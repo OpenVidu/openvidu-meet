@@ -1,0 +1,43 @@
+<ov-base-card
+	[disabled]="disabled"
+	[title]="title"
+	[description]="description"
+	[icon]="icon"
+	[iconBackgroundColor]="iconBackgroundColor"
+>
+	<div card-content class="card-content">
+		@if (disabled) {
+			<div class="disabled-overlay">
+				<p>This card is only available in the PRO version</p>
+			</div>
+		}
+
+		@if (selectionType === 'text') {
+			<mat-form-field card-content>
+				<mat-select [(value)]="selectedOption" (selectionChange)="onSelectionChange($event)">
+					@for (option of options; track option.value) {
+						<mat-option [value]="option.value">
+							{{ option.label }}
+						</mat-option>
+					}
+				</mat-select>
+			</mat-form-field>
+		} @else if (selectionType === 'color') {
+			@for (option of options; track option.label) {
+				<div class="item-option">
+					<p>{{ option.label }}</p>
+
+					<input
+						id="round-input"
+						type="color"
+						class="color-picker"
+						[value]="option.value"
+						(change)="onColorChange(option.label, $event)"
+					/>
+				</div>
+			}
+		} @else if (selectionType === 'custom') {
+			<ng-content></ng-content>
+		}
+	</div>
+</ov-base-card>

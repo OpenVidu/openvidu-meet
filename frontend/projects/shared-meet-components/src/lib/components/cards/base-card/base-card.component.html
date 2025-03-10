@@ -1,0 +1,26 @@
+<mat-card class="base-card" [style.background-color]="cardBackgroundColor" [class]="{ disabled: disabled }">
+	<div class="card-header" [class.balancedPadding]="!showCardContent">
+		<div class="icon-container" [style.background-color]="iconBackgroundColor">
+			@if (iconUrl) {
+				<img [src]="iconUrl" alt="App Logo" class="app-logo" />
+			} @else {
+				<mat-icon class="card-icon" [style.color]="iconColor">{{ icon }}</mat-icon>
+			}
+		</div>
+		<div class="text-container">
+			<div class="card-title">{{ title }}</div>
+			<div class="card-subtitle">{{ description }}</div>
+		</div>
+
+		<ng-content select="[card-header-tag]"></ng-content>
+	</div>
+	@if (showCardContent) {
+		<div class="divider"></div>
+	}
+
+	<div class="card-content" #cardContent [class.hidden]="!showCardContent">
+		<ng-content select="[card-content]"></ng-content>
+	</div>
+
+	<ng-content select="[card-footer]"></ng-content>
+</mat-card>

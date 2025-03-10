@@ -1,0 +1,18 @@
+<ov-base-card
+	[title]="title"
+	[description]="description"
+	[icon]="icon"
+	[iconBackgroundColor]="iconBackgroundColor"
+	[cardBackgroundColor]="cardBackgroundColor"
+>
+	<ng-content card-content select="[card-content]"></ng-content>
+
+	<div card-footer class="card-footer">
+		<span>{{ title }} is {{ toggleValue ? 'enabled' : 'disabled' }}</span>
+		<mat-slide-toggle
+			class="ov-slide-toggle"
+			[checked]="toggleValue"
+			(change)="onToggleChange($event)"
+		></mat-slide-toggle>
+	</div>
+</ov-base-card>

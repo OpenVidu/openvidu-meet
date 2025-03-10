@@ -1,0 +1,36 @@
+@if (!serverError && !loading) {
+	<ov-videoconference
+		[token]="token"
+		[tokenError]="serverError"
+		[participantName]="participantName"
+		[prejoin]="featureFlags.showPrejoin"
+		[videoEnabled]="featureFlags.videoEnabled"
+		[audioEnabled]="featureFlags.audioEnabled"
+		[toolbarCameraButton]="featureFlags.showCamera"
+		[toolbarMicrophoneButton]="featureFlags.showMicrophone"
+		[toolbarScreenshareButton]="featureFlags.showScreenShare"
+		[toolbarChatPanelButton]="featureFlags.showChat"
+		[toolbarRecordingButton]="featureFlags.showRecording"
+		[toolbarBroadcastingButton]="false"
+		[activitiesPanelRecordingActivity]="featureFlags.showRecording"
+		[activitiesPanelBroadcastingActivity]="false"
+		[toolbarBackgroundEffectsButton]="featureFlags.showBackgrounds"
+		[toolbarActivitiesPanelButton]="featureFlags.showActivityPanel"
+		(onTokenRequested)="onTokenRequested($event)"
+		(onParticipantConnected)="onParticipantConnected($event)"
+		(onParticipantLeft)="onParticipantLeft($event)"
+		(onRecordingStartRequested)="onRecordingStartRequested($event)"
+		(onRecordingStopRequested)="onRecordingStopRequested($event)"
+		(onRecordingDeleteRequested)="onRecordingDeleteRequested($event)"
+	>
+	</ov-videoconference>
+}
+
+@if (!loading && serverError) {
+	<div class="error">
+		<mat-icon>error</mat-icon>
+		<span>
+			{{ serverError }}
+		</span>
+	</div>
+}

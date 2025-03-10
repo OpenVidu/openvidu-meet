@@ -1,0 +1,21 @@
+@use '@angular/material' as mat;
+@use './assets/styles/openvidu-theme.scss';
+
+@include mat.core();
+
+html {
+	@include mat.core-theme(openvidu-theme.$light-theme);
+	@include mat.all-component-bases(openvidu-theme.$light-theme);
+	@include mat.all-component-colors(openvidu-theme.$light-theme);
+	@include mat.all-component-typographies(openvidu-theme.$light-theme);
+	@include mat.all-component-densities(openvidu-theme.$light-theme);
+}
+html,
+body {
+	height: 100%;
+	overflow: hidden;
+}
+body {
+	margin: 0;
+	font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+}

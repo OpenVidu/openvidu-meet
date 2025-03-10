@@ -1,0 +1,60 @@
+<mat-toolbar color="primary">
+	<button mat-icon-button aria-label="Menu icon" (click)="toggleSideMenu()">
+		<mat-icon>menu</mat-icon>
+	</button>
+
+	<span class="toolbar-title">OpenVidu Console</span>
+
+	<span class="toolbar-spacer"></span>
+
+	<button mat-icon-button aria-label="Profile">
+		<mat-icon>account_circle</mat-icon>
+	</button>
+
+	<button mat-icon-button (click)="onLogoutClicked.emit()" aria-label="Logout">
+		<mat-icon>logout</mat-icon>
+	</button>
+</mat-toolbar>
+
+<mat-sidenav-container autosize class="sidenav-container">
+	<mat-sidenav
+		#sidenav
+		[ngClass]="isSideMenuCollapsed ? 'collapsed' : 'expanded'"
+		[mode]="isMobile ? 'over' : 'side'"
+		[opened]="isMobile ? 'false' : 'true'"
+	>
+		<mat-nav-list>
+			@for (link of navLinks; track link.route) {
+				<ng-container>
+					<a
+						mat-list-item
+						class="menu-button"
+						[routerLink]="link.route"
+						(click)="link.clickHandler ? link.clickHandler() : null"
+					>
+						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
+							<mat-icon>{{ link.icon }}</mat-icon>
+							@if (!isSideMenuCollapsed) {
+								{{ link.label }}
+							}
+						</span>
+					</a>
+				</ng-container>
+			}
+		</mat-nav-list>
+
+		@if (!isSideMenuCollapsed) {
+			<div class="separator"></div>
+			<div class="version">
+				<p>v{{ version }}</p>
+			</div>
+		}
+	</mat-sidenav>
+
+	<!-- Main content -->
+	<mat-sidenav-content>
+		<div class="page-content">
+			<router-outlet></router-outlet>
+		</div>
+	</mat-sidenav-content>
+</mat-sidenav-container>
