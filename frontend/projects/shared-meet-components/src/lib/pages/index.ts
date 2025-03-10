@@ -1,5 +1,6 @@
 export * from './console/console.component';
 export * from './console/rooms/rooms.component';
+export * from './console/recordings/recordings.component';
 export * from './console/access-permissions/access-permissions.component';
 export * from './console/appearance/appearance.component';
 export * from './console/security-preferences/security-preferences.component';
