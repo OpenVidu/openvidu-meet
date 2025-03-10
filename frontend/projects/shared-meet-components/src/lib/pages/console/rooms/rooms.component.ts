@@ -22,10 +22,10 @@ import { OpenViduMeetRoom } from 'projects/shared-meet-components/src/lib/typing
 		MatButtonModule,
 		MatIconModule
 	],
-	templateUrl: './room-preferences.component.html',
-	styleUrl: './room-preferences.component.scss'
+	templateUrl: './rooms.component.html',
+	styleUrl: './rooms.component.scss'
 })
-export class RoomPreferencesComponent implements OnInit {
+export class RoomsComponent implements OnInit {
 	createdRooms: OpenViduMeetRoom[] = [];
 	private roomPreferences!: RoomPreferences;
 	recordingEnabled = false;
@@ -36,7 +36,6 @@ export class RoomPreferencesComponent implements OnInit {
 
 	constructor(
 		protected loggerService: LoggerService,
-
 		private roomService: RoomService,
 		private notificationService: NotificationService
 	) {

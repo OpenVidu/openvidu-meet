@@ -18,10 +18,11 @@ import {
 	DisconnectedComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
-	RoomPreferencesComponent,
+	RoomsComponent,
 	SecurityPreferencesComponent,
 	VideoRoomComponent
 } from '../pages';
+import { RecordingsComponent } from '@lib/pages/console/recordings/recordings.component';
 
 export const baseRoutes: Routes = [
 	{ path: 'disconnected', component: DisconnectedComponent },
@@ -34,7 +35,7 @@ export const baseRoutes: Routes = [
 	{
 		path: 'console',
 		component: ConsoleComponent,
-		canActivate: [/*standaloneModeGuard*/ checkAdminAuthenticatedGuard],
+		canActivate: [checkAdminAuthenticatedGuard],
 		children: [
 			{
 				path: '',
@@ -46,25 +47,30 @@ export const baseRoutes: Routes = [
 				component: OverviewComponent
 			},
 			{
-				path: 'access-permissions',
-				component: AccessPermissionsComponent
+				path: 'rooms',
+				component: RoomsComponent
 			},
 			{
-				path: 'appearance',
-				component: AppearanceComponent
+				path: 'recordings',
+				component: RecordingsComponent
 			},
-			{
-				path: 'room-preferences',
-				component: RoomPreferencesComponent
-			},
-			{
-				path: 'security-preferences',
-				component: SecurityPreferencesComponent
-			},
-			{
-				path: 'about',
-				component: AboutComponent
-			},
+			// {
+			// 	path: 'access-permissions',
+			// 	component: AccessPermissionsComponent
+			// },
+			// {
+			// 	path: 'appearance',
+			// 	component: AppearanceComponent
+			// },
+
+			// {
+			// 	path: 'security-preferences',
+			// 	component: SecurityPreferencesComponent
+			// },
+			// {
+			// 	path: 'about',
+			// 	component: AboutComponent
+			// },
 			{ path: '**', redirectTo: 'overview' }
 		]
 	},

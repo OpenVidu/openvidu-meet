@@ -13,7 +13,7 @@ import { AuthService } from '../../services';
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[] = [
 		{ label: 'Overview', route: 'overview', icon: 'dashboard' },
-		{ label: 'Rooms', route: 'room-preferences', icon: 'video_settings' },
+		{ label: 'Rooms', route: 'rooms', icon: 'video_settings' },
 		{ label: 'Recordings', route: 'recordings', icon: 'radio_button_checked' }
 		// { label: 'Access & Permissions', route: 'access-permissions', icon: 'lock' },
 		// { label: 'Appearance', route: 'appearance', icon: 'palette' },
