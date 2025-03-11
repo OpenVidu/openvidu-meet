@@ -32,7 +32,6 @@ export class S3Service {
 	protected s3: S3Client;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
-		console.log('CE S3Service constructor');
 		const config: S3ClientConfig = {
 			region: MEET_AWS_REGION,
 			credentials: {
