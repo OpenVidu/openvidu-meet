@@ -1,74 +1,57 @@
-### Stage 0: Build common types library
-FROM node:20 as build-common-types
+# ====================================================
+# Stage 1: builder
+# ====================================================
+FROM node:22.14.0-alpine3.21 AS builder
+
+WORKDIR /app
+
+RUN mkdir -p types frontend backend && chown -R node:node /app
 
 USER node
 
-WORKDIR /app/meet-common-types
-
-COPY --chown=node:node types/ ./
-
-RUN npm install && \
-	npm run build:prod && \
-	npm pack && \
-	rm -rf node_modules dist
-
-
-### Stage 1: Build the frontend
-FROM node:20 as build-frontend
-
-USER node
+COPY --chown=node:node frontend/package*.json ./frontend/
+COPY --chown=node:node backend/package*.json ./backend/
+COPY --chown=node:node types/package*.json ./types/
+COPY --chown=node:node . .
 
 WORKDIR /app/frontend
 
 ARG BASE_HREF=/
 
-COPY --chown=node:node frontend/ ./
-COPY --from=build-common-types /app/meet-common-types/openvidu-meet-common-types-**.tgz ./
-
-RUN npm install && \
-	npm run lib:build && \
-	npm run lib:pack && \
-	mv dist/shared-meet-components/shared-meet-components-**.tgz . && \
-	npm install shared-meet-components-**.tgz && \
-    npm run build:prod ${BASE_HREF}
-
-### Stage 2: Build the backend
-FROM node:20 as build-backend
-
-USER node
+RUN npm install
+# Sync types from the types package
+RUN npm run types:sync
+# Build the fronted for production
+RUN npm run build:prod ${BASE_HREF}
 
 WORKDIR /app/backend
 
-COPY --chown=node:node backend/package*.json ./
-COPY --from=build-common-types /app/meet-common-types/openvidu-meet-common-types-**.tgz ./
-
 RUN npm install
-
-COPY --chown=node:node backend/ ./
-
-RUN mkdir -p /app/backend/dist/src && chown -R node:node /app/backend/dist
-
-# Copy static files from the frontend build
-COPY --from=build-frontend /app/frontend/dist/openvidu-meet /app/backend/dist/public
-
+# Sync types from the types package
+RUN npm run types:sync
+# Build the backend for production
 RUN npm run build:prod
 
-
-### Stage 3: Final production image
-FROM node:20-alpine as production
+# ====================================================
+# Stage 2: production
+# ====================================================
+FROM node:22.14.0-alpine3.21 AS production
 
 WORKDIR /opt/openvidu-meet
 
-COPY --from=build-common-types /app/meet-common-types/openvidu-meet-common-types-**.tgz ./
-COPY --from=build-backend /app/backend/dist ./dist
-COPY --from=build-backend /app/backend/package*.json ./
+COPY backend/package*.json ./
+RUN npm ci --production
 
-RUN npm install --production && npm cache clean --force
+# Copy the frontend and backend from the builder
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/public ./dist/public
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
 	chown -R node:node /opt/openvidu-meet
+
+ENV NODE_ENV=production
 
 EXPOSE $SERVER_PORT
 
