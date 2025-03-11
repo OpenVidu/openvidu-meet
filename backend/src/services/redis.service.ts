@@ -1,4 +1,4 @@
-import { injectable } from '../config/dependency-injector.config.js';
+import { inject, injectable } from '../config/dependency-injector.config.js';
 import * as config from '../environment.js';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
 import {
@@ -17,14 +17,13 @@ import { EventEmitter } from 'events';
 import Redlock from 'redlock';
 
 @injectable()
-export class RedisService extends LoggerService {
+export class RedisService {
 	protected readonly DEFAULT_TTL: number = 32 * 60 * 60 * 24; // 32 days
 	protected redis: Redis;
 	protected isConnected = false;
 	public events: EventEmitter;
 
-	constructor() {
-		super();
+	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		this.events = new EventEmitter();
 		const redisOptions = this.loadRedisConfig();
 		this.redis = new Redis(redisOptions);
