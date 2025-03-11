@@ -54,11 +54,16 @@ cd openvidu-meet
 > **The script prepare and build all necessary dependencies and typings for running the frontend and backend.**
 >
 >
-> - For building the **typings**, you can run the following command:
+> - For building the **typings**, you can run the following command in the frontend and backend directories:
 >
 >   ```bash
->   cd openvidu-meet/types
->   npm run sync-ce
+>   cd frontend
+>   npm run types:sync
+>   ```
+>
+>   ```bash
+>   cd backend
+>   npm run types:sync
 >   ```
 
 **3. Start the Backend**
