@@ -168,10 +168,6 @@ export class RoomService {
 			return ParticipantRole.PUBLISHER;
 		}
 
-		if (room.viewerRoomUrl.includes(secret)) {
-			return ParticipantRole.VIEWER;
-		}
-
 		throw new Error('Invalid secret');
 	}
 
@@ -228,7 +224,6 @@ export class RoomService {
 			expirationDate,
 			moderatorRoomUrl: `${baseUrl}/${roomName}/?secret=${secureUid(10)}`,
 			publisherRoomUrl: `${baseUrl}/${roomName}?secret=${secureUid(10)}`,
-			viewerRoomUrl: `${baseUrl}/${roomName}/?secret=${secureUid(10)}`,
 			preferences
 		};
 		return openviduRoom;

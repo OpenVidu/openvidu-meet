@@ -19,5 +19,4 @@ export interface OpenViduMeetRoom extends BaseRoomOptions {
 	creationDate: number;
 	moderatorRoomUrl: string;
 	publisherRoomUrl: string;
-	viewerRoomUrl: string;
 }

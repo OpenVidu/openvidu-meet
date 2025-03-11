@@ -45,8 +45,6 @@ export class ParticipantService {
 				return this.generateModeratorPermissions(roomName);
 			case ParticipantRole.PUBLISHER:
 				return this.generatePublisherPermissions(roomName);
-			case ParticipantRole.VIEWER:
-				return this.generateViewerPermissions(roomName);
 			default:
 				throw new Error(`Role ${role} not supported`);
 		}
@@ -101,32 +99,6 @@ export class ParticipantService {
 				canRecord: false,
 				canChat: true,
 				canChangeVirtualBackground: true
-			}
-		};
-	}
-
-	protected generateViewerPermissions(roomName: string): ParticipantPermissions {
-		return {
-			livekit: {
-				roomJoin: true,
-				roomList: false,
-				roomRecord: false,
-				roomAdmin: false,
-				room: roomName,
-				ingressAdmin: false,
-				canPublish: false,
-				canSubscribe: true,
-				canPublishData: false,
-				canUpdateOwnMetadata: false,
-				hidden: false,
-				recorder: false,
-				agent: false
-			},
-			openvidu: {
-				canPublishScreen: false,
-				canRecord: false,
-				canChat: false,
-				canChangeVirtualBackground: false
 			}
 		};
 	}

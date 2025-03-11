@@ -69,13 +69,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 			// TODO: Extract permissions from token and apply them to the component
 			this.applyParticipantPermissions();
-			if (this.ctxService.isViewerParticipant()) {
-				this.featureFlags.videoEnabled = false;
-				this.featureFlags.audioEnabled = false;
-				this.featureFlags.showMicrophone = false;
-				this.featureFlags.showCamera = false;
-				this.featureFlags.showScreenShare = false;
-			}
 		} catch (error: any) {
 			console.error('Error fetching room preferences', error);
 			this.serverError = error.error.message || error.message || error.error;

@@ -15,7 +15,7 @@ export class ContextService {
 		roomName: '',
 		participantName: '',
 		token: '',
-		participantRole: ParticipantRole.VIEWER,
+		participantRole: ParticipantRole.PUBLISHER,
 		participantPermissions: {
 			canRecord: false,
 			canChat: false,
@@ -112,10 +112,6 @@ export class ContextService {
 
 	isModeratorParticipant(): boolean {
 		return this.context.participantRole === ParticipantRole.MODERATOR;
-	}
-
-	isViewerParticipant(): boolean {
-		return this.context.participantRole === ParticipantRole.VIEWER;
 	}
 
 	setParticipantName(participantName: string): void {
