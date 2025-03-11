@@ -108,3 +108,4 @@ docker run \
   -p 6080:6080 \
   openvidu-meet-ce
 ```
+You can check all the available environment variables in the [environment file](backend/src/environment.ts).
