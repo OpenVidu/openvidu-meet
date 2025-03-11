@@ -1,16 +1,14 @@
 # OpenVidu Meet
 
-OpenVidu Meet is a versatile video conferencing application powered by **OpenVidu**, designed to support a wide range of use cases, from personal video calls to professional webinars. Built with **Angular**, OpenVidu Meet offers two distinct modes of operation to cater to both non-technical users and developers seeking deep integration with their applications.
-
 # Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-4. [Development](#development)
+2. [Development](#development)
    - [1. Clone the Repository](#1-clone-the-openvidu-meet-repository)
    - [2. Prepare the Project](#2-prepare-the-project)
    - [3. Start the Backend](#3-start-the-backend)
    - [4. Start the Frontend](#4-start-the-frontend)
-5. [Build (with Docker)](#build-with-docker)
+3. [Build (with Docker)](#build-with-docker)
    - [Build the Backend Image](#build-the-backend-image)
    - [Run the Backend Container](#run-the-backend-container)
 
@@ -53,7 +51,7 @@ cd openvidu-meet
 ```
 
 > [!NOTE]
-> **The script prepare and build all necessary dependencies ( typings) for running the frontend and backend.**
+> **The script prepare and build all necessary dependencies and typings for running the frontend and backend.**
 >
 >
 > - For building the **typings**, you can run the following command:
