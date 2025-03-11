@@ -1,9 +1,12 @@
 {
 	"env": {
-	  "NODE_ENV": "development"
+		"NODE_ENV": "development"
 	},
-	"watch": ["openapi/openvidu-meet-api.yaml", "src"],
+	"watch": ["openapi/openvidu-meet-api.yaml", "src", "../types/src"],
 	"ext": "js,json,ts",
-	"ignore": ["node_modules", "dist"],
-	"exec": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/server.ts"
-  }
+	"ignore": ["node_modules", "dist", "src/typings", "public"],
+	"exec": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/server.ts",
+	"events": {
+		"restart": "npm run types:sync"
+	}
+}
