@@ -70,3 +70,14 @@ export const validateRoomRequest = (req: Request, res: Response, next: NextFunct
 	req.body = data;
 	next();
 };
+
+export const validateGetRoomQueryParams = (req: Request, res: Response, next: NextFunction) => {
+	const fieldsQuery = req.query.fields as string | undefined;
+
+	if (fieldsQuery) {
+		const fields = fieldsQuery.split(',').map((f) => f.trim());
+		req.query.fields = fields;
+	}
+
+	next();
+}

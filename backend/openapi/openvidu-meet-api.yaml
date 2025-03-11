@@ -133,10 +133,21 @@ paths:
             summary: Get a list of OpenVidu Meet rooms
             description: >
                 Retrieves a list of OpenVidu Meet rooms that are currently active.
+                You can specify a comma-separated list of fields (using the "fields" query parameter) to include only
+                those properties in the response (e.g. roomName, preferences).
             tags:
                 - Room
             security:
                 - apiKeyInHeader: []
+            parameters:
+                - name: fields
+                  in: query
+                  required: false
+                  description: |
+                    Comma-separated list of fields to include in the response.
+                    For example: "roomName,preferences". Only allowed fields will be returned.
+                  schema:
+                    type: string
             responses:
                 '200':
                     description: Successfully retrieved the list of OpenVidu Meet rooms
@@ -249,6 +260,8 @@ paths:
             summary: Get details of an OpenVidu Meet room
             description: >
                 Retrieves the details of an OpenVidu Meet room with the specified room name.
+                Additionally, you can specify a comma-separated list of fields (using the "fields" query parameter)
+                to include only those properties in the response (e.g. roomName, preferences).
             tags:
                 - Room
             security:
@@ -260,6 +273,14 @@ paths:
                   description: The name of the room to retrieve
                   schema:
                       type: string
+                - name: fields
+                  in: query
+                  required: false
+                  description: |
+                    Comma-separated list of fields to include in the response.
+                    For example: "roomName,preferences". Only allowed fields will be returned.
+                  schema:
+                    type: string
             responses:
                 '200':
                     description: Successfully retrieved the OpenVidu Meet room

@@ -22,14 +22,21 @@ export const createRoom = async (req: Request, res: Response) => {
 	}
 };
 
-export const getRooms = async (_req: Request, res: Response) => {
+export const getRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const fields = req.query.fields as string[] | undefined;
 
 	try {
 		logger.verbose('Getting rooms');
 
 		const roomService = container.get(RoomService);
 		const rooms = await roomService.listOpenViduRooms();
+
+		if (fields && fields.length > 0) {
+			const filteredRooms = rooms.map((room) => filterObjectFields(room, fields));
+			return res.status(200).json(filteredRooms);
+		}
+
 		return res.status(200).json(rooms);
 	} catch (error) {
 		logger.error('Error getting rooms');
@@ -41,12 +48,19 @@ export const getRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	const { roomName } = req.params;
+	const fields = req.query.fields as string[] | undefined;
 
 	try {
 		logger.verbose(`Getting room with id '${roomName}'`);
 
 		const roomService = container.get(RoomService);
 		const room = await roomService.getOpenViduRoom(roomName);
+
+		if (fields && fields.length > 0) {
+			const filteredRoom = filterObjectFields(room, fields);
+			return res.status(200).json(filteredRoom);
+		}
+
 		return res.status(200).json(room);
 	} catch (error) {
 		logger.error(`Error getting room with id '${roomName}'`);
@@ -104,6 +118,19 @@ export const updateRoomPreferences = async (req: Request, res: Response) => {
 	// 	logger.error('Error saving room preferences:' + error);
 	// 	return res.status(500).json({ message: 'Error saving room preferences', error });
 	// }
+};
+
+const filterObjectFields = (obj: Record<string, any>, fields: string[]): Record<string, any> => {
+	return fields.reduce(
+		(acc, field) => {
+			if (Object.prototype.hasOwnProperty.call(obj, field)) {
+				acc[field] = obj[field];
+			}
+
+			return acc;
+		},
+		{} as Record<string, any>
+	);
 };
 
 const handleError = (res: Response, error: OpenViduMeetError | unknown) => {
