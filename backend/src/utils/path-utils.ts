@@ -13,14 +13,16 @@ const webcomponentBundlePath = path.join(srcPath, '../public/webcomponent/openvi
 const indexHtmlPath = path.join(publicFilesPath, 'index.html');
 
 const getOpenApiSpecPath = () => {
-	const defaultPath = 'openapi/openvidu-meet-api.yaml';
-	const fallbackPath = path.resolve(__dirname, '../../../openapi/openvidu-meet-api.yaml');
+	const prodPath = path.join('dist', 'openapi', 'openvidu-meet-api.yaml');
+	const devPath = path.join(process.cwd(), 'openapi', 'openvidu-meet-api.yaml');
 
-	if (fs.existsSync(defaultPath)) {
-		return defaultPath;
+	if (fs.existsSync(prodPath)) {
+		return prodPath;
+	} else if (fs.existsSync(devPath)) {
+		return devPath;
 	} else {
-		console.warn(`Falling back to loading YAML from ${fallbackPath}`);
-		return fallbackPath;
+		console.warn(`OpenAPI spec not found in ${prodPath} or ${devPath}`);
+		throw new Error(`OpenAPI spec not found in ${prodPath} or ${devPath}`);
 	}
 };
 
