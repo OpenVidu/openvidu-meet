@@ -33,7 +33,7 @@
 		"start:dev": "nodemon",
 		"package:build": "npm run build:prod && npm pack",
 		"lib:sync-pro": "npm run package:build && cp openvidu-meet-server-*.tgz ../../openvidu-meet-pro/backend",
-		"types:sync": "npm run sync-ce --prefix ../types",
+		"typings:sync": "npm run sync-ce --prefix ../typings",
 		"test:embedded-auth-api": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/api/embedded/participants.test.ts",
 		"test:integration-webhooks": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/services/openvidu-webhook.service.test.ts",
 		"lint:fix": "eslint src --fix",

@@ -2,11 +2,11 @@
 	"env": {
 		"NODE_ENV": "development"
 	},
-	"watch": ["openapi/openvidu-meet-api.yaml", "src", "../types/src"],
+	"watch": ["openapi/openvidu-meet-api.yaml", "src", "../typings/src"],
 	"ext": "js,json,ts",
 	"ignore": ["node_modules", "dist", "src/typings", "public"],
 	"exec": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/server.ts",
 	"events": {
-		"restart": "npm run types:sync"
+		"restart": "npm run typings:sync"
 	}
 }

@@ -6,7 +6,7 @@
 		"start:dev": "npx ng serve --configuration development --port=5080 --host=0.0.0.0",
 		"build:dev": "npx ng build --configuration development --watch",
 		"build:prod": "func() { ./node_modules/@angular/cli/bin/ng.js build --configuration production --base-href=\"${1:-/}\"; }; func",
-		"types:sync": "npm run sync-ce --prefix ../types",
+		"typings:sync": "npm run sync-ce --prefix ../typings",
 		"sync:backend": "npx ng build --configuration production --output-path ../backend/dist/public/",
 		"e2e:run-all": "npx mocha --recursive --timeout 30000 ./tests/e2e/**/*.test.ts",
 		"e2e:run-routes": "npx mocha --recursive --timeout 30000 ./tests/e2e/routes.test.ts",

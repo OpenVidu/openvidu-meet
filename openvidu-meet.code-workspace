@@ -4,8 +4,8 @@
 			"path": "."
 		},
 		{
-			"name": "types",
-			"path": "types"
+			"name": "typings",
+			"path": "typings"
 		},
 		{
 			"name": "backend",
