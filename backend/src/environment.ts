@@ -24,7 +24,7 @@ export const {
 	MEET_PREFERENCES_STORAGE_MODE = 's3',
 	MEET_WEBHOOK_ENABLED = 'true',
 	MEET_WEBHOOK_URL = 'http://localhost:5080/webhook',
-	MEET_LOG_LEVEL = 'verbose',
+	MEET_LOG_LEVEL = 'info',
 
 	// LiveKit configuration
 	LIVEKIT_URL = 'ws://localhost:7880',
