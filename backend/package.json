@@ -28,10 +28,12 @@
 	],
 	"scripts": {
 		"build:prod": "tsc",
+		"postbuild:prod": "cp -r openapi dist/openapi",
 		"start:prod": "node dist/src/server.js",
 		"start:dev": "nodemon",
 		"package:build": "npm run build:prod && npm pack",
 		"lib:sync-pro": "npm run package:build && cp openvidu-meet-server-*.tgz ../../openvidu-meet-pro/backend",
+		"types:sync": "npm run sync-ce --prefix ../types",
 		"test:embedded-auth-api": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/api/embedded/participants.test.ts",
 		"test:integration-webhooks": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/services/openvidu-webhook.service.test.ts",
 		"lint:fix": "eslint src --fix",
@@ -56,6 +58,7 @@
 		"reflect-metadata": "^0.2.2",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.1",
+		"uid": "^2.0.2",
 		"winston": "3.14.2",
 		"yamljs": "^0.3.0",
 		"zod": "^3.24.2"
