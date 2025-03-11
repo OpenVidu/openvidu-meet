@@ -19,11 +19,8 @@ export class LoggerService {
 				winston.format.errors({ stack: true })
 				// winston.format.splat(),
 				// winston.format.json()
-			)
-		});
-
-		if (process.env.NODE_ENV !== 'production') {
-			this.logger.add(
+			),
+			transports: [
 				new winston.transports.Console({
 					format: winston.format.combine(
 						winston.format.colorize(),
@@ -32,8 +29,8 @@ export class LoggerService {
 						})
 					)
 				})
-			);
-		}
+			]
+		});
 	}
 
 	// Generic method to log messages with a specific level
