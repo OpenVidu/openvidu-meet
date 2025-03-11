@@ -12,9 +12,6 @@
    - [Build the Backend Image](#build-the-backend-image)
    - [Run the Backend Container](#run-the-backend-container)
 
-
-
-
 ## Architecture Overview
 
 The OpenVidu Meet application is composed of two main parts (frontend and backend) that interact with each other to provide the video conferencing service. The following diagram illustrates the architecture of the application:
@@ -50,29 +47,16 @@ cd openvidu-meet
 ./prepare.sh
 ```
 
-> [!NOTE]
-> **The script prepare and build all necessary dependencies and typings for running the frontend and backend.**
->
->
-> - For building the **typings**, you can run the following command in the frontend and backend directories:
->
->   ```bash
->   cd frontend
->   npm run types:sync
->   ```
->
->   ```bash
->   cd backend
->   npm run types:sync
->   ```
-
 **3. Start the Backend**
-
 
 ```bash
 cd backend && \
 npm run start:dev
 ```
+
+> [!NOTE] > **The types under `types/src` are shared between the frontend and backend projects.** If you need to update the comon types, remember doing it in the `types` project.
+>
+> Every time you make changes to the types, the backend process will automatically invoke the syncing task to update the types in the frontend and backend projects. So, you don't need to worry about updating the types manually.
 
 **4. Start the Frontend**
 
@@ -82,10 +66,10 @@ Opening a new tab, under root directory:
 cd frontend && \
 npm run build:dev
 ```
+
 This command will build the frontend application and move the files to the backend project. It will also listen for changes in the frontend application and rebuild the application when changes are detected.
 
 After running these commands, you can access the frontend application at [http://localhost:6080](http://localhost:6080).
-
 
 ## Build (with docker)
 
@@ -108,4 +92,5 @@ docker run \
   -p 6080:6080 \
   openvidu-meet-ce
 ```
+
 You can check all the available environment variables in the [environment file](backend/src/environment.ts).
