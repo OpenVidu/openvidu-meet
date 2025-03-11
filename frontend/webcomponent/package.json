@@ -1,13 +1,12 @@
 {
-	"name": "openvidu-meet",
+	"name": "openvidu-meet-webcomponent",
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"build": "rollup -c",
+		"build": "npm install && rollup -c",
 		"test": "jest",
 		"test:e2e": "playwright test",
-		"lint": "eslint 'src/**/*.ts'",
-		"prepare": "npm run build"
+		"lint": "eslint 'src/**/*.ts'"
 	},
 	"keywords": [],
 	"author": "",
