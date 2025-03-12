@@ -2,8 +2,8 @@
 
 set -e
 
-# Build types library
-cd types
+# Build typings library
+cd typings
 npm install
 npm run sync-ce
 cd ..

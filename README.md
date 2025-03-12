@@ -24,10 +24,10 @@ The OpenVidu Meet application is composed of two main parts (frontend and backen
   Also, the frontend project installs external dependencies on the following libraries:
 
   - [**openvidu-components-angular**](https://github.com/OpenVidu/openvidu/tree/master/openvidu-components-angular): A library of Angular components that provide the core functionality of the video conferencing service.
-  - [**typing**](./types/): Common types used by the frontend and backend.
+  - [**typings**](./typings/): Common types used by the frontend and backend.
 
 - **Backend**: The backend is a Node.js application.
-  - [**typings**](./types/): Common types used by the frontend and backend.
+  - [**typings**](./typings/): Common types used by the frontend and backend.
 
 ## Development
 
