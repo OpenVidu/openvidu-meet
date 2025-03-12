@@ -56,8 +56,8 @@ npm run start:dev
 ```
 
 > [!NOTE]
->  **The types under `types/src` are shared between the frontend and backend projects.**
-> If you need to update the comon types, remember doing it in the `types` project.
+>  **The types under `typings` are shared between the frontend and backend projects.**
+> If you need to update the comon types, remember doing it in the `typings` project.
 >
 > Every time you make changes to the types, the backend process will automatically invoke the syncing task to update the types in the frontend and backend projects. So, you don't need to worry about updating the types manually.
 
