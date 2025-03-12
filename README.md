@@ -8,7 +8,8 @@
    - [2. Prepare the Project](#2-prepare-the-project)
    - [3. Start the Backend](#3-start-the-backend)
    - [4. Start the Frontend](#4-start-the-frontend)
-3. [Build (with Docker)](#build-with-docker)
+3. [Testing](#testing)
+4. [Build (with Docker)](#build-with-docker)
    - [Build the Backend Image](#build-the-backend-image)
    - [Run the Backend Container](#run-the-backend-container)
 
@@ -72,6 +73,29 @@ npm run build:dev
 This command will build the frontend application and move the files to the backend project. It will also listen for changes in the frontend application and rebuild the application when changes are detected.
 
 After running these commands, you can access the frontend application at [http://localhost:6080](http://localhost:6080).
+
+
+## Testing
+
+This repository offers a testing application that allows you to test the OpenVidu Meet.
+
+To run the testing application, follow these steps under the root directory:
+
+1. Install the dependencies:
+
+```bash
+cd testapp && \
+npm install
+```
+
+2. Start the testing application:
+
+```bash
+npm run start
+```
+
+After running these commands, you can access the testing application at [http://localhost:5080](http://localhost:5080).
+
 
 ## Build (with docker)
 
