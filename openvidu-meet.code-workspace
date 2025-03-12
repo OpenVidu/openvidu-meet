@@ -12,17 +12,21 @@
 			"path": "backend"
 		},
 		{
-			"name": "frontend",
-			"path": "frontend",
+			"name": "frontend-src",
+			"path": "frontend/src",
+		},
+		{
+			"name": "testapp",
+			"path": "testapp"
 		},
 		{
 			"name": "shared-meet-components",
-			"path": "frontend/projects/shared-meet-components"
+			"path": "frontend/projects/shared-meet-components/src"
 		},
 		{
 			"name": "webcomponent",
 			"path": "frontend/webcomponent"
-		}
+		},
 	],
 	"settings": {
 		"jest.disabledWorkspaceFolders": ["openvidu-meet", "types", "frontend"],
