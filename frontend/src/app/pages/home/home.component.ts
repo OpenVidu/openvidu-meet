@@ -17,7 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // import { ConfigService } from '@app/services/config.service';
-import { HttpService, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/public-api';
+import { HttpService, OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/public-api';
 
 import packageInfo from '../../../../package.json';
 
@@ -145,14 +145,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 				expirationDate: Date.now() + 3600
 			};
 
-			const room = await this.httpService.createRoom(options);
+			const room: OpenViduMeetRoom = await this.httpService.createRoom(options);
 
 			this.roomForm.get('roomNamePrefix')?.setValue(roomNamePrefix);
 
-			// TODO: Should create a way of select the access role (moderator/participant)
-			const publisherUrl = new URL(room.publisherRoomUrl);
-			const secret = publisherUrl.searchParams.get('secret');
-			const path = publisherUrl.pathname;
+			const isFirstParticipant = room.numParticipants === 0;
+			const accessRoomUrl = new URL(isFirstParticipant ? room.moderatorRoomUrl : room.publisherRoomUrl);
+
+			const secret = accessRoomUrl.searchParams.get('secret');
+			const path = accessRoomUrl.pathname;
 			this.router.navigate([path], { queryParams: { secret } });
 		} catch (error) {
 			console.error('Error creating room ', error);
