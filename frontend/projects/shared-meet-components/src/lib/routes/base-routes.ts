@@ -92,5 +92,5 @@ export const baseRoutes: Routes = [
 	},
 
 	// Redirect all other routes to home
-	{ path: '**', redirectTo: 'home' }
+	{ path: '**', redirectTo: '' }
 ];
