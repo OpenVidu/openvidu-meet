@@ -4,7 +4,6 @@ import { MEET_NAME_ID } from '../environment.js';
 import { uid } from 'uid/single';
 
 export class OpenViduRoomHelper {
-
 	/**
 	 * Converts an OpenViduMeetRoom object to an OpenViduMeetRoomOptions object.
 	 *
@@ -22,8 +21,13 @@ export class OpenViduRoomHelper {
 
 	static generateLivekitRoomOptions(roomInput: OpenViduMeetRoom | OpenViduMeetRoomOptions): CreateOptions {
 		const isOpenViduRoom = 'creationDate' in roomInput;
+		const sanitizedPrefix = roomInput.roomNamePrefix
+			?.trim()
+			.replace(/[^a-zA-Z0-9-]/g, '')
+			.replace(/-+$/, '');
+		const sanitizedRoomName = sanitizedPrefix ? `${sanitizedPrefix}-${uid(15)}` : uid(15);
 		const {
-			roomName = `${roomInput.roomNamePrefix ?? ''}${uid(15)}`,
+			roomName = sanitizedRoomName,
 			expirationDate,
 			maxParticipants,
 			creationDate = Date.now()
