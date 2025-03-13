@@ -25,15 +25,10 @@ export class UnauthorizedComponent implements OnInit {
 				case 'invalid-participant':
 					this.message = 'The participant name must be provided';
 					break;
-				// case 'no-token':
-				// 	this.message = 'No token provided';
-				// 	break;
-				// case 'no-iframe-allowed':
-				// 	this.message = 'The page is not accessible directly from an iframe. Please use the OpenVidu Embedded';
-				// 	break;
-				// case 'embedded':
-				// 	this.message = 'The page is not accessible directly. Please use the OpenVidu Embedded';
-				// 	break;
+				case 'unauthorized-participant':
+					this.message = 'You are not authorized to join this room';
+					break;
+
 				default:
 					this.message = 'Unauthorized access';
 					break;
