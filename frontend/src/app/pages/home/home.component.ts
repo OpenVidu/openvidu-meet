@@ -142,7 +142,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 			// TODO: Fix expiration date
 			const options: OpenViduMeetRoomOptions = {
 				roomNamePrefix,
-				expirationDate: Date.now() + 3600
+				expirationDate: Date.now() + 3600 // 1 hour
 			};
 
 			const room: OpenViduMeetRoom = await this.httpService.createRoom(options);
