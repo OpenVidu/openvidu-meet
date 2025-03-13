@@ -17,7 +17,6 @@ export type OpenViduMeetRoomOptions = BaseRoomOptions;
 export interface OpenViduMeetRoom extends BaseRoomOptions {
 	roomName: string;
 	creationDate: number;
-	numParticipants: number;
 	moderatorRoomUrl: string;
 	publisherRoomUrl: string;
 }

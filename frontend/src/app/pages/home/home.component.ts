@@ -149,10 +149,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 			this.roomForm.get('roomNamePrefix')?.setValue(roomNamePrefix);
 
-			const isFirstParticipant = room.numParticipants === 0;
-			const accessRoomUrl = new URL(isFirstParticipant ? room.moderatorRoomUrl : room.publisherRoomUrl);
-
-
+			const accessRoomUrl = new URL(room.moderatorRoomUrl);
 			const secret = accessRoomUrl.searchParams.get('secret');
 			const roomName = accessRoomUrl.pathname;
 

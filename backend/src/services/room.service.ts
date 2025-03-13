@@ -214,14 +214,13 @@ export class RoomService {
 		livekitRoom: Room,
 		roomOptions: OpenViduMeetRoomOptions
 	): OpenViduMeetRoom {
-		const { name: roomName, creationTime, numParticipants } = livekitRoom;
+		const { name: roomName, creationTime } = livekitRoom;
 		const { preferences, expirationDate, roomNamePrefix, maxParticipants } = roomOptions;
 
 		const openviduRoom: OpenViduMeetRoom = {
 			roomName,
 			roomNamePrefix,
 			creationDate: Number(creationTime) * 1000,
-			numParticipants,
 			maxParticipants,
 			expirationDate,
 			moderatorRoomUrl: `${baseUrl}/room/${roomName}?secret=${secureUid(10)}`,
