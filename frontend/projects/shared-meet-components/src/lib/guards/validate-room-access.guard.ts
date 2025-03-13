@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, CanActivateFn } from '@angular/router';
-import { ContextService, HttpService } from '../services';
+import { ContextService, HttpService, SessionStorageService } from '../services';
 
 /**
  * Guard to validate the access to a room.
@@ -12,30 +12,38 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 	const httpService = inject(HttpService);
 	const contextService = inject(ContextService);
 	const router = inject(Router);
+	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomName, participantName, secret } = extractParams(route);
-
-	if (contextService.isEmbeddedMode() && !contextService.getParticipantName()) {
-		await redirectToUnauthorized(router, 'invalid-participant');
-		return false;
-	}
+	const storageSecret = sessionStorageService.getModeratorSecret(roomName);
 
 	try {
 		// Generate a participant token
-		const response = await httpService.generateParticipantToken({ roomName, participantName, secret });
+		const response = await httpService.generateParticipantToken({
+			roomName,
+			participantName,
+			secret: storageSecret || secret
+		});
 		contextService.setToken(response.token);
 		return true;
 	} catch (error: any) {
-		if (error.status === 409) {
-			// Participant already exists
-			// Redirect to a page where the user can input their participant name
-			await router.navigate([`${roomName}/participant-name`], {
-				queryParams: { originUrl: _state.url, accessError: 'participant-exists', t: Date.now() },
-				skipLocationChange: true
-			});
-			return false;
+		console.error('Error generating participant token:', error);
+		switch (error.status) {
+			case 409:
+				// Participant already exists.
+				// Send a timestamp to force update the query params and show the error message in participant name input form
+				await router.navigate([`${roomName}/participant-name`], {
+					queryParams: { originUrl: _state.url, accessError: 'participant-exists', t: Date.now() },
+					skipLocationChange: true
+				});
+				break;
+			case 406:
+				await redirectToUnauthorized(router, 'unauthorized-participant');
+				break;
+			default:
+				await redirectToUnauthorized(router, 'invalid-room');
 		}
-		return await redirectToUnauthorized(router, 'invalid-room');
+		return false;
 	}
 };
 

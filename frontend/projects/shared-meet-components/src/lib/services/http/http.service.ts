@@ -23,13 +23,20 @@ export class HttpService {
 		return this.deleteRequest(`${this.pathPrefix}/${this.apiVersion}/rooms/${roomName}`);
 	}
 
-	listRooms(): Promise<OpenViduMeetRoom[]> {
-		//TODO: Add 'fields' query param for filtering rooms by fields
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/rooms`);
+	listRooms(fields?: string): Promise<OpenViduMeetRoom[]> {
+		let path = `${this.pathPrefix}/${this.apiVersion}/rooms/`;
+		if (fields) {
+			path += `?fields=${encodeURIComponent(fields)}`;
+		}
+		return this.getRequest(path);
 	}
 
-	getRoom(roomName: string): Promise<OpenViduMeetRoom> {
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/rooms/${roomName}`);
+	getRoom(roomName: string, fields?: string): Promise<OpenViduMeetRoom> {
+		let path = `${this.pathPrefix}/${this.apiVersion}/rooms/${roomName}`;
+		if (fields) {
+			path += `?fields=${encodeURIComponent(fields)}`;
+		}
+		return this.getRequest(path);
 	}
 
 	generateParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {

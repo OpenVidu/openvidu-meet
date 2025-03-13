@@ -5,3 +5,4 @@ export * from './global-preferences/global-preferences.service';
 export * from './room/room.service';
 export * from './notification/notification.service';
 export * from './webcomponent-manager/webcomponent-manager.service';
+export * from './session-storage/session-storage.service';

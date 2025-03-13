@@ -3,3 +3,4 @@ export * from './extract-query-params.guard';
 export * from './validate-room-access.guard';
 export * from './application-mode.guard';
 export * from './participant-name.guard';
+export * from './replace-moderator-secret.guard';

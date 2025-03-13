@@ -7,7 +7,8 @@ import {
 	validateRoomAccessGuard,
 	applicationModeGuard,
 	extractQueryParamsGuard,
-	checkParticipantNameGuard
+	checkParticipantNameGuard,
+	replaceModeratorSecretGuard
 } from '../guards';
 import {
 	AboutComponent,
@@ -77,11 +78,17 @@ export const baseRoutes: Routes = [
 	{
 		path: ':room-name',
 		component: VideoRoomComponent,
-		canActivate: [applicationModeGuard, extractQueryParamsGuard, checkParticipantNameGuard, validateRoomAccessGuard],
+		canActivate: [
+			applicationModeGuard,
+			extractQueryParamsGuard,
+			checkParticipantNameGuard,
+			validateRoomAccessGuard,
+			replaceModeratorSecretGuard
+		]
 	},
 	{
 		path: ':room-name/participant-name',
-		component: ParticipantNameFormComponent,
+		component: ParticipantNameFormComponent
 	},
 
 	// Redirect all other routes to home
