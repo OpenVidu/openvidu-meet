@@ -19,10 +19,11 @@ export const {
 	MEET_SECRET = 'user',
 	MEET_ADMIN_USER = 'admin',
 	MEET_ADMIN_SECRET = 'admin',
+	MEET_PARTICIPANT_TOKEN_EXPIRATION = '6h',
 	MEET_ACCESS_TOKEN_EXPIRATION = '2h',
 	MEET_REFRESH_TOKEN_EXPIRATION = '1d',
 	MEET_PREFERENCES_STORAGE_MODE = 's3',
-	MEET_WEBHOOK_ENABLED = 'true',
+	MEET_WEBHOOK_ENABLED = 'false',
 	MEET_WEBHOOK_URL = 'http://localhost:5080/webhook',
 	MEET_LOG_LEVEL = 'info',
 
@@ -60,6 +61,7 @@ export const {
 
 export const MEET_API_BASE_PATH = '/meet/api';
 export const MEET_API_BASE_PATH_V1 = MEET_API_BASE_PATH + '/v1';
+export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
 export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
 export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
 

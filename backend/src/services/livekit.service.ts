@@ -14,7 +14,13 @@ import {
 	SendDataOptions,
 	StreamOutput
 } from 'livekit-server-sdk';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL, LIVEKIT_URL_PRIVATE } from '../environment.js';
+import {
+	LIVEKIT_API_KEY,
+	LIVEKIT_API_SECRET,
+	LIVEKIT_URL,
+	LIVEKIT_URL_PRIVATE,
+	MEET_PARTICIPANT_TOKEN_EXPIRATION
+} from '../environment.js';
 import { LoggerService } from './logger.service.js';
 import {
 	errorLivekitIsNotAvailable,
@@ -142,7 +148,7 @@ export class LiveKitService {
 		const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
 			identity: participantName,
 			name: participantName,
-			ttl: '24h',
+			ttl: MEET_PARTICIPANT_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				livekitUrl: LIVEKIT_URL,
 				role,

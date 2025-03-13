@@ -8,7 +8,8 @@ import {
 	MEET_API_KEY,
 	MEET_PRIVATE_ACCESS,
 	MEET_SECRET,
-	MEET_USER
+	MEET_USER,
+	PARTICIPANT_TOKEN_COOKIE_NAME
 } from '../environment.js';
 import { container } from '../config/dependency-injector.config.js';
 
@@ -28,6 +29,31 @@ export const withAdminValidToken = async (req: Request, res: Response, next: Nex
 		if (payload.sub !== MEET_ADMIN_USER) {
 			return res.status(403).json({ message: 'Invalid token subject' });
 		}
+	} catch (error) {
+		return res.status(401).json({ message: 'Invalid token' });
+	}
+
+	next();
+};
+
+export const withParticipantValidToken = async (req: Request, res: Response, next: NextFunction) => {
+	const token = req.cookies[PARTICIPANT_TOKEN_COOKIE_NAME];
+
+	if (!token) {
+		return res.status(401).json({ message: 'Unauthorized' });
+	}
+
+	const tokenService = container.get(TokenService);
+
+	try {
+		const payload = await tokenService.verifyToken(token);
+
+		// Parse metadata if it exists and add payload to request body for further processing
+		if (payload.metadata) {
+			payload.metadata = JSON.parse(payload.metadata);
+		}
+
+		req.body.payload = payload;
 	} catch (error) {
 		return res.status(401).json({ message: 'Invalid token' });
 	}

@@ -5,6 +5,8 @@ import { TokenOptions } from '@typings-ce';
 import { OpenViduMeetError } from '../models/index.js';
 import { ParticipantService } from '../services/participant.service.js';
 import { RoomService } from '../services/room.service.js';
+import { MEET_PARTICIPANT_TOKEN_EXPIRATION, PARTICIPANT_TOKEN_COOKIE_NAME } from '../environment.js';
+import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -28,8 +30,7 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 		const secretRole = await roomService.getRoomSecretRole(roomName, secret);
 		const token = await participantService.generateParticipantToken(secretRole, tokenOptions);
 
-		// TODO: Set the participant token in a cookie
-		// res.cookie('ovParticipantToken', token, { httpOnly: true, expires: tokenTtl });
+		res.cookie(PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/', MEET_PARTICIPANT_TOKEN_EXPIRATION));
 
 		logger.verbose(`Participant token generated for room ${roomName}`);
 		return res.status(200).json({ token });
