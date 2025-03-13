@@ -60,6 +60,14 @@ export const errorRoomNotFound = (roomName: string): OpenViduMeetError => {
 
 // Participant errors
 
+export const errorParticipantUnauthorized = (roomName: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Unauthorized generating token with received credentials in room '${roomName}'`,
+		406
+	);
+};
+
 export const errorParticipantNotFound = (participantName: string, roomName: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Participant Error',

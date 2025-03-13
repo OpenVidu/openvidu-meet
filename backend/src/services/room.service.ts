@@ -9,6 +9,7 @@ import { OpenViduRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 import { ParticipantService } from './participant.service.js';
+import { errorParticipantUnauthorized } from '../models/error.model.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -168,7 +169,7 @@ export class RoomService {
 			return ParticipantRole.PUBLISHER;
 		}
 
-		throw new Error('Invalid secret');
+		throw errorParticipantUnauthorized(roomName);
 	}
 
 	/**
