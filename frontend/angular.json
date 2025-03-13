@@ -167,10 +167,14 @@
 					"defaultConfiguration": "production"
 				},
 				"test": {
-					"builder": "@angular-devkit/build-angular:karma",
+					"builder": "@angular-builders/custom-webpack:karma",
 					"options": {
 						"tsConfig": "projects/shared-meet-components/tsconfig.spec.json",
-						"polyfills": ["zone.js", "zone.js/testing"]
+						"polyfills": ["zone.js", "zone.js/testing"],
+						"karmaConfig": "./karma.conf.js",
+						"customWebpackConfig": {
+							"path": "projects/shared-meet-components/src/tests/webpack.config.js"
+						}
 					}
 				}
 			}
