@@ -17,7 +17,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // import { ConfigService } from '@app/services/config.service';
-import { StorageAppService } from '@app/services/storage.service';
 import { HttpService, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/public-api';
 
 import packageInfo from '../../../../package.json';
@@ -47,7 +46,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 		private router: Router,
 		public formBuilder: UntypedFormBuilder,
 		private httpService: HttpService,
-		private storageService: StorageAppService,
 		// private callService: ConfigService,
 		private fb: FormBuilder,
 		private route: ActivatedRoute
@@ -74,13 +72,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 			// this.isPrivateAccess = this.callService.isPrivateAccess();
 
 			if (this.isPrivateAccess) {
-				const userCredentials = this.storageService.getParticipantCredentials();
-
-				if (!userCredentials) return;
-
-				await this.httpService.userLogin(userCredentials);
-				this.storageService.setParticipantCredentials(userCredentials);
-				// this.username = this.storageService.getParticipantName();
 				this.isUserLogged = true;
 				this.loginError = false;
 			}
@@ -121,7 +112,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 		try {
 			await this.httpService.userLogin({ username: this.username, password });
-			this.storageService.setParticipantCredentials({ username: this.username, password });
 			this.isUserLogged = true;
 		} catch (error) {
 			this.isUserLogged = false;
@@ -133,7 +123,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 	async logout() {
 		try {
 			await this.httpService.userLogout();
-			this.storageService.clearParticipantCredentials();
 			this.loginError = false;
 			this.isUserLogged = false;
 		} catch (error) {
@@ -160,14 +149,14 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 			this.roomForm.get('roomNamePrefix')?.setValue(roomNamePrefix);
 
-			const publisherUrl = new URL(room.publisherRoomUrl);
+			const publisherUrl = new URL(room.moderatorRoomUrl);
 			const queryParams = publisherUrl.searchParams;
 
 			const path = publisherUrl.pathname.slice(1);
 
 			// !FIXME here, the participantName is not set and the guard of VideoRoomComponent will need it.
 			// Possibly, when standalone mode, the room should be created in prejoin page instead of home page.
-			this.router.navigate(['/',path], { queryParams: { secret: queryParams.get('secret') } });
+			this.router.navigate(['/', path], { queryParams: { secret: queryParams.get('secret') } });
 		} catch (error) {
 			console.error('Error creating room ', error);
 		}
