@@ -222,7 +222,7 @@ export class RoomService {
 			creationDate: Number(creationTime) * 1000,
 			maxParticipants,
 			expirationDate,
-			moderatorRoomUrl: `${baseUrl}/${roomName}/?secret=${secureUid(10)}`,
+			moderatorRoomUrl: `${baseUrl}/${roomName}?secret=${secureUid(10)}`,
 			publisherRoomUrl: `${baseUrl}/${roomName}?secret=${secureUid(10)}`,
 			preferences
 		};
