@@ -149,14 +149,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 			this.roomForm.get('roomNamePrefix')?.setValue(roomNamePrefix);
 
-			const publisherUrl = new URL(room.moderatorRoomUrl);
-			const queryParams = publisherUrl.searchParams;
-
-			const path = publisherUrl.pathname.slice(1);
-
-			// !FIXME here, the participantName is not set and the guard of VideoRoomComponent will need it.
-			// Possibly, when standalone mode, the room should be created in prejoin page instead of home page.
-			this.router.navigate(['/', path], { queryParams: { secret: queryParams.get('secret') } });
+			// TODO: Should create a way of select the access role (moderator/participant)
+			const publisherUrl = new URL(room.publisherRoomUrl);
+			const secret = publisherUrl.searchParams.get('secret');
+			const path = publisherUrl.pathname;
+			this.router.navigate([path], { queryParams: { secret } });
 		} catch (error) {
 			console.error('Error creating room ', error);
 		}
