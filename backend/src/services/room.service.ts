@@ -224,8 +224,8 @@ export class RoomService {
 			numParticipants,
 			maxParticipants,
 			expirationDate,
-			moderatorRoomUrl: `${baseUrl}/${roomName}?secret=${secureUid(10)}`,
-			publisherRoomUrl: `${baseUrl}/${roomName}?secret=${secureUid(10)}`,
+			moderatorRoomUrl: `${baseUrl}/room/${roomName}?secret=${secureUid(10)}`,
+			publisherRoomUrl: `${baseUrl}/room/${roomName}?secret=${secureUid(10)}`,
 			preferences
 		};
 		return openviduRoom;

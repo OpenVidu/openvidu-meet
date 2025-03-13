@@ -76,7 +76,7 @@ export const baseRoutes: Routes = [
 		]
 	},
 	{
-		path: ':room-name',
+		path: 'room/:room-name',
 		component: VideoRoomComponent,
 		canActivate: [
 			applicationModeGuard,
@@ -87,7 +87,7 @@ export const baseRoutes: Routes = [
 		]
 	},
 	{
-		path: ':room-name/participant-name',
+		path: 'room/:room-name/participant-name',
 		component: ParticipantNameFormComponent
 	},
 

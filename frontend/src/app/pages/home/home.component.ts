@@ -152,9 +152,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 			const isFirstParticipant = room.numParticipants === 0;
 			const accessRoomUrl = new URL(isFirstParticipant ? room.moderatorRoomUrl : room.publisherRoomUrl);
 
+
 			const secret = accessRoomUrl.searchParams.get('secret');
-			const path = accessRoomUrl.pathname;
-			this.router.navigate([path], { queryParams: { secret } });
+			const roomName = accessRoomUrl.pathname;
+
+			this.router.navigate([roomName], { queryParams: { secret } });
 		} catch (error) {
 			console.error('Error creating room ', error);
 		}

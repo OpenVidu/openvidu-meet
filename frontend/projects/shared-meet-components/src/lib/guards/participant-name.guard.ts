@@ -12,7 +12,7 @@ export const checkParticipantNameGuard: CanActivateFn = async (route, state) => 
 	// Check if participant name exists in the service
 	if (!hasParticipantName) {
 		// Redirect to a page where the participant can input their participant name
-		return router.navigate([`${roomName}/participant-name`], {
+		return router.navigate([`room/${roomName}/participant-name`], {
 			queryParams: { originUrl: state.url, t: Date.now() },
 			skipLocationChange: true
 		});
