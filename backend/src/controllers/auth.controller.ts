@@ -5,11 +5,14 @@ import { TokenService } from '../services/token.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import {
 	ACCESS_TOKEN_COOKIE_NAME,
+	MEET_ACCESS_TOKEN_EXPIRATION,
 	MEET_ADMIN_USER,
 	MEET_API_BASE_PATH_V1,
+	MEET_REFRESH_TOKEN_EXPIRATION,
 	REFRESH_TOKEN_COOKIE_NAME
 } from '../environment.js';
 import { ClaimGrants } from 'livekit-server-sdk';
+import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const login = (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -53,8 +56,12 @@ export const adminLogin = async (req: Request, res: Response) => {
 		const tokenService = container.get(TokenService);
 		const accessToken = await tokenService.generateAccessToken(username);
 		const refreshToken = await tokenService.generateRefreshToken(username);
-		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, tokenService.getAccessTokenCookieOptions());
-		res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, tokenService.getRefreshTokenCookieOptions());
+		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
+		res.cookie(
+			REFRESH_TOKEN_COOKIE_NAME,
+			refreshToken,
+			getCookieOptions(`${MEET_API_BASE_PATH_V1}/auth/admin`, MEET_REFRESH_TOKEN_EXPIRATION)
+		);
 		logger.info(`Admin login succeeded for username: ${username}`);
 		return res.status(200).json({ message: 'Admin login succeeded' });
 	} catch (error) {
@@ -98,7 +105,7 @@ export const adminRefresh = async (req: Request, res: Response) => {
 
 	try {
 		const accessToken = await tokenService.generateAccessToken(MEET_ADMIN_USER);
-		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, tokenService.getAccessTokenCookieOptions());
+		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
 		logger.info(`Admin refresh succeeded for username: ${MEET_ADMIN_USER}`);
 		return res.status(200).json({ message: 'Admin refresh succeeded' });
 	} catch (error) {
