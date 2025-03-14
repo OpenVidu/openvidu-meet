@@ -3,31 +3,59 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { Room } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { MEET_API_KEY, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../environment.js';
-import { OpenViduWebhookEvent } from '../models/webhook.model.js';
+import { OpenViduWebhookEvent, OpenViduWebhookEventType } from '../models/webhook.model.js';
+import { RecordingInfo } from '../models/recording.model.js';
 
 @injectable()
 export class OpenViduWebhookService {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {}
 
 	async sendRoomFinishedWebhook(room: Room) {
-		await this.sendWebhookEvent(OpenViduWebhookEvent.ROOM_FINISHED, {
-			room: {
-				name: room.name
+		const data: OpenViduWebhookEvent = {
+			event: OpenViduWebhookEventType.ROOM_FINISHED,
+			createdAt: Date.now(),
+			data: {
+				roomName: room.name
 			}
-		});
+		};
+		await this.sendWebhookEvent(data);
 	}
 
-	private async sendWebhookEvent(eventType: OpenViduWebhookEvent, data: object) {
+	async sendRecordingStartedWebhook(recordingInfo: RecordingInfo) {
+		const data: OpenViduWebhookEvent = {
+			event: OpenViduWebhookEventType.RECORDING_STARTED,
+			createdAt: Date.now(),
+			data: {
+				recordingId: recordingInfo.id,
+				filename: recordingInfo.filename,
+				roomName: recordingInfo.roomName,
+				status: recordingInfo.status
+			}
+		};
+		await this.sendWebhookEvent(data);
+	}
+
+	async sendRecordingStoppedWebhook(recordingInfo: RecordingInfo) {
+		const data: OpenViduWebhookEvent = {
+			event: OpenViduWebhookEventType.RECORDING_STOPPED,
+			createdAt: Date.now(),
+			data: {
+				recordingId: recordingInfo.id,
+				filename: recordingInfo.filename,
+				roomName: recordingInfo.roomName,
+				status: recordingInfo.status
+			}
+		};
+		await this.sendWebhookEvent(data);
+	}
+
+	private async sendWebhookEvent(data: OpenViduWebhookEvent) {
 		if (!this.isWebhookEnabled()) return;
 
-		const payload = {
-			event: eventType,
-			...data
-		};
-		const timestamp = Date.now();
-		const signature = this.generateWebhookSignature(timestamp, payload);
+		const timestamp = data.createdAt;
+		const signature = this.generateWebhookSignature(timestamp, data);
 
-		this.logger.verbose(`Sending webhook event ${eventType}`);
+		this.logger.info(`Sending webhook event ${data.event}`);
 
 		try {
 			await this.fetchWithRetry(MEET_WEBHOOK_URL, {
@@ -37,10 +65,10 @@ export class OpenViduWebhookService {
 					'X-Timestamp': timestamp.toString(),
 					'X-Signature': signature
 				},
-				body: JSON.stringify(payload)
+				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error sending webhook event ${eventType}: ${error}`);
+			this.logger.error(`Error sending webhook event ${data.event}: ${error}`);
 			throw error;
 		}
 	}
@@ -64,7 +92,7 @@ export class OpenViduWebhookService {
 				throw new Error(`Request failed: ${error}`);
 			}
 
-			this.logger.verbose(`Retrying in ${delay / 1000} seconds... (${retries} retries left)`);
+			this.logger.warn(`Retrying in ${delay / 1000} seconds... (${retries} retries left)`);
 			await new Promise((resolve) => setTimeout(resolve, delay));
 			// Retry the request after a delay with exponential backoff
 			return this.fetchWithRetry(url, options, retries - 1, delay * 2);

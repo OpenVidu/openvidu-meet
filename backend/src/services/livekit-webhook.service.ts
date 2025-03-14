@@ -10,6 +10,7 @@ import { RoomService } from './room.service.js';
 import { S3Service } from './s3.service.js';
 import { RoomStatusData } from '../models/room.model.js';
 import { RecordingService } from './recording.service.js';
+import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -20,7 +21,8 @@ export class LivekitWebhookService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
-		@inject(LoggerService) protected logger: LoggerService
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
 	}
@@ -86,18 +88,24 @@ export class LivekitWebhookService {
 
 			const { roomName } = egressInfo;
 
-			let payload: RecordingInfo | undefined = undefined;
+			let recordingInfo: RecordingInfo | undefined = undefined;
 
 			this.logger.info(`Recording egress '${egressInfo.egressId}' updated: ${egressInfo.status}`);
 			const topic: DataTopic = RecordingHelper.getDataTopicFromStatus(egressInfo);
-			payload = RecordingHelper.toRecordingInfo(egressInfo);
+			recordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
 
 			// Add recording metadata
-			const metadataPath = this.generateMetadataPath(payload);
-			await Promise.all([
-				this.s3Service.saveObject(metadataPath, payload),
-				this.roomService.sendSignal(roomName, payload, { topic })
-			]);
+			const metadataPath = this.generateMetadataPath(recordingInfo);
+			const promises = [
+				this.s3Service.saveObject(metadataPath, recordingInfo),
+				this.roomService.sendSignal(roomName, recordingInfo, { topic })
+			];
+
+			if(recordingInfo.status === RecordingStatus.STARTED) {
+				promises.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
+			}
+
+			await Promise.all(promises);
 		} catch (error) {
 			this.logger.warn(`Error sending data on egress updated: ${error}`);
 		}
@@ -124,7 +132,8 @@ export class LivekitWebhookService {
 			const metadataPath = this.generateMetadataPath(payload);
 			await Promise.all([
 				this.s3Service.saveObject(metadataPath, payload),
-				this.roomService.sendSignal(roomName, payload, { topic })
+				this.roomService.sendSignal(roomName, payload, { topic }),
+				this.openViduWebhookService.sendRecordingStoppedWebhook(payload)
 			]);
 		} catch (error) {
 			this.logger.warn(`Error sending data on egress ended: ${error}`);

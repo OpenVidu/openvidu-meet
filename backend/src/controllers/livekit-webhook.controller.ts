@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
-import { RoomService } from '../services/room.service.js';
 import { WebhookEvent } from 'livekit-server-sdk';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
 import { container } from '../config/dependency-injector.config.js';
