@@ -43,6 +43,10 @@ export class HttpService {
 		return this.postRequest(`${this.pathPrefix}/participants/token`, tokenOptions);
 	}
 
+	refreshParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
+		return this.postRequest(`${this.pathPrefix}/participants/token/refresh`, tokenOptions);
+	}
+
 	/**
 	 * Retrieves the global preferences.
 	 *
