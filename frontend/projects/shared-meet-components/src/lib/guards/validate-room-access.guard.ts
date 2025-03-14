@@ -6,7 +6,7 @@ import { ContextService, HttpService, SessionStorageService } from '../services'
  * Guard to validate the access to a room.
  */
 export const validateRoomAccessGuard: CanActivateFn = async (
-	route: ActivatedRouteSnapshot,
+	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {
 	const httpService = inject(HttpService);
@@ -14,7 +14,9 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 	const router = inject(Router);
 	const sessionStorageService = inject(SessionStorageService);
 
-	const { roomName, participantName, secret } = extractParams(route);
+	const roomName = contextService.getRoomName();
+	const participantName = contextService.getParticipantName();
+	const secret = contextService.getSecret();
 	const storageSecret = sessionStorageService.getModeratorSecret(roomName);
 
 	try {
@@ -46,12 +48,6 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 		return false;
 	}
 };
-
-const extractParams = (route: ActivatedRouteSnapshot) => ({
-	roomName: route.params['room-name'],
-	participantName: route.queryParams['participant-name'],
-	secret: route.queryParams['secret']
-});
 
 const redirectToUnauthorized = async (router: Router, reason: string): Promise<boolean> => {
 	await router.navigate(['unauthorized'], { queryParams: { reason } });

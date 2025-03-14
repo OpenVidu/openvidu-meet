@@ -14,6 +14,7 @@ export class ContextService {
 	private context: ContextData = {
 		roomName: '',
 		participantName: '',
+		secret: '',
 		token: '',
 		participantRole: ParticipantRole.PUBLISHER,
 		participantPermissions: {
@@ -116,6 +117,14 @@ export class ContextService {
 
 	setParticipantName(participantName: string): void {
 		this.context.participantName = participantName;
+	}
+
+	getSecret(): string {
+		return this.context.secret;
+	}
+
+	setSecret(secret: string): void {
+		this.context.secret = secret;
 	}
 
 	canRecord(): boolean {

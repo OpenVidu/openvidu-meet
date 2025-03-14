@@ -4,7 +4,7 @@ import { ContextService } from '../services';
 
 export const extractQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const contextService = inject(ContextService);
-	const { roomName, participantName, leaveRedirectUrl } = extractParams(route);
+	const { roomName, participantName, secret, leaveRedirectUrl } = extractParams(route);
 
 	if (isValidUrl(leaveRedirectUrl)) {
 		contextService.setLeaveRedirectUrl(leaveRedirectUrl);
@@ -12,6 +12,7 @@ export const extractQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnap
 
 	contextService.setRoomName(roomName);
 	contextService.setParticipantName(participantName);
+	contextService.setSecret(secret);
 
 	return true;
 };

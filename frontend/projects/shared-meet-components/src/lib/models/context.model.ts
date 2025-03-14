@@ -3,6 +3,7 @@ import { OpenViduMeetPermissions, ParticipantRole } from 'projects/shared-meet-c
 export interface ContextData {
 	roomName: string;
 	participantName: string;
+	secret: string;
 	token: string;
 	participantRole: ParticipantRole;
 	participantPermissions: OpenViduMeetPermissions;
