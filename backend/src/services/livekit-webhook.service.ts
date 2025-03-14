@@ -160,6 +160,24 @@ export class LivekitWebhookService {
 		}
 	}
 
+	/**
+	 * Handles the event when a room is finished.
+	 *
+	 * This method sends a webhook notification indicating that the room has finished.
+	 * If an error occurs while sending the webhook, it logs the error.
+	 *
+	 * @param {Room} room - The room object that has finished.
+	 * @returns {Promise<void>} A promise that resolves when the webhook has been sent.
+	 */
+	async handleRoomFinished(room: Room) {
+		try {
+			await this.openViduWebhookService.sendRoomFinishedWebhook(room);
+		} catch (error) {
+			this.logger.error(`Error handling room finished event: ${error}`);
+		}
+	}
+
+
 	private async sendStatusSignal(roomName: string, roomId: string, participantSid: string) {
 		// Get recording list
 		const recordingInfo = await this.recordingService.getAllRecordingsByRoom(roomName, roomId);

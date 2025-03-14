@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { WebhookEvent } from 'livekit-server-sdk';
-import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
 import { container } from '../config/dependency-injector.config.js';
 
 export const lkWebhookHandler = async (req: Request, res: Response) => {
@@ -10,7 +9,6 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 
 	try {
 		const lkWebhookService = container.get(LivekitWebhookService);
-		const ovWebhookService = container.get(OpenViduWebhookService);
 
 		const webhookEvent: WebhookEvent = await lkWebhookService.getEventFromWebhook(
 			req.body,
@@ -39,7 +37,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 				await lkWebhookService.handleParticipantJoined(room!, participant!);
 				break;
 			case 'room_finished':
-				await ovWebhookService.sendRoomFinishedWebhook(room!);
+				await lkWebhookService.handleRoomFinished(room!);
 				break;
 			default:
 				break;
