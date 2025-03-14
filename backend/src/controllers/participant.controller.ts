@@ -4,38 +4,43 @@ import { LoggerService } from '../services/logger.service.js';
 import { TokenOptions } from '@typings-ce';
 import { OpenViduMeetError } from '../models/index.js';
 import { ParticipantService } from '../services/participant.service.js';
-import { RoomService } from '../services/room.service.js';
 import { MEET_PARTICIPANT_TOKEN_EXPIRATION, PARTICIPANT_TOKEN_COOKIE_NAME } from '../environment.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const tokenOptions: TokenOptions = req.body;
-	const { roomName, secret, participantName } = tokenOptions;
+	const { roomName } = tokenOptions;
+	const participantService = container.get(ParticipantService);
 
 	try {
-		const roomService = container.get(RoomService);
-		const participantService = container.get(ParticipantService);
-
-		// Check if participant with same participantName exists in the room
-		const participantExists = await participantService.participantExists(roomName, participantName);
-
-		if (participantExists) {
-			logger.verbose(`Participant ${participantName} already exists in room ${roomName}`);
-			return res.status(409).json({ message: 'Participant already exists' });
-		}
-
 		logger.verbose(`Generating participant token for room ${roomName}`);
-
-		const secretRole = await roomService.getRoomSecretRole(roomName, secret);
-		const token = await participantService.generateParticipantToken(secretRole, tokenOptions);
+		const token = await participantService.generateOrRefreshParticipantToken(tokenOptions);
 
 		res.cookie(PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/', MEET_PARTICIPANT_TOKEN_EXPIRATION));
-
 		logger.verbose(`Participant token generated for room ${roomName}`);
 		return res.status(200).json({ token });
 	} catch (error) {
 		logger.error(`Error generating participant token for room: ${roomName}`);
+		return handleError(res, error);
+	}
+};
+
+export const refreshParticipantToken = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const tokenOptions: TokenOptions = req.body;
+	const { roomName } = tokenOptions;
+	const participantService = container.get(ParticipantService);
+
+	try {
+		logger.verbose(`Refreshing participant token for room ${roomName}`);
+		const token = await participantService.generateOrRefreshParticipantToken(tokenOptions, true);
+
+		res.cookie(PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/', MEET_PARTICIPANT_TOKEN_EXPIRATION));
+		logger.verbose(`Participant token refreshed for room ${roomName}`);
+		return res.status(200).json({ token });
+	} catch (error) {
+		logger.error(`Error refreshing participant token for room: ${roomName}`);
 		return handleError(res, error);
 	}
 };

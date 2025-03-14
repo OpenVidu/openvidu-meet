@@ -3,17 +3,39 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
 import { ParticipantInfo } from 'livekit-server-sdk';
+import { RoomService } from './room.service.js';
+import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/index.js';
 
 @injectable()
 export class ParticipantService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
+		@inject(RoomService) protected roomService: RoomService,
 		@inject(LiveKitService) protected livekitService: LiveKitService
 	) {}
 
-	async generateParticipantToken(role: ParticipantRole, options: TokenOptions): Promise<string> {
-		const permissions = this.getParticipantPermissions(role, options.roomName);
+	async generateOrRefreshParticipantToken(options: TokenOptions, refresh = false): Promise<string> {
+		const { roomName, participantName, secret } = options;
 
+		// Check if participant with same participantName exists in the room
+		const participantExists = await this.participantExists(roomName, participantName);
+
+		if (!refresh && participantExists) {
+			this.logger.verbose(`Participant ${participantName} already exists in room ${roomName}`);
+			throw errorParticipantAlreadyExists(participantName, roomName);
+		}
+
+		if (refresh && !participantExists) {
+			this.logger.verbose(`Participant ${participantName} does not exist in room ${roomName}`);
+			throw errorParticipantNotFound(participantName, roomName);
+		}
+
+		const role = await this.roomService.getRoomSecretRole(roomName, secret);
+		return this.generateParticipantToken(role, options);
+	}
+
+	protected async generateParticipantToken(role: ParticipantRole, options: TokenOptions): Promise<string> {
+		const permissions = this.getParticipantPermissions(role, options.roomName);
 		return this.livekitService.generateToken(options, permissions, role);
 	}
 

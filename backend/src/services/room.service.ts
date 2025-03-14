@@ -23,7 +23,6 @@ export class RoomService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(ParticipantService) protected participantService: ParticipantService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService
 	) {}

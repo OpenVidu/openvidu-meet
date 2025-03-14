@@ -24,7 +24,6 @@ import {
 import { LoggerService } from './logger.service.js';
 import {
 	errorLivekitIsNotAvailable,
-	errorParticipantAlreadyExists,
 	errorParticipantNotFound,
 	errorRoomNotFound,
 	internalError
@@ -132,17 +131,6 @@ export class LiveKitService {
 		role: ParticipantRole
 	): Promise<string> {
 		const { roomName, participantName } = options;
-
-		try {
-			if (await this.participantExists(roomName, participantName)) {
-				this.logger.error(`Participant ${participantName} already exists in room ${roomName}`);
-				throw errorParticipantAlreadyExists(participantName, roomName);
-			}
-		} catch (error) {
-			this.logger.error(`Error checking participant existence, ${JSON.stringify(error)}`);
-			throw error;
-		}
-
 		this.logger.info(`Generating token for ${participantName} in room ${roomName}`);
 
 		const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
