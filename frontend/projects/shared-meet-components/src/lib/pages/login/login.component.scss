@@ -1,16 +1,16 @@
-$formBorderRadius: 0.35rem;
-$formColor: #e6e6e6;
-$formError: #770000;
-$formInputBackgroundColor: #434a52;
-$formInputHoverBackgroundColor: #3c4249;
-$formLabelBackgroundColor: #363b41;
-$formSubmitBackgroundColor: #0087a9;
-$formSubmitDisabledBackgroundColor: #264b55;
+$loginBorderRadius: 0.35rem;
+$loginColor: #e6e6e6;
+$loginError: #770000;
+$loginInputBackgroundColor: #434a52;
+$loginInputHoverBackgroundColor: #3c4249;
+$loginLabelBackgroundColor: #363b41;
+$loginSubmitBackgroundColor: #0087a9;
+$loginSubmitDisabledBackgroundColor: #264b55;
 
-$formSubmitColor: #eee;
-$formSubmitDisabledColor: #bdbdbd;
+$loginSubmitColor: #eee;
+$loginSubmitDisabledColor: #bdbdbd;
 
-$formSubmitHoverBackgroundColor: #006a85;
+$loginSubmitHoverBackgroundColor: #006a85;
 $iconFill: #606468;
 $formGap: 0.375rem;
 
@@ -22,24 +22,24 @@ $formGap: 0.375rem;
 	height: 100%;
 	text-align: center;
 	position: relative;
-	color: $formColor;
+	color: $loginColor;
 }
 
 #header,
 .footer {
 	background-color: transparent;
-	color: $formColor;
+	color: $loginColor;
 }
 
-.roomError {
+.loginError {
 	font-size: 14px;
-	color: $formError;
+	color: $loginError;
 	text-shadow: 0.2px 0px #ffffff;
 	text-align: left;
 	font-weight: 600;
 }
 
-.roomError mat-icon {
+.loginError mat-icon {
 	vertical-align: bottom;
 	padding-right: 4px;
 }
@@ -52,7 +52,7 @@ $formGap: 0.375rem;
 }
 
 .footer a {
-	color: $formColor;
+	color: $loginColor;
 }
 
 #meet-version,
@@ -160,90 +160,89 @@ input[type='submit'] {
 	flex: 1;
 }
 
-.room-prefix {
-	color: $formColor;
+.login {
+	color: $loginColor;
 }
 
-.room-prefix label.error {
-	background-color: $formError;
+.login label.error {
+	background-color: $loginError;
 }
-.room-prefix label,
-.room-prefix input[type='text'],
-.room-prefix input[type='password'] {
-	border-radius: $formBorderRadius;
+.login label,
+.login input[type='text'],
+.login input[type='password'] {
+	border-radius: $loginBorderRadius;
 	padding: 0.85rem;
 }
-
 #room-name-input {
 	border-radius: 0;
 }
 
-.room-prefix button[type='submit'] {
-	border-radius: $formBorderRadius;
+.login button[type='submit'] {
+	border-radius: $loginBorderRadius;
 	padding: 0.4rem;
 	cursor: pointer;
 }
 
-.room-prefix button:disabled[type='submit'] {
+.login button:disabled[type='submit'] {
 	cursor: auto;
-	color: $formSubmitDisabledColor !important;
-	background-color: $formSubmitDisabledBackgroundColor !important;
+	color: $loginSubmitDisabledColor !important;
+	background-color: $loginSubmitDisabledBackgroundColor !important;
 }
 
-.room-prefix label {
-	background-color: $formLabelBackgroundColor;
+.login label {
+	background-color: $loginLabelBackgroundColor;
 	border-bottom-right-radius: 0;
 	border-top-right-radius: 0;
 	padding-inline: 1.25rem;
 }
 
-.room-prefix input[type='password'],
-.room-prefix input[type='text'] {
-	background-color: $formInputBackgroundColor;
+.login input[type='password'],
+.login input[type='text'] {
+	background-color: $loginInputBackgroundColor;
 	border-bottom-left-radius: 0;
 	border-top-left-radius: 0;
 	font-size: 16px;
 }
 
-.room-prefix input[type='password']:focus,
-.room-prefix input[type='password']:hover,
-.room-prefix input[type='text']:focus,
-.room-prefix input[type='text']:hover {
-	background-color: $formInputHoverBackgroundColor;
+.login input[type='password']:focus,
+.login input[type='password']:hover,
+.login input[type='text']:focus,
+.login input[type='text']:hover {
+	background-color: $loginInputHoverBackgroundColor;
 }
 
-.room-prefix button[type='submit'] {
-	background-color: $formSubmitBackgroundColor;
-	color: $formSubmitColor;
+.login button[type='submit'] {
+	background-color: $loginSubmitBackgroundColor;
+	color: $loginSubmitColor;
 	font-weight: 500;
 	text-transform: uppercase;
 }
 
-.room-prefix button[type='submit']:focus,
-.room-prefix button[type='submit']:hover {
-	background-color: $formSubmitHoverBackgroundColor;
+.login button[type='submit']:focus,
+.login button[type='submit']:hover {
+	background-color: $loginSubmitHoverBackgroundColor;
 }
 #clear-room-name-btn {
 	height: auto;
-	background-color: $formInputBackgroundColor;
+	background-color: $loginInputBackgroundColor;
 	border-radius: 0;
-	color: $formColor;
+	color: $loginColor;
 	mat-icon {
 		vertical-align: middle;
 	}
 }
 #room-name-generator-btn {
 	height: auto;
-	background-color: $formInputBackgroundColor;
-	border-radius: $formBorderRadius;
+	background-color: $loginInputBackgroundColor;
+	border-radius: $loginBorderRadius;
 	border-bottom-left-radius: 0;
 	border-top-left-radius: 0;
-	color: $formColor;
+	color: $loginColor;
 	mat-icon {
 		vertical-align: middle;
 	}
 	&:hover {
-		background-color: $formInputHoverBackgroundColor;
+		background-color: $loginInputHoverBackgroundColor;
 	}
 }
 

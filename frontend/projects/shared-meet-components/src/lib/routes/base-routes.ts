@@ -25,9 +25,11 @@ import {
 	SecurityPreferencesComponent,
 	VideoRoomComponent
 } from '../pages';
+import { LoginComponent } from '@lib/pages/login/login.component';
 
 export const baseRoutes: Routes = [
 	{ path: '', component: RoomCreatorComponent },
+	{ path: 'login', component: LoginComponent },
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'unauthorized', component: UnauthorizedComponent },
 	{
