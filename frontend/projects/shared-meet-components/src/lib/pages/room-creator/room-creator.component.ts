@@ -14,10 +14,9 @@ import { NgClass } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { HttpService } from '../../services/http/http.service';
+import { ContextService, HttpService } from '../../services/index';
 import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from '../../typings/ce/room';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
-import packageInfo from '../../../../../../package.json';
 
 @Component({
 	selector: 'app-room-creator',
@@ -27,9 +26,12 @@ import packageInfo from '../../../../../../package.json';
 	imports: [MatToolbar, MatIconButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, NgClass, MatButton]
 })
 export class RoomCreatorComponent implements OnInit, OnDestroy {
+	version = '';
+	openviduLogoUrl = '';
+	backgroundImageUrl = '';
+
 	roomForm: FormGroup;
 	loginForm: FormGroup;
-	version = '';
 	isPrivateAccess = false;
 	username = '';
 	loginError = false;
@@ -44,7 +46,8 @@ export class RoomCreatorComponent implements OnInit, OnDestroy {
 		private httpService: HttpService,
 		// private callService: ConfigService,
 		private fb: FormBuilder,
-		private route: ActivatedRoute
+		private route: ActivatedRoute,
+		private contextService: ContextService
 	) {
 		this.loginForm = this.fb.group({
 			username: [
@@ -60,7 +63,9 @@ export class RoomCreatorComponent implements OnInit, OnDestroy {
 	}
 
 	async ngOnInit() {
-		this.version = packageInfo.version;
+		this.version = this.contextService.getVersion();
+		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
+		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
 		this.subscribeToQueryParams();
 
 		try {

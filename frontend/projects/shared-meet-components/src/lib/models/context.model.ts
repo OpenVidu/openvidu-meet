@@ -11,6 +11,9 @@ export interface ContextData {
 	edition: Edition;
 	leaveRedirectUrl: string;
 	parentDomain: string;
+	version: string;
+	openviduLogoUrl: string;
+	backgroundImageUrl: string;
 }
 
 export enum ApplicationMode {

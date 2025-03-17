@@ -26,7 +26,10 @@ export class ContextService {
 		mode: ApplicationMode.STANDALONE,
 		edition: Edition.CE,
 		leaveRedirectUrl: '',
-		parentDomain: ''
+		parentDomain: '',
+		version: '',
+		openviduLogoUrl: '',
+		backgroundImageUrl: ''
 	};
 
 	private log;
@@ -36,6 +39,30 @@ export class ContextService {
 	 */
 	constructor(private loggerService: LoggerService) {
 		this.log = this.loggerService.get('OpenVidu Meet - ContextService');
+	}
+
+	setVersion(version: string): void {
+		this.context.version = version;
+	}
+
+	getVersion(): string {
+		return this.context.version;
+	}
+
+	setOpenViduLogoUrl(openviduLogoUrl: string): void {
+		this.context.openviduLogoUrl = openviduLogoUrl;
+	}
+
+	getOpenViduLogoUrl(): string {
+		return this.context.openviduLogoUrl;
+	}
+
+	setBackgroundImageUrl(backgroundImageUrl: string): void {
+		this.context.backgroundImageUrl = backgroundImageUrl;
+	}
+
+	getBackgroundImageUrl(): string {
+		return this.context.backgroundImageUrl;
 	}
 
 	/**
