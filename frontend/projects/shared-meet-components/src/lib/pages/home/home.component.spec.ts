@@ -1,18 +1,15 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HomeComponent } from './home.component';
-import { UntypedFormBuilder } from '@angular/forms';
 
 describe('HomeComponent', () => {
 	let component: HomeComponent;
 	let fixture: ComponentFixture<HomeComponent>;
 
-	beforeEach(async(() => {
-		TestBed.configureTestingModule({
-    providers: [UntypedFormBuilder],
-    imports: [RouterTestingModule.withRoutes([]), HomeComponent]
-}).compileComponents();
-	}));
+	beforeEach(async () => {
+		await TestBed.configureTestingModule({
+			imports: [HomeComponent]
+		}).compileComponents();
+	});
 
 	beforeEach(() => {
 		fixture = TestBed.createComponent(HomeComponent);

@@ -17,15 +17,17 @@ import {
 	ConsoleComponent,
 	ConsoleLoginComponent,
 	DisconnectedComponent,
+	HomeComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
+	RecordingsComponent,
 	RoomsComponent,
 	SecurityPreferencesComponent,
 	VideoRoomComponent
 } from '../pages';
-import { RecordingsComponent } from '@lib/pages/console/recordings/recordings.component';
 
 export const baseRoutes: Routes = [
+	{ path: '', component: HomeComponent },
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'unauthorized', component: UnauthorizedComponent },
 	{

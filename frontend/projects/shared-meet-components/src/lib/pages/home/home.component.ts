@@ -13,15 +13,11 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { NgClass } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { ActivatedRoute, Router } from '@angular/router';
-
 import { Subscription } from 'rxjs';
-
-// import { ConfigService } from '@app/services/config.service';
-import { HttpService, OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/public-api';
-
-import packageInfo from '../../../../package.json';
-
+import { HttpService } from '../../services/http/http.service';
+import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from '../../typings/ce/room';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
+import packageInfo from '../../../../../../package.json';
 
 @Component({
 	selector: 'app-home',
