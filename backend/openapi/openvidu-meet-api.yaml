@@ -16,10 +16,18 @@ servers:
       description: Development server
 
 tags:
-    - name: Room
+    - name: OpenVidu Meet - Room
       description: Operations related to managing OpenVidu Meet rooms
-    - name: Participant
+    - name: OpenVidu Meet - Recordings
+      description: Operations related to managing OpenVidu Meet recordings
+    # - name: OpenVidu Meet - Participant
+    #   description: Operations related to managing participants in OpenVidu Meet rooms
+    # - name: Internal API - Room
+    #   description: Operations related to managing OpenVidu Meet rooms
+    - name: Internal API - Participant
       description: Operations related to managing participants in OpenVidu Meet rooms
+    - name: Internal API - Recordings
+      description: Operations related to managing OpenVidu Meet recordings
 
 paths:
     /rooms:
@@ -30,7 +38,7 @@ paths:
                 Creates a new OpenVidu Meet room with the specified expiration date.
                 The room will be available for participants to join using the generated URLs.
             tags:
-                - Room
+                - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
             requestBody:
@@ -136,7 +144,7 @@ paths:
                 You can specify a comma-separated list of fields (using the "fields" query parameter) to include only
                 those properties in the response (e.g. roomName, preferences).
             tags:
-                - Room
+                - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
             parameters:
@@ -144,10 +152,10 @@ paths:
                   in: query
                   required: false
                   description: |
-                    Comma-separated list of fields to include in the response.
-                    For example: "roomName,preferences". Only allowed fields will be returned.
+                      Comma-separated list of fields to include in the response.
+                      For example: "roomName,preferences". Only allowed fields will be returned.
                   schema:
-                    type: string
+                      type: string
             responses:
                 '200':
                     description: Successfully retrieved the list of OpenVidu Meet rooms
@@ -174,13 +182,73 @@ paths:
                             example:
                                 code: 500
                                 message: 'Internal server error'
+    /rooms/{roomName}:
+        get:
+            operationId: getRoom
+            summary: Get details of an OpenVidu Meet room
+            description: >
+                Retrieves the details of an OpenVidu Meet room with the specified room name.
+                Additionally, you can specify a comma-separated list of fields (using the "fields" query parameter)
+                to include only those properties in the response (e.g. roomName, preferences).
+            tags:
+                - OpenVidu Meet - Room
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: roomName
+                  in: path
+                  required: true
+                  description: The name of the room to retrieve
+                  schema:
+                      type: string
+                - name: fields
+                  in: query
+                  required: false
+                  description: |
+                      Comma-separated list of fields to include in the response.
+                      For example: "roomName,preferences". Only allowed fields will be returned.
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Successfully retrieved the OpenVidu Meet room
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OpenViduMeetRoom'
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '404':
+                    description: Room not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Room not found'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
         put:
             operationId: updateRoom
             summary: Update an OpenVidu Meet room
             description: >
                 Updates the preferences of an OpenVidu Meet room with the specified room name.
             tags:
-                - Room
+                - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
             parameters:
@@ -254,73 +322,13 @@ paths:
                                                 message:
                                                     type: string
                                                     example: 'Expected boolean, received string'
-    /rooms/{roomName}:
-        get:
-            operationId: getRoom
-            summary: Get details of an OpenVidu Meet room
-            description: >
-                Retrieves the details of an OpenVidu Meet room with the specified room name.
-                Additionally, you can specify a comma-separated list of fields (using the "fields" query parameter)
-                to include only those properties in the response (e.g. roomName, preferences).
-            tags:
-                - Room
-            security:
-                - apiKeyInHeader: []
-            parameters:
-                - name: roomName
-                  in: path
-                  required: true
-                  description: The name of the room to retrieve
-                  schema:
-                      type: string
-                - name: fields
-                  in: query
-                  required: false
-                  description: |
-                    Comma-separated list of fields to include in the response.
-                    For example: "roomName,preferences". Only allowed fields will be returned.
-                  schema:
-                    type: string
-            responses:
-                '200':
-                    description: Successfully retrieved the OpenVidu Meet room
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/OpenViduMeetRoom'
-                '401':
-                    description: Unauthorized — The API key is missing or invalid
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                message: 'Unauthorized'
-                '404':
-                    description: Room not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                code: 404
-                                message: 'Room not found'
-                '500':
-                    description: Internal server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                code: 500
-                                message: 'Internal server error'
         delete:
             operationId: deleteRoom
             summary: Delete an OpenVidu Meet room
             description: >
                 Deletes an OpenVidu Meet room with the specified room name.
             tags:
-                - Room
+                - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
             parameters:
@@ -359,6 +367,385 @@ paths:
                             example:
                                 code: 500
                                 message: 'Internal server error'
+    /recordings:
+        post:
+            operationId: createRecording
+            summary: Create a new OpenVidu Meet recording
+            description: >
+                Creates a new OpenVidu Meet recording for the specified room.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            requestBody:
+                description: Recording details
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - roomName
+                            properties:
+                                roomName:
+                                    type: string
+                                    example: 'OpenVidu-123456'
+                                    description: >
+                                        The name of the room to record.
+
+            responses:
+                '200':
+                    description: Successfully created the OpenVidu Meet recording
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OpenViduMeetRecording'
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '404':
+                    description: Room not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Room not found'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+        get:
+            operationId: getRecordings
+            summary: Get a list of OpenVidu Meet recordings
+            description: >
+                Retrieves a list of OpenVidu Meet recordings that are currently available.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            responses:
+                '200':
+                    description: Successfully retrieved the list of OpenVidu Meet recordings
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/OpenViduMeetRecording'
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+        delete:
+            operationId: deleteMultipleRecordings
+            summary: Delete multiples OpenVidu Meet recordings
+            description: >
+                Deletes multiples OpenVidu Meet recordings with the specified recording IDs.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            requestBody:
+                description: Recording IDs to delete
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - recordingIds
+                            properties:
+                                recordingIds:
+                                    type: array
+                                    items:
+                                        type: string
+                                    example: ['recording_123456', 'recording_123457']
+                                    description: >
+                                        The IDs of the recordings to delete.
+            responses:
+                '204':
+                    description: Successfully deleted the OpenVidu Meet recordings
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+    /recordings/{recordingId}:
+        put:
+            operationId: stopRecording
+            summary: Stop an OpenVidu Meet recording
+            description: >
+                Stops an OpenVidu Meet recording with the specified recording ID.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: recordingId
+                  in: path
+                  required: true
+                  description: The ID of the recording to stop
+                  schema:
+                      type: string
+            responses:
+                '204':
+                    description: Successfully stopped the OpenVidu Meet recording
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '404':
+                    description: Recording not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Recording not found'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+        get:
+            operationId: getRecording
+            summary: Get details of an OpenVidu Meet recording
+            description: >
+                Retrieves the details of an OpenVidu Meet recording with the specified recording ID.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: recordingId
+                  in: path
+                  required: true
+                  description: The ID of the recording to retrieve
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Successfully retrieved the OpenVidu Meet recording
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OpenViduMeetRecording'
+
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '404':
+                    description: Recording not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Recording not found'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+        delete:
+            operationId: deleteRecording
+            summary: Delete an OpenVidu Meet recording
+            description: >
+                Deletes an OpenVidu Meet recording with the specified recording ID.
+            tags:
+                - OpenVidu Meet - Recordings
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: recordingId
+                  in: path
+                  required: true
+                  description: The ID of the recording to delete
+                  schema:
+                      type: string
+            responses:
+                '204':
+                    description: Successfully deleted the OpenVidu Meet recording
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
+    /recordings/{recordingId}/stream:
+        get:
+            operationId: getRecordingStream
+            summary: Stream an OpenVidu Meet recording
+            description: >
+                Streams the OpenVidu Meet recording with the specified recording ID.
+                This endpoint supports range requests, allowing partial content retrieval
+                for video playback without downloading the entire file.
+            tags:
+                - Internal API - Recordings
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: recordingId
+                  in: path
+                  required: true
+                  description: The ID of the recording to stream
+                  schema:
+                      type: string
+                - name: Range
+                  in: header
+                  required: false
+                  description: >
+                      Byte range for partial content retrieval.
+                      Example: `bytes=0-1023` to request the first 1024 bytes of the file.
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Successfully streaming the full recording
+                    headers:
+                        Accept-Ranges:
+                            description: Indicates that byte-range requests are supported
+                            schema:
+                                type: string
+                        Content-Length:
+                            description: The total file size in bytes
+                            schema:
+                                type: integer
+                    content:
+                        video/mp4:
+                            schema:
+                                type: string
+                                format: binary
+                '206':
+                    description: Partial content streaming based on byte range
+                    headers:
+                        Accept-Ranges:
+                            description: Indicates that byte-range requests are supported
+                            schema:
+                                type: string
+                        Content-Range:
+                            description: Specifies the range of bytes being sent
+                            schema:
+                                type: string
+                        Content-Length:
+                            description: The length of the partial content in bytes
+                            schema:
+                                type: integer
+                    content:
+                        video/mp4:
+                            schema:
+                                type: string
+                                format: binary
+                '400':
+                    description: Bad Request — Invalid range header format
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 400
+                                message: 'Invalid Range header'
+                '401':
+                    description: Unauthorized — The API key is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '404':
+                    description: Recording not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Recording not found'
+                '416':
+                    description: Requested range not satisfiable
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 416
+                                message: 'Requested range not satisfiable'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
 
     /participants/token:
         post:
@@ -367,7 +754,7 @@ paths:
             description: >
                 Generates a token for a participant to join an OpenVidu Meet room.
             tags:
-                - Participant
+                - Internal API - Participant
             requestBody:
                 description: Participant details
                 content:
@@ -429,49 +816,49 @@ paths:
                             example:
                                 message: 'Internal server error'
     /participants/{participantName}:
-      delete:
-        operationId: disconnectParticipant
-        summary: Delete a participant from a room
-        description: >
-            Deletes a participant from an OpenVidu Meet room.
-        tags:
-            - Participant
-        security:
-            - apiKeyInHeader: []
-        parameters:
-            - name: participantName
-              in: path
-              required: true
-              description: The name of the participant to delete
-              schema:
-                  type: string
-            - name: roomName
-              in: query
-              required: true
-              description: The name of the room from which to delete the participant
-              schema:
-                  type: string
-        responses:
-            '204':
-                description: Successfully disconnect the participant
-            '404':
-                description: Participant not found
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/Error'
-                        example:
-                            code: 404
-                            message: 'Participant not found'
-            '500':
-                description: Internal server error
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/Error'
-                        example:
-                            code: 500
-                            message: 'Internal server error'
+        delete:
+            operationId: disconnectParticipant
+            summary: Delete a participant from a room
+            description: >
+                Deletes a participant from an OpenVidu Meet room.
+            tags:
+                - Internal API - Participant
+            security:
+                - apiKeyInHeader: []
+            parameters:
+                - name: participantName
+                  in: path
+                  required: true
+                  description: The name of the participant to delete
+                  schema:
+                      type: string
+                - name: roomName
+                  in: query
+                  required: true
+                  description: The name of the room from which to delete the participant
+                  schema:
+                      type: string
+            responses:
+                '204':
+                    description: Successfully disconnect the participant
+                '404':
+                    description: Participant not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 404
+                                message: 'Participant not found'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                code: 500
+                                message: 'Internal server error'
 components:
     securitySchemes:
         apiKeyInHeader:
@@ -612,6 +999,59 @@ components:
                     description: >
                         The URL for the viewer to join the room. The viewer has read-only permissions to watch the room
                         and participants.
+        OpenViduMeetRecording:
+            type: object
+            properties:
+                id:
+                    type: string
+                    example: 'recording_123456'
+                    description: >
+                        The unique identifier of the recording.
+                roomName:
+                    type: string
+                    example: 'OpenVidu-123456'
+                    description: >
+                        The name of the room where the recording was made.
+                # roomId:
+                #     type: string
+                #     example: '123456'
+                #     description: >
+                #         The unique identifier of the room where the recording was made.
+                outputMode:
+                    type: string
+                    example: 'COMPOSED'
+                    description: >
+                        The output mode of the recording. Possible values are "COMPOSED".
+                status:
+                    type: string
+                    example: 'READY'
+                    description: >
+                        The status of the recording. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "RECORDING".
+                filename:
+                    type: string
+                    example: 'recording_123456.mp4'
+                    description: >
+                        The name of the recording file.
+                startedAt:
+                    type: number
+                    example: 1620000000000
+                    description: >
+                        The date when the recording was started in milliseconds since the Unix epoch.
+                endedAt:
+                    type: number
+                    example: 1620000000000
+                    description: >
+                        The date when the recording was stopped in milliseconds since the Unix epoch.
+                duration:
+                    type: number
+                    example: 3600
+                    description: >
+                        The duration of the recording in seconds.
+                size:
+                    type: number
+                    example: 1024
+                    description: >
+                        The size of the recording file in bytes.
         Error:
             type: object
             required:
