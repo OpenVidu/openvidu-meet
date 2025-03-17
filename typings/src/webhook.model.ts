@@ -1,4 +1,4 @@
-import { RecordingStatus } from './recording.model.js';
+import { MeetRecordingStatus } from './recording.model.js';
 
 export interface OpenViduWebhookEvent {
 	creationDate: number;
@@ -16,7 +16,7 @@ export interface RecordingWebhookData {
 	recordingId: string;
 	filename?: string;
 	roomName: string;
-	status: RecordingStatus;
+	status: MeetRecordingStatus;
 }
 
 export interface RoomWebhookData {

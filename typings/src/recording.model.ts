@@ -1,4 +1,4 @@
-export const enum RecordingStatus {
+export const enum MeetRecordingStatus {
 	STARTING = 'STARTING',
 	STARTED = 'STARTED',
 	STOPPING = 'STOPPING',
@@ -7,7 +7,7 @@ export const enum RecordingStatus {
 	READY = 'READY'
 }
 
-export const enum RecordingOutputMode {
+export const enum MeetRecordingOutputMode {
 	COMPOSED = 'COMPOSED',
 	INDIVIDUAL = 'INDIVIDUAL'
 }
@@ -15,15 +15,16 @@ export const enum RecordingOutputMode {
 /**
  * Interface representing a recording
  */
-export interface RecordingInfo {
+export interface MeetRecordingInfo {
 	id: string;
 	roomName: string;
+	// TODO: Delete roomId
 	roomId: string;
-	outputMode: RecordingOutputMode;
-	status: RecordingStatus;
+	outputMode: MeetRecordingOutputMode;
+	status: MeetRecordingStatus;
 	filename?: string;
-	creationDate?: number;
-	endDate?: number;
+	startedAt?: number;
+	endedAt?: number;
 	duration?: number;
 	size?: number;
 }
