@@ -20,13 +20,13 @@ import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-gene
 import packageInfo from '../../../../../../package.json';
 
 @Component({
-	selector: 'app-home',
-	templateUrl: './home.component.html',
-	styleUrls: ['./home.component.scss'],
+	selector: 'app-room-creator',
+	templateUrl: './room-creator.component.html',
+	styleUrls: ['./room-creator.component.scss'],
 	standalone: true,
 	imports: [MatToolbar, MatIconButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, NgClass, MatButton]
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class RoomCreatorComponent implements OnInit, OnDestroy {
 	roomForm: FormGroup;
 	loginForm: FormGroup;
 	version = '';

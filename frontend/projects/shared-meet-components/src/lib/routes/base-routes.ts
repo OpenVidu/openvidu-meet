@@ -17,7 +17,7 @@ import {
 	ConsoleComponent,
 	ConsoleLoginComponent,
 	DisconnectedComponent,
-	HomeComponent,
+	RoomCreatorComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
 	RecordingsComponent,
@@ -27,7 +27,7 @@ import {
 } from '../pages';
 
 export const baseRoutes: Routes = [
-	{ path: '', component: HomeComponent },
+	{ path: '', component: RoomCreatorComponent },
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'unauthorized', component: UnauthorizedComponent },
 	{
@@ -93,6 +93,6 @@ export const baseRoutes: Routes = [
 		component: ParticipantNameFormComponent
 	},
 
-	// Redirect all other routes to home
+	// Redirect all other routes to RoomCreatorComponent
 	{ path: '**', redirectTo: '' }
 ];
