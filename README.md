@@ -50,6 +50,10 @@ cd openvidu-meet
 
 **3. Start the Backend**
 
+> [!NOTE]
+> For development purposes, the backend application uses the `backend/.env.development` file to load environment variables. You can customize the values in this file to suit your local development environment.
+
+
 ```bash
 cd backend && \
 npm run start:dev
