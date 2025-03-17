@@ -1,4 +1,4 @@
-export enum RecordingStatus {
+export const enum RecordingStatus {
 	STARTING = 'STARTING',
 	STARTED = 'STARTED',
 	STOPPING = 'STOPPING',
@@ -7,7 +7,7 @@ export enum RecordingStatus {
 	READY = 'READY'
 }
 
-export enum RecordingOutputMode {
+export const enum RecordingOutputMode {
 	COMPOSED = 'COMPOSED',
 	INDIVIDUAL = 'INDIVIDUAL'
 }
@@ -22,8 +22,8 @@ export interface RecordingInfo {
 	outputMode: RecordingOutputMode;
 	status: RecordingStatus;
 	filename?: string;
-	startedAt?: number;
-	endedAt?: number;
+	creationDate?: number;
+	endDate?: number;
 	duration?: number;
 	size?: number;
 }

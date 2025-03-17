@@ -1,4 +1,4 @@
-import { RecordingInfo } from './recording.model.js';
+import { RecordingInfo } from '@typings-ce';
 
 export interface RoomStatusData {
 	isRecordingStarted: boolean;

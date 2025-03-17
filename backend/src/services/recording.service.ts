@@ -18,7 +18,7 @@ import {
 import { S3Service } from './s3.service.js';
 import { DataTopic } from '../models/signal.model.js';
 import { LoggerService } from './logger.service.js';
-import { RecordingInfo, RecordingStatus } from '../models/recording.model.js';
+import { RecordingInfo, RecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MEET_S3_BUCKET } from '../environment.js';
 import { RoomService } from './room.service.js';

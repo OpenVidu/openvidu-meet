@@ -1,5 +1,5 @@
 import { EgressInfo } from 'livekit-server-sdk';
-import { RecordingInfo, RecordingOutputMode, RecordingStatus } from '../models/recording.model.js';
+import { RecordingInfo, RecordingOutputMode, RecordingStatus } from '@typings-ce';
 import { EgressStatus } from '@livekit/protocol';
 import { DataTopic } from '../models/signal.model.js';
 
@@ -19,8 +19,8 @@ export class RecordingHelper {
 			outputMode,
 			status,
 			filename,
-			startedAt,
-			endedAt: endTimeInMilliseconds,
+			creationDate: startedAt,
+			endDate: endTimeInMilliseconds,
 			duration,
 			size
 		};

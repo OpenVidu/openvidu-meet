@@ -3,8 +3,7 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { Room } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { MEET_API_KEY, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../environment.js';
-import { OpenViduWebhookEvent, OpenViduWebhookEventType } from '@typings-ce';
-import { RecordingInfo } from '../models/recording.model.js';
+import { OpenViduWebhookEvent, OpenViduWebhookEventType, RecordingInfo } from '@typings-ce';
 
 @injectable()
 export class OpenViduWebhookService {

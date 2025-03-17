@@ -3,7 +3,7 @@ import { EgressInfo, ParticipantInfo, Room, SendDataOptions, WebhookEvent, Webho
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { DataTopic } from '../models/signal.model.js';
 import { LiveKitService } from './livekit.service.js';
-import { RecordingInfo, RecordingStatus } from '../models/recording.model.js';
+import { RecordingInfo, RecordingStatus } from '@typings-ce';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID } from '../environment.js';
 import { LoggerService } from './logger.service.js';
 import { RoomService } from './room.service.js';
