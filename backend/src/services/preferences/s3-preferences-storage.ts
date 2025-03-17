@@ -78,18 +78,44 @@ export class S3PreferenceStorage<
 
 	async saveOpenViduRoom(ovRoom: R): Promise<R> {
 		const { roomName } = ovRoom;
+		const s3Path = `${this.PREFERENCES_PATH}/${roomName}/${roomName}.json`;
+		const roomStr = JSON.stringify(ovRoom);
 
-		try {
-			await Promise.all([
-				this.s3Service.saveObject(`${this.PREFERENCES_PATH}/${roomName}/${roomName}.json`, ovRoom),
-				//TODO: Implement ttl for room preferences
-				this.redisService.set(roomName, JSON.stringify(ovRoom), false)
-			]);
+		const results = await Promise.allSettled([
+			this.s3Service.saveObject(s3Path, ovRoom),
+			this.redisService.set(roomName, roomStr, false)
+		]);
+
+		const s3Result = results[0];
+		const redisResult = results[1];
+
+		if (s3Result.status === 'fulfilled' && redisResult.status === 'fulfilled') {
 			return ovRoom;
-		} catch (error) {
-			this.handleError(error, `Error saving Room preferences for room ${roomName}`);
-			throw error;
 		}
+
+		// Rollback changes if one of the operations failed
+		if (s3Result.status === 'fulfilled') {
+			try {
+				await this.s3Service.deleteObject(s3Path);
+			} catch (rollbackError) {
+				this.logger.error(`Error rolling back S3 save for room ${roomName}: ${rollbackError}`);
+			}
+		}
+
+		if (redisResult.status === 'fulfilled') {
+			try {
+				await this.redisService.delete(roomName);
+			} catch (rollbackError) {
+				this.logger.error(`Error rolling back Redis set for room ${roomName}: ${rollbackError}`);
+			}
+		}
+
+		// Return the error that occurred first
+		const rejectedResult: PromiseRejectedResult =
+			s3Result.status === 'rejected' ? s3Result : (redisResult as PromiseRejectedResult);
+		const error = rejectedResult.reason;
+		this.handleError(error, `Error saving Room preferences for room ${roomName}`);
+		throw error;
 	}
 
 	async getOpenViduRooms(): Promise<R[]> {
