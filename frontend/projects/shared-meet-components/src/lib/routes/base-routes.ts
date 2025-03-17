@@ -23,7 +23,8 @@ import {
 	RecordingsComponent,
 	RoomsComponent,
 	SecurityPreferencesComponent,
-	VideoRoomComponent
+	VideoRoomComponent,
+	RoomFormComponent
 } from '../pages';
 import { LoginComponent } from '@lib/pages/login/login.component';
 import { Role } from '@lib/typings/ce';
@@ -74,7 +75,11 @@ export const baseRoutes: Routes = [
 			},
 			{
 				path: 'rooms',
-				component: RoomsComponent
+				component: RoomsComponent,
+				children: [
+					{ path: 'new', component: RoomFormComponent },
+					{ path: ':roomName/edit', component: RoomFormComponent }
+				]
 			},
 			{
 				path: 'recordings',

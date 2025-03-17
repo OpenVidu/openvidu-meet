@@ -30,13 +30,14 @@
 </div> -->
 <h1>Rooms</h1>
 
-<ov-dynamic-grid [maxColumns]="2" [withHeader]="true" [gutter]="'10px'" [layoutMode]="'grid'">
-	<!-- Custom Header-->
-	<div header></div>
+<!-- <ov-dynamic-grid [maxColumns]="2" [withHeader]="true" [gutter]="'10px'" [layoutMode]="'grid'"> -->
+<!-- Custom Header-->
+<!-- <div header></div> -->
 
+@if (!isInRoomForm()) {
 	<mat-list class="grid-item" [attr.data-span]="2">
 		<div mat-subheader class="item-subheader">
-			<h3>Active Rooms</h3>
+			<h3>Rooms</h3>
 			<div class="subheader-button">
 				<button mat-flat-button color="primary" (click)="createRoom()">
 					<mat-icon class="icon-left">add</mat-icon>
@@ -53,7 +54,7 @@
 				<div matListItemLine class="item-details">
 					<div>
 						<mat-icon class="icon">auto_delete</mat-icon>
-						<p>{{ item.expirationDate | date: 'dd/MM/yyyy' }}</p>
+						<p>Expires: {{ item.expirationDate | date: 'dd/MM/yyyy' }}</p>
 					</div>
 				</div>
 
@@ -71,9 +72,10 @@
 			<p class="empty-rooms-message">No rooms created yet</p>
 		}
 	</mat-list>
+}
 
-	<!-- Recording Toggle -->
-	<ov-toggle-card
+<!-- Recording Toggle -->
+<!-- <ov-toggle-card
 		[title]="'Recording'"
 		[description]="'Allow record your rooms for later use'"
 		[icon]="'radio_button_checked'"
@@ -82,10 +84,10 @@
 		[toggleValue]="recordingEnabled"
 		(onToggleValueChanged)="onRecordingToggle($event)"
 	>
-	</ov-toggle-card>
+	</ov-toggle-card> -->
 
-	<!-- Chat Toggle -->
-	<ov-toggle-card
+<!-- Chat Toggle -->
+<!-- <ov-toggle-card
 		[title]="'Chat'"
 		[description]="'Allow participants to communicate via chat'"
 		[icon]="'message'"
@@ -94,9 +96,9 @@
 		[toggleValue]="chatEnabled"
 		(onToggleValueChanged)="onChatToggle($event)"
 	>
-	</ov-toggle-card>
+	</ov-toggle-card> -->
 
-	<ov-toggle-card
+<!-- <ov-toggle-card
 		[title]="'Backgrounds'"
 		[description]="'Allow participants to change their backgrounds'"
 		[icon]="'blur_on'"
@@ -105,5 +107,8 @@
 		[toggleValue]="backgroundsEnabled"
 		(onToggleValueChanged)="onVirtualBackgroundToggle($event)"
 	>
-	</ov-toggle-card>
-</ov-dynamic-grid>
+	</ov-toggle-card> -->
+<!-- </ov-dynamic-grid> -->
+<div>
+	<router-outlet></router-outlet>
+</div>

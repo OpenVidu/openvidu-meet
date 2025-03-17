@@ -4,8 +4,8 @@ mat-sidenav-container {
 }
 
 .page-content {
-	height: 100%;
-	padding: 15px;
+	height: calc(100% - (64px + 40px));
+	padding: 20px;
 }
 .toolbar-title {
 	font-size: 1.5rem;
@@ -55,7 +55,6 @@ mat-sidenav {
 
 	.centeredEntry {
 		justify-content: center !important;
-
 	}
 }
 
