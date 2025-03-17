@@ -3,7 +3,7 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { Room } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { MEET_API_KEY, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../environment.js';
-import { OpenViduWebhookEvent, OpenViduWebhookEventType } from '../models/webhook.model.js';
+import { OpenViduWebhookEvent, OpenViduWebhookEventType } from '@typings-ce';
 import { RecordingInfo } from '../models/recording.model.js';
 
 @injectable()
@@ -13,7 +13,7 @@ export class OpenViduWebhookService {
 	async sendRoomFinishedWebhook(room: Room) {
 		const data: OpenViduWebhookEvent = {
 			event: OpenViduWebhookEventType.ROOM_FINISHED,
-			createdAt: Date.now(),
+			creationDate: Date.now(),
 			data: {
 				roomName: room.name
 			}
@@ -24,7 +24,7 @@ export class OpenViduWebhookService {
 	async sendRecordingStartedWebhook(recordingInfo: RecordingInfo) {
 		const data: OpenViduWebhookEvent = {
 			event: OpenViduWebhookEventType.RECORDING_STARTED,
-			createdAt: Date.now(),
+			creationDate: Date.now(),
 			data: {
 				recordingId: recordingInfo.id,
 				filename: recordingInfo.filename,
@@ -38,7 +38,7 @@ export class OpenViduWebhookService {
 	async sendRecordingStoppedWebhook(recordingInfo: RecordingInfo) {
 		const data: OpenViduWebhookEvent = {
 			event: OpenViduWebhookEventType.RECORDING_STOPPED,
-			createdAt: Date.now(),
+			creationDate: Date.now(),
 			data: {
 				recordingId: recordingInfo.id,
 				filename: recordingInfo.filename,
@@ -52,7 +52,7 @@ export class OpenViduWebhookService {
 	private async sendWebhookEvent(data: OpenViduWebhookEvent) {
 		if (!this.isWebhookEnabled()) return;
 
-		const timestamp = data.createdAt;
+		const timestamp = data.creationDate;
 		const signature = this.generateWebhookSignature(timestamp, data);
 
 		this.logger.info(`Sending webhook event ${data.event}`);

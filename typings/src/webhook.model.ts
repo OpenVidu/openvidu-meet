@@ -1,12 +1,12 @@
 import { RecordingStatus } from './recording.model.js';
 
 export interface OpenViduWebhookEvent {
-	createdAt: number;
+	creationDate: number;
 	event: OpenViduWebhookEventType;
 	data: RoomWebhookData | RecordingWebhookData;
 }
 
-export enum OpenViduWebhookEventType {
+export const enum OpenViduWebhookEventType {
 	RECORDING_STARTED = 'recording_started',
 	RECORDING_STOPPED = 'recording_stopped',
 	ROOM_FINISHED = 'room_finished'
