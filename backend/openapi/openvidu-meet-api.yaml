@@ -416,6 +416,36 @@ paths:
                             example:
                                 code: 404
                                 message: 'Room not found'
+                '422':
+                    description: Unprocessable Entity — The request body is invalid
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+                                        example: 'Unprocessable Entity'
+                                    message:
+                                        type: string
+                                        example: 'Invalid request body'
+                                    details:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                field:
+                                                    type: string
+                                                    example: 'roomName'
+                                                message:
+                                                    type: string
+                                                    example: 'Room not found'
+                            example:
+                                error: 'Unprocessable Entity'
+                                message: 'Invalid request body'
+                                details:
+                                    - field: 'roomName'
+                                      message: 'Room not found'
                 '500':
                     description: Internal server error
                     content:
@@ -429,11 +459,19 @@ paths:
             operationId: getRecordings
             summary: Get a list of OpenVidu Meet recordings
             description: >
-                Retrieves a list of OpenVidu Meet recordings that are currently available.
+                Retrieves a list of OpenVidu Meet recordings.
             tags:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
+            parameters:
+              - name: status
+                in: query
+                required: false
+                description: |
+                    The status of the recordings to retrieve. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "READY".
+                schema:
+                    type: string
             responses:
                 '200':
                     description: Successfully retrieved the list of OpenVidu Meet recordings
@@ -1026,7 +1064,7 @@ components:
                     type: string
                     example: 'READY'
                     description: >
-                        The status of the recording. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "RECORDING".
+                        The status of the recording. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "READY".
                 filename:
                     type: string
                     example: 'recording_123456.mp4'
