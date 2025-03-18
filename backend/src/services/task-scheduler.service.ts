@@ -3,6 +3,7 @@ import { LoggerService } from './index.js';
 import { SystemEventService } from './system-event.service.js';
 import { CronJob } from 'cron';
 import { MutexService } from './mutex.service.js';
+import { RedisLockName } from '../models/redis.model.js';
 
 @injectable()
 export class TaskSchedulerService {
@@ -23,7 +24,6 @@ export class TaskSchedulerService {
 	 * @returns A promise that resolves when the garbage collector has been successfully started.
 	 */
 	async startRoomGarbageCollector(callbackFn: () => Promise<void>): Promise<void> {
-		const lockName = 'room-garbage-lock';
 		const lockTtl = 59 * 60 * 1000; // TTL of 59 minutes
 
 		if (this.roomGarbageCollectorJob) {
@@ -34,7 +34,7 @@ export class TaskSchedulerService {
 		// Create a cron job to run every hour
 		this.roomGarbageCollectorJob = new CronJob('0 * * * *', async () => {
 			try {
-				const lock = await this.mutexService.acquire(lockName, lockTtl);
+				const lock = await this.mutexService.acquire(RedisLockName.GARBAGE_COLLECTOR, lockTtl);
 
 				if (!lock) {
 					this.logger.debug('Failed to acquire lock for room garbage collection. Skipping.');

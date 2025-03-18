@@ -1,13 +1,13 @@
 import Redlock, { Lock } from 'redlock';
 import { RedisService } from './redis.service.js';
 import { inject, injectable } from 'inversify';
-import { RedisKeyPrefix } from '../models/redis.model.js';
 
 @injectable()
 export class MutexService {
 	protected redlockWithoutRetry: Redlock;
 	protected locks: Map<string, Lock>;
 	protected readonly TTL_MS = 10_000;
+	protected LOCK_KEY_PREFIX = 'ov_meet_lock:'
 
 	constructor(@inject(RedisService) protected redisService: RedisService) {
 		this.redlockWithoutRetry = this.redisService.createRedlock(0);
@@ -21,7 +21,7 @@ export class MutexService {
 	 * @returns A Promise that resolves to the acquired Lock object.
 	 */
 	async acquire(resource: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
-		resource = RedisKeyPrefix.LOCK + resource;
+		resource = this.LOCK_KEY_PREFIX + resource;
 
 		try {
 			const lock = await this.redlockWithoutRetry.acquire([resource], ttl);
@@ -39,7 +39,7 @@ export class MutexService {
 	 * @returns A Promise that resolves when the lock is released.
 	 */
 	async release(resource: string): Promise<void> {
-		resource = RedisKeyPrefix.LOCK + resource;
+		resource = this.LOCK_KEY_PREFIX + resource;
 		const lock = this.locks.get(resource);
 
 		if (lock) {
