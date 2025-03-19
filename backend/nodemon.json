@@ -7,6 +7,6 @@
 	"ignore": ["node_modules", "dist", "src/typings", "public"],
 	"exec": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/server.ts",
 	"events": {
-		"restart": "npm run typings:sync"
+		"restart": "npm run typings:sync && npm run generate:openapi-doc"
 	}
 }

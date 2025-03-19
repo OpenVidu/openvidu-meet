@@ -1,8 +1,6 @@
 import express, { Request, Response, Express } from 'express';
 import cors from 'cors';
 import chalk from 'chalk';
-import YAML from 'yamljs';
-import swaggerUi from 'swagger-ui-express';
 import { registerDependencies, container } from './config/dependency-injector.config.js';
 import {
 	SERVER_PORT,
@@ -11,7 +9,7 @@ import {
 	MEET_API_BASE_PATH_V1,
 	MEET_API_BASE_PATH
 } from './environment.js';
-import { getOpenApiSpecPath, indexHtmlPath, publicFilesPath, webcomponentBundlePath } from './utils/path-utils.js';
+import { openapiHtmlPath, indexHtmlPath, publicFilesPath, webcomponentBundlePath } from './utils/path-utils.js';
 import { authRouter, livekitRouter, preferencesRouter, recordingRouter, roomRouter } from './routes/index.js';
 import { GlobalPreferencesService, RoomService } from './services/index.js';
 import { participantsInternalRouter, participantsRouter } from './routes/participants.routes.js';
@@ -19,7 +17,6 @@ import cookieParser from 'cookie-parser';
 
 const createApp = () => {
 	const app: Express = express();
-	const openapiSpec = YAML.load(getOpenApiSpecPath());
 
 	// Enable CORS support
 	if (SERVER_CORS_ORIGIN) {
@@ -36,7 +33,7 @@ const createApp = () => {
 	app.use(express.json());
 	app.use(cookieParser());
 
-	app.use(`${MEET_API_BASE_PATH_V1}/docs`, swaggerUi.serve, swaggerUi.setup(openapiSpec));
+	app.use(`${MEET_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(openapiHtmlPath));
 	app.use(`${MEET_API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/auth`, /*mediaTypeValidatorMiddleware,*/ authRouter);
