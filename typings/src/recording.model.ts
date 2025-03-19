@@ -1,30 +1,31 @@
 export const enum MeetRecordingStatus {
 	STARTING = 'STARTING',
-	STARTED = 'STARTED',
-	STOPPING = 'STOPPING',
-	STOPPED = 'STOPPED',
+	ACTIVE = 'ACTIVE',
+	ENDING = 'ENDING',
+	COMPLETE = 'COMPLETE',
 	FAILED = 'FAILED',
-	READY = 'READY'
+	ABORTED = 'ABORTED',
+	LIMITED_REACHED = 'LIMITED_REACHED',
 }
 
 export const enum MeetRecordingOutputMode {
-	COMPOSED = 'COMPOSED',
-	INDIVIDUAL = 'INDIVIDUAL'
+	COMPOSED = 'COMPOSED'
 }
 
 /**
  * Interface representing a recording
  */
 export interface MeetRecordingInfo {
-	id: string;
-	roomName: string;
-	// TODO: Delete roomId
+	recordingId: string;
 	roomId: string;
 	outputMode: MeetRecordingOutputMode;
 	status: MeetRecordingStatus;
 	filename?: string;
-	startedAt?: number;
-	endedAt?: number;
+	startDate?: number;
+	endDate?: number;
 	duration?: number;
 	size?: number;
+	errorCode?: number;
+	error?: string;
+	details?: string;
 }
