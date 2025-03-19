@@ -32,14 +32,12 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	chatPreferences: ChatPreferences = { enabled: true };
 	recordingPreferences: RecordingPreferences = { enabled: true };
 	virtualBackgroundPreferences: VirtualBackgroundPreferences = { enabled: true };
-
 	featureFlags = {
 		videoEnabled: true,
 		audioEnabled: true,
 		showMicrophone: true,
 		showCamera: true,
 		showScreenShare: true,
-		showActivityPanel: true,
 		showPrejoin: true,
 		showChat: true,
 		showRecording: true,
@@ -178,7 +176,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 		this.featureFlags.showChat = this.chatPreferences.enabled;
 		this.featureFlags.showRecording = this.recordingPreferences.enabled;
-		this.featureFlags.showActivityPanel = this.recordingPreferences.enabled;
 		this.featureFlags.showBackgrounds = this.virtualBackgroundPreferences.enabled;
 	}
 
