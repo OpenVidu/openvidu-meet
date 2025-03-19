@@ -1,28 +1,30 @@
 import { EgressInfo } from 'livekit-server-sdk';
-import { RecordingInfo, RecordingOutputMode, RecordingStatus } from '@typings-ce';
+import { MeetRecordingInfo, MeetRecordingOutputMode, MeetRecordingStatus } from '@typings-ce';
 import { EgressStatus } from '@livekit/protocol';
-import { DataTopic } from '../models/signal.model.js';
 
 export class RecordingHelper {
-	static toRecordingInfo(egressInfo: EgressInfo): RecordingInfo {
+	static toRecordingInfo(egressInfo: EgressInfo): MeetRecordingInfo {
 		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
 		const size = RecordingHelper.extractSize(egressInfo);
 		const outputMode = RecordingHelper.extractOutputMode(egressInfo);
 		const duration = RecordingHelper.extractDuration(egressInfo);
-		const startedAt = RecordingHelper.extractCreatedAt(egressInfo);
-		const endTimeInMilliseconds = RecordingHelper.extractEndedAt(egressInfo);
+		const startDateMs = RecordingHelper.extractStartDate(egressInfo);
+		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
 		const filename = RecordingHelper.extractFilename(egressInfo);
+		const { egressId, roomName, errorCode, error, details } = egressInfo;
 		return {
-			id: egressInfo.egressId,
-			roomName: egressInfo.roomName,
-			roomId: egressInfo.roomId,
+			recordingId: egressId,
+			roomId: roomName,
 			outputMode,
 			status,
 			filename,
-			creationDate: startedAt,
-			endDate: endTimeInMilliseconds,
+			startDate: startDateMs,
+			endDate: endDateMs,
 			duration,
-			size
+			size,
+			errorCode,
+			error,
+			details: details
 		};
 	}
 
@@ -36,40 +38,24 @@ export class RecordingHelper {
 		return fileResults.length > 0 && streamResults.length === 0;
 	}
 
-	static extractOpenViduStatus(status: EgressStatus | undefined): RecordingStatus {
+	static extractOpenViduStatus(status: EgressStatus | undefined): MeetRecordingStatus {
 		switch (status) {
 			case EgressStatus.EGRESS_STARTING:
-				return RecordingStatus.STARTING;
+				return MeetRecordingStatus.STARTING;
 			case EgressStatus.EGRESS_ACTIVE:
-				return RecordingStatus.STARTED;
+				return MeetRecordingStatus.ACTIVE;
 			case EgressStatus.EGRESS_ENDING:
-				return RecordingStatus.STOPPED;
+				return MeetRecordingStatus.ENDING;
 			case EgressStatus.EGRESS_COMPLETE:
-				return RecordingStatus.READY;
+				return MeetRecordingStatus.COMPLETE;
 			case EgressStatus.EGRESS_FAILED:
+				return MeetRecordingStatus.FAILED;
 			case EgressStatus.EGRESS_ABORTED:
+				return MeetRecordingStatus.ABORTED;
 			case EgressStatus.EGRESS_LIMIT_REACHED:
-				return RecordingStatus.FAILED;
+				return MeetRecordingStatus.LIMITED_REACHED;
 			default:
-				return RecordingStatus.FAILED;
-		}
-	}
-
-	static getDataTopicFromStatus(egressInfo: EgressInfo): DataTopic {
-		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
-
-		switch (status) {
-			case RecordingStatus.STARTING:
-				return DataTopic.RECORDING_STARTING;
-			case RecordingStatus.STARTED:
-				return DataTopic.RECORDING_STARTED;
-			case RecordingStatus.STOPPED:
-			case RecordingStatus.READY:
-				return DataTopic.RECORDING_STOPPED;
-			case RecordingStatus.FAILED:
-				return DataTopic.RECORDING_FAILED;
-			default:
-				return DataTopic.RECORDING_FAILED;
+				return MeetRecordingStatus.FAILED;
 		}
 	}
 
@@ -81,33 +67,30 @@ export class RecordingHelper {
 	 * @param egressInfo - The egress information containing the roomComposite flag.
 	 * @returns The extracted OpenVidu output mode.
 	 */
-	static extractOutputMode(egressInfo: EgressInfo): RecordingOutputMode {
-		if (egressInfo.request.case === 'roomComposite') {
-			return RecordingOutputMode.COMPOSED;
-		} else {
-			return RecordingOutputMode.INDIVIDUAL;
-		}
+	static extractOutputMode(egressInfo: EgressInfo): MeetRecordingOutputMode {
+		// if (egressInfo.request.case === 'roomComposite') {
+		// 	return MeetRecordingOutputMode.COMPOSED;
+		// } else {
+		// 	return MeetRecordingOutputMode.INDIVIDUAL;
+		// }
+		return MeetRecordingOutputMode.COMPOSED;
 	}
 
-	static extractFilename(recordingInfo: RecordingInfo): string | undefined;
+	static extractFilename(recordingInfo: MeetRecordingInfo): string | undefined;
 
 	static extractFilename(egressInfo: EgressInfo): string | undefined;
 
-	static extractFilename(info: RecordingInfo | EgressInfo): string | undefined {
+	static extractFilename(info: MeetRecordingInfo | EgressInfo): string | undefined {
 		if (!info) return undefined;
 
 		if ('request' in info) {
 			// EgressInfo
 			return info.fileResults?.[0]?.filename.split('/').pop();
 		} else {
-			// RecordingInfo
-			const { roomName, filename, roomId } = info;
+			// MeetRecordingInfo
+			const { filename, roomId } = info;
 
-			if (!filename) {
-				return undefined;
-			}
-
-			return roomName ? `${roomName}-${roomId}/${filename}` : filename;
+			return `${roomId}/${filename}`;
 		}
 	}
 
@@ -128,7 +111,7 @@ export class RecordingHelper {
 	 * @param egressInfo - The EgressInfo object containing the endedAt value.
 	 * @returns The endedAt value converted to milliseconds.
 	 */
-	static extractEndedAt(egressInfo: EgressInfo): number {
+	static extractEndDate(egressInfo: EgressInfo): number {
 		return this.toMilliseconds(Number(egressInfo.endedAt ?? 0));
 	}
 
@@ -138,7 +121,7 @@ export class RecordingHelper {
 	 * @param egressInfo The EgressInfo object from which to extract the creation timestamp.
 	 * @returns The creation timestamp in milliseconds.
 	 */
-	static extractCreatedAt(egressInfo: EgressInfo): number {
+	static extractStartDate(egressInfo: EgressInfo): number {
 		const { startedAt, updatedAt } = egressInfo;
 		const createdAt = startedAt && Number(startedAt) !== 0 ? startedAt : (updatedAt ?? 0);
 		return this.toMilliseconds(Number(createdAt));

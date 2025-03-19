@@ -9,6 +9,7 @@ import { OpenViduRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 import { errorParticipantUnauthorized } from '../models/error.model.js';
+import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -40,6 +41,7 @@ export class RoomService {
 			}
 
 			await Promise.all([
+				//TODO: Livekit rooms should not be created here. They should be created when a user joins a room.
 				this.restoreMissingLivekitRooms().catch((error) =>
 					this.logger.error('Error restoring missing rooms:', error)
 				),
@@ -180,6 +182,25 @@ export class RoomService {
 			default:
 				throw errorParticipantUnauthorized(roomName);
 		}
+	}
+
+	async sendRoomStatusSignalToOpenViduComponents(roomName: string, participantSid: string) {
+		// Check if recording is started in the room
+		const activeEgressArray = await this.livekitService.getActiveEgress(roomName);
+		const isRecordingStarted = activeEgressArray.length > 0;
+
+		// Skip if recording is not started
+		if (!isRecordingStarted) {
+			return;
+		}
+
+		// Construct the payload and signal options
+		const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
+			isRecordingStarted,
+			participantSid
+		);
+
+		await this.sendSignal(roomName, payload, options);
 	}
 
 	/**

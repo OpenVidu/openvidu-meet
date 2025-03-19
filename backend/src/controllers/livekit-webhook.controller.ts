@@ -27,6 +27,8 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 
 		switch (eventType) {
 			case 'egress_started':
+				await lkWebhookService.handleEgressStarted(egressInfo!);
+				break;
 			case 'egress_updated':
 				await lkWebhookService.handleEgressUpdated(egressInfo!);
 				break;

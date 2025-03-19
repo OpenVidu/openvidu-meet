@@ -7,17 +7,13 @@ import { container } from '../config/dependency-injector.config.js';
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
-	const roomName = req.body.roomName;
-
-	if (!roomName) {
-		return res.status(400).json({ name: 'Recording Error', message: 'Room name is required for this operation' });
-	}
+	const { roomId } = req.body;
 
 	try {
-		logger.info(`Starting recording in ${roomName}`);
+		logger.info(`Starting recording in ${roomId}`);
 		const recordingService = container.get(RecordingService);
 
-		const recordingInfo = await recordingService.startRecording(roomName);
+		const recordingInfo = await recordingService.startRecording(roomId);
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
@@ -29,15 +25,76 @@ export const startRecording = async (req: Request, res: Response) => {
 	}
 };
 
+export const getRecordings = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
+
+	try {
+		logger.info('Getting all recordings');
+
+		const { status, page, limit } = req.query;
+
+		// const continuationToken = req.query.continuationToken as string;
+		const response = await recordingService.getAllRecordings();
+		return res
+			.status(200)
+			.json({ recordings: response.recordingInfo, continuationToken: response.continuationToken });
+	} catch (error) {
+		if (error instanceof OpenViduMeetError) {
+			logger.error(`Error getting all recordings: ${error.message}`);
+			return res.status(error.statusCode).json({ name: error.name, message: error.message });
+		}
+
+		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error getting recordings' });
+	}
+};
+
+export const bulkDeleteRecordings = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+
+	try {
+		const recordingIds = req.body.recordingIds;
+		logger.info(`Deleting recordings: ${recordingIds}`);
+		const recordingService = container.get(RecordingService);
+
+		// TODO: Check role to determine if the request is from an admin or a participant
+		const role = req.body.payload.metadata.role;
+		await recordingService.bulkDeleteRecordings(recordingIds, role);
+
+		return res.status(204).json();
+	} catch (error) {
+		if (error instanceof OpenViduMeetError) {
+			logger.error(`Error deleting recordings: ${error.message}`);
+			return res.status(error.statusCode).json({ name: error.name, message: error.message });
+		}
+
+		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error deleting recordings' });
+	}
+};
+
+export const getRecording = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+
+	try {
+		const recordingId = req.params.recordingId;
+		logger.info(`Getting recording ${recordingId}`);
+		const recordingService = container.get(RecordingService);
+
+		const recordingInfo = await recordingService.getRecording(recordingId);
+		return res.status(200).json(recordingInfo);
+	} catch (error) {
+		if (error instanceof OpenViduMeetError) {
+			logger.error(`Error getting recording: ${error.message}`);
+			return res.status(error.statusCode).json({ name: error.name, message: error.message });
+		}
+
+		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error getting recording' });
+	}
+};
+
 export const stopRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingId = req.params.recordingId;
-
-	if (!recordingId) {
-		return res
-			.status(400)
-			.json({ name: 'Recording Error', message: 'Recording ID is required for this operation' });
-	}
 
 	try {
 		logger.info(`Stopping recording ${recordingId}`);
@@ -55,43 +112,35 @@ export const stopRecording = async (req: Request, res: Response) => {
 	}
 };
 
-/**
- * Endpoint only available for the admin user
- * !WARNING: This will be removed in future versions
- */
-export const getAllRecordings = async (req: Request, res: Response) => {
+export const deleteRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const recordingId = req.params.recordingId;
 
 	try {
-		logger.info('Getting all recordings');
+		logger.info(`Deleting recording ${recordingId}`);
 		const recordingService = container.get(RecordingService);
 
-		// const continuationToken = req.query.continuationToken as string;
-		const response = await recordingService.getAllRecordings();
-		return res
-			.status(200)
-			.json({ recordings: response.recordingInfo, continuationToken: response.continuationToken });
+		// TODO: Check role to determine if the request is from an admin or a participant
+		const role = req.body.payload.metadata.role;
+		const recordingInfo = await recordingService.deleteRecording(recordingId, role);
+
+		return res.status(204).json(recordingInfo);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error getting all recordings: ${error.message}`);
+			logger.error(`Error deleting recording: ${error.message}`);
 			return res.status(error.statusCode).json({ name: error.name, message: error.message });
 		}
 
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error getting recordings' });
+		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error deleting recording' });
 	}
 };
 
+// Internal Recording methods
 export const streamRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	const recordingId = req.params.recordingId;
 	const range = req.headers.range;
-
-	if (!recordingId) {
-		return res
-			.status(400)
-			.json({ name: 'Recording Error', message: 'Recording ID is required for this operation' });
-	}
 
 	try {
 		logger.info(`Streaming recording ${recordingId}`);
@@ -130,33 +179,5 @@ export const streamRecording = async (req: Request, res: Response) => {
 		}
 
 		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error streaming recording' });
-	}
-};
-
-export const deleteRecording = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const recordingId = req.params.recordingId;
-
-	if (!recordingId) {
-		return res
-			.status(400)
-			.json({ name: 'Recording Error', message: 'Recording ID is required for this operation' });
-	}
-
-	try {
-		logger.info(`Deleting recording ${recordingId}`);
-		const recordingService = container.get(RecordingService);
-
-		const isRequestedByAdmin = req.url.includes('admin');
-		const recordingInfo = await recordingService.deleteRecording(recordingId, isRequestedByAdmin);
-
-		return res.status(204).json(recordingInfo);
-	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error deleting recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error deleting recording' });
 	}
 };

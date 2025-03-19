@@ -96,7 +96,7 @@ export class LiveKitService {
 		try {
 			return await this.roomClient.getParticipant(roomName, participantName);
 		} catch (error) {
-			this.logger.error(`Error getting participant ${error}`);
+			this.logger.warn(`Participant ${participantName} not found in room ${roomName} ${error}`);
 			throw internalError(`Error getting participant: ${error}`);
 		}
 	}
@@ -170,10 +170,50 @@ export class LiveKitService {
 		}
 	}
 
-	async getEgress(options: ListEgressOptions): Promise<EgressInfo[]> {
+	/**
+	 * Retrieves a list of egress information based on the provided options.
+	 *
+	 * @param {ListEgressOptions} options - The options to filter the egress list.
+	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of EgressInfo objects.
+	 * @throws Will throw an error if there is an issue retrieving the egress information.
+	 */
+	async getEgress(roomName?:string, egressId?: string): Promise<EgressInfo[]> {
 		try {
+			const options: ListEgressOptions = {
+				roomName,
+				egressId,
+			};
 			return await this.egressClient.listEgress(options);
 		} catch (error: any) {
+			if (error.message.includes('404')) {
+				return [];
+			}
+
+			this.logger.error(`Error getting egress: ${JSON.stringify(error)}`);
+			throw internalError(`Error getting egress: ${error}`);
+		}
+	}
+
+	/**
+	 * Retrieves a list of active egress information based on the provided egress ID.
+	 *
+	 * @param egressId - The unique identifier of the egress to retrieve.
+	 * @returns A promise that resolves to an array of `EgressInfo` objects representing the active egress.
+	 * @throws Will throw an error if there is an issue retrieving the egress information.
+	 */
+	async getActiveEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
+		try {
+			const options: ListEgressOptions = {
+				roomName,
+				egressId,
+				active: true
+			};
+			return await this.egressClient.listEgress(options);
+		} catch (error: any) {
+			if (error.message.includes('404')) {
+				return [];
+			}
+
 			this.logger.error(`Error getting egress: ${JSON.stringify(error)}`);
 			throw internalError(`Error getting egress: ${error}`);
 		}

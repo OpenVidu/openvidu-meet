@@ -3,56 +3,56 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { Room } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { MEET_API_KEY, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../environment.js';
-import { OpenViduWebhookEvent, OpenViduWebhookEventType, RecordingInfo } from '@typings-ce';
+import { MeetWebhookEvent, MeetWebhookEventType, MeetRecordingInfo, MeetWebhookPayload } from '@typings-ce';
 
 @injectable()
 export class OpenViduWebhookService {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {}
 
+	// TODO: Implement Room webhooks
 	async sendRoomFinishedWebhook(room: Room) {
-		const data: OpenViduWebhookEvent = {
-			event: OpenViduWebhookEventType.ROOM_FINISHED,
-			creationDate: Date.now(),
-			data: {
-				roomName: room.name
-			}
-		};
-		await this.sendWebhookEvent(data);
+		// try {
+		// 	await this.sendWebhookEvent(MeetWebhookEventType.ROOM_FINISHED, data);
+		// } catch (error) {
+		// 	this.logger.error(`Error sending room finished webhook: ${error}`);
+		// }
 	}
 
-	async sendRecordingStartedWebhook(recordingInfo: RecordingInfo) {
-		const data: OpenViduWebhookEvent = {
-			event: OpenViduWebhookEventType.RECORDING_STARTED,
-			creationDate: Date.now(),
-			data: {
-				recordingId: recordingInfo.id,
-				filename: recordingInfo.filename,
-				roomName: recordingInfo.roomName,
-				status: recordingInfo.status
-			}
-		};
-		await this.sendWebhookEvent(data);
+	async sendRecordingStartedWebhook(recordingInfo: MeetRecordingInfo) {
+		try {
+			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_STARTED, recordingInfo);
+		} catch (error) {
+			this.logger.error(`Error sending recording started webhook: ${error}`);
+		}
 	}
 
-	async sendRecordingStoppedWebhook(recordingInfo: RecordingInfo) {
-		const data: OpenViduWebhookEvent = {
-			event: OpenViduWebhookEventType.RECORDING_STOPPED,
-			creationDate: Date.now(),
-			data: {
-				recordingId: recordingInfo.id,
-				filename: recordingInfo.filename,
-				roomName: recordingInfo.roomName,
-				status: recordingInfo.status
-			}
-		};
-		await this.sendWebhookEvent(data);
+	async sendRecordingUpdatedWebhook(recordingInfo: MeetRecordingInfo) {
+		try {
+			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_UPDATED, recordingInfo);
+		} catch (error) {
+			this.logger.error(`Error sending recording updated webhook: ${error}`);
+		}
 	}
 
-	private async sendWebhookEvent(data: OpenViduWebhookEvent) {
+	async sendRecordingEndedWebhook(recordingInfo: MeetRecordingInfo) {
+		try {
+			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_ENDED, recordingInfo);
+		} catch (error) {
+			this.logger.error(`Error sending recording ended webhook: ${error}`);
+		}
+	}
+
+	private async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
 		if (!this.isWebhookEnabled()) return;
 
-		const timestamp = data.creationDate;
-		const signature = this.generateWebhookSignature(timestamp, data);
+		const creationDate = Date.now();
+		const data: MeetWebhookEvent = {
+			event,
+			creationDate,
+			data: payload
+		};
+
+		const signature = this.generateWebhookSignature(creationDate, data);
 
 		this.logger.info(`Sending webhook event ${data.event}`);
 
@@ -61,7 +61,7 @@ export class OpenViduWebhookService {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'X-Timestamp': timestamp.toString(),
+					'X-Timestamp': creationDate.toString(),
 					'X-Signature': signature
 				},
 				body: JSON.stringify(data)
