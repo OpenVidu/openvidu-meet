@@ -35,11 +35,14 @@ export const {
 
 	// S3 configuration
 	MEET_S3_BUCKET = 'openvidu',
+	MEET_S3_SUBBUCKET = 'openvidu-meet',
 	MEET_S3_SERVICE_ENDPOINT = 'http://localhost:9000',
 	MEET_S3_ACCESS_KEY = 'minioadmin',
 	MEET_S3_SECRET_KEY = 'minioadmin',
 	MEET_AWS_REGION = 'us-east-1',
 	MEET_S3_WITH_PATH_STYLE_ACCESS = 'true',
+	MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR = '5',
+	MEET_S3_INITIAL_RETRY_DELAY_MS = '100',
 
 	// Redis configuration
 	MEET_REDIS_HOST: REDIS_HOST = 'localhost',
@@ -64,6 +67,8 @@ export const MEET_API_BASE_PATH_V1 = MEET_API_BASE_PATH + '/v1';
 export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
 export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
 export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
+export const MEET_S3_ROOMS_PREFIX = 'rooms';
+export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {
@@ -122,6 +127,9 @@ export const logEnvVars = () => {
 	console.log('MEET S3 ACCESS KEY:', credential('****' + MEET_S3_ACCESS_KEY.slice(-3)));
 	console.log('MEET S3 SECRET KEY:', credential('****' + MEET_S3_SECRET_KEY.slice(-3)));
 	console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
+	console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
+	console.log('MEET S3 MAX RETRIES ATTEMPTS ON SAVE ERROR:', text(MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR));
+	console.log('MEET S3 INITIAL RETRY DELAY MS:', text(MEET_S3_INITIAL_RETRY_DELAY_MS));
 	console.log('---------------------------------------------------------');
 	console.log('Redis Configuration');
 	console.log('---------------------------------------------------------');
