@@ -129,8 +129,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
 		try {
-			const { roomName } = event;
-			await this.httpService.startRecording(roomName);
+			const { roomName: roomId } = event;
+			await this.httpService.startRecording(roomId);
 		} catch (error) {
 			console.error(error);
 		}

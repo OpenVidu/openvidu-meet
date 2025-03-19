@@ -101,8 +101,8 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
-	startRecording(roomName: string): Promise<RecordingInfo> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/recordings`, { roomName });
+	startRecording(roomId: string): Promise<RecordingInfo> {
+		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/recordings`, { roomId });
 	}
 
 	stopRecording(recordingId: string): Promise<RecordingInfo> {
