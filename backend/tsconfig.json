@@ -15,7 +15,8 @@
 		"emitDecoratorMetadata": true, /* Enables experimental support for emitting type metadata for decorators. */
 		"paths": {
 			"@typings-ce": ["./src/typings/ce/index.ts"]
-		}
+		},
+		"typeRoots": ["src/config/@types"]
 	},
 	"include": ["src/**/*.ts", "index.ts"],
 	"exclude": ["node_modules", "tests/**/*.ts", "tests/**/*.tsx"],
