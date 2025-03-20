@@ -150,8 +150,8 @@ export class LivekitWebhookService {
 		this.logger.debug(`Processing recording ${webhookAction} webhook.`);
 
 		const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
-		const metadataPath = this.generateMetadataPath(recordingInfo);
 		const { roomId, recordingId, status } = recordingInfo;
+		const metadataPath = this.generateMetadataPath(recordingId);
 
 		this.logger.debug(`Recording '${recordingId}' for room '${roomId}' is in status '${status}'`);
 
@@ -189,10 +189,9 @@ export class LivekitWebhookService {
 		}
 	}
 
-	protected generateMetadataPath(recordingInfo: MeetRecordingInfo): string {
-		const { roomId, recordingId } = recordingInfo;
-		// Remove file extension from filename
-		const recordingFilename = recordingInfo.filename?.split('.')[0];
-		return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${recordingFilename}-${recordingId}.json`;
+	protected generateMetadataPath(recordingId: string): string {
+		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+
+		return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
 	}
 }

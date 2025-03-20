@@ -11,9 +11,10 @@ export class RecordingHelper {
 		const startDateMs = RecordingHelper.extractStartDate(egressInfo);
 		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
 		const filename = RecordingHelper.extractFilename(egressInfo);
+		const uid = RecordingHelper.extractUidFromFilename(filename);
 		const { egressId, roomName, errorCode, error, details } = egressInfo;
 		return {
-			recordingId: egressId,
+			recordingId: `${roomName}--${egressId}--${uid}`,
 			roomId: roomName,
 			outputMode,
 			status,
@@ -76,22 +77,50 @@ export class RecordingHelper {
 		return MeetRecordingOutputMode.COMPOSED;
 	}
 
-	static extractFilename(recordingInfo: MeetRecordingInfo): string | undefined;
+	/**
+	 * Extracts the filename/path for storing the recording.
+	 * For EgressInfo, returns the last segment of the fileResults.
+	 * For MeetRecordingInfo, returns a combination of roomId and filename.
+	 */
+	static extractFilename(recordingInfo: MeetRecordingInfo): string;
 
-	static extractFilename(egressInfo: EgressInfo): string | undefined;
+	static extractFilename(egressInfo: EgressInfo): string;
 
-	static extractFilename(info: MeetRecordingInfo | EgressInfo): string | undefined {
-		if (!info) return undefined;
-
+	static extractFilename(info: MeetRecordingInfo | EgressInfo): string {
 		if ('request' in info) {
 			// EgressInfo
-			return info.fileResults?.[0]?.filename.split('/').pop();
+			return info.fileResults[0]!.filename.split('/').pop()!;
 		} else {
 			// MeetRecordingInfo
 			const { filename, roomId } = info;
 
 			return `${roomId}/${filename}`;
 		}
+	}
+
+	/**
+	 * Extracts the UID from the given filename.
+	 *
+	 * @param filename room-123--{uid}.mp4
+	 * @returns
+	 */
+	static extractUidFromFilename(filename: string): string {
+		const uidWithExtension = filename.split('--')[1];
+		return uidWithExtension.split('.')[0];
+	}
+
+	/**
+	 * Extracts the room name, egressId, and UID from the given recordingId.
+	 * @param recordingId ${roomId}--${egressId}--${uid}
+	 */
+	static extractInfoFromRecordingId(recordingId: string): { roomId: string; egressId: string; uid: string } {
+		const [roomId, egressId, uid] = recordingId.split('--');
+
+		if (!roomId || !egressId || !uid) {
+			throw new Error(`Invalid recordingId format: ${recordingId}`);
+		}
+
+		return { roomId, egressId, uid };
 	}
 
 	/**

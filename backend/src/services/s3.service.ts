@@ -2,6 +2,8 @@ import {
 	_Object,
 	DeleteObjectCommand,
 	DeleteObjectCommandOutput,
+	DeleteObjectsCommand,
+	DeleteObjectsCommandOutput,
 	GetObjectCommand,
 	GetObjectCommandOutput,
 	HeadObjectCommand,
@@ -130,6 +132,82 @@ export class S3Service {
 	}
 
 	/**
+	 * Bulk deletes objects from S3.
+	 * @param keys Array of object keys to delete. Estos keys deben incluir el subbucket (se obtiene con getFullKey).
+	 * @param bucket S3 bucket name (default: MEET_S3_BUCKET)
+	 */
+	async deleteObjects(keys: string[], bucket: string = MEET_S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
+		try {
+			this.logger.info(`S3 delete: attempting to delete ${keys.length} objects from bucket ${bucket}`);
+			const command = new DeleteObjectsCommand({
+				Bucket: bucket,
+				Delete: {
+					Objects: keys.map((key) => ({ Key: this.getFullKey(key) })),
+					Quiet: false
+				}
+			});
+			console.log(
+				'command',
+				keys.map((key) => ({ Key: key }))
+			);
+			const result = await this.run(command);
+			this.logger.info(`S3 bulk delete: successfully deleted objects from bucket ${bucket}`);
+			return result;
+		} catch (error: any) {
+			this.logger.error(`S3 bulk delete: error deleting objects in bucket ${bucket}: ${error}`);
+			throw internalError(error);
+		}
+	}
+
+	/**
+	 * List objects with pagination.
+	 *
+	 * @param additionalPrefix Additional prefix relative to the subbucket.
+	 *                         Por ejemplo, para listar metadata se pasa ".metadata/".
+	 * @param searchPattern Optional regex pattern to filter keys.
+	 * @param bucket Optional bucket name.
+	 * @param maxKeys Maximum number of objects to return.
+	 * @param continuationToken Token to retrieve the next page.
+	 *
+	 * @returns The ListObjectsV2CommandOutput with Keys and NextContinuationToken.
+	 */
+	async listObjectsPaginated(
+		additionalPrefix = '',
+		maxKeys = 50,
+		continuationToken?: string,
+		searchPattern = '',
+		bucket: string = MEET_S3_BUCKET
+	): Promise<ListObjectsV2CommandOutput> {
+		// Se construye el prefijo completo combinando el subbucket y el additionalPrefix.
+		// Ejemplo: si s3Subbucket es "recordings" y additionalPrefix es ".metadata/",
+		// se listarán los objetos con key que empiece por "recordings/.metadata/".
+		const basePrefix = this.getFullKey(additionalPrefix);
+		this.logger.verbose(`S3 listObjectsPaginated: listing objects with prefix "${basePrefix}"`);
+
+		const command = new ListObjectsV2Command({
+			Bucket: bucket,
+			Prefix: basePrefix,
+			MaxKeys: maxKeys,
+			ContinuationToken: continuationToken
+		});
+
+		try {
+			const response: ListObjectsV2CommandOutput = await this.s3.send(command);
+
+			// Si se ha proporcionado searchPattern, se filtran los resultados.
+			if (searchPattern) {
+				const regex = new RegExp(searchPattern);
+				response.Contents = (response.Contents || []).filter((item) => item.Key && regex.test(item.Key));
+			}
+
+			return response;
+		} catch (error: any) {
+			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix "${basePrefix}": ${error}`);
+			throw internalError(error);
+		}
+	}
+
+	/**
 	 * Lists all objects in an S3 bucket with optional subbucket and search pattern filtering.
 	 *
 	 * @param {string} [subbucket=''] - The subbucket within the main bucket to list objects from.
@@ -207,19 +285,17 @@ export class S3Service {
 	}
 
 	async getObjectAsJson(name: string, bucket: string = MEET_S3_BUCKET): Promise<Object | undefined> {
-		const fullKey = this.getFullKey(name);
-
 		try {
-			const obj = await this.getObject(fullKey, bucket);
+			const obj = await this.getObject(name, bucket);
 			const str = await obj.Body?.transformToString();
 			const parsed = JSON.parse(str as string);
-			this.logger.info(
-				`S3 getObjectAsJson: successfully retrieved and parsed object ${fullKey} from bucket ${bucket}`
+			this.logger.verbose(
+				`S3 getObjectAsJson: successfully retrieved and parsed object ${name} from bucket ${bucket}`
 			);
 			return parsed;
 		} catch (error: any) {
 			if (error.name === 'NoSuchKey') {
-				this.logger.warn(`S3 getObjectAsJson: object '${fullKey}' does not exist in bucket ${bucket}`);
+				this.logger.warn(`S3 getObjectAsJson: object '${name}' does not exist in bucket ${bucket}`);
 				return undefined;
 			}
 
@@ -227,7 +303,7 @@ export class S3Service {
 				throw errorS3NotAvailable(error);
 			}
 
-			this.logger.error(`S3 getObjectAsJson: error retrieving object ${fullKey} from bucket ${bucket}: ${error}`);
+			this.logger.error(`S3 getObjectAsJson: error retrieving object ${name} from bucket ${bucket}: ${error}`);
 			throw internalError(error);
 		}
 	}
@@ -237,10 +313,8 @@ export class S3Service {
 		bucket: string = MEET_S3_BUCKET,
 		range?: { start: number; end: number }
 	): Promise<Readable> {
-		const fullKey = this.getFullKey(name);
-
 		try {
-			const obj = await this.getObject(fullKey, bucket, range);
+			const obj = await this.getObject(name, bucket, range);
 
 			if (obj.Body) {
 				this.logger.info(
@@ -253,7 +327,7 @@ export class S3Service {
 			}
 		} catch (error: any) {
 			this.logger.error(
-				`S3 getObjectAsStream: error retrieving stream for object ${fullKey} from bucket ${bucket}: ${error}`
+				`S3 getObjectAsStream: error retrieving stream for object ${name} from bucket ${bucket}: ${error}`
 			);
 
 			if (error.code === 'ECONNREFUSED') {
@@ -288,11 +362,18 @@ export class S3Service {
 	}
 
 	/**
-	 * Prepares a full key path by prefixing the object's name with the subbucket.
-	 * All operations are performed under MEET_S3_BUCKET/MEET_S3_SUBBUCKET.
+	 * Constructs the full key for an S3 object by ensuring it includes the specified sub-bucket prefix.
+	 * If the provided name already starts with the prefix, it is returned as-is.
+	 * Otherwise, the prefix is prepended to the name.
 	 */
 	protected getFullKey(name: string): string {
-		return `${MEET_S3_SUBBUCKET}/${name}`;
+		const prefix = `${MEET_S3_SUBBUCKET}`;
+
+		if (name.startsWith(prefix)) {
+			return name;
+		}
+
+		return `${prefix}/${name}`;
 	}
 
 	protected async getObject(

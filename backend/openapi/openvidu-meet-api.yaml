@@ -156,15 +156,45 @@ paths:
                       For example: "roomName,preferences". Only allowed fields will be returned.
                   schema:
                       type: string
+                - name: page
+                  in: query
+                  required: false
+                  description: The page number for pagination (default is 1).
+                  schema:
+                      type: integer
+                      default: 1
+                - name: limit
+                  in: query
+                  required: false
+                  description: The number of rooms per page (default is 10).
+                  schema:
+                      type: integer
+                      default: 10
             responses:
                 '200':
                     description: Successfully retrieved the list of OpenVidu Meet rooms
                     content:
                         application/json:
                             schema:
-                                type: array
-                                items:
-                                    $ref: '#/components/schemas/OpenViduMeetRoom'
+                                type: object
+                                properties:
+                                    rooms:
+                                        type: array
+                                        items:
+                                        $ref: '#/components/schemas/OpenViduMeetRoom'
+                                    pagination:
+                                        type: object
+                                        properties:
+                                            totalItems:
+                                                type: integer
+                                                description: Total number of rooms.
+                                            totalPages:
+                                                type: integer
+                                                description: Total number of pages.
+                                            currentPage:
+                                                type: integer
+                                                description: Current page number.
+
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -398,7 +428,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/OpenViduMeetRecording'
+                                $ref: '#/components/schemas/MeetRecording'
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -469,23 +499,44 @@ paths:
                   in: query
                   required: false
                   description: |
-                      The status of the recordings to retrieve. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "READY".
+                      Filter recordings by their status.
+
+                      Possible values:
+                      - `STARTING`
+                      - `ACTIVE`
+                      - `ENDING`
+                      - `COMPLETE`
+                      - `FAILED`
+                      - `ABORTED`
+                      - `LIMITED_REACHED`
+
+                      You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
+                      If not specified, recordings with any status will be returned.
+
+                      > ⚠️ **Note:** Using this filter with multiple values or partial matches may impact performance for large datasets.
                   schema:
                       type: string
-                - name: page
+                - name: roomId
                   in: query
                   required: false
-                  description: The page number for pagination (default is 1).
+                  description: |
+                      The unique identifier of the room for which you want to retrieve recordings.
+                      If not provided, recordings from all rooms will be returned.
                   schema:
-                      type: integer
-                      default: 1
-                - name: limit
+                      type: string
+                - name: maxItems
                   in: query
                   required: false
                   description: The number of recordings per page (default is 10). Maximum is 100.
                   schema:
                       type: integer
                       default: 10
+                - name: nextPageToken
+                  in: query
+                  required: false
+                  description: The token to retrieve the next page of recordings.
+                  schema:
+                      type: string
             responses:
                 '200':
                     description: Successfully retrieved the list of OpenVidu Meet recordings
@@ -497,19 +548,16 @@ paths:
                                     recordings:
                                         type: array
                                         items:
-                                        $ref: '#/components/schemas/OpenViduMeetRecording'
+                                        $ref: '#/components/schemas/MeetRecording'
                                     pagination:
                                         type: object
                                         properties:
-                                            totalItems:
-                                                type: integer
-                                                description: Total number of recordings.
-                                            totalPages:
-                                                type: integer
-                                                description: Total number of pages.
-                                            currentPage:
-                                                type: integer
-                                                description: Current page number.
+                                            isTruncated:
+                                                type: boolean
+                                                description: Indicates if there are more recordings to retrieve.
+                                            nextPageToken:
+                                                type: string
+                                                description: The token to retrieve the next page of recordings.
 
                 '401':
                     description: Unauthorized — The API key is missing or invalid
@@ -642,7 +690,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/OpenViduMeetRecording'
+                                $ref: '#/components/schemas/MeetRecording'
 
                 '401':
                     description: Unauthorized — The API key is missing or invalid
@@ -1067,24 +1115,19 @@ components:
                     description: >
                         The URL for the viewer to join the room. The viewer has read-only permissions to watch the room
                         and participants.
-        OpenViduMeetRecording:
+        MeetRecording:
             type: object
             properties:
-                id:
+                recordingId:
                     type: string
-                    example: 'recording_123456'
+                    example: 'room-123--EG_XYZ--XX445'
                     description: >
                         The unique identifier of the recording.
-                roomName:
+                roomId:
                     type: string
-                    example: 'OpenVidu-123456'
+                    example: 'room-123'
                     description: >
-                        The name of the room where the recording was made.
-                # roomId:
-                #     type: string
-                #     example: '123456'
-                #     description: >
-                #         The unique identifier of the room where the recording was made.
+                        The ID of the room where the recording was made.
                 outputMode:
                     type: string
                     example: 'COMPOSED'
@@ -1092,20 +1135,20 @@ components:
                         The output mode of the recording. Possible values are "COMPOSED".
                 status:
                     type: string
-                    example: 'READY'
+                    example: 'ACTIVE'
                     description: >
-                        The status of the recording. Possible values are "STARTING", "STARTED", "STOPPING", "STOPPED", "FAILED" and "READY".
+                        The status of the recording. Possible values are "STARTING", "ACTIVE", "ENDING", "COMPLETE", "FAILED", "ABORTED" and "LIMITED_REACHED".
                 filename:
                     type: string
-                    example: 'recording_123456.mp4'
+                    example: 'room-123--XX445.mp4'
                     description: >
                         The name of the recording file.
-                startedAt:
+                startDate:
                     type: number
                     example: 1620000000000
                     description: >
                         The date when the recording was started in milliseconds since the Unix epoch.
-                endedAt:
+                endDate:
                     type: number
                     example: 1620000000000
                     description: >
@@ -1120,6 +1163,21 @@ components:
                     example: 1024
                     description: >
                         The size of the recording file in bytes.
+                errorCode:
+                    type: number
+                    example: 100
+                    description: >
+                        The error code of the recording.
+                error:
+                    type: string
+                    example: 'error'
+                    description: >
+                        The error message of the recording.
+                details:
+                    type: string
+                    example: 'Stopped using API'
+                    description: >
+                        Additional details about the recording.
         Error:
             type: object
             required:
