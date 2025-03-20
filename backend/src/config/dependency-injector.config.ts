@@ -1,5 +1,4 @@
 import { Container } from 'inversify';
-
 import {
 	AuthService,
 	GlobalPreferencesService,
@@ -17,7 +16,8 @@ import {
 	S3Service,
 	SystemEventService,
 	TaskSchedulerService,
-	TokenService
+	TokenService,
+	UserService
 } from '../services/index.js';
 
 const container: Container = new Container();
@@ -37,6 +37,7 @@ const registerDependencies = () => {
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 	container.bind(LoggerService).toSelf().inSingletonScope();
 	container.bind(AuthService).toSelf().inSingletonScope();
+	container.bind(UserService).toSelf().inSingletonScope();
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
