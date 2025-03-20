@@ -1,4 +1,4 @@
-type StatusError = 400 | 404 | 406 | 409 | 422 | 500 | 503;
+type StatusError = 400 | 401 | 403 | 404 | 406 | 409 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
 	name: string;
 	statusCode: StatusError;
@@ -17,7 +17,7 @@ export const errorLivekitIsNotAvailable = (): OpenViduMeetError => {
 
 export const errorS3NotAvailable = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${error}`, 503);
-}
+};
 
 export const internalError = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('Unexpected error', `Something went wrong ${error}`, 500);
@@ -29,6 +29,28 @@ export const errorRequest = (error: string): OpenViduMeetError => {
 
 export const errorUnprocessableParams = (error: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Wrong request', `Some parameters are not valid. ${error}`, 422);
+};
+
+// Auth errors
+
+export const errorUnauthorized = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Authentication error', 'Unauthorized', 401);
+};
+
+export const errorInvalidToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Authentication error', 'Invalid token', 401);
+};
+
+export const errorInvalidTokenSubject = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Authentication error', 'Invalid token subject', 403);
+};
+
+export const errorInsufficientPermissions = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Authentication error', 'You do not have permission to access this resource', 403);
+};
+
+export const errorInvalidApiKey = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Authentication error', 'Invalid API key', 401);
 };
 
 // Recording errors
@@ -69,17 +91,9 @@ export const errorParticipantUnauthorized = (roomName: string): OpenViduMeetErro
 };
 
 export const errorParticipantNotFound = (participantName: string, roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Participant Error',
-		`'${participantName}' not found in room '${roomName}'`,
-		404
-	);
+	return new OpenViduMeetError('Participant Error', `'${participantName}' not found in room '${roomName}'`, 404);
 };
 
 export const errorParticipantAlreadyExists = (participantName: string, roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Room Error',
-		`'${participantName}' already exists in room in ${roomName}`,
-		409
-	);
+	return new OpenViduMeetError('Room Error', `'${participantName}' already exists in room in ${roomName}`, 409);
 };

@@ -1,122 +1,116 @@
-import { NextFunction, Request, Response } from 'express';
-import basicAuth from 'express-basic-auth';
-import { TokenService } from '../services/token.service.js';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { TokenService, UserService } from '../services/index.js';
 import {
 	ACCESS_TOKEN_COOKIE_NAME,
-	MEET_ADMIN_SECRET,
-	MEET_ADMIN_USER,
 	MEET_API_KEY,
 	MEET_PRIVATE_ACCESS,
-	MEET_SECRET,
-	MEET_USER,
 	PARTICIPANT_TOKEN_COOKIE_NAME
 } from '../environment.js';
 import { container } from '../config/dependency-injector.config.js';
+import { ClaimGrants } from 'livekit-server-sdk';
+import { Role } from '@typings-ce';
+import {
+	errorUnauthorized,
+	errorInvalidToken,
+	errorInvalidTokenSubject,
+	errorInsufficientPermissions,
+	errorInvalidApiKey,
+	OpenViduMeetError
+} from '../models/index.js';
 
-// Configure token validation middleware for admin access
-export const withAdminValidToken = async (req: Request, res: Response, next: NextFunction) => {
-	const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
+export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): RequestHandler => {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		let lastError: OpenViduMeetError | null = null;
 
-	if (!token) {
-		return res.status(401).json({ message: 'Unauthorized' });
-	}
-
-	const tokenService = container.get(TokenService);
-
-	try {
-		const payload = await tokenService.verifyToken(token);
-
-		if (payload.sub !== MEET_ADMIN_USER) {
-			return res.status(403).json({ message: 'Invalid token subject' });
+		for (const middleware of validators) {
+			try {
+				await middleware(req);
+				// If any middleware granted access, it is not necessary to continue checking the rest
+				return next();
+			} catch (error) {
+				// If no middleware granted access, return unauthorized
+				if (error instanceof OpenViduMeetError) {
+					lastError = error;
+				}
+			}
 		}
-	} catch (error) {
-		return res.status(401).json({ message: 'Invalid token' });
-	}
 
-	next();
+		if (lastError) {
+			return res.status(lastError.statusCode).json({ message: lastError.message });
+		}
+
+		return res.status(500).json({ message: 'Internal server error' });
+	};
 };
 
-export const withParticipantValidToken = async (req: Request, res: Response, next: NextFunction) => {
+// Configure token validatior for role-based access
+export const tokenAndRoleValidator = (role: Role) => {
+	return async (req: Request) => {
+		// Skip token validation if role is USER and access is public
+		if (role == Role.USER && MEET_PRIVATE_ACCESS === 'false') {
+			return;
+		}
+
+		const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
+
+		if (!token) {
+			throw errorUnauthorized();
+		}
+
+		const tokenService = container.get(TokenService);
+		let payload: ClaimGrants;
+
+		try {
+			payload = await tokenService.verifyToken(token);
+		} catch (error) {
+			throw errorInvalidToken();
+		}
+
+		const username = payload.sub;
+		const userService = container.get(UserService);
+		const user = username ? userService.getUser(username) : null;
+
+		if (!user) {
+			throw errorInvalidTokenSubject();
+		}
+
+		if (user.role !== role) {
+			throw errorInsufficientPermissions();
+		}
+
+		req.session = req.session || {};
+		req.session.user = user;
+	};
+};
+
+// Configure token validatior for participant access
+export const participantTokenValidator = async (req: Request) => {
 	const token = req.cookies[PARTICIPANT_TOKEN_COOKIE_NAME];
 
 	if (!token) {
-		return res.status(401).json({ message: 'Unauthorized' });
+		throw errorUnauthorized();
 	}
 
 	const tokenService = container.get(TokenService);
 
 	try {
 		const payload = await tokenService.verifyToken(token);
-
-		// Parse metadata if it exists and add payload to request body for further processing
-		if (payload.metadata) {
-			payload.metadata = JSON.parse(payload.metadata);
-		}
-
-		req.body.payload = payload;
+		req.session = req.session || {};
+		req.session.tokenClaims = payload;
 	} catch (error) {
-		return res.status(401).json({ message: 'Invalid token' });
+		throw errorInvalidToken();
 	}
-
-	next();
 };
 
-export const withValidApiKey = async (req: Request, res: Response, next: NextFunction) => {
+// Configure API key validatior
+export const apiKeyValidator = async (req: Request) => {
 	const apiKey = req.headers['x-api-key'];
 
 	if (!apiKey) {
-		return res.status(401).json({ message: 'Unauthorized' });
+		throw errorUnauthorized();
 	}
 
 	if (apiKey !== MEET_API_KEY) {
-		return res.status(401).json({ message: 'Invalid API key' });
-	}
-
-	next();
-};
-
-// Configure basic auth middleware for user and admin access
-export const withAdminAndUserBasicAuth = (req: Request, res: Response, next: NextFunction) => {
-	if (MEET_PRIVATE_ACCESS === 'true') {
-		// Configure basic auth middleware if access is private
-		const basicAuthMiddleware = basicAuth({
-			users: {
-				[MEET_USER]: MEET_SECRET,
-				[MEET_ADMIN_USER]: MEET_ADMIN_SECRET
-			},
-			challenge: true,
-			unauthorizedResponse: () => 'Unauthorized'
-		});
-		return basicAuthMiddleware(req, res, next);
-	} else {
-		// Skip basic auth if access is public
-		next();
-	}
-};
-
-// Configure basic auth middleware for admin access
-export const withAdminBasicAuth = basicAuth({
-	users: {
-		[MEET_ADMIN_USER]: MEET_ADMIN_SECRET
-	},
-	challenge: true,
-	unauthorizedResponse: () => 'Unauthorized'
-});
-
-// Configure basic auth middleware for user access
-export const withUserBasicAuth = (req: Request, res: Response, next: NextFunction) => {
-	if (MEET_PRIVATE_ACCESS === 'true') {
-		// Configure basic auth middleware if access is private
-		const basicAuthMiddleware = basicAuth({
-			users: {
-				[MEET_USER]: MEET_SECRET
-			},
-			challenge: true,
-			unauthorizedResponse: () => 'Unauthorized'
-		});
-		return basicAuthMiddleware(req, res, next);
-	} else {
-		// Skip basic auth if access is public
-		next();
+		throw errorInvalidApiKey();
 	}
 };
