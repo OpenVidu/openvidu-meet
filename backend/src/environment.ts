@@ -63,6 +63,7 @@ export const {
 } = process.env;
 
 export const MEET_API_BASE_PATH = '/meet/api';
+export const MEET_INTERNAL_API_BASE_PATH_V1 = '/meet/internal-api/v1';
 export const MEET_API_BASE_PATH_V1 = MEET_API_BASE_PATH + '/v1';
 export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
 export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';

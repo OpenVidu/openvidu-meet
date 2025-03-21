@@ -6,19 +6,18 @@ import {
 	validateParticipantTokenRequest
 } from '../middlewares/request-validators/participant-validator.middleware.js';
 
-export const participantsInternalRouter = Router();
-participantsInternalRouter.use(bodyParser.urlencoded({ extended: true }));
-participantsInternalRouter.use(bodyParser.json());
+export const internalParticipantsRouter = Router();
+internalParticipantsRouter.use(bodyParser.urlencoded({ extended: true }));
+internalParticipantsRouter.use(bodyParser.json());
 
-participantsInternalRouter.post('/token', validateParticipantTokenRequest, participantCtrl.generateParticipantToken);
-participantsInternalRouter.post(
+internalParticipantsRouter.post('/token', validateParticipantTokenRequest, participantCtrl.generateParticipantToken);
+internalParticipantsRouter.post(
 	'/token/refresh',
 	validateParticipantTokenRequest,
 	participantCtrl.refreshParticipantToken
 );
-
-export const participantsRouter = Router();
-participantsRouter.use(bodyParser.urlencoded({ extended: true }));
-participantsRouter.use(bodyParser.json());
-
-participantsRouter.delete('/:participantName', validateParticipantDeletionRequest, participantCtrl.deleteParticipant);
+internalParticipantsRouter.delete(
+	'/:participantName',
+	validateParticipantDeletionRequest,
+	participantCtrl.deleteParticipant
+);
