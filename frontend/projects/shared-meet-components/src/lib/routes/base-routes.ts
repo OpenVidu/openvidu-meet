@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 
 import { UnauthorizedComponent } from '../components';
 import {
-	checkAdminAuthenticatedGuard,
-	checkAdminNotAuthenticatedGuard,
+	checkUserAuthenticatedGuard,
+	checkUserNotAuthenticatedGuard,
 	validateRoomAccessGuard,
 	applicationModeGuard,
 	extractQueryParamsGuard,
@@ -26,21 +26,42 @@ import {
 	VideoRoomComponent
 } from '../pages';
 import { LoginComponent } from '@lib/pages/login/login.component';
+import { Role } from '@lib/typings/ce';
 
 export const baseRoutes: Routes = [
-	{ path: '', component: RoomCreatorComponent },
-	{ path: 'login', component: LoginComponent },
+	{
+		path: '',
+		component: RoomCreatorComponent,
+		canActivate: [checkUserAuthenticatedGuard],
+		data: {
+			expectedRoles: [Role.USER],
+			redirectToUnauthorized: 'login',
+			redirectToInvalidRole: 'console'
+		}
+	},
+	{
+		path: 'login',
+		component: LoginComponent,
+		canActivate: [checkUserNotAuthenticatedGuard],
+		data: { redirectTo: '' }
+	},
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'unauthorized', component: UnauthorizedComponent },
 	{
 		path: 'console/login',
 		component: ConsoleLoginComponent,
-		canActivate: [checkAdminNotAuthenticatedGuard]
+		canActivate: [checkUserNotAuthenticatedGuard],
+		data: { redirectTo: 'console' }
 	},
 	{
 		path: 'console',
 		component: ConsoleComponent,
-		canActivate: [checkAdminAuthenticatedGuard],
+		canActivate: [checkUserAuthenticatedGuard],
+		data: {
+			expectedRoles: [Role.ADMIN],
+			redirectToUnauthorized: 'console/login',
+			redirectToInvalidRole: ''
+		},
 		children: [
 			{
 				path: '',

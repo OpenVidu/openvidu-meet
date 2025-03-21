@@ -1,19 +1,32 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services';
+import { Role } from '@lib/typings/ce';
 
-export const checkAdminAuthenticatedGuard: CanActivateFn = async (
+export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
-	state: RouterStateSnapshot
+	_state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
 	const router = inject(Router);
 
 	// Check if admin is authenticated
-	const isAuthenticated = await authService.isAdminAuthenticated();
+	const isAuthenticated = await authService.isUserAuthenticated();
 	if (!isAuthenticated) {
-		// Redirect to login page
-		router.navigate(['console/login']);
+		// Redirect to the login page specified in the route data when user is not authenticated
+		const { redirectToUnauthorized } = route.data;
+		router.navigate([redirectToUnauthorized]);
+		return false;
+	}
+
+	// Check if the user has the expected roles
+	const { expectedRoles } = route.data;
+	const userRole = authService.isAdmin() ? Role.ADMIN : Role.USER;
+
+	if (!expectedRoles.includes(userRole)) {
+		// Redirect to the page specified in the route data when user has an invalid role
+		const { redirectToInvalidRole } = route.data;
+		router.navigate([redirectToInvalidRole]);
 		return false;
 	}
 
@@ -21,18 +34,19 @@ export const checkAdminAuthenticatedGuard: CanActivateFn = async (
 	return true;
 };
 
-export const checkAdminNotAuthenticatedGuard: CanActivateFn = async (
+export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
-	state: RouterStateSnapshot
+	_state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
 	const router = inject(Router);
 
-	// Check if admin is not authenticated
-	const isAuthenticated = await authService.isAdminAuthenticated();
+	// Check if user is not authenticated
+	const isAuthenticated = await authService.isUserAuthenticated();
 	if (isAuthenticated) {
-		// Redirect to console page
-		router.navigate(['console']);
+		// Redirect to the page specified in the route data
+		const { redirectTo } = route.data;
+		router.navigate([redirectTo]);
 		return false;
 	}
 
