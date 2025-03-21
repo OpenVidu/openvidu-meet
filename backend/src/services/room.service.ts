@@ -8,7 +8,6 @@ import { OpenViduMeetRoom, OpenViduMeetRoomOptions, ParticipantRole } from '@typ
 import { OpenViduRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
-import { ParticipantService } from './participant.service.js';
 import { errorParticipantUnauthorized } from '../models/error.model.js';
 
 /**
@@ -159,16 +158,28 @@ export class RoomService {
 	 */
 	async getRoomSecretRole(roomName: string, secret: string): Promise<ParticipantRole> {
 		const room = await this.getOpenViduRoom(roomName);
+		const { moderatorRoomUrl, publisherRoomUrl } = room;
 
-		if (room.moderatorRoomUrl.includes(secret)) {
-			return ParticipantRole.MODERATOR;
+		const extractSecret = (urlString: string, type: string): string => {
+			const url = new URL(urlString);
+			const secret = url.searchParams.get('secret');
+
+			if (!secret) throw new Error(`${type} secret not found`);
+
+			return secret;
+		};
+
+		const publisherSecret = extractSecret(publisherRoomUrl, 'Publisher');
+		const moderatorSecret = extractSecret(moderatorRoomUrl, 'Moderator');
+
+		switch (secret) {
+			case moderatorSecret:
+				return ParticipantRole.MODERATOR;
+			case publisherSecret:
+				return ParticipantRole.PUBLISHER;
+			default:
+				throw errorParticipantUnauthorized(roomName);
 		}
-
-		if (room.publisherRoomUrl.includes(secret)) {
-			return ParticipantRole.PUBLISHER;
-		}
-
-		throw errorParticipantUnauthorized(roomName);
 	}
 
 	/**
