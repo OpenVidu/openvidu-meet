@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
-import { GlobalPreferences, RoomPreferences, TokenOptions } from '@lib/typings/ce';
+import { GlobalPreferences, RoomPreferences, TokenOptions, User } from '@lib/typings/ce';
 import { RecordingInfo, Room } from 'openvidu-components-angular';
 import { lastValueFrom } from 'rxjs';
 
@@ -75,28 +75,20 @@ export class HttpService {
 		return this.putRequest(`${this.pathPrefix}/preferences/room`, preferences);
 	}
 
-	adminLogin(body: { username: string; password: string }): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/admin/login`, body);
-	}
-
-	adminLogout(): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/admin/logout`);
-	}
-
-	adminRefresh(): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/admin/refresh`);
-	}
-
-	adminVerify(): Promise<{ message: string }> {
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/auth/admin/verify`);
-	}
-
-	userLogin(body: { username: string; password: string }): Promise<{ message: string }> {
+	login(body: { username: string; password: string }): Promise<{ message: string }> {
 		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/login`, body);
 	}
 
-	userLogout(): Promise<{ message: string }> {
+	logout(): Promise<{ message: string }> {
 		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/logout`);
+	}
+
+	refreshToken(): Promise<{ message: string }> {
+		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/refresh`);
+	}
+
+	getProfile(): Promise<User> {
+		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/auth/profile`);
 	}
 
 	getRecordings(continuationToken?: string): Promise<{ recordings: RecordingInfo[]; continuationToken: string }> {
