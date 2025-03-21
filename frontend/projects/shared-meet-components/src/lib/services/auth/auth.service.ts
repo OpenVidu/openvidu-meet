@@ -3,53 +3,74 @@ import { HttpService } from '../http/http.service';
 import { Router } from '@angular/router';
 import { from, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Role, User } from '@lib/typings/ce';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class AuthService {
-	protected isAuthenticated = false;
 	protected hasCheckAuth = false;
+	protected isAuthenticated = false;
+	protected user: User | null = null;
 
 	constructor(
 		protected httpService: HttpService,
 		protected router: Router
 	) {}
 
-	async adminLogin(username: string, password: string) {
+	async login(username: string, password: string) {
 		try {
-			await this.httpService.adminLogin({ username, password });
-			this.isAuthenticated = true;
-		} catch (error) {
-			console.error((error as HttpErrorResponse).error.message);
+			await this.httpService.login({ username, password });
+			await this.getAuthenticatedUser();
+		} catch (err) {
+			const error = err as HttpErrorResponse;
+			console.error(error.error.message || error.error);
 			throw error;
 		}
 	}
 
-	adminRefresh(): Observable<{ message: string }> {
-		return from(this.httpService.adminRefresh());
+	refreshToken(): Observable<{ message: string }> {
+		return from(this.httpService.refreshToken());
 	}
 
-	async adminLogout() {
+	async logout(redirectTo?: string) {
 		try {
-			await this.httpService.adminLogout();
+			await this.httpService.logout();
 			this.isAuthenticated = false;
-			this.router.navigate(['console/login']);
+			this.user = null;
+
+			if (redirectTo) {
+				this.router.navigate([redirectTo]);
+			}
 		} catch (error) {
 			console.error((error as HttpErrorResponse).error.message);
 		}
 	}
 
-	async isAdminAuthenticated(): Promise<boolean> {
+	async isUserAuthenticated(): Promise<boolean> {
 		if (!this.hasCheckAuth) {
-			try {
-				await this.httpService.adminVerify();
-				this.isAuthenticated = true;
-			} catch (error) {
-				this.isAuthenticated = false;
-			}
+			await this.getAuthenticatedUser();
 			this.hasCheckAuth = true;
 		}
 		return this.isAuthenticated;
+	}
+
+	getUsername(): string {
+		return this.user?.username || '';
+	}
+
+	isAdmin(): boolean {
+		return this.user?.role === Role.ADMIN;
+	}
+
+	private async getAuthenticatedUser() {
+		try {
+			const user = await this.httpService.getProfile();
+			this.user = user;
+			this.isAuthenticated = true;
+		} catch (error) {
+			this.user = null;
+			this.isAuthenticated = false;
+		}
 	}
 }
