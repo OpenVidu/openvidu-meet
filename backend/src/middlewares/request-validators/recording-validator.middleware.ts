@@ -6,7 +6,7 @@ const sanitizeId = (val: string): string => {
 	return val
 		.trim() // Remove leading and trailing spaces
 		.replace(/\s+/g, '-') // Replace spaces with hyphens
-		.replace(/[^a-zA-Z0-9-]/g, ''); // Remove special characters (only allow alphanumeric and hyphens)
+		.replace(/[^a-zA-Z0-9_-]/g, ''); // Remove special characters (allow alphanumeric, hyphens and underscores)
 };
 
 const nonEmptySanitizedString = (fieldName: string) =>
@@ -30,8 +30,7 @@ export const BulkDeleteRecordingsSchema = z.object({
 	recordingIds: z.preprocess(
 		(arg) => {
 			if (typeof arg === 'string') {
-				// Si se recibe un string con valores separados por comas,
-				// se divide en array, eliminando espacios en blanco y valores vacíos.
+				// If the argument is a string, it is expected to be a comma-separated list of recording IDs.
 				return arg
 					.split(',')
 					.map((s) => s.trim())
@@ -41,6 +40,7 @@ export const BulkDeleteRecordingsSchema = z.object({
 			return arg;
 		},
 		z.array(nonEmptySanitizedString('recordingId'))
+		.default([])
 	)
 });
 
@@ -69,7 +69,7 @@ export const withValidStartRecordingRequest = (req: Request, res: Response, next
 };
 
 export const withValidRecordingIdRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingSchema.safeParse(req.params.recordingId);
+	const { success, error, data } = GetRecordingSchema.safeParse({ recordingId: req.params.recordingId });
 
 	if (!success) {
 		return rejectRequest(res, error);
@@ -101,7 +101,7 @@ export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response,
 		return rejectRequest(res, error);
 	}
 
-	req.query.recordingIds = data.recordingIds;
+	req.query.recordingIds = data.recordingIds.join(',');
 
 	next();
 };
@@ -111,8 +111,6 @@ const rejectRequest = (res: Response, error: z.ZodError) => {
 		field: error.path.join('.'),
 		message: error.message
 	}));
-
-	console.log(errors);
 
 	return res.status(422).json({
 		error: 'Unprocessable Entity',

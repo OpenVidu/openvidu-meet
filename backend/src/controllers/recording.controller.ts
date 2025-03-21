@@ -46,13 +46,14 @@ export const getRecordings = async (req: Request, res: Response) => {
 export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const recordingIds = req.body.recordingIds;
+	const { recordingIds } = req.query;
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
 		// TODO: Check role to determine if the request is from an admin or a participant
-		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordings(recordingIds);
+		const recordingIdsArray = (recordingIds as string).split(',');
+		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordings(recordingIdsArray);
 
 		return res.status(200).json({ deleted, notDeleted });
 	} catch (error) {
@@ -113,7 +114,7 @@ export const deleteRecording = async (req: Request, res: Response) => {
 	try {
 		// TODO: Check role to determine if the request is from an admin or a participant
 		await recordingService.deleteRecording(recordingId);
-		return res.status(204);
+		return res.status(204).send();
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error deleting recording: ${error.message}`);
