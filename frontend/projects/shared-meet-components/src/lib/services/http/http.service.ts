@@ -10,21 +10,22 @@ import { lastValueFrom } from 'rxjs';
 })
 export class HttpService {
 	// private baseHref: string;
-	protected pathPrefix = 'meet/api';
-	protected apiVersion = 'v1';
+	protected API_PATH_PREFIX = 'meet/api';
+	protected INTERNAL_API_PATH_PREFIX = 'meet/internal-api';
+	protected API_V1_VERSION = 'v1';
 
 	constructor(protected http: HttpClient) {}
 
 	createRoom(options: OpenViduMeetRoomOptions): Promise<OpenViduMeetRoom> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/rooms`, options);
+		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms`, options);
 	}
 
 	deleteRoom(roomName: string): Promise<any> {
-		return this.deleteRequest(`${this.pathPrefix}/${this.apiVersion}/rooms/${roomName}`);
+		return this.deleteRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`);
 	}
 
 	listRooms(fields?: string): Promise<OpenViduMeetRoom[]> {
-		let path = `${this.pathPrefix}/${this.apiVersion}/rooms/`;
+		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/`;
 		if (fields) {
 			path += `?fields=${encodeURIComponent(fields)}`;
 		}
@@ -32,7 +33,7 @@ export class HttpService {
 	}
 
 	getRoom(roomName: string, fields?: string): Promise<OpenViduMeetRoom> {
-		let path = `${this.pathPrefix}/${this.apiVersion}/rooms/${roomName}`;
+		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`;
 		if (fields) {
 			path += `?fields=${encodeURIComponent(fields)}`;
 		}
@@ -40,11 +41,11 @@ export class HttpService {
 	}
 
 	generateParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.pathPrefix}/participants/token`, tokenOptions);
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token`, tokenOptions);
 	}
 
 	refreshParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.pathPrefix}/participants/token/refresh`, tokenOptions);
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token/refresh`, tokenOptions);
 	}
 
 	/**
@@ -53,7 +54,7 @@ export class HttpService {
 	 * @returns {Promise<GlobalPreferences>} A promise that resolves to the global preferences.
 	 */
 	getGlobalPreferences(): Promise<GlobalPreferences> {
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/preferences`);
+		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences`);
 	}
 
 	/**
@@ -62,7 +63,7 @@ export class HttpService {
 	 * @returns {Promise<RoomPreferences>} A promise that resolves to the room preferences.
 	 */
 	getRoomPreferences(): Promise<RoomPreferences> {
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/preferences/room`);
+		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences/room`);
 	}
 
 	/**
@@ -72,7 +73,7 @@ export class HttpService {
 	 * @returns A promise that resolves when the preferences have been successfully saved.
 	 */
 	saveRoomPreferences(preferences: RoomPreferences): Promise<any> {
-		return this.putRequest(`${this.pathPrefix}/preferences/room`, preferences);
+		return this.putRequest(`${this.API_PATH_PREFIX}/preferences/room`, preferences);
 	}
 
 	login(body: { username: string; password: string }): Promise<{ message: string }> {
@@ -92,7 +93,7 @@ export class HttpService {
 	}
 
 	getRecordings(continuationToken?: string): Promise<{ recordings: RecordingInfo[]; continuationToken: string }> {
-		let path = `${this.pathPrefix}/${this.apiVersion}/recordings`;
+		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings`;
 
 		if (continuationToken) {
 			path += `?continuationToken=${continuationToken}`;
@@ -102,15 +103,15 @@ export class HttpService {
 	}
 
 	startRecording(roomId: string): Promise<RecordingInfo> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/recordings`, { roomId });
+		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings`, { roomId });
 	}
 
 	stopRecording(recordingId: string): Promise<RecordingInfo> {
-		return this.putRequest(`${this.pathPrefix}/${this.apiVersion}/recordings/${recordingId}`);
+		return this.putRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}`);
 	}
 
 	deleteRecording(recordingId: string): Promise<RecordingInfo> {
-		return this.deleteRequest(`${this.pathPrefix}/${this.apiVersion}/recordings/${recordingId}`);
+		return this.deleteRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}`);
 	}
 
 	protected getRequest<T>(path: string): Promise<T> {
