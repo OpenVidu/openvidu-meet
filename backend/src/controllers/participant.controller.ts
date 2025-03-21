@@ -6,6 +6,7 @@ import { OpenViduMeetError } from '../models/index.js';
 import { ParticipantService } from '../services/participant.service.js';
 import { MEET_PARTICIPANT_TOKEN_EXPIRATION, PARTICIPANT_TOKEN_COOKIE_NAME } from '../environment.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
+import { TokenService } from '../services/token.service.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -28,6 +29,23 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 export const refreshParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+
+	// Check if there is a previous token and if it is valid
+	const previousToken = req.cookies[PARTICIPANT_TOKEN_COOKIE_NAME];
+
+	if (previousToken) {
+		logger.verbose('Previous participant token found. Checking validity');
+		const tokenService = container.get(TokenService);
+
+		try {
+			await tokenService.verifyToken(previousToken);
+			logger.verbose('Previous participant token is valid. No need to refresh');
+			return res.status(409).json({ message: 'Participant token is still valid' });
+		} catch (error) {
+			logger.verbose('Previous participant token is invalid');
+		}
+	}
+
 	const tokenOptions: TokenOptions = req.body;
 	const { roomName } = tokenOptions;
 	const participantService = container.get(ParticipantService);
