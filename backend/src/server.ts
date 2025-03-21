@@ -76,7 +76,7 @@ const startServer = (app: express.Application) => {
 		console.log('---------------------------------------------------------');
 		console.log(' ');
 		console.log('OpenVidu Meet is listening on port', chalk.cyanBright(SERVER_PORT));
-		console.log('REST API Docs: ', chalk.cyanBright(`http://localhost:${SERVER_PORT}/meet/api/v1/docs`));
+		console.log('REST API Docs: ', chalk.cyanBright(`http://localhost:${SERVER_PORT}${MEET_API_BASE_PATH_V1}/docs`));
 		logEnvVars();
 		await Promise.all([initializeGlobalPreferences(), container.get(RoomService).initialize()]);
 	});
