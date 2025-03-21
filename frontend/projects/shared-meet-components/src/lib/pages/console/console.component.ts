@@ -24,6 +24,6 @@ export class ConsoleComponent {
 	constructor(private authService: AuthService) {}
 
 	async logout() {
-		await this.authService.adminLogout();
+		await this.authService.logout('console/login');
 	}
 }

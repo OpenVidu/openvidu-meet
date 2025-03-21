@@ -44,8 +44,15 @@ export class LoginComponent {
 		const { username, password } = this.loginForm.value;
 
 		try {
-			// TODO: Replace with user login
-			await this.authService.adminLogin(username!, password!);
+			await this.authService.login(username!, password!);
+
+			// Check if the user has the expected role
+			if (this.authService.isAdmin()) {
+				this.authService.logout();
+				this.loginErrorMessage = 'Invalid username or password';
+				return;
+			}
+
 			this.router.navigate(['']);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {

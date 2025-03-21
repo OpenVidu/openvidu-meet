@@ -43,7 +43,15 @@ export class ConsoleLoginComponent {
 		const { username, password } = this.loginForm.value;
 
 		try {
-			await this.authService.adminLogin(username!, password!);
+			await this.authService.login(username!, password!);
+
+			// Check if the user has the expected role
+			if (!this.authService.isAdmin()) {
+				this.authService.logout();
+				this.loginErrorMessage = 'Invalid username or password';
+				return;
+			}
+
 			this.router.navigate(['console']);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {

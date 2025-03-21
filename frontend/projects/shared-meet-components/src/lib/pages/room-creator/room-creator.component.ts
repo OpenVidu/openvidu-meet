@@ -6,7 +6,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { NgClass } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
-import { ContextService, HttpService } from '../../services/index';
+import { AuthService, ContextService, HttpService } from '../../services/index';
 import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from '../../typings/ce/room';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
 
@@ -30,6 +30,7 @@ export class RoomCreatorComponent implements OnInit {
 	constructor(
 		private router: Router,
 		private httpService: HttpService,
+		private authService: AuthService,
 		private contextService: ContextService
 	) {}
 
@@ -38,8 +39,7 @@ export class RoomCreatorComponent implements OnInit {
 		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
 		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
 
-		// TODO: Retrieve actual username
-		this.username = 'user';
+		this.username = this.authService.getUsername();
 	}
 
 	generateRoomName(event: any) {
@@ -53,7 +53,7 @@ export class RoomCreatorComponent implements OnInit {
 
 	async logout() {
 		try {
-			await this.httpService.userLogout();
+			await this.authService.logout('login');
 		} catch (error) {
 			console.error('Error doing logout ', error);
 		}
