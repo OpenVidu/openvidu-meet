@@ -9,7 +9,7 @@ export const enum MeetRecordingStatus {
 }
 
 export const enum MeetRecordingOutputMode {
-	COMPOSED = 'COMPOSED'
+	COMPOSED = 'COMPOSED',
 }
 
 /**
@@ -29,3 +29,10 @@ export interface MeetRecordingInfo {
 	error?: string;
 	details?: string;
 }
+
+export type MeetRecordingFilters = {
+	maxItems?: number;
+	nextPageToken?: string;
+	roomId?: string;
+	status?: string;
+};

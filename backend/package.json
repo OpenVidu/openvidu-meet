@@ -29,7 +29,7 @@
 	"scripts": {
 		"build:prod": "tsc",
 		"postbuild:prod": "npm run generate:openapi-doc",
-		"generate:openapi-doc": "mkdir -p public/openapi && npx openapi-generate-html -i openapi/openvidu-meet-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o public/openapi/index.html",
+		"generate:openapi-doc": "mkdir -p public/openapi && npx openapi-generate-html -i openapi/openvidu-meet-api.yaml --ui=stoplight --theme=light --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o public/openapi/index.html",
 		"start:prod": "node dist/src/server.js",
 		"start:dev": "nodemon",
 		"package:build": "npm run build:prod && npm pack",

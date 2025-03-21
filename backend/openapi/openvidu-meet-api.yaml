@@ -1,10 +1,10 @@
 openapi: 3.0.1
 info:
     version: v1
-    title: OpenVidu Meet API
+    title: OpenVidu Meet REST API
     description: >
-        The OpenVidu Embedded API allows seamless integration of OpenVidu Meet rooms into your application.
-        This API provides endpoints to manage rooms, generate secure access URLs, and configure room preferences.
+        The OpenVidu Meet REST API allows seamless integration of OpenVidu Meet rooms into your application.
+        This REST API provides endpoints to manage rooms and recordings in OpenVidu Meet.
     termsOfService: https://openvidu.io/conditions/terms-of-service/
     contact:
         name: OpenVidu
@@ -400,9 +400,9 @@ paths:
     /recordings:
         post:
             operationId: createRecording
-            summary: Create a new OpenVidu Meet recording
+            summary: Start a recording
             description: >
-                Creates a new OpenVidu Meet recording for the specified room.
+                Start a new recording for an OpenVidu Meet room with the specified room ID.
             tags:
                 - OpenVidu Meet - Recordings
             security:
@@ -414,13 +414,13 @@ paths:
                         schema:
                             type: object
                             required:
-                                - roomName
+                                - roomId
                             properties:
-                                roomName:
+                                roomId:
                                     type: string
-                                    example: 'OpenVidu-123456'
+                                    example: 'room-123'
                                     description: >
-                                        The name of the room to record.
+                                        The unique identifier of the room to record.
 
             responses:
                 '200':
@@ -444,8 +444,17 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 404
-                                message: 'Room not found'
+                                name: 'Room Error'
+                                message: 'The room "room-123" does not exist'
+                '409':
+                    description: Conflict — The room is already being recorded
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Recording Error'
+                                message: 'The room "room-123" is already being recorded'
                 '422':
                     description: Unprocessable Entity — The request body is invalid
                     content:
@@ -466,16 +475,16 @@ paths:
                                             properties:
                                                 field:
                                                     type: string
-                                                    example: 'roomName'
+                                                    example: 'roomId'
                                                 message:
                                                     type: string
-                                                    example: 'Room not found'
+                                                    example: 'roomId not found'
                             example:
                                 error: 'Unprocessable Entity'
                                 message: 'Invalid request body'
                                 details:
-                                    - field: 'roomName'
-                                      message: 'Room not found'
+                                    - field: 'roomId'
+                                      example: 'roomId not found'
                 '500':
                     description: Internal server error
                     content:
@@ -483,13 +492,14 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 500
-                                message: 'Internal server error'
+                                name: 'Unexpected Error'
+                                message: 'Something went wrong'
         get:
             operationId: getRecordings
-            summary: Get a list of OpenVidu Meet recordings
+            summary: Get all recordings
             description: >
-                Retrieves a paginated list of OpenVidu Meet recordings
+                Retrieves a paginated list of all recordings available in the system.
+                You can apply filters to narrow down the results based on specific criteria.
             tags:
                 - OpenVidu Meet - Recordings
             security:
@@ -513,7 +523,7 @@ paths:
                       You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
                       If not specified, recordings with any status will be returned.
 
-                      > ⚠️ **Note:** Using this filter with multiple values or partial matches may impact performance for large datasets.
+                      > ⚠️ **Note:** Using this filter may impact performance for large datasets.
                   schema:
                       type: string
                 - name: roomId
@@ -539,7 +549,7 @@ paths:
                       type: string
             responses:
                 '200':
-                    description: Successfully retrieved the list of OpenVidu Meet recordings
+                    description: Successfully retrieved the recording list
                     content:
                         application/json:
                             schema:
@@ -577,34 +587,53 @@ paths:
                                 code: 500
                                 message: 'Internal server error'
         delete:
-            operationId: deleteMultipleRecordings
-            summary: Delete multiples OpenVidu Meet recordings
+            operationId: bulkDeleteRecordings
+            summary: Bulk delete recordings
             description: >
-                Deletes multiples OpenVidu Meet recordings with the specified recording IDs.
+                Deletes multiple recordings at once with the specified recording IDs.
             tags:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
-            requestBody:
-                description: Recording IDs to delete
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            required:
-                                - recordingIds
-                            properties:
-                                recordingIds:
-                                    type: array
-                                    items:
-                                        type: string
-                                    example: ['recording_123456', 'recording_123457']
-                                    description: >
-                                        The IDs of the recordings to delete.
+            parameters:
+                - name: recordingIds
+                  in: query
+                  required: true
+                  description: |
+                      The unique IDs of the recordings to delete.
+                      You can provide multiple recording IDs as a comma-separated list (e.g., `recordingIds=room-123--EG_XYZ--XX445,room-123--EG_XYZ--XX446`).
+                  schema:
+                      type: string
             responses:
-                '204':
-                    description: Successfully deleted the OpenVidu Meet recordings
+                '200':
+                    description: Bulk deletion completed. Includes lists of successfully deleted IDs and errors.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    deleted:
+                                        type: array
+                                        items:
+                                            type: string
+                                        description: List of successfully deleted recording IDs.
+                                        example:
+                                            - 'room-123--EG_XYZ--XX445'
+                                            - 'room-123--EG_XYZ--XX446'
+                                    notDeleted:
+                                        type: array
+                                        description: List of recordings that could not be deleted along with the corresponding error messages.
+                                        items:
+                                            type: object
+                                            properties:
+                                                recordingId:
+                                                    type: string
+                                                    description: The unique identifier of the recording that was not deleted.
+                                                    example: 'room-123--EG_XYZ--XX447'
+                                                error:
+                                                    type: string
+                                                    description: A message explaining why the deletion failed.
+                                                    example: 'Recording not found'
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -613,6 +642,36 @@ paths:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '422':
+                    description: Unprocessable Entity — The request body is invalid
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+                                        example: 'Unprocessable Entity'
+                                    message:
+                                        type: string
+                                        example: 'Invalid request body'
+                                    details:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                field:
+                                                    type: string
+                                                    example: 'recordingIds'
+                                                message:
+                                                    type: string
+                                                    example: 'recordingIds not found'
+                            example:
+                                error: 'Unprocessable Entity'
+                                message: 'Invalid request body'
+                                details:
+                                    - field: 'recordingIds'
+                                      example: 'recordingIds not found'
                 '500':
                     description: Internal server error
                     content:
@@ -620,14 +679,15 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 500
-                                message: 'Internal server error'
+                                name: 'Unexpected Error'
+                                message: 'Something went wrong'
     /recordings/{recordingId}:
         put:
             operationId: stopRecording
-            summary: Stop an OpenVidu Meet recording
+            summary: Stop a recording
             description: >
-                Stops an OpenVidu Meet recording with the specified recording ID.
+                Stops a recording with the specified recording ID.
+                The recording must be in an `ACTIVE` state; otherwise, a 409 error is returned.
             tags:
                 - OpenVidu Meet - Recordings
             security:
@@ -636,12 +696,17 @@ paths:
                 - name: recordingId
                   in: path
                   required: true
-                  description: The ID of the recording to stop
+                  description: The unique identifier of the recording to stop.
                   schema:
                       type: string
+                      example: 'room-123--EG_XYZ--XX445'
             responses:
-                '204':
-                    description: Successfully stopped the OpenVidu Meet recording
+                '200':
+                    description: Successfully stopped the recording.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MeetRecording'
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -657,8 +722,17 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 404
-                                message: 'Recording not found'
+                                name: 'Recording Error'
+                                message: 'Recording "room-123--EG_XYZ--XX445" not found'
+                '409':
+                    description: Conflict — The recording is already stopped.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Recording Error'
+                                message: 'Recording "room-123--EG_XYZ--XX445" is already stopped'
                 '500':
                     description: Internal server error
                     content:
@@ -666,13 +740,13 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 500
-                                message: 'Internal server error'
+                                name: 'Unexpected Error'
+                                message: 'Something went wrong'
         get:
             operationId: getRecording
-            summary: Get details of an OpenVidu Meet recording
+            summary: Get a recording
             description: >
-                Retrieves the details of an OpenVidu Meet recording with the specified recording ID.
+                Retrieves the details of a recording with the specified recording ID.
             tags:
                 - OpenVidu Meet - Recordings
             security:
@@ -681,12 +755,13 @@ paths:
                 - name: recordingId
                   in: path
                   required: true
-                  description: The ID of the recording to retrieve
+                  description: The unique identifier of the recording to retrieve
                   schema:
                       type: string
+                      example: 'room-123--EG_XYZ--XX445'
             responses:
                 '200':
-                    description: Successfully retrieved the OpenVidu Meet recording
+                    description: Successfully retrieved the recording.
                     content:
                         application/json:
                             schema:
@@ -701,14 +776,14 @@ paths:
                             example:
                                 message: 'Unauthorized'
                 '404':
-                    description: Recording not found
+                    description: Recording not found — The recording with the specified ID was not found
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 404
-                                message: 'Recording not found'
+                                name: 'Recording Error'
+                                message: 'Recording "room-123--EG_XYZ--XX445" not found'
                 '500':
                     description: Internal server error
                     content:
@@ -716,13 +791,14 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 500
-                                message: 'Internal server error'
+                                name: 'Unexpected Error'
+                                message: 'Something went wrong'
         delete:
             operationId: deleteRecording
-            summary: Delete an OpenVidu Meet recording
+            summary: Delete a recording
             description: >
-                Deletes an OpenVidu Meet recording with the specified recording ID.
+                Deletes a recording with the specified recording.
+                The recording will only be deleted if it exists and is not in progress (i.e., not in a state such as `ACTIVE`, `STARTING`, or `ENDING`).
             tags:
                 - OpenVidu Meet - Recordings
             security:
@@ -731,12 +807,13 @@ paths:
                 - name: recordingId
                   in: path
                   required: true
-                  description: The ID of the recording to delete
+                  description: The unique identifier of the recording to delete.
                   schema:
                       type: string
+                      example: 'room-123--EG_XYZ--XX445'
             responses:
                 '204':
-                    description: Successfully deleted the OpenVidu Meet recording
+                    description: Recording successfully deleted. No content is returned.
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -745,6 +822,24 @@ paths:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '404':
+                    description: Recording not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Recording Error'
+                                message: 'Recording "room-123--EG_XYZ--XX445" not found'
+                '409':
+                    description: Conflict — The recording is in progress
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Recording Error'
+                                message: 'Recording "room-123--EG_XYZ--XX445" is in progress'
                 '500':
                     description: Internal server error
                     content:
@@ -752,8 +847,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
-                                code: 500
-                                message: 'Internal server error'
+                                name: 'Unexpected Error'
+                                message: 'Something went wrong'
     /recordings/{recordingId}/stream:
         get:
             operationId: getRecordingStream
@@ -1137,7 +1232,17 @@ components:
                     type: string
                     example: 'ACTIVE'
                     description: >
-                        The status of the recording. Possible values are "STARTING", "ACTIVE", "ENDING", "COMPLETE", "FAILED", "ABORTED" and "LIMITED_REACHED".
+                        The status of the recording.
+
+                          Possible values:
+                          - `STARTING`
+                          - `ACTIVE`
+                          - `ENDING`
+                          - `COMPLETE`
+                          - `FAILED`
+                          - `ABORTED`
+                          - `LIMITED_REACHED`
+
                 filename:
                     type: string
                     example: 'room-123--XX445.mp4'
@@ -1183,5 +1288,7 @@ components:
             required:
                 - message
             properties:
+                name:
+                    type: string
                 message:
                     type: string

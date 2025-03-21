@@ -6,13 +6,11 @@ import { container } from '../config/dependency-injector.config.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-
+	const recordingService = container.get(RecordingService);
 	const { roomId } = req.body;
+	logger.info(`Starting recording in ${roomId}`);
 
 	try {
-		logger.info(`Starting recording in ${roomId}`);
-		const recordingService = container.get(RecordingService);
-
 		const recordingInfo = await recordingService.startRecording(roomId);
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
@@ -28,12 +26,11 @@ export const startRecording = async (req: Request, res: Response) => {
 export const getRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
+	const queryParams = req.query;
+
+	logger.info('Getting all recordings');
 
 	try {
-		logger.info('Getting all recordings');
-
-		const queryParams = req.query;
-
 		const response = await recordingService.getAllRecordings(queryParams);
 		return res.status(200).json(response);
 	} catch (error) {
@@ -48,16 +45,16 @@ export const getRecordings = async (req: Request, res: Response) => {
 
 export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
+	const recordingIds = req.body.recordingIds;
+
+	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		const recordingIds = req.body.recordingIds;
-		logger.info(`Deleting recordings: ${recordingIds}`);
-		const recordingService = container.get(RecordingService);
-
 		// TODO: Check role to determine if the request is from an admin or a participant
-		await recordingService.bulkDeleteRecordings(recordingIds);
+		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordings(recordingIds);
 
-		return res.status(204).json();
+		return res.status(200).json({ deleted, notDeleted });
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error deleting recordings: ${error.message}`);
@@ -70,12 +67,11 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 
 export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
+	const recordingId = req.params.recordingId;
+	logger.info(`Getting recording ${recordingId}`);
 
 	try {
-		const recordingId = req.params.recordingId;
-		logger.info(`Getting recording ${recordingId}`);
-		const recordingService = container.get(RecordingService);
-
 		const recordingInfo = await recordingService.getRecording(recordingId);
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
@@ -110,16 +106,14 @@ export const stopRecording = async (req: Request, res: Response) => {
 
 export const deleteRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
+	logger.info(`Deleting recording ${recordingId}`);
 
 	try {
-		logger.info(`Deleting recording ${recordingId}`);
-		const recordingService = container.get(RecordingService);
-
 		// TODO: Check role to determine if the request is from an admin or a participant
-		const recordingInfo = await recordingService.deleteRecording(recordingId);
-
-		return res.status(204).json(recordingInfo);
+		await recordingService.deleteRecording(recordingId);
+		return res.status(204);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error deleting recording: ${error.message}`);

@@ -1,17 +1,20 @@
-import { EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
+import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import { uid } from 'uid';
 import { Readable } from 'stream';
 import { LiveKitService } from './livekit.service.js';
 import {
 	errorRecordingAlreadyStarted,
+	errorRecordingAlreadyStopped,
+	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
 	errorRoomNotFound,
-	internalError
+	internalError,
+	OpenViduMeetError
 } from '../models/error.model.js';
 import { S3Service } from './s3.service.js';
 import { LoggerService } from './logger.service.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MEET_S3_BUCKET, MEET_S3_RECORDINGS_PREFIX, MEET_S3_SUBBUCKET } from '../environment.js';
 import { RoomService } from './room.service.js';
@@ -20,13 +23,6 @@ import { MutexService, RedisLock } from './mutex.service.js';
 import { RedisLockName } from '../models/index.js';
 import ms from 'ms';
 import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
-
-type GetAllRecordingsParams = {
-	maxItems?: number;
-	nextPageToken?: string;
-	roomId?: string;
-	status?: string;
-};
 
 @injectable()
 export class RecordingService {
@@ -43,15 +39,15 @@ export class RecordingService {
 		let acquiredLock: RedisLock | null = null;
 
 		try {
+			const room = await this.roomService.getOpenViduRoom(roomId);
+
+			if (!room) throw errorRoomNotFound(roomId);
+
 			// Attempt to acquire lock.
 			// Note: using a high TTL to prevent expiration during a long recording.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
-
-			const room = await this.roomService.getOpenViduRoom(roomId);
-
-			if (!room) throw errorRoomNotFound(roomId);
 
 			const options = this.generateCompositeOptionsFromRequest();
 			const output = this.generateFileOutputFromRequest(roomId);
@@ -73,10 +69,22 @@ export class RecordingService {
 		try {
 			const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
-			const egressArray = await this.livekitService.getActiveEgress(roomId, egressId);
+			const [egress] = await this.livekitService.getEgress(roomId, egressId);
 
-			if (egressArray.length === 0) {
+			if (!egress) {
 				throw errorRecordingNotFound(egressId);
+			}
+
+			switch (egress.status) {
+				case EgressStatus.EGRESS_ACTIVE:
+					// Everything is fine, the recording can be stopped.
+					break;
+				case EgressStatus.EGRESS_STARTING:
+					// The recording is still starting, it cannot be stopped yet.
+					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
+				default:
+					// The recording is already stopped.
+					throw errorRecordingAlreadyStopped(recordingId);
 			}
 
 			const egressInfo = await this.livekitService.stopEgress(egressId);
@@ -116,21 +124,25 @@ export class RecordingService {
 	 * Deletes multiple recordings in bulk from S3.
 	 * For each provided egressId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
-	 * @param egressIds Array of recording identifiers.
+	 * @param recordingIds Array of recording identifiers.
 	 * @returns An array with the MeetRecordingInfo of the successfully deleted recordings.
 	 */
-	async bulkDeleteRecordings(egressIds: string[]): Promise<MeetRecordingInfo[]> {
+	async bulkDeleteRecordings(
+		recordingIds: string[]
+	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
 		const keysToDelete: string[] = [];
-		const deletedRecordings: MeetRecordingInfo[] = [];
+		const deletedRecordings: string[] = [];
+		const notDeletedRecordings: { recordingId: string; error: string }[] = [];
 
-		for (const egressId of egressIds) {
+		for (const recordingId of recordingIds) {
 			try {
-				const { filesToDelete, recordingInfo } = await this.getDeletableRecordingData(egressId);
+				const { filesToDelete } = await this.getDeletableRecordingData(recordingId);
 				keysToDelete.push(...filesToDelete);
-				deletedRecordings.push(recordingInfo);
-				this.logger.verbose(`BulkDelete: Prepared recording ${egressId} for deletion.`);
+				deletedRecordings.push(recordingId);
+				this.logger.verbose(`BulkDelete: Prepared recording ${recordingId} for deletion.`);
 			} catch (error) {
-				this.logger.error(`BulkDelete: Error processing recording ${egressId}: ${error}`);
+				this.logger.error(`BulkDelete: Error processing recording ${recordingId}: ${error}`);
+				notDeletedRecordings.push({ recordingId, error: (error as OpenViduMeetError).message });
 			}
 		}
 
@@ -146,7 +158,7 @@ export class RecordingService {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
 		}
 
-		return deletedRecordings;
+		return { deleted: deletedRecordings, notDeleted: notDeletedRecordings };
 	}
 
 	/**
@@ -171,13 +183,16 @@ export class RecordingService {
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings({ maxItems, nextPageToken, roomId, status }: GetAllRecordingsParams): Promise<{
+	async getAllRecordings({ maxItems, nextPageToken, roomId, status }: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
 		try {
+			// Construct the room prefix if a room ID is provided
 			const roomPrefix = roomId ? `/${roomId}` : '';
+
+			// Retrieve the recordings from the S3 bucket
 			const { Contents, IsTruncated, NextContinuationToken } = await this.s3Service.listObjectsPaginated(
 				`${MEET_S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`,
 				maxItems,
@@ -190,6 +205,7 @@ export class RecordingService {
 			}
 
 			const promises: Promise<MeetRecordingInfo>[] = [];
+			// Retrieve the metadata for each recording
 			Contents.forEach((item) => {
 				if (item?.Key && item.Key.endsWith('.json')) {
 					promises.push(this.s3Service.getObjectAsJson(item.Key) as Promise<MeetRecordingInfo>);
@@ -199,13 +215,14 @@ export class RecordingService {
 			let recordings: MeetRecordingInfo[] = await Promise.all(promises);
 
 			if (status) {
-				// Filter recordings by status
+				// Filter recordings by status if a status filter is provided
+				// status is already an array of RegExp after middleware validation.
+
 				const statusArray = status
 					.split(',')
 					.map((s) => s.trim())
 					.filter(Boolean)
 					.map((s) => new RegExp(this.sanitizeRegExp(s)));
-
 
 				recordings = recordings.filter((recording) =>
 					statusArray.some((regex) => regex.test(recording.status))
@@ -213,7 +230,7 @@ export class RecordingService {
 			}
 
 			this.logger.info(`Retrieved ${recordings.length} recordings.`);
-
+			// Return the paginated list of recordings
 			return { recordings, isTruncated: !!IsTruncated, nextPageToken: NextContinuationToken };
 		} catch (error) {
 			this.logger.error(`Error getting recordings: ${error}`);
@@ -221,7 +238,6 @@ export class RecordingService {
 		}
 	}
 
-	//TODO: Implement getRecordingAsStream method
 	async getRecordingAsStream(
 		recordingId: string,
 		range?: string

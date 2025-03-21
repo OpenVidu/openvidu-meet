@@ -56,19 +56,23 @@ export const errorInvalidApiKey = (): OpenViduMeetError => {
 // Recording errors
 
 export const errorRecordingNotFound = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording ${recordingId} not found`, 404);
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' not found`, 404);
 };
 
 export const errorRecordingNotStopped = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording ${recordingId} is not stopped yet`, 409);
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not stopped yet`, 409);
 };
 
 export const errorRecordingNotReady = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording ${recordingId} is not ready yet`, 409);
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not ready yet`, 409);
 };
 
 export const errorRecordingAlreadyStopped = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording ${recordingId} is already stopped`, 409);
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is already stopped`, 409);
+};
+
+export const errorRecordingCannotBeStoppedWhileStarting = (recordingId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' cannot be stopped while starting`, 409);
 };
 
 export const errorRecordingAlreadyStarted = (roomName: string): OpenViduMeetError => {
