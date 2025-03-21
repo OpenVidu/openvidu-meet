@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import * as recordingCtrl from '../controllers/recording.controller.js';
-import { withParticipantValidToken, withUserBasicAuth } from '../middlewares/auth.middleware.js';
+import { withAuth, participantTokenValidator, tokenAndRoleValidator } from '../middlewares/auth.middleware.js';
 import { withRecordingEnabledAndCorrectPermissions } from '../middlewares/recording.middleware.js';
+import { Role } from '@typings-ce';
 
 export const recordingRouter = Router();
 
@@ -12,15 +13,23 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.post(
 	'/',
-	withParticipantValidToken,
+	withAuth(participantTokenValidator),
 	withRecordingEnabledAndCorrectPermissions,
 	recordingCtrl.startRecording
 );
-recordingRouter.put('/:recordingId', withUserBasicAuth, /* withRecordingEnabled,*/ recordingCtrl.stopRecording);
-recordingRouter.get('/:recordingId/stream', /*withRecordingEnabled,*/ recordingCtrl.streamRecording);
+recordingRouter.put(
+	'/:recordingId',
+	withAuth(participantTokenValidator),
+	/* withRecordingEnabledAndCorrectPermissions,*/ recordingCtrl.stopRecording
+);
+recordingRouter.get(
+	'/:recordingId/stream',
+	withAuth(participantTokenValidator),
+	/*withRecordingEnabledAndCorrectPermissions,*/ recordingCtrl.streamRecording
+);
 recordingRouter.delete(
 	'/:recordingId',
-	withUserBasicAuth,
-	/*withRecordingEnabled,*/
+	withAuth(tokenAndRoleValidator(Role.ADMIN), participantTokenValidator),
+	/*withRecordingEnabledAndCorrectPermissions,*/
 	recordingCtrl.deleteRecording
 );

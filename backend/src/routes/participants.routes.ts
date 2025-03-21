@@ -11,7 +11,11 @@ participantsInternalRouter.use(bodyParser.urlencoded({ extended: true }));
 participantsInternalRouter.use(bodyParser.json());
 
 participantsInternalRouter.post('/token', validateParticipantTokenRequest, participantCtrl.generateParticipantToken);
-participantsInternalRouter.post('/token/refresh', validateParticipantTokenRequest, participantCtrl.refreshParticipantToken);
+participantsInternalRouter.post(
+	'/token/refresh',
+	validateParticipantTokenRequest,
+	participantCtrl.refreshParticipantToken
+);
 
 export const participantsRouter = Router();
 participantsRouter.use(bodyParser.urlencoded({ extended: true }));
