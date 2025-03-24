@@ -13,7 +13,7 @@ import { openapiHtmlPath, indexHtmlPath, publicFilesPath, webcomponentBundlePath
 import {
 	authRouter,
 	internalRecordingRouter,
-	livekitRouter,
+	livekitWebhookRouter,
 	preferencesRouter,
 	recordingRouter,
 	roomRouter
@@ -53,8 +53,8 @@ const createApp = () => {
 	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use('/meet/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
-	app.use('/livekit/webhook', livekitRouter);
-	app.use('/meet/livekit/webhook', livekitRouter);
+	app.use('/livekit/webhook', livekitWebhookRouter);
+	app.use('/meet/livekit/webhook', livekitWebhookRouter);
 	// Serve OpenVidu Meet webcomponent bundle file
 	app.get('/meet/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
 	// Serve OpenVidu Meet index.html file for all non-API routes
