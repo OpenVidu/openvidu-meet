@@ -9,7 +9,7 @@ import {
 	withRecordingEnabledAndCorrectPermissions,
 	withValidGetRecordingsRequest,
 	withValidRecordingBulkDeleteRequest,
-	withValidRecordingIdRequest,
+	withValidRecordingId,
 	withValidStartRecordingRequest
 } from '../middlewares/index.js';
 
@@ -28,7 +28,7 @@ recordingRouter.post(
 recordingRouter.put(
 	'/:recordingId',
 	withAuth(participantTokenValidator),
-	/* withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingIdRequest,
+	/* withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingId,
 	recordingCtrl.stopRecording
 );
 
@@ -36,10 +36,10 @@ recordingRouter.delete(
 	'/:recordingId',
 	withAuth(tokenAndRoleValidator(Role.ADMIN), participantTokenValidator),
 	/*withRecordingEnabledAndCorrectPermissions,*/
-	withValidRecordingIdRequest,
+	withValidRecordingId,
 	recordingCtrl.deleteRecording
 );
-recordingRouter.get('/:recordingId', withValidRecordingIdRequest, recordingCtrl.getRecording);
+recordingRouter.get('/:recordingId', withValidRecordingId, recordingCtrl.getRecording);
 recordingRouter.get('/', withValidGetRecordingsRequest, recordingCtrl.getRecordings);
 recordingRouter.delete('/', withValidRecordingBulkDeleteRequest, recordingCtrl.bulkDeleteRecordings);
 
@@ -51,6 +51,6 @@ internalRecordingRouter.use(bodyParser.json());
 internalRecordingRouter.get(
 	'/:recordingId/stream',
 	withAuth(participantTokenValidator),
-	/*withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingIdRequest,
+	/*withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingId,
 	recordingCtrl.streamRecording
 );

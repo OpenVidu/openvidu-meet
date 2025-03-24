@@ -68,7 +68,7 @@ export const withValidStartRecordingRequest = (req: Request, res: Response, next
 	next();
 };
 
-export const withValidRecordingIdRequest = (req: Request, res: Response, next: NextFunction) => {
+export const withValidRecordingId = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = GetRecordingSchema.safeParse({ recordingId: req.params.recordingId });
 
 	if (!success) {
