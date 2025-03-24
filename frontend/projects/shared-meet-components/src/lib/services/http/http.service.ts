@@ -77,19 +77,19 @@ export class HttpService {
 	}
 
 	login(body: { username: string; password: string }): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/login`, body);
+		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/auth/login`, body);
 	}
 
 	logout(): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/logout`);
+		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/auth/logout`);
 	}
 
 	refreshToken(): Promise<{ message: string }> {
-		return this.postRequest(`${this.pathPrefix}/${this.apiVersion}/auth/refresh`);
+		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/auth/refresh`);
 	}
 
 	getProfile(): Promise<User> {
-		return this.getRequest(`${this.pathPrefix}/${this.apiVersion}/auth/profile`);
+		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/auth/profile`);
 	}
 
 	getRecordings(continuationToken?: string): Promise<{ recordings: RecordingInfo[]; continuationToken: string }> {
