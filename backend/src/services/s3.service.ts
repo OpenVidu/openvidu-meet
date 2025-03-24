@@ -138,7 +138,7 @@ export class S3Service {
 	 */
 	async deleteObjects(keys: string[], bucket: string = MEET_S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
 		try {
-			this.logger.info(`S3 delete: attempting to delete ${keys.length} objects from bucket ${bucket}`);
+			this.logger.verbose(`S3 delete: attempting to delete ${keys.length} objects from bucket ${bucket}`);
 			const command = new DeleteObjectsCommand({
 				Bucket: bucket,
 				Delete: {
@@ -146,10 +146,6 @@ export class S3Service {
 					Quiet: false
 				}
 			});
-			console.log(
-				'command',
-				keys.map((key) => ({ Key: key }))
-			);
 			const result = await this.run(command);
 			this.logger.info(`S3 bulk delete: successfully deleted objects from bucket ${bucket}`);
 			return result;
