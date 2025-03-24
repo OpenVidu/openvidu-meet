@@ -147,7 +147,8 @@ export class S3Service {
 				}
 			});
 			const result = await this.run(command);
-			this.logger.info(`S3 bulk delete: successfully deleted objects from bucket ${bucket}`);
+			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
+			this.logger.info(`Successfully deleted ${keys.length} objects from bucket ${bucket}`);
 			return result;
 		} catch (error: any) {
 			this.logger.error(`S3 bulk delete: error deleting objects in bucket ${bucket}: ${error}`);
