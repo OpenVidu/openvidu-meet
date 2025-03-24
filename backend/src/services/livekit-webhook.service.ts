@@ -127,7 +127,10 @@ export class LivekitWebhookService {
 	 */
 	async handleMeetingFinished(room: Room) {
 		try {
-			await this.openViduWebhookService.sendRoomFinishedWebhook(room);
+			await Promise.all([
+				this.recordingService.releaseRoomRecordingActiveLock(room.name),
+				this.openViduWebhookService.sendRoomFinishedWebhook(room)
+			]);
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);
 		}

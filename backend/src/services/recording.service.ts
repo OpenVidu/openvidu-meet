@@ -26,7 +26,6 @@ import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapte
 
 @injectable()
 export class RecordingService {
-	protected readonly RECORDING_ACTIVE_LOCK_TTL = ms('6h');
 	constructor(
 		@inject(S3Service) protected s3Service: S3Service,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
@@ -43,8 +42,7 @@ export class RecordingService {
 
 			if (!room) throw errorRoomNotFound(roomId);
 
-			// Attempt to acquire lock.
-			// Note: using a high TTL to prevent expiration during a long recording.
+			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
@@ -53,8 +51,6 @@ export class RecordingService {
 			const output = this.generateFileOutputFromRequest(roomId);
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
-			// Return recording info without releasing the lock here,
-			// as it will be released in handleEgressEnded on successful completion.
 			return RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
 			this.logger.error(`Error starting recording in room ${roomId}: ${error}`);
@@ -270,12 +266,20 @@ export class RecordingService {
 
 	/**
 	 * Acquires a Redis-based lock to indicate that a recording is active for a specific room.
+	 *
+	 * This lock will be used to prevent multiple recording start requests from being processed
+	 * simultaneously for the same room.
+	 *
+	 * The active recording lock will be released when the recording ends (handleEgressEnded) or when the room is finished (handleMeetingFinished).
+	 *
+	 * @param roomName - The name of the room to acquire the lock for.
 	 */
 	async acquireRoomRecordingActiveLock(roomName: string): Promise<RedisLock | null> {
 		const lockName = `${roomName}_${RedisLockName.RECORDING_ACTIVE}`;
+		const LOCK_TTL = ms('6h');
 
 		try {
-			const lock = await this.mutexService.acquire(lockName, this.RECORDING_ACTIVE_LOCK_TTL);
+			const lock = await this.mutexService.acquire(lockName, LOCK_TTL);
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
