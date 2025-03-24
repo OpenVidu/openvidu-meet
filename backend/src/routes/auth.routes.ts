@@ -1,3 +1,4 @@
+import ms from 'ms';
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import * as authCtrl from '../controllers/auth.controller.js';
@@ -10,7 +11,7 @@ export const authRouter = Router();
 
 // Limit login attempts for avoiding brute force attacks
 const loginLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 min
+	windowMs: ms('15m'),
 	limit: 5,
 	message: 'Too many login attempts, please try again later'
 });
