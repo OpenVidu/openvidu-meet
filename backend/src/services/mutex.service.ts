@@ -8,7 +8,6 @@ export type RedisLock = Lock;
 @injectable()
 export class MutexService {
 	protected redlockWithoutRetry: Redlock;
-	protected locks: Map<string, Lock>;
 	protected readonly TTL_MS = ms('1m');
 	protected LOCK_KEY_PREFIX = 'ov_meet_lock:';
 	protected LOCK_REGISTRY_PREFIX = 'ov_meet_lock_registry:';
@@ -19,7 +18,6 @@ export class MutexService {
 	) {
 		// Create a Redlock instance with no retry strategy
 		this.redlockWithoutRetry = this.redisService.createRedlock(0);
-		this.locks = new Map();
 	}
 
 	/**
@@ -36,9 +34,7 @@ export class MutexService {
 			this.logger.debug(`Acquiring lock for resource: ${resource}`);
 			const lock = await this.redlockWithoutRetry.acquire([key], ttl);
 
-			// Store the lock in memory for easy access (optional)
-			this.locks.set(key, lock);
-			// Store Lock metadata in Redis registry for support HA release
+			// Store Lock data in Redis registry for support HA and release lock
 			await this.redisService.set(
 				registryKey,
 				JSON.stringify({
@@ -78,7 +74,6 @@ export class MutexService {
 			} catch (error) {
 				this.logger.error(`Error releasing lock for key ${key}:`, error);
 			} finally {
-				this.locks.delete(key);
 				await this.redisService.delete(this.getLockRegistryKey(resource));
 			}
 		}
@@ -102,24 +97,14 @@ export class MutexService {
 	/**
 	 * Retrieves the lock data for a given resource.
 	 *
-	 * This method first attempts to retrieve the lock from memory. If the lock is not found in memory,
-	 * it then tries to fetch the lock data from Redis. If the lock data is successfully retrieved from Redis,
-	 * it constructs a new `Lock` instance and returns it. If the lock data cannot be found in either memory
-	 * or Redis, the method returns `null`.
+	 * This method first attempts to retrieve the lock from Redis. If the lock data is successfully retrieved from Redis,
+	 * it constructs a new `Lock` instance and returns it. If the lock data cannot be found the method returns `null`.
 	 *
 	 * @param resource - The identifier of the resource for which the lock data is being retrieved.
 	 * @returns A promise that resolves to the `Lock` instance if found, or `null` if the lock data is not available.
 	 */
 	protected async getLockData(resource: string): Promise<Lock | null> {
-		const key = this.getLockKey(resource);
 		const registryKey = this.getLockRegistryKey(resource);
-
-		// Try to get lock from memory
-		let lock = this.locks.get(key);
-
-		if (lock) {
-			return lock;
-		}
 
 		try {
 			this.logger.debug(`Getting lock data in Redis for resource: ${resource}`);
@@ -132,8 +117,7 @@ export class MutexService {
 			}
 
 			const { resources, value, expiration } = JSON.parse(redisLockData);
-			lock = new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
-			return lock;
+			return new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
 		} catch (error) {
 			this.logger.error(`Cannot release lock. Lock not found for resource: ${resource}.`);
 			return null;
