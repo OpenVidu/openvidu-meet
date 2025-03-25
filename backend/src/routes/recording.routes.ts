@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import * as recordingCtrl from '../controllers/recording.controller.js';
-import { Role } from '@typings-ce';
+import { UserRole } from '@typings-ce';
 import {
 	withAuth,
 	participantTokenValidator,
 	tokenAndRoleValidator,
-	withRecordingEnabledAndCorrectPermissions,
+	withRecordingEnabled,
+	withCorrectPermissions,
 	withValidGetRecordingsRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingId,
-	withValidStartRecordingRequest
+	withValidStartRecordingRequest,
+	apiKeyValidator
 } from '../middlewares/index.js';
 
 export const recordingRouter = Router();
@@ -20,28 +22,44 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.post(
 	'/',
-	withAuth(participantTokenValidator),
-	withRecordingEnabledAndCorrectPermissions,
 	withValidStartRecordingRequest,
+	withRecordingEnabled,
+	withAuth(participantTokenValidator),
+	withCorrectPermissions,
 	recordingCtrl.startRecording
 );
 recordingRouter.put(
 	'/:recordingId',
+	withValidRecordingId,
+	withRecordingEnabled,
 	withAuth(participantTokenValidator),
-	/* withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingId,
+	withCorrectPermissions,
 	recordingCtrl.stopRecording
 );
-
 recordingRouter.delete(
 	'/:recordingId',
-	withAuth(tokenAndRoleValidator(Role.ADMIN), participantTokenValidator),
-	/*withRecordingEnabledAndCorrectPermissions,*/
 	withValidRecordingId,
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	recordingCtrl.deleteRecording
 );
-recordingRouter.get('/:recordingId', withValidRecordingId, recordingCtrl.getRecording);
-recordingRouter.get('/', withValidGetRecordingsRequest, recordingCtrl.getRecordings);
-recordingRouter.delete('/', withValidRecordingBulkDeleteRequest, recordingCtrl.bulkDeleteRecordings);
+recordingRouter.get(
+	'/:recordingId',
+	withValidRecordingId,
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	recordingCtrl.getRecording
+);
+recordingRouter.get(
+	'/',
+	withValidGetRecordingsRequest,
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	recordingCtrl.getRecordings
+);
+recordingRouter.delete(
+	'/',
+	withValidRecordingBulkDeleteRequest,
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	recordingCtrl.bulkDeleteRecordings
+);
 
 // Internal Recording Routes
 export const internalRecordingRouter = Router();
@@ -50,7 +68,7 @@ internalRecordingRouter.use(bodyParser.json());
 
 internalRecordingRouter.get(
 	'/:recordingId/stream',
-	withAuth(participantTokenValidator),
-	/*withRecordingEnabledAndCorrectPermissions,*/ withValidRecordingId,
+	withValidRecordingId,
+	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
 	recordingCtrl.streamRecording
 );

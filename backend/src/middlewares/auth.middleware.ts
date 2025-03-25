@@ -104,3 +104,38 @@ export const apiKeyValidator = async (req: Request) => {
 		throw errorInvalidApiKey();
 	}
 };
+
+// Allow anonymous access
+export const allowAnonymous = async (req: Request) => {
+	const anonymousUser = {
+		username: 'anonymous',
+		role: UserRole.USER
+	};
+
+	req.session = req.session || {};
+	req.session.user = anonymousUser;
+};
+
+export const configureProfileAuth = async (req: Request, res: Response, next: NextFunction) => {
+	const logger = container.get(LoggerService);
+	const globalPrefService = container.get(GlobalPreferencesService);
+	let requireAuthForRoomCreation: boolean;
+	let authMode: AuthMode;
+
+	try {
+		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
+		requireAuthForRoomCreation = securityPreferences.roomCreationPolicy.requireAuthentication;
+		authMode = securityPreferences.authentication.authMode;
+	} catch (error) {
+		logger.error('Error checking authentication preferences:' + error);
+		return res.status(500).json({ message: 'Internal server error' });
+	}
+
+	const authValidators = [tokenAndRoleValidator(UserRole.ADMIN)];
+
+	if (requireAuthForRoomCreation || authMode !== AuthMode.NONE) {
+		authValidators.push(tokenAndRoleValidator(UserRole.USER));
+	}
+
+	return withAuth(...authValidators)(req, res, next);
+};

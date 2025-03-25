@@ -1,4 +1,6 @@
 export * from './auth.middleware.js';
+export * from './room.middleware.js';
+export * from './participant.middleware.js';
 export * from './recording.middleware.js';
 export * from './content-type.middleware.js';
 export * from './request-validators/participant-validator.middleware.js';
