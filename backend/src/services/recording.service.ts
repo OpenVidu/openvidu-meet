@@ -16,7 +16,7 @@ import { S3Service } from './s3.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
-import { MEET_S3_BUCKET, MEET_S3_RECORDINGS_PREFIX, MEET_S3_SUBBUCKET } from '../environment.js';
+import { MEET_RECORDING_LOCK_TTL, MEET_S3_BUCKET, MEET_S3_RECORDINGS_PREFIX, MEET_S3_SUBBUCKET } from '../environment.js';
 import { RoomService } from './room.service.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { MutexService, RedisLock } from './mutex.service.js';
@@ -272,14 +272,13 @@ export class RecordingService {
 	 *
 	 * The active recording lock will be released when the recording ends (handleEgressEnded) or when the room is finished (handleMeetingFinished).
 	 *
-	 * @param roomName - The name of the room to acquire the lock for.
+	 * @param roomId - The name of the room to acquire the lock for.
 	 */
-	async acquireRoomRecordingActiveLock(roomName: string): Promise<RedisLock | null> {
-		const lockName = `${roomName}_${RedisLockName.RECORDING_ACTIVE}`;
-		const LOCK_TTL = ms('6h');
+	async acquireRoomRecordingActiveLock(roomId: string): Promise<RedisLock | null> {
+		const lockName = `${roomId}_${RedisLockName.RECORDING_ACTIVE}`;
 
 		try {
-			const lock = await this.mutexService.acquire(lockName, LOCK_TTL);
+			const lock = await this.mutexService.acquire(lockName, ms(MEET_RECORDING_LOCK_TTL));
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);

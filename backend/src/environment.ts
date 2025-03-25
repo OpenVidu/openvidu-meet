@@ -70,6 +70,8 @@ export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
 export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
 export const MEET_S3_ROOMS_PREFIX = 'rooms';
 export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
+// Time to live for the active recording lock in Redis
+export const MEET_RECORDING_LOCK_TTL = '6h';
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {
