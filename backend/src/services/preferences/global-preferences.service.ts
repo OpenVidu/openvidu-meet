@@ -3,12 +3,12 @@
  * regardless of the underlying storage mechanism.
  */
 
-import { GlobalPreferences, OpenViduMeetRoom, RoomPreferences } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, OpenViduMeetRoom, RoomPreferences } from '@typings-ce';
 import { LoggerService } from '../logger.service.js';
 import { PreferencesStorage } from './global-preferences-storage.interface.js';
 import { GlobalPreferencesStorageFactory } from './global-preferences.factory.js';
 import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
-import { MEET_NAME_ID } from '../../environment.js';
+import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
 import { injectable, inject } from '../../config/dependency-injector.config.js';
 
 @injectable()
@@ -137,7 +137,27 @@ export class GlobalPreferencesService<
 	 */
 	protected getDefaultPreferences(): G {
 		return {
-			projectId: MEET_NAME_ID
+			projectId: MEET_NAME_ID,
+			webhooksPreferences: {
+				enabled: MEET_WEBHOOK_ENABLED === 'true',
+				url: MEET_WEBHOOK_URL
+			},
+			securityPreferences: {
+				roomCreationPolicy: {
+					allowRoomCreation: true,
+					requireAuthentication: true
+				},
+				authentication: {
+					authMode: AuthMode.NONE,
+					method: {
+						type: AuthType.SINGLE_USER,
+						credentials: {
+							username: MEET_USER,
+							passwordHash: MEET_SECRET
+						}
+					}
+				}
+			}
 		} as G;
 	}
 
