@@ -1,4 +1,5 @@
 export * from './global-preferences.js';
+export * from './auth-preferences.js';
 export * from './room-preferences.js';
 export * from './participant.js';
 export * from './token.js';
