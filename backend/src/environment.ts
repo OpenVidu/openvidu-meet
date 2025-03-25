@@ -14,7 +14,6 @@ export const {
 	SERVER_CORS_ORIGIN = '*',
 	MEET_NAME_ID = 'openviduMeet',
 	MEET_API_KEY = 'meet-api-key',
-	MEET_PRIVATE_ACCESS = 'false',
 	MEET_USER = 'user',
 	MEET_SECRET = 'user',
 	MEET_ADMIN_USER = 'admin',
@@ -88,8 +87,6 @@ export function checkModuleEnabled() {
 export const logEnvVars = () => {
 	const credential = chalk.yellow;
 	const text = chalk.cyanBright;
-	const enabled = chalk.greenBright;
-	const disabled = chalk.redBright;
 
 	console.log(' ');
 	console.log('---------------------------------------------------------');
@@ -99,16 +96,6 @@ export const logEnvVars = () => {
 	console.log('CORS ORIGIN:', text(SERVER_CORS_ORIGIN));
 	console.log('MEET LOG LEVEL: ', text(MEET_LOG_LEVEL));
 	console.log('MEET API KEY: ', credential('****' + MEET_API_KEY.slice(-3)));
-	console.log(
-		'MEET PRIVATE ACCESS: ',
-		MEET_PRIVATE_ACCESS === 'true' ? enabled(MEET_PRIVATE_ACCESS) : disabled(MEET_PRIVATE_ACCESS)
-	);
-
-	if (MEET_PRIVATE_ACCESS === 'true') {
-		console.log('MEET USER: ', credential('****' + MEET_USER.slice(-3)));
-		console.log('MEET SECRET: ', credential('****' + MEET_SECRET.slice(-3)));
-	}
-
 	console.log('MEET ADMIN USER: ', credential('****' + MEET_ADMIN_USER.slice(-3)));
 	console.log('MEET ADMIN PASSWORD: ', credential('****' + MEET_ADMIN_SECRET.slice(-3)));
 	console.log('MEET ACCESS TOKEN EXPIRATION: ', text(MEET_ACCESS_TOKEN_EXPIRATION));
