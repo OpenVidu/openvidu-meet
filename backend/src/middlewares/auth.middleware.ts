@@ -1,14 +1,9 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { TokenService, UserService } from '../services/index.js';
-import {
-	ACCESS_TOKEN_COOKIE_NAME,
-	MEET_API_KEY,
-	MEET_PRIVATE_ACCESS,
-	PARTICIPANT_TOKEN_COOKIE_NAME
-} from '../environment.js';
+import { GlobalPreferencesService, LoggerService, TokenService, UserService } from '../services/index.js';
+import { ACCESS_TOKEN_COOKIE_NAME, MEET_API_KEY, PARTICIPANT_TOKEN_COOKIE_NAME } from '../environment.js';
 import { container } from '../config/dependency-injector.config.js';
 import { ClaimGrants } from 'livekit-server-sdk';
-import { Role } from '@typings-ce';
+import { AuthMode, UserRole } from '@typings-ce';
 import {
 	errorUnauthorized,
 	errorInvalidToken,
@@ -22,9 +17,9 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 	return async (req: Request, res: Response, next: NextFunction) => {
 		let lastError: OpenViduMeetError | null = null;
 
-		for (const middleware of validators) {
+		for (const validator of validators) {
 			try {
-				await middleware(req);
+				await validator(req);
 				// If any middleware granted access, it is not necessary to continue checking the rest
 				return next();
 			} catch (error) {
@@ -44,13 +39,8 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 };
 
 // Configure token validatior for role-based access
-export const tokenAndRoleValidator = (role: Role) => {
+export const tokenAndRoleValidator = (role: UserRole) => {
 	return async (req: Request) => {
-		// Skip token validation if role is USER and access is public
-		if (role == Role.USER && MEET_PRIVATE_ACCESS === 'false') {
-			return;
-		}
-
 		const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
 
 		if (!token) {
@@ -68,7 +58,7 @@ export const tokenAndRoleValidator = (role: Role) => {
 
 		const username = payload.sub;
 		const userService = container.get(UserService);
-		const user = username ? userService.getUser(username) : null;
+		const user = username ? await userService.getUser(username) : null;
 
 		if (!user) {
 			throw errorInvalidTokenSubject();

@@ -20,7 +20,7 @@ export const login = async (req: Request, res: Response) => {
 	const { username, password } = req.body as { username: string; password: string };
 
 	const authService = container.get(AuthService);
-	const user = authService.authenticate(username, password);
+	const user = await authService.authenticate(username, password);
 
 	if (!user) {
 		logger.warn('Login failed');
@@ -75,7 +75,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	const username = payload.sub;
 	const userService = container.get(UserService);
-	const user = username ? userService.getUser(username) : null;
+	const user = username ? await userService.getUser(username) : null;
 
 	if (!user) {
 		logger.warn('Invalid refresh token subject');
@@ -95,7 +95,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 export const getProfile = (req: Request, res: Response) => {
 	const user = req.session?.user;
-	
+
 	if (!user) {
 		return res.status(401).json({ message: 'Unauthorized' });
 	}
