@@ -5,7 +5,7 @@ export const enum MeetRecordingStatus {
 	COMPLETE = 'COMPLETE',
 	FAILED = 'FAILED',
 	ABORTED = 'ABORTED',
-	LIMITED_REACHED = 'LIMITED_REACHED',
+	LIMIT_REACHED = 'LIMIT_REACHED',
 }
 
 export const enum MeetRecordingOutputMode {

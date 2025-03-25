@@ -67,7 +67,7 @@ export class OpenViduComponentsAdapterHelper {
 			case MeetRecordingStatus.FAILED:
 			case MeetRecordingStatus.ABORTED:
 				return OpenViduComponentsDataTopic.RECORDING_FAILED;
-			case MeetRecordingStatus.LIMITED_REACHED:
+			case MeetRecordingStatus.LIMIT_REACHED:
 				return OpenViduComponentsDataTopic.RECORDING_STOPPED;
 			default:
 				return OpenViduComponentsDataTopic.RECORDING_FAILED;
@@ -87,7 +87,7 @@ export class OpenViduComponentsAdapterHelper {
 			case MeetRecordingStatus.FAILED:
 			case MeetRecordingStatus.ABORTED:
 				return 'FAILED';
-			case MeetRecordingStatus.LIMITED_REACHED:
+			case MeetRecordingStatus.LIMIT_REACHED:
 				return 'READY';
 			default:
 				return 'FAILED';

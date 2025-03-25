@@ -54,7 +54,7 @@ export class RecordingHelper {
 			case EgressStatus.EGRESS_ABORTED:
 				return MeetRecordingStatus.ABORTED;
 			case EgressStatus.EGRESS_LIMIT_REACHED:
-				return MeetRecordingStatus.LIMITED_REACHED;
+				return MeetRecordingStatus.LIMIT_REACHED;
 			default:
 				return MeetRecordingStatus.FAILED;
 		}
