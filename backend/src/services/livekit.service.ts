@@ -177,11 +177,11 @@ export class LiveKitService {
 	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of EgressInfo objects.
 	 * @throws Will throw an error if there is an issue retrieving the egress information.
 	 */
-	async getEgress(roomName?:string, egressId?: string): Promise<EgressInfo[]> {
+	async getEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
 		try {
 			const options: ListEgressOptions = {
 				roomName,
-				egressId,
+				egressId
 			};
 			return await this.egressClient.listEgress(options);
 		} catch (error: any) {
@@ -220,6 +220,7 @@ export class LiveKitService {
 	}
 
 	isEgressParticipant(participant: ParticipantInfo): boolean {
+		// TODO: Remove deprecated warning by using ParticipantInfo_Kind: participant.kind === ParticipantInfo_Kind.EGRESS;
 		return participant.identity.startsWith('EG_') && participant.permission?.recorder === true;
 	}
 
