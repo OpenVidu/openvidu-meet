@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services';
-import { Role } from '@lib/typings/ce';
+import { UserRole } from '@lib/typings/ce';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
@@ -21,7 +21,7 @@ export const checkUserAuthenticatedGuard: CanActivateFn = async (
 
 	// Check if the user has the expected roles
 	const { expectedRoles } = route.data;
-	const userRole = authService.isAdmin() ? Role.ADMIN : Role.USER;
+	const userRole = authService.isAdmin() ? UserRole.ADMIN : UserRole.USER;
 
 	if (!expectedRoles.includes(userRole)) {
 		// Redirect to the page specified in the route data when user has an invalid role

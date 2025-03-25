@@ -1,9 +1,9 @@
 export interface User {
     username: string;
-    role: Role;
+    role: UserRole;
 }
 
-export const enum Role {
+export const enum UserRole {
     ADMIN = 'admin',
     USER = 'user'
 }

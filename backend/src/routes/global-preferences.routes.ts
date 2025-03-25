@@ -5,7 +5,7 @@ import {
 	updateAppearancePreferences
 } from '../controllers/global-preferences/appearance-preferences.controller.js';
 import { withAuth, tokenAndRoleValidator, apiKeyValidator } from '../middlewares/auth.middleware.js';
-import { Role } from '@typings-ce';
+import { UserRole } from '@typings-ce';
 
 export const preferencesRouter = Router();
 
@@ -14,11 +14,11 @@ preferencesRouter.use(bodyParser.json());
 
 preferencesRouter.put(
 	'/appearance',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(Role.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	updateAppearancePreferences
 );
 preferencesRouter.get(
 	'/appearance',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(Role.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	getAppearancePreferences
 );

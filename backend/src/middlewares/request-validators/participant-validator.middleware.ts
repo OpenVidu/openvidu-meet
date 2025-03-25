@@ -31,7 +31,6 @@ export const validateParticipantDeletionRequest = (req: Request, res: Response, 
 	}
 
 	req.query = data!;
-
 	next();
 };
 

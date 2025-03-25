@@ -39,12 +39,11 @@ export const BulkDeleteRecordingsSchema = z.object({
 
 			return arg;
 		},
-		z.array(nonEmptySanitizedString('recordingId'))
-		.default([])
+		z.array(nonEmptySanitizedString('recordingId')).default([])
 	)
 });
 
-const GetRecordingsFiltersSchema:  z.ZodType<MeetRecordingFilters> = z.object({
+const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 	maxItems: z.coerce
 		.number()
 		.int()
@@ -64,7 +63,6 @@ export const withValidStartRecordingRequest = (req: Request, res: Response, next
 	}
 
 	req.body = data;
-
 	next();
 };
 
@@ -76,7 +74,6 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 	}
 
 	req.params.recordingId = data.recordingId;
-
 	next();
 };
 
@@ -102,7 +99,6 @@ export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response,
 	}
 
 	req.query.recordingIds = data.recordingIds.join(',');
-
 	next();
 };
 

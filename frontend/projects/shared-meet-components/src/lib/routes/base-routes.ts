@@ -27,7 +27,7 @@ import {
 	RoomFormComponent
 } from '../pages';
 import { LoginComponent } from '@lib/pages/login/login.component';
-import { Role } from '@lib/typings/ce';
+import { UserRole } from '@lib/typings/ce';
 
 export const baseRoutes: Routes = [
 	{
@@ -35,7 +35,7 @@ export const baseRoutes: Routes = [
 		component: RoomCreatorComponent,
 		canActivate: [checkUserAuthenticatedGuard],
 		data: {
-			expectedRoles: [Role.USER],
+			expectedRoles: [UserRole.USER],
 			redirectToUnauthorized: 'login',
 			redirectToInvalidRole: 'console'
 		}
@@ -59,7 +59,7 @@ export const baseRoutes: Routes = [
 		component: ConsoleComponent,
 		canActivate: [checkUserAuthenticatedGuard],
 		data: {
-			expectedRoles: [Role.ADMIN],
+			expectedRoles: [UserRole.ADMIN],
 			redirectToUnauthorized: 'console/login',
 			redirectToInvalidRole: ''
 		},

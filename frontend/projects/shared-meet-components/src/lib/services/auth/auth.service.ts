@@ -3,7 +3,7 @@ import { HttpService } from '../http/http.service';
 import { Router } from '@angular/router';
 import { from, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Role, User } from '@lib/typings/ce';
+import { UserRole, User } from '@lib/typings/ce';
 
 @Injectable({
 	providedIn: 'root'
@@ -60,7 +60,7 @@ export class AuthService {
 	}
 
 	isAdmin(): boolean {
-		return this.user?.role === Role.ADMIN;
+		return this.user?.role === UserRole.ADMIN;
 	}
 
 	private async getAuthenticatedUser() {
