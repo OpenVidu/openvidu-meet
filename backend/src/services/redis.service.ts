@@ -15,10 +15,11 @@ import { internalError } from '../models/error.model.js';
 import { LoggerService } from './logger.service.js';
 import { EventEmitter } from 'events';
 import Redlock from 'redlock';
+import ms from 'ms';
 
 @injectable()
 export class RedisService {
-	protected readonly DEFAULT_TTL: number = 32 * 60 * 60 * 24; // 32 days
+	protected readonly DEFAULT_TTL: number = ms('32 days');
 	protected redis: Redis;
 	protected isConnected = false;
 	public events: EventEmitter;
