@@ -5,6 +5,13 @@ import { GlobalPreferencesService } from '../services/index.js';
 import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 import { AuthMode, ParticipantRole, UserRole } from '@typings-ce';
 
+/**
+ * Middleware that configures authentication for creating a room based on global settings.
+ *
+ * - Admin role and API key authentication methods are always allowed.
+ * - If room creation is allowed and requires authentication, the user must have a valid token.
+ * - If room creation is allowed and does not require authentication, anonymous users are allowed.
+ */
 export const configureCreateRoomAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(GlobalPreferencesService);

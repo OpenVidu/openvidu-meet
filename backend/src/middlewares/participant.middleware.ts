@@ -4,6 +4,13 @@ import { container } from '../config/dependency-injector.config.js';
 import { GlobalPreferencesService, LoggerService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
+/**
+ * Middleware to configure authentication based on participant role and authentication mode for entering a room.
+ *
+ * - If the authentication mode is MODERATORS_ONLY and the participant role is MODERATOR, configure user authentication.
+ * - If the authentication mode is ALL_USERS, configure user authentication.
+ * - Otherwise, allow anonymous access.
+ */
 export const configureTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(GlobalPreferencesService);
