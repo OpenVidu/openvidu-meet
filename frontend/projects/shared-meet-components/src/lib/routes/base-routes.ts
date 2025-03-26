@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { UnauthorizedComponent } from '../components';
+import { UnauthorizedComponent, RoomCreatorDisabledComponent } from '../components';
 import {
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
@@ -8,7 +8,8 @@ import {
 	applicationModeGuard,
 	extractQueryParamsGuard,
 	checkParticipantNameGuard,
-	replaceModeratorSecretGuard
+	replaceModeratorSecretGuard,
+	checkRoomCreatorEnabledGuard
 } from '../guards';
 import {
 	AboutComponent,
@@ -18,6 +19,7 @@ import {
 	ConsoleLoginComponent,
 	DisconnectedComponent,
 	RoomCreatorComponent,
+	LoginComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
 	RecordingsComponent,
@@ -26,14 +28,13 @@ import {
 	VideoRoomComponent,
 	RoomFormComponent
 } from '../pages';
-import { LoginComponent } from '@lib/pages/login/login.component';
 import { UserRole } from '@lib/typings/ce';
 
 export const baseRoutes: Routes = [
 	{
 		path: '',
 		component: RoomCreatorComponent,
-		canActivate: [checkUserAuthenticatedGuard],
+		canActivate: [checkRoomCreatorEnabledGuard, checkUserAuthenticatedGuard],
 		data: {
 			expectedRoles: [UserRole.USER],
 			redirectToUnauthorized: 'login',
@@ -46,6 +47,7 @@ export const baseRoutes: Routes = [
 		canActivate: [checkUserNotAuthenticatedGuard],
 		data: { redirectTo: '' }
 	},
+	{ path: 'room-creator-disabled', component: RoomCreatorDisabledComponent },
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'unauthorized', component: UnauthorizedComponent },
 	{
