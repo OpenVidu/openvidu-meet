@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { ApplicationMode, ContextData, Edition } from '../../models/context.model';
 import { LoggerService } from 'openvidu-components-angular';
-import { ParticipantRole } from 'projects/shared-meet-components/src/public-api';
+import { AuthMode, HttpService, ParticipantRole } from 'projects/shared-meet-components/src/public-api';
 
 @Injectable({
 	providedIn: 'root'
@@ -25,6 +25,7 @@ export class ContextService {
 		},
 		mode: ApplicationMode.STANDALONE,
 		edition: Edition.CE,
+		globalPreferences: undefined,
 		leaveRedirectUrl: '',
 		parentDomain: '',
 		version: '',
@@ -37,7 +38,10 @@ export class ContextService {
 	/**
 	 * Initializes a new instance of the ContextService class.
 	 */
-	constructor(private loggerService: LoggerService) {
+	constructor(
+		private loggerService: LoggerService,
+		private httpService: HttpService
+	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ContextService');
 	}
 
@@ -162,6 +166,21 @@ export class ContextService {
 		return this.context.participantPermissions.canChat;
 	}
 
+	async canUsersCreateRooms(): Promise<boolean> {
+		await this.getGlobalPreferences();
+		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.allowRoomCreation;
+	}
+
+	async requireAuthenticationForRoomCreation(): Promise<boolean> {
+		await this.getGlobalPreferences();
+		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.requireAuthentication;
+	}
+
+	async getAuthModeToEnterRoom(): Promise<AuthMode> {
+		await this.getGlobalPreferences();
+		return this.context.globalPreferences!.securityPreferences.authentication.authMode;
+	}
+
 	private getValidDecodedToken(token: string) {
 		this.checkIsJWTValid(token);
 		const decodedToken: any = jwtDecode(token);
@@ -182,6 +201,18 @@ export class ContextService {
 		const tokenParts = token.split('.');
 		if (tokenParts.length !== 3) {
 			throw new Error('Invalid token. Token must be a valid JWT');
+		}
+	}
+
+	private async getGlobalPreferences() {
+		if (!this.context.globalPreferences) {
+			try {
+				// TODO: Retrieve only publicly available global preferences
+				this.context.globalPreferences = await this.httpService.getGlobalPreferences();
+			} catch (error) {
+				this.log.e('Error getting global preferences', error);
+				throw new Error('Error getting global preferences');
+			}
 		}
 	}
 }
