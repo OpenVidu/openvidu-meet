@@ -5,5 +5,6 @@ export interface User {
 
 export const enum UserRole {
     ADMIN = 'admin',
-    USER = 'user'
+    USER = 'user',
+    APP = 'app'
 }
