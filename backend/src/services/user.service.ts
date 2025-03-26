@@ -1,6 +1,6 @@
 import { MEET_ADMIN_USER } from '../environment.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
-import { AuthType, UserRole, SingleUserAuth, User } from '@typings-ce';
+import { UserRole, SingleUserAuth, User, SingleUserCredentials } from '@typings-ce';
 import { LoggerService } from './logger.service.js';
 import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
 
@@ -19,27 +19,26 @@ export class UserService {
 			};
 		}
 
-		let configuredUsername: string | undefined;
+		const userCredentials = await this.getStoredUserCredentials();
 
-		try {
-			const { securityPreferences } = await this.globalPrefService.getGlobalPreferences();
-			const method = securityPreferences.authentication.method;
-
-			if (method.type === AuthType.SINGLE_USER) {
-				configuredUsername = (method as SingleUserAuth).credentials.username;
-			}
-		} catch (error) {
-			this.logger.error('Error checking room creation policy:' + error);
-			return null;
-		}
-
-		if (username === configuredUsername) {
+		if (userCredentials && username === userCredentials.username) {
 			return {
-				username: configuredUsername,
+				username,
 				role: UserRole.USER
 			};
 		}
 
 		return null;
+	}
+
+	async getStoredUserCredentials(): Promise<SingleUserCredentials | null> {
+		try {
+			const { securityPreferences } = await this.globalPrefService.getGlobalPreferences();
+			const { method: authMethod } = securityPreferences.authentication;
+			return (authMethod as SingleUserAuth).credentials;
+		} catch (error) {
+			this.logger.error('Error getting stored user credentials:' + error);
+			return null;
+		}
 	}
 }
