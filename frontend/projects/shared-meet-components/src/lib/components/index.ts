@@ -5,3 +5,4 @@ export * from './cards/selection-card/selection-card.component';
 export * from './cards/pro-feature/pro-feature.component';
 export * from './dynamic-grid/dynamic-grid.component';
 export * from './errors/unauthorized/unauthorized.component';
+export * from './errors/room-creator-disabled/room-creator-disabled.component';
