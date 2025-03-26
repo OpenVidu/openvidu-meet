@@ -40,10 +40,12 @@ export class LoginComponent {
 		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
 		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
 		const redirectParam = this.route.snapshot.queryParams['redirectTo'];
-		
-		if (redirectParam) {
-			this.redirectTo = redirectParam;
-		}
+
+		this.route.queryParams.subscribe((params) => {
+			if (params['redirectTo']) {
+				this.redirectTo = params['redirectTo'];
+			}
+		});
 	}
 
 	async login() {
