@@ -5,7 +5,7 @@ import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ContextService, AuthService } from '../../services/index';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -26,9 +26,11 @@ export class LoginComponent {
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
+	redirectTo = ''; // By default, redirect to RoomCreatorComponent
 
 	constructor(
 		private router: Router,
+		private route: ActivatedRoute,
 		private authService: AuthService,
 		private contextService: ContextService
 	) {}
@@ -37,6 +39,11 @@ export class LoginComponent {
 		this.version = this.contextService.getVersion();
 		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
 		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
+		const redirectParam = this.route.snapshot.queryParams['redirectTo'];
+		
+		if (redirectParam) {
+			this.redirectTo = redirectParam;
+		}
 	}
 
 	async login() {
@@ -53,7 +60,7 @@ export class LoginComponent {
 				return;
 			}
 
-			this.router.navigate(['']);
+			this.router.navigate([this.redirectTo]);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
 				this.loginErrorMessage = 'Too many login attempts. Please try again later';
