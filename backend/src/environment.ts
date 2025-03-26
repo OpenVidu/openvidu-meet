@@ -61,14 +61,24 @@ export const {
 	ENABLED_MODULES = ''
 } = process.env;
 
+// Base paths for the API
 export const MEET_API_BASE_PATH = '/meet/api';
 export const MEET_INTERNAL_API_BASE_PATH_V1 = '/meet/internal-api/v1';
 export const MEET_API_BASE_PATH_V1 = MEET_API_BASE_PATH + '/v1';
+
+// Cookie names
 export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
 export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
 export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
+
+// Fixed usernames
+export const MEET_ANONYMOUS_USER = 'anonymous';
+export const MEET_API_USER = 'api-user';
+
+// S3 prefixes
 export const MEET_S3_ROOMS_PREFIX = 'rooms';
 export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
+
 // Time to live for the active recording lock in Redis
 export const MEET_RECORDING_LOCK_TTL = '6h';
 

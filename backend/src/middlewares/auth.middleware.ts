@@ -1,9 +1,15 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { GlobalPreferencesService, LoggerService, TokenService, UserService } from '../services/index.js';
-import { ACCESS_TOKEN_COOKIE_NAME, MEET_API_KEY, PARTICIPANT_TOKEN_COOKIE_NAME } from '../environment.js';
+import { LoggerService, TokenService, UserService } from '../services/index.js';
+import {
+	ACCESS_TOKEN_COOKIE_NAME,
+	MEET_ANONYMOUS_USER,
+	MEET_API_KEY,
+	MEET_API_USER,
+	PARTICIPANT_TOKEN_COOKIE_NAME
+} from '../environment.js';
 import { container } from '../config/dependency-injector.config.js';
 import { ClaimGrants } from 'livekit-server-sdk';
-import { AuthMode, UserRole } from '@typings-ce';
+import { User, UserRole } from '@typings-ce';
 import {
 	errorUnauthorized,
 	errorInvalidToken,
@@ -13,6 +19,14 @@ import {
 	OpenViduMeetError
 } from '../models/index.js';
 
+/**
+ * This middleware allows to chain multiple validators to check if the request is authorized.
+ * If any of the validators grants access, the request is allowed to continue, skipping the rest of the validators.
+ * If none of the validators grants access, the request is rejected with an unauthorized error.
+ *
+ * @param validators List of validators to check if the request is authorized
+ * @returns RequestHandler middleware
+ */
 export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): RequestHandler => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		let lastError: OpenViduMeetError | null = null;
@@ -103,39 +117,43 @@ export const apiKeyValidator = async (req: Request) => {
 	if (apiKey !== MEET_API_KEY) {
 		throw errorInvalidApiKey();
 	}
+
+	const apiUser = {
+		username: MEET_API_USER,
+		role: UserRole.APP
+	};
+
+	req.session = req.session || {};
+	req.session.user = apiUser;
 };
 
 // Allow anonymous access
 export const allowAnonymous = async (req: Request) => {
-	const anonymousUser = {
-		username: 'anonymous',
-		role: UserRole.USER
-	};
+	let user: User | null = null;
+
+	// Check if there is a user already authenticated
+	const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
+
+	if (token) {
+		try {
+			const tokenService = container.get(TokenService);
+			const payload = await tokenService.verifyToken(token);
+			const username = payload.sub;
+			const userService = container.get(UserService);
+			user = username ? await userService.getUser(username) : null;
+		} catch (error) {
+			const logger = container.get(LoggerService);
+			logger.debug('Token found but invalid:' + error);
+		}
+	}
+
+	if (!user) {
+		user = {
+			username: MEET_ANONYMOUS_USER,
+			role: UserRole.USER
+		};
+	}
 
 	req.session = req.session || {};
-	req.session.user = anonymousUser;
-};
-
-export const configureProfileAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const logger = container.get(LoggerService);
-	const globalPrefService = container.get(GlobalPreferencesService);
-	let requireAuthForRoomCreation: boolean;
-	let authMode: AuthMode;
-
-	try {
-		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
-		requireAuthForRoomCreation = securityPreferences.roomCreationPolicy.requireAuthentication;
-		authMode = securityPreferences.authentication.authMode;
-	} catch (error) {
-		logger.error('Error checking authentication preferences:' + error);
-		return res.status(500).json({ message: 'Internal server error' });
-	}
-
-	const authValidators = [tokenAndRoleValidator(UserRole.ADMIN)];
-
-	if (requireAuthForRoomCreation || authMode !== AuthMode.NONE) {
-		authValidators.push(tokenAndRoleValidator(UserRole.USER));
-	}
-
-	return withAuth(...authValidators)(req, res, next);
+	req.session.user = user;
 };
