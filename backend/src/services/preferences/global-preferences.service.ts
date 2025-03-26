@@ -10,6 +10,7 @@ import { GlobalPreferencesStorageFactory } from './global-preferences.factory.js
 import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
 import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
 import { injectable, inject } from '../../config/dependency-injector.config.js';
+import { PasswordHelper } from '../../helpers/password.helper.js';
 
 @injectable()
 export class GlobalPreferencesService<
@@ -29,7 +30,7 @@ export class GlobalPreferencesService<
 	 * @returns {Promise<G>} Default global preferences.
 	 */
 	async ensurePreferencesInitialized(): Promise<G> {
-		const preferences = this.getDefaultPreferences();
+		const preferences = await this.getDefaultPreferences();
 
 		try {
 			await this.storage.initialize(preferences);
@@ -135,7 +136,7 @@ export class GlobalPreferencesService<
 	 * Returns the default global preferences.
 	 * @returns {G}
 	 */
-	protected getDefaultPreferences(): G {
+	protected async getDefaultPreferences(): Promise<G> {
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {
@@ -153,7 +154,7 @@ export class GlobalPreferencesService<
 						type: AuthType.SINGLE_USER,
 						credentials: {
 							username: MEET_USER,
-							passwordHash: MEET_SECRET
+							passwordHash: await PasswordHelper.hashPassword(MEET_SECRET)
 						}
 					}
 				}
