@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@ang
 import { WebComponentManagerService, ContextService } from '../services';
 import { ApplicationMode } from 'projects/shared-meet-components/src/public-api';
 
-export const applicationModeGuard: CanActivateFn = async (
+export const applicationModeGuard: CanActivateFn = (
 	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {

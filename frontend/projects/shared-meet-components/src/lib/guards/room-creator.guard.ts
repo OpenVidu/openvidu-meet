@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
-import { ContextService } from 'shared-meet-components';
+import { ContextService } from '../services';
 
 export const checkRoomCreatorEnabledGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
@@ -11,8 +11,7 @@ export const checkRoomCreatorEnabledGuard: CanActivateFn = async (
 
 	const isRoomCreatorEnabled = await contextService.canUsersCreateRooms();
 	if (!isRoomCreatorEnabled) {
-		router.navigate(['room-creator-disabled']);
-		return false;
+		return router.createUrlTree(['room-creator-disabled']);
 	}
 
 	return true;

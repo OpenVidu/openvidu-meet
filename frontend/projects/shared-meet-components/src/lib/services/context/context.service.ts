@@ -171,7 +171,7 @@ export class ContextService {
 		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.allowRoomCreation;
 	}
 
-	async requireAuthenticationForRoomCreation(): Promise<boolean> {
+	async isAuthRequiredToCreateRooms(): Promise<boolean> {
 		await this.getGlobalPreferences();
 		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.requireAuthentication;
 	}

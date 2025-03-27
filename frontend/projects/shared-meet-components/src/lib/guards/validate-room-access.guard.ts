@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, CanActivateFn } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, CanActivateFn, UrlTree, RedirectCommand } from '@angular/router';
 import { ContextService, HttpService, SessionStorageService } from '../services';
 
 /**
@@ -7,7 +7,7 @@ import { ContextService, HttpService, SessionStorageService } from '../services'
  */
 export const validateRoomAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
-	_state: RouterStateSnapshot
+	state: RouterStateSnapshot
 ) => {
 	const httpService = inject(HttpService);
 	const contextService = inject(ContextService);
@@ -34,22 +34,20 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 			case 409:
 				// Participant already exists.
 				// Send a timestamp to force update the query params and show the error message in participant name input form
-				await router.navigate([`${roomName}/participant-name`], {
-					queryParams: { originUrl: _state.url, accessError: 'participant-exists', t: Date.now() },
+				const participantNameRoute = router.createUrlTree([`room/${roomName}/participant-name`], {
+					queryParams: { originUrl: state.url, accessError: 'participant-exists', t: Date.now() }
+				});
+				return new RedirectCommand(participantNameRoute, {
 					skipLocationChange: true
 				});
-				break;
 			case 406:
-				await redirectToUnauthorized(router, 'unauthorized-participant');
-				break;
+				return redirectToUnauthorized(router, 'unauthorized-participant');
 			default:
-				await redirectToUnauthorized(router, 'invalid-room');
+				return redirectToUnauthorized(router, 'invalid-room');
 		}
-		return false;
 	}
 };
 
-const redirectToUnauthorized = async (router: Router, reason: string): Promise<boolean> => {
-	await router.navigate(['unauthorized'], { queryParams: { reason } });
-	return false;
+const redirectToUnauthorized = (router: Router, reason: string): UrlTree => {
+	return router.createUrlTree(['unauthorized'], { queryParams: { reason } });
 };

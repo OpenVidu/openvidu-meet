@@ -18,7 +18,7 @@ import { filter, take } from 'rxjs';
  *
  * @throws Will log an error and return `false` if an error occurs during the process.
  */
-export const replaceModeratorSecretGuard: CanActivateFn = async (route, state) => {
+export const replaceModeratorSecretGuard: CanActivateFn = (route, _state) => {
 	const httpService = inject(HttpService);
 	const contextService = inject(ContextService);
 	const router = inject(Router);
