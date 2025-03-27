@@ -5,3 +5,4 @@ export * from './application-mode.guard';
 export * from './participant-name.guard';
 export * from './replace-moderator-secret.guard';
 export * from './room-creator.guard';
+export * from './run-serially.guard';
