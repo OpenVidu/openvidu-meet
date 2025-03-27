@@ -8,6 +8,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ContextService, AuthService } from '../../services/index';
 import { HttpErrorResponse } from '@angular/common/http';
+import { UserRole } from 'shared-meet-components';
 
 @Component({
 	selector: 'app-login',
@@ -39,7 +40,6 @@ export class LoginComponent {
 		this.version = this.contextService.getVersion();
 		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
 		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
-		const redirectParam = this.route.snapshot.queryParams['redirectTo'];
 
 		this.route.queryParams.subscribe((params) => {
 			if (params['redirectTo']) {
@@ -56,7 +56,8 @@ export class LoginComponent {
 			await this.authService.login(username!, password!);
 
 			// Check if the user has the expected role
-			if (this.authService.isAdmin()) {
+			const role = await this.authService.getUserRole();
+			if (role !== UserRole.USER) {
 				this.authService.logout();
 				this.loginErrorMessage = 'Invalid username or password';
 				return;

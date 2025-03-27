@@ -35,7 +35,7 @@ export class ParticipantNameFormComponent implements OnInit {
 		protected authService: AuthService
 	) {}
 
-	ngOnInit() {
+	async ngOnInit() {
 		this.route.queryParams.subscribe((params) => {
 			if (params['originUrl']) {
 				this.originUrl = params['originUrl'];
@@ -45,7 +45,7 @@ export class ParticipantNameFormComponent implements OnInit {
 		});
 
 		// Set the username if authenticated as default value
-		const username = this.authService.getUsername();
+		const username = await this.authService.getUsername();
 		if (username) {
 			this.participantForm.get('name')?.setValue(username);
 		}

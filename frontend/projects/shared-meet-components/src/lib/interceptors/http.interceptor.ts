@@ -70,7 +70,6 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	return next(req).pipe(
 		catchError((error: HttpErrorResponse) => {
-			console.log('Error with status', error.status);
 			if (error.status === 401) {
 				// Error refreshing participant token
 				if (error.url?.includes('/token/refresh')) {

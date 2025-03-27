@@ -39,7 +39,10 @@ export class RoomCreatorComponent implements OnInit {
 		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
 		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
 
-		this.username = this.authService.getUsername();
+		const username = await this.authService.getUsername();
+		if (username) {
+			this.username = username;
+		}
 	}
 
 	generateRoomName(event: any) {

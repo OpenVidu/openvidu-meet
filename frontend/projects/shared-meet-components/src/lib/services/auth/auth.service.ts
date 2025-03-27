@@ -10,7 +10,6 @@ import { UserRole, User } from '@lib/typings/ce';
 })
 export class AuthService {
 	protected hasCheckAuth = false;
-	protected isAuthenticated = false;
 	protected user: User | null = null;
 
 	constructor(
@@ -21,7 +20,7 @@ export class AuthService {
 	async login(username: string, password: string) {
 		try {
 			await this.httpService.login({ username, password });
-			await this.getAuthenticatedUser();
+			await this.getAuthenticatedUser(true);
 		} catch (err) {
 			const error = err as HttpErrorResponse;
 			console.error(error.error.message || error.error);
@@ -36,7 +35,6 @@ export class AuthService {
 	async logout(redirectTo?: string) {
 		try {
 			await this.httpService.logout();
-			this.isAuthenticated = false;
 			this.user = null;
 
 			if (redirectTo) {
@@ -48,29 +46,30 @@ export class AuthService {
 	}
 
 	async isUserAuthenticated(): Promise<boolean> {
-		if (!this.hasCheckAuth) {
-			await this.getAuthenticatedUser();
+		await this.getAuthenticatedUser();
+		return !!this.user;
+	}
+
+	async getUsername(): Promise<string | undefined> {
+		await this.getAuthenticatedUser();
+		return this.user?.username;
+	}
+
+	async getUserRole(): Promise<UserRole | undefined> {
+		await this.getAuthenticatedUser();
+		return this.user?.role;
+	}
+
+	private async getAuthenticatedUser(force = false) {
+		if (force || (!this.user && !this.hasCheckAuth)) {
+			try {
+				const user = await this.httpService.getProfile();
+				this.user = user;
+			} catch (error) {
+				this.user = null;
+			}
+			
 			this.hasCheckAuth = true;
-		}
-		return this.isAuthenticated;
-	}
-
-	getUsername(): string {
-		return this.user?.username || '';
-	}
-
-	isAdmin(): boolean {
-		return this.user?.role === UserRole.ADMIN;
-	}
-
-	private async getAuthenticatedUser() {
-		try {
-			const user = await this.httpService.getProfile();
-			this.user = user;
-			this.isAuthenticated = true;
-		} catch (error) {
-			this.user = null;
-			this.isAuthenticated = false;
 		}
 	}
 }

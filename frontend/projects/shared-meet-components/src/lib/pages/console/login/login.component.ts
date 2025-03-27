@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../../services';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { UserRole } from 'shared-meet-components';
 
 @Component({
 	selector: 'ov-login',
@@ -46,7 +47,8 @@ export class ConsoleLoginComponent {
 			await this.authService.login(username!, password!);
 
 			// Check if the user has the expected role
-			if (!this.authService.isAdmin()) {
+			const role = await this.authService.getUserRole();
+			if (role !== UserRole.ADMIN) {
 				this.authService.logout();
 				this.loginErrorMessage = 'Invalid username or password';
 				return;
