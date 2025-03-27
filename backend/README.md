@@ -45,9 +45,30 @@ The recording feature is based on the following key concepts:
 
    If the room does not exist or no active recording is detected, the lock is considered orphaned and is immediately released. This strategy helps ensure that stale locks do not prevent new recordings and maintains overall system reliability.
 
+### Recording Compose process
+The recording compose process is initiated by sending a `startRecording` request to the OpenVidu instance. The backend then waits for the `egress_started` event from LiveKit, which indicates that the recording has started successfully. If this event is not received within 30 seconds, the backend attempts to stop the recording.
 
-[![OpenVidu Meet Recording Logic](../docs/meet-recording-diagram.png)](../docs/meet-recording-diagram.png)
+```mermaid
+flowchart TD
+  A["Start New Recording Request"] --> B{"Can room be recorded?"}
+  B -- No --> C["Reject Request"]
+  B -- Yes --> D["Acquire lock in Redis"]
+  D --> E["Send startRecording to LiveKit"]
+  E --> F["Wait for recording_active event"]
 
+  %% Branch for recording_active event
+  F -- "recording_active event received" --> G["Cancel timeout"]
+  G --> I["Resolve Request"] --> H{"Monitor recording events"}
+  H -- "egress_ended" --> J["Release lock"]
+  H -- "room_finished" --> J["Release lock"]
+
+  %% Branch: Timeout
+  F -- "No event within 30 sec (Timeout)" --> K["Attempt to stop recording"]
+  K --> L{"Stop recording result"}
+  L -- "Success (recording stopped)" --> N["Reject Request"] --> H
+  L -- "Error (recording not found, already stopped,\nor unknown error)" --> O["Reject Request"] --> J
+
+```
 
 ### Storage structure for recordings
 
@@ -72,4 +93,6 @@ openvidu/
 ```
 
 **Recording Identifier Format:**
+
+The recording identifier is a unique string that combines the room ID, egress ID, and user ID. It follows the format:
 `recordingId: room-123--{egressId}--{uid}`
