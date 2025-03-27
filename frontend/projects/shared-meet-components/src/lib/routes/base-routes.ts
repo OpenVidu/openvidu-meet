@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-
 import { UnauthorizedComponent, RoomCreatorDisabledComponent } from '../components';
 import {
 	checkUserAuthenticatedGuard,
@@ -9,7 +8,9 @@ import {
 	extractQueryParamsGuard,
 	checkParticipantNameGuard,
 	replaceModeratorSecretGuard,
-	checkRoomCreatorEnabledGuard
+	checkRoomCreatorEnabledGuard,
+	checkParticipantRoleAndAuthGuard,
+	runGuardsSerially
 } from '../guards';
 import {
 	AboutComponent,
@@ -34,8 +35,14 @@ export const baseRoutes: Routes = [
 	{
 		path: '',
 		component: RoomCreatorComponent,
-		canActivate: [checkRoomCreatorEnabledGuard, checkUserAuthenticatedGuard],
+		canActivate: [
+			runGuardsSerially(
+				checkRoomCreatorEnabledGuard,
+				checkUserAuthenticatedGuard
+			)
+		],
 		data: {
+			checkSkipAuth: true,
 			expectedRoles: [UserRole.USER],
 			redirectToUnauthorized: 'login',
 			redirectToInvalidRole: 'console'
@@ -111,11 +118,14 @@ export const baseRoutes: Routes = [
 		path: 'room/:room-name',
 		component: VideoRoomComponent,
 		canActivate: [
-			applicationModeGuard,
-			extractQueryParamsGuard,
-			checkParticipantNameGuard,
-			validateRoomAccessGuard,
-			replaceModeratorSecretGuard
+			runGuardsSerially(
+				applicationModeGuard,
+				extractQueryParamsGuard,
+				checkParticipantNameGuard,
+				validateRoomAccessGuard,
+				checkParticipantRoleAndAuthGuard,
+				replaceModeratorSecretGuard
+			)
 		]
 	},
 	{
