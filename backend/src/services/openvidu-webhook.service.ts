@@ -99,6 +99,7 @@ export class OpenViduWebhookService {
 	}
 
 	private isWebhookEnabled(): boolean {
+		// TODO: Retrieve this from the database
 		return !!MEET_WEBHOOK_URL && MEET_WEBHOOK_ENABLED === 'true';
 	}
 }
