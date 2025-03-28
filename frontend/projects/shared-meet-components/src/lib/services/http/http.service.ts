@@ -1,7 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
-import { GlobalPreferences, ParticipantRole, RoomPreferences, TokenOptions, User } from '@lib/typings/ce';
+import {
+	GlobalPreferences,
+	ParticipantRole,
+	RoomPreferences,
+	SecurityPreferencesDTO,
+	TokenOptions,
+	User
+} from '@lib/typings/ce';
 import { RecordingInfo, Room } from 'openvidu-components-angular';
 import { lastValueFrom } from 'rxjs';
 
@@ -61,12 +68,12 @@ export class HttpService {
 	}
 
 	/**
-	 * Retrieves the global preferences.
+	 * Retrieves security preferences.
 	 *
 	 * @returns {Promise<GlobalPreferences>} A promise that resolves to the global preferences.
 	 */
-	getGlobalPreferences(): Promise<GlobalPreferences> {
-		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences`);
+	getSecurityPreferences(): Promise<SecurityPreferencesDTO> {
+		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences/security`);
 	}
 
 	/**

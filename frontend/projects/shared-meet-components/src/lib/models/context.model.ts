@@ -1,7 +1,7 @@
 import {
-	GlobalPreferences,
 	OpenViduMeetPermissions,
-	ParticipantRole
+	ParticipantRole,
+	SecurityPreferencesDTO
 } from 'projects/shared-meet-components/src/public-api';
 
 export interface ContextData {
@@ -13,7 +13,7 @@ export interface ContextData {
 	participantPermissions: OpenViduMeetPermissions;
 	mode: ApplicationMode;
 	edition: Edition;
-	globalPreferences?: GlobalPreferences;
+	securityPreferences?: SecurityPreferencesDTO;
 	leaveRedirectUrl: string;
 	parentDomain: string;
 	version: string;

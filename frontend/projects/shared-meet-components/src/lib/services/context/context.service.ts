@@ -25,7 +25,7 @@ export class ContextService {
 		},
 		mode: ApplicationMode.STANDALONE,
 		edition: Edition.CE,
-		globalPreferences: undefined,
+		securityPreferences: undefined,
 		leaveRedirectUrl: '',
 		parentDomain: '',
 		version: '',
@@ -167,18 +167,18 @@ export class ContextService {
 	}
 
 	async canUsersCreateRooms(): Promise<boolean> {
-		await this.getGlobalPreferences();
-		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.allowRoomCreation;
+		await this.getSecurityPreferences();
+		return this.context.securityPreferences!.roomCreationPolicy.allowRoomCreation;
 	}
 
 	async isAuthRequiredToCreateRooms(): Promise<boolean> {
-		await this.getGlobalPreferences();
-		return this.context.globalPreferences!.securityPreferences.roomCreationPolicy.requireAuthentication;
+		await this.getSecurityPreferences();
+		return this.context.securityPreferences!.roomCreationPolicy.requireAuthentication;
 	}
 
 	async getAuthModeToEnterRoom(): Promise<AuthMode> {
-		await this.getGlobalPreferences();
-		return this.context.globalPreferences!.securityPreferences.authentication.authMode;
+		await this.getSecurityPreferences();
+		return this.context.securityPreferences!.authentication.authMode;
 	}
 
 	private getValidDecodedToken(token: string) {
@@ -204,14 +204,13 @@ export class ContextService {
 		}
 	}
 
-	private async getGlobalPreferences() {
-		if (!this.context.globalPreferences) {
+	private async getSecurityPreferences() {
+		if (!this.context.securityPreferences) {
 			try {
-				// TODO: Retrieve only publicly available global preferences
-				this.context.globalPreferences = await this.httpService.getGlobalPreferences();
+				this.context.securityPreferences = await this.httpService.getSecurityPreferences();
 			} catch (error) {
-				this.log.e('Error getting global preferences', error);
-				throw new Error('Error getting global preferences');
+				this.log.e('Error getting security preferences', error);
+				throw new Error('Error getting security preferences');
 			}
 		}
 	}
