@@ -27,8 +27,7 @@ export class TaskSchedulerService {
 	 * @returns A promise that resolves when the garbage collector has been successfully started.
 	 */
 	async startRoomGarbageCollector(callbackFn: () => Promise<void>): Promise<void> {
-		const lockTtl = 59 * 60 * 1000; // TTL of 59 minutes
-
+		// Stop the existing job if it exists
 		if (this.roomGarbageCollectorJob) {
 			this.roomGarbageCollectorJob.stop();
 			this.roomGarbageCollectorJob = null;
@@ -37,7 +36,7 @@ export class TaskSchedulerService {
 		// Create a cron job to run every hour
 		this.roomGarbageCollectorJob = new CronJob('0 * * * *', async () => {
 			try {
-				const lock = await this.mutexService.acquire(RedisLockName.GARBAGE_COLLECTOR, lockTtl);
+				const lock = await this.mutexService.acquire(MeetLock.getRoomGarbageCollectorLock(), ms('59m'));
 
 				if (!lock) {
 					this.logger.debug('Failed to acquire lock for room garbage collection. Skipping.');

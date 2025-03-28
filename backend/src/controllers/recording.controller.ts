@@ -8,7 +8,7 @@ export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { roomId } = req.body;
-	logger.info(`Starting recording in ${roomId}`);
+	logger.info(`Initiating recording for room ${roomId}`);
 
 	try {
 		const recordingInfo = await recordingService.startRecording(roomId);
@@ -90,7 +90,7 @@ export const stopRecording = async (req: Request, res: Response) => {
 	const recordingId = req.params.recordingId;
 
 	try {
-		logger.info(`Stopping recording ${recordingId}`);
+		logger.info(`Initiating stop for recording ${recordingId}`);
 		const recordingService = container.get(RecordingService);
 
 		const recordingInfo = await recordingService.stopRecording(recordingId);

@@ -95,10 +95,10 @@ export class S3Service {
 				Body: JSON.stringify(body)
 			});
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
-			this.logger.info(`S3 saveObject: successfully saved object ${fullKey} in bucket ${bucket}`);
+			this.logger.info(`S3: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
 		} catch (error: any) {
-			this.logger.error(`S3 saveObject: error putting object ${fullKey} in bucket ${bucket}: ${error}`);
+			this.logger.error(`S3: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorS3NotAvailable(error);
@@ -404,7 +404,7 @@ export class S3Service {
 
 		while (true) {
 			try {
-				this.logger.verbose(`S3 retryOperation: attempt ${attempt + 1}`);
+				this.logger.verbose(`S3 operation: attempt ${attempt + 1}`);
 				return await operation();
 			} catch (error) {
 				attempt++;

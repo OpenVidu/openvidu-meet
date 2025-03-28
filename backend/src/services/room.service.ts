@@ -212,11 +212,7 @@ export class RoomService {
 	 * @returns A promise that resolves when the signal has been sent.
 	 */
 	async sendSignal(roomName: string, rawData: any, options: SendDataOptions): Promise<void> {
-		this.logger.verbose(
-			`Sending signal "${options.topic}" to ${
-				options.destinationIdentities ? `participant(s) ${options.destinationIdentities}` : 'all participants'
-			} in room "${roomName}".`
-		);
+		this.logger.verbose(`Notifying participants in room ${roomName}: "${options.topic}".`);
 		this.livekitService.sendData(roomName, rawData, options);
 	}
 
