@@ -13,6 +13,10 @@ const enum OpenViduComponentsDataTopic {
 }
 
 export class OpenViduComponentsAdapterHelper {
+	private constructor() {
+		// Prevent instantiation of this utility class
+	}
+
 	static generateRecordingSignal(recordingInfo: MeetRecordingInfo) {
 		const options: SendDataOptions = {
 			destinationSids: [],

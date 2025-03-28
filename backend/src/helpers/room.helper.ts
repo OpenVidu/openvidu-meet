@@ -4,6 +4,10 @@ import { MEET_NAME_ID } from '../environment.js';
 import { uid } from 'uid/single';
 
 export class OpenViduRoomHelper {
+	private constructor() {
+		// Prevent instantiation of this utility class
+	}
+
 	/**
 	 * Converts an OpenViduMeetRoom object to an OpenViduMeetRoomOptions object.
 	 *

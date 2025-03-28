@@ -3,6 +3,10 @@ import { MeetRecordingInfo, MeetRecordingOutputMode, MeetRecordingStatus } from 
 import { EgressStatus } from '@livekit/protocol';
 
 export class RecordingHelper {
+	private constructor() {
+		// Prevent instantiation of this utility class
+	}
+
 	static toRecordingInfo(egressInfo: EgressInfo): MeetRecordingInfo {
 		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
 		const size = RecordingHelper.extractSize(egressInfo);
@@ -140,8 +144,9 @@ export class RecordingHelper {
 	 * @param egressInfo - The EgressInfo object containing the endedAt value.
 	 * @returns The endedAt value converted to milliseconds.
 	 */
-	static extractEndDate(egressInfo: EgressInfo): number {
-		return this.toMilliseconds(Number(egressInfo.endedAt ?? 0));
+	static extractEndDate(egressInfo: EgressInfo): number | undefined {
+		const endDateMs = this.toMilliseconds(Number(egressInfo.endedAt ?? 0));
+		return endDateMs !== 0 ? endDateMs : undefined;
 	}
 
 	/**
