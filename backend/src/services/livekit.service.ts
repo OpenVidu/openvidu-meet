@@ -5,6 +5,7 @@ import {
 	DataPacket_Kind,
 	EgressClient,
 	EgressInfo,
+	EgressStatus,
 	EncodedFileOutput,
 	ListEgressOptions,
 	ParticipantInfo,
@@ -208,7 +209,12 @@ export class LiveKitService {
 				egressId,
 				active: true
 			};
-			return await this.egressClient.listEgress(options);
+			const egress = await this.egressClient.listEgress(options);
+
+			// In some cases, the egress list may contain egress that their status is ENDINDG
+			// which means that the egress is still active but it is in the process of stopping.
+			// We need to filter those out.
+			return egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
 		} catch (error: any) {
 			if (error.message.includes('404')) {
 				return [];
