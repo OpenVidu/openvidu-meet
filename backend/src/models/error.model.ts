@@ -63,10 +63,6 @@ export const errorRecordingNotStopped = (recordingId: string): OpenViduMeetError
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not stopped yet`, 409);
 };
 
-export const errorRecordingNotReady = (recordingId: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not ready yet`, 409);
-};
-
 export const errorRecordingAlreadyStopped = (recordingId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is already stopped`, 409);
 };
@@ -77,6 +73,30 @@ export const errorRecordingCannotBeStoppedWhileStarting = (recordingId: string):
 
 export const errorRecordingAlreadyStarted = (roomName: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `The room '${roomName}' is already being recorded`, 409);
+};
+
+const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
+	return (
+		error instanceof OpenViduMeetError &&
+		error.name === originalError.name &&
+		error.statusCode === originalError.statusCode &&
+		error.message === originalError.message
+	);
+};
+
+export const isErrorRecordingAlreadyStopped = (error: OpenViduMeetError, recordingId: string): boolean => {
+	return isMatchingError(error, errorRecordingAlreadyStopped(recordingId));
+};
+
+export const isErrorRecordingNotFound = (error: OpenViduMeetError, recordingId: string): boolean => {
+	return isMatchingError(error, errorRecordingNotFound(recordingId));
+};
+
+export const isErrorRecordingCannotBeStoppedWhileStarting = (
+	error: OpenViduMeetError,
+	recordingId: string
+): boolean => {
+	return isMatchingError(error, errorRecordingCannotBeStoppedWhileStarting(recordingId));
 };
 
 // Room errors

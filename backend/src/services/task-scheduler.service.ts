@@ -3,11 +3,14 @@ import { LoggerService } from './index.js';
 import { SystemEventService } from './system-event.service.js';
 import { CronJob } from 'cron';
 import { MutexService } from './mutex.service.js';
-import { RedisLockName } from '../models/redis.model.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import ms from 'ms';
+import { MEET_RECORDING_CLEANUP_TIMEOUT } from '../environment.js';
 
 @injectable()
 export class TaskSchedulerService {
 	protected roomGarbageCollectorJob: CronJob | null = null;
+	private recordingCleanupTimers: Map<string, NodeJS.Timeout> = new Map();
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
@@ -52,5 +55,46 @@ export class TaskSchedulerService {
 		// Start the job
 		this.logger.debug('Starting room garbage collector');
 		this.roomGarbageCollectorJob.start();
+	}
+
+	/**
+	 * Schedules a cleanup timer for a recording that has just started.
+	 *
+	 * If the egress_started webhook is not received before the timer expires,
+	 * this timer will execute a cleanup callback by stopping the recording and releasing
+	 * the active lock for the specified room.
+	 */
+	async scheduleRecordingCleanupTimer(roomId: string, cleanupCallback: () => Promise<void>): Promise<void> {
+		this.logger.debug(`Recording cleanup timer (${MEET_RECORDING_CLEANUP_TIMEOUT}) scheduled for room ${roomId}.`);
+
+		// Schedule a timeout to run the cleanup callback after a specified time
+		const timeoutMs = ms(MEET_RECORDING_CLEANUP_TIMEOUT);
+		const timer = setTimeout(async () => {
+			this.logger.warn(`Recording cleanup timer expired for room ${roomId}. Initiating cleanup process.`);
+			this.recordingCleanupTimers.delete(roomId);
+			await cleanupCallback();
+		}, timeoutMs);
+		this.recordingCleanupTimers.set(roomId, timer);
+	}
+
+	cancelRecordingCleanupTimer(roomId: string): void {
+		const timer = this.recordingCleanupTimers.get(roomId);
+
+		if (timer) {
+			clearTimeout(timer);
+			this.recordingCleanupTimers.delete(roomId);
+			this.logger.info(`Recording cleanup timer cancelled for room ${roomId}`);
+		}
+	}
+
+	async startRecordingLockGarbageCollector(callbackFn: () => Promise<void>): Promise<void> {
+		// Create a cron job to run every minute
+		const recordingLockGarbageCollectorJob = new CronJob('0 * * * * *', async () => {
+			try {
+				await callbackFn();
+			} catch (error) {
+				this.logger.error('Error running recording lock garbage collection:', error);
+			}
+		});
 	}
 }

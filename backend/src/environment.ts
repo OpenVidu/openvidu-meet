@@ -81,6 +81,7 @@ export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
 
 // Time to live for the active recording lock in Redis
 export const MEET_RECORDING_LOCK_TTL = '6h';
+export const MEET_RECORDING_CLEANUP_TIMEOUT = '30s';
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {

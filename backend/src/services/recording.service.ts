@@ -1,5 +1,6 @@
 import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import { uid } from 'uid';
+import ms from 'ms';
 import { Readable } from 'stream';
 import { LiveKitService } from './livekit.service.js';
 import {
@@ -10,19 +11,29 @@ import {
 	errorRecordingNotStopped,
 	errorRoomNotFound,
 	internalError,
+	isErrorRecordingAlreadyStopped,
+	isErrorRecordingCannotBeStoppedWhileStarting,
+	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { S3Service } from './s3.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
-import { MEET_RECORDING_LOCK_TTL, MEET_S3_BUCKET, MEET_S3_RECORDINGS_PREFIX, MEET_S3_SUBBUCKET } from '../environment.js';
+import {
+	MEET_RECORDING_LOCK_TTL,
+	MEET_S3_BUCKET,
+	MEET_S3_RECORDINGS_PREFIX,
+	MEET_S3_SUBBUCKET
+} from '../environment.js';
 import { RoomService } from './room.service.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { MutexService, RedisLock } from './mutex.service.js';
-import { RedisLockName } from '../models/index.js';
-import ms from 'ms';
 import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import { TaskSchedulerService } from './task-scheduler.service.js';
+import { SystemEventService } from './system-event.service.js';
+import { SystemEventType } from '../models/system-event.model.js';
 
 @injectable()
 export class RecordingService {
@@ -31,6 +42,8 @@ export class RecordingService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(MutexService) protected mutexService: MutexService,
+		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
+		@inject(SystemEventService) protected systemEventService: SystemEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
@@ -42,6 +55,9 @@ export class RecordingService {
 
 			if (!room) throw errorRoomNotFound(roomId);
 
+			//TODO: Check if the room has participants before starting the recording
+			//room.numParticipants === 0 ? throw errorNoParticipants(roomId);
+
 			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
 
@@ -50,10 +66,33 @@ export class RecordingService {
 			const options = this.generateCompositeOptionsFromRequest();
 			const output = this.generateFileOutputFromRequest(roomId);
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
+			const recordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
+			const { recordingId } = recordingInfo;
 
-			return RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingPromise = new Promise<MeetRecordingInfo>((resolve, reject) => {
+				this.taskSchedulerService.scheduleRecordingCleanupTimer(
+					roomId,
+					this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
+				);
+
+				this.systemEventService.once(SystemEventType.RECORDING_ACTIVE, (payload: Record<string, unknown>) => {
+					// This listener is triggered only for the instance that started the recording.
+					// Check if the recording ID matches the one that was started
+					const isEventForCurrentRecording =
+						payload?.recordingId === recordingId && payload?.roomId === roomId;
+
+					if (isEventForCurrentRecording) {
+						this.taskSchedulerService.cancelRecordingCleanupTimer(roomId);
+						resolve(recordingInfo);
+					} else {
+						this.logger.error('Received recording active event with mismatched recording ID:', payload);
+					}
+				});
+			});
+
+			return await recordingPromise;
 		} catch (error) {
-			this.logger.error(`Error starting recording in room ${roomId}: ${error}`);
+			this.logger.error(`Error starting recording in room '${roomId}': ${error}`);
 
 			if (acquiredLock) await this.releaseRoomRecordingActiveLock(roomId);
 
@@ -71,6 +110,11 @@ export class RecordingService {
 				throw errorRecordingNotFound(egressId);
 			}
 
+			// Cancel the recording cleanup timer if it is running
+			this.taskSchedulerService.cancelRecordingCleanupTimer(roomId);
+			// Remove the listener for the EGRESS_STARTED event.
+			this.systemEventService.off(SystemEventType.RECORDING_ACTIVE);
+
 			switch (egress.status) {
 				case EgressStatus.EGRESS_ACTIVE:
 					// Everything is fine, the recording can be stopped.
@@ -85,9 +129,10 @@ export class RecordingService {
 
 			const egressInfo = await this.livekitService.stopEgress(egressId);
 
+			this.logger.info(`Recording stopped successfully for room '${roomId}'.`);
 			return RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
-			this.logger.error(`Error stopping recording ${recordingId}: ${error}`);
+			this.logger.error(`Error stopping recording '${recordingId}': ${error}`);
 			throw error;
 		}
 	}
@@ -275,7 +320,7 @@ export class RecordingService {
 	 * @param roomId - The name of the room to acquire the lock for.
 	 */
 	async acquireRoomRecordingActiveLock(roomId: string): Promise<RedisLock | null> {
-		const lockName = `${roomId}_${RedisLockName.RECORDING_ACTIVE}`;
+		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
 			const lock = await this.mutexService.acquire(lockName, ms(MEET_RECORDING_LOCK_TTL));
@@ -292,14 +337,24 @@ export class RecordingService {
 	 * This method attempts to release a lock associated with the active recording
 	 * of a given room.
 	 */
-	async releaseRoomRecordingActiveLock(roomName: string): Promise<void> {
-		if (roomName) {
-			const lockName = `${roomName}_${RedisLockName.RECORDING_ACTIVE}`;
+	async releaseRoomRecordingActiveLock(roomId: string): Promise<void> {
+		if (roomId) {
+			const lockName = MeetLock.getRecordingActiveLock(roomId);
+			const egress = await this.livekitService.getActiveEgress(roomId);
+
+			if (egress.length > 0) {
+				this.logger.verbose(
+					`Active egress found for room ${roomId}: ${egress.map((e) => e.egressId).join(', ')}`
+				);
+				this.logger.error(`Cannot release recorgin lock for room '${roomId}'.`);
+				return;
+			}
 
 			try {
 				await this.mutexService.release(lockName);
+				this.logger.verbose(`Recording active lock released for room '${roomId}'.`);
 			} catch (error) {
-				this.logger.warn(`Error releasing lock ${lockName} on egress ended: ${error}`);
+				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended: ${error}`);
 			}
 		}
 	}
@@ -362,7 +417,7 @@ export class RecordingService {
 		return { recordingInfo, metadataFilePath: metadataPath };
 	}
 
-	private generateCompositeOptionsFromRequest(layout = 'speaker'): RoomCompositeOptions {
+	protected generateCompositeOptionsFromRequest(layout = 'speaker'): RoomCompositeOptions {
 		return {
 			layout: layout
 			// customBaseUrl: customLayout,
@@ -377,7 +432,7 @@ export class RecordingService {
 	 * @param fileName - The name of the file (default is 'recording').
 	 * @returns The generated file output object.
 	 */
-	private generateFileOutputFromRequest(roomId: string): EncodedFileOutput {
+	protected generateFileOutputFromRequest(roomId: string): EncodedFileOutput {
 		// Added unique identifier to the file path for avoiding overwriting
 		const recordingName = `${roomId}--${uid(10)}`;
 
@@ -400,7 +455,72 @@ export class RecordingService {
 	 * @param str - The input string to sanitize for use in a regular expression.
 	 * @returns A new string with special characters escaped.
 	 */
-	private sanitizeRegExp(str: string) {
+	protected sanitizeRegExp(str: string) {
 		return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
+
+	/**
+	 * Callback function to release the active recording lock after a timeout.
+	 * This function is scheduled by the recording cleanup timer when a recording is started.
+	 *
+	 * @param recordingId
+	 * @param roomId
+	 */
+	protected async handleRecordingLockTimeout(
+		recordingId: string,
+		roomId: string,
+		rejectRequest: (reason?: unknown) => void
+	) {
+		this.logger.debug(`Recording cleanup timer triggered for room '${roomId}'.`);
+
+		let shouldReleaseLock = false;
+
+		try {
+			await this.stopRecording(recordingId);
+			// The recording was stopped successfully
+			// the cleanup timer will be cancelled when the egress_ended event is received.
+		} catch (error) {
+			if (error instanceof OpenViduMeetError) {
+				// The recording is already stopped or not found in LiveKit.
+				const isRecordingAlreadyStopped = isErrorRecordingAlreadyStopped(error, recordingId);
+				const isRecordingNotFound = isErrorRecordingNotFound(error, recordingId);
+
+				if (isRecordingAlreadyStopped || isRecordingNotFound) {
+					this.logger.verbose(`Recording ${recordingId} is already stopped or not found.`);
+					this.logger.verbose(' Proceeding to release the recording active lock.');
+					shouldReleaseLock = true;
+				} else if (isErrorRecordingCannotBeStoppedWhileStarting(error, recordingId)) {
+					// The recording is still starting, the cleanup timer will be cancelled.
+					this.logger.warn(
+						`Recording ${recordingId} is still starting. Skipping recording active lock release.`
+					);
+				} else {
+					// An error occurred while stopping the recording.
+					this.logger.error(`Error stopping recording ${recordingId}: ${error.message}`);
+					shouldReleaseLock = true;
+				}
+			} else {
+				this.logger.error(`Unexpected error while run recording cleanup timer:`, error);
+			}
+		} finally {
+			if (shouldReleaseLock) {
+				try {
+					await this.releaseRoomRecordingActiveLock(roomId);
+					this.logger.debug(`Recording active lock released for room ${roomId}.`);
+				} catch (releaseError) {
+					this.logger.error(`Error releasing active recording lock for room ${roomId}: ${releaseError}`);
+				}
+			}
+
+			// Reject the REST request with a timeout error.
+			rejectRequest(new Error(`Timeout waiting for '${SystemEventType.RECORDING_ACTIVE}' event in room '${roomId}'`));
+		}
+	}
+
+	protected async deleteOrphanLocks() {
+		// TODO: Get all recordings active locks from redis
+		// TODO: Extract all rooms ids from the active locks
+		// TODO: Check each room id if it has an active recording
+		// TODO: Remove the lock if the room has no active recording
 	}
 }

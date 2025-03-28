@@ -16,20 +16,29 @@ import { LoggerService } from './logger.service.js';
 import { EventEmitter } from 'events';
 import Redlock from 'redlock';
 import ms from 'ms';
+import { SystemEventPayload } from '../models/system-event.model.js';
 
 @injectable()
-export class RedisService {
+export class RedisService extends EventEmitter {
 	protected readonly DEFAULT_TTL: number = ms('32 days');
-	protected redis: Redis;
+	protected EVENT_CHANNEL = 'ov_meet_channel';
+	protected redisPublisher: Redis;
+	protected redisSubscriber: Redis;
 	protected isConnected = false;
-	public events: EventEmitter;
+	protected eventHandler?: (event: SystemEventPayload) => void;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
-		this.events = new EventEmitter();
-		const redisOptions = this.loadRedisConfig();
-		this.redis = new Redis(redisOptions);
+		super();
 
-		this.redis.on('connect', () => {
+		const redisOptions = this.loadRedisConfig();
+		this.redisPublisher = new Redis(redisOptions);
+		this.redisSubscriber = new Redis(redisOptions);
+
+		this.setupEventHandlers();
+	}
+
+	protected setupEventHandlers(): void {
+		const onConnect = () => {
 			if (!this.isConnected) {
 				this.logger.verbose('Connected to Redis');
 			} else {
@@ -37,18 +46,29 @@ export class RedisService {
 			}
 
 			this.isConnected = true;
-			this.events.emit('redisConnected');
-		});
-		this.redis.on('error', (e) => this.logger.error('Error Redis', e));
+			this.emit('redisConnected');
+		};
 
-		this.redis.on('end', () => {
+		const onError = (error: Error) => {
+			this.logger.error('Redis Error', error);
+		};
+
+		const onDisconnect = () => {
 			this.isConnected = false;
 			this.logger.warn('Redis disconnected');
-		});
+			this.emit('redisDisconnected');
+		};
+
+		this.redisPublisher.on('connect', onConnect);
+		this.redisSubscriber.on('connect', onConnect);
+		this.redisPublisher.on('error', onError);
+		this.redisSubscriber.on('error', onError);
+		this.redisPublisher.on('end', onDisconnect);
+		this.redisSubscriber.on('end', onDisconnect);
 	}
 
 	createRedlock(retryCount = -1, retryDelay = 200) {
-		return new Redlock([this.redis], {
+		return new Redlock([this.redisPublisher], {
 			driftFactor: 0.01,
 			retryCount,
 			retryDelay,
@@ -61,7 +81,62 @@ export class RedisService {
 			callback();
 		}
 
-		this.events.on('redisConnected', callback);
+		this.on('redisConnected', callback);
+	}
+
+	/**
+	 * Publishes a message to a specified Redis channel.
+	 *
+	 * @param channel - The name of the Redis channel to publish the message to.
+	 * @param message - The message to be published to the channel.
+	 * @returns A promise that resolves when the message has been successfully published.
+	 */
+	async publishEvent(channel: string, message: string) {
+		try {
+			await this.redisPublisher.publish(channel, message);
+		} catch (error) {
+			this.logger.error('Error publishing message to Redis', error);
+		}
+	}
+
+	/**
+	 * Subscribes to a Redis channel.
+	 *
+	 * @param channel - The channel to subscribe to.
+	 * @param callback - The callback function to execute when a message is received on the channel.
+	 */
+	subscribe(channel: string, callback: (message: string) => void) {
+		this.logger.verbose(`Subscribing to Redis channel: ${channel}`);
+		this.redisSubscriber.subscribe(channel, (err, count) => {
+			if (err) {
+				this.logger.error('Error subscribing to Redis channel', err);
+				return;
+			}
+
+			this.logger.verbose(`Subscribed to ${channel}. Now subscribed to ${count} channel(s).`);
+		});
+
+		this.redisSubscriber.on('message', (receivedChannel, message) => {
+			if (receivedChannel === channel) {
+				callback(message);
+			}
+		});
+	}
+
+	/**
+	 * Unsubscribes from a Redis channel.
+	 *
+	 * @param channel - The channel to unsubscribe from.
+	 */
+	unsubscribe(channel: string) {
+		this.redisSubscriber.unsubscribe(channel, (err, count) => {
+			if (err) {
+				this.logger.error('Error unsubscribing from Redis channel', err);
+				return;
+			}
+
+			this.logger.verbose(`Unsubscribed from channel ${channel}. Now subscribed to ${count} channel(s).`);
+		});
 	}
 
 	/**
@@ -76,7 +151,7 @@ export class RedisService {
 		const keys: Set<string> = new Set();
 
 		do {
-			const [nextCursor, partialKeys] = await this.redis.scan(cursor, 'MATCH', pattern);
+			const [nextCursor, partialKeys] = await this.redisPublisher.scan(cursor, 'MATCH', pattern);
 			partialKeys.forEach((key) => keys.add(key));
 			cursor = nextCursor;
 		} while (cursor !== '0');
@@ -98,33 +173,15 @@ export class RedisService {
 	get(key: string, hashKey?: string): Promise<string | null> {
 		try {
 			if (hashKey) {
-				return this.redis.hget(key, hashKey);
+				return this.redisPublisher.hget(key, hashKey);
 			} else {
-				return this.redis.get(key);
+				return this.redisPublisher.get(key);
 			}
 		} catch (error) {
 			this.logger.error('Error getting value from Redis', error);
 			throw internalError(error);
 		}
 	}
-
-	// getAll(key: string): Promise<Record<string, string>> {
-	// 	try {
-	// 		return this.redis.hgetall(key);
-	// 	} catch (error) {
-	// 		this.logger.error('Error getting value from Redis', error);
-	// 		throw internalError(error);
-	// 	}
-	// }
-
-	// getDel(key: string): Promise<string | null> {
-	// 	try {
-	// 		return this.redis.getdel(key);
-	// 	} catch (error) {
-	// 		this.logger.error('Error getting and deleting value from Redis', error);
-	// 		throw internalError(error);
-	// 	}
-	// }
 
 	/**
 	 * Sets a value in Redis with an optional TTL (time-to-live).
@@ -141,14 +198,14 @@ export class RedisService {
 
 			if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
 				if (withTTL) {
-					await this.redis.set(key, value, 'EX', this.DEFAULT_TTL);
+					await this.redisPublisher.set(key, value, 'EX', this.DEFAULT_TTL);
 				} else {
-					await this.redis.set(key, value);
+					await this.redisPublisher.set(key, value);
 				}
 			} else if (valueType === 'object') {
-				await this.redis.hmset(key, value);
+				await this.redisPublisher.hmset(key, value);
 
-				if (withTTL) await this.redis.expire(key, this.DEFAULT_TTL);
+				if (withTTL) await this.redisPublisher.expire(key, this.DEFAULT_TTL);
 			} else {
 				throw new Error('Invalid value type');
 			}
@@ -169,9 +226,9 @@ export class RedisService {
 	delete(key: string, hashKey?: string): Promise<number> {
 		try {
 			if (hashKey) {
-				return this.redis.hdel(key, hashKey);
+				return this.redisPublisher.hdel(key, hashKey);
 			} else {
-				return this.redis.del(key);
+				return this.redisPublisher.del(key);
 			}
 		} catch (error) {
 			throw internalError(`Error deleting key from Redis ${error}`);
@@ -179,11 +236,11 @@ export class RedisService {
 	}
 
 	quit() {
-		this.redis.quit();
+		this.redisPublisher.quit();
 	}
 
 	async checkHealth() {
-		return (await this.redis.ping()) === 'PONG';
+		return (await this.redisPublisher.ping()) === 'PONG';
 	}
 
 	private loadRedisConfig(): RedisOptions {

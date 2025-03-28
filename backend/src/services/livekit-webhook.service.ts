@@ -2,7 +2,7 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { LiveKitService } from './livekit.service.js';
-import { MeetRecordingInfo } from '@typings-ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID, MEET_S3_RECORDINGS_PREFIX } from '../environment.js';
 import { LoggerService } from './logger.service.js';
 import { RoomService } from './room.service.js';
@@ -10,6 +10,8 @@ import { S3Service } from './s3.service.js';
 import { RecordingService } from './recording.service.js';
 import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { MutexService } from './mutex.service.js';
+import { SystemEventService } from './system-event.service.js';
+import { SystemEventType } from '../models/system-event.model.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -21,6 +23,7 @@ export class LivekitWebhookService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
+		@inject(SystemEventService) protected systemEventService: SystemEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
@@ -33,7 +36,12 @@ export class LivekitWebhookService {
 	 * @returns The WebhookEvent extracted from the request body.
 	 */
 	async getEventFromWebhook(body: string, auth?: string): Promise<WebhookEvent> {
-		return await this.webhookReceiver.receive(body, auth);
+		try {
+			return await this.webhookReceiver.receive(body, auth);
+		} catch (error) {
+			this.logger.error('Error receiving webhook event', error);
+			throw error;
+		}
 	}
 
 	/**
@@ -79,10 +87,20 @@ export class LivekitWebhookService {
 		}
 	}
 
+	/**
+	 * Handles the 'room_created' event by sending a webhook notification indicating that the room has been created.
+	 * If an error occurs while sending the webhook, it logs the error.
+	 * @param room - Information about the room that was created.
+	 */
 	async handleEgressStarted(egressInfo: EgressInfo) {
 		await this.processRecordingEgress(egressInfo, 'started');
 	}
 
+	/**
+	 * Handles the 'egress_updated' event by gathering relevant room and recording information,
+	 * updating the recording metadata, and sending a data payload with recording information to the room.
+	 * @param egressInfo - Information about the updated recording egress.
+	 */
 	async handleEgressUpdated(egressInfo: EgressInfo) {
 		await this.processRecordingEgress(egressInfo, 'updated');
 	}
@@ -104,15 +122,13 @@ export class LivekitWebhookService {
 	 * @param participant - Information about the newly joined participant.
 	 */
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
-		try {
-			// Skip if the participant is an egress participant
-			if (this.livekitService.isEgressParticipant(participant)) {
-				return;
-			}
+		// Skip if the participant is an egress participant
+		if (this.livekitService.isEgressParticipant(participant)) return;
 
+		try {
 			await this.roomService.sendRoomStatusSignalToOpenViduComponents(room.name, participant.sid);
 		} catch (error) {
-			this.logger.error(`Error sending data on participant joined: ${error}`);
+			this.logger.error('Error sending room status signal on participant join:', error);
 		}
 	}
 
@@ -125,7 +141,7 @@ export class LivekitWebhookService {
 	 * @param {Room} room - The room object that has finished.
 	 * @returns {Promise<void>} A promise that resolves when the webhook has been sent.
 	 */
-	async handleMeetingFinished(room: Room) {
+	async handleMeetingFinished(room: Room): Promise<void> {
 		try {
 			await Promise.all([
 				this.recordingService.releaseRoomRecordingActiveLock(room.name),
@@ -150,49 +166,60 @@ export class LivekitWebhookService {
 	): Promise<void> {
 		if (!RecordingHelper.isRecordingEgress(egressInfo)) return;
 
-		this.logger.debug(`Processing recording ${webhookAction} webhook.`);
+		this.logger.debug(`Handling recording_${webhookAction} webhook.`);
 
 		const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
 		const { roomId, recordingId, status } = recordingInfo;
-		const metadataPath = this.generateMetadataPath(recordingId);
+		const metadataPath = this.buildMetadataFilePath(recordingId);
 
-		this.logger.debug(`Recording '${recordingId}' for room '${roomId}' is in status '${status}'`);
+		this.logger.debug(`Recording '${recordingId}' status: '${status}'`);
 
-		const promises: Promise<unknown>[] = [];
+		const tasks: Promise<unknown>[] = [];
+
+		// Update recording metadata
+		tasks.push(
+			this.s3Service.saveObject(metadataPath, recordingInfo),
+			this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+		);
+
+		// Send webhook notification
+		switch (webhookAction) {
+			case 'started':
+				tasks.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
+				break;
+			case 'updated':
+				tasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
+
+				if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
+					// Send system event for active recording with the aim of cancelling the cleanup timer
+					tasks.push(
+						this.systemEventService.publishEvent(SystemEventType.RECORDING_ACTIVE, {
+							roomId,
+							recordingId
+						})
+					);
+				}
+
+				break;
+			case 'ended':
+				tasks.push(
+					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
+					this.recordingService.releaseRoomRecordingActiveLock(roomId)
+				);
+				break;
+		}
 
 		try {
-			// Update recording metadata
-			promises.push(
-				this.s3Service.saveObject(metadataPath, recordingInfo),
-				this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
-			);
-
-			// Send webhook notification
-			switch (webhookAction) {
-				case 'started':
-					promises.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
-					break;
-				case 'updated':
-					promises.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
-					break;
-				case 'ended':
-					promises.push(
-						this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
-						this.recordingService.releaseRoomRecordingActiveLock(roomId)
-					);
-					break;
-			}
-
 			// Wait for all promises to resolve
-			await Promise.all(promises);
+			await Promise.all(tasks);
 		} catch (error) {
 			this.logger.warn(
-				`Error sending recording ${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
+				`Error processing recording ${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
 		}
 	}
 
-	protected generateMetadataPath(recordingId: string): string {
+	protected buildMetadataFilePath(recordingId: string): string {
 		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
 		return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
