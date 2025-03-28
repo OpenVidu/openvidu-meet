@@ -1,4 +1,4 @@
-import { AuthenticationPreferences } from './auth-preferences.js';
+import { AuthenticationPreferences, AuthenticationPreferencesDTO } from './auth-preferences.js';
 
 /**
  * Represents global preferences for OpenVidu Meet.
@@ -26,3 +26,11 @@ export interface RoomCreationPolicy {
     allowRoomCreation: boolean;
     requireAuthentication: boolean;
 }
+
+// DTOs
+export interface SecurityPreferencesDTO {
+    authentication: AuthenticationPreferencesDTO;
+    roomCreationPolicy: RoomCreationPolicy;
+}
+
+export type UpdateSecurityPreferencesDTO = Partial<SecurityPreferencesDTO>;

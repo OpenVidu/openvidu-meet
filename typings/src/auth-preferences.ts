@@ -82,3 +82,13 @@ export interface SingleUserCredentials {
 //     GOOGLE = 'google',
 //     GITHUB = 'github'
 // }
+
+// DTOs
+export interface AuthenticationPreferencesDTO {
+    authMode: AuthMode;
+    method: ValidAuthMethodDTO;
+}
+
+export type ValidAuthMethodDTO = SingleUserAuthDTO;
+
+export type SingleUserAuthDTO = Omit<SingleUserAuth, 'credentials'>;
