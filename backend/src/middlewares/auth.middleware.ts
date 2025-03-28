@@ -18,6 +18,8 @@ import {
 	errorInvalidApiKey,
 	OpenViduMeetError
 } from '../models/index.js';
+import rateLimit from 'express-rate-limit';
+import ms from 'ms';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -157,3 +159,10 @@ export const allowAnonymous = async (req: Request) => {
 	req.session = req.session || {};
 	req.session.user = user;
 };
+
+// Limit login attempts to avoid brute force attacks
+export const loginLimiter = rateLimit({
+	windowMs: ms('15m'),
+	limit: 5,
+	message: 'Too many login attempts, please try again later'
+});

@@ -45,8 +45,6 @@ const createApp = () => {
 	app.use(`${MEET_API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/auth`, /*mediaTypeValidatorMiddleware,*/ authRouter);
-
-	// TODO: This route should be part of the rooms router
 	app.use(`${MEET_API_BASE_PATH_V1}/preferences`, /*mediaTypeValidatorMiddleware,*/ preferencesRouter);
 
 	// Internal routes

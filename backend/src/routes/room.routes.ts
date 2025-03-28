@@ -16,7 +16,6 @@ import { UserRole } from '@typings-ce';
 import { configureCreateRoomAuth, configureRoomAuthorization } from '../middlewares/room.middleware.js';
 
 export const roomRouter = Router();
-
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
 roomRouter.use(bodyParser.json());
 

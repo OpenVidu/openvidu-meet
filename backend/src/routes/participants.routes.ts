@@ -12,6 +12,7 @@ export const internalParticipantsRouter = Router();
 internalParticipantsRouter.use(bodyParser.urlencoded({ extended: true }));
 internalParticipantsRouter.use(bodyParser.json());
 
+// Internal Participant Routes
 internalParticipantsRouter.post(
 	'/token',
 	validateParticipantTokenRequest,
