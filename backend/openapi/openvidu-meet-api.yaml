@@ -702,7 +702,13 @@ paths:
                       example: 'room-123--EG_XYZ--XX445'
             responses:
                 '200':
-                    description: Successfully stopped the recording.
+                    description: Accepted — The stop request has been accepted. The endpoint to retrieve the recording is provided in the Location header.
+                    headers:
+                        Location:
+                            description: The URL to retrieve the recording details
+                            schema:
+                                type: string
+                                example: 'https://openvidu.example.com/meet/api/v1/recordings/room-123--EG_XYZ--XX445'
                     content:
                         application/json:
                             schema:
