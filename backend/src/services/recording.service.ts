@@ -224,7 +224,7 @@ export class RecordingService {
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings({ maxItems, nextPageToken, roomId, status }: MeetRecordingFilters): Promise<{
+	async getAllRecordings({ maxItems, nextPageToken, roomId }: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		isTruncated: boolean;
 		nextPageToken?: string;
@@ -253,22 +253,7 @@ export class RecordingService {
 				}
 			});
 
-			let recordings: MeetRecordingInfo[] = await Promise.all(promises);
-
-			if (status) {
-				// Filter recordings by status if a status filter is provided
-				// status is already an array of RegExp after middleware validation.
-
-				const statusArray = status
-					.split(',')
-					.map((s) => s.trim())
-					.filter(Boolean)
-					.map((s) => new RegExp(this.sanitizeRegExp(s)));
-
-				recordings = recordings.filter((recording) =>
-					statusArray.some((regex) => regex.test(recording.status))
-				);
-			}
+			const recordings: MeetRecordingInfo[] = await Promise.all(promises);
 
 			this.logger.info(`Retrieved ${recordings.length} recordings.`);
 			// Return the paginated list of recordings
@@ -513,7 +498,9 @@ export class RecordingService {
 			}
 
 			// Reject the REST request with a timeout error.
-			rejectRequest(new Error(`Timeout waiting for '${SystemEventType.RECORDING_ACTIVE}' event in room '${roomId}'`));
+			rejectRequest(
+				new Error(`Timeout waiting for '${SystemEventType.RECORDING_ACTIVE}' event in room '${roomId}'`)
+			);
 		}
 	}
 

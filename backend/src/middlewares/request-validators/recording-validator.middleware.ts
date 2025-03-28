@@ -50,7 +50,7 @@ const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 		.optional()
 		.transform((val = 10) => (val > 100 ? 100 : val))
 		.default(10),
-	status: z.string().optional(),
+	// status: z.string().optional(),
 	roomId: z.string().optional(),
 	nextPageToken: z.string().optional()
 });

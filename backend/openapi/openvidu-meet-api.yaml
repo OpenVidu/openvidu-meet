@@ -505,27 +505,27 @@ paths:
             security:
                 - apiKeyInHeader: []
             parameters:
-                - name: status
-                  in: query
-                  required: false
-                  description: |
-                      Filter recordings by their status.
+                # - name: status
+                #   in: query
+                #   required: false
+                #   description: |
+                #       Filter recordings by their status.
 
-                      Possible values:
-                      - `STARTING`
-                      - `ACTIVE`
-                      - `ENDING`
-                      - `COMPLETE`
-                      - `FAILED`
-                      - `ABORTED`
-                      - `LIMITED_REACHED`
+                #       Possible values:
+                #       - `STARTING`
+                #       - `ACTIVE`
+                #       - `ENDING`
+                #       - `COMPLETE`
+                #       - `FAILED`
+                #       - `ABORTED`
+                #       - `LIMITED_REACHED`
 
-                      You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
-                      If not specified, recordings with any status will be returned.
+                #       You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
+                #       If not specified, recordings with any status will be returned.
 
-                      > ⚠️ **Note:** Using this filter may impact performance for large datasets.
-                  schema:
-                      type: string
+                #       > ⚠️ **Note:** Using this filter may impact performance for large datasets.
+                #   schema:
+                #       type: string
                 - name: roomId
                   in: query
                   required: false
