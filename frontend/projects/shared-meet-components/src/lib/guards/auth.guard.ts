@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
-import { AuthService, ContextService } from '../services';
+import { ActivatedRouteSnapshot, CanActivateFn, RedirectCommand, Router, RouterStateSnapshot } from '@angular/router';
+import { AuthService, ContextService, HttpService, SessionStorageService } from '../services';
 import { AuthMode, ParticipantRole } from '@lib/typings/ce';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
@@ -47,11 +47,26 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
+	const router = inject(Router);
 	const authService = inject(AuthService);
 	const contextService = inject(ContextService);
-	const router = inject(Router);
+	const sessionStorageService = inject(SessionStorageService);
+	const httpService = inject(HttpService);
 
-	const participantRole = contextService.getParticipantRole();
+	// Get participant role by room secret
+	let participantRole: ParticipantRole;
+
+	try {
+		const roomName = contextService.getRoomName();
+		const secret = contextService.getSecret();
+		const storageSecret = sessionStorageService.getModeratorSecret(roomName);
+
+		participantRole = await httpService.getParticipantRole(roomName, storageSecret || secret);
+	} catch (error) {
+		console.error('Error getting participant role:', error);
+		return router.createUrlTree(['unauthorized'], { queryParams: { reason: 'unauthorized-participant' } });
+	}
+
 	const authMode = await contextService.getAuthModeToEnterRoom();
 
 	// If the user is a moderator and the room requires authentication for moderators only,
@@ -60,15 +75,17 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	const isAuthRequiredForModerators =
 		authMode === AuthMode.MODERATORS_ONLY && participantRole === ParticipantRole.MODERATOR;
 	const isAuthRequiredForAllUsers = authMode === AuthMode.ALL_USERS;
-	console.log('Participant role:', participantRole);
 
 	if (isAuthRequiredForModerators || isAuthRequiredForAllUsers) {
 		// Check if user is authenticated
 		const isAuthenticated = await authService.isUserAuthenticated();
 		if (!isAuthenticated) {
 			// Redirect to the login page with query param to redirect back to the room
-			return router.createUrlTree(['login'], {
+			const loginRoute = router.createUrlTree(['login'], {
 				queryParams: { redirectTo: state.url }
+			});
+			return new RedirectCommand(loginRoute, {
+				skipLocationChange: true
 			});
 		}
 	}

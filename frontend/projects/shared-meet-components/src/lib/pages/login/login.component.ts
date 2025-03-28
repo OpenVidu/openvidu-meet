@@ -63,7 +63,8 @@ export class LoginComponent {
 				return;
 			}
 
-			this.router.navigate([this.redirectTo]);
+			let urlTree = this.router.parseUrl(this.redirectTo);
+			this.router.navigateByUrl(urlTree);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
 				this.loginErrorMessage = 'Too many login attempts. Please try again later';

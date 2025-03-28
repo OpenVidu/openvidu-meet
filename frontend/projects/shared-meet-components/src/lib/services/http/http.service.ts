@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
-import { GlobalPreferences, RoomPreferences, TokenOptions, User } from '@lib/typings/ce';
+import { GlobalPreferences, ParticipantRole, RoomPreferences, TokenOptions, User } from '@lib/typings/ce';
 import { RecordingInfo, Room } from 'openvidu-components-angular';
 import { lastValueFrom } from 'rxjs';
 
@@ -40,12 +40,24 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
+	getParticipantRole(roomName: string, secret: string): Promise<ParticipantRole> {
+		return this.getRequest(
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}/participant-role?secret=${secret}`
+		);
+	}
+
 	generateParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token`, tokenOptions);
+		return this.postRequest(
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token`,
+			tokenOptions
+		);
 	}
 
 	refreshParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token/refresh`, tokenOptions);
+		return this.postRequest(
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/participants/token/refresh`,
+			tokenOptions
+		);
 	}
 
 	/**

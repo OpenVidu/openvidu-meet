@@ -11,7 +11,8 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	const sessionStorageService = inject(SessionStorageService);
 	const httpService: HttpService = inject(HttpService);
 
-	const url = router.getCurrentNavigation()?.finalUrl?.toString() || router.url;
+	const pageUrl = router.getCurrentNavigation()?.finalUrl?.toString() || router.url;
+	const requestUrl = req.url;
 
 	req = req.clone({
 		withCredentials: true
@@ -26,9 +27,15 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 			}),
 			catchError((error: HttpErrorResponse) => {
 				if (error.url?.includes('/auth/refresh')) {
-					console.error('Error refreshing access token. Logging out...');
-					const redirectTo = url.startsWith('/console') ? 'console/login' : 'login';
-					authService.logout(redirectTo);
+					console.error('Error refreshing access token');
+
+					// If the original request was not to the profile endpoint, logout and redirect to the login page
+					if (!requestUrl.includes('/profile')) {
+						console.log('Logging out...');
+						const redirectTo = pageUrl.startsWith('/console') ? 'console/login' : 'login';
+						authService.logout(redirectTo);
+					}
+
 					throw firstError;
 				}
 
@@ -79,9 +86,12 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 				}
 
 				// Expired access/participant token
-				if (url.startsWith('/room')) {
+				if (pageUrl.startsWith('/room') && !requestUrl.includes('/profile')) {
+					// If the error occurred in a room page and the request is not to the profile endpoint,
+					// refresh the participant token
 					return refreshParticipantToken(error);
-				} else if (!url.startsWith('/console/login') && !url.startsWith('/login')) {
+				} else if (!pageUrl.startsWith('/console/login') && !pageUrl.startsWith('/login')) {
+					// If the error occurred in a page that is not the login page, refresh the access token
 					return refreshAccessToken(error);
 				}
 			}

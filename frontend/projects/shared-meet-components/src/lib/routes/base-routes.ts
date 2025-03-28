@@ -35,12 +35,7 @@ export const baseRoutes: Routes = [
 	{
 		path: '',
 		component: RoomCreatorComponent,
-		canActivate: [
-			runGuardsSerially(
-				checkRoomCreatorEnabledGuard,
-				checkUserAuthenticatedGuard
-			)
-		],
+		canActivate: [runGuardsSerially(checkRoomCreatorEnabledGuard, checkUserAuthenticatedGuard)],
 		data: {
 			checkSkipAuth: true,
 			expectedRoles: [UserRole.USER],
@@ -121,9 +116,9 @@ export const baseRoutes: Routes = [
 			runGuardsSerially(
 				applicationModeGuard,
 				extractQueryParamsGuard,
+				checkParticipantRoleAndAuthGuard,
 				checkParticipantNameGuard,
 				validateRoomAccessGuard,
-				checkParticipantRoleAndAuthGuard,
 				replaceModeratorSecretGuard
 			)
 		]
