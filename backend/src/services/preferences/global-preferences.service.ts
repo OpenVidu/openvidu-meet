@@ -53,6 +53,16 @@ export class GlobalPreferencesService<
 		return await this.ensurePreferencesInitialized();
 	}
 
+	/**
+	 * Saves the global preferences.
+	 * @param {GlobalPreferences} preferences
+	 * @returns {Promise<GlobalPreferences>}
+	 */
+	async saveGlobalPreferences(preferences: G): Promise<G> {
+		this.logger.info('Saving global preferences');
+		return this.storage.saveGlobalPreferences(preferences) as Promise<G>;
+	}
+
 	async saveOpenViduRoom(ovRoom: R): Promise<R> {
 		this.logger.info(`Saving OpenVidu room ${ovRoom.roomName}`);
 		return this.storage.saveOpenViduRoom(ovRoom) as Promise<R>;
