@@ -428,7 +428,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/MeetRecording'
+                                $ref: '#/components/schemas/MeetRecordingStart'
                 '401':
                     description: Unauthorized — The API key is missing or invalid
                     content:
@@ -558,7 +558,7 @@ paths:
                                     recordings:
                                         type: array
                                         items:
-                                        $ref: '#/components/schemas/MeetRecording'
+                                          $ref: '#/components/schemas/MeetRecording'
                                     pagination:
                                         type: object
                                         properties:
@@ -1210,79 +1210,76 @@ components:
                     description: >
                         The URL for the viewer to join the room. The viewer has read-only permissions to watch the room
                         and participants.
+        MeetRecordingBase:
+          type: object
+          properties:
+            recordingId:
+              type: string
+              example: 'room-123--EG_XYZ--XX445'
+              description: The unique identifier of the recording.
+            roomId:
+              type: string
+              example: 'room-123'
+              description: The ID of the room where the recording was made.
+            # outputMode:
+            #   type: string
+            #   example: 'COMPOSED'
+            #   description: >
+            #     The output mode of the recording. Possible value: "COMPOSED".
+            status:
+              type: string
+              example: 'ACTIVE'
+              description: >
+                The status of the recording.
+                Possible values:
+                  - STARTING
+                  - ACTIVE
+                  - ENDING
+                  - COMPLETE
+                  - FAILED
+                  - ABORTED
+                  - LIMITED_REACHED
+            filename:
+              type: string
+              example: 'room-123--XX445.mp4'
+              description: The name of the recording file.
+            startDate:
+              type: number
+              example: 1620000000000
+              description: The date when the recording was started (milliseconds since the Unix epoch).
+
         MeetRecording:
-            type: object
-            properties:
-                recordingId:
-                    type: string
-                    example: 'room-123--EG_XYZ--XX445'
-                    description: >
-                        The unique identifier of the recording.
-                roomId:
-                    type: string
-                    example: 'room-123'
-                    description: >
-                        The ID of the room where the recording was made.
-                outputMode:
-                    type: string
-                    example: 'COMPOSED'
-                    description: >
-                        The output mode of the recording. Possible values are "COMPOSED".
-                status:
-                    type: string
-                    example: 'ACTIVE'
-                    description: >
-                        The status of the recording.
-
-                          Possible values:
-                          - `STARTING`
-                          - `ACTIVE`
-                          - `ENDING`
-                          - `COMPLETE`
-                          - `FAILED`
-                          - `ABORTED`
-                          - `LIMITED_REACHED`
-
-                filename:
-                    type: string
-                    example: 'room-123--XX445.mp4'
-                    description: >
-                        The name of the recording file.
-                startDate:
-                    type: number
-                    example: 1620000000000
-                    description: >
-                        The date when the recording was started in milliseconds since the Unix epoch.
+          allOf:
+            - $ref: '#/components/schemas/MeetRecordingBase'
+            - type: object
+              properties:
                 endDate:
-                    type: number
-                    example: 1620000000000
-                    description: >
-                        The date when the recording was stopped in milliseconds since the Unix epoch.
+                  type: number
+                  example: 1620000000000
+                  description: The date when the recording was stopped (milliseconds since the Unix epoch).
                 duration:
-                    type: number
-                    example: 3600
-                    description: >
-                        The duration of the recording in seconds.
+                  type: number
+                  example: 3600
+                  description: The duration of the recording in seconds.
                 size:
-                    type: number
-                    example: 1024
-                    description: >
-                        The size of the recording file in bytes.
+                  type: number
+                  example: 1024
+                  description: The size of the recording file in bytes.
                 errorCode:
-                    type: number
-                    example: 100
-                    description: >
-                        The error code of the recording.
+                  type: number
+                  example: 100
+                  description: The error code of the recording.
                 error:
-                    type: string
-                    example: 'error'
-                    description: >
-                        The error message of the recording.
+                  type: string
+                  description: The error message of the recording.
+                  nullable: true
                 details:
-                    type: string
-                    example: 'Stopped using API'
-                    description: >
-                        Additional details about the recording.
+                  type: string
+                  example: 'Stopped using API'
+                  description: Additional details about the recording.
+
+        MeetRecordingStart:
+            $ref: '#/components/schemas/MeetRecordingBase'
         Error:
             type: object
             required:

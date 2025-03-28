@@ -1,5 +1,5 @@
 import { EgressInfo } from 'livekit-server-sdk';
-import { MeetRecordingInfo, MeetRecordingOutputMode, MeetRecordingStatus } from '@typings-ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { EgressStatus } from '@livekit/protocol';
 
 export class RecordingHelper {
@@ -10,7 +10,7 @@ export class RecordingHelper {
 	static toRecordingInfo(egressInfo: EgressInfo): MeetRecordingInfo {
 		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
 		const size = RecordingHelper.extractSize(egressInfo);
-		const outputMode = RecordingHelper.extractOutputMode(egressInfo);
+		// const outputMode = RecordingHelper.extractOutputMode(egressInfo);
 		const duration = RecordingHelper.extractDuration(egressInfo);
 		const startDateMs = RecordingHelper.extractStartDate(egressInfo);
 		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
@@ -20,16 +20,16 @@ export class RecordingHelper {
 		return {
 			recordingId: `${roomName}--${egressId}--${uid}`,
 			roomId: roomName,
-			outputMode,
+			// outputMode,
 			status,
 			filename,
 			startDate: startDateMs,
 			endDate: endDateMs,
 			duration,
 			size,
-			errorCode,
-			error,
-			details: details
+			errorCode: errorCode ? Number(errorCode) : undefined,
+			error: error ? String(error) : undefined,
+			details: details ? String(details) : undefined,
 		};
 	}
 
@@ -72,14 +72,14 @@ export class RecordingHelper {
 	 * @param egressInfo - The egress information containing the roomComposite flag.
 	 * @returns The extracted OpenVidu output mode.
 	 */
-	static extractOutputMode(egressInfo: EgressInfo): MeetRecordingOutputMode {
-		// if (egressInfo.request.case === 'roomComposite') {
-		// 	return MeetRecordingOutputMode.COMPOSED;
-		// } else {
-		// 	return MeetRecordingOutputMode.INDIVIDUAL;
-		// }
-		return MeetRecordingOutputMode.COMPOSED;
-	}
+	// static extractOutputMode(egressInfo: EgressInfo): MeetRecordingOutputMode {
+	// 	// if (egressInfo.request.case === 'roomComposite') {
+	// 	// 	return MeetRecordingOutputMode.COMPOSED;
+	// 	// } else {
+	// 	// 	return MeetRecordingOutputMode.INDIVIDUAL;
+	// 	// }
+	// 	return MeetRecordingOutputMode.COMPOSED;
+	// }
 
 	/**
 	 * Extracts the filename/path for storing the recording.
@@ -133,8 +133,9 @@ export class RecordingHelper {
 	 * @param egressInfo The egress information containing the file results.
 	 * @returns The duration in milliseconds.
 	 */
-	static extractDuration(egressInfo: EgressInfo): number {
-		return this.toSeconds(Number(egressInfo.fileResults?.[0]?.duration ?? 0));
+	static extractDuration(egressInfo: EgressInfo): number | undefined {
+		const duration = this.toSeconds(Number(egressInfo.fileResults?.[0]?.duration ?? 0));
+		return duration !== 0 ? duration : undefined;
 	}
 
 	/**
@@ -168,8 +169,9 @@ export class RecordingHelper {
 	 * @param egressInfo - The EgressInfo object to extract the size from.
 	 * @returns The size extracted from the EgressInfo object, or 0 if not available.
 	 */
-	static extractSize(egressInfo: EgressInfo): number {
-		return Number(egressInfo.fileResults?.[0]?.size ?? 0);
+	static extractSize(egressInfo: EgressInfo): number | undefined {
+		const size = Number(egressInfo.fileResults?.[0]?.size ?? 0);
+		return size !== 0 ? size : undefined;
 	}
 
 	private static toSeconds(nanoseconds: number): number {

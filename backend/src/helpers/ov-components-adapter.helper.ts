@@ -47,7 +47,7 @@ export class OpenViduComponentsAdapterHelper {
 			id: info.recordingId,
 			roomName: info.details ?? '',
 			roomId: info.roomId,
-			outputMode: info.outputMode,
+			// outputMode: info.outputMode,
 			status: this.mapRecordingStatus(info.status),
 			filename: info.filename,
 			startedAt: info.startDate,
