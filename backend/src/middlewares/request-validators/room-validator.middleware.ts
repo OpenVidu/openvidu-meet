@@ -49,6 +49,10 @@ const RoomRequestOptionsSchema: z.ZodType<OpenViduMeetRoomOptions> = z.object({
 		.default(null)
 });
 
+const GetParticipantRoleSchema = z.object({
+	secret: z.string()
+});
+
 export const validateRoomRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);
 
@@ -80,4 +84,24 @@ export const validateGetRoomQueryParams = (req: Request, res: Response, next: Ne
 	}
 
 	next();
-}
+};
+
+export const validateGetParticipantRoleRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetParticipantRoleSchema.safeParse(req.query);
+
+	if (!success) {
+		const errors = error.errors.map((error) => ({
+			field: error.path.join('.'),
+			message: error.message
+		}));
+
+		return res.status(422).json({
+			error: 'Unprocessable Entity',
+			message: 'Invalid request query',
+			details: errors
+		});
+	}
+
+	req.query = data;
+	next();
+};

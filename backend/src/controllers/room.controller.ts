@@ -94,6 +94,24 @@ export const deleteRooms = async (req: Request, res: Response) => {
 	}
 };
 
+export const getParticipantRole = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+
+	const { roomName } = req.params;
+	const { secret } = req.query as { secret: string };
+
+	try {
+		logger.verbose(`Getting participant role for room '${roomName}'`);
+
+		const role = await roomService.getRoomSecretRole(roomName, secret);
+		return res.status(200).json(role);
+	} catch (error) {
+		logger.error(`Error getting participant role for room '${roomName}'`);
+		handleError(res, error);
+	}
+};
+
 export const updateRoomPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 

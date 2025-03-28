@@ -8,6 +8,7 @@ import {
 	participantTokenValidator
 } from '../middlewares/auth.middleware.js';
 import {
+	validateGetParticipantRoleRequest,
 	validateGetRoomQueryParams,
 	validateRoomRequest
 } from '../middlewares/request-validators/room-validator.middleware.js';
@@ -38,3 +39,10 @@ roomRouter.delete('/:roomName', withAuth(apiKeyValidator, tokenAndRoleValidator(
 
 // Room preferences
 roomRouter.put('/', withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)), roomCtrl.updateRoomPreferences);
+
+// Internal room routes
+export const internalRoomRouter = Router();
+internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
+internalRoomRouter.use(bodyParser.json());
+
+internalRoomRouter.get('/:roomName/participant-role', validateGetParticipantRoleRequest, roomCtrl.getParticipantRole);
