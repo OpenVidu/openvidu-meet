@@ -1,7 +1,7 @@
 import { MeetRecordingInfo } from './recording.model.js';
-import { OpenViduMeetRoom } from './room.js';
+import { MeetRoom } from './room.js';
 
-export type MeetWebhookPayload = MeetRecordingInfo | OpenViduMeetRoom;
+export type MeetWebhookPayload = MeetRecordingInfo | MeetRoom;
 
 export const enum MeetWebhookEventType {
     RECORDING_STARTED = 'recordingStarted',

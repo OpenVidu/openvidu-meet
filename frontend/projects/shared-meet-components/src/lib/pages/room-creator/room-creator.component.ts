@@ -7,7 +7,7 @@ import { NgClass } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
 import { AuthService, ContextService, HttpService } from '../../services/index';
-import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from '../../typings/ce/room';
+import { MeetRoom, MeetRoomOptions } from '../../typings/ce/room';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
 
 @Component({
@@ -72,12 +72,12 @@ export class RoomCreatorComponent implements OnInit {
 
 		try {
 			// TODO: Fix expiration date
-			const options: OpenViduMeetRoomOptions = {
+			const options: MeetRoomOptions = {
 				roomNamePrefix,
 				expirationDate: Date.now() + 3600 * 1000 // 1 hour
 			};
 
-			const room: OpenViduMeetRoom = await this.httpService.createRoom(options);
+			const room: MeetRoom = await this.httpService.createRoom(options);
 
 			const accessRoomUrl = new URL(room.moderatorRoomUrl);
 			const secret = accessRoomUrl.searchParams.get('secret');

@@ -1,6 +1,6 @@
 import { container } from '../config/dependency-injector.config.js';
 import { Request, Response, NextFunction } from 'express';
-import { OpenViduMeetPermissions, OpenViduMeetRoom } from '@typings-ce';
+import { OpenViduMeetPermissions, MeetRoom } from '@typings-ce';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -18,7 +18,7 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 		({ roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId));
 	}
 
-	let room: OpenViduMeetRoom;
+	let room: MeetRoom;
 
 	try {
 		const roomService = container.get(RoomService);

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { RoomPreferences } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../http/http.service';
-import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
+import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
 
 @Injectable({
 	providedIn: 'root'
@@ -17,9 +17,9 @@ export class RoomService {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
 
-	async createRoom(): Promise<OpenViduMeetRoom> {
+	async createRoom(): Promise<MeetRoom> {
 		// TODO: Improve expiration date
-		const options: OpenViduMeetRoomOptions = {
+		const options: MeetRoomOptions = {
 			roomNamePrefix: 'TestRoom-',
 			expirationDate: Date.now() + 1000 * 60 * 60 // 1 hour from now
 		};

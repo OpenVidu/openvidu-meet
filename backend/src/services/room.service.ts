@@ -4,8 +4,8 @@ import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
-import { OpenViduMeetRoom, OpenViduMeetRoomOptions, ParticipantRole } from '@typings-ce';
-import { OpenViduRoomHelper } from '../helpers/room.helper.js';
+import { MeetRoom, MeetRoomOptions, ParticipantRole } from '@typings-ce';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 import { errorParticipantUnauthorized } from '../models/error.model.js';
@@ -54,16 +54,16 @@ export class RoomService {
 	 * Creates an OpenVidu room with the specified options.
 	 *
 	 * @param {string} baseUrl - The base URL for the room.
-	 * @param {OpenViduMeetRoomOptions} options - The options for creating the OpenVidu room.
-	 * @returns {Promise<OpenViduMeetRoom>} A promise that resolves to the created OpenVidu room.
+	 * @param {MeetRoomOptions} options - The options for creating the OpenVidu room.
+	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
 	 *
 	 */
-	async createRoom(baseUrl: string, roomOptions: OpenViduMeetRoomOptions): Promise<OpenViduMeetRoom> {
+	async createRoom(baseUrl: string, roomOptions: MeetRoomOptions): Promise<MeetRoom> {
 		const livekitRoom: Room = await this.createLivekitRoom(roomOptions);
 
-		const openviduRoom: OpenViduMeetRoom = this.generateOpenViduRoom(baseUrl, livekitRoom, roomOptions);
+		const openviduRoom: MeetRoom = this.generateOpenViduRoom(baseUrl, livekitRoom, roomOptions);
 
 		await this.globalPrefService.saveOpenViduRoom(openviduRoom);
 
@@ -72,10 +72,10 @@ export class RoomService {
 
 	/**
 	 * Retrieves a list of rooms.
-	 * @returns A Promise that resolves to an array of {@link OpenViduMeetRoom} objects.
+	 * @returns A Promise that resolves to an array of {@link MeetRoom} objects.
 	 * @throws If there was an error retrieving the rooms.
 	 */
-	async listOpenViduRooms(): Promise<OpenViduMeetRoom[]> {
+	async listOpenViduRooms(): Promise<MeetRoom[]> {
 		return await this.globalPrefService.getOpenViduRooms();
 	}
 
@@ -83,9 +83,9 @@ export class RoomService {
 	 * Retrieves an OpenVidu room by its name.
 	 *
 	 * @param roomName - The name of the room to retrieve.
-	 * @returns A promise that resolves to an {@link OpenViduMeetRoom} object.
+	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
-	async getOpenViduRoom(roomName: string): Promise<OpenViduMeetRoom> {
+	async getOpenViduRoom(roomName: string): Promise<MeetRoom> {
 		return await this.globalPrefService.getOpenViduRoom(roomName);
 	}
 
@@ -222,8 +222,8 @@ export class RoomService {
 	 * @param roomOptions - The options for creating the room.
 	 * @returns A promise that resolves to the created room.
 	 */
-	protected async createLivekitRoom(roomOptions: OpenViduMeetRoomOptions): Promise<Room> {
-		const livekitRoomOptions: CreateOptions = OpenViduRoomHelper.generateLivekitRoomOptions(roomOptions);
+	protected async createLivekitRoom(roomOptions: MeetRoomOptions): Promise<Room> {
+		const livekitRoomOptions: CreateOptions = MeetRoomHelper.generateLivekitRoomOptions(roomOptions);
 
 		return this.livekitService.createRoom(livekitRoomOptions);
 	}
@@ -239,12 +239,12 @@ export class RoomService {
 	protected generateOpenViduRoom(
 		baseUrl: string,
 		livekitRoom: Room,
-		roomOptions: OpenViduMeetRoomOptions
-	): OpenViduMeetRoom {
+		roomOptions: MeetRoomOptions
+	): MeetRoom {
 		const { name: roomName, creationTime } = livekitRoom;
 		const { preferences, expirationDate, roomNamePrefix, maxParticipants } = roomOptions;
 
-		const openviduRoom: OpenViduMeetRoom = {
+		const openviduRoom: MeetRoom = {
 			roomName,
 			roomNamePrefix,
 			creationDate: Number(creationTime) * 1000,
@@ -338,7 +338,7 @@ export class RoomService {
 		]);
 
 		let lkRooms: Room[] = [];
-		let ovRooms: OpenViduMeetRoom[] = [];
+		let ovRooms: MeetRoom[] = [];
 
 		if (lkResult.status === 'fulfilled') {
 			lkRooms = lkResult.value;
@@ -352,7 +352,7 @@ export class RoomService {
 			this.logger.error('Failed to list OpenVidu rooms:', ovResult.reason);
 		}
 
-		const missingRooms: OpenViduMeetRoom[] = ovRooms.filter(
+		const missingRooms: MeetRoom[] = ovRooms.filter(
 			(ovRoom) => !lkRooms.some((room) => room.name === ovRoom.roomName)
 		);
 

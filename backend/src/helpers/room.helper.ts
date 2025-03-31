@@ -1,20 +1,20 @@
-import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from '@typings-ce';
+import { MeetRoom, MeetRoomOptions } from '@typings-ce';
 import { CreateOptions } from 'livekit-server-sdk';
 import { MEET_NAME_ID } from '../environment.js';
 import { uid } from 'uid/single';
 
-export class OpenViduRoomHelper {
+export class MeetRoomHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
 	}
 
 	/**
-	 * Converts an OpenViduMeetRoom object to an OpenViduMeetRoomOptions object.
+	 * Converts an MeetRoom object to an MeetRoomOptions object.
 	 *
-	 * @param room - The OpenViduMeetRoom object to convert.
-	 * @returns An OpenViduMeetRoomOptions object containing the same properties as the input room.
+	 * @param room - The MeetRoom object to convert.
+	 * @returns An MeetRoomOptions object containing the same properties as the input room.
 	 */
-	static toOpenViduOptions(room: OpenViduMeetRoom): OpenViduMeetRoomOptions {
+	static toOpenViduOptions(room: MeetRoom): MeetRoomOptions {
 		return {
 			expirationDate: room.expirationDate,
 			maxParticipants: room.maxParticipants,
@@ -23,7 +23,7 @@ export class OpenViduRoomHelper {
 		};
 	}
 
-	static generateLivekitRoomOptions(roomInput: OpenViduMeetRoom | OpenViduMeetRoomOptions): CreateOptions {
+	static generateLivekitRoomOptions(roomInput: MeetRoom | MeetRoomOptions): CreateOptions {
 		const isOpenViduRoom = 'creationDate' in roomInput;
 		const sanitizedPrefix = roomInput.roomNamePrefix
 			?.trim()
@@ -35,7 +35,7 @@ export class OpenViduRoomHelper {
 			expirationDate,
 			maxParticipants,
 			creationDate = Date.now()
-		} = roomInput as OpenViduMeetRoom;
+		} = roomInput as MeetRoom;
 
 		const timeUntilExpiration = this.calculateExpirationTime(expirationDate, creationDate);
 
@@ -44,7 +44,7 @@ export class OpenViduRoomHelper {
 			metadata: JSON.stringify({
 				createdBy: MEET_NAME_ID,
 				roomOptions: isOpenViduRoom
-					? OpenViduRoomHelper.toOpenViduOptions(roomInput as OpenViduMeetRoom)
+					? MeetRoomHelper.toOpenViduOptions(roomInput as MeetRoom)
 					: roomInput
 			}),
 			emptyTimeout: timeUntilExpiration,

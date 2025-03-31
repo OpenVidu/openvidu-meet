@@ -9,12 +9,12 @@ interface BaseRoomOptions {
 /**
  * Options for creating or configuring a room.
  */
-export type OpenViduMeetRoomOptions = BaseRoomOptions;
+export type MeetRoomOptions = BaseRoomOptions;
 
 /**
  * Interface representing the response received when a room is created.
  */
-export interface OpenViduMeetRoom extends BaseRoomOptions {
+export interface MeetRoom extends BaseRoomOptions {
 	roomName: string;
 	creationDate: number;
 	moderatorRoomUrl: string;

@@ -3,12 +3,12 @@ import { Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { RoomService } from '../services/room.service.js';
-import { OpenViduMeetRoomOptions } from '@typings-ce';
+import { MeetRoomOptions } from '@typings-ce';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const options: OpenViduMeetRoomOptions = req.body;
+	const options: MeetRoomOptions = req.body;
 
 	try {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);

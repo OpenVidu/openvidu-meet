@@ -8,7 +8,7 @@ import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListItem, MatListModule } from '@angular/material/list';
-import { OpenViduMeetRoom } from 'projects/shared-meet-components/src/lib/typings/ce/room';
+import { MeetRoom } from 'projects/shared-meet-components/src/lib/typings/ce/room';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 @Component({
@@ -28,7 +28,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 	styleUrl: './rooms.component.scss'
 })
 export class RoomsComponent implements OnInit {
-	createdRooms: OpenViduMeetRoom[] = [];
+	createdRooms: MeetRoom[] = [];
 	// private roomPreferences!: RoomPreferences;
 	recordingEnabled = false;
 	chatEnabled = false;
@@ -77,7 +77,7 @@ export class RoomsComponent implements OnInit {
 		window.open(`/${roomName}`, '_blank');
 	}
 
-	deleteRoom(room: OpenViduMeetRoom) {
+	deleteRoom(room: MeetRoom) {
 		try {
 			this.roomService.deleteRoom(room.roomName);
 			this.createdRooms = this.createdRooms.filter((r) => r.roomName !== room.roomName);
@@ -88,7 +88,7 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	async onRoomClicked(room: OpenViduMeetRoom) {
+	async onRoomClicked(room: MeetRoom) {
 		console.log('Room clicked:', room);
 		//TODO: Go to room details page
 		await this.router.navigate([room.roomName, 'edit'], { relativeTo: this.route });

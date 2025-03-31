@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { OpenViduMeetRoom, OpenViduMeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
+import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
 import {
 	GlobalPreferences,
 	ParticipantRole,
@@ -23,7 +23,7 @@ export class HttpService {
 
 	constructor(protected http: HttpClient) {}
 
-	createRoom(options: OpenViduMeetRoomOptions): Promise<OpenViduMeetRoom> {
+	createRoom(options: MeetRoomOptions): Promise<MeetRoom> {
 		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms`, options);
 	}
 
@@ -31,7 +31,7 @@ export class HttpService {
 		return this.deleteRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`);
 	}
 
-	listRooms(fields?: string): Promise<OpenViduMeetRoom[]> {
+	listRooms(fields?: string): Promise<MeetRoom[]> {
 		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/`;
 		if (fields) {
 			path += `?fields=${encodeURIComponent(fields)}`;
@@ -39,7 +39,7 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
-	getRoom(roomName: string, fields?: string): Promise<OpenViduMeetRoom> {
+	getRoom(roomName: string, fields?: string): Promise<MeetRoom> {
 		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`;
 		if (fields) {
 			path += `?fields=${encodeURIComponent(fields)}`;

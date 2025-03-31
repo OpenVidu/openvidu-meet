@@ -3,7 +3,7 @@
  * regardless of the underlying storage mechanism.
  */
 
-import { AuthMode, AuthType, GlobalPreferences, OpenViduMeetRoom, RoomPreferences } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, MeetRoom, RoomPreferences } from '@typings-ce';
 import { LoggerService } from '../logger.service.js';
 import { PreferencesStorage } from './global-preferences-storage.interface.js';
 import { GlobalPreferencesStorageFactory } from './global-preferences.factory.js';
@@ -15,7 +15,7 @@ import { PasswordHelper } from '../../helpers/password.helper.js';
 @injectable()
 export class GlobalPreferencesService<
 	G extends GlobalPreferences = GlobalPreferences,
-	R extends OpenViduMeetRoom = OpenViduMeetRoom
+	R extends MeetRoom = MeetRoom
 > {
 	protected storage: PreferencesStorage;
 	constructor(

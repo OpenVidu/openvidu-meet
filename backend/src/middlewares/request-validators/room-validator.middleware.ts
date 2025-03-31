@@ -1,6 +1,6 @@
 import {
 	ChatPreferences,
-	OpenViduMeetRoomOptions,
+	MeetRoomOptions,
 	RecordingPreferences,
 	RoomPreferences,
 	VirtualBackgroundPreferences
@@ -26,7 +26,7 @@ const RoomPreferencesSchema: z.ZodType<RoomPreferences> = z.object({
 	virtualBackgroundPreferences: VirtualBackgroundPreferencesSchema
 });
 
-const RoomRequestOptionsSchema: z.ZodType<OpenViduMeetRoomOptions> = z.object({
+const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	expirationDate: z
 		.number()
 		.positive('Expiration date must be a positive integer')
