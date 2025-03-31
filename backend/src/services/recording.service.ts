@@ -23,6 +23,7 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	MEET_RECORDING_LOCK_GC_INTERVAL,
 	MEET_RECORDING_LOCK_TTL,
+	MEET_RECORDING_STARTED_TIMEOUT,
 	MEET_S3_BUCKET,
 	MEET_S3_RECORDINGS_PREFIX,
 	MEET_S3_SUBBUCKET
@@ -80,10 +81,12 @@ export class RecordingService {
 			const { recordingId } = recordingInfo;
 
 			const recordingPromise = new Promise<MeetRecordingInfo>((resolve, reject) => {
-				this.taskSchedulerService.scheduleRecordingCleanupTimer(
-					roomId,
-					this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
-				);
+				this.taskSchedulerService.registerTask({
+					name: `${roomId}_recording_timeout`,
+					type: 'timeout',
+					scheduleOrDelay: MEET_RECORDING_STARTED_TIMEOUT,
+					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
+				});
 
 				this.systemEventService.once(SystemEventType.RECORDING_ACTIVE, (payload: Record<string, unknown>) => {
 					// This listener is triggered only for the instance that started the recording.
@@ -92,7 +95,7 @@ export class RecordingService {
 						payload?.recordingId === recordingId && payload?.roomId === roomId;
 
 					if (isEventForCurrentRecording) {
-						this.taskSchedulerService.cancelRecordingCleanupTimer(roomId);
+						this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
 						resolve(recordingInfo);
 					} else {
 						this.logger.error('Received recording active event with mismatched recording ID:', payload);
@@ -121,7 +124,7 @@ export class RecordingService {
 			}
 
 			// Cancel the recording cleanup timer if it is running
-			this.taskSchedulerService.cancelRecordingCleanupTimer(roomId);
+			this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
 			// Remove the listener for the EGRESS_STARTED event.
 			this.systemEventService.off(SystemEventType.RECORDING_ACTIVE);
 
@@ -587,7 +590,9 @@ export class RecordingService {
 			const lockAge = Date.now() - (createdAt || Date.now());
 
 			if (lockAge < LOCK_GRACE_PERIOD) {
-				this.logger.debug(`Lock for room ${roomId} is too recent (${ms(lockAge)}), skipping orphan lock cleanup`);
+				this.logger.debug(
+					`Lock for room ${roomId} is too recent (${ms(lockAge)}), skipping orphan lock cleanup`
+				);
 				return;
 			}
 

@@ -6,7 +6,6 @@ import { MutexService } from './mutex.service.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import ms from 'ms';
 import { CronExpressionParser } from 'cron-parser';
-import { MEET_RECORDING_STARTED_TIMEOUT } from '../environment.js';
 
 export type TaskType = 'cron' | 'timeout';
 
@@ -79,47 +78,6 @@ export class TaskSchedulerService {
 	}
 
 	/**
-	 * Schedules a cleanup timer for a recording that has just started.
-	 *
-	 * If the egress_started webhook is not received before the timer expires,
-	 * this timer will execute a cleanup callback by stopping the recording and releasing
-	 * the active lock for the specified room.
-	 */
-	async scheduleRecordingCleanupTimer(roomId: string, cleanupCallback: () => Promise<void>): Promise<void> {
-		this.logger.debug(`Recording cleanup timer (${MEET_RECORDING_STARTED_TIMEOUT}) scheduled for room ${roomId}.`);
-
-		// Schedule a timeout to run the cleanup callback after a specified time
-		const timeoutMs = ms(MEET_RECORDING_STARTED_TIMEOUT);
-		const timer = setTimeout(async () => {
-			this.logger.warn(`Recording cleanup timer expired for room ${roomId}. Initiating cleanup process.`);
-			this.recordingCleanupTimers.delete(roomId);
-			await cleanupCallback();
-		}, timeoutMs);
-		this.recordingCleanupTimers.set(roomId, timer);
-	}
-
-	cancelRecordingCleanupTimer(roomId: string): void {
-		const timer = this.recordingCleanupTimers.get(roomId);
-
-		if (timer) {
-			clearTimeout(timer);
-			this.recordingCleanupTimers.delete(roomId);
-			this.logger.info(`Recording cleanup timer cancelled for room ${roomId}`);
-		}
-	}
-
-	async startRecordingLockGarbageCollector(callbackFn: () => Promise<void>): Promise<void> {
-		// Create a cron job to run every minute
-		const recordingLockGarbageCollectorJob = new CronJob('0 * * * * *', async () => {
-			try {
-				await callbackFn();
-			} catch (error) {
-				this.logger.error('Error running recording lock garbage collection:', error);
-			}
-		});
-	}
-
-	/**
 	 * Registers a new task to be scheduled.
 	 * If the task is already registered, it will not be added again.
 	 */
@@ -176,6 +134,7 @@ export class TaskSchedulerService {
 			const timeoutId = setTimeout(
 				async () => {
 					try {
+						this.scheduledTasks.delete(name);
 						await callback();
 					} catch (error) {
 						this.logger.error(`Error running timeout task "${name}":`, error);
