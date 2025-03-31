@@ -19,7 +19,7 @@ import {
 	recordingRouter,
 	roomRouter
 } from './routes/index.js';
-import { GlobalPreferencesService, RoomService } from './services/index.js';
+import { GlobalPreferencesService } from './services/index.js';
 import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
 
@@ -67,6 +67,7 @@ const createApp = () => {
 
 const initializeGlobalPreferences = async () => {
 	const globalPreferencesService = container.get(GlobalPreferencesService);
+	// TODO: This should be invoked in the constructor of the service
 	await globalPreferencesService.ensurePreferencesInitialized();
 };
 
@@ -81,7 +82,7 @@ const startServer = (app: express.Application) => {
 			chalk.cyanBright(`http://localhost:${SERVER_PORT}${MEET_API_BASE_PATH_V1}/docs`)
 		);
 		logEnvVars();
-		await Promise.all([initializeGlobalPreferences(), container.get(RoomService).initialize()]);
+		await Promise.all([initializeGlobalPreferences()]);
 	});
 };
 

@@ -45,12 +45,20 @@ const registerDependencies = () => {
 	container.bind(RedisService).toSelf().inSingletonScope();
 	container.bind(S3Service).toSelf().inSingletonScope();
 	container.bind(RecordingService).toSelf().inSingletonScope();
+
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
 	container.bind(GlobalPreferencesService).toSelf().inSingletonScope();
 	container.bind(ParticipantService).toSelf().inSingletonScope();
 
 	container.bind(S3PreferenceStorage).toSelf().inSingletonScope();
 	container.bind(GlobalPreferencesStorageFactory).toSelf().inSingletonScope();
+
+	initializeEagerServices();
+};
+
+const initializeEagerServices = () => {
+	// Force the creation of services that need to be initialized at startup
+	container.get(RecordingService);
 };
 
 export { injectable, inject } from 'inversify';
