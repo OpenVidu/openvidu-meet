@@ -6,7 +6,7 @@ import { LoggerService } from '../services/logger.service.js';
 import {
 	ACCESS_TOKEN_COOKIE_NAME,
 	MEET_ACCESS_TOKEN_EXPIRATION,
-	MEET_API_BASE_PATH_V1,
+	MEET_INTERNAL_API_BASE_PATH_V1,
 	MEET_REFRESH_TOKEN_EXPIRATION,
 	REFRESH_TOKEN_COOKIE_NAME
 } from '../environment.js';
@@ -35,7 +35,7 @@ export const login = async (req: Request, res: Response) => {
 		res.cookie(
 			REFRESH_TOKEN_COOKIE_NAME,
 			refreshToken,
-			getCookieOptions(`${MEET_API_BASE_PATH_V1}/auth`, MEET_REFRESH_TOKEN_EXPIRATION)
+			getCookieOptions(`${MEET_INTERNAL_API_BASE_PATH_V1}/auth`, MEET_REFRESH_TOKEN_EXPIRATION)
 		);
 		logger.info(`Login succeeded for user ${username}`);
 		return res.status(200).json({ message: 'Login succeeded' });
@@ -48,7 +48,7 @@ export const login = async (req: Request, res: Response) => {
 export const logout = (_req: Request, res: Response) => {
 	res.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
 	res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
-		path: `${MEET_API_BASE_PATH_V1}/auth`
+		path: `${MEET_INTERNAL_API_BASE_PATH_V1}/auth`
 	});
 	return res.status(200).json({ message: 'Logout successful' });
 };
