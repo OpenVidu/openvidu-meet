@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import chalk from 'chalk';
+import ms from 'ms';
 
 const envPath = process.env.MEET_CONFIG_DIR
 	? process.env.MEET_CONFIG_DIR
@@ -80,8 +81,9 @@ export const MEET_S3_ROOMS_PREFIX = 'rooms';
 export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
 
 // Time to live for the active recording lock in Redis
-export const MEET_RECORDING_LOCK_TTL = '6h';
-export const MEET_RECORDING_CLEANUP_TIMEOUT = '30s';
+export const MEET_RECORDING_LOCK_TTL: ms.StringValue = '6h';
+export const MEET_RECORDING_STARTED_TIMEOUT: ms.StringValue = '30s';
+export const MEET_RECORDING_LOCK_GC_INTERVAL: ms.StringValue = '30m';
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {

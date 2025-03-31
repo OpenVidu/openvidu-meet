@@ -10,7 +10,7 @@ export class MeetLock {
 			throw new Error('roomId must be a non-empty string');
 		}
 
-		return `${RedisLockPrefix.BASE}${roomId}_${RedisLockName.RECORDING_ACTIVE}`;
+		return `${RedisLockPrefix.BASE}${RedisLockName.RECORDING_ACTIVE}_${roomId}`;
 	}
 
 	static getRegistryLock(lockName: string): string {
@@ -21,8 +21,15 @@ export class MeetLock {
 		return `${RedisLockPrefix.REGISTRY}${lockName}`;
 	}
 
+	static getScheduledTaskLock(taskName: string): string {
+		if (!taskName) {
+			throw new Error('taskName must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.SCHEDULED_TASK}_${taskName}`;
+	}
+
 	static getRoomGarbageCollectorLock(): string {
 		return `${RedisLockPrefix.BASE}${RedisLockName.ROOM_GARBAGE_COLLECTOR}`;
 	}
-
 }

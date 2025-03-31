@@ -30,6 +30,7 @@ import {
 	internalError
 } from '../models/error.model.js';
 import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 
 @injectable()
 export class LiveKitService {
@@ -178,11 +179,12 @@ export class LiveKitService {
 	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of EgressInfo objects.
 	 * @throws Will throw an error if there is an issue retrieving the egress information.
 	 */
-	async getEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
+	async getEgress(roomName?: string, egressId?: string, active?: boolean): Promise<EgressInfo[]> {
 		try {
 			const options: ListEgressOptions = {
 				roomName,
-				egressId
+				egressId,
+				active
 			};
 			return await this.egressClient.listEgress(options);
 		} catch (error: any) {
@@ -203,25 +205,77 @@ export class LiveKitService {
 	 * @throws Will throw an error if there is an issue retrieving the egress information.
 	 */
 	async getActiveEgress(roomName?: string, egressId?: string): Promise<EgressInfo[]> {
+		const egress = await this.getEgress(roomName, egressId, true);
+
+		// In some cases, the egress list may contain egress that their status is ENDINDG
+		// which means that the egress is still active but it is in the process of stopping.
+		// We need to filter those out.
+		return egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
+	}
+
+	/**
+	 * Retrieves all recording egress sessions for a specific room or all rooms.
+	 *
+	 * @param {string} [roomName] - Optional room name to filter recordings by room
+	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of recording EgressInfo objects
+	 * @throws Will throw an error if there is an issue retrieving the egress information
+	 */
+	async getRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
+		const egressArray = await this.getEgress(roomName);
+
+		if (egressArray.length === 0) {
+			return [];
+		}
+
+		// Filter the egress array to include only recording egress
+		return egressArray.filter((egress) => RecordingHelper.isRecordingEgress(egress));
+	}
+
+	/**
+	 * Retrieves all active recording egress sessions for a specific room or all rooms.
+	 *
+	 * @param {string} [roomName] - Optional room name to filter recordings by room
+	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of active recording EgressInfo objects
+	 * @throws Will throw an error if there is an issue retrieving the egress information
+	 */
+	async getActiveRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
+		// Get all recording egress
+		const recordingEgress = await this.getRecordingsEgress(roomName);
+
+		if (recordingEgress.length === 0) {
+			return [];
+		}
+
+		// Filter the recording egress array to include only active egress
+		return recordingEgress.filter((egress) => egress.status === EgressStatus.EGRESS_ACTIVE);
+	}
+
+	/**
+	 * Retrieves all in-progress recording egress sessions for a specific room or all rooms.
+	 *
+	 * This method checks it is in any "in-progress" state, including EGRESS_STARTING, EGRESS_ACTIVE, and EGRESS_ENDING.
+	 *
+	 * @param {string} [roomName] - Optional room name to filter recordings by room
+	 * @returns {Promise<EgressInfo[]>} A promise that resolves to an array of in-progress recording EgressInfo objects
+	 * @throws Will throw an error if there is an issue retrieving the egress information
+	 */
+	async getInProgressRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
 		try {
-			const options: ListEgressOptions = {
-				roomName,
-				egressId,
-				active: true
-			};
-			const egress = await this.egressClient.listEgress(options);
+			const egressArray = await this.getEgress(roomName);
+			return egressArray.filter((egress) => {
+				if (!RecordingHelper.isRecordingEgress(egress)) {
+					return false;
+				}
 
-			// In some cases, the egress list may contain egress that their status is ENDINDG
-			// which means that the egress is still active but it is in the process of stopping.
-			// We need to filter those out.
-			return egress.filter((e) => e.status === EgressStatus.EGRESS_ACTIVE);
-		} catch (error: any) {
-			if (error.message.includes('404')) {
-				return [];
-			}
-
-			this.logger.error(`Error getting egress: ${JSON.stringify(error)}`);
-			throw internalError(`Error getting egress: ${error}`);
+				// Check if recording is in any "in-progress" state
+				return [EgressStatus.EGRESS_STARTING, EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_ENDING].includes(
+					egress.status
+				);
+			});
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			this.logger.error(`Error getting in-progress recordings: ${errorMessage}`);
+			throw internalError(`Error getting in-progress recordings: ${errorMessage}`);
 		}
 	}
 

@@ -21,6 +21,7 @@ import { LoggerService } from './logger.service.js';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
+	MEET_RECORDING_LOCK_GC_INTERVAL,
 	MEET_RECORDING_LOCK_TTL,
 	MEET_S3_BUCKET,
 	MEET_S3_RECORDINGS_PREFIX,
@@ -31,7 +32,7 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { MutexService, RedisLock } from './mutex.service.js';
 import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { TaskSchedulerService } from './task-scheduler.service.js';
+import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
 import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
 
@@ -45,7 +46,16 @@ export class RecordingService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
 		@inject(LoggerService) protected logger: LoggerService
-	) {}
+	) {
+		// Register the recording garbage collector task
+		const recordingGarbageCollectorTask: IScheduledTask = {
+			name: 'activeRecordingGarbageCollector',
+			type: 'cron',
+			scheduleOrDelay: MEET_RECORDING_LOCK_GC_INTERVAL,
+			callback: this.deleteOrphanLocks.bind(this)
+		};
+		this.taskSchedulerService.registerTask(recordingGarbageCollectorTask);
+	}
 
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
@@ -504,10 +514,131 @@ export class RecordingService {
 		}
 	}
 
-	protected async deleteOrphanLocks() {
-		// TODO: Get all recordings active locks from redis
-		// TODO: Extract all rooms ids from the active locks
-		// TODO: Check each room id if it has an active recording
-		// TODO: Remove the lock if the room has no active recording
+	/**
+	 * Cleans up orphaned recording locks in the system.
+	 *
+	 * This method identifies and releases locks that are no longer needed by:
+	 * 1. Finding all active recording locks in the system
+	 * 2. Checking if the associated room still exists in LiveKit
+	 * 3. For existing rooms, checking if they have active recordings in progress
+	 * 4. Releasing lock if the room exists but has no participants or no active recordings
+	 * 5. Releasing lock if the room does not exist
+	 *
+	 * Orphaned locks can occur when:
+	 * - A room is deleted but its lock remains
+	 * - A recording completes but the lock isn't released
+	 * - System crashes during the recording process
+	 *
+	 * @returns {Promise<void>} A promise that resolves when the cleanup process completes
+	 * @throws {OpenViduMeetError} Rethrows any errors except 404 (room not found)
+	 * @protected
+	 */
+	protected async deleteOrphanLocks(): Promise<void> {
+		this.logger.debug('Starting orphaned recording locks cleanup process');
+		// Create the lock pattern for finding all recording locks
+		const lockPattern = MeetLock.getRecordingActiveLock('roomId').replace('roomId', '*');
+		this.logger.debug(`Searching for locks with pattern: ${lockPattern}`);
+		let recordingLocks: RedisLock[] = [];
+
+		try {
+			recordingLocks = await this.mutexService.getLocksByPrefix(lockPattern);
+
+			if (recordingLocks.length === 0) {
+				this.logger.debug('No active recording locks found');
+				return;
+			}
+
+			// Extract all rooms ids from the active locks
+			const lockPrefix = lockPattern.replace('*', '');
+
+			const roomIds = recordingLocks.map((lock) => lock.resources[0].replace(lockPrefix, ''));
+
+			// Check each room id if it exists in LiveKit
+			// If the room does not exist, release the lock
+			for (const roomId of roomIds) {
+				await this.processOrphanLock(roomId, lockPrefix);
+			}
+		} catch (error) {
+			this.logger.error('Error retrieving recording locks:', error);
+		}
+	}
+
+	/**
+	 * Process an orphaned lock by checking if the associated room exists and releasing the lock if necessary.
+	 *
+	 * @param roomId - The ID of the room associated with the lock.
+	 * @param lockPrefix - The prefix used to identify the lock.
+	 */
+	protected async processOrphanLock(roomId: string, lockPrefix: string): Promise<void> {
+		const lockKey = `${lockPrefix}${roomId}`;
+		const LOCK_GRACE_PERIOD = ms('1m');
+
+		try {
+			// Verify if the lock still exists before proceeding to check the room
+			const lockExists = await this.mutexService.lockExists(lockKey);
+
+			if (!lockExists) {
+				this.logger.debug(`Lock for room ${roomId} no longer exists, skipping`);
+				return;
+			}
+
+			// Verify if the lock is too recent
+			const createdAt = await this.mutexService.getLockCreatedAt(lockKey);
+			const lockAge = Date.now() - (createdAt || Date.now());
+
+			if (lockAge < LOCK_GRACE_PERIOD) {
+				this.logger.debug(`Lock for room ${roomId} is too recent (${ms(lockAge)}), skipping orphan lock cleanup`);
+				return;
+			}
+
+			const room = await this.livekitService.getRoom(roomId);
+
+			if (room.numPublishers === 0) {
+				const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+
+				if (inProgressRecordings.length > 0) {
+					this.logger.debug(
+						`Room ${roomId} has ${inProgressRecordings.length} recordings in transition, keeping lock`
+					);
+					return;
+				}
+
+				this.logger.info(`Room ${roomId} no longer exists, releasing orphaned lock`);
+				await this.mutexService.release(lockKey);
+				return;
+			}
+
+			// The room has participants, check if it has in-progress recordings
+			const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+
+			if (inProgressRecordings.length === 0) {
+				// If the room has no active recording, release the lock
+				this.logger.info(`No active recordings for room ${roomId}, releasing orphaned lock`);
+				await this.mutexService.release(lockKey);
+			}
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
+				this.logger.info(`Room ${roomId} no longer exists, releasing orphaned lock`);
+
+				try {
+					const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+
+					if (inProgressRecordings.length > 0) {
+						this.logger.debug(
+							`Room ${roomId} has ${inProgressRecordings.length} recordings in transition, keeping lock`
+						);
+						return;
+					}
+
+					await this.mutexService.release(lockKey);
+				} catch (error) {
+					this.logger.error(`Error releasing lock for room ${roomId}:`, error);
+				}
+
+				return;
+			}
+
+			throw error;
+		}
 	}
 }

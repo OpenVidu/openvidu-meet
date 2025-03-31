@@ -38,7 +38,8 @@ export class MutexService {
 				JSON.stringify({
 					resources: lock.resources,
 					value: lock.value,
-					expiration: lock.expiration
+					expiration: lock.expiration,
+					createdAt: Date.now()
 				}),
 				true
 			);
@@ -57,17 +58,17 @@ export class MutexService {
 	 */
 	async release(key: string): Promise<void> {
 		const registryKey = MeetLock.getRegistryLock(key);
-		const lock = await this.getLockData(key);
+		const lock = await this.getLockData(registryKey);
 
 		if (!lock) {
+			this.logger.warn(`Lock not found for resource: ${key}. May be expired or released by another process.`);
 			return;
 		}
 
 		if (lock) {
-			this.logger.debug(`Releasing lock for resource: ${key}`);
-
 			try {
 				await lock.release();
+				this.logger.verbose(`Lock ${key} successfully released.`);
 			} catch (error) {
 				this.logger.error(`Error releasing lock for key ${key}:`, error);
 			} finally {
@@ -77,31 +78,75 @@ export class MutexService {
 	}
 
 	/**
-	 * Retrieves the lock data for a given resource.
+	 * Retrieves all locks for a given prefix.
 	 *
-	 * This method first attempts to retrieve the lock from Redis. If the lock data is successfully retrieved from Redis,
-	 * it constructs a new `Lock` instance and returns it. If the lock data cannot be found the method returns `null`.
+	 * This method retrieves all keys from Redis that match the specified prefix and returns an array of `Lock` instances.
 	 *
-	 * @param key - The identifier of the resource for which the lock data is being retrieved.
-	 * @returns A promise that resolves to the `Lock` instance if found, or `null` if the lock data is not available.
+	 * @param pattern - The prefix to filter the keys in Redis.
+	 * @returns A promise that resolves to an array of `Lock` instances.
 	 */
-	protected async getLockData(key: string): Promise<Lock | null> {
+	async getLocksByPrefix(pattern: string): Promise<Lock[]> {
+		const registryPattern = MeetLock.getRegistryLock(pattern);
+		const keys = await this.redisService.getKeys(registryPattern);
+		this.logger.debug(`Found ${keys.length} registry keys for pattern "${pattern}".`);
+
+		if (keys.length === 0) {
+			return [];
+		}
+
+		const lockPromises: Promise<Lock | null>[] = keys.map((key) => this.getLockData(key));
+
+		const locksResult = await Promise.all(lockPromises);
+
+		const locks = locksResult.filter((lock): lock is Lock => lock !== null);
+		return locks;
+	}
+
+	lockExists(key: string): Promise<boolean> {
+		const registryKey = MeetLock.getRegistryLock(key);
+		return this.redisService.exists(registryKey);
+	}
+
+	/**
+	 * Retrieves the creation timestamp of a lock identified by the given key.
+	 *
+	 * @param key - The unique identifier for the lock
+	 * @returns A Promise that resolves to the creation timestamp (as a number) of the lock, or null if the lock doesn't exist or has expired
+	 */
+	async getLockCreatedAt(key: string): Promise<number | null> {
 		const registryKey = MeetLock.getRegistryLock(key);
 
+		const redisLockData = await this.redisService.get(registryKey);
+
+		if (!redisLockData) {
+			this.logger.warn(
+				`Lock not found for resource: ${registryKey}. May be expired or released by another process.`
+			);
+			return null;
+		}
+
+		const { createdAt } = JSON.parse(redisLockData);
+		return createdAt;
+	}
+
+	/**
+	 * Retrieves the lock data for a given resource key.
+	 *
+	 * @param registryKey - The resource key to retrieve the lock data for.
+	 * @returns A promise that resolves to a `Lock` instance or null if not found.
+	 */
+	protected async getLockData(registryKey: string): Promise<Lock | null> {
 		try {
-			this.logger.debug(`Getting lock data in Redis for resource: ${key}`);
 			// Try to get lock from Redis
 			const redisLockData = await this.redisService.get(registryKey);
 
 			if (!redisLockData) {
-				this.logger.error(`Cannot release lock. Lock not found for resource: ${key}.`);
 				return null;
 			}
 
 			const { resources, value, expiration } = JSON.parse(redisLockData);
 			return new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
 		} catch (error) {
-			this.logger.error(`Cannot release lock. Lock not found for resource: ${key}.`);
 			return null;
 		}
 	}
