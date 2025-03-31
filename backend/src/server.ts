@@ -9,7 +9,7 @@ import {
 	MEET_API_BASE_PATH_V1,
 	MEET_INTERNAL_API_BASE_PATH_V1
 } from './environment.js';
-import { openapiHtmlPath, indexHtmlPath, publicFilesPath, webcomponentBundlePath } from './utils/path-utils.js';
+import { publicApiHtmlFilePath, indexHtmlPath, publicFilesPath, webcomponentBundlePath, internalApiHtmlFilePath } from './utils/path-utils.js';
 import {
 	authRouter,
 	internalRecordingRouter,
@@ -41,7 +41,8 @@ const createApp = () => {
 	app.use(express.json());
 	app.use(cookieParser());
 
-	app.use(`${MEET_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(openapiHtmlPath));
+	app.use(`${MEET_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(publicApiHtmlFilePath));
+	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(internalApiHtmlFilePath));
 	app.use(`${MEET_API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/auth`, /*mediaTypeValidatorMiddleware,*/ authRouter);
