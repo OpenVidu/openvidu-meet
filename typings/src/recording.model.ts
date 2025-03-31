@@ -8,9 +8,9 @@ export const enum MeetRecordingStatus {
 	LIMIT_REACHED = 'LIMIT_REACHED',
 }
 
-export const enum MeetRecordingOutputMode {
-	COMPOSED = 'COMPOSED',
-}
+// export const enum MeetRecordingOutputMode {
+// 	COMPOSED = 'COMPOSED',
+// }
 
 /**
  * Interface representing a recording
@@ -18,7 +18,7 @@ export const enum MeetRecordingOutputMode {
 export interface MeetRecordingInfo {
 	recordingId: string;
 	roomId: string;
-	outputMode: MeetRecordingOutputMode;
+	// outputMode: MeetRecordingOutputMode;
 	status: MeetRecordingStatus;
 	filename?: string;
 	startDate?: number;
