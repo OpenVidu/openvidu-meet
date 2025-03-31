@@ -60,11 +60,11 @@ export class RedisService extends EventEmitter {
 		};
 
 		this.redisPublisher.on('connect', onConnect);
-		this.redisSubscriber.on('connect', onConnect);
+		this.redisSubscriber.on('connect', () => this.logger.verbose('Connected to Redis subscriber'));
 		this.redisPublisher.on('error', onError);
-		this.redisSubscriber.on('error', onError);
+		this.redisSubscriber.on('error', (error) => this.logger.error('Redis Subscriber Error', error));
 		this.redisPublisher.on('end', onDisconnect);
-		this.redisSubscriber.on('end', onDisconnect);
+		this.redisSubscriber.on('end', () => this.logger.warn('Redis subscriber disconnected'));
 	}
 
 	createRedlock(retryCount = -1, retryDelay = 200) {
