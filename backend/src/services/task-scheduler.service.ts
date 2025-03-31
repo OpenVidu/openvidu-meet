@@ -137,7 +137,7 @@ export class TaskSchedulerService {
 		}
 	}
 
-	protected scheduleTask(task: IScheduledTask): void {
+	protected async scheduleTask(task: IScheduledTask): Promise<void> {
 		const { name, type, scheduleOrDelay, callback } = task;
 
 		if (this.scheduledTasks.has(name)) {
@@ -167,6 +167,8 @@ export class TaskSchedulerService {
 					this.logger.error(`Error running cron task "${name}":`, error);
 				}
 			});
+			// Start the job immediately
+			await callback();
 			job.start();
 			this.scheduledTasks.set(name, job);
 		} else if (type === 'timeout') {
