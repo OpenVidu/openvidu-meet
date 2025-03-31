@@ -12,13 +12,14 @@ info:
         url: https://openvidu.io/support/
 
 servers:
-    - url: http://localhost:6080/meet/api/v1
+    - url: http://localhost:6080/meet/internal-api/v1
       description: Development server
 tags:
     - name: Internal API - Participant
       description: Operations related to managing participants in OpenVidu Meet rooms
     - name: Internal API - Recordings
       description: Operations related to managing OpenVidu Meet recordings
+
 paths:
     /recordings/{recordingId}/stream:
         get:
@@ -31,7 +32,7 @@ paths:
             tags:
                 - Internal API - Recordings
             security:
-                - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: recordingId
                   in: path
@@ -94,13 +95,21 @@ paths:
                                 code: 400
                                 message: 'Invalid Range header'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The access token is missing or invalid
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Recording not found
                     content:
@@ -136,35 +145,25 @@ paths:
                 Generates a token for a participant to join an OpenVidu Meet room.
             tags:
                 - Internal API - Participant
+            security:
+                - accessTokenCookie: []
             requestBody:
                 description: Participant details
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required:
-                                - roomName
-                                - participantName
-                                - secret
-                            properties:
-                                roomName:
-                                    type: string
-                                    example: 'OpenVidu-123456'
-                                    description: >
-                                        The name of the room to join.
-                                participantName:
-                                    type: string
-                                    example: 'Alice'
-                                    description: >
-                                        The name of the participant.
-                                secret:
-                                    type: string
-                                    example: 'abc123456'
-                                    description: >
-                                        The secret token from the room Url
+                            $ref: '#/components/schemas/TokenOptions'
             responses:
                 '200':
                     description: Successfully generated the participant token
+                    headers:
+                        Set-Cookie:
+                            description: >
+                                The cookie containing the participant token.
+                                This cookie is used to authenticate the participant in the room.
+                            schema:
+                                type: string
+                                example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
                     content:
                         application/json:
                             schema:
@@ -175,19 +174,118 @@ paths:
                                         example: 'token_123456'
                                         description: >
                                             The token to authenticate the participant.
+                '401':
+                    description: Unauthorized — The access token is missing or invalid when authentication is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions when authentication is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Room not found
                     content:
                         application/json:
                             schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Room Error'
+                                message: 'The room does not exist'
+                '409':
+                    description: Conflict — The participant already exists in the room
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Participant Error'
+                                message: 'Participant already exists in the room'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Internal server error'
+    /participants/token/refresh:
+        post:
+            operationId: refreshParticipantToken
+            summary: Refresh a token for a participant
+            description: >
+                Refresh a token for a participant in an OpenVidu Meet room.
+            tags:
+                - Internal API - Participant
+            security:
+                - accessTokenCookie: []
+            requestBody:
+                description: Participant details
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TokenOptions'
+            responses:
+                '200':
+                    description: Successfully refreshed the participant token
+                    headers:
+                        Set-Cookie:
+                            description: >
+                                The cookie containing the participant token.
+                                This cookie is used to authenticate the participant in the room.
+                            schema:
+                                type: string
+                                example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+                    content:
+                        application/json:
+                            schema:
                                 type: object
                                 properties:
-                                    name:
+                                    token:
                                         type: string
-                                        example: 'Room not found'
-                                    message:
-                                        type: string
-                                        example: 'The room does not exist'
+                                        example: 'token_123456'
+                                        description: >
+                                            The token to authenticate the participant.
+                '401':
+                    description: Unauthorized — The access token is missing or invalid when authentication is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions when authentication is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
+                '404':
+                    description: Room or participant not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Participant Error'
+                                message: 'Participant not found in the room'
+                '409':
+                    description: Conflict — Current token is still valid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Participant token is still valid'
                 '500':
                     description: Internal server error
                     content:
@@ -205,7 +303,7 @@ paths:
             tags:
                 - Internal API - Participant
             security:
-                - apiKeyInHeader: []
+                - participantTokenCookie: []
             parameters:
                 - name: participantName
                   in: path
@@ -222,6 +320,22 @@ paths:
             responses:
                 '204':
                     description: Successfully disconnect the participant
+                '401':
+                    description: Unauthorized — The participant access token is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The participant authenticated with the access token is not moderator of the room
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Participant not found
                     content:
@@ -243,214 +357,119 @@ paths:
 
 components:
     securitySchemes:
-        apiKeyInHeader:
-            type: apiKey
-            name: X-API-KEY
-            in: header
-            description: >
-                The API key to authenticate the request. This key is required to access the OpenVidu Meet API.
-        jwtInCookie:
+        accessTokenCookie:
             type: apiKey
             name: OvMeetAccessToken
             in: cookie
             description: >
-                The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet admin console.
+                The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
+        refreshTokenCookie:
+            type: apiKey
+            name: OvMeetRefreshToken
+            in: cookie
+            description: >
+                The JWT token to refresh the access token in case of consuming the API from the OpenVidu Meet frontend.
+        participantTokenCookie:
+            type: apiKey
+            name: OvMeetParticipantToken
+            in: cookie
+            description: >
+                The JWT token to authenticate the participant when entering the room.
     schemas:
-        OpenViduMeetRoomOptions:
+        MeetRecordingBase:
             type: object
-            required:
-                - expirationDate
             properties:
-                expirationDate:
+                recordingId:
+                    type: string
+                    example: 'room-123--EG_XYZ--XX445'
+                    description: The unique identifier of the recording.
+                roomId:
+                    type: string
+                    example: 'room-123'
+                    description: The ID of the room where the recording was made.
+                # outputMode:
+                #   type: string
+                #   example: 'COMPOSED'
+                #   description: >
+                #     The output mode of the recording. Possible value: "COMPOSED".
+                status:
+                    type: string
+                    example: 'ACTIVE'
+                    description: >
+                        The status of the recording.
+                        Possible values:
+                          - STARTING
+                          - ACTIVE
+                          - ENDING
+                          - COMPLETE
+                          - FAILED
+                          - ABORTED
+                          - LIMITED_REACHED
+                filename:
+                    type: string
+                    example: 'room-123--XX445.mp4'
+                    description: The name of the recording file.
+                startDate:
                     type: number
                     example: 1620000000000
-                    description: >
-                        The expiration date of the room in milliseconds since the Unix epoch.
-                        After this date, the room will be closed and no new participants will be allowed to join.
-                roomNamePrefix:
-                    type: string
-                    example: 'OpenVidu'
-                    description: >
-                        A prefix to be used for the room name. The room name will be generated by appending a random
-                        alphanumeric string to this prefix.
-                maxParticipants:
-                    type: integer
-                    example: 10
-                    description: >
-                        The maximum number of participants allowed in the room. If the number of participants exceeds
-                        this limit, new participants will not be allowed to join.
-                preferences:
-                    $ref: '#/components/schemas/RoomPreferences'
-                    description: >
-                        The preferences for the room.
-        RoomPreferences:
-            type: object
-            properties:
-                chatPreferences:
-                    $ref: '#/components/schemas/ChatPreferences'
-                    description: >
-                        Preferences for the chat feature in the room.
+                    description: The date when the recording was started (milliseconds since the Unix epoch).
 
-                recordingPreferences:
-                    $ref: '#/components/schemas/RecordingPreferences'
-                    description: >
-                        Preferences for recording the room.
+        MeetRecording:
+            allOf:
+                - $ref: '#/components/schemas/MeetRecordingBase'
+                - type: object
+                  properties:
+                      endDate:
+                          type: number
+                          example: 1620000000000
+                          description: The date when the recording was stopped (milliseconds since the Unix epoch).
+                      duration:
+                          type: number
+                          example: 3600
+                          description: The duration of the recording in seconds.
+                      size:
+                          type: number
+                          example: 1024
+                          description: The size of the recording file in bytes.
+                      errorCode:
+                          type: number
+                          example: 100
+                          description: The error code of the recording.
+                      error:
+                          type: string
+                          description: The error message of the recording.
+                          nullable: true
+                      details:
+                          type: string
+                          example: 'Stopped using API'
+                          description: Additional details about the recording.
 
-                virtualBackgroundPreferences:
-                    $ref: '#/components/schemas/VirtualBackgroundPreferences'
-                    description: >
-                        Preferences for virtual background in the room.
-        ChatPreferences:
+        MeetRecordingStart:
+            $ref: '#/components/schemas/MeetRecordingBase'
+
+        TokenOptions:
             type: object
-            properties:
-                enabled:
-                    type: boolean
-                    default: true
-                    example: true
-                    description: >
-                        If true, the room will be allowed to send and receive chat messages.
-        RecordingPreferences:
-            type: object
-            properties:
-                enabled:
-                    type: boolean
-                    default: true
-                    example: true
-                    description: >
-                        If true, the room will be allowed to record the video of the participants.
-        VirtualBackgroundPreferences:
-            type: object
-            properties:
-                enabled:
-                    type: boolean
-                    default: true
-                    example: true
-                    description: >
-                        If true, the room will be allowed to use virtual background.
-        OpenViduMeetRoom:
-            type: object
+            required:
+                - roomName
+                - participantName
+                - secret
             properties:
                 roomName:
                     type: string
                     example: 'OpenVidu-123456'
                     description: >
-                        The name of the room. This name is generated by appending a random alphanumeric string to the
-                        room name prefix specified in the request.
-                creationDate:
-                    type: number
-                    example: 1620000000000
-                    description: >
-                        The creation date of the room in milliseconds since the Unix epoch.
-                expirationDate:
-                    type: number
-                    example: 1620000000000
-                    description: >
-                        The expiration date of the room in milliseconds since the Unix epoch.
-                        After this date, the room will be closed and no new participants will be allowed to join.
-                roomNamePrefix:
+                        The name of the room to join.
+                participantName:
                     type: string
-                    example: 'OpenVidu'
+                    example: 'Alice'
                     description: >
-                        The prefix used for the room name. The room name is generated by appending a random alphanumeric
-                        string to this prefix.
-                preferences:
-                    $ref: '#/components/schemas/RoomPreferences'
-                    description: >
-                        The preferences for the room.
-                maxParticipants:
-                    type: integer
-                    example: 10
-                    description: >
-                        The maximum number of participants allowed in the room. If the number of participants exceeds
-                        this limit, new participants will not be allowed to join.
-                moderatorURL:
+                        The name of the participant.
+                secret:
                     type: string
-                    example: 'http://localhost:6080/meet/OpenVidu-123456/?secret=tok_123456'
+                    example: 'abc123456'
                     description: >
-                        The URL for the moderator to join the room. The moderator has special permissions to manage the
-                        room and participants.
-                publisherURL:
-                    type: string
-                    example: 'http://localhost:6080/meet/OpenVidu-123456/?secret=tok_123456'
-                    description: >
-                        The URL for the publisher to join the room. The publisher has permissions to publish audio and
-                        video streams to the room.
-                viewerURL:
-                    type: string
-                    example: 'http://localhost:6080/meet/OpenVidu-123456/?secret=tok_123456'
-                    description: >
-                        The URL for the viewer to join the room. The viewer has read-only permissions to watch the room
-                        and participants.
-        MeetRecordingBase:
-          type: object
-          properties:
-            recordingId:
-              type: string
-              example: 'room-123--EG_XYZ--XX445'
-              description: The unique identifier of the recording.
-            roomId:
-              type: string
-              example: 'room-123'
-              description: The ID of the room where the recording was made.
-            # outputMode:
-            #   type: string
-            #   example: 'COMPOSED'
-            #   description: >
-            #     The output mode of the recording. Possible value: "COMPOSED".
-            status:
-              type: string
-              example: 'ACTIVE'
-              description: >
-                The status of the recording.
-                Possible values:
-                  - STARTING
-                  - ACTIVE
-                  - ENDING
-                  - COMPLETE
-                  - FAILED
-                  - ABORTED
-                  - LIMITED_REACHED
-            filename:
-              type: string
-              example: 'room-123--XX445.mp4'
-              description: The name of the recording file.
-            startDate:
-              type: number
-              example: 1620000000000
-              description: The date when the recording was started (milliseconds since the Unix epoch).
+                        The secret token from the room Url
 
-        MeetRecording:
-          allOf:
-            - $ref: '#/components/schemas/MeetRecordingBase'
-            - type: object
-              properties:
-                endDate:
-                  type: number
-                  example: 1620000000000
-                  description: The date when the recording was stopped (milliseconds since the Unix epoch).
-                duration:
-                  type: number
-                  example: 3600
-                  description: The duration of the recording in seconds.
-                size:
-                  type: number
-                  example: 1024
-                  description: The size of the recording file in bytes.
-                errorCode:
-                  type: number
-                  example: 100
-                  description: The error code of the recording.
-                error:
-                  type: string
-                  description: The error message of the recording.
-                  nullable: true
-                details:
-                  type: string
-                  example: 'Stopped using API'
-                  description: Additional details about the recording.
-
-        MeetRecordingStart:
-            $ref: '#/components/schemas/MeetRecordingBase'
         Error:
             type: object
             required:

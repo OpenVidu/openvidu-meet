@@ -33,6 +33,7 @@ paths:
                 - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             requestBody:
                 description: Room configuration options
                 content:
@@ -73,13 +74,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/OpenViduMeetRoom'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '422':
                     description: Unprocessable Entity — The request body is invalid
                     content:
@@ -139,6 +148,7 @@ paths:
                 - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: fields
                   in: query
@@ -173,7 +183,7 @@ paths:
                                     rooms:
                                         type: array
                                         items:
-                                        $ref: '#/components/schemas/OpenViduMeetRoom'
+                                            $ref: '#/components/schemas/OpenViduMeetRoom'
                                     pagination:
                                         type: object
                                         properties:
@@ -188,13 +198,21 @@ paths:
                                                 description: Current page number.
 
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '500':
                     description: Internal server error
                     content:
@@ -216,6 +234,8 @@ paths:
                 - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
+                - participantTokenCookie: []
             parameters:
                 - name: roomName
                   in: path
@@ -239,13 +259,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/OpenViduMeetRoom'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access/participant token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The participant authenticated with the access token is not moderator of the room
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Room not found
                     content:
@@ -273,6 +301,7 @@ paths:
                 - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: roomName
                   in: path
@@ -304,13 +333,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/OpenViduMeetRoom'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Room not found
                     content:
@@ -353,6 +390,7 @@ paths:
                 - OpenVidu Meet - Room
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: roomName
                   in: path
@@ -364,13 +402,21 @@ paths:
                 '204':
                     description: Successfully deleted the OpenVidu Meet room
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Room not found
                     content:
@@ -398,7 +444,7 @@ paths:
             tags:
                 - OpenVidu Meet - Recordings
             security:
-                - apiKeyInHeader: []
+                - participantTokenCookie: []
             requestBody:
                 description: Recording details
                 content:
@@ -413,7 +459,6 @@ paths:
                                     example: 'room-123'
                                     description: >
                                         The unique identifier of the room to record.
-
             responses:
                 '200':
                     description: Successfully created the OpenVidu Meet recording
@@ -422,13 +467,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/MeetRecordingStart'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The participant access token is missing or invalid
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — Recording is not enabled for the room or the participant authenticated with the access token has not enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Room not found
                     content:
@@ -496,6 +549,7 @@ paths:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 # - name: status
                 #   in: query
@@ -550,7 +604,7 @@ paths:
                                     recordings:
                                         type: array
                                         items:
-                                          $ref: '#/components/schemas/MeetRecording'
+                                            $ref: '#/components/schemas/MeetRecording'
                                     pagination:
                                         type: object
                                         properties:
@@ -562,13 +616,21 @@ paths:
                                                 description: The token to retrieve the next page of recordings.
 
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '500':
                     description: Internal server error
                     content:
@@ -587,6 +649,7 @@ paths:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: recordingIds
                   in: query
@@ -627,13 +690,21 @@ paths:
                                                     description: A message explaining why the deletion failed.
                                                     example: 'Recording not found'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '422':
                     description: Unprocessable Entity — The request body is invalid
                     content:
@@ -683,7 +754,7 @@ paths:
             tags:
                 - OpenVidu Meet - Recordings
             security:
-                - apiKeyInHeader: []
+                - participantTokenCookie: []
             parameters:
                 - name: recordingId
                   in: path
@@ -706,13 +777,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/MeetRecording'
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The participant access token is missing or invalid
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — Recording is not enabled for the room or the participant authenticated with the access token has not enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Recording not found
                     content:
@@ -749,6 +828,7 @@ paths:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: recordingId
                   in: path
@@ -766,13 +846,21 @@ paths:
                                 $ref: '#/components/schemas/MeetRecording'
 
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Recording not found — The recording with the specified ID was not found
                     content:
@@ -801,6 +889,7 @@ paths:
                 - OpenVidu Meet - Recordings
             security:
                 - apiKeyInHeader: []
+                - accessTokenCookie: []
             parameters:
                 - name: recordingId
                   in: path
@@ -813,13 +902,21 @@ paths:
                 '204':
                     description: Recording successfully deleted. No content is returned.
                 '401':
-                    description: Unauthorized — The API key is missing or invalid
+                    description: Unauthorized — The API key is missing or invalid, or the access token is missing or invalid when using cookie-based authentication
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
+                '403':
+                    description: Forbidden — The user authenticated with the access token does not have enough permissions
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Insufficient permissions to access this resource'
                 '404':
                     description: Recording not found
                     content:
@@ -855,12 +952,18 @@ components:
             in: header
             description: >
                 The API key to authenticate the request. This key is required to access the OpenVidu Meet API.
-        jwtInCookie:
+        accessTokenCookie:
             type: apiKey
             name: OvMeetAccessToken
             in: cookie
             description: >
-                The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet admin console.
+                The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
+        participantTokenCookie:
+            type: apiKey
+            name: OvMeetParticipantToken
+            in: cookie
+            description: >
+                The JWT token to authenticate the participant when entering the room.
     schemas:
         OpenViduMeetRoomOptions:
             type: object
@@ -988,75 +1091,76 @@ components:
                         The URL for the viewer to join the room. The viewer has read-only permissions to watch the room
                         and participants.
         MeetRecordingBase:
-          type: object
-          properties:
-            recordingId:
-              type: string
-              example: 'room-123--EG_XYZ--XX445'
-              description: The unique identifier of the recording.
-            roomId:
-              type: string
-              example: 'room-123'
-              description: The ID of the room where the recording was made.
-            # outputMode:
-            #   type: string
-            #   example: 'COMPOSED'
-            #   description: >
-            #     The output mode of the recording. Possible value: "COMPOSED".
-            status:
-              type: string
-              example: 'ACTIVE'
-              description: >
-                The status of the recording.
-                Possible values:
-                  - STARTING
-                  - ACTIVE
-                  - ENDING
-                  - COMPLETE
-                  - FAILED
-                  - ABORTED
-                  - LIMITED_REACHED
-            filename:
-              type: string
-              example: 'room-123--XX445.mp4'
-              description: The name of the recording file.
-            startDate:
-              type: number
-              example: 1620000000000
-              description: The date when the recording was started (milliseconds since the Unix epoch).
+            type: object
+            properties:
+                recordingId:
+                    type: string
+                    example: 'room-123--EG_XYZ--XX445'
+                    description: The unique identifier of the recording.
+                roomId:
+                    type: string
+                    example: 'room-123'
+                    description: The ID of the room where the recording was made.
+                # outputMode:
+                #   type: string
+                #   example: 'COMPOSED'
+                #   description: >
+                #     The output mode of the recording. Possible value: "COMPOSED".
+                status:
+                    type: string
+                    example: 'ACTIVE'
+                    description: >
+                        The status of the recording.
+                        Possible values:
+                          - STARTING
+                          - ACTIVE
+                          - ENDING
+                          - COMPLETE
+                          - FAILED
+                          - ABORTED
+                          - LIMITED_REACHED
+                filename:
+                    type: string
+                    example: 'room-123--XX445.mp4'
+                    description: The name of the recording file.
+                startDate:
+                    type: number
+                    example: 1620000000000
+                    description: The date when the recording was started (milliseconds since the Unix epoch).
 
         MeetRecording:
-          allOf:
-            - $ref: '#/components/schemas/MeetRecordingBase'
-            - type: object
-              properties:
-                endDate:
-                  type: number
-                  example: 1620000000000
-                  description: The date when the recording was stopped (milliseconds since the Unix epoch).
-                duration:
-                  type: number
-                  example: 3600
-                  description: The duration of the recording in seconds.
-                size:
-                  type: number
-                  example: 1024
-                  description: The size of the recording file in bytes.
-                errorCode:
-                  type: number
-                  example: 100
-                  description: The error code of the recording.
-                error:
-                  type: string
-                  description: The error message of the recording.
-                  nullable: true
-                details:
-                  type: string
-                  example: 'Stopped using API'
-                  description: Additional details about the recording.
+            allOf:
+                - $ref: '#/components/schemas/MeetRecordingBase'
+                - type: object
+                  properties:
+                      endDate:
+                          type: number
+                          example: 1620000000000
+                          description: The date when the recording was stopped (milliseconds since the Unix epoch).
+                      duration:
+                          type: number
+                          example: 3600
+                          description: The duration of the recording in seconds.
+                      size:
+                          type: number
+                          example: 1024
+                          description: The size of the recording file in bytes.
+                      errorCode:
+                          type: number
+                          example: 100
+                          description: The error code of the recording.
+                      error:
+                          type: string
+                          description: The error message of the recording.
+                          nullable: true
+                      details:
+                          type: string
+                          example: 'Stopped using API'
+                          description: Additional details about the recording.
 
         MeetRecordingStart:
             $ref: '#/components/schemas/MeetRecordingBase'
+
         Error:
             type: object
             required:
