@@ -15,12 +15,288 @@ servers:
     - url: http://localhost:6080/meet/internal-api/v1
       description: Development server
 tags:
+    - name: Internal API - Authentication
+      description: Authentication operations
+    - name: Internal API - Rooms
+      description: Operations related to managing OpenVidu Meet rooms
     - name: Internal API - Participant
       description: Operations related to managing participants in OpenVidu Meet rooms
     - name: Internal API - Recordings
       description: Operations related to managing OpenVidu Meet recordings
 
 paths:
+    /auth/login:
+        post:
+            operationId: loginUser
+            summary: Login to OpenVidu Meet
+            description: >
+                Authenticates a user and returns an access and refresh token in cookies.
+            tags:
+                - Internal API - Authentication
+            requestBody:
+                description: User credentials
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    example: 'admin'
+                                    description: The username of the user.
+                                password:
+                                    type: string
+                                    example: 'password123'
+                                    description: The password of the user.
+            responses:
+                '200':
+                    description: Successfully logged in
+                    headers:
+                        Set-Cookie:
+                            description: >
+                                The cookie containing the access token.
+                                This cookie is used to authenticate the user in subsequent requests.
+                            schema:
+                                type: string
+                                example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+                        Set-Cookie-Refresh:
+                            description: >
+                                The cookie containing the refresh token.
+                                This cookie is used to refresh the access token when it expires.
+                            schema:
+                                type: string
+                                example: 'OvMeetRefreshToken=token_123456; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                        example: 'Login succeeded'
+                '404':
+                    description: Invalid credentials
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Login failed. Invalid username or password'
+                '422':
+                    description: Unprocessable Entity — The request body is invalid
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+                                        example: 'Unprocessable Entity'
+                                    message:
+                                        type: string
+                                        example: 'Invalid request body'
+                                    details:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                field:
+                                                    type: string
+                                                    example: 'username'
+                                                message:
+                                                    type: string
+                                                    example: 'Username must be at least 4 characters long'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Internal server error'
+    /auth/logout:
+        post:
+            operationId: logoutUser
+            summary: Logout from OpenVidu Meet
+            description: >
+                Logs out the user and clears the access and refresh tokens from cookies.
+            tags:
+                - Internal API - Authentication
+            responses:
+                '200':
+                    description: Successfully logged out
+                    headers:
+                        Set-Cookie:
+                            schema:
+                                type: string
+                                example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
+                        Set-Cookie-Refresh:
+                            schema:
+                                type: string
+                                example: 'OvMeetRefreshToken=; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                        example: 'Logout successful'
+    /auth/refresh:
+        post:
+            operationId: refreshAccessToken
+            summary: Refresh the access token
+            description: >
+                Refreshes the access token using the refresh token.
+                The new access token is returned in a cookie.
+            tags:
+                - Internal API - Authentication
+            security:
+                - refreshTokenCookie: []
+            responses:
+                '200':
+                    description: Successfully refreshed the access token
+                    headers:
+                        Set-Cookie:
+                            description: >
+                                The cookie containing the new access token.
+                                This cookie is used to authenticate the user in subsequent requests.
+                            schema:
+                                type: string
+                                example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                        example: 'Token refreshed'
+                '400':
+                    description: Bad Request — The refresh token is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'No refresh token provided'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Internal server error'
+    /auth/profile:
+        get:
+            operationId: getUserProfile
+            summary: Get user profile
+            description: >
+                Retrieves the profile information of the authenticated user.
+            tags:
+                - Internal API - Authentication
+            security:
+                - accessTokenCookie: []
+            responses:
+                '200':
+                    description: Successfully retrieved user profile
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    username:
+                                        type: string
+                                        example: 'admin'
+                                        description: The username of the authenticated user.
+                                    role:
+                                        type: string
+                                        example: 'admin'
+                                        description: The role assigned to the authenticated user.
+                '401':
+                    description: Unauthorized — The access token is missing or invalid
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Unauthorized'
+    /rooms/{roomName}/participant-role:
+        get:
+            operationId: getParticipantRole
+            summary: Get participant role in a room
+            description: >
+                Retrieves the role that a participant will have in a specified OpenVidu Meet room when using the URL thant contains the secret token.
+                This endpoint is useful for checking the participant's role before joining the room.
+            tags:
+                - Internal API - Rooms
+            security:
+                - accessTokenCookie: []
+            parameters:
+                - name: roomName
+                  in: path
+                  required: true
+                  description: The name of the room to check the participant's role
+                  schema:
+                      type: string
+                - name: secret
+                  in: query
+                  required: true
+                  description: The secret token from the room URL to check the participant's role
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Successfully retrieved participant role
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                                example: 'moderator'
+                                description: The role that the participant will have in the room.
+                '404':
+                    description: Room not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                name: 'Room Error'
+                                message: 'The room does not exist'
+                '422':
+                    description: Unprocessable Entity — Invalid request query parameters
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+                                        example: 'Unprocessable Entity'
+                                    message:
+                                        type: string
+                                        example: 'Invalid request query'
+                                    details:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                field:
+                                                    type: string
+                                                    example: 'secret'
+                                                message:
+                                                    type: string
+                                                    example: 'secret is required'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Error'
+                            example:
+                                message: 'Internal server error'
     /recordings/{recordingId}/stream:
         get:
             operationId: getRecordingStream
