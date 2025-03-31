@@ -2,12 +2,22 @@ import crypto from 'crypto';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { Room } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
-import { MEET_API_KEY, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../environment.js';
-import { MeetWebhookEvent, MeetWebhookEventType, MeetRecordingInfo, MeetWebhookPayload } from '@typings-ce';
+import { MEET_API_KEY } from '../environment.js';
+import {
+	MeetWebhookEvent,
+	MeetWebhookEventType,
+	MeetRecordingInfo,
+	MeetWebhookPayload,
+	WebhookPreferences
+} from '@typings-ce';
+import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
 
 @injectable()
 export class OpenViduWebhookService {
-	constructor(@inject(LoggerService) protected logger: LoggerService) {}
+	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService
+	) {}
 
 	// TODO: Implement Room webhooks
 	async sendRoomFinishedWebhook(room: Room) {
@@ -43,7 +53,9 @@ export class OpenViduWebhookService {
 	}
 
 	private async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
-		if (!this.isWebhookEnabled()) return;
+		const webhookPreferences = await this.getWebhookPreferences();
+
+		if (!webhookPreferences.enabled) return;
 
 		const creationDate = Date.now();
 		const data: MeetWebhookEvent = {
@@ -57,7 +69,7 @@ export class OpenViduWebhookService {
 		this.logger.info(`Sending webhook event ${data.event}`);
 
 		try {
-			await this.fetchWithRetry(MEET_WEBHOOK_URL, {
+			await this.fetchWithRetry(webhookPreferences.url, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -98,8 +110,13 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	private isWebhookEnabled(): boolean {
-		// TODO: Retrieve this from the database
-		return !!MEET_WEBHOOK_URL && MEET_WEBHOOK_ENABLED === 'true';
+	private async getWebhookPreferences(): Promise<WebhookPreferences> {
+		try {
+			const { webhooksPreferences } = await this.globalPrefService.getGlobalPreferences();
+			return webhooksPreferences;
+		} catch (error) {
+			this.logger.error('Error getting webhook preferences:', error);
+			throw error;
+		}
 	}
 }
