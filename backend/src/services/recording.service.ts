@@ -581,7 +581,7 @@ export class RecordingService {
 			const lockExists = await this.mutexService.lockExists(lockKey);
 
 			if (!lockExists) {
-				this.logger.debug(`Lock for room ${roomId} no longer exists, skipping`);
+				this.logger.debug(`Lock for room ${roomId} no longer exists, skipping cleanup`);
 				return;
 			}
 
@@ -596,53 +596,39 @@ export class RecordingService {
 				return;
 			}
 
-			const room = await this.livekitService.getRoom(roomId);
+			const roomExists = await this.livekitService.roomExists(roomId);
 
-			if (room.numPublishers === 0) {
-				const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			if (roomExists) {
+				// Room exists, check if it has publishers
+				this.logger.debug(`Room ${roomId} exists, checking for publishers`);
+				const room = await this.livekitService.getRoom(roomId);
+				const hasPublishers = room.numPublishers > 0;
 
-				if (inProgressRecordings.length > 0) {
-					this.logger.debug(
-						`Room ${roomId} has ${inProgressRecordings.length} recordings in transition, keeping lock`
-					);
-					return;
+				if (hasPublishers) {
+					// Room has publishers, but no in-progress recordings
+					this.logger.debug(`Room ${roomId} has publishers, checking for in-progress recordings`);
+				} else {
+					// Room has no publishers
+					this.logger.debug(`Room ${roomId} has no publishers, checking for in-progress recordings`);
 				}
-
-				this.logger.info(`Room ${roomId} no longer exists, releasing orphaned lock`);
-				await this.mutexService.release(lockKey);
-				return;
+			} else {
+				// Room does not exist, and no in-progress recordings, release the lock
+				this.logger.debug(`Room ${roomId} no longer exists, checking for in-progress recordings`);
 			}
 
-			// The room has participants, check if it has in-progress recordings
+			// Verify if in-progress recordings exist
 			const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			const hasInProgressRecordings = inProgressRecordings.length > 0;
 
-			if (inProgressRecordings.length === 0) {
-				// If the room has no active recording, release the lock
-				this.logger.info(`No active recordings for room ${roomId}, releasing orphaned lock`);
-				await this.mutexService.release(lockKey);
-			}
-		} catch (error) {
-			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
-				this.logger.info(`Room ${roomId} no longer exists, releasing orphaned lock`);
-
-				try {
-					const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
-
-					if (inProgressRecordings.length > 0) {
-						this.logger.debug(
-							`Room ${roomId} has ${inProgressRecordings.length} recordings in transition, keeping lock`
-						);
-						return;
-					}
-
-					await this.mutexService.release(lockKey);
-				} catch (error) {
-					this.logger.error(`Error releasing lock for room ${roomId}:`, error);
-				}
-
+			if (hasInProgressRecordings) {
+				this.logger.debug(`Room ${roomId} has in-progress recordings, skipping cleanup`);
 				return;
 			}
 
+			this.logger.info(`Room ${roomId} has no in-progress recordings, releasing orphaned lock`);
+			await this.mutexService.release(lockKey);
+		} catch (error) {
+			this.logger.error(`Error processing orphan lock for room ${roomId}:`, error);
 			throw error;
 		}
 	}
