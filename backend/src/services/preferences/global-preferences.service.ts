@@ -3,7 +3,7 @@
  * regardless of the underlying storage mechanism.
  */
 
-import { AuthMode, AuthType, GlobalPreferences, MeetRoom, RoomPreferences } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, MeetRoom, MeetRoomPreferences } from '@typings-ce';
 import { LoggerService } from '../logger.service.js';
 import { PreferencesStorage } from './global-preferences-storage.interface.js';
 import { GlobalPreferencesStorageFactory } from './global-preferences.factory.js';
@@ -64,7 +64,7 @@ export class GlobalPreferencesService<
 	}
 
 	async saveOpenViduRoom(ovRoom: R): Promise<R> {
-		this.logger.info(`Saving OpenVidu room ${ovRoom.roomName}`);
+		this.logger.info(`Saving OpenVidu room ${ovRoom.roomId}`);
 		return this.storage.saveOpenViduRoom(ovRoom) as Promise<R>;
 	}
 
@@ -75,27 +75,27 @@ export class GlobalPreferencesService<
 	/**
 	 * Retrieves the preferences associated with a specific room.
 	 *
-	 * @param roomName - The unique identifier for the room.
+	 * @param roomId - The unique identifier for the room.
 	 * @returns A promise that resolves to the room's preferences.
 	 * @throws Error if the room preferences are not found.
 	 */
-	async getOpenViduRoom(roomName: string): Promise<R> {
-		const openviduRoom = await this.storage.getOpenViduRoom(roomName);
+	async getOpenViduRoom(roomId: string): Promise<R> {
+		const openviduRoom = await this.storage.getOpenViduRoom(roomId);
 
 		if (!openviduRoom) {
-			this.logger.error(`Room not found for room ${roomName}`);
-			throw errorRoomNotFound(roomName);
+			this.logger.error(`Room not found for room ${roomId}`);
+			throw errorRoomNotFound(roomId);
 		}
 
 		return openviduRoom as R;
 	}
 
-	async deleteOpenViduRoom(roomName: string): Promise<void> {
-		return this.storage.deleteOpenViduRoom(roomName);
+	async deleteOpenViduRoom(roomId: string): Promise<void> {
+		return this.storage.deleteOpenViduRoom(roomId);
 	}
 
-	async getOpenViduRoomPreferences(roomName: string): Promise<RoomPreferences> {
-		const openviduRoom = await this.getOpenViduRoom(roomName);
+	async getOpenViduRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
+		const openviduRoom = await this.getOpenViduRoom(roomId);
 
 		if (!openviduRoom.preferences) {
 			throw new Error('Room preferences not found');
@@ -109,11 +109,11 @@ export class GlobalPreferencesService<
 	 * @param {RoomPreferences} roomPreferences
 	 * @returns {Promise<GlobalPreferences>}
 	 */
-	async updateOpenViduRoomPreferences(roomName: string, roomPreferences: RoomPreferences): Promise<R> {
+	async updateOpenViduRoomPreferences(roomId: string, roomPreferences: MeetRoomPreferences): Promise<R> {
 		// TODO: Move validation to the controller layer
 		this.validateRoomPreferences(roomPreferences);
 
-		const openviduRoom = await this.getOpenViduRoom(roomName);
+		const openviduRoom = await this.getOpenViduRoom(roomId);
 		openviduRoom.preferences = roomPreferences;
 		return this.saveOpenViduRoom(openviduRoom);
 	}
@@ -122,7 +122,7 @@ export class GlobalPreferencesService<
 	 * Validates the room preferences.
 	 * @param {RoomPreferences} preferences
 	 */
-	validateRoomPreferences(preferences: RoomPreferences) {
+	validateRoomPreferences(preferences: MeetRoomPreferences) {
 		const { recordingPreferences, chatPreferences, virtualBackgroundPreferences } = preferences;
 
 		if (!recordingPreferences || !chatPreferences || !virtualBackgroundPreferences) {

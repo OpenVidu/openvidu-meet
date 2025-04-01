@@ -52,7 +52,7 @@ export const configureCreateRoomAuth = async (req: Request, res: Response, next:
  * - If the user is not a moderator, access is denied.
  */
 export const configureRoomAuthorization = async (req: Request, res: Response, next: NextFunction) => {
-	const roomName = req.params.roomName as string;
+	const roomId = req.params.roomId as string;
 	const payload = req.session?.tokenClaims;
 
 	// If there is no token, the user is admin or it is invoked using the API key
@@ -61,7 +61,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 		return next();
 	}
 
-	const sameRoom = payload.video?.room === roomName;
+	const sameRoom = payload.video?.room === roomId;
 	const metadata = JSON.parse(payload.metadata || '{}');
 	const role = metadata.role as ParticipantRole;
 

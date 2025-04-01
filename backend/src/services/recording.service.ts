@@ -62,7 +62,7 @@ export class RecordingService {
 		let acquiredLock: RedisLock | null = null;
 
 		try {
-			const room = await this.roomService.getOpenViduRoom(roomId);
+			const room = await this.roomService.getMeetRoom(roomId);
 
 			if (!room) throw errorRoomNotFound(roomId);
 
@@ -364,9 +364,9 @@ export class RecordingService {
 	 * and sends it to the OpenVidu Components in the given room. The payload
 	 * is adapted to match the expected format for OpenVidu Components.
 	 */
-	sendRecordingSignalToOpenViduComponents(roomName: string, recordingInfo: MeetRecordingInfo) {
+	sendRecordingSignalToOpenViduComponents(roomId: string, recordingInfo: MeetRecordingInfo) {
 		const { payload, options } = OpenViduComponentsAdapterHelper.generateRecordingSignal(recordingInfo);
-		return this.roomService.sendSignal(roomName, payload, options);
+		return this.roomService.sendSignal(roomId, payload, options);
 	}
 
 	/**

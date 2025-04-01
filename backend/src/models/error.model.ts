@@ -71,8 +71,8 @@ export const errorRecordingCannotBeStoppedWhileStarting = (recordingId: string):
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' cannot be stopped while starting`, 409);
 };
 
-export const errorRecordingAlreadyStarted = (roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `The room '${roomName}' is already being recorded`, 409);
+export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `The room '${roomId}' is already being recorded`, 409);
 };
 
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
@@ -100,24 +100,24 @@ export const isErrorRecordingCannotBeStoppedWhileStarting = (
 };
 
 // Room errors
-export const errorRoomNotFound = (roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', `The room '${roomName}' does not exist`, 404);
+export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `The room '${roomId}' does not exist`, 404);
 };
 
 // Participant errors
 
-export const errorParticipantUnauthorized = (roomName: string): OpenViduMeetError => {
+export const errorParticipantUnauthorized = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Participant Error',
-		`Unauthorized generating token with received credentials in room '${roomName}'`,
+		`Unauthorized generating token with received credentials in room '${roomId}'`,
 		406
 	);
 };
 
-export const errorParticipantNotFound = (participantName: string, roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', `'${participantName}' not found in room '${roomName}'`, 404);
+export const errorParticipantNotFound = (participantName: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Participant Error', `'${participantName}' not found in room '${roomId}'`, 404);
 };
 
-export const errorParticipantAlreadyExists = (participantName: string, roomName: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', `'${participantName}' already exists in room in ${roomName}`, 409);
+export const errorParticipantAlreadyExists = (participantName: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `'${participantName}' already exists in room in ${roomId}`, 409);
 };

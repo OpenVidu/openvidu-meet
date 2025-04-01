@@ -36,10 +36,10 @@ export interface PreferencesStorage<
 	/**
 	 * Retrieves the {@link MeetRoom}.
 	 *
-	 * @param roomName - The name of the room to retrieve.
+	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to the OpenVidu Room, or null if not found.
 	 **/
-	getOpenViduRoom(roomName: string): Promise<R | null>;
+	getOpenViduRoom(roomId: string): Promise<R | null>;
 
 	/**
 	 * Saves the OpenVidu Room.
@@ -52,8 +52,8 @@ export interface PreferencesStorage<
 	/**
 	 * Deletes the OpenVidu Room for a given room name.
 	 *
-	 * @param roomName - The name of the room whose should be deleted.
+	 * @param roomId - The name of the room whose should be deleted.
 	 * @returns A promise that resolves when the room have been deleted.
 	 **/
-	deleteOpenViduRoom(roomName: string): Promise<void>;
+	deleteOpenViduRoom(roomId: string): Promise<void>;
 }

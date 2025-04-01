@@ -80,14 +80,14 @@ export class S3PreferenceStorage<
 	}
 
 	async saveOpenViduRoom(ovRoom: R): Promise<R> {
-		const { roomName } = ovRoom;
-		const s3Path = `${MEET_S3_ROOMS_PREFIX}/${roomName}/${roomName}.json`;
+		const { roomId } = ovRoom;
+		const s3Path = `${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 		const roomStr = JSON.stringify(ovRoom);
 
 		const results = await Promise.allSettled([
 			this.s3Service.saveObject(s3Path, ovRoom),
 			// TODO: Use a key prefix for Redis
-			this.redisService.set(roomName, roomStr, false)
+			this.redisService.set(roomId, roomStr, false)
 		]);
 
 		const s3Result = results[0];
@@ -102,15 +102,15 @@ export class S3PreferenceStorage<
 			try {
 				await this.s3Service.deleteObject(s3Path);
 			} catch (rollbackError) {
-				this.logger.error(`Error rolling back S3 save for room ${roomName}: ${rollbackError}`);
+				this.logger.error(`Error rolling back S3 save for room ${roomId}: ${rollbackError}`);
 			}
 		}
 
 		if (redisResult.status === 'fulfilled') {
 			try {
-				await this.redisService.delete(roomName);
+				await this.redisService.delete(roomId);
 			} catch (rollbackError) {
-				this.logger.error(`Error rolling back Redis set for room ${roomName}: ${rollbackError}`);
+				this.logger.error(`Error rolling back Redis set for room ${roomId}: ${rollbackError}`);
 			}
 		}
 
@@ -118,7 +118,7 @@ export class S3PreferenceStorage<
 		const rejectedResult: PromiseRejectedResult =
 			s3Result.status === 'rejected' ? s3Result : (redisResult as PromiseRejectedResult);
 		const error = rejectedResult.reason;
-		this.handleError(error, `Error saving Room preferences for room ${roomName}`);
+		this.handleError(error, `Error saving Room preferences for room ${roomId}`);
 		throw error;
 	}
 
@@ -138,16 +138,16 @@ export class S3PreferenceStorage<
 			}
 
 			// Extract room names from file paths
-			const roomNamesList = roomFiles.map((file) => this.extractRoomName(file.Key)).filter(Boolean) as string[];
+			const roomIds = roomFiles.map((file) => this.extractRoomId(file.Key)).filter(Boolean) as string[];
 			// Fetch room preferences in parallel
 			const rooms = await Promise.all(
-				roomNamesList.map(async (roomName: string) => {
-					if (!roomName) return null;
+				roomIds.map(async (roomId: string) => {
+					if (!roomId) return null;
 
 					try {
-						return await this.getOpenViduRoom(roomName);
+						return await this.getOpenViduRoom(roomId);
 					} catch (error: any) {
-						this.logger.warn(`Failed to fetch room "${roomName}": ${error.message}`);
+						this.logger.warn(`Failed to fetch room "${roomId}": ${error.message}`);
 						return null;
 					}
 				})
@@ -162,13 +162,13 @@ export class S3PreferenceStorage<
 	}
 
 	/**
-	 * Extracts the room name from the given file path.
+	 * Extracts the room id from the given file path.
 	 * Assumes the room name is located one directory before the file name.
-	 * Example: 'path/to/roomName/file.json' -> 'roomName'
+	 * Example: 'path/to/roomId/file.json' -> 'roomId'
 	 * @param filePath - The S3 object key representing the file path.
 	 * @returns The extracted room name or null if extraction fails.
 	 */
-	private extractRoomName(filePath?: string): string | null {
+	private extractRoomId(filePath?: string): string | null {
 		if (!filePath) return null;
 
 		const parts = filePath.split('/');
@@ -198,14 +198,14 @@ export class S3PreferenceStorage<
 		}
 	}
 
-	async deleteOpenViduRoom(roomName: string): Promise<void> {
+	async deleteOpenViduRoom(roomId: string): Promise<void> {
 		try {
 			await Promise.all([
-				this.s3Service.deleteObject(`${MEET_S3_ROOMS_PREFIX}/${roomName}/${roomName}.json`),
-				this.redisService.delete(roomName)
+				this.s3Service.deleteObject(`${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`),
+				this.redisService.delete(roomId)
 			]);
 		} catch (error) {
-			this.handleError(error, `Error deleting Room preferences for room ${roomName}`);
+			this.handleError(error, `Error deleting Room preferences for room ${roomId}`);
 		}
 	}
 

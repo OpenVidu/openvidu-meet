@@ -15,64 +15,66 @@ export class ParticipantService {
 	) {}
 
 	async generateOrRefreshParticipantToken(options: TokenOptions, refresh = false): Promise<string> {
-		const { roomName, participantName, secret } = options;
+		const { roomId, participantName, secret } = options;
 
 		// Check if participant with same participantName exists in the room
-		const participantExists = await this.participantExists(roomName, participantName);
+		const participantExists = await this.participantExists(roomId, participantName);
 
 		if (!refresh && participantExists) {
-			this.logger.verbose(`Participant ${participantName} already exists in room ${roomName}`);
-			throw errorParticipantAlreadyExists(participantName, roomName);
+			this.logger.verbose(`Participant ${participantName} already exists in room ${roomId}`);
+			throw errorParticipantAlreadyExists(participantName, roomId);
 		}
 
 		if (refresh && !participantExists) {
-			this.logger.verbose(`Participant ${participantName} does not exist in room ${roomName}`);
-			throw errorParticipantNotFound(participantName, roomName);
+			this.logger.verbose(`Participant ${participantName} does not exist in room ${roomId}`);
+			throw errorParticipantNotFound(participantName, roomId);
 		}
 
-		const role = await this.roomService.getRoomSecretRole(roomName, secret);
-		return this.generateParticipantToken(role, options);
+		const role = await this.roomService.getRoomSecretRole(roomId, secret);
+		const token = await this.generateParticipantToken(role, options);
+		this.logger.verbose(`Participant token generated for room ${roomId}`);
+		return token;
 	}
 
 	protected async generateParticipantToken(role: ParticipantRole, options: TokenOptions): Promise<string> {
-		const permissions = this.getParticipantPermissions(role, options.roomName);
+		const permissions = this.getParticipantPermissions(role, options.roomId);
 		return this.livekitService.generateToken(options, permissions, role);
 	}
 
-	async getParticipant(roomName: string, participantName: string): Promise<ParticipantInfo | null> {
+	async getParticipant(roomId: string, participantName: string): Promise<ParticipantInfo | null> {
 		this.logger.verbose(`Fetching participant ${participantName}`);
-		return this.livekitService.getParticipant(roomName, participantName);
+		return this.livekitService.getParticipant(roomId, participantName);
 	}
 
-	async participantExists(roomName: string, participantName: string): Promise<boolean> {
-		this.logger.verbose(`Checking if participant ${participantName} exists in room ${roomName}`);
+	async participantExists(roomId: string, participantName: string): Promise<boolean> {
+		this.logger.verbose(`Checking if participant ${participantName} exists in room ${roomId}`);
 
 		try {
-			const participant = await this.getParticipant(roomName, participantName);
+			const participant = await this.getParticipant(roomId, participantName);
 			return participant !== null;
 		} catch (error) {
 			return false;
 		}
 	}
 
-	async deleteParticipant(participantName: string, roomName: string): Promise<void> {
-		this.logger.verbose(`Deleting participant ${participantName} from room ${roomName}`);
+	async deleteParticipant(participantName: string, roomId: string): Promise<void> {
+		this.logger.verbose(`Deleting participant ${participantName} from room ${roomId}`);
 
-		return this.livekitService.deleteParticipant(participantName, roomName);
+		return this.livekitService.deleteParticipant(participantName, roomId);
 	}
 
-	getParticipantPermissions(role: ParticipantRole, roomName: string): ParticipantPermissions {
+	getParticipantPermissions(role: ParticipantRole, roomId: string): ParticipantPermissions {
 		switch (role) {
 			case ParticipantRole.MODERATOR:
-				return this.generateModeratorPermissions(roomName);
+				return this.generateModeratorPermissions(roomId);
 			case ParticipantRole.PUBLISHER:
-				return this.generatePublisherPermissions(roomName);
+				return this.generatePublisherPermissions(roomId);
 			default:
 				throw new Error(`Role ${role} not supported`);
 		}
 	}
 
-	protected generateModeratorPermissions(roomName: string): ParticipantPermissions {
+	protected generateModeratorPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
 				roomCreate: true,
@@ -80,7 +82,7 @@ export class ParticipantService {
 				roomList: true,
 				roomRecord: true,
 				roomAdmin: true,
-				room: roomName,
+				room: roomId,
 				ingressAdmin: true,
 				canPublish: true,
 				canSubscribe: true,
@@ -99,14 +101,14 @@ export class ParticipantService {
 		};
 	}
 
-	protected generatePublisherPermissions(roomName: string): ParticipantPermissions {
+	protected generatePublisherPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
 				roomJoin: true,
 				roomList: true,
 				roomRecord: false,
 				roomAdmin: false,
-				room: roomName,
+				room: roomId,
 				ingressAdmin: false,
 				canPublish: true,
 				canSubscribe: true,

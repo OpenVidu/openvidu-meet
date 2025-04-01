@@ -45,7 +45,7 @@ export class OpenViduComponentsAdapterHelper {
 	private static parseRecordingInfoToOpenViduComponents(info: MeetRecordingInfo) {
 		return {
 			id: info.recordingId,
-			roomName: info.details ?? '',
+			roomName: info.roomId,
 			roomId: info.roomId,
 			// outputMode: info.outputMode,
 			status: this.mapRecordingStatus(info.status),

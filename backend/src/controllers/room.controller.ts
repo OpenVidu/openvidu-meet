@@ -14,7 +14,7 @@ export const createRoom = async (req: Request, res: Response) => {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
 		const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-		const room = await roomService.createRoom(baseUrl, options);
+		const room = await roomService.createMeetRoom(baseUrl, options);
 		return res.status(200).json(room);
 	} catch (error) {
 		logger.error(`Error creating room with options '${JSON.stringify(options)}'`);
@@ -47,14 +47,14 @@ export const getRooms = async (req: Request, res: Response) => {
 export const getRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
-	const { roomName } = req.params;
+	const { roomId } = req.params;
 	const fields = req.query.fields as string[] | undefined;
 
 	try {
-		logger.verbose(`Getting room with id '${roomName}'`);
+		logger.verbose(`Getting room with id '${roomId}'`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getOpenViduRoom(roomName);
+		const room = await roomService.getMeetRoom(roomId);
 
 		if (fields && fields.length > 0) {
 			const filteredRoom = filterObjectFields(room, fields);
@@ -63,7 +63,7 @@ export const getRoom = async (req: Request, res: Response) => {
 
 		return res.status(200).json(room);
 	} catch (error) {
-		logger.error(`Error getting room with id '${roomName}'`);
+		logger.error(`Error getting room with id '${roomId}'`);
 		handleError(res, error);
 	}
 };
@@ -72,14 +72,14 @@ export const deleteRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
-	const { roomName } = req.params;
-	const { roomNames } = req.body;
+	const { roomId } = req.params;
+	const { roomIds } = req.body;
 
-	const roomsToDelete = roomName ? [roomName] : roomNames;
+	const roomsToDelete = roomId ? [roomId] : roomIds;
 
-	// TODO: Validate roomNames with ZOD
+	// TODO: Validate roomIds with ZOD
 	if (!Array.isArray(roomsToDelete) || roomsToDelete.length === 0) {
-		return res.status(400).json({ error: 'roomNames must be a non-empty array' });
+		return res.status(400).json({ error: 'roomIds must be a non-empty array' });
 	}
 
 	try {
@@ -98,16 +98,16 @@ export const getParticipantRole = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
-	const { roomName } = req.params;
+	const { roomId } = req.params;
 	const { secret } = req.query as { secret: string };
 
 	try {
-		logger.verbose(`Getting participant role for room '${roomName}'`);
+		logger.verbose(`Getting participant role for room '${roomId}'`);
 
-		const role = await roomService.getRoomSecretRole(roomName, secret);
+		const role = await roomService.getRoomSecretRole(roomId, secret);
 		return res.status(200).json(role);
 	} catch (error) {
-		logger.error(`Error getting participant role for room '${roomName}'`);
+		logger.error(`Error getting participant role for room '${roomId}'`);
 		handleError(res, error);
 	}
 };

@@ -27,7 +27,8 @@ import {
 	errorLivekitIsNotAvailable,
 	errorParticipantNotFound,
 	errorRoomNotFound,
-	internalError
+	internalError,
+	OpenViduMeetError
 } from '../models/error.model.js';
 import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -49,6 +50,28 @@ export class LiveKitService {
 		} catch (error) {
 			this.logger.error('Error creating LiveKit room:', error);
 			throw internalError(`Error creating room: ${error}`);
+		}
+	}
+
+	/**
+	 * Checks if a room with the specified name exists in LiveKit.
+	 *
+	 * @param roomName - The name of the room to check
+	 * @returns A Promise that resolves to true if the room exists, false otherwise
+	 * @throws Will rethrow service availability or other unexpected errors
+	 */
+	async roomExists(roomName: string): Promise<boolean> {
+		try {
+			await this.getRoom(roomName);
+			return true;
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 404) {
+				return false;
+			}
+
+			// Rethrow other errors as they indicate we couldn't determine if the room exists
+			this.logger.error(`Error checking if room ${roomName} exists:`, error);
+			throw error;
 		}
 	}
 
@@ -94,6 +117,14 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Retrieves information about a specific participant in a LiveKit room.
+	 *
+	 * @param roomName - The name of the room where the participant is located
+	 * @param participantName - The name of the participant to retrieve
+	 * @returns A Promise that resolves to the participant's information
+	 * @throws An internal error if the participant cannot be found or another error occurs
+	 */
 	async getParticipant(roomName: string, participantName: string): Promise<ParticipantInfo> {
 		try {
 			return await this.roomClient.getParticipant(roomName, participantName);
@@ -132,8 +163,8 @@ export class LiveKitService {
 		permissions: ParticipantPermissions,
 		role: ParticipantRole
 	): Promise<string> {
-		const { roomName, participantName } = options;
-		this.logger.info(`Generating token for ${participantName} in room ${roomName}`);
+		const { roomId, participantName } = options;
+		this.logger.info(`Generating token for ${participantName} in room ${roomId}`);
 
 		const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
 			identity: participantName,

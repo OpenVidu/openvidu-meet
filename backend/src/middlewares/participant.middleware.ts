@@ -19,8 +19,8 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 	let role: ParticipantRole;
 
 	try {
-		const { roomName, secret } = req.body as TokenOptions;
-		role = await roomService.getRoomSecretRole(roomName, secret);
+		const { roomId, secret } = req.body as TokenOptions;
+		role = await roomService.getRoomSecretRole(roomId, secret);
 	} catch (error) {
 		logger.error('Error getting room secret role', error);
 		return res.status(500).json({ message: 'Internal server error' });
@@ -55,14 +55,14 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 };
 
 export const withModeratorPermissions = async (req: Request, res: Response, next: NextFunction) => {
-	const roomName = req.query.roomName as string;
+	const roomId = req.query.roomId as string;
 	const payload = req.session?.tokenClaims;
 
 	if (!payload) {
 		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
 	}
 
-	const sameRoom = payload.video?.room === roomName;
+	const sameRoom = payload.video?.room === roomId;
 	const metadata = JSON.parse(payload.metadata || '{}');
 	const role = metadata.role as ParticipantRole;
 

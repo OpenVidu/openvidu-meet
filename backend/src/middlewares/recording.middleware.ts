@@ -22,7 +22,7 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 
 	try {
 		const roomService = container.get(RoomService);
-		room = await roomService.getOpenViduRoom(roomId);
+		room = await roomService.getMeetRoom(roomId);
 	} catch (error) {
 		logger.error('Error checking recording preferences:' + error);
 		return res.status(403).json({ message: 'Recording is disabled in this room' });

@@ -3,13 +3,13 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 
 const ParticipantTokenRequestSchema: z.ZodType<TokenOptions> = z.object({
-	roomName: z.string().nonempty('Room name is required'),
+	roomId: z.string().nonempty('Room ID is required'),
 	participantName: z.string().nonempty('Participant name is required'),
 	secret: z.string().nonempty('Secret is required')
 });
 
 const DeleteParticipantSchema = z.object({
-	roomName: z.string().trim().min(1, 'roomName is required')
+	roomId: z.string().trim().min(1, 'Room ID is required')
 });
 
 export const validateParticipantTokenRequest = (req: Request, res: Response, next: NextFunction) => {
