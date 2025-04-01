@@ -1,20 +1,20 @@
 /**
  * Interface representing the preferences for a room.
  */
-export interface RoomPreferences {
-	chatPreferences: ChatPreferences;
-	recordingPreferences: RecordingPreferences;
-	virtualBackgroundPreferences: VirtualBackgroundPreferences;
+export interface MeetRoomPreferences {
+	chatPreferences: MeetChatPreferences;
+	recordingPreferences: MeetRecordingPreferences;
+	virtualBackgroundPreferences: MeetVirtualBackgroundPreferences;
 }
 /**
  * Interface representing the preferences for recording.
  */
-export interface RecordingPreferences {
+export interface MeetRecordingPreferences {
 	enabled: boolean;
 }
-export interface ChatPreferences {
+export interface MeetChatPreferences {
 	enabled: boolean;
 }
-export interface VirtualBackgroundPreferences {
+export interface MeetVirtualBackgroundPreferences {
 	enabled: boolean;
 }

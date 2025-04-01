@@ -3,9 +3,9 @@
  */
 export interface TokenOptions {
 	/**
-	 * The name of the room to join.
+	 * The unique identifier for the room.
 	 */
-	roomName: string;
+	roomId: string;
 
 	/**
 	 * The name of the participant.
