@@ -71,12 +71,15 @@ export class LivekitWebhookService {
 				return false;
 			}
 
-			const livekitRoom = await this.livekitService.getRoom(roomName);
+			const roomExists = await this.livekitService.roomExists(roomName);
 
-			if (!livekitRoom) {
+			if (!roomExists) {
 				this.logger.debug(`Room ${roomName} not found or no longer exists.`);
 				return false;
 			}
+
+			// Fetch the room information from LiveKit
+			const livekitRoom = await this.livekitService.getRoom(roomName);
 
 			// Parse metadata safely, defaulting to an empty object if null/undefined
 			const metadata = livekitRoom.metadata ? JSON.parse(livekitRoom.metadata) : {};
