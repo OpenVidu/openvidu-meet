@@ -82,7 +82,7 @@ export const baseRoutes: Routes = [
 				component: RoomsComponent,
 				children: [
 					{ path: 'new', component: RoomFormComponent },
-					{ path: ':roomName/edit', component: RoomFormComponent }
+					{ path: ':roomId/edit', component: RoomFormComponent }
 				]
 			},
 			{
@@ -110,7 +110,7 @@ export const baseRoutes: Routes = [
 		]
 	},
 	{
-		path: 'room/:room-name',
+		path: 'room/:room-id',
 		component: VideoRoomComponent,
 		canActivate: [
 			runGuardsSerially(
@@ -124,7 +124,7 @@ export const baseRoutes: Routes = [
 		]
 	},
 	{
-		path: 'room/:room-name/participant-name',
+		path: 'room/:room-id/participant-name',
 		component: ParticipantNameFormComponent
 	},
 

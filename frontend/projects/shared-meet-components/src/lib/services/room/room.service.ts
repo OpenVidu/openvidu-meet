@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { RoomPreferences } from '@lib/typings/ce';
+import { MeetRoomPreferences } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../http/http.service';
 import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
@@ -9,7 +9,7 @@ import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/l
 })
 export class RoomService {
 	protected log;
-	protected roomPreferences: RoomPreferences | undefined;
+	protected roomPreferences: MeetRoomPreferences | undefined;
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService
@@ -20,26 +20,26 @@ export class RoomService {
 	async createRoom(): Promise<MeetRoom> {
 		// TODO: Improve expiration date
 		const options: MeetRoomOptions = {
-			roomNamePrefix: 'TestRoom-',
+			roomIdPrefix: 'TestRoom-',
 			expirationDate: Date.now() + 1000 * 60 * 60 // 1 hour from now
 		};
 		this.log.d('Creating room', options);
 		return this.httpService.createRoom(options);
 	}
 
-	async deleteRoom(roomName: string) {
-		return this.httpService.deleteRoom(roomName);
+	async deleteRoom(roomId: string) {
+		return this.httpService.deleteRoom(roomId);
 	}
 
 	async listRooms() {
 		return this.httpService.listRooms();
 	}
 
-	async getRoom(roomName: string) {
-		return this.httpService.getRoom(roomName);
+	async getRoom(roomId: string) {
+		return this.httpService.getRoom(roomId);
 	}
 
-	async getRoomPreferences(): Promise<RoomPreferences> {
+	async getRoomPreferences(): Promise<MeetRoomPreferences> {
 		if (!this.roomPreferences) {
 			this.log.d('Room preferences not found, fetching from server');
 			// Fetch the room preferences from the server
@@ -55,7 +55,7 @@ export class RoomService {
 	 * @param {RoomPreferences} preferences - The preferences to be saved.
 	 * @returns {Promise<void>} A promise that resolves when the preferences have been saved.
 	 */
-	async saveRoomPreferences(preferences: RoomPreferences): Promise<void> {
+	async saveRoomPreferences(preferences: MeetRoomPreferences): Promise<void> {
 		this.log.d('Saving room preferences', preferences);
 		await this.httpService.saveRoomPreferences(preferences);
 		this.roomPreferences = preferences;

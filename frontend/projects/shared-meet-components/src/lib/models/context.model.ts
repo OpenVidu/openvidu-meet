@@ -5,7 +5,7 @@ import {
 } from 'projects/shared-meet-components/src/public-api';
 
 export interface ContextData {
-	roomName: string;
+	roomId: string;
 	participantName: string;
 	secret: string;
 	token: string;

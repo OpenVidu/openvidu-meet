@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RoomService, NotificationService } from '../../../services';
 import { DynamicGridComponent, ToggleCardComponent } from '../../../components';
-import { RoomPreferences } from '@lib/typings/ce';
-import { ILogger, LoggerService, Room } from 'openvidu-components-angular';
+import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { MatCardModule } from '@angular/material/card';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,8 +32,7 @@ export class RoomsComponent implements OnInit {
 	recordingEnabled = false;
 	chatEnabled = false;
 	backgroundsEnabled = false;
-
-	protected log;
+	protected log: ILogger;
 
 	constructor(
 		protected loggerService: LoggerService,
@@ -56,12 +54,12 @@ export class RoomsComponent implements OnInit {
 	}
 
 	isInRoomForm(): boolean {
-		return this.route.snapshot.firstChild !== null; // Verifica si hay un hijo en la ruta
+		return this.route.snapshot.firstChild !== null; // Verify if the current route has a child route
 	}
 
 	async createRoom() {
 		//TODO: Go to room details page
-		await  this.router.navigate(['new'], { relativeTo: this.route });
+		await this.router.navigate(['new'], { relativeTo: this.route });
 		// try {
 		// 	const room = await this.roomService.createRoom();
 		// 	this.notificationService.showSnackbar('Room created');
@@ -73,14 +71,14 @@ export class RoomsComponent implements OnInit {
 		// }
 	}
 
-	openRoom(roomName: string) {
-		window.open(`/${roomName}`, '_blank');
+	openRoom(roomId: string) {
+		window.open(`/${roomId}`, '_blank');
 	}
 
-	deleteRoom(room: MeetRoom) {
+	deleteRoom({ roomId }: MeetRoom) {
 		try {
-			this.roomService.deleteRoom(room.roomName);
-			this.createdRooms = this.createdRooms.filter((r) => r.roomName !== room.roomName);
+			this.roomService.deleteRoom(roomId);
+			this.createdRooms = this.createdRooms.filter((r) => r.roomId !== roomId);
 			this.notificationService.showSnackbar('Room deleted');
 		} catch (error) {
 			this.notificationService.showAlert('Error deleting room');
@@ -88,10 +86,9 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	async onRoomClicked(room: MeetRoom) {
-		console.log('Room clicked:', room);
+	async onRoomClicked({ roomId }: MeetRoom) {
 		//TODO: Go to room details page
-		await this.router.navigate([room.roomName, 'edit'], { relativeTo: this.route });
+		await this.router.navigate([roomId, 'edit'], { relativeTo: this.route });
 	}
 
 	// async onRecordingToggle(enabled: boolean) {

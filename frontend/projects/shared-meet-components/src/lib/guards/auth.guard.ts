@@ -57,11 +57,11 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	let participantRole: ParticipantRole;
 
 	try {
-		const roomName = contextService.getRoomName();
+		const roomId = contextService.getRoomId();
 		const secret = contextService.getSecret();
-		const storageSecret = sessionStorageService.getModeratorSecret(roomName);
+		const storageSecret = sessionStorageService.getModeratorSecret(roomId);
 
-		participantRole = await httpService.getParticipantRole(roomName, storageSecret || secret);
+		participantRole = await httpService.getParticipantRole(roomId, storageSecret || secret);
 	} catch (error) {
 		console.error('Error getting participant role:', error);
 		return router.createUrlTree(['unauthorized'], { queryParams: { reason: 'unauthorized-participant' } });

@@ -46,12 +46,12 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	const refreshParticipantToken = (firstError: HttpErrorResponse): Observable<HttpEvent<unknown>> => {
 		console.log('Refreshing participant token...');
-		const roomName = contextService.getRoomName();
+		const roomId = contextService.getRoomId();
 		const participantName = contextService.getParticipantName();
-		const storedSecret = sessionStorageService.getModeratorSecret(roomName);
+		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
 		const secret = storedSecret || contextService.getSecret();
 
-		return from(httpService.refreshParticipantToken({ roomName, participantName, secret })).pipe(
+		return from(httpService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
 			switchMap((data) => {
 				console.log('Participant token refreshed');
 				contextService.setToken(data.token);

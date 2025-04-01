@@ -173,7 +173,7 @@ input[type='submit'] {
 	border-radius: $loginBorderRadius;
 	padding: 0.85rem;
 }
-#room-name-input {
+#room-id-input {
 	border-radius: 0;
 }
 
@@ -222,7 +222,7 @@ input[type='submit'] {
 .login button[type='submit']:hover {
 	background-color: $loginSubmitHoverBackgroundColor;
 }
-#clear-room-name-btn {
+#clear-room-id-btn {
 	height: auto;
 	background-color: $loginInputBackgroundColor;
 	border-radius: 0;
@@ -231,7 +231,7 @@ input[type='submit'] {
 		vertical-align: middle;
 	}
 }
-#room-name-generator-btn {
+#room-id-generator-btn {
 	height: auto;
 	background-color: $loginInputBackgroundColor;
 	border-radius: $loginBorderRadius;

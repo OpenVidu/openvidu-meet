@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { RoomPreferences } from '@lib/typings/ce';
+import { MeetRoomPreferences } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../http/http.service';
 
@@ -9,7 +9,7 @@ import { HttpService } from '../http/http.service';
 // This service is used to store the global preferences of the application
 export class GlobalPreferencesService {
 	protected log;
-	protected roomPreferences: RoomPreferences | undefined;
+	protected roomPreferences: MeetRoomPreferences | undefined;
 
 	constructor(
 		protected loggerService: LoggerService,

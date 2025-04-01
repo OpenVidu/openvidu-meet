@@ -33,10 +33,10 @@ export const replaceModeratorSecretGuard: CanActivateFn = (route, _state) => {
 			)
 			.subscribe(async () => {
 				if (contextService.isModeratorParticipant()) {
-					const roomName = contextService.getRoomName();
-					const { moderatorSecret, publisherSecret } = await getUrlSecret(httpService, roomName);
+					const roomId = contextService.getRoomId();
+					const { moderatorSecret, publisherSecret } = await getUrlSecret(httpService, roomId);
 
-					sessionStorageService.setModeratorSecret(roomName, moderatorSecret);
+					sessionStorageService.setModeratorSecret(roomId, moderatorSecret);
 					// Replace secret in URL by the publisher secret
 					const queryParams = { ...route.queryParams, secret: publisherSecret };
 					const urlTree = router.createUrlTree([], { queryParams, queryParamsHandling: 'merge' });
@@ -55,12 +55,9 @@ export const replaceModeratorSecretGuard: CanActivateFn = (route, _state) => {
 
 const getUrlSecret = async (
 	httpService: HttpService,
-	roomName: string
+	roomId: string
 ): Promise<{ moderatorSecret: string; publisherSecret: string }> => {
-	const { moderatorRoomUrl, publisherRoomUrl } = await httpService.getRoom(
-		roomName,
-		'moderatorRoomUrl,publisherRoomUrl'
-	);
+	const { moderatorRoomUrl, publisherRoomUrl } = await httpService.getRoom(roomId);
 
 	const extractSecret = (urlString: string, type: string): string => {
 		const url = new URL(urlString);

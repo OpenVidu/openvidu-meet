@@ -174,7 +174,7 @@ input[type='submit'] {
 	padding: 0.85rem;
 }
 
-#room-name-input {
+#room-id-input {
 	border-radius: 0;
 }
 
@@ -223,7 +223,7 @@ input[type='submit'] {
 .room-prefix button[type='submit']:hover {
 	background-color: $formSubmitHoverBackgroundColor;
 }
-#clear-room-name-btn {
+#clear-room-id-btn {
 	height: auto;
 	background-color: $formInputBackgroundColor;
 	border-radius: 0;
@@ -232,7 +232,7 @@ input[type='submit'] {
 		vertical-align: middle;
 	}
 }
-#room-name-generator-btn {
+#room-id-generator-btn {
 	height: auto;
 	background-color: $formInputBackgroundColor;
 	border-radius: $formBorderRadius;

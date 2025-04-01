@@ -12,7 +12,7 @@ import { AuthMode, HttpService, ParticipantRole } from 'projects/shared-meet-com
  */
 export class ContextService {
 	private context: ContextData = {
-		roomName: '',
+		roomId: '',
 		participantName: '',
 		secret: '',
 		token: '',
@@ -126,12 +126,12 @@ export class ContextService {
 		return this.context.leaveRedirectUrl;
 	}
 
-	getRoomName(): string {
-		return this.context.roomName;
+	getRoomId(): string {
+		return this.context.roomId;
 	}
 
-	setRoomName(roomName: string): void {
-		this.context.roomName = roomName;
+	setRoomId(roomId: string): void {
+		this.context.roomId = roomId;
 	}
 
 	getParticipantName(): string {

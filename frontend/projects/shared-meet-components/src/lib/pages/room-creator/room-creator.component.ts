@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, Validators, FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton, MatButton } from '@angular/material/button';
@@ -23,7 +23,7 @@ export class RoomCreatorComponent implements OnInit {
 	backgroundImageUrl = '';
 
 	roomForm = new FormGroup({
-		roomNamePrefix: new FormControl(this.getRandomName(), [Validators.required, Validators.minLength(6)])
+		roomIdPrefix: new FormControl(this.getRandomName(), [])
 	});
 	username = '';
 
@@ -45,13 +45,13 @@ export class RoomCreatorComponent implements OnInit {
 		}
 	}
 
-	generateRoomName(event: any) {
+	generateRoomId(event: any) {
 		event.preventDefault();
-		this.roomForm.get('roomNamePrefix')?.setValue(this.getRandomName());
+		this.roomForm.get('roomIdPrefix')?.setValue(this.getRandomName());
 	}
 
-	clearRoomName() {
-		this.roomForm.get('roomNamePrefix')?.setValue('');
+	clearRoomId() {
+		this.roomForm.get('roomIdPrefix')?.setValue('');
 	}
 
 	async logout() {
@@ -68,12 +68,12 @@ export class RoomCreatorComponent implements OnInit {
 			return;
 		}
 
-		const roomNamePrefix = this.roomForm.get('roomNamePrefix')?.value!.replace(/ /g, '-');
+		const roomIdPrefix = this.roomForm.get('roomIdPrefix')?.value!.replace(/ /g, '-');
 
 		try {
 			// TODO: Fix expiration date
 			const options: MeetRoomOptions = {
-				roomNamePrefix,
+				roomIdPrefix,
 				expirationDate: Date.now() + 3600 * 1000 // 1 hour
 			};
 
@@ -81,9 +81,9 @@ export class RoomCreatorComponent implements OnInit {
 
 			const accessRoomUrl = new URL(room.moderatorRoomUrl);
 			const secret = accessRoomUrl.searchParams.get('secret');
-			const roomName = accessRoomUrl.pathname;
+			const roomId = accessRoomUrl.pathname;
 
-			this.router.navigate([roomName], { queryParams: { secret } });
+			this.router.navigate([roomId], { queryParams: { secret } });
 		} catch (error) {
 			console.error('Error creating room ', error);
 		}

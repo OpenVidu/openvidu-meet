@@ -11,7 +11,7 @@ import {
 	OpenViduComponentsUiModule
 } from 'openvidu-components-angular';
 
-import { ChatPreferences, RecordingPreferences, VirtualBackgroundPreferences } from '@lib/typings/ce';
+import { MeetChatPreferences, MeetRecordingPreferences, MeetVirtualBackgroundPreferences } from '@lib/typings/ce';
 
 import { HttpService, WebComponentManagerService, ContextService, RoomService } from '../../services';
 import { OpenViduMeetMessage, WebComponentEventType } from 'webcomponent/src/types/message.type';
@@ -24,14 +24,14 @@ import { OpenViduMeetMessage, WebComponentEventType } from 'webcomponent/src/typ
 	imports: [OpenViduComponentsUiModule, ApiDirectiveModule, MatIcon]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
-	roomName = '';
+	roomId = '';
 	participantName = '';
 	token = '';
 	serverError = '';
 	loading = true;
-	chatPreferences: ChatPreferences = { enabled: true };
-	recordingPreferences: RecordingPreferences = { enabled: true };
-	virtualBackgroundPreferences: VirtualBackgroundPreferences = { enabled: true };
+	chatPreferences: MeetChatPreferences = { enabled: true };
+	recordingPreferences: MeetRecordingPreferences = { enabled: true };
+	virtualBackgroundPreferences: MeetVirtualBackgroundPreferences = { enabled: true };
 	featureFlags = {
 		videoEnabled: true,
 		audioEnabled: true,
@@ -55,7 +55,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async ngOnInit() {
 		try {
-			this.roomName = this.ctxService.getRoomName();
+			this.roomId = this.ctxService.getRoomId();
 			this.participantName = this.ctxService.getParticipantName();
 
 			if (this.ctxService.isEmbeddedMode()) {
@@ -102,7 +102,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		const message: OpenViduMeetMessage = {
 			eventType: WebComponentEventType.LOCAL_PARTICIPANT_CONNECTED,
 			payload: {
-				roomName: event.getProperties().room?.name,
+				roomId: event.getProperties().room?.name,
 				participantName: event.name
 			}
 		};
@@ -117,7 +117,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		const message: OpenViduMeetMessage = {
 			eventType: WebComponentEventType.LOCAL_PARTICIPANT_LEFT,
 			payload: {
-				roomName: event.roomName,
+				roomId: event.roomName,
 				participantName: event.participantName
 			}
 		};

@@ -20,45 +20,39 @@
 		<div class="grid">
 			<form [formGroup]="roomForm" novalidate (ngSubmit)="goToVideoRoom()" id="form-room" class="form room-prefix">
 				<div class="form-field">
-					<label for="room-name-input" [ngClass]="{ error: roomForm.get('roomNamePrefix')?.invalid }">
+					<label for="room-id-input" [ngClass]="{ error: roomForm.get('roomIdPrefix')?.invalid }">
 						<mat-icon matTooltip="Room name prefix">video_camera_front</mat-icon>
-						<span class="hidden">Room name prefix</span></label
+						<span class="hidden">Room ID prefix</span></label
 					>
 					<input
-						formControlName="roomNamePrefix"
+						formControlName="roomIdPrefix"
 						autocomplete="off"
-						id="room-name-input"
+						id="room-id-input"
 						type="text"
-						name="roomNamePrefix"
+						name="roomIdPrefix"
 						class="form-input"
 						placeholder="Room name prefix"
 					/>
-					@if (roomForm.get('roomNamePrefix')?.value) {
+					@if (roomForm.get('roomIdPrefix')?.value) {
 						<button
 							matSuffix
 							mat-icon-button
 							aria-label="Clear"
-							id="clear-room-name-btn"
-							(click)="clearRoomName()"
+							id="clear-room-id-btn"
+							(click)="clearRoomId()"
 						>
 							<mat-icon>close</mat-icon>
 						</button>
 					}
 					<button
-						matTooltip="Generate room name prefix"
+						matTooltip="Generate room ID prefix"
 						mat-icon-button
-						id="room-name-generator-btn"
-						(click)="generateRoomName($event)"
+						id="room-id-generator-btn"
+						(click)="generateRoomId($event)"
 					>
 						<mat-icon>cached</mat-icon>
 					</button>
 				</div>
-				@if (roomForm.get('roomNamePrefix')?.hasError('required')) {
-					<div class="roomError" id="requiredNameError">Room name is required</div>
-				}
-				@if (roomForm.get('roomNamePrefix')?.hasError('minlength')) {
-					<div class="roomError" id="shortNameError">Room name is too short!</div>
-				}
 				<div class="form-field">
 					<button mat-button id="join-btn" type="submit" [disabled]="roomForm.invalid">JOIN</button>
 				</div>

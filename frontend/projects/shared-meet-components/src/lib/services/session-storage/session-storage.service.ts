@@ -13,30 +13,30 @@ export class SessionStorageService {
 	/**
 	 * Stores a moderator secret for a specific room.
 	 *
-	 * @param roomName The room name.
+	 * @param roomId The room ID.
 	 * @param secret The secret string.
 	 */
-	public setModeratorSecret(roomName: string, secret: string): void {
-		this.set(`moderator_secret_${roomName}`, secret);
+	public setModeratorSecret(roomId: string, secret: string): void {
+		this.set(`moderator_secret_${roomId}`, secret);
 	}
 
 	/**
 	 * Retrieves the moderator secret for a specific room.
 	 *
-	 * @param roomName The room name.
+	 * @param roomId The room ID.
 	 * @returns The stored secret or null if not found.
 	 */
-	public getModeratorSecret(roomName: string): string | null {
-		return this.get<string>(`moderator_secret_${roomName}`) ?? null;
+	public getModeratorSecret(roomId: string): string | null {
+		return this.get<string>(`moderator_secret_${roomId}`) ?? null;
 	}
 
 	/**
 	 * Removes the moderator secret for a specific room.
 	 *
-	 * @param roomName The room name.
+	 * @param roomId The room ID.
 	 */
-	public removeModeratorSecret(roomName: string): void {
-		this.remove(`moderator_secret_${roomName}`);
+	public removeModeratorSecret(roomId: string): void {
+		this.remove(`moderator_secret_${roomId}`);
 	}
 
 	/**

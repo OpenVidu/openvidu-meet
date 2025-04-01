@@ -4,7 +4,7 @@ import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/l
 import {
 	GlobalPreferences,
 	ParticipantRole,
-	RoomPreferences,
+	MeetRoomPreferences,
 	SecurityPreferencesDTO,
 	TokenOptions,
 	User
@@ -27,8 +27,8 @@ export class HttpService {
 		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms`, options);
 	}
 
-	deleteRoom(roomName: string): Promise<any> {
-		return this.deleteRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`);
+	deleteRoom(roomId: string): Promise<any> {
+		return this.deleteRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomId}`);
 	}
 
 	listRooms(fields?: string): Promise<MeetRoom[]> {
@@ -39,17 +39,14 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
-	getRoom(roomName: string, fields?: string): Promise<MeetRoom> {
-		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}`;
-		if (fields) {
-			path += `?fields=${encodeURIComponent(fields)}`;
-		}
+	getRoom(roomId: string): Promise<MeetRoom> {
+		let path = `${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomId}`;
 		return this.getRequest(path);
 	}
 
-	getParticipantRole(roomName: string, secret: string): Promise<ParticipantRole> {
+	getParticipantRole(roomId: string, secret: string): Promise<ParticipantRole> {
 		return this.getRequest(
-			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomName}/participant-role?secret=${secret}`
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomId}/participant-role?secret=${secret}`
 		);
 	}
 
@@ -79,9 +76,9 @@ export class HttpService {
 	/**
 	 * Retrieves the room preferences.
 	 *
-	 * @returns {Promise<RoomPreferences>} A promise that resolves to the room preferences.
+	 * @returns {Promise<MeetRoomPreferences>} A promise that resolves to the room preferences.
 	 */
-	getRoomPreferences(): Promise<RoomPreferences> {
+	getRoomPreferences(): Promise<MeetRoomPreferences> {
 		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences/room`);
 	}
 
@@ -91,7 +88,7 @@ export class HttpService {
 	 * @param preferences - The room preferences to be saved.
 	 * @returns A promise that resolves when the preferences have been successfully saved.
 	 */
-	saveRoomPreferences(preferences: RoomPreferences): Promise<any> {
+	saveRoomPreferences(preferences: MeetRoomPreferences): Promise<any> {
 		return this.putRequest(`${this.API_PATH_PREFIX}/preferences/room`, preferences);
 	}
 
