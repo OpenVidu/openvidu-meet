@@ -223,7 +223,7 @@ paths:
                                 $ref: '#/components/schemas/Error'
                             example:
                                 message: 'Unauthorized'
-    /rooms/{roomName}/participant-role:
+    /rooms/{roomId}/participant-role:
         get:
             operationId: getParticipantRole
             summary: Get participant role in a room
@@ -235,7 +235,7 @@ paths:
             security:
                 - accessTokenCookie: []
             parameters:
-                - name: roomName
+                - name: roomId
                   in: path
                   required: true
                   description: The name of the room to check the participant's role
@@ -587,10 +587,10 @@ paths:
                   description: The name of the participant to delete
                   schema:
                       type: string
-                - name: roomName
+                - name: roomId
                   in: query
                   required: true
-                  description: The name of the room from which to delete the participant
+                  description: The ID of the room where the participant is connected
                   schema:
                       type: string
             responses:
@@ -726,15 +726,15 @@ components:
         TokenOptions:
             type: object
             required:
-                - roomName
+                - roomId
                 - participantName
                 - secret
             properties:
-                roomName:
+                roomId:
                     type: string
-                    example: 'OpenVidu-123456'
+                    example: 'room-123'
                     description: >
-                        The name of the room to join.
+                        The ID of the room where the participant will join.
                 participantName:
                     type: string
                     example: 'Alice'
