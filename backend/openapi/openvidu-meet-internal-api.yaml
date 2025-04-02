@@ -1,19 +1,23 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
-    version: v1
-    title: OpenVidu Meet Internal REST API
+    title: OpenVidu Meet REST API
     description: >
-        The OpenVidu Meet Internal REST API allows seamless integration of OpenVidu Meet rooms into your application.
-        This REST API provides endpoints to manage rooms and recordings in OpenVidu Meet.
-    termsOfService: https://openvidu.io/conditions/terms-of-service/
+        The OpenVidu Meet REST API provides a comprehensive set of endpoints for integrating real-time video
+        conferencing capabilities into your applications.
     contact:
         name: OpenVidu
         email: commercial@openvidu.io
         url: https://openvidu.io/support/
+    license:
+        name: Apache License 2.0
+        identifier: Apache-2.0
+        url: https://www.apache.org/licenses/LICENSE-2.0
+    version: v1
+    termsOfService: https://openvidu.io/conditions/terms-of-service/
 
 servers:
-    - url: http://localhost:6080/meet/internal-api/v1
-      description: Development server
+    - url: /meet/internal-api/v1
+      description: OpenVidu Meet Internal API
 tags:
     - name: Internal API - Authentication
       description: Authentication operations
@@ -712,9 +716,8 @@ components:
                           example: 100
                           description: The error code of the recording.
                       error:
-                          type: string
+                          type: [string, 'null']
                           description: The error message of the recording.
-                          nullable: true
                       details:
                           type: string
                           example: 'Stopped using API'
