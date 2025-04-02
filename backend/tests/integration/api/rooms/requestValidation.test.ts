@@ -76,7 +76,7 @@ describe('Room Request Validation Tests', () => {
 		expect(response.body).toHaveProperty('preferences');
 		expect(response.body.preferences).toEqual({
 			recordingPreferences: { enabled: true },
-¡			chatPreferences: { enabled: true },
+			chatPreferences: { enabled: true },
 			virtualBackgroundPreferences: { enabled: true }
 		});
 	});
