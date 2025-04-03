@@ -1,9 +1,8 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import { Express } from 'express';
 import { startTestServer, stopTestServer } from '../../../utils/server-setup.js';
 import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
-import { beforeEach } from 'node:test';
 
 const BASE_URL = '/meet/api/v1';
 const INTERNAL_BASE_URL = '/meet/internal-api/v1';
