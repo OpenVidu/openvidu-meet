@@ -1,4 +1,4 @@
-description: Success room response
+description: Success response for creating a room
 content:
     application/json:
         schema:

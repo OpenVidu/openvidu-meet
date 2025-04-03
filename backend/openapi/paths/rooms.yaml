@@ -35,6 +35,7 @@
             - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
+            - $ref: '../components/parameters/room-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
         responses:
@@ -60,9 +61,11 @@
             - participantTokenCookie: []
         parameters:
             - $ref: '../components/parameters/room-id.yaml'
+            - $ref: '../components/parameters/room-fields.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-create-room.yaml'
+                $ref: '../components/responses/success-get-room.yaml'
+
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

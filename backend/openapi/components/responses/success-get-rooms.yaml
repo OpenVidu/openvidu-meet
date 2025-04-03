@@ -15,5 +15,82 @@ content:
                             type: boolean
                             description: Indicates if there are more rooms to retrieve.
                         nextPageToken:
-                            type: string
+                            type: [string, 'null']
                             description: The token to retrieve the next page of rooms.
+
+        examples:
+            complete_room_details:
+                summary: Full room details response with multiple rooms
+                value:
+                    rooms:
+                        - roomId: 'room-123'
+                          roomIdPrefix: 'room'
+                          creationDate: 1620000000000
+                          expirationDate: 1620000800000
+                          preferences:
+                              chatPreferences:
+                                  enabled: true
+                              recordingPreferences:
+                                  enabled: false
+                              virtualBackgroundPreferences:
+                                  enabled: true
+                          moderatorURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                          publisherURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                        - roomId: 'room-456'
+                          roomIdPrefix: 'room'
+                          creationDate: 1620001000000
+                          expirationDate: 1620001800000
+                          preferences:
+                              chatPreferences:
+                                  enabled: false
+                              recordingPreferences:
+                                  enabled: true
+                              virtualBackgroundPreferences:
+                                  enabled: false
+                          moderatorURL: 'http://localhost:6080/room/room-456/?secret=tok_789012'
+                          publisherURL: 'http://localhost:6080/room/room-456/?secret=tok_789012'
+                    pagination:
+                        isTruncated: false
+            roomId_fields_only:
+                summary: Response with only roomId for each room
+                value:
+                    rooms:
+                        - roomId: 'room-123'
+                        - roomId: 'room-456'
+                    pagination:
+                        isTruncated: false
+
+            no_urls:
+                summary: Room details including preferences but no URLs
+                value:
+                    rooms:
+                        - roomId: 'room-123'
+                          preferences:
+                              chatPreferences:
+                                  enabled: true
+                              recordingPreferences:
+                                  enabled: false
+                              virtualBackgroundPreferences:
+                                  enabled: true
+                        - roomId: 'room-456'
+                          preferences:
+                              chatPreferences:
+                                  enabled: false
+                              recordingPreferences:
+                                  enabled: true
+                              virtualBackgroundPreferences:
+                                  enabled: false
+                    pagination:
+                        isTruncated: true
+                        nextPageToken: 'abc123'
+
+            urls_only:
+                summary: Response containing only moderator and publisher URLs
+                value:
+                    rooms:
+                        - moderatorURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                          publisherURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                        - moderatorURL: 'http://localhost:6080/room/room-456/?secret=tok_789012'
+                          publisherURL: 'http://localhost:6080/room/room-456/?secret=tok_789012'
+                    pagination:
+                        isTruncated: false

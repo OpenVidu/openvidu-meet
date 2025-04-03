@@ -1,0 +1,45 @@
+description: Success response for retrieving a room
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/meet-room.yaml'
+        examples:
+            complete_room_details:
+                summary: Full room details response
+                value:
+                    roomId: 'room-123'
+                    roomIdPrefix: 'room'
+                    creationDate: 1620000000000
+                    expirationDate: 1620000800000
+                    preferences:
+                        chatPreferences:
+                            enabled: true
+                        recordingPreferences:
+                            enabled: false
+                        virtualBackgroundPreferences:
+                            enabled: true
+                    moderatorURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                    publisherURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+
+            roomId_fields_only:
+                summary: Response with only the roomId
+                value:
+                    roomId: 'room-123'
+
+            no_urls:
+                summary: Room details including preferences but no URLs
+                value:
+                    roomId: 'room-123'
+                    preferences:
+                        chatPreferences:
+                            enabled: true
+                        recordingPreferences:
+                            enabled: false
+                        virtualBackgroundPreferences:
+                            enabled: true
+
+            urls_only:
+                summary: Response containing only moderator and publisher URLs
+                value:
+                    moderatorURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+                    publisherURL: 'http://localhost:6080/room/room-123/?secret=tok_123456'
