@@ -6,6 +6,7 @@ import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
 
 const BASE_URL = '/meet/api/v1';
 const INTERNAL_BASE_URL = '/meet/internal-api/v1';
+const ROOMS_URL = `${BASE_URL}/rooms`;
 
 const API_KEY_HEADER = 'X-API-Key';
 const API_KEY = 'meet-api-key';
@@ -54,7 +55,7 @@ describe('Room API Security Tests', () => {
 		return accessTokenCookie;
 	};
 
-	const extractSecretByroomUrl = (urlString: string, type: string): string => {
+	const extractSecretByRoomUrl = (urlString: string, type: string): string => {
 		const url = new URL(urlString);
 		const secret = url.searchParams.get('secret');
 
@@ -73,33 +74,33 @@ describe('Room API Security Tests', () => {
 
 	afterAll(async () => {
 		// Clean up created rooms
-		const roomsResponse = await request(app).get(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY);
+		const roomsResponse = await request(app).get(ROOMS_URL).set(API_KEY_HEADER, API_KEY);
 
 		for (const room of roomsResponse.body) {
-			await request(app).delete(`${BASE_URL}/rooms/${room.roomId}`).set(API_KEY_HEADER, API_KEY);
+			await request(app).delete(`${ROOMS_URL}/${room.roomId}`).set(API_KEY_HEADER, API_KEY);
 		}
 
 		await stopTestServer();
-	});
+	}, 20000);
 
 	describe('Create Room Tests', () => {
-		it('should success when users cannot create rooms, and request includes API key', async () => {
+		it('should succeed when users cannot create rooms, and request includes API key', async () => {
 			await changeSecurityPreferences({
 				usersCanCreateRooms: false
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).set('X-API-Key', 'meet-api-key').send({
+			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when users cannot create rooms, and user is authenticated as admin', async () => {
+		it('should succeed when users cannot create rooms, and user is authenticated as admin', async () => {
 			await changeSecurityPreferences({
 				usersCanCreateRooms: false
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).set('Cookie', adminCookie).send({
+			const response = await request(app).post(ROOMS_URL).set('Cookie', adminCookie).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
@@ -110,7 +111,7 @@ describe('Room API Security Tests', () => {
 				usersCanCreateRooms: false
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).set('Cookie', userCookie).send({
+			const response = await request(app).post(ROOMS_URL).set('Cookie', userCookie).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(403);
@@ -121,31 +122,31 @@ describe('Room API Security Tests', () => {
 				usersCanCreateRooms: false
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).send({
+			const response = await request(app).post(ROOMS_URL).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(401);
 		});
 
-		it('should success when users can create rooms and auth is not required, and user is not authenticated', async () => {
+		it('should succeed when users can create rooms and auth is not required, and user is not authenticated', async () => {
 			await changeSecurityPreferences({
 				usersCanCreateRooms: true,
 				authRequired: false
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).send({
+			const response = await request(app).post(ROOMS_URL).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when users can create rooms and auth is required, and user is authenticated', async () => {
+		it('should succeed when users can create rooms and auth is required, and user is authenticated', async () => {
 			await changeSecurityPreferences({
 				usersCanCreateRooms: true,
 				authRequired: true
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).set('Cookie', userCookie).send({
+			const response = await request(app).post(ROOMS_URL).set('Cookie', userCookie).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
@@ -157,7 +158,7 @@ describe('Room API Security Tests', () => {
 				authRequired: true
 			});
 
-			const response = await request(app).post(`${BASE_URL}/rooms`).send({
+			const response = await request(app).post(ROOMS_URL).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(401);
@@ -165,23 +166,23 @@ describe('Room API Security Tests', () => {
 	});
 
 	describe('Get Rooms Tests', () => {
-		it('should success when request includes API key', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY);
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app).get(ROOMS_URL).set(API_KEY_HEADER, API_KEY);
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms`).set('Cookie', adminCookie);
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app).get(ROOMS_URL).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms`).set('Cookie', userCookie);
+			const response = await request(app).get(ROOMS_URL).set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms`);
+			const response = await request(app).get(ROOMS_URL);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -221,77 +222,77 @@ describe('Room API Security Tests', () => {
 
 		beforeAll(async () => {
 			// Create a room and extract the roomId to test the get room endpoint
-			const response = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
+			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 
 			// Extract the moderator and publisher secrets from the room URL
 			const { moderatorRoomUrl, publisherRoomUrl } = response.body;
-			const moderatorSecret = extractSecretByroomUrl(moderatorRoomUrl, 'Moderator');
-			const publisherSecret = extractSecretByroomUrl(publisherRoomUrl, 'Publisher');
+			const moderatorSecret = extractSecretByRoomUrl(moderatorRoomUrl, 'Moderator');
+			const publisherSecret = extractSecretByRoomUrl(publisherRoomUrl, 'Publisher');
 
 			// Generate participant tokens for the room and extract the cookies
 			moderatorCookie = await generateParticipantToken(roomId, 'Moderator', moderatorSecret);
 			publisherCookie = await generateParticipantToken(roomId, 'Publisher', publisherSecret);
 		});
 
-		it('should success when request includes API key', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set(API_KEY_HEADER, API_KEY);
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set(API_KEY_HEADER, API_KEY);
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', adminCookie);
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', userCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', userCookie);
 			expect(response.status).toBe(401);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`);
 			expect(response.status).toBe(401);
 		});
 
 		it('should fail when participant is publisher', async () => {
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', publisherCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', publisherCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
-			const roomResponse = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
+			const roomResponse = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			const newRoomId = roomResponse.body.roomId;
 
 			// Extract the moderator secret and generate a participant token for the new room
-			const newModeratorSecret = extractSecretByroomUrl(roomResponse.body.moderatorRoomUrl, 'Moderator');
+			const newModeratorSecret = extractSecretByRoomUrl(roomResponse.body.moderatorRoomUrl, 'Moderator');
 			const newModeratorCookie = await generateParticipantToken(newRoomId, 'Moderator', newModeratorSecret);
 
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', newModeratorCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', newModeratorCookie);
 			expect(response.status).toBe(403);
 		});
 
-		it('should success when no authentication is required and participant is moderator', async () => {
+		it('should succeed when no authentication is required and participant is moderator', async () => {
 			await changeSecurityPreferences({
 				authMode: AuthMode.NONE
 			});
 
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', moderatorCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', moderatorCookie);
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when authentication is required for moderators, participant is moderator and user is authenticated', async () => {
+		it('should succeed when authentication is required for moderators, participant is moderator and user is authenticated', async () => {
 			await changeSecurityPreferences({
 				authMode: AuthMode.MODERATORS_ONLY
 			});
 
 			const response = await request(app)
-				.get(`${BASE_URL}/rooms/${roomId}`)
+				.get(`${ROOMS_URL}/${roomId}`)
 				.set('Cookie', [moderatorCookie, userCookie]);
 			expect(response.status).toBe(200);
 		});
@@ -301,17 +302,17 @@ describe('Room API Security Tests', () => {
 				authMode: AuthMode.MODERATORS_ONLY
 			});
 
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', moderatorCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', moderatorCookie);
 			expect(response.status).toBe(401);
 		});
 
-		it('should success when authentication is required for all participants, participant is moderator and user is authenticated', async () => {
+		it('should succeed when authentication is required for all participants, participant is moderator and user is authenticated', async () => {
 			await changeSecurityPreferences({
 				authMode: AuthMode.ALL_USERS
 			});
 
 			const response = await request(app)
-				.get(`${BASE_URL}/rooms/${roomId}`)
+				.get(`${ROOMS_URL}/${roomId}`)
 				.set('Cookie', [moderatorCookie, userCookie]);
 			expect(response.status).toBe(200);
 		});
@@ -321,7 +322,7 @@ describe('Room API Security Tests', () => {
 				authMode: AuthMode.ALL_USERS
 			});
 
-			const response = await request(app).get(`${BASE_URL}/rooms/${roomId}`).set('Cookie', moderatorCookie);
+			const response = await request(app).get(`${ROOMS_URL}/${roomId}`).set('Cookie', moderatorCookie);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -331,51 +332,51 @@ describe('Room API Security Tests', () => {
 
 		beforeEach(async () => {
 			// Create a room and extract the roomId to test the delete room endpoint
-			const response = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
+			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 		});
 
-		it('should success when request includes API key', async () => {
-			const response = await request(app).delete(`${BASE_URL}/rooms/${roomId}`).set(API_KEY_HEADER, API_KEY);
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app).delete(`${ROOMS_URL}/${roomId}`).set(API_KEY_HEADER, API_KEY);
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when user is authenticated as admin', async () => {
-			const response = await request(app).delete(`${BASE_URL}/rooms/${roomId}`).set('Cookie', adminCookie);
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app).delete(`${ROOMS_URL}/${roomId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).delete(`${BASE_URL}/rooms/${roomId}`).set('Cookie', userCookie);
+			const response = await request(app).delete(`${ROOMS_URL}/${roomId}`).set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).delete(`${BASE_URL}/rooms/${roomId}`);
+			const response = await request(app).delete(`${ROOMS_URL}/${roomId}`);
 			expect(response.status).toBe(401);
 		});
 	});
 
 	describe.skip('Update Room Preferences Tests', () => {
-		it('should success when request includes API key', async () => {
-			const response = await request(app).put(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({});
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app).put(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({});
 			expect(response.status).toBe(200);
 		});
 
-		it('should success when user is authenticated as admin', async () => {
-			const response = await request(app).put(`${BASE_URL}/rooms`).set('Cookie', adminCookie).send({});
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app).put(ROOMS_URL).set('Cookie', adminCookie).send({});
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).put(`${BASE_URL}/rooms`).set('Cookie', userCookie).send({});
+			const response = await request(app).put(ROOMS_URL).set('Cookie', userCookie).send({});
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${BASE_URL}/rooms`).send({});
+			const response = await request(app).put(ROOMS_URL).send({});
 			expect(response.status).toBe(401);
 		});
 	});
@@ -386,16 +387,16 @@ describe('Room API Security Tests', () => {
 
 		beforeAll(async () => {
 			// Create a room and extract the roomId to test the get participant role endpoint
-			const response = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
+			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
 				expirationDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 
 			// Extract the moderator secret from the room URL
-			moderatorSecret = extractSecretByroomUrl(response.body.moderatorRoomUrl, 'Moderator');
+			moderatorSecret = extractSecretByRoomUrl(response.body.moderatorRoomUrl, 'Moderator');
 		});
 
-		it('should success if user is not authenticated', async () => {
+		it('should succeed if user is not authenticated', async () => {
 			const response = await request(app).get(`${INTERNAL_BASE_URL}/rooms/${roomId}/participant-role`).query({
 				secret: moderatorSecret
 			});
