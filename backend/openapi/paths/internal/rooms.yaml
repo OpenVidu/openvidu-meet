@@ -1,0 +1,29 @@
+/rooms/{roomId}/participant-role:
+    get:
+        operationId: getParticipantRole
+        summary: Get participant role in a room
+        description: >
+            Retrieves the role that a participant will have in a specified OpenVidu Meet room when using the URL thant contains the secret token.
+            This endpoint is useful for checking the participant's role before joining the room.
+        tags:
+            - Internal API - Rooms
+        security:
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/internal/secret.yaml'
+        responses:
+            '200':
+                description: Successfully retrieved participant role
+                content:
+                    application/json:
+                        schema:
+                            type: string
+                            example: 'moderator'
+                            description: The role that the participant will have in the room.
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

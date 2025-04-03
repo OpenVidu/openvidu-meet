@@ -1,0 +1,180 @@
+/recordings:
+    post:
+        operationId: createRecording
+        summary: Start a recording
+        description: >
+            Start a new recording for an OpenVidu Meet room with the specified room ID.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - participantTokenCookie: []
+        requestBody:
+            $ref: '../components/requestBodies/start-recording-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-start-recording.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-already-started.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    get:
+        operationId: getRecordings
+        summary: Get all recordings
+        description: >
+            Retrieves a paginated list of all recordings available in the system.
+            You can apply filters to narrow down the results based on specific criteria.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            # - name: status
+            #   in: query
+            #   required: false
+            #   description: |
+            #       Filter recordings by their status.
+
+            #       Possible values:
+            #       - `STARTING`
+            #       - `ACTIVE`
+            #       - `ENDING`
+            #       - `COMPLETE`
+            #       - `FAILED`
+            #       - `ABORTED`
+            #       - `LIMITED_REACHED`
+
+            #       You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
+            #       If not specified, recordings with any status will be returned.
+
+            #       > ⚠️ **Note:** Using this filter may impact performance for large datasets.
+            #   schema:
+            #       type: string
+            - $ref: '../components/parameters/room-id.yaml'
+            - $ref: '../components/parameters/max-items.yaml'
+            - $ref: '../components/parameters/next-page-token.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-recordings.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+    delete:
+        operationId: bulkDeleteRecordings
+        summary: Bulk delete recordings
+        description: >
+            Deletes multiple recordings at once with the specified recording IDs.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - name: recordingIds
+              in: query
+              required: true
+              description: |
+                  The unique IDs of the recordings to delete.
+                  You can provide multiple recording IDs as a comma-separated list (e.g., `recordingIds=room-123--EG_XYZ--XX445,room-123--EG_XYZ--XX446`).
+              schema:
+                  type: string
+        responses:
+            '200':
+                $ref: '../components/responses/success-bulk-delete-recordings.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+/recordings/{recordingId}:
+    put:
+        operationId: stopRecording
+        summary: Stop a recording
+        description: >
+            Stops a recording with the specified recording ID.
+            The recording must be in an `ACTIVE` state; otherwise, a 409 error is returned.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/recording-id.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-stop-recording.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-recording-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-in-progress.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+    get:
+        operationId: getRecording
+        summary: Get a recording
+        description: >
+            Retrieves the details of a recording with the specified recording ID.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/recording-id.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-recording.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-recording-not-found.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: deleteRecording
+        summary: Delete a recording
+        description: >
+            Deletes a recording with the specified recording.
+            The recording will only be deleted if it exists and is not in progress (i.e., not in a state such as `ACTIVE`, `STARTING`, or `ENDING`).
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/recording-id.yaml'
+        responses:
+            '204':
+                description: Recording successfully deleted. No content is returned.
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-recording-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-in-progress.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'

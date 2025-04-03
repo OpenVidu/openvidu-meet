@@ -1,0 +1,132 @@
+/rooms:
+    post:
+        operationId: createRoom
+        summary: Create a room
+        description: >
+            Creates a new OpenVidu Meet room with the specified expiration date.
+            The room will be available for participants to join using the generated URLs.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../components/requestBodies/create-room-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-create-room.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+    get:
+        operationId: getRooms
+        summary: Get all rooms
+        description: >
+            Retrieves a paginated list of all rooms available in the system.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/max-items.yaml'
+            - $ref: '../components/parameters/next-page-token.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-rooms.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}:
+    get:
+        operationId: getRoom
+        summary: Get a room
+        description: >
+            Retrieves the details of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/room-id.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-create-room.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    put:
+        operationId: updateRoom
+        summary: Update a room
+        description: >
+            Updates the preferences of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - name: roomId
+              in: path
+              required: true
+              description: The unique identifier of the room to update
+              schema:
+                  type: string
+                  example: 'room-123'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-create-room.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+    delete:
+        operationId: deleteRoom
+        summary: Delete a room
+        description: >
+            Deletes an OpenVidu Meet room with the specified room ID.
+            The room with participants will be closed and all participants will be disconnected.
+            The room will be deleted from the system and will no longer be available.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/room-id.yaml'
+        responses:
+            '204':
+                description: Successfully deleted the OpenVidu Meet room
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'

@@ -1,0 +1,54 @@
+type: object
+properties:
+    recordingId:
+        type: string
+        example: 'room-123--EG_XYZ--XX445'
+        description: The unique identifier of the recording.
+    roomId:
+        type: string
+        example: 'room-123'
+        description: The ID of the room where the recording was made.
+    # outputMode:
+    #   type: string
+    #   example: 'COMPOSED'
+    #   description: >
+    #     The output mode of the recording. Possible value: "COMPOSED".
+    status:
+        type: string
+        enum: ['STARTING', 'ACTIVE', 'ENDING', 'COMPLETE', 'FAILED', 'ABORTED', 'LIMITED_REACHED']
+        example: 'ACTIVE'
+        description: >
+            The status of the recording.
+    filename:
+        type: string
+        example: 'room-123--XX445.mp4'
+        description: >
+            The URL for the publisher to join the room. The publisher has permissions to publish audio and
+            video streams to the room.
+    startDate:
+        type: [number, 'null']
+        example: 1620000000000
+        description: The date when the recording started (milliseconds since the Unix epoch).
+    endDate:
+        type: [number, 'null']
+        example: 1620000003600
+        description: The date when the recording was stopped (milliseconds since the Unix epoch).
+    duration:
+        type: [number, 'null']
+        example: 3.6
+        description: The duration of the recording in seconds.
+    size:
+        type: [number, 'null']
+        example: 1024
+        description: The size of the recording file in bytes.
+    errorCode:
+        type: [number, 'null']
+        example: 100
+        description: The error code of the recording.
+    error:
+        type: [string, 'null']
+        description: The error message of the recording.
+    details:
+        type: [string, 'null']
+        example: 'Stopped using API'
+        description: Additional details about the recording.

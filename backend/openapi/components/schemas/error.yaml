@@ -1,0 +1,11 @@
+type: object
+required:
+    - message
+properties:
+    name:
+        type: string
+    message:
+        type: string
+    code:
+        type: integer
+description: HTTP status code associated with the error

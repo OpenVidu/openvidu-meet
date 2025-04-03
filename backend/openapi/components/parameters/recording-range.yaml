@@ -1,0 +1,8 @@
+name: Range
+in: header
+required: false
+description: >
+    Byte range for partial content retrieval.
+    Example: `bytes=0-1023` to request the first 1024 bytes of the file.
+schema:
+    type: string

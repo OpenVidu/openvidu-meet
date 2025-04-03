@@ -1,0 +1,12 @@
+- name: OpenVidu Meet - Room
+  description: Operations related to managing OpenVidu Meet rooms
+- name: OpenVidu Meet - Recordings
+  description: Operations related to managing OpenVidu Meet recordings
+- name: Internal API - Authentication
+  description: Authentication operations
+- name: Internal API - Rooms
+  description: Operations related to managing OpenVidu Meet rooms
+- name: Internal API - Participant
+  description: Operations related to managing participants in OpenVidu Meet rooms
+- name: Internal API - Recordings
+  description: Operations related to managing OpenVidu Meet recordings

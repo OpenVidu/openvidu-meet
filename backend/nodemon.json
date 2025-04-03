@@ -2,8 +2,8 @@
 	"env": {
 		"NODE_ENV": "development"
 	},
-	"watch": ["openapi/openvidu-meet-api.yaml", "openapi/openvidu-meet-internal-api.yaml", "src", "../typings/src"],
-	"ext": "js,json,ts",
+	"watch": ["openapi/**/*.yaml", "src", "../typings/src"],
+	"ext": "js,json,ts,yaml,yml",
 	"ignore": ["node_modules", "dist", "src/typings", "public"],
 	"exec": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/server.ts",
 	"events": {

@@ -1,0 +1,52 @@
+description: Successfully retrieved the recording list
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                recordings:
+                    type: array
+                    items:
+                        $ref: '../schemas/meet-recording.yaml'
+                pagination:
+                    $ref: '../schemas/meet-pagination.yaml'
+        examples:
+            successful_recording_retrieval:
+                summary: Successfully retrieved a list of recordings
+                value:
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                          roomId: 'room-123'
+                          status: 'ACTIVE'
+                          filename: 'room-123--XX445.mp4'
+                          startDate: 1620000000000
+                          endDate: 1620000003600
+                          duration: 3.6
+                          size: 1024
+                          details: 'Stopped using API'
+                    pagination:
+                        isTruncated: false
+
+            paginated_recording_list:
+                summary: A paginated response indicating more recordings are available
+                value:
+                    recordings:
+                        - recordingId: 'room-456--EG_XYZ--XX678'
+                          roomId: 'room-456'
+                          status: 'COMPLETE'
+                          filename: 'room-456--XX678.mp4'
+                          startDate: 1625000000000
+                          endDate: 1625000007200
+                          duration: 7.2
+                          size: 2048
+                          details: 'Recording completed successfully'
+                    pagination:
+                        isTruncated: true
+                        nextPageToken: 'NEXT_PAGE_ABC123'
+
+            no_recordings_found:
+                summary: No recordings found for the given query
+                value:
+                    recordings: []
+                    pagination:
+                        isTruncated: false

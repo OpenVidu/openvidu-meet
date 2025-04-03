@@ -1,0 +1,10 @@
+type: object
+properties:
+    isTruncated:
+        type: boolean
+        description: >
+            Indicates if there are more recordings to retrieve.
+            If true, use the `nextPageToken` to fetch the next set of recordings.
+    nextPageToken:
+        type: [string, 'null']
+        description: The token to retrieve the next page of recordings.

@@ -1,0 +1,33 @@
+description: Room update details
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/meet-room-preferences.yaml#/MeetRoomPreferences'
+        examples:
+            default:
+                summary: Standard preferences
+                value:
+                    chatPreferences:
+                        enabled: true
+                    recordingPreferences:
+                        enabled: true
+                    virtualBackgroundPreferences:
+                        enabled: true
+            withoutRecording:
+                summary: Room with recording disabled
+                value:
+                    chatPreferences:
+                        enabled: true
+                    recordingPreferences:
+                        enabled: false
+                    virtualBackgroundPreferences:
+                        enabled: true
+            withoutChat:
+                summary: Room with chat disabled
+                value:
+                    chatPreferences:
+                        enabled: false
+                    recordingPreferences:
+                        enabled: true
+                    virtualBackgroundPreferences:
+                        enabled: true

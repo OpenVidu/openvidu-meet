@@ -1,0 +1,7 @@
+name: recordingId
+in: path
+required: true
+description: The unique identifier of the recording to delete.
+schema:
+    type: string
+    example: 'room-123--EG_XYZ--XX445'

@@ -1,0 +1,5 @@
+description: Participant details
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/meet-token-options.yaml'

@@ -1,0 +1,78 @@
+/recordings/{recordingId}/stream:
+    get:
+        operationId: getRecordingStream
+        summary: Stream an OpenVidu Meet recording
+        description: >
+            Streams the OpenVidu Meet recording with the specified recording ID.
+            This endpoint supports range requests, allowing partial content retrieval
+            for video playback without downloading the entire file.
+        tags:
+            - Internal API - Recordings
+        security:
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/recording-id.yaml'
+            - $ref: '../../components/parameters/recording-range.yaml'
+        responses:
+            '200':
+                description: Successfully streaming the full recording
+                headers:
+                    Accept-Ranges:
+                        description: Indicates that byte-range requests are supported
+                        schema:
+                            type: string
+                    Content-Length:
+                        description: The total file size in bytes
+                        schema:
+                            type: integer
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '206':
+                description: Partial content streaming based on byte range
+                headers:
+                    Accept-Ranges:
+                        description: Indicates that byte-range requests are supported
+                        schema:
+                            type: string
+                    Content-Range:
+                        description: Specifies the range of bytes being sent
+                        schema:
+                            type: string
+                    Content-Length:
+                        description: The length of the partial content in bytes
+                        schema:
+                            type: integer
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '400':
+                description: Bad Request — Invalid range header format
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../../components/schemas/error.yaml'
+                        example:
+                            code: 400
+                            message: 'Invalid Range header'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '416':
+                description: Requested range not satisfiable
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../../components/schemas/error.yaml'
+                        example:
+                            code: 416
+                            message: 'Requested range not satisfiable'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

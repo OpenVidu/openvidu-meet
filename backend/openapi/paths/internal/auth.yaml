@@ -1,0 +1,78 @@
+/auth/login:
+    post:
+        operationId: loginUser
+        summary: Login to OpenVidu Meet
+        description: >
+            Authenticates a user and returns an access and refresh token in cookies.
+        tags:
+            - Internal API - Authentication
+        requestBody:
+            $ref: '../../components/requestBodies/internal/login-user.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-user-login.yaml'
+            # Should be 401
+            '404':
+                $ref: '../../components/responses/internal/error-invalid-credentials.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/auth/logout:
+    post:
+        operationId: logoutUser
+        summary: Logout from OpenVidu Meet
+        description: >
+            Logs out the user and clears the access and refresh tokens from cookies.
+        tags:
+            - Internal API - Authentication
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-user-logout.yaml'
+
+/auth/refresh:
+    post:
+        operationId: refreshAccessToken
+        summary: Refresh the access token
+        description: >
+            Refreshes the access token using the refresh token.
+            The new access token is returned in a cookie.
+        tags:
+            - Internal API - Authentication
+        security:
+            - refreshTokenCookie: []
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-refresh-token.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-refresh-token.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/auth/profile:
+    get:
+        operationId: getUserProfile
+        summary: Get user profile
+        description: >
+            Retrieves the profile information of the authenticated user.
+        tags:
+            - Internal API - Authentication
+        security:
+            - accessTokenCookie: []
+        responses:
+            '200':
+                description: Successfully retrieved user profile
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    example: 'admin'
+                                    description: The username of the authenticated user.
+                                role:
+                                    type: string
+                                    example: 'admin'
+                                    description: The role assigned to the authenticated user.
+            '401':
+                $ref: '../../components/responses/internal/error-invalid-refresh-token.yaml'

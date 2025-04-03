@@ -1,0 +1,58 @@
+description: Bulk deletion completed. Includes lists of successfully deleted IDs and errors.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: List of successfully deleted recording IDs.
+                    example:
+                        - 'room-123--EG_XYZ--XX445'
+                        - 'room-123--EG_XYZ--XX446'
+                notDeleted:
+                    type: array
+                    description: List of recordings that could not be deleted along with the corresponding error messages.
+                    items:
+                        type: object
+                        properties:
+                            recordingId:
+                                type: string
+                                description: The unique identifier of the recording that was not deleted.
+                                example: 'room-123--EG_XYZ--XX447'
+                            error:
+                                type: string
+                                description: A message explaining why the deletion failed.
+                                example: 'Recording not found'
+        examples:
+            successful_deletion:
+                summary: All recordings were successfully deleted
+                value:
+                    deleted:
+                        - 'room-123--EG_XYZ--XX445'
+                        - 'room-123--EG_XYZ--XX446'
+                    notDeleted: []
+
+            partial_deletion_with_errors:
+                summary: Some recordings were deleted successfully, others failed
+                value:
+                    deleted:
+                        - 'room-123--EG_XYZ--XX445'
+                        - 'room-123--EG_XYZ--XX446'
+                    notDeleted:
+                        - recordingId: 'room-123--EG_XYZ--XX447'
+                          error: 'Recording not found'
+                        - recordingId: 'room-123--EG_XYZ--XX448'
+                          error: 'Access denied for deletion'
+
+            no_deletion_performed:
+                summary: No recordings were deleted
+                value:
+                    deleted: []
+                    notDeleted:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                          error: 'Recording not found'
+                        - recordingId: 'room-123--EG_XYZ--XX446'
+                          error: 'Recording not found'

@@ -1,0 +1,14 @@
+title: OpenVidu Meet REST API
+description: >
+    The OpenVidu Meet REST API provides a comprehensive set of endpoints for integrating real-time video
+    conferencing capabilities into your applications.
+contact:
+    name: OpenVidu
+    email: commercial@openvidu.io
+    url: https://openvidu.io/support/
+license:
+    name: Apache License 2.0
+    identifier: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+version: v1
+termsOfService: https://openvidu.io/conditions/terms-of-service/

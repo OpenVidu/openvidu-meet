@@ -1,0 +1,18 @@
+description: Successfully logged out
+headers:
+    Set-Cookie:
+        schema:
+            type: string
+            example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
+    Set-Cookie-Refresh:
+        schema:
+            type: string
+            example: 'OvMeetRefreshToken=; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Logout successful'

@@ -1,0 +1,125 @@
+/participants/token:
+    post:
+        operationId: generateParticipantToken
+        summary: Generate a token for a participant
+        description: >
+            Generates a token for a participant to join an OpenVidu Meet room.
+        tags:
+            - Internal API - Participant
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/participant-token-request.yaml'
+        responses:
+            '200':
+                description: Successfully generated the participant token
+                headers:
+                    Set-Cookie:
+                        description: >
+                            The cookie containing the participant token.
+                            This cookie is used to authenticate the participant in the room.
+                        schema:
+                            type: string
+                            example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    example: 'token_123456'
+                                    description: >
+                                        The token to authenticate the participant.
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '409':
+                description: Conflict — The participant already exists in the room
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../../components/schemas/error.yaml'
+                        example:
+                            name: 'Participant Error'
+                            message: 'Participant already exists in the room'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+/participants/token/refresh:
+    post:
+        operationId: refreshParticipantToken
+        summary: Refresh a token for a participant
+        description: >
+            Refresh a token for a participant in an OpenVidu Meet room.
+        tags:
+            - Internal API - Participant
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/participant-token-request.yaml'
+        responses:
+            '200':
+                description: Successfully refreshed the participant token
+                headers:
+                    Set-Cookie:
+                        description: >
+                            The cookie containing the participant token.
+                            This cookie is used to authenticate the participant in the room.
+                        schema:
+                            type: string
+                            example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                token:
+                                    type: string
+                                    example: 'token_123456'
+                                    description: >
+                                        The token to authenticate the participant.
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '409':
+                description: Conflict — Current token is still valid
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../../components/schemas/error.yaml'
+                        example:
+                            message: 'Participant token is still valid'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/participants/{participantName}:
+    delete:
+        operationId: disconnectParticipant
+        summary: Delete a participant from a room
+        description: >
+            Deletes a participant from an OpenVidu Meet room.
+        tags:
+            - Internal API - Participant
+        security:
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/internal/participant-name.yaml'
+            - $ref: '../../components/parameters/room-id.yaml'
+        responses:
+            '204':
+                description: Successfully disconnect the participant
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

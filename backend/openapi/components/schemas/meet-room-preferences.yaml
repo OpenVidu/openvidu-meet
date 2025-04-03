@@ -1,0 +1,45 @@
+MeetRoomPreferences:
+    type: object
+    properties:
+        chatPreferences:
+            $ref: '#/MeetChatPreferences'
+            description: >
+                Preferences for the chat feature in the room.
+
+        recordingPreferences:
+            $ref: '#/MeetRecordingPreferences'
+            description: >
+                Preferences for recording the room.
+
+        virtualBackgroundPreferences:
+            $ref: '#/MeetVirtualBackgroundPreferences'
+            description: >
+                Preferences for virtual background in the room.
+
+MeetChatPreferences:
+    type: object
+    properties:
+        enabled:
+            type: boolean
+            default: true
+            example: true
+            description: >
+                If true, the room will be allowed to send and receive chat messages.
+MeetRecordingPreferences:
+    type: object
+    properties:
+        enabled:
+            type: boolean
+            default: true
+            example: true
+            description: >
+                If true, the room will be allowed to record the video of the participants.
+MeetVirtualBackgroundPreferences:
+    type: object
+    properties:
+        enabled:
+            type: boolean
+            default: true
+            example: true
+            description: >
+                If true, the room will be allowed to use virtual background.

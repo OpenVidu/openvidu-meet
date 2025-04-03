@@ -1,0 +1,8 @@
+name: maxItems
+in: query
+required: false
+description: The number of rooms per page (default is 10). Maximum is 100.
+schema:
+    type: integer
+    default: 10
+    maximum: 100

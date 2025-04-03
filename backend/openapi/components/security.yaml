@@ -1,0 +1,18 @@
+apiKeyInHeader:
+    type: apiKey
+    name: X-API-KEY
+    in: header
+    description: >
+        The API key to authenticate the request. This key is required to access the OpenVidu Meet API.
+accessTokenCookie:
+    type: apiKey
+    name: OvMeetAccessToken
+    in: cookie
+    description: >
+        The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
+participantTokenCookie:
+    type: apiKey
+    name: OvMeetParticipantToken
+    in: cookie
+    description: >
+        The JWT token to authenticate the participant when entering the room.

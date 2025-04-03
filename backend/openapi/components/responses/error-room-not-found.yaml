@@ -1,0 +1,8 @@
+description: Room not found
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/error.yaml'
+        example:
+            code: 404
+            message: 'Room not found'

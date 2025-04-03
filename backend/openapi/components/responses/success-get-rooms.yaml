@@ -1,0 +1,19 @@
+description: Successfully retrieved the list of OpenVidu Meet rooms
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                rooms:
+                    type: array
+                    items:
+                        $ref: '../schemas/meet-room.yaml'
+                pagination:
+                    type: object
+                    properties:
+                        isTruncated:
+                            type: boolean
+                            description: Indicates if there are more rooms to retrieve.
+                        nextPageToken:
+                            type: string
+                            description: The token to retrieve the next page of rooms.

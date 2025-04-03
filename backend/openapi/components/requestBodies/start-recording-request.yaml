@@ -1,0 +1,13 @@
+description: Recording details
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - roomId
+            properties:
+                roomId:
+                    type: string
+                    example: 'room-123'
+                    description: >
+                        The unique identifier of the room to record.

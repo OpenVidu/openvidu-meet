@@ -1,0 +1,17 @@
+description: Successfully refreshed the access token
+headers:
+    Set-Cookie:
+        description: >
+            The cookie containing the new access token.
+            This cookie is used to authenticate the user in subsequent requests.
+        schema:
+            type: string
+            example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Token refreshed'

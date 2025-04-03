@@ -1,0 +1,45 @@
+type: object
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room. This ID is generated when the room is created.
+    roomIdPrefix:
+        type: string
+        example: 'room'
+        description: >
+            The prefix used for the room ID. This prefix is used to generate the room ID.
+    creationDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The creation date of the room in milliseconds since the Unix epoch.
+    expirationDate:
+        type: number
+        example: 1620000800000
+        description: >
+            The expiration date of the room in milliseconds since the Unix epoch.
+            After this date, the room will be closed and no new participants will be allowed to join.
+    preferences:
+        $ref: meet-room-preferences.yaml#/MeetRoomPreferences
+        description: >
+            The preferences for the room.
+    # maxParticipants:
+    #     type: integer
+    #     example: 10
+    #     description: >
+    #         The maximum number of participants allowed in the room. If the number of participants exceeds
+    #         this limit, new participants will not be allowed to join.
+    moderatorURL:
+        type: string
+        example: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+        description: >
+            The URL for the moderator to join the room. The moderator has special permissions to manage the
+            room and participants.
+    publisherURL:
+        type: string
+        example: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+        description: >
+            The URL for the publisher to join the room. The publisher has permissions to publish audio and
+            video streams to the room.

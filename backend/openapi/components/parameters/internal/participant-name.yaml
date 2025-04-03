@@ -1,0 +1,6 @@
+name: participantName
+in: path
+required: true
+description: The name of the participant to delete
+schema:
+    type: string

@@ -1,0 +1,5 @@
+description: Unprocessable Entity — Invalid request body
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/validation-error.yaml'

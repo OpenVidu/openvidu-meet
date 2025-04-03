@@ -1,0 +1,6 @@
+name: nextPageToken
+in: query
+required: false
+description: The token to retrieve the next page of rooms.
+schema:
+    type: string
