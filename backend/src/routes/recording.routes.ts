@@ -22,42 +22,42 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.post(
 	'/',
-	withValidStartRecordingRequest,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
 	withCorrectPermissions,
+	withValidStartRecordingRequest,
 	recordingCtrl.startRecording
 );
 recordingRouter.put(
 	'/:recordingId',
-	withValidRecordingId,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
 	withCorrectPermissions,
+	withValidRecordingId,
 	recordingCtrl.stopRecording
 );
 recordingRouter.delete(
 	'/:recordingId',
-	withValidRecordingId,
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRecordingId,
 	recordingCtrl.deleteRecording
 );
 recordingRouter.get(
 	'/:recordingId',
-	withValidRecordingId,
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRecordingId,
 	recordingCtrl.getRecording
 );
 recordingRouter.get(
 	'/',
-	withValidGetRecordingsRequest,
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidGetRecordingsRequest,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
 	'/',
-	withValidRecordingBulkDeleteRequest,
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRecordingBulkDeleteRequest,
 	recordingCtrl.bulkDeleteRecordings
 );
 
@@ -68,7 +68,7 @@ internalRecordingRouter.use(bodyParser.json());
 
 internalRecordingRouter.get(
 	'/:recordingId/stream',
-	withValidRecordingId,
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRecordingId,
 	recordingCtrl.streamRecording
 );
