@@ -1,7 +1,7 @@
 import express, { Request, Response, Express } from 'express';
 import cors from 'cors';
 import chalk from 'chalk';
-import { registerDependencies, container } from './config/dependency-injector.config.js';
+import { registerDependencies, initializeEagerServices } from './config/dependency-injector.config.js';
 import {
 	SERVER_PORT,
 	SERVER_CORS_ORIGIN,
@@ -25,7 +25,6 @@ import {
 	recordingRouter,
 	roomRouter
 } from './routes/index.js';
-import { MeetStorageService } from './services/index.js';
 import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
 
@@ -75,12 +74,6 @@ const createApp = () => {
 	return app;
 };
 
-const initializeGlobalPreferences = async () => {
-	const globalPreferencesService = container.get(MeetStorageService);
-	// TODO: This should be invoked in the constructor of the service
-	await globalPreferencesService.ensurePreferencesInitialized();
-};
-
 const startServer = (app: express.Application) => {
 	app.listen(SERVER_PORT, async () => {
 		console.log(' ');
@@ -92,7 +85,6 @@ const startServer = (app: express.Application) => {
 			chalk.cyanBright(`http://localhost:${SERVER_PORT}${MEET_API_BASE_PATH_V1}/docs`)
 		);
 		logEnvVars();
-		await Promise.all([initializeGlobalPreferences()]);
 	});
 };
 
@@ -118,6 +110,7 @@ if (isMainModule()) {
 	registerDependencies();
 	const app = createApp();
 	startServer(app);
+	await initializeEagerServices();
 }
 
-export { registerDependencies, createApp, initializeGlobalPreferences };
+export { registerDependencies, createApp };

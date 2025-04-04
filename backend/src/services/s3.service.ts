@@ -95,7 +95,7 @@ export class S3Service {
 				Body: JSON.stringify(body)
 			});
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
-			this.logger.info(`S3: successfully saved object '${fullKey}' in bucket '${bucket}'`);
+			this.logger.verbose(`S3: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
 		} catch (error: any) {
 			this.logger.error(`S3: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
@@ -175,9 +175,9 @@ export class S3Service {
 		searchPattern = '',
 		bucket: string = MEET_S3_BUCKET
 	): Promise<ListObjectsV2CommandOutput> {
-		// Se construye el prefijo completo combinando el subbucket y el additionalPrefix.
-		// Ejemplo: si s3Subbucket es "recordings" y additionalPrefix es ".metadata/",
-		// se listarán los objetos con key que empiece por "recordings/.metadata/".
+		// The complete prefix is constructed by combining the subbucket and the additionalPrefix.
+		// Example: if s3Subbucket is "recordings" and additionalPrefix is ".metadata/",
+		// it will list objects with keys that start with "recordings/.metadata/".
 		const basePrefix = this.getFullKey(additionalPrefix);
 		this.logger.verbose(`S3 listObjectsPaginated: listing objects with prefix "${basePrefix}"`);
 
@@ -191,7 +191,8 @@ export class S3Service {
 		try {
 			const response: ListObjectsV2CommandOutput = await this.s3.send(command);
 
-			// Si se ha proporcionado searchPattern, se filtran los resultados.
+			// If searchPattern is provided, filter the results.
+
 			if (searchPattern) {
 				const regex = new RegExp(searchPattern);
 				response.Contents = (response.Contents || []).filter((item) => item.Key && regex.test(item.Key));

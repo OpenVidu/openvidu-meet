@@ -20,7 +20,7 @@ import {
 	UserService
 } from '../services/index.js';
 
-const container: Container = new Container();
+export const container: Container = new Container();
 
 /**
  * Registers all necessary dependencies in the container.
@@ -30,7 +30,7 @@ const container: Container = new Container();
  * available for injection throughout the application.
  *
  */
-const registerDependencies = () => {
+export const registerDependencies = () => {
 	console.log('Registering CE dependencies');
 	container.bind(SystemEventService).toSelf().inSingletonScope();
 	container.bind(MutexService).toSelf().inSingletonScope();
@@ -52,14 +52,12 @@ const registerDependencies = () => {
 
 	container.bind(S3Storage).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
-
-	initializeEagerServices();
 };
 
-const initializeEagerServices = () => {
+export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
+	await container.get(MeetStorageService).buildAndSaveDefaultPreferences();
 };
 
 export { injectable, inject } from 'inversify';
-export { container, registerDependencies };

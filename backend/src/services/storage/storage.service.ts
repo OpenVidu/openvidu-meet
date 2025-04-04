@@ -30,10 +30,11 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	 * Initializes default preferences if not already initialized.
 	 * @returns {Promise<G>} Default global preferences.
 	 */
-	async ensurePreferencesInitialized(): Promise<G> {
+	async buildAndSaveDefaultPreferences(): Promise<G> {
 		const preferences = await this.getDefaultPreferences();
 
 		try {
+			this.logger.verbose('Initializing global preferences with default values');
 			await this.storageProvider.initialize(preferences);
 			return preferences as G;
 		} catch (error) {
@@ -51,7 +52,7 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 
 		if (preferences) return preferences as G;
 
-		return await this.ensurePreferencesInitialized();
+		return await this.buildAndSaveDefaultPreferences();
 	}
 
 	/**
@@ -117,12 +118,12 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	}
 
 	/**
+	 * TODO: Move validation to the controller layer
 	 * Updates room preferences in storage.
 	 * @param {RoomPreferences} roomPreferences
 	 * @returns {Promise<GlobalPreferences>}
 	 */
 	async updateOpenViduRoomPreferences(roomId: string, roomPreferences: MeetRoomPreferences): Promise<R> {
-		// TODO: Move validation to the controller layer
 		this.validateRoomPreferences(roomPreferences);
 
 		const openviduRoom = await this.getOpenViduRoom(roomId);

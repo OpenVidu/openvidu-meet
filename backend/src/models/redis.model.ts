@@ -1,3 +1,11 @@
+export const enum RedisKeyPrefix {
+	BASE = 'ov_meet:'
+}
+
+export const enum RedisKeyName {
+	GLOBAL_PREFERENCES = `${RedisKeyPrefix.BASE}global_preferences`
+}
+
 export const enum RedisLockPrefix {
 	BASE = 'ov_meet_lock:',
 	REGISTRY = 'ov_meet_lock_registry:'

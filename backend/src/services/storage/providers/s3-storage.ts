@@ -5,8 +5,8 @@ import { LoggerService } from '../../logger.service.js';
 import { RedisService } from '../../redis.service.js';
 import { OpenViduMeetError } from '../../../models/error.model.js';
 import { inject, injectable } from '../../../config/dependency-injector.config.js';
-import { MEET_S3_ROOMS_PREFIX } from '../../../environment.js';
-
+import { MEET_S3_ROOMS_PREFIX, MEET_S3_SUBBUCKET } from '../../../environment.js';
+import { RedisKeyName } from '../../../models/redis.model.js';
 
 /**
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage
@@ -29,43 +29,75 @@ import { MEET_S3_ROOMS_PREFIX } from '../../../environment.js';
 export class S3Storage<G extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom>
 	implements StorageProvider
 {
-	protected readonly GLOBAL_PREFERENCES_KEY = 'openvidu-meet-preferences';
+	protected readonly S3_GLOBAL_PREFERENCES_KEY = `${MEET_S3_SUBBUCKET}/global-preferences.json`;
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(S3Service) protected s3Service: S3Service,
 		@inject(RedisService) protected redisService: RedisService
 	) {}
 
+	/**
+	 * Initializes global preferences. If no preferences exist, persists the provided defaults.
+	 * If preferences exist but belong to a different project, they are replaced.
+	 *
+	 * @param defaultPreferences - The default preferences to initialize with.
+	 */
 	async initialize(defaultPreferences: G): Promise<void> {
-		const existingPreferences = await this.getGlobalPreferences();
+		try {
+			const existingPreferences = await this.getGlobalPreferences();
 
-		if (existingPreferences) {
-			if (existingPreferences.projectId !== defaultPreferences.projectId) {
+			if (!existingPreferences) {
+				this.logger.info('No existing preferences found. Saving default preferences to S3.');
+				await this.saveGlobalPreferences(defaultPreferences);
+				return;
+			}
+
+			this.logger.verbose('Global preferences found. Checking project association...');
+			const isDifferentProject = existingPreferences.projectId !== defaultPreferences.projectId;
+
+			if (isDifferentProject) {
 				this.logger.warn(
-					`Existing preferences are associated with a different project (Project ID: ${existingPreferences.projectId}). Replacing them with the default preferences for the current project.`
+					`Existing global preferences belong to project [${existingPreferences.projectId}], ` +
+						`which differs from current project [${defaultPreferences.projectId}]. Replacing preferences.`
 				);
 
 				await this.saveGlobalPreferences(defaultPreferences);
+				return;
 			}
-		} else {
-			this.logger.info('Saving default preferences to S3');
-			await this.saveGlobalPreferences(defaultPreferences);
+
+			this.logger.verbose(
+				'Global preferences for the current project are already initialized. No action needed.'
+			);
+		} catch (error) {
+			this.logger.error('Error during global preferences initialization:', error);
 		}
 	}
 
+	/**
+	 * Retrieves the global preferences.
+	 * First attempts to retrieve from Redis; if not available, falls back to S3.
+	 * If fetched from S3, caches the result in Redis.
+	 *
+	 * @returns A promise that resolves to the global preferences or null if not found.
+	 */
 	async getGlobalPreferences(): Promise<G | null> {
 		try {
-			let preferences: G | null = await this.getFromRedis<G>(this.GLOBAL_PREFERENCES_KEY);
+			// Try to get preferences from Redis cache
+			let preferences: G | null = await this.getFromRedis<G>(RedisKeyName.GLOBAL_PREFERENCES);
 
 			if (!preferences) {
-				// Fallback to fetching from S3 if Redis doesn't have it
-				this.logger.debug('Preferences not found in Redis. Fetching from S3...');
-				preferences = await this.getFromS3<G>(`${this.GLOBAL_PREFERENCES_KEY}.json`);
+				this.logger.debug('Global preferences not found in Redis. Fetching from S3...');
+				preferences = await this.getFromS3<G>(this.S3_GLOBAL_PREFERENCES_KEY);
 
 				if (preferences) {
-					// TODO: Use a key prefix for Redis
-					await this.redisService.set(this.GLOBAL_PREFERENCES_KEY, JSON.stringify(preferences), false);
+					this.logger.verbose('Fetched global preferences from S3. Caching them in Redis.');
+					const redisPayload = JSON.stringify(preferences);
+					await this.redisService.set(RedisKeyName.GLOBAL_PREFERENCES, redisPayload, false);
+				} else {
+					this.logger.warn('No global preferences found in S3.');
 				}
+			} else {
+				this.logger.verbose('Global preferences retrieved from Redis.');
 			}
 
 			return preferences;
@@ -75,16 +107,26 @@ export class S3Storage<G extends GlobalPreferences = GlobalPreferences, R extend
 		}
 	}
 
+	/**
+	 * Persists the global preferences to both S3 and Redis in parallel.
+	 * Uses Promise.all to execute both operations concurrently.
+	 *
+	 * @param preferences - Global preferences to store.
+	 * @returns The saved preferences.
+	 * @throws Rethrows any error if saving fails.
+	 */
 	async saveGlobalPreferences(preferences: G): Promise<G> {
 		try {
+			const redisPayload = JSON.stringify(preferences);
+
 			await Promise.all([
-				this.s3Service.saveObject(`${this.GLOBAL_PREFERENCES_KEY}.json`, preferences),
-				// TODO: Use a key prefix for Redis
-				this.redisService.set(this.GLOBAL_PREFERENCES_KEY, JSON.stringify(preferences), false)
+				this.s3Service.saveObject(this.S3_GLOBAL_PREFERENCES_KEY, preferences),
+				this.redisService.set(RedisKeyName.GLOBAL_PREFERENCES, redisPayload, false)
 			]);
+			this.logger.info('Global preferences saved successfully');
 			return preferences;
 		} catch (error) {
-			this.handleError(error, 'Error saving preferences');
+			this.handleError(error, 'Error saving global preferences');
 			throw error;
 		}
 	}
@@ -233,27 +275,49 @@ export class S3Storage<G extends GlobalPreferences = GlobalPreferences, R extend
 		}
 	}
 
+	/**
+	 * Retrieves an object of type U from Redis by the given key.
+	 * Returns null if the key is not found or an error occurs.
+	 *
+	 * @param key - The Redis key to fetch.
+	 * @returns A promise that resolves to an object of type U or null.
+	 */
 	protected async getFromRedis<U>(key: string): Promise<U | null> {
-		let response: string | null = null;
+		try {
+			const response = await this.redisService.get(key);
 
-		response = await this.redisService.get(key);
+			if (response) {
+				return JSON.parse(response) as U;
+			}
 
-		if (response) {
-			return JSON.parse(response) as U;
+			return null;
+		} catch (error) {
+			this.logger.error(`Error fetching from Redis for key ${key}: ${error}`);
+			return null;
 		}
-
-		return null;
 	}
 
+	/**
+	 * Retrieves an object of type U from S3 at the specified path.
+	 * Returns null if the object is not found.
+	 *
+	 * @param path - The S3 key or path to fetch.
+	 * @returns A promise that resolves to an object of type U or null.
+	 */
 	protected async getFromS3<U>(path: string): Promise<U | null> {
-		const response = await this.s3Service.getObjectAsJson(path);
+		try {
+			const response = await this.s3Service.getObjectAsJson(path);
 
-		if (response) {
-			this.logger.verbose(`Object found in S3 at path: ${path}`);
-			return response as U;
+			if (response) {
+				this.logger.verbose(`Object found in S3 at path: ${path}`);
+				return response as U;
+			}
+
+			return null;
+		} catch (error) {
+			this.logger.error(`Error fetching from S3 for path ${path}: ${error}`);
+			return null;
 		}
-
-		return null;
 	}
 
 	protected handleError(error: any, message: string) {
