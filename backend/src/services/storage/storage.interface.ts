@@ -1,13 +1,17 @@
 import { GlobalPreferences, MeetRoom } from '@typings-ce';
 
 /**
- * Interface for managing global preferences storage.
+ * An interface that defines the contract for storage providers in the OpenVidu Meet application.
+ * Storage providers handle persistence of global application preferences and meeting room data.
+ *
+ * @template T - The type of global preferences, extending GlobalPreferences
+ * @template R - The type of room data, extending MeetRoom
+ *
+ * Implementations of this interface should handle the persistent storage
+ * of application settings and room information, which could be backed by
+ * various storage solutions (database, file system, cloud storage, etc.).
  */
-
-export interface PreferencesStorage<
-	T extends GlobalPreferences = GlobalPreferences,
-	R extends MeetRoom = MeetRoom
-> {
+export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom> {
 	/**
 	 * Initializes the storage with default preferences if they are not already set.
 	 *
@@ -31,7 +35,14 @@ export interface PreferencesStorage<
 	 */
 	saveGlobalPreferences(preferences: T): Promise<T>;
 
-	getOpenViduRooms(): Promise<R[]>;
+	getMeetRooms(
+		maxItems?: number,
+		nextPageToken?: string
+	): Promise<{
+		rooms: R[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}>;
 
 	/**
 	 * Retrieves the {@link MeetRoom}.
@@ -39,21 +50,21 @@ export interface PreferencesStorage<
 	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to the OpenVidu Room, or null if not found.
 	 **/
-	getOpenViduRoom(roomId: string): Promise<R | null>;
+	getMeetRoom(roomId: string): Promise<R | null>;
 
 	/**
-	 * Saves the OpenVidu Room.
+	 * Saves the OpenVidu Meet Room.
 	 *
 	 * @param ovRoom - The OpenVidu Room to save.
 	 * @returns A promise that resolves to the saved
 	 **/
-	saveOpenViduRoom(ovRoom: R): Promise<R>;
+	saveMeetRoom(ovRoom: R): Promise<R>;
 
 	/**
-	 * Deletes the OpenVidu Room for a given room name.
+	 * Deletes the OpenVidu Meet Room for a given room name.
 	 *
 	 * @param roomId - The name of the room whose should be deleted.
 	 * @returns A promise that resolves when the room have been deleted.
 	 **/
-	deleteOpenViduRoom(roomId: string): Promise<void>;
+	deleteMeetRoom(roomId: string): Promise<void>;
 }

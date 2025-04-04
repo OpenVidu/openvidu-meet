@@ -1,23 +1,33 @@
-/**
- * Implements storage for preferences using S3.
- * This is used when the application is configured to operate in "s3" mode.
- */
-
 import { GlobalPreferences, MeetRoom } from '@typings-ce';
-import { PreferencesStorage } from './global-preferences-storage.interface.js';
-import { S3Service } from '../s3.service.js';
-import { LoggerService } from '../logger.service.js';
-import { RedisService } from '../redis.service.js';
-import { OpenViduMeetError } from '../../models/error.model.js';
-import { inject, injectable } from '../../config/dependency-injector.config.js';
-import { MEET_S3_ROOMS_PREFIX } from '../../environment.js';
+import { StorageProvider } from '../storage.interface.js';
+import { S3Service } from '../../s3.service.js';
+import { LoggerService } from '../../logger.service.js';
+import { RedisService } from '../../redis.service.js';
+import { OpenViduMeetError } from '../../../models/error.model.js';
+import { inject, injectable } from '../../../config/dependency-injector.config.js';
+import { MEET_S3_ROOMS_PREFIX } from '../../../environment.js';
 
-// TODO Rename this service to MeetStorageService?
+
+/**
+ * Implementation of the StorageProvider interface using AWS S3 for persistent storage
+ * with Redis caching for improved performance.
+ *
+ * This class provides operations for storing and retrieving application preferences and room data
+ * with a two-tiered storage approach:
+ * - Redis is used as a primary cache for fast access
+ * - S3 serves as the persistent storage layer and fallback when data is not in Redis
+ *
+ * The storage operations are performed in parallel to both systems when writing data,
+ * with transaction-like rollback behavior if one operation fails.
+ *
+ * @template G - Type for global preferences data, defaults to GlobalPreferences
+ * @template R - Type for room data, defaults to MeetRoom
+ *
+ * @implements {StorageProvider}
+ */
 @injectable()
-export class S3PreferenceStorage<
-	G extends GlobalPreferences = GlobalPreferences,
-	R extends MeetRoom = MeetRoom
-> implements PreferencesStorage
+export class S3Storage<G extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom>
+	implements StorageProvider
 {
 	protected readonly GLOBAL_PREFERENCES_KEY = 'openvidu-meet-preferences';
 	constructor(
@@ -79,7 +89,7 @@ export class S3PreferenceStorage<
 		}
 	}
 
-	async saveOpenViduRoom(ovRoom: R): Promise<R> {
+	async saveMeetRoom(ovRoom: R): Promise<R> {
 		const { roomId } = ovRoom;
 		const s3Path = `${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 		const roomStr = JSON.stringify(ovRoom);
@@ -122,20 +132,33 @@ export class S3PreferenceStorage<
 		throw error;
 	}
 
-	async getOpenViduRooms(): Promise<R[]> {
+	async getMeetRooms(
+		maxItems: number,
+		nextPageToken?: string
+	): Promise<{
+		rooms: R[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}> {
 		try {
-			const content = await this.s3Service.listObjects(MEET_S3_ROOMS_PREFIX);
-			const roomFiles =
-				content.Contents?.filter(
-					(file) =>
-						file?.Key?.endsWith('.json') &&
-						file.Key !== `${this.GLOBAL_PREFERENCES_KEY}.json`
-				) ?? [];
+			const {
+				Contents: roomFiles,
+				IsTruncated,
+				NextContinuationToken
+			} = await this.s3Service.listObjectsPaginated(MEET_S3_ROOMS_PREFIX, maxItems, nextPageToken);
 
-			if (roomFiles.length === 0) {
-				this.logger.verbose('No OpenVidu rooms found in S3');
-				return [];
+			if (!roomFiles) {
+				this.logger.verbose('No rooms found. Returning an empty array.');
+				return { rooms: [], isTruncated: false };
 			}
+
+			// const promises: Promise<R>[] = [];
+			// // Retrieve the data for each room
+			// roomFiles.forEach((item) => {
+			// 	if (item?.Key && item.Key.endsWith('.json')) {
+			// 		promises.push(getOpenViduRoom(item.Key) as Promise<R>);
+			// 	}
+			// });
 
 			// Extract room names from file paths
 			const roomIds = roomFiles.map((file) => this.extractRoomId(file.Key)).filter(Boolean) as string[];
@@ -145,7 +168,7 @@ export class S3PreferenceStorage<
 					if (!roomId) return null;
 
 					try {
-						return await this.getOpenViduRoom(roomId);
+						return await this.getMeetRoom(roomId);
 					} catch (error: any) {
 						this.logger.warn(`Failed to fetch room "${roomId}": ${error.message}`);
 						return null;
@@ -154,10 +177,11 @@ export class S3PreferenceStorage<
 			);
 
 			// Filter out null values
-			return rooms.filter(Boolean) as R[];
+			const roomsResponse = rooms.filter(Boolean) as R[];
+			return { rooms: roomsResponse, isTruncated: !!IsTruncated, nextPageToken: NextContinuationToken };
 		} catch (error) {
 			this.handleError(error, 'Error fetching Room preferences');
-			return [];
+			return { rooms: [], isTruncated: false };
 		}
 	}
 
@@ -181,7 +205,7 @@ export class S3PreferenceStorage<
 		return parts[parts.length - 2];
 	}
 
-	async getOpenViduRoom(roomId: string): Promise<R | null> {
+	async getMeetRoom(roomId: string): Promise<R | null> {
 		try {
 			const room: R | null = await this.getFromRedis<R>(roomId);
 
@@ -198,7 +222,7 @@ export class S3PreferenceStorage<
 		}
 	}
 
-	async deleteOpenViduRoom(roomId: string): Promise<void> {
+	async deleteMeetRoom(roomId: string): Promise<void> {
 		try {
 			await Promise.all([
 				this.s3Service.deleteObject(`${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`),

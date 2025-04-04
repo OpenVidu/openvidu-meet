@@ -25,7 +25,7 @@ import {
 	recordingRouter,
 	roomRouter
 } from './routes/index.js';
-import { GlobalPreferencesService } from './services/index.js';
+import { MeetStorageService } from './services/index.js';
 import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
 
@@ -76,7 +76,7 @@ const createApp = () => {
 };
 
 const initializeGlobalPreferences = async () => {
-	const globalPreferencesService = container.get(GlobalPreferencesService);
+	const globalPreferencesService = container.get(MeetStorageService);
 	// TODO: This should be invoked in the constructor of the service
 	await globalPreferencesService.ensurePreferencesInitialized();
 };

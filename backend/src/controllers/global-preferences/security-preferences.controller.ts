@@ -1,13 +1,13 @@
 import { container } from '../../config/dependency-injector.config.js';
 import { Request, Response } from 'express';
 import { LoggerService } from '../../services/logger.service.js';
-import { GlobalPreferencesService } from '../../services/preferences/index.js';
+import { MeetStorageService } from '../../services/storage/index.js';
 import { OpenViduMeetError } from '../../models/error.model.js';
 import { SecurityPreferencesDTO, UpdateSecurityPreferencesDTO } from '@typings-ce';
 
 export const updateSecurityPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const globalPrefService = container.get(GlobalPreferencesService);
+	const globalPrefService = container.get(MeetStorageService);
 
 	logger.verbose(`Updating security preferences: ${JSON.stringify(req.body)}`);
 	const securityPreferences = req.body as UpdateSecurityPreferencesDTO;
@@ -43,7 +43,7 @@ export const updateSecurityPreferences = async (req: Request, res: Response) => 
 
 export const getSecurityPreferences = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const preferenceService = container.get(GlobalPreferencesService);
+	const preferenceService = container.get(MeetStorageService);
 
 	try {
 		const preferences = await preferenceService.getGlobalPreferences();

@@ -1,28 +1,29 @@
-/**
- * Service that provides high-level methods for managing application preferences,
- * regardless of the underlying storage mechanism.
- */
-
 import { AuthMode, AuthType, GlobalPreferences, MeetRoom, MeetRoomPreferences } from '@typings-ce';
 import { LoggerService } from '../logger.service.js';
-import { PreferencesStorage } from './global-preferences-storage.interface.js';
-import { GlobalPreferencesStorageFactory } from './global-preferences.factory.js';
+import { StorageProvider } from './storage.interface.js';
+import { StorageFactory } from './storage.factory.js';
 import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
 import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
 import { injectable, inject } from '../../config/dependency-injector.config.js';
 import { PasswordHelper } from '../../helpers/password.helper.js';
 
+/**
+ * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
+ *
+ * This service provides an abstraction layer over the underlying storage implementation,
+ * handling initialization, retrieval, and persistence of global preferences and room data.
+ *
+ * @typeParam G - Type for global preferences, extends GlobalPreferences
+ * @typeParam R - Type for room data, extends MeetRoom
+ */
 @injectable()
-export class GlobalPreferencesService<
-	G extends GlobalPreferences = GlobalPreferences,
-	R extends MeetRoom = MeetRoom
-> {
-	protected storage: PreferencesStorage;
+export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom> {
+	protected storageProvider: StorageProvider;
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(GlobalPreferencesStorageFactory) protected storageFactory: GlobalPreferencesStorageFactory
+		@inject(StorageFactory) protected storageFactory: StorageFactory
 	) {
-		this.storage = this.storageFactory.create();
+		this.storageProvider = this.storageFactory.create();
 	}
 
 	/**
@@ -33,7 +34,7 @@ export class GlobalPreferencesService<
 		const preferences = await this.getDefaultPreferences();
 
 		try {
-			await this.storage.initialize(preferences);
+			await this.storageProvider.initialize(preferences);
 			return preferences as G;
 		} catch (error) {
 			this.handleError(error, 'Error initializing default preferences');
@@ -46,7 +47,7 @@ export class GlobalPreferencesService<
 	 * @returns {Promise<GlobalPreferences>}
 	 */
 	async getGlobalPreferences(): Promise<G> {
-		const preferences = await this.storage.getGlobalPreferences();
+		const preferences = await this.storageProvider.getGlobalPreferences();
 
 		if (preferences) return preferences as G;
 
@@ -60,16 +61,27 @@ export class GlobalPreferencesService<
 	 */
 	async saveGlobalPreferences(preferences: G): Promise<G> {
 		this.logger.info('Saving global preferences');
-		return this.storage.saveGlobalPreferences(preferences) as Promise<G>;
+		return this.storageProvider.saveGlobalPreferences(preferences) as Promise<G>;
 	}
 
 	async saveOpenViduRoom(ovRoom: R): Promise<R> {
 		this.logger.info(`Saving OpenVidu room ${ovRoom.roomId}`);
-		return this.storage.saveOpenViduRoom(ovRoom) as Promise<R>;
+		return this.storageProvider.saveMeetRoom(ovRoom) as Promise<R>;
 	}
 
-	async getOpenViduRooms(): Promise<R[]> {
-		return this.storage.getOpenViduRooms() as Promise<R[]>;
+	async getOpenViduRooms(
+		maxItems?: number,
+		nextPageToken?: string
+	): Promise<{
+		rooms: R[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}> {
+		return this.storageProvider.getMeetRooms(maxItems, nextPageToken) as Promise<{
+			rooms: R[];
+			isTruncated: boolean;
+			nextPageToken?: string;
+		}>;
 	}
 
 	/**
@@ -80,7 +92,7 @@ export class GlobalPreferencesService<
 	 * @throws Error if the room preferences are not found.
 	 */
 	async getOpenViduRoom(roomId: string): Promise<R> {
-		const openviduRoom = await this.storage.getOpenViduRoom(roomId);
+		const openviduRoom = await this.storageProvider.getMeetRoom(roomId);
 
 		if (!openviduRoom) {
 			this.logger.error(`Room not found for room ${roomId}`);
@@ -91,7 +103,7 @@ export class GlobalPreferencesService<
 	}
 
 	async deleteOpenViduRoom(roomId: string): Promise<void> {
-		return this.storage.deleteOpenViduRoom(roomId);
+		return this.storageProvider.deleteMeetRoom(roomId);
 	}
 
 	async getOpenViduRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
@@ -177,7 +189,7 @@ export class GlobalPreferencesService<
 	 * @param {any} error
 	 * @param {string} message
 	 */
-	protected handleError(error: any, message: string) {
+	protected handleError(error: OpenViduMeetError | unknown, message: string) {
 		if (error instanceof OpenViduMeetError) {
 			this.logger.error(`${message}: ${error.message}`);
 		} else {

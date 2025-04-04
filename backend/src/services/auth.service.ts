@@ -2,7 +2,7 @@ import { MEET_ADMIN_SECRET, MEET_ADMIN_USER } from '../environment.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { User } from '@typings-ce';
 import { UserService } from './user.service.js';
-import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
+import { MeetStorageService } from './storage/storage.service.js';
 import { LoggerService } from './logger.service.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 
@@ -11,7 +11,7 @@ export class AuthService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(UserService) protected userService: UserService,
-		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService
+		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
 	) {}
 
 	async authenticate(username: string, password: string): Promise<User | null> {

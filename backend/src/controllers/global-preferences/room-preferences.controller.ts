@@ -1,7 +1,7 @@
 import { container } from '../../config/dependency-injector.config.js';
 import { Request, Response } from 'express';
 import { LoggerService } from '../../services/logger.service.js';
-import { GlobalPreferencesService } from '../../services/preferences/index.js';
+import { MeetStorageService } from '../../services/storage/index.js';
 import { OpenViduMeetError } from '../../models/error.model.js';
 
 export const updateRoomPreferences = async (req: Request, res: Response) => {
@@ -11,7 +11,7 @@ export const updateRoomPreferences = async (req: Request, res: Response) => {
 	const { roomId, roomPreferences } = req.body;
 
 	try {
-		const preferenceService = container.get(GlobalPreferencesService);
+		const preferenceService = container.get(MeetStorageService);
 		preferenceService.validateRoomPreferences(roomPreferences);
 
 		const savedPreferences = await preferenceService.updateOpenViduRoomPreferences(roomId, roomPreferences);
@@ -35,7 +35,7 @@ export const getRoomPreferences = async (req: Request, res: Response) => {
 
 	try {
 		const { roomId } = req.params;
-		const preferenceService = container.get(GlobalPreferencesService);
+		const preferenceService = container.get(MeetStorageService);
 		const preferences = await preferenceService.getOpenViduRoomPreferences(roomId);
 
 		if (!preferences) {

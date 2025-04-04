@@ -1,7 +1,7 @@
 import { container } from '../config/dependency-injector.config.js';
 import { NextFunction, Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
-import { GlobalPreferencesService } from '../services/index.js';
+import { MeetStorageService } from '../services/index.js';
 import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 import { AuthMode, ParticipantRole, UserRole } from '@typings-ce';
 
@@ -14,7 +14,7 @@ import { AuthMode, ParticipantRole, UserRole } from '@typings-ce';
  */
 export const configureCreateRoomAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
-	const globalPrefService = container.get(GlobalPreferencesService);
+	const globalPrefService = container.get(MeetStorageService);
 	let allowRoomCreation: boolean;
 	let requireAuthentication: boolean;
 
@@ -70,7 +70,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 	}
 
 	const logger = container.get(LoggerService);
-	const globalPrefService = container.get(GlobalPreferencesService);
+	const globalPrefService = container.get(MeetStorageService);
 	let authMode: AuthMode;
 
 	try {

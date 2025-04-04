@@ -10,13 +10,13 @@ import {
 	MeetWebhookPayload,
 	WebhookPreferences
 } from '@typings-ce';
-import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
+import { MeetStorageService } from './storage/storage.service.js';
 
 @injectable()
 export class OpenViduWebhookService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService
+		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
 	) {}
 
 	// TODO: Implement Room webhooks

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthMode, ParticipantRole, UserRole, TokenOptions } from '@typings-ce';
 import { container } from '../config/dependency-injector.config.js';
-import { GlobalPreferencesService, LoggerService, RoomService } from '../services/index.js';
+import { MeetStorageService, LoggerService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -13,7 +13,7 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  */
 export const configureTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
-	const globalPrefService = container.get(GlobalPreferencesService);
+	const globalPrefService = container.get(MeetStorageService);
 	const roomService = container.get(RoomService);
 
 	let role: ParticipantRole;

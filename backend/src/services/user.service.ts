@@ -2,13 +2,13 @@ import { MEET_ADMIN_USER } from '../environment.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { UserRole, SingleUserAuth, User, SingleUserCredentials } from '@typings-ce';
 import { LoggerService } from './logger.service.js';
-import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
+import { MeetStorageService } from './storage/storage.service.js';
 
 @injectable()
 export class UserService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService
+		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
 	) {}
 
 	async getUser(username: string): Promise<User | null> {

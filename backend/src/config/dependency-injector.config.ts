@@ -1,8 +1,8 @@
 import { Container } from 'inversify';
 import {
 	AuthService,
-	GlobalPreferencesService,
-	GlobalPreferencesStorageFactory,
+	MeetStorageService,
+	StorageFactory,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
@@ -12,7 +12,7 @@ import {
 	RecordingService,
 	RedisService,
 	RoomService,
-	S3PreferenceStorage,
+	S3Storage,
 	S3Service,
 	SystemEventService,
 	TaskSchedulerService,
@@ -47,11 +47,11 @@ const registerDependencies = () => {
 	container.bind(RecordingService).toSelf().inSingletonScope();
 
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
-	container.bind(GlobalPreferencesService).toSelf().inSingletonScope();
+	container.bind(MeetStorageService).toSelf().inSingletonScope();
 	container.bind(ParticipantService).toSelf().inSingletonScope();
 
-	container.bind(S3PreferenceStorage).toSelf().inSingletonScope();
-	container.bind(GlobalPreferencesStorageFactory).toSelf().inSingletonScope();
+	container.bind(S3Storage).toSelf().inSingletonScope();
+	container.bind(StorageFactory).toSelf().inSingletonScope();
 
 	initializeEagerServices();
 };
