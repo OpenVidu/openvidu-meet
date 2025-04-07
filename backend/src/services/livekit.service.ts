@@ -107,7 +107,7 @@ export class LiveKitService {
 				await this.getRoom(roomName);
 			} catch (error) {
 				this.logger.warn(`Livekit Room ${roomName} not found. Skipping deletion.`);
-				return;
+				return Promise.resolve();
 			}
 
 			await this.roomClient.deleteRoom(roomName);

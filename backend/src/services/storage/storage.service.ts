@@ -117,8 +117,8 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 		return meetRoom as R;
 	}
 
-	async deleteMeetRoom(roomId: string): Promise<void> {
-		return this.storageProvider.deleteMeetRoom(roomId);
+	async deleteMeetRooms(roomIds: string[]): Promise<void> {
+		return this.storageProvider.deleteMeetRooms(roomIds);
 	}
 
 	/**

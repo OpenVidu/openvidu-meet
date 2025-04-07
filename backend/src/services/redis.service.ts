@@ -220,16 +220,15 @@ export class RedisService extends EventEmitter {
 	/**
 	 * Deletes a key from Redis.
 	 * @param key - The key to delete.
-	 * @param hashKey - The hash key to delete. If provided, it will delete the hash key from the hash stored at the given key.
 	 * @returns A promise that resolves to the number of keys deleted.
 	 */
-	delete(key: string, hashKey?: string): Promise<number> {
+	delete(keys: string | string[]): Promise<number> {
 		try {
-			if (hashKey) {
-				return this.redisPublisher.hdel(key, hashKey);
-			} else {
-				return this.redisPublisher.del(key);
+			if (typeof keys === 'string') {
+				keys = [keys];
 			}
+
+			return this.redisPublisher.del(keys);
 		} catch (error) {
 			throw internalError(`Error deleting key from Redis ${error}`);
 		}

@@ -80,6 +80,8 @@ export const MEET_API_USER = 'api-user';
 export const MEET_S3_ROOMS_PREFIX = 'rooms';
 export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
 
+export const MEET_ROOM_GC_INTERVAL: ms.StringValue = '1h';
+
 // Time to live for the active recording lock in Redis
 export const MEET_RECORDING_LOCK_TTL: ms.StringValue = '6h';
 export const MEET_RECORDING_STARTED_TIMEOUT: ms.StringValue = '30s';

@@ -240,15 +240,15 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		}
 	}
 
-	async deleteMeetRoom(roomId: string): Promise<void> {
-		const s3RoomPath = `${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
-		const redisKey = RedisKeyName.ROOM + roomId;
+	async deleteMeetRooms(roomIds: string[]): Promise<void> {
+		const roomsToDelete = roomIds.map((id) => `${MEET_S3_ROOMS_PREFIX}/${id}/${id}.json`);
+		const redisKeysToDelete = roomIds.map((id) => RedisKeyName.ROOM + id);
 
 		try {
-			await Promise.all([this.s3Service.deleteObject(s3RoomPath), this.redisService.delete(redisKey)]);
-			this.logger.verbose(`Room ${roomId} deleted successfully from S3 and Redis`);
+			await Promise.all([this.s3Service.deleteObjects(roomsToDelete), this.redisService.delete(redisKeysToDelete)]);
+			this.logger.verbose(`Rooms deleted successfully: ${roomIds.join(', ')}`);
 		} catch (error) {
-			this.handleError(error, `Error deleting Room preferences for room ${roomId}`);
+			this.handleError(error, `Error deleting rooms: ${roomIds.join(', ')}`);
 		}
 	}
 

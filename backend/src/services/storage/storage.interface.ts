@@ -72,10 +72,10 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	saveMeetRoom(ovRoom: R): Promise<R>;
 
 	/**
-	 * Deletes the OpenVidu Meet Room for a given room name.
+	 * Deletes OpenVidu Meet Rooms.
 	 *
-	 * @param roomId - The name of the room whose should be deleted.
+	 * @param roomIds - The room names to delete.
 	 * @returns A promise that resolves when the room have been deleted.
 	 **/
-	deleteMeetRoom(roomId: string): Promise<void>;
+	deleteMeetRooms(roomIds: string[]): Promise<void>;
 }
