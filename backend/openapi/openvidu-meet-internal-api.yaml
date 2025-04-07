@@ -20,8 +20,6 @@ paths:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
     /rooms/{roomId}/participant-role:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1participant-role'
-    /recordings/{recordingId}/stream:
-        $ref: './paths/internal/recordings.yaml#/~1recordings~1{recordingId}~1stream'
     /participants/token:
         $ref: './paths/internal/participants.yaml#/~1participants~1token'
     /participants/token/refresh:
