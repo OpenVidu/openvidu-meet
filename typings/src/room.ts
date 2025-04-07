@@ -20,3 +20,9 @@ export interface MeetRoom extends BaseRoomOptions {
 	moderatorRoomUrl: string;
 	publisherRoomUrl: string;
 }
+
+export type MeetRoomFilters = {
+	maxItems?: number;
+	nextPageToken?: string;
+	fields?: string;
+};
