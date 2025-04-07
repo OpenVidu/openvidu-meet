@@ -9,6 +9,7 @@ import {
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
+	errorRoomHasNoParticipants,
 	errorRoomNotFound,
 	internalError,
 	isErrorRecordingAlreadyStopped,
@@ -68,6 +69,11 @@ export class RecordingService {
 
 			//TODO: Check if the room has participants before starting the recording
 			//room.numParticipants === 0 ? throw errorNoParticipants(roomId);
+			const lkRoom = await this.livekitService.getRoom(roomId);
+
+			if (!lkRoom) throw errorRoomNotFound(roomId);
+
+			if (lkRoom.numParticipants === 0) throw errorRoomHasNoParticipants(roomId);
 
 			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
