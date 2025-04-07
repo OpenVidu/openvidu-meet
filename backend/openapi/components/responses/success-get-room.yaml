@@ -30,6 +30,9 @@ content:
                 summary: Room details including preferences but no URLs
                 value:
                     roomId: 'room-123'
+                    roomIdPrefix: 'room'
+                    creationDate: 1620000000000
+                    expirationDate: 1620000800000
                     preferences:
                         chatPreferences:
                             enabled: true

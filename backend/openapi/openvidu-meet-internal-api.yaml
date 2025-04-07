@@ -16,6 +16,8 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1refresh'
     /auth/profile:
         $ref: './paths/internal/auth.yaml#/~1auth~1profile'
+    /rooms/{roomId}:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
     /rooms/{roomId}/participant-role:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1participant-role'
     /recordings/{recordingId}/stream:

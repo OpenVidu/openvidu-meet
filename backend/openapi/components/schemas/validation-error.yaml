@@ -5,7 +5,7 @@ properties:
         example: 'Unprocessable Entity'
     message:
         type: string
-        example: 'Invalid request body'
+        example: 'Invalid request'
     details:
         type: array
         items:
@@ -13,7 +13,7 @@ properties:
             properties:
                 field:
                     type: string
-                    example: 'expirationDate'
+                    example: '{{field}}'
                 message:
                     type: string
-                    example: 'Expected number, received string'
+                    example: 'Expected {{type}} but got {{value}}'

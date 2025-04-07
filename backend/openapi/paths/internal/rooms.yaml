@@ -1,3 +1,38 @@
+/rooms/{roomId}:
+    put:
+        operationId: updateRoom
+        summary: Update a room
+        description: >
+            Updates the preferences of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - Internal API - Rooms
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - name: roomId
+              in: path
+              required: true
+              description: The unique identifier of the room to update
+              schema:
+                  type: string
+                  example: 'room-123'
+        requestBody:
+            $ref: '../../components/requestBodies/update-room-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/success-create-room.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
 /rooms/{roomId}/participant-role:
     get:
         operationId: getParticipantRole

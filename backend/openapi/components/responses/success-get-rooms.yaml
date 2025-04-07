@@ -65,6 +65,9 @@ content:
                 value:
                     rooms:
                         - roomId: 'room-123'
+                          roomIdPrefix: 'room'
+                          creationDate: 1620000000000
+                          expirationDate: 1620000800000
                           preferences:
                               chatPreferences:
                                   enabled: true
@@ -73,6 +76,9 @@ content:
                               virtualBackgroundPreferences:
                                   enabled: true
                         - roomId: 'room-456'
+                          roomIdPrefix: 'room'
+                          creationDate: 1620001000000
+                          expirationDate: 1620001800000
                           preferences:
                               chatPreferences:
                                   enabled: false

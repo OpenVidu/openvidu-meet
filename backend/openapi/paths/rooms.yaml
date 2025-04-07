@@ -47,6 +47,36 @@
                 $ref: '../components/responses/forbidden-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
+
+    delete:
+        operationId: bulkDeleteRooms
+        summary: Bulk delete rooms
+        description: >
+            Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
+        tags:
+            - OpenVidu Meet - Room
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - name: roomIds
+              in: query
+              required: true
+              description: A comma-separated list of room IDs to delete.
+              schema:
+                  type: string
+                  example: 'room-123,room-456'
+        responses:
+            '204':
+                description: Bulk deletion completed.
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
 /rooms/{roomId}:
     get:
         operationId: getRoom
@@ -65,7 +95,6 @@
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'
-
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -74,47 +103,22 @@
                 $ref: '../components/responses/error-room-not-found.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-    put:
-        operationId: updateRoom
-        summary: Update a room
-        description: >
-            Updates the preferences of an OpenVidu Meet room with the specified room ID.
-        tags:
-            - OpenVidu Meet - Room
-        security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-        parameters:
-            - name: roomId
-              in: path
-              required: true
-              description: The unique identifier of the room to update
-              schema:
-                  type: string
-                  example: 'room-123'
-        requestBody:
-            $ref: '../components/requestBodies/update-room-request.yaml'
-        responses:
-            '200':
-                $ref: '../components/responses/success-create-room.yaml'
-            '401':
-                $ref: '../components/responses/unauthorized-error.yaml'
-            '403':
-                $ref: '../components/responses/forbidden-error.yaml'
-            '404':
-                $ref: '../components/responses/error-room-not-found.yaml'
-            '422':
-                $ref: '../components/responses/validation-error.yaml'
-            '500':
-                $ref: '../components/responses/internal-server-error.yaml'
-
     delete:
         operationId: deleteRoom
         summary: Delete a room
         description: >
-            Deletes an OpenVidu Meet room with the specified room ID.
-            The room with participants will be closed and all participants will be disconnected.
-            The room will be deleted from the system and will no longer be available.
+            Permanently removes an OpenVidu Meet room with the specified room ID.
+            When a room is deleted:
+
+            - All active participants are immediately disconnected
+
+            - All associated resources and session data are removed
+
+            - The room ID becomes available for reuse
+
+            This operation is idempotent - deleting a non-existent room or
+            attempting to delete an already removed room will return a successful
+            response.
         tags:
             - OpenVidu Meet - Room
         security:
