@@ -35,6 +35,17 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 */
 	saveGlobalPreferences(preferences: T): Promise<T>;
 
+	/**
+	 *
+	 * Retrieves the OpenVidu Meet Rooms.
+	 *
+	 * @param maxItems - The maximum number of items to retrieve. If not provided, all items will be retrieved.
+	 * @param nextPageToken - The token for the next page of results. If not provided, the first page will be retrieved.
+	 * @returns A promise that resolves to an object containing ç
+	 * 	- the retrieved rooms,
+	 *  - a boolean indicating if there are more items to retrieve
+	 * 	- an optional next page token.
+	 */
 	getMeetRooms(
 		maxItems?: number,
 		nextPageToken?: string

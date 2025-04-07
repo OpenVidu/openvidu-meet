@@ -3,8 +3,8 @@ import { inject, injectable } from '../config/dependency-injector.config.js';
 import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
 import { LoggerService } from './logger.service.js';
 import { LiveKitService } from './livekit.service.js';
-import { GlobalPreferencesService } from './preferences/global-preferences.service.js';
-import { MeetRoom, MeetRoomOptions, ParticipantRole } from '@typings-ce';
+import { MeetStorageService } from './storage/storage.service.js';
+import { MeetRoom, MeetRoomFilters, MeetRoomOptions, MeetRoomPreferences, ParticipantRole } from '@typings-ce';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
@@ -13,6 +13,7 @@ import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
 import { uid } from 'uid/single';
 import { MEET_NAME_ID } from '../environment.js';
 import ms from 'ms';
+import { UtilsHelper } from '../helpers/utils.helper.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -24,7 +25,7 @@ import ms from 'ms';
 export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(GlobalPreferencesService) protected globalPrefService: GlobalPreferencesService,
+		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService
@@ -66,7 +67,7 @@ export class RoomService {
 		const { preferences, expirationDate, roomIdPrefix } = roomOptions;
 		const roomId = roomIdPrefix ? `${roomIdPrefix}-${uid(15)}` : uid(15);
 
-		const openviduRoom: MeetRoom = {
+		const meetRoom: MeetRoom = {
 			roomId,
 			roomIdPrefix,
 			creationDate: Date.now(),
@@ -77,9 +78,9 @@ export class RoomService {
 			publisherRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
 		};
 
-		await this.globalPrefService.saveOpenViduRoom(openviduRoom);
+		await this.storageService.saveMeetRoom(meetRoom);
 
-		return openviduRoom;
+		return meetRoom;
 	}
 
 	/**
@@ -114,12 +115,40 @@ export class RoomService {
 	}
 
 	/**
+	 * Updates the preferences of a specific meeting room.
+	 *
+	 * @param roomId - The unique identifier of the meeting room to update
+	 * @param preferences - The new preferences to apply to the meeting room
+	 * @returns A Promise that resolves to the updated MeetRoom object
+	 */
+	async updateMeetRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<MeetRoom> {
+		const room = await this.getMeetRoom(roomId);
+		room.preferences = preferences;
+
+		return await this.storageService.saveMeetRoom(room);
+	}
+
+	/**
 	 * Retrieves a list of rooms.
 	 * @returns A Promise that resolves to an array of {@link MeetRoom} objects.
 	 * @throws If there was an error retrieving the rooms.
 	 */
-	async listOpenViduRooms(): Promise<MeetRoom[]> {
-		return await this.globalPrefService.getOpenViduRooms();
+	async getAllMeetRooms({ maxItems, nextPageToken, fields }: MeetRoomFilters): Promise<{
+		rooms: MeetRoom[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}> {
+		const response = await this.storageService.getMeetRooms(maxItems, nextPageToken);
+
+		if (fields && fields.length > 0) {
+			const fieldsArray = Array.isArray(fields) ? fields : fields.split(',').map((f) => f.trim());
+			const filteredRooms = response.rooms.map((room) =>
+				UtilsHelper.filterObjectFields(room as unknown as Record<string, unknown>, fieldsArray)
+			);
+			response.rooms = filteredRooms as MeetRoom[];
+		}
+
+		return response;
 	}
 
 	/**
@@ -128,8 +157,19 @@ export class RoomService {
 	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
-	async getMeetRoom(roomId: string): Promise<MeetRoom> {
-		return await this.globalPrefService.getOpenViduRoom(roomId);
+	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
+		const meetRoom = await this.storageService.getMeetRoom(roomId);
+
+		if (fields && fields.length > 0) {
+			const fieldsArray = Array.isArray(fields) ? fields : fields.split(',').map((f) => f.trim());
+			const filteredRoom = UtilsHelper.filterObjectFields(
+				meetRoom as unknown as Record<string, unknown>,
+				fieldsArray
+			);
+			return filteredRoom as MeetRoom;
+		}
+
+		return meetRoom;
 	}
 
 	/**
@@ -140,7 +180,7 @@ export class RoomService {
 	 * @param roomIds - An array of room names to be deleted.
 	 * @returns A promise that resolves with an array of successfully deleted room names.
 	 */
-	async deleteRooms(roomIds: string[]): Promise<string[]> {
+	async bulkDeleteRooms(roomIds: string[]): Promise<string[]> {
 		const [openViduResults, livekitResults] = await Promise.all([
 			this.deleteOpenViduRooms(roomIds),
 			Promise.allSettled(roomIds.map((roomId) => this.livekitService.deleteRoom(roomId)))
@@ -171,10 +211,8 @@ export class RoomService {
 	 * @param roomIds - List of room names to delete.
 	 * @returns A promise that resolves with an array of successfully deleted room names.
 	 */
-	async deleteOpenViduRooms(roomIds: string[]): Promise<string[]> {
-		const results = await Promise.allSettled(
-			roomIds.map((roomId) => this.globalPrefService.deleteOpenViduRoom(roomId))
-		);
+	protected async deleteOpenViduRooms(roomIds: string[]): Promise<string[]> {
+		const results = await Promise.allSettled(roomIds.map((roomId) => this.storageService.deleteMeetRoom(roomId)));
 
 		const successfulRooms: string[] = [];
 
@@ -307,21 +345,22 @@ export class RoomService {
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
 	protected async deleteOpenViduExpiredRooms(): Promise<string[]> {
-		const now = Date.now();
-		this.logger.verbose(`Checking OpenVidu expired rooms at ${new Date(now).toISOString()}`);
-		const rooms = await this.listOpenViduRooms();
-		const expiredRooms = rooms
-			.filter((room) => room.expirationDate && room.expirationDate < now)
-			.map((room) => room.roomId);
+		// const now = Date.now();
+		// this.logger.verbose(`Checking OpenVidu expired rooms at ${new Date(now).toISOString()}`);
+		// const rooms = await this.getAllMeetRooms();
+		// const expiredRooms = rooms
+		// 	.filter((room) => room.expirationDate && room.expirationDate < now)
+		// 	.map((room) => room.roomId);
 
-		if (expiredRooms.length === 0) {
-			this.logger.verbose('No OpenVidu expired rooms to delete.');
-			return [];
-		}
+		// if (expiredRooms.length === 0) {
+		// 	this.logger.verbose('No OpenVidu expired rooms to delete.');
+		// 	return [];
+		// }
 
-		this.logger.info(`Deleting ${expiredRooms.length} OpenVidu expired rooms: ${expiredRooms.join(', ')}`);
+		// this.logger.info(`Deleting ${expiredRooms.length} OpenVidu expired rooms: ${expiredRooms.join(', ')}`);
 
-		return await this.deleteOpenViduRooms(expiredRooms);
+		// return await this.deleteOpenViduRooms(expiredRooms);
+		return [];
 	}
 
 	/**
@@ -333,52 +372,43 @@ export class RoomService {
 	 * @protected
 	 */
 	protected async restoreMissingLivekitRooms(): Promise<void> {
-		this.logger.verbose(`Checking missing Livekit rooms ...`);
-
-		const [lkResult, ovResult] = await Promise.allSettled([
-			this.livekitService.listRooms(),
-			this.listOpenViduRooms()
-		]);
-
-		let lkRooms: Room[] = [];
-		let ovRooms: MeetRoom[] = [];
-
-		if (lkResult.status === 'fulfilled') {
-			lkRooms = lkResult.value;
-		} else {
-			this.logger.error('Failed to list Livekit rooms:', lkResult.reason);
-		}
-
-		if (ovResult.status === 'fulfilled') {
-			ovRooms = ovResult.value;
-		} else {
-			this.logger.error('Failed to list OpenVidu rooms:', ovResult.reason);
-		}
-
-		const missingRooms: MeetRoom[] = ovRooms.filter(
-			(ovRoom) => !lkRooms.some((room) => room.name === ovRoom.roomId)
-		);
-
-		if (missingRooms.length === 0) {
-			this.logger.verbose('All OpenVidu rooms are present in Livekit. No missing rooms to restore. ');
-			return;
-		}
-
-		this.logger.info(`Restoring ${missingRooms.length} missing rooms`);
-
-		const creationResults = await Promise.allSettled(
-			missingRooms.map(({ roomId }: MeetRoom) => {
-				this.logger.debug(`Restoring room: ${roomId}`);
-				this.createLivekitRoom(roomId);
-			})
-		);
-
-		creationResults.forEach((result, index) => {
-			if (result.status === 'rejected') {
-				this.logger.error(`Failed to restore room "${missingRooms[index].roomId}": ${result.reason}`);
-			} else {
-				this.logger.info(`Restored room "${missingRooms[index].roomId}"`);
-			}
-		});
+		// this.logger.verbose(`Checking missing Livekit rooms ...`);
+		// const [lkResult, ovResult] = await Promise.allSettled([
+		// 	this.livekitService.listRooms(),
+		// 	this.getAllMeetRooms()
+		// ]);
+		// let lkRooms: Room[] = [];
+		// let ovRooms: MeetRoom[] = [];
+		// if (lkResult.status === 'fulfilled') {
+		// 	lkRooms = lkResult.value;
+		// } else {
+		// 	this.logger.error('Failed to list Livekit rooms:', lkResult.reason);
+		// }
+		// if (ovResult.status === 'fulfilled') {
+		// 	ovRooms = ovResult.value;
+		// } else {
+		// 	this.logger.error('Failed to list OpenVidu rooms:', ovResult.reason);
+		// }
+		// const missingRooms: MeetRoom[] = ovRooms.filter(
+		// 	(ovRoom) => !lkRooms.some((room) => room.name === ovRoom.roomId)
+		// );
+		// if (missingRooms.length === 0) {
+		// 	this.logger.verbose('All OpenVidu rooms are present in Livekit. No missing rooms to restore. ');
+		// 	return;
+		// }
+		// this.logger.info(`Restoring ${missingRooms.length} missing rooms`);
+		// const creationResults = await Promise.allSettled(
+		// 	missingRooms.map(({ roomId }: MeetRoom) => {
+		// 		this.logger.debug(`Restoring room: ${roomId}`);
+		// 		this.createLivekitRoom(roomId);
+		// 	})
+		// );
+		// creationResults.forEach((result, index) => {
+		// 	if (result.status === 'rejected') {
+		// 		this.logger.error(`Failed to restore room "${missingRooms[index].roomId}": ${result.reason}`);
+		// 	} else {
+		// 		this.logger.info(`Restored room "${missingRooms[index].roomId}"`);
+		// 	}
+		// });
 	}
 }

@@ -12,7 +12,7 @@ import {
 	RecordingService,
 	RedisService,
 	RoomService,
-	S3Storage,
+	S3StorageProvider,
 	S3Service,
 	SystemEventService,
 	TaskSchedulerService,
@@ -50,7 +50,7 @@ export const registerDependencies = () => {
 	container.bind(MeetStorageService).toSelf().inSingletonScope();
 	container.bind(ParticipantService).toSelf().inSingletonScope();
 
-	container.bind(S3Storage).toSelf().inSingletonScope();
+	container.bind(S3StorageProvider).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 };
 

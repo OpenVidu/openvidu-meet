@@ -13,6 +13,6 @@ export * from './mutex.service.js';
 export * from './storage/index.js';
 export * from './redis.service.js';
 export * from './s3.service.js';
-export * from './storage/providers/s3-storage.js';
+export * from './storage/providers/s3-storage.provider.js';
 export * from './token.service.js';
 export * from './user.service.js';

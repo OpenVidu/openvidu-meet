@@ -65,12 +65,12 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 		return this.storageProvider.saveGlobalPreferences(preferences) as Promise<G>;
 	}
 
-	async saveOpenViduRoom(ovRoom: R): Promise<R> {
-		this.logger.info(`Saving OpenVidu room ${ovRoom.roomId}`);
-		return this.storageProvider.saveMeetRoom(ovRoom) as Promise<R>;
+	async saveMeetRoom(meetRoom: R): Promise<R> {
+		this.logger.info(`Saving OpenVidu room ${meetRoom.roomId}`);
+		return this.storageProvider.saveMeetRoom(meetRoom) as Promise<R>;
 	}
 
-	async getOpenViduRooms(
+	async getMeetRooms(
 		maxItems?: number,
 		nextPageToken?: string
 	): Promise<{
@@ -92,23 +92,24 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	 * @returns A promise that resolves to the room's preferences.
 	 * @throws Error if the room preferences are not found.
 	 */
-	async getOpenViduRoom(roomId: string): Promise<R> {
-		const openviduRoom = await this.storageProvider.getMeetRoom(roomId);
+	async getMeetRoom(roomId: string): Promise<R> {
+		const meetRoom = await this.storageProvider.getMeetRoom(roomId);
 
-		if (!openviduRoom) {
+		if (!meetRoom) {
 			this.logger.error(`Room not found for room ${roomId}`);
 			throw errorRoomNotFound(roomId);
 		}
 
-		return openviduRoom as R;
+		return meetRoom as R;
 	}
 
-	async deleteOpenViduRoom(roomId: string): Promise<void> {
+	async deleteMeetRoom(roomId: string): Promise<void> {
 		return this.storageProvider.deleteMeetRoom(roomId);
 	}
 
+	//TODO: REMOVE THIS METHOD
 	async getOpenViduRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
-		const openviduRoom = await this.getOpenViduRoom(roomId);
+		const openviduRoom = await this.getMeetRoom(roomId);
 
 		if (!openviduRoom.preferences) {
 			throw new Error('Room preferences not found');
@@ -126,9 +127,9 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	async updateOpenViduRoomPreferences(roomId: string, roomPreferences: MeetRoomPreferences): Promise<R> {
 		this.validateRoomPreferences(roomPreferences);
 
-		const openviduRoom = await this.getOpenViduRoom(roomId);
+		const openviduRoom = await this.getMeetRoom(roomId);
 		openviduRoom.preferences = roomPreferences;
-		return this.saveOpenViduRoom(openviduRoom);
+		return this.saveMeetRoom(openviduRoom);
 	}
 
 	/**
