@@ -121,55 +121,6 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 		return this.storageProvider.deleteMeetRoom(roomId);
 	}
 
-	//TODO: REMOVE THIS METHOD
-	async getOpenViduRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
-		const openviduRoom = await this.getMeetRoom(roomId);
-
-		if (!openviduRoom.preferences) {
-			throw new Error('Room preferences not found');
-		}
-
-		return openviduRoom.preferences;
-	}
-
-	/**
-	 * TODO: Move validation to the controller layer
-	 * Updates room preferences in storage.
-	 * @param {RoomPreferences} roomPreferences
-	 * @returns {Promise<GlobalPreferences>}
-	 */
-	async updateOpenViduRoomPreferences(roomId: string, roomPreferences: MeetRoomPreferences): Promise<R> {
-		this.validateRoomPreferences(roomPreferences);
-
-		const openviduRoom = await this.getMeetRoom(roomId);
-		openviduRoom.preferences = roomPreferences;
-		return this.saveMeetRoom(openviduRoom);
-	}
-
-	/**
-	 * Validates the room preferences.
-	 * @param {RoomPreferences} preferences
-	 */
-	validateRoomPreferences(preferences: MeetRoomPreferences) {
-		const { recordingPreferences, chatPreferences, virtualBackgroundPreferences } = preferences;
-
-		if (!recordingPreferences || !chatPreferences || !virtualBackgroundPreferences) {
-			throw new Error('All room preferences must be provided');
-		}
-
-		if (typeof preferences.recordingPreferences.enabled !== 'boolean') {
-			throw new Error('Invalid value for recordingPreferences.enabled');
-		}
-
-		if (typeof preferences.chatPreferences.enabled !== 'boolean') {
-			throw new Error('Invalid value for chatPreferences.enabled');
-		}
-
-		if (typeof preferences.virtualBackgroundPreferences.enabled !== 'boolean') {
-			throw new Error('Invalid value for virtualBackgroundPreferences.enabled');
-		}
-	}
-
 	/**
 	 * Returns the default global preferences.
 	 * @returns {G}
