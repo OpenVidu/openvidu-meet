@@ -1,30 +1,4 @@
 /recordings:
-    post:
-        operationId: createRecording
-        summary: Start a recording
-        description: >
-            Start a new recording for an OpenVidu Meet room with the specified room ID.
-        tags:
-            - OpenVidu Meet - Recordings
-        security:
-            - participantTokenCookie: []
-        requestBody:
-            $ref: '../components/requestBodies/start-recording-request.yaml'
-        responses:
-            '200':
-                $ref: '../components/responses/success-start-recording.yaml'
-            '401':
-                $ref: '../components/responses/unauthorized-error.yaml'
-            '403':
-                $ref: '../components/responses/forbidden-error.yaml'
-            '404':
-                $ref: '../components/responses/error-room-not-found.yaml'
-            '409':
-                $ref: '../components/responses/error-recording-already-started.yaml'
-            '422':
-                $ref: '../components/responses/validation-error.yaml'
-            '500':
-                $ref: '../components/responses/internal-server-error.yaml'
     get:
         operationId: getRecordings
         summary: Get all recordings
@@ -103,32 +77,6 @@
                 $ref: '../components/responses/internal-server-error.yaml'
 
 /recordings/{recordingId}:
-    put:
-        operationId: stopRecording
-        summary: Stop a recording
-        description: >
-            Stops a recording with the specified recording ID.
-            The recording must be in an `ACTIVE` state; otherwise, a 409 error is returned.
-        tags:
-            - OpenVidu Meet - Recordings
-        security:
-            - participantTokenCookie: []
-        parameters:
-            - $ref: '../components/parameters/recording-id.yaml'
-        responses:
-            '200':
-                $ref: '../components/responses/success-stop-recording.yaml'
-            '401':
-                $ref: '../components/responses/unauthorized-error.yaml'
-            '403':
-                $ref: '../components/responses/forbidden-error.yaml'
-            '404':
-                $ref: '../components/responses/error-recording-not-found.yaml'
-            '409':
-                $ref: '../components/responses/error-recording-in-progress.yaml'
-            '500':
-                $ref: '../components/responses/internal-server-error.yaml'
-
     get:
         operationId: getRecording
         summary: Get a recording
