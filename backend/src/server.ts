@@ -50,7 +50,6 @@ const createApp = () => {
 	app.use(`${MEET_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(publicApiHtmlFilePath));
 	app.use(`${MEET_API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	app.use(`${MEET_API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
-	app.use(`${MEET_API_BASE_PATH_V1}/preferences`, /*mediaTypeValidatorMiddleware,*/ preferencesRouter);
 
 	// Internal API routes
 	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
@@ -60,6 +59,8 @@ const createApp = () => {
 	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
 	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantsRouter);
 	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
+	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
+
 	app.use('/meet/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
 	// LiveKit Webhook route
