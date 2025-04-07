@@ -26,7 +26,7 @@ const GetRecordingSchema = z.object({
 	recordingId: nonEmptySanitizedString('recordingId')
 });
 
-export const BulkDeleteRecordingsSchema = z.object({
+const BulkDeleteRecordingsSchema = z.object({
 	recordingIds: z.preprocess(
 		(arg) => {
 			if (typeof arg === 'string') {

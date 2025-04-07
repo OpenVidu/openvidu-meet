@@ -28,7 +28,7 @@ export const getRecordings = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 	const queryParams = req.query;
 
-	logger.info('Getting all recordings');
+	logger.verbose('Getting all recordings');
 
 	try {
 		const response = await recordingService.getAllRecordings(queryParams);
