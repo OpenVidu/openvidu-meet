@@ -20,22 +20,6 @@ recordingRouter.use(bodyParser.urlencoded({ extended: true }));
 recordingRouter.use(bodyParser.json());
 
 // Recording Routes
-recordingRouter.post(
-	'/',
-	withRecordingEnabled,
-	withAuth(participantTokenValidator),
-	withCorrectPermissions,
-	withValidStartRecordingRequest,
-	recordingCtrl.startRecording
-);
-recordingRouter.put(
-	'/:recordingId',
-	withRecordingEnabled,
-	withAuth(participantTokenValidator),
-	withCorrectPermissions,
-	withValidRecordingId,
-	recordingCtrl.stopRecording
-);
 recordingRouter.delete(
 	'/:recordingId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
@@ -73,9 +57,21 @@ export const internalRecordingRouter = Router();
 internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRecordingRouter.use(bodyParser.json());
 
-internalRecordingRouter.get(
-	'/:recordingId/content',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+// TODO: Check permissions middlewares
+internalRecordingRouter.post(
+	'/',
+	withRecordingEnabled,
+	withAuth(participantTokenValidator),
+	withCorrectPermissions,
+	withValidStartRecordingRequest,
+	recordingCtrl.startRecording
+);
+
+internalRecordingRouter.put(
+	'/:recordingId',
+	withRecordingEnabled,
+	withAuth(participantTokenValidator),
+	withCorrectPermissions,
 	withValidRecordingId,
-	recordingCtrl.getRecordingContent
+	recordingCtrl.stopRecording
 );
