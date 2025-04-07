@@ -57,7 +57,7 @@ export const registerDependencies = () => {
 export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
-	await container.get(MeetStorageService).buildAndSaveDefaultPreferences();
+	await container.get(MeetStorageService).initializeGlobalPreferences();
 };
 
 export { injectable, inject } from 'inversify';

@@ -15,5 +15,6 @@ export const enum RedisLockPrefix {
 export const enum RedisLockName {
 	ROOM_GARBAGE_COLLECTOR = 'room_garbage_collector',
 	RECORDING_ACTIVE = 'recording_active',
-	SCHEDULED_TASK = 'scheduled_task'
+	SCHEDULED_TASK = 'scheduled_task',
+	GLOBAL_PREFERENCES = 'global_preferences',
 }

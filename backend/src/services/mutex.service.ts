@@ -45,7 +45,7 @@ export class MutexService {
 			);
 			return lock;
 		} catch (error) {
-			this.logger.error('Error acquiring lock:', error);
+			this.logger.warn('Error acquiring lock:', error);
 			return null;
 		}
 	}

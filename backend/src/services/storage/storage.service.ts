@@ -6,6 +6,9 @@ import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.j
 import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
 import { injectable, inject } from '../../config/dependency-injector.config.js';
 import { PasswordHelper } from '../../helpers/password.helper.js';
+import { MutexService } from '../mutex.service.js';
+import { MeetLock } from '../../helpers/redis.helper.js';
+import ms from 'ms';
 
 /**
  * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
@@ -21,7 +24,8 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	protected storageProvider: StorageProvider;
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(StorageFactory) protected storageFactory: StorageFactory
+		@inject(StorageFactory) protected storageFactory: StorageFactory,
+		@inject(MutexService) protected mutexService: MutexService
 	) {
 		this.storageProvider = this.storageFactory.create();
 	}
@@ -30,16 +34,24 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	 * Initializes default preferences if not already initialized.
 	 * @returns {Promise<G>} Default global preferences.
 	 */
-	async buildAndSaveDefaultPreferences(): Promise<G> {
-		const preferences = await this.getDefaultPreferences();
-
+	async initializeGlobalPreferences(): Promise<void> {
 		try {
+			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
+			const lock = await this.mutexService.acquire(MeetLock.getGlobalPreferencesLock(), ms('30s'));
+
+			if (!lock) {
+				this.logger.warn(
+					'Unable to acquire lock for global preferences initialization. May be already initialized by another instance.'
+				);
+				return;
+			}
+
+			const preferences = await this.getDefaultPreferences();
+
 			this.logger.verbose('Initializing global preferences with default values');
 			await this.storageProvider.initialize(preferences);
-			return preferences as G;
 		} catch (error) {
 			this.handleError(error, 'Error initializing default preferences');
-			return Promise.resolve({} as G);
 		}
 	}
 
@@ -52,7 +64,9 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 
 		if (preferences) return preferences as G;
 
-		return await this.buildAndSaveDefaultPreferences();
+		await this.initializeGlobalPreferences();
+
+		return this.storageProvider.getGlobalPreferences() as Promise<G>;
 	}
 
 	/**

@@ -32,4 +32,8 @@ export class MeetLock {
 	static getRoomGarbageCollectorLock(): string {
 		return `${RedisLockPrefix.BASE}${RedisLockName.ROOM_GARBAGE_COLLECTOR}`;
 	}
+
+	static getGlobalPreferencesLock(): string {
+		return `${RedisLockPrefix.BASE}${RedisLockName.GLOBAL_PREFERENCES}`;
+	}
 }
