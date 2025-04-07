@@ -126,8 +126,14 @@ export const deleteRecording = async (req: Request, res: Response) => {
 	}
 };
 
-// Internal Recording methods
-export const streamRecording = async (req: Request, res: Response) => {
+/**
+ * Streams a recording video file to the client with support for range requests.
+ *
+ * This controller endpoint retrieves a recording by its ID and streams it as a video/mp4 file.
+ * It supports HTTP range requests, allowing for features like video seeking and partial downloads.
+ *
+ */
+export const getRecordingContent = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	const recordingId = req.params.recordingId;
@@ -172,3 +178,6 @@ export const streamRecording = async (req: Request, res: Response) => {
 		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error streaming recording' });
 	}
 };
+
+
+// Internal Recording methods

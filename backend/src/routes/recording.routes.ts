@@ -61,14 +61,21 @@ recordingRouter.delete(
 	recordingCtrl.bulkDeleteRecordings
 );
 
+recordingRouter.get(
+	'/:recordingId/content',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRecordingId,
+	recordingCtrl.getRecordingContent
+);
+
 // Internal Recording Routes
 export const internalRecordingRouter = Router();
 internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRecordingRouter.use(bodyParser.json());
 
 internalRecordingRouter.get(
-	'/:recordingId/stream',
+	'/:recordingId/content',
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
 	withValidRecordingId,
-	recordingCtrl.streamRecording
+	recordingCtrl.getRecordingContent
 );
