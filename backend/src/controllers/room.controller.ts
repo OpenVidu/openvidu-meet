@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { RoomService } from '../services/room.service.js';
-import { MeetRoomOptions } from '@typings-ce';
+import { MeetRoomFilters, MeetRoomOptions } from '@typings-ce';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -24,20 +24,15 @@ export const createRoom = async (req: Request, res: Response) => {
 
 export const getRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const fields = req.query.fields as string[] | undefined;
+	const roomService = container.get(RoomService);
+	const queryParams = req.query as unknown as MeetRoomFilters;
+
+	logger.verbose('Getting all rooms');
 
 	try {
-		logger.verbose('Getting rooms');
+		const response = await roomService.getAllMeetRooms(queryParams);
 
-		const roomService = container.get(RoomService);
-		const rooms = await roomService.listOpenViduRooms();
-
-		if (fields && fields.length > 0) {
-			const filteredRooms = rooms.map((room) => filterObjectFields(room, fields));
-			return res.status(200).json(filteredRooms);
-		}
-
-		return res.status(200).json(rooms);
+		return res.status(200).json(response);
 	} catch (error) {
 		logger.error('Error getting rooms');
 		handleError(res, error);
@@ -48,18 +43,13 @@ export const getRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	const { roomId } = req.params;
-	const fields = req.query.fields as string[] | undefined;
+	const fields = req.query.fields as string | undefined;
 
 	try {
 		logger.verbose(`Getting room with id '${roomId}'`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId);
-
-		if (fields && fields.length > 0) {
-			const filteredRoom = filterObjectFields(room, fields);
-			return res.status(200).json(filteredRoom);
-		}
+		const room = await roomService.getMeetRoom(roomId, fields);
 
 		return res.status(200).json(room);
 	} catch (error) {
@@ -68,28 +58,38 @@ export const getRoom = async (req: Request, res: Response) => {
 	}
 };
 
-export const deleteRooms = async (req: Request, res: Response) => {
+export const deleteRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
 	const { roomId } = req.params;
-	const { roomIds } = req.body;
-
-	const roomsToDelete = roomId ? [roomId] : roomIds;
-
-	// TODO: Validate roomIds with ZOD
-	if (!Array.isArray(roomsToDelete) || roomsToDelete.length === 0) {
-		return res.status(400).json({ error: 'roomIds must be a non-empty array' });
-	}
 
 	try {
-		logger.verbose(`Deleting rooms: ${roomsToDelete.join(', ')}`);
+		logger.verbose(`Deleting room: ${roomId}`);
 
-		await roomService.deleteRooms(roomsToDelete);
-		logger.info(`Rooms deleted: ${roomsToDelete.join(', ')}`);
-		return res.status(200).json({ message: 'Rooms deleted', deletedRooms: roomsToDelete });
+		await roomService.bulkDeleteRooms([roomId]);
+		logger.info(`Room deleted: ${roomId}`);
+		return res.status(204).json();
 	} catch (error) {
-		logger.error(`Error deleting rooms: ${roomsToDelete.join(', ')}`);
+		logger.error(`Error deleting room: ${roomId}`);
+		handleError(res, error);
+	}
+};
+
+export const bulkDeleteRooms = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { roomIds } = req.query;
+
+	logger.info(`Deleting rooms: ${roomIds}`);
+
+	try {
+		const roomIdsArray = (roomIds as string).split(',');
+		 await roomService.bulkDeleteRooms(roomIdsArray);
+
+		return res.status(204).send();
+	} catch (error) {
+		logger.error(`Error deleting rooms: ${error}`);
 		handleError(res, error);
 	}
 };
@@ -114,41 +114,19 @@ export const getParticipantRole = async (req: Request, res: Response) => {
 
 export const updateRoomPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const roomPreferences = req.body;
+	const { roomId } = req.params;
 
-	logger.verbose(`Updating room preferences: ${JSON.stringify(req.body)}`);
-	// const { roomName, roomPreferences } = req.body;
+	logger.verbose(`Updating room preferences`);
 
-	// try {
-	// 	const preferenceService = container.get(GlobalPreferencesService);
-	// 	preferenceService.validateRoomPreferences(roomPreferences);
-
-	// 	const savedPreferences = await preferenceService.updateOpenViduRoomPreferences(roomName, roomPreferences);
-
-	// 	return res
-	// 		.status(200)
-	// 		.json({ message: 'Room preferences updated successfully.', preferences: savedPreferences });
-	// } catch (error) {
-	// 	if (error instanceof OpenViduCallError) {
-	// 		logger.error(`Error saving room preferences: ${error.message}`);
-	// 		return res.status(error.statusCode).json({ name: error.name, message: error.message });
-	// 	}
-
-	// 	logger.error('Error saving room preferences:' + error);
-	// 	return res.status(500).json({ message: 'Error saving room preferences', error });
-	// }
-};
-
-const filterObjectFields = (obj: Record<string, any>, fields: string[]): Record<string, any> => {
-	return fields.reduce(
-		(acc, field) => {
-			if (Object.prototype.hasOwnProperty.call(obj, field)) {
-				acc[field] = obj[field];
-			}
-
-			return acc;
-		},
-		{} as Record<string, any>
-	);
+	try {
+		const room = await roomService.updateMeetRoomPreferences(roomId, roomPreferences);
+		return res.status(200).json(room);
+	} catch (error) {
+		logger.error(`Error saving room preferences: ${error}`);
+		handleError(res, error);
+	}
 };
 
 const handleError = (res: Response, error: OpenViduMeetError | unknown) => {

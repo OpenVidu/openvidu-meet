@@ -3,10 +3,27 @@ import {
 	MeetRoomOptions,
 	MeetRecordingPreferences,
 	MeetRoomPreferences,
-	MeetVirtualBackgroundPreferences
+	MeetVirtualBackgroundPreferences,
+	MeetRoomFilters
 } from '@typings-ce';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+
+const sanitizeId = (val: string): string => {
+	return val
+		.trim() // Remove leading and trailing spaces
+		.replace(/\s+/g, '-') // Replace spaces with hyphens
+		.replace(/[^a-zA-Z0-9_-]/g, ''); // Remove special characters (allow alphanumeric, hyphens and underscores)
+};
+
+const nonEmptySanitizedString = (fieldName: string) =>
+	z
+		.string()
+		.min(1, { message: `${fieldName} is required and cannot be empty` })
+		.transform(sanitizeId)
+		.refine((data) => data !== '', {
+			message: `${fieldName} cannot be empty after sanitization`
+		});
 
 const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z.object({
 	enabled: z.boolean()
@@ -61,6 +78,33 @@ const GetParticipantRoleSchema = z.object({
 	secret: z.string()
 });
 
+const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
+	maxItems: z.coerce
+		.number()
+		.int()
+		.transform((val) => (val > 100 ? 100 : val))
+		.default(10),
+	nextPageToken: z.string().optional(),
+	fields: z.string().optional()
+});
+
+const BulkDeleteRoomsSchema = z.object({
+	roomIds: z.preprocess(
+		(arg) => {
+			if (typeof arg === 'string') {
+				// If the argument is a string, it is expected to be a comma-separated list of recording IDs.
+				return arg
+					.split(',')
+					.map((s) => s.trim())
+					.filter((s) => s !== '');
+			}
+
+			return arg;
+		},
+		z.array(nonEmptySanitizedString('recordingId')).default([])
+	)
+});
+
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);
 
@@ -72,14 +116,40 @@ export const withValidRoomOptions = (req: Request, res: Response, next: NextFunc
 	next();
 };
 
-export const validateGetRoomQueryParams = (req: Request, res: Response, next: NextFunction) => {
-	const fieldsQuery = req.query.fields as string | undefined;
+export const withValidRoomFiltersRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRoomFiltersSchema.safeParse(req.query);
 
-	if (fieldsQuery) {
-		const fields = fieldsQuery.split(',').map((f) => f.trim());
-		req.query.fields = fields;
+	if (!success) {
+		return rejectRequest(res, error);
 	}
 
+	req.query = {
+		...data,
+		maxItems: data.maxItems?.toString()
+	};
+
+	next();
+};
+
+export const withValidRoomPreferences = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = RoomPreferencesSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectRequest(res, error);
+	}
+
+	req.body = data;
+	next();
+};
+
+export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = BulkDeleteRoomsSchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectRequest(res, error);
+	}
+
+	req.query.roomIds = data.roomIds.join(',');
 	next();
 };
 
@@ -87,16 +157,7 @@ export const validateGetParticipantRoleRequest = (req: Request, res: Response, n
 	const { success, error, data } = GetParticipantRoleSchema.safeParse(req.query);
 
 	if (!success) {
-		const errors = error.errors.map((error) => ({
-			field: error.path.join('.'),
-			message: error.message
-		}));
-
-		return res.status(422).json({
-			error: 'Unprocessable Entity',
-			message: 'Invalid request query',
-			details: errors
-		});
+		return rejectRequest(res, error);
 	}
 
 	req.query = data;
