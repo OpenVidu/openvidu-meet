@@ -17,7 +17,7 @@ export const validateLoginRequest = (req: Request, res: Response, next: NextFunc
 
 		return res.status(422).json({
 			error: 'Unprocessable Entity',
-			message: 'Invalid request body',
+			message: 'Invalid request',
 			details: errors
 		});
 	}

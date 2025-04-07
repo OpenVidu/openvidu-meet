@@ -44,7 +44,7 @@ const rejectRequest = (res: Response, error: z.ZodError) => {
 
 	return res.status(422).json({
 		error: 'Unprocessable Entity',
-		message: 'Invalid request body',
+		message: 'Invalid request',
 		details: errors
 	});
 };

@@ -12,7 +12,8 @@ import {
 	configureCreateRoomAuth,
 	configureRoomAuthorization,
 	withValidRoomPreferences,
-	withValidRoomBulkDeleteRequest
+	withValidRoomBulkDeleteRequest,
+	withValidRoomId
 } from '../middlewares/index.js';
 
 import { UserRole } from '@typings-ce';
@@ -39,6 +40,7 @@ roomRouter.get(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
 	configureRoomAuthorization,
+	withValidRoomId,
 	roomCtrl.getRoom
 );
 roomRouter.delete('/:roomId', withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)), roomCtrl.deleteRoom);

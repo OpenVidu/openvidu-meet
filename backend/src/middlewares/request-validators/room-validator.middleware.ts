@@ -101,7 +101,7 @@ const BulkDeleteRoomsSchema = z.object({
 
 			return arg;
 		},
-		z.array(nonEmptySanitizedString('recordingId')).default([])
+		z.array(nonEmptySanitizedString('roomId')).default([])
 	)
 });
 
@@ -142,6 +142,17 @@ export const withValidRoomPreferences = (req: Request, res: Response, next: Next
 	next();
 };
 
+export const withValidRoomId = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = nonEmptySanitizedString('roomId').safeParse(req.params.roomId);
+
+	if (!success) {
+		return rejectRequest(res, error);
+	}
+
+	req.params.roomId = data;
+	next();
+};
+
 export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = BulkDeleteRoomsSchema.safeParse(req.query);
 
@@ -172,7 +183,7 @@ const rejectRequest = (res: Response, error: z.ZodError) => {
 
 	return res.status(422).json({
 		error: 'Unprocessable Entity',
-		message: 'Invalid request body',
+		message: 'Invalid request',
 		details: errors
 	});
 };
