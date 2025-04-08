@@ -1,7 +1,7 @@
 import { MeetRoomPreferences } from './room-preferences.js';
 
 interface BaseRoomOptions {
-	expirationDate: number;
+	autoDeletionDate: number;
 	roomIdPrefix?: string;
 	preferences?: MeetRoomPreferences;
 	// maxParticipants?: number | null;
