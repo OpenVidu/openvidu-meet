@@ -68,7 +68,7 @@ describe('Participant API Security Tests', () => {
 
 		// Create a room and extract the roomId
 		const response = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
-			expirationDate: EXPIRATION_DATE
+			autoDeletionDate: EXPIRATION_DATE
 		});
 		roomId = response.body.roomId;
 
@@ -370,7 +370,7 @@ describe('Participant API Security Tests', () => {
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
 			const roomResponse = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			const newRoomId = roomResponse.body.roomId;
 

@@ -90,7 +90,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
@@ -101,7 +101,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).set('Cookie', adminCookie).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
@@ -112,7 +112,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).set('Cookie', userCookie).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(403);
 		});
@@ -123,7 +123,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(401);
 		});
@@ -135,7 +135,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
@@ -147,7 +147,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).set('Cookie', userCookie).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(200);
 		});
@@ -159,7 +159,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_URL).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			expect(response.status).toBe(401);
 		});
@@ -223,7 +223,7 @@ describe('Room API Security Tests', () => {
 		beforeAll(async () => {
 			// Create a room and extract the roomId to test the get room endpoint
 			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 
@@ -265,7 +265,7 @@ describe('Room API Security Tests', () => {
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
 			const roomResponse = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			const newRoomId = roomResponse.body.roomId;
 
@@ -333,7 +333,7 @@ describe('Room API Security Tests', () => {
 		beforeEach(async () => {
 			// Create a room and extract the roomId to test the delete room endpoint
 			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 		});
@@ -388,7 +388,7 @@ describe('Room API Security Tests', () => {
 		beforeAll(async () => {
 			// Create a room and extract the roomId to test the get participant role endpoint
 			const response = await request(app).post(ROOMS_URL).set(API_KEY_HEADER, API_KEY).send({
-				expirationDate: EXPIRATION_DATE
+				autoDeletionDate: EXPIRATION_DATE
 			});
 			roomId = response.body.roomId;
 

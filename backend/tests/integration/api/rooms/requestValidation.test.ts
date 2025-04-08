@@ -26,12 +26,12 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000
+				autoDeletionDate: 1772129829000
 			})
 			.expect(200);
 
 		expect(response.body).toHaveProperty('creationDate');
-		expect(response.body).toHaveProperty('expirationDate');
+		expect(response.body).toHaveProperty('autoDeletionDate');
 		expect(response.body).toHaveProperty('maxParticipants');
 		expect(response.body).toHaveProperty('preferences');
 		expect(response.body).toHaveProperty('moderatorRoomUrl');
@@ -44,7 +44,7 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000,
+				autoDeletionDate: 1772129829000,
 				roomNamePrefix: 'Conference',
 				maxParticipants: 10,
 				preferences: {
@@ -56,7 +56,7 @@ describe('Room Request Validation Tests', () => {
 			.expect(200);
 
 		expect(response.body).toHaveProperty('creationDate');
-		expect(response.body).toHaveProperty('expirationDate');
+		expect(response.body).toHaveProperty('autoDeletionDate');
 		expect(response.body).toHaveProperty('maxParticipants');
 		expect(response.body).toHaveProperty('preferences');
 		expect(response.body).toHaveProperty('moderatorRoomUrl');
@@ -69,7 +69,7 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000
+				autoDeletionDate: 1772129829000
 			})
 			.expect(200);
 
@@ -81,19 +81,19 @@ describe('Room Request Validation Tests', () => {
 		});
 	});
 
-	it('❌ Should return 422 when missing expirationDate', async () => {
+	it('❌ Should return 422 when missing autoDeletionDate', async () => {
 		const response = await request(app).post(`${baseUrl}${apiVersion}${endpoint}`).send({}).expect(422);
 
 		expect(response.body).toHaveProperty('error', 'Unprocessable Entity');
-		expect(response.body.details[0].field).toBe('expirationDate');
+		expect(response.body.details[0].field).toBe('autoDeletionDate');
 		expect(response.body.details[0].message).toContain('Required');
 	});
 
-	it('❌ Should return 422 when expirationDate is in the past', async () => {
+	it('❌ Should return 422 when autoDeletionDate is in the past', async () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1600000000000
+				autoDeletionDate: 1600000000000
 			})
 			.expect(422);
 
@@ -104,7 +104,7 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000,
+				autoDeletionDate: 1772129829000,
 				maxParticipants: -5
 			})
 			.expect(422);
@@ -117,7 +117,7 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000,
+				autoDeletionDate: 1772129829000,
 				maxParticipants: 'ten'
 			})
 			.expect(422);
@@ -125,11 +125,11 @@ describe('Room Request Validation Tests', () => {
 		expect(response.body.details[0].message).toContain('Expected number, received string');
 	});
 
-	it('❌ Should return 422 when expirationDate is not a number', async () => {
+	it('❌ Should return 422 when autoDeletionDate is not a number', async () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 'tomorrow'
+				autoDeletionDate: 'tomorrow'
 			})
 			.expect(422);
 
@@ -140,7 +140,7 @@ describe('Room Request Validation Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000,
+				autoDeletionDate: 1772129829000,
 				preferences: {
 					recordingPreferences: { enabled: 'yes' },
 					chatPreferences: { enabled: 'no' }
@@ -162,7 +162,7 @@ describe('Room Request Validation Tests', () => {
 		mockLoggerService.error = jest.fn();
 
 		const response = await request(app).post(`${baseUrl}${apiVersion}${endpoint}`).send({
-			expirationDate: 1772129829000,
+			autoDeletionDate: 1772129829000,
 			roomNamePrefix: 'OpenVidu'
 		});
 

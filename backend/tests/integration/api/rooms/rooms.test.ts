@@ -35,7 +35,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		const response = await request(app)
 			.post(`${baseUrl}${apiVersion}${endpoint}`)
 			.send({
-				expirationDate: 1772129829000,
+				autoDeletionDate: 1772129829000,
 				roomNamePrefix: 'OpenVidu',
 				maxParticipants: 10,
 				preferences: {
@@ -47,7 +47,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 			.expect(200);
 
 		expect(response.body).toHaveProperty('creationDate');
-		expect(response.body).toHaveProperty('expirationDate');
+		expect(response.body).toHaveProperty('autoDeletionDate');
 		expect(response.body).toHaveProperty('maxParticipants');
 		expect(response.body).toHaveProperty('preferences');
 		expect(response.body).toHaveProperty('moderatorRoomUrl');
@@ -74,7 +74,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		mockLoggerService.error = jest.fn();
 
 		const response = await request(app).post(`${baseUrl}${apiVersion}${endpoint}`).send({
-			expirationDate: 1772129829000,
+			autoDeletionDate: 1772129829000,
 			roomNamePrefix: 'OpenVidu'
 		});
 
