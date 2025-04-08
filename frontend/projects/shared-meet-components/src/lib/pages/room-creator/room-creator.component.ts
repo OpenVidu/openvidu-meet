@@ -74,7 +74,7 @@ export class RoomCreatorComponent implements OnInit {
 			// TODO: Fix expiration date
 			const options: MeetRoomOptions = {
 				roomIdPrefix,
-				expirationDate: Date.now() + 3600 * 1000 // 1 hour
+				autoDeletionDate: Date.now() + 3600 * 1000 // 1 hour
 			};
 
 			const room: MeetRoom = await this.httpService.createRoom(options);

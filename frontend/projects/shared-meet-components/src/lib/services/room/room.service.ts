@@ -21,7 +21,7 @@ export class RoomService {
 		// TODO: Improve expiration date
 		const options: MeetRoomOptions = {
 			roomIdPrefix: 'TestRoom-',
-			expirationDate: Date.now() + 1000 * 60 * 60 // 1 hour from now
+			autoDeletionDate: Date.now() + 1000 * 60 * 60 // 1 hour from now
 		};
 		this.log.d('Creating room', options);
 		return this.httpService.createRoom(options);

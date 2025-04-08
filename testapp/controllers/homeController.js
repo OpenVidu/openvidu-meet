@@ -18,7 +18,7 @@ export const renderHomePage = async (req, res) => {
 export const createRoom = async (req, res) => {
   try {
     // Extract values from request body
-    const { roomIdPrefix, expirationDate } = req.body
+    const { roomIdPrefix, autoDeletionDate } = req.body
 
     // Request to create a new room
     const response = await fetch(`${process.env.OPENVIDU_MEET_URL}/rooms`, {
@@ -26,7 +26,7 @@ export const createRoom = async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         roomIdPrefix,
-        expirationDate: new Date(expirationDate).getTime()
+        autoDeletionDate: new Date(autoDeletionDate).getTime()
       })
     })
 
