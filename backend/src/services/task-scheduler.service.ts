@@ -18,9 +18,6 @@ export interface IScheduledTask {
 
 @injectable()
 export class TaskSchedulerService {
-	protected roomGarbageCollectorJob: CronJob | null = null;
-	private recordingCleanupTimers: Map<string, NodeJS.Timeout> = new Map();
-
 	private taskRegistry: IScheduledTask[] = [];
 	private scheduledTasks = new Map<string, CronJob | NodeJS.Timeout>();
 	private started = false;
@@ -37,44 +34,6 @@ export class TaskSchedulerService {
 			});
 			this.started = true;
 		});
-	}
-
-	/**
-	 * Starts the room garbage collector which runs a specified callback function every hour.
-	 * The garbage collector acquires a lock to ensure that only one instance runs at a time.
-	 * If a lock cannot be acquired, the garbage collection is skipped for that hour.
-	 *
-	 * @param callbackFn - The callback function to be executed for garbage collection.
-	 * @returns A promise that resolves when the garbage collector has been successfully started.
-	 */
-	async startRoomGarbageCollector(callbackFn: () => Promise<void>): Promise<void> {
-		// Stop the existing job if it exists
-		if (this.roomGarbageCollectorJob) {
-			this.roomGarbageCollectorJob.stop();
-			this.roomGarbageCollectorJob = null;
-		}
-
-		// Create a cron job to run every hour
-		this.roomGarbageCollectorJob = new CronJob('0 * * * *', async () => {
-			try {
-				const lock = await this.mutexService.acquire(MeetLock.getRoomGarbageCollectorLock(), ms('59m'));
-
-				if (!lock) {
-					this.logger.debug('Failed to acquire lock for room garbage collection. Skipping.');
-					return;
-				}
-
-				this.logger.debug('Lock acquired for room garbage collection.');
-
-				await callbackFn();
-			} catch (error) {
-				this.logger.error('Error running room garbage collection:', error);
-			}
-		});
-
-		// Start the job
-		this.logger.debug('Starting room garbage collector');
-		this.roomGarbageCollectorJob.start();
 	}
 
 	/**
