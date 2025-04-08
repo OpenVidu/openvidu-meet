@@ -47,7 +47,8 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	autoDeletionDate: z
 		.number()
 		.positive('Expiration date must be a positive integer')
-		.min(Date.now(), 'Expiration date must be in the future'),
+		.refine((date) => date >= Date.now() + 60 * 60 * 1000, 'Expiration date must be at least 1 hour in the future')
+		.optional(),
 	roomIdPrefix: z
 		.string()
 		.transform(
