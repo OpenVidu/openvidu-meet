@@ -19,7 +19,7 @@ properties:
         type: [number, 'null']
         example: 1620000800000
         description: >
-            The date and time when the room will be deleted, represented in milliseconds since the Unix epoch.
+            The date and time when the room will be deleted (must be one hour in the future or more) represented in milliseconds since the Unix epoch.
 
             After this date, the room will be automatically deleted and no new participants can join.
 
