@@ -10,7 +10,7 @@ content:
                     roomId: 'room-123'
                     roomIdPrefix: 'room'
                     creationDate: 1620000000000
-                    expirationDate: 1620000800000
+                    autoDeletionDate: 1620000800000
                     preferences:
                         chatPreferences:
                             enabled: true
@@ -32,7 +32,7 @@ content:
                     roomId: 'room-123'
                     roomIdPrefix: 'room'
                     creationDate: 1620000000000
-                    expirationDate: 1620000800000
+                    autoDeletionDate: 1620000800000
                     preferences:
                         chatPreferences:
                             enabled: true

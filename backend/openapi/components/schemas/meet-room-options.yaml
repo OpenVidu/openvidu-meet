@@ -1,13 +1,17 @@
 type: object
-required:
-    - expirationDate
 properties:
-    expirationDate:
-        type: number
+    autoDeletionDate:
+        type: [number, 'null']
         example: 1620000000000
         description: >
-            The expiration date of the room in milliseconds since the Unix epoch.
-            After this date, the room will be closed and no new participants will be allowed to join.
+            The date and time when the room will be deleted, represented in milliseconds since the Unix epoch.
+
+            After this date, the room will be automatically deleted and no new participants can join.
+
+            If this value is set, the room is marked for deletion but will only be removed after the last
+              participant leaves ("graceful deletion").
+
+            If this value is not defined, the room will exist indefinitely until manually deleted.
     roomIdPrefix:
         type: string
         example: 'room'
