@@ -55,9 +55,9 @@ export class RoomService {
 	 * @param {RoomPreferences} preferences - The preferences to be saved.
 	 * @returns {Promise<void>} A promise that resolves when the preferences have been saved.
 	 */
-	async saveRoomPreferences(preferences: MeetRoomPreferences): Promise<void> {
+	async saveRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
 		this.log.d('Saving room preferences', preferences);
-		await this.httpService.saveRoomPreferences(preferences);
+		await this.httpService.updateRoomPreferences(roomId, preferences);
 		this.roomPreferences = preferences;
 	}
 }

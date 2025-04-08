@@ -70,10 +70,11 @@ export class HttpService {
 	 * @returns {Promise<GlobalPreferences>} A promise that resolves to the global preferences.
 	 */
 	getSecurityPreferences(): Promise<SecurityPreferencesDTO> {
-		return this.getRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences/security`);
+		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/preferences/security`);
 	}
 
 	/**
+	 * TODO: Delete this method
 	 * Retrieves the room preferences.
 	 *
 	 * @returns {Promise<MeetRoomPreferences>} A promise that resolves to the room preferences.
@@ -88,8 +89,8 @@ export class HttpService {
 	 * @param preferences - The room preferences to be saved.
 	 * @returns A promise that resolves when the preferences have been successfully saved.
 	 */
-	saveRoomPreferences(preferences: MeetRoomPreferences): Promise<any> {
-		return this.putRequest(`${this.API_PATH_PREFIX}/preferences/room`, preferences);
+	updateRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<any> {
+		return this.putRequest(`${this.INTERNAL_API_PATH_PREFIX}/room/${roomId}`, preferences);
 	}
 
 	login(body: { username: string; password: string }): Promise<{ message: string }> {
@@ -119,11 +120,11 @@ export class HttpService {
 	}
 
 	startRecording(roomId: string): Promise<RecordingInfo> {
-		return this.postRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings`, { roomId });
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings`, { roomId });
 	}
 
 	stopRecording(recordingId: string): Promise<RecordingInfo> {
-		return this.putRequest(`${this.API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}`);
+		return this.putRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}`);
 	}
 
 	deleteRecording(recordingId: string): Promise<RecordingInfo> {
