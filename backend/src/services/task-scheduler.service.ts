@@ -5,7 +5,6 @@ import { CronJob } from 'cron';
 import { MutexService } from './mutex.service.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import ms from 'ms';
-import { CronExpressionParser } from 'cron-parser';
 
 export type TaskType = 'cron' | 'timeout';
 
@@ -65,7 +64,7 @@ export class TaskSchedulerService {
 		if (type === 'cron') {
 			this.logger.debug(`Scheduling cron task "${name}" with schedule "${scheduleOrDelay}"`);
 			const cronExpression = this.msStringToCronExpression(scheduleOrDelay);
-			const lockDuration = this.getCronIntervalDuration(cronExpression);
+			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms('59s'));
 
 			const job = new CronJob(cronExpression, async () => {
 				try {
@@ -120,27 +119,6 @@ export class TaskSchedulerService {
 
 			this.scheduledTasks.delete(name);
 			this.logger.debug(`Task "${name}" cancelled.`);
-		}
-	}
-
-	protected getCronIntervalDuration(cronExpression: string): number {
-		try {
-			// Parse the cron expression using cron-parser
-			const interval = CronExpressionParser.parse(cronExpression);
-
-			// Get the next interval time
-			const next = interval.next().getTime();
-
-			// Get the current time
-			const afterNext = interval.next().getTime();
-
-			// Calculate the interval duration in milliseconds
-			const intervalMs = afterNext - next;
-			// Return the interval duration minus 1 minute for ensuring the lock expires before the next iteration
-			return Math.max(intervalMs - ms('1m'), ms('10s'));
-		} catch (error) {
-			this.logger.error('Error parsing cron expression:', error);
-			throw new Error('Invalid cron expression');
 		}
 	}
 
