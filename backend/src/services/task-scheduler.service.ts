@@ -32,6 +32,14 @@ export class TaskSchedulerService {
 				this.scheduleTask(task);
 			});
 			this.started = true;
+
+			this.systemEventService.onceRedisError(() => {
+				this.logger.debug('Redis shutdown detected. Cancelling all scheduled tasks...');
+				this.scheduledTasks.forEach((task, name) => {
+					this.cancelTask(name);
+				});
+				this.started = false;
+			});
 		});
 	}
 

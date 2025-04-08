@@ -72,6 +72,10 @@ export class SystemEventService {
 		this.redisService.onReady(callback);
 	}
 
+	onceRedisError(callback: () => void) {
+		this.redisService.onceError(callback);
+	}
+
 	/**
 	 * Handles incoming messages from Redis, parses them as system events,
 	 * and emits the corresponding event to all registered listeners.

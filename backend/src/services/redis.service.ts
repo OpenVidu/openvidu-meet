@@ -51,6 +51,7 @@ export class RedisService extends EventEmitter {
 
 		const onError = (error: Error) => {
 			this.logger.error('Redis Error', error);
+			this.emit('redisError', error);
 		};
 
 		const onDisconnect = () => {
@@ -82,6 +83,10 @@ export class RedisService extends EventEmitter {
 		}
 
 		this.on('redisConnected', callback);
+	}
+
+	public onceError(callback: () => void) {
+		this.once('redisError', callback);
 	}
 
 	/**
