@@ -13,7 +13,7 @@ export class MeetRoomHelper {
 	 */
 	static toOpenViduOptions(room: MeetRoom): MeetRoomOptions {
 		return {
-			expirationDate: room.expirationDate,
+			autoDeletionDate: room.autoDeletionDate,
 			// maxParticipants: room.maxParticipants,
 			preferences: room.preferences,
 			roomIdPrefix: room.roomIdPrefix

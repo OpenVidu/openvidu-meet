@@ -50,7 +50,7 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(baseUrl: string, roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { preferences, expirationDate, roomIdPrefix } = roomOptions;
+		const { preferences, autoDeletionDate, roomIdPrefix } = roomOptions;
 		const roomId = roomIdPrefix ? `${roomIdPrefix}-${uid(15)}` : uid(15);
 
 		const meetRoom: MeetRoom = {
@@ -58,7 +58,7 @@ export class RoomService {
 			roomIdPrefix,
 			creationDate: Date.now(),
 			// maxParticipants,
-			expirationDate,
+			autoDeletionDate,
 			preferences,
 			moderatorRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
 			publisherRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
@@ -304,7 +304,7 @@ export class RoomService {
 			nextPageToken = token;
 
 			const expiredRoomIds = rooms
-				.filter((room) => room.expirationDate && room.expirationDate < now)
+				.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now)
 				.map((room) => room.roomId);
 
 			if (expiredRoomIds.length > 0) {
