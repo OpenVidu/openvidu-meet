@@ -46,10 +46,10 @@ recordingRouter.delete(
 );
 
 recordingRouter.get(
-	'/:recordingId/content',
+	'/:recordingId/media',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	withValidRecordingId,
-	recordingCtrl.getRecordingContent
+	recordingCtrl.getRecordingMedia
 );
 
 // Internal Recording Routes

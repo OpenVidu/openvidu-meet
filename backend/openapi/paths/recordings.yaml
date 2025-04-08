@@ -126,13 +126,13 @@
                 $ref: '../components/responses/error-recording-in-progress.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-/recordings/{recordingId}/content:
+/recordings/{recordingId}/media:
     get:
-        operationId: getRecordingContent
-        summary: Get recording content
+        operationId: getRecordingMeedia
+        summary: Get recording media
         description: >
-            Retrieves the content of a recording with the specified recording ID.
-            The content is returned in a binary format suitable for video playback.
+            Retrieves the media of a recording with the specified recording ID.
+            The media is returned in a binary format suitable for video playback.
             This endpoint supports range requests, allowing partial content retrieval
             for video playback without downloading the entire file.
         tags:

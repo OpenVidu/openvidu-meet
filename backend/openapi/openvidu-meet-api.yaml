@@ -18,7 +18,7 @@ paths:
     /recordings/{recordingId}:
         $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}'
     /recordings/{recordingId}/content:
-        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}~1content'
+        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}~1media'
 components:
     securitySchemes:
         $ref: './components/security.yaml'
