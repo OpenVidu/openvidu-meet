@@ -57,21 +57,20 @@ export const internalRecordingRouter = Router();
 internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRecordingRouter.use(bodyParser.json());
 
-// TODO: Check permissions middlewares
 internalRecordingRouter.post(
 	'/',
+	withValidStartRecordingRequest,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
 	withCorrectPermissions,
-	withValidStartRecordingRequest,
 	recordingCtrl.startRecording
 );
 
 internalRecordingRouter.put(
 	'/:recordingId',
+	withValidRecordingId,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
 	withCorrectPermissions,
-	withValidRecordingId,
 	recordingCtrl.stopRecording
 );
