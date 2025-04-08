@@ -3,28 +3,18 @@ recordingStarted:
         summary: Recording started
         description: >
             This webhook is triggered when a recording starts.
-            The API provider will send a POST request to this endpoint with the recording details.
-            The JSON payload includes information such as the recording identifier, room, and its status.
+
+            > The recording can be in the `STARTING` status for a few seconds before it becomes `ACTIVE`.
+
         operationId: recordingStartedWebhook
         parameters:
-            - name: X-Timestamp
-              in: header
-              description: Timestamp of the webhook event (in Unix Epoch seconds)
-              example: 1678901234
-              schema:
-                  type: string
-            - name: X-Signature
-              in: header
-              description: HMAC signature for webhook verification
-              example: 1234567890abcdef
-              schema:
-                  type: string
+            - $ref: ../components/parameters/x-timestamp.yaml
+            - $ref: ../components/parameters/x-signature.yaml
         requestBody:
             required: true
             content:
                 application/json:
                     schema:
-                        # $ref: '#/components/schemas/RecordingStartedWebhook'
                         properties:
                             creationDate:
                                 type: number
@@ -35,127 +25,148 @@ recordingStarted:
                                 description: Event type identifier.
                                 example: recordingStarted
                             data:
-                                type: object
                                 properties:
                                     recordingId:
                                         type: string
-                                        description: The unique identifier of the recording that started.
+                                        description: The unique identifier of the recording.
                                         example: room-123--EG_XYZ--XX445
                                     roomId:
                                         type: string
-                                        description: The unique identifier of the room for which the recording started.
+                                        description: The ID of the room where the recording was made.
                                         example: room-123
                                     status:
                                         type: string
                                         description: The status of the recording.
                                         example: STARTING
+                                    filename:
+                                        type: string
+                                        description: The name of the recording file.
+                                        example: room-123--XX445.mp4
+                                    startDate:
+                                        type: number
+                                        description: The date when the recording started (milliseconds since the Unix epoch).
+                                        example: 1620000000000
         responses:
             '200':
                 description: Webhook received successfully
-#     recordingUpdated:
-#         post:
-#             summary: Recording updated
-#             description: >
-#                 This webhook is triggered when a recording update occurs.
-#                 The API provider sends a POST request with the updated details of the recording.
-#             operationId: recordingUpdatedWebhook
-#             parameters:
-#                 - name: X-Timestamp
-#                   in: header
-#                   description: Timestamp of the webhook event (in Unix Epoch seconds)
-#                   example: 1678901234
-#                   schema:
-#                       type: string
-#                 - name: X-Signature
-#                   in: header
-#                   description: HMAC signature for webhook verification
-#                   example: 1234567890abcdef
-#                   schema:
-#                       type: string
-#             requestBody:
-#                 required: true
-#                 content:
-#                     application/json:
-#                         schema:
-#                             type: object
-#                             properties:
-#                                 creationDate:
-#                                     type: number
-#                                     description: The date when the event was created (milliseconds since the Unix epoch).
-#                                     example: 1620000000000
-#                                 event:
-#                                     type: string
-#                                     description: Event type identifier.
-#                                     example: recordingUpdated
-#                                 data:
-#                                     type: object
-#                                     properties:
-#                                         recordingId:
-#                                             type: string
-#                                             description: The unique identifier of the recording being updated.
-#                                             example: room-123--EG_XYZ--XX445
-#                                         roomId:
-#                                             type: string
-#                                             description: The unique identifier of the room for which the recording is updated.
-#                                             example: room-123
-#                                         status:
-#                                             type: string
-#                                             description: The updated status of the recording.
-#                                             example: ACTIVE
-#             responses:
-#                 '200':
-#                     description: Webhook received successfully
+recordingUpdated:
+    post:
+        summary: Recording updated
+        description: >
+            This webhook is triggered when a recording update occurs.
 
-#     recordingEnded:
-#         post:
-#             summary: Recording ended
-#             description: >
-#                 This webhook is triggered when a recording ends.
-#                 The API provider will send a POST request containing the final details of the recording.
-#             operationId: recordingEndedWebhook
-#             parameters:
-#                 - name: X-Timestamp
-#                   in: header
-#                   description: Timestamp of the webhook event (in Unix Epoch seconds)
-#                   example: 1678901234
-#                   schema:
-#                       type: string
-#                 - name: X-Signature
-#                   in: header
-#                   description: HMAC signature for webhook verification
-#                   example: 1234567890abcdef
-#                   schema:
-#                       type: string
-#             requestBody:
-#                 required: true
-#                 content:
-#                     application/json:
-#                         schema:
-#                             type: object
-#                             properties:
-#                                 creationDate:
-#                                     type: number
-#                                     description: The date when the event was created (milliseconds since the Unix epoch).
-#                                     example: 1620000000000
-#                                 event:
-#                                     type: string
-#                                     description: Event type identifier.
-#                                     example: recordingEnded
-#                                 data:
-#                                     type: object
-#                                     properties:
-#                                         recordingId:
-#                                             type: string
-#                                             description: The unique identifier of the recording that ended.
-#                                             example: room-123--EG_XYZ--XX445
-#                                         roomId:
-#                                             type: string
-#                                             description: The unique identifier of the room for which the recording ended.
-#                                             example: room-123
-#                                         status:
-#                                             type: string
-#                                             description: The final status of the recording.
-#                                             example: COMPLETE
-#             responses:
-#                 '200':
-#                     description: Webhook received successfully
+            > This update can be due to a change in the recording status (e.g., from `STARTING` to `ACTIVE`).
+        operationId: recordingUpdatedWebhook
+        parameters:
+            - $ref: ../components/parameters/x-timestamp.yaml
+            - $ref: ../components/parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            creationDate:
+                                type: number
+                                description: The date when the event was created (milliseconds since the Unix epoch).
+                                example: 1620000000000
+                            event:
+                                type: string
+                                description: Event type identifier.
+                                example: recordingUpdated
+                            data:
+                                properties:
+                                    recordingId:
+                                        type: string
+                                        description: The unique identifier of the recording.
+                                        example: room-123--EG_XYZ--XX445
+                                    roomId:
+                                        type: string
+                                        description: The ID of the room where the recording was made.
+                                        example: room-123
+                                    status:
+                                        type: string
+                                        enum: [ACTIVE, ENDING]
+                                        description: The status of the recording.
+                                        example: ACTIVE
+                                    filename:
+                                        type: string
+                                        description: The name of the recording file.
+                                        example: room-123--XX445.mp4
+                                    startDate:
+                                        type: number
+                                        description: The date when the recording started (milliseconds since the Unix epoch).
+                                        example: 1620000000000
+        responses:
+            '200':
+                description: Webhook received successfully
+recordingEnded:
+    post:
+        summary: Recording ended
+        description: >
+            This webhook is triggered when a recording ends.
+
+            > The recording can end due to various reasons, such as the user stopping the recording or the recording reaching its maximum duration.
+        operationId: recordingEndedWebhook
+        parameters:
+            - $ref: ../components/parameters/x-timestamp.yaml
+            - $ref: ../components/parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            creationDate:
+                                type: number
+                                description: The date when the event was created (milliseconds since the Unix epoch).
+                                example: 1620000000000
+                            event:
+                                type: string
+                                description: Event type identifier.
+                                example: recordingEnded
+                            data:
+                                properties:
+                                    recordingId:
+                                        type: string
+                                        description: The unique identifier of the recording.
+                                        example: room-123--EG_XYZ--XX445
+                                    roomId:
+                                        type: string
+                                        description: The ID of the room where the recording was made.
+                                        example: room-123
+                                    status:
+                                        type: string
+                                        enum: [COMPLETE, FAILED, ABORTED, LIMITED_REACHED]
+                                        description: The status of the recording.
+                                        example: COMPLETE
+                                    filename:
+                                        type: string
+                                        description: The name of the recording file.
+                                        example: room-123--XX445.mp4
+                                    startDate:
+                                        type: number
+                                        description: The date when the recording started (milliseconds since the Unix epoch).
+                                        example: 1620000000000
+                                    endDate:
+                                        type: number
+                                        description: The date when the recording ended (milliseconds since the Unix epoch).
+                                        example: 1620000003600
+                                    duration:
+                                        type: number
+                                        description: The duration of the recording in seconds.
+                                        example: 3.6
+                                    size:
+                                        type: number
+                                        description: The size of the recording file in bytes.
+                                        example: 1024
+                                    details:
+                                        type: string
+                                        description: Additional details about the recording.
+                                        example: Stopped using API
+
+        responses:
+            '200':
+                description: Webhook received successfully
