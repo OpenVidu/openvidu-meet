@@ -71,10 +71,11 @@ export class RoomCreatorComponent implements OnInit {
 		const roomIdPrefix = this.roomForm.get('roomIdPrefix')?.value!.replace(/ /g, '-');
 
 		try {
-			// TODO: Fix expiration date
+			const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000; // 24h * 60m * 60s * 1000ms
+
 			const options: MeetRoomOptions = {
 				roomIdPrefix,
-				autoDeletionDate: Date.now() + 3600 * 1000 // 1 hour
+				autoDeletionDate: Date.now() + MILLISECONDS_PER_DAY // Expires 1 day from now
 			};
 
 			const room: MeetRoom = await this.httpService.createRoom(options);
