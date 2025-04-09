@@ -1,0 +1,46 @@
+description: Bulk deletion completed. Includes lists of successfully deleted IDs and marked for deletion IDs.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: List of successfully deleted rooms IDs.
+                    example:
+                        - 'room-123'
+                        - 'room-456'
+                markedAsDeleted:
+                    type: array
+                    description: List of rooms that were marked for deletion but not actually deleted. The rooms will be deleted when all participants leave the room.
+                    items:
+                        type: string
+                        example:
+                            - 'room-789'
+                            - 'room-101'
+        examples:
+            successful_deletion:
+                summary: All rooms were successfully deleted
+                value:
+                    deleted:
+                        - 'room-123'
+                        - 'room-456'
+                    markedAsDeleted: []
+            partial_deletion:
+                summary: Some rooms were deleted successfully, others were marked for deletion
+                value:
+                    deleted:
+                        - 'room-123'
+                        - 'room-456'
+                    markedAsDeleted:
+                        - 'room-789'
+                        - 'room-101'
+            no_deletion_performed:
+                summary: No rooms were deleted
+                value:
+                    deleted: []
+                    markedAsDeleted:
+                        - 'room-789'
+                        - 'room-101'

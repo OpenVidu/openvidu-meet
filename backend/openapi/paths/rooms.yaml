@@ -67,8 +67,8 @@
                   type: string
                   example: 'room-123,room-456'
         responses:
-            '204':
-                description: Bulk deletion completed.
+            '200':
+                $ref: '../components/responses/success-bulk-delete-rooms.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -127,6 +127,8 @@
         parameters:
             - $ref: '../components/parameters/room-id.yaml'
         responses:
+            '202':
+                description: Room deletion accepted. The room will be deleted when all participants leave.
             '204':
                 description: Successfully deleted the OpenVidu Meet room
             '401':
