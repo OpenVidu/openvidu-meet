@@ -146,10 +146,17 @@ export class LivekitWebhookService {
 	 */
 	async handleMeetingFinished(room: Room): Promise<void> {
 		try {
-			await Promise.all([
+			const [meetRoom] = await Promise.all([
+				this.roomService.getMeetRoom(room.name),
 				this.recordingService.releaseRoomRecordingActiveLock(room.name),
 				this.openViduWebhookService.sendRoomFinishedWebhook(room)
 			]);
+
+			if (meetRoom.markedForDeletion) {
+				// If the room is marked for deletion, we need to delete it
+				this.logger.info(`Deleting room ${room.name} after meeting finished because it was marked for deletion`);
+				this.roomService.bulkDeleteRooms([room.name], true);
+			}
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);
 		}

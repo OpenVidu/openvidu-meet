@@ -8,7 +8,7 @@ import { MeetRoom, MeetRoomFilters, MeetRoomOptions, MeetRoomPreferences, Partic
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
-import { errorParticipantUnauthorized } from '../models/error.model.js';
+import { errorParticipantUnauthorized, internalError } from '../models/error.model.js';
 import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
 import { uid } from 'uid/single';
 import { MEET_NAME_ID, MEET_ROOM_GC_INTERVAL } from '../environment.js';
@@ -159,27 +159,63 @@ export class RoomService {
 	}
 
 	/**
-	 * Bulk deletes rooms from both storage (e.g., S3) and LiveKit.
+	 * Deletes a room by its ID.
 	 *
-	 * @param roomIds - An array with the IDs of the rooms to delete.
+	 * @param roomId - The unique identifier of the room to delete.
+	 * @param forceDelete - Whether to force delete the room even if it has participants.
+	 * @returns A promise that resolves to an object containing the deleted and marked rooms.
 	 */
-	async bulkDeleteRooms(roomIds: string[]): Promise<void> {
+	async bulkDeleteRooms(
+		roomIds: string[],
+		forceDelete: boolean
+	): Promise<{ deleted: string[]; markedAsDeleted: string[] }> {
 		try {
-			// Delete rooms from storage and LiveKit in parallel
-			const meetRoomPromise = this.storageService.deleteMeetRooms(roomIds);
-			const livekitResults = await Promise.allSettled(
-				roomIds.map((roomId) => this.livekitService.deleteRoom(roomId))
+			const results = await Promise.allSettled(
+				roomIds.map(async (roomId) => {
+					const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
+					const shouldDelete = forceDelete || !hasParticipants;
+
+					if (shouldDelete) {
+						this.logger.verbose(`Deleting room ${roomId}.`);
+
+						await Promise.all([
+							this.storageService.deleteMeetRooms([roomId]),
+							this.livekitService.deleteRoom(roomId)
+						]);
+
+						return { roomId, status: 'deleted' } as const;
+					}
+
+					this.logger.verbose(`Room ${roomId} has participants. Marking as deleted (graceful deletion).`);
+					// Mark room as deleted
+					const room = await this.storageService.getMeetRoom(roomId);
+					room.markedForDeletion = true;
+					await this.storageService.saveMeetRoom(room);
+					return { roomId, status: 'marked' } as const;
+				})
 			);
 
-			// Wait for the meet rooms deletion to complete
-			await meetRoomPromise;
+			const deleted: string[] = [];
+			const markedAsDeleted: string[] = [];
 
-			// Log results of LiveKit room deletions
-			livekitResults.forEach((result, index) => {
-				if (result.status === 'rejected') {
-					this.logger.error(`Failed to delete LiveKit room "${roomIds[index]}": ${result.reason}`);
+			results.forEach((result) => {
+				if (result.status === 'fulfilled') {
+					if (result.value.status === 'deleted') {
+						deleted.push(result.value.roomId);
+					} else if (result.value.status === 'marked') {
+						markedAsDeleted.push(result.value.roomId);
+					}
+				} else {
+					this.logger.error(`Failed to process deletion for a room: ${result.reason}`);
 				}
 			});
+
+			if (deleted.length === 0 && markedAsDeleted.length === 0) {
+				this.logger.error('No rooms were deleted or marked as deleted.');
+				throw internalError('No rooms were deleted or marked as deleted.');
+			}
+
+			return { deleted, markedAsDeleted };
 		} catch (error) {
 			this.logger.error('Error deleting rooms:', error);
 			throw error;

@@ -75,6 +75,22 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Checks if a LiveKit room has at least one participant.
+	 *
+	 * @param roomName - The name of the room to check
+	 * @returns A promise that resolves to true if the room has at least one participant,
+	 *          or false if the room has no participants or if an error occurs
+	 */
+	async roomHasParticipants(roomName: string): Promise<boolean> {
+		try {
+			const participants = await this.roomClient.listParticipants(roomName);
+			return participants.length > 0;
+		} catch (error) {
+			return false;
+		}
+	}
+
 	async getRoom(roomName: string): Promise<Room> {
 		let rooms: Room[] = [];
 

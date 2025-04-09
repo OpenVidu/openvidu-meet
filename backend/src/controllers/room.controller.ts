@@ -63,13 +63,19 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 
 	const { roomId } = req.params;
+	const { force } = req.query;
+	const forceDelete = force === 'true';
 
 	try {
 		logger.verbose(`Deleting room: ${roomId}`);
 
-		await roomService.bulkDeleteRooms([roomId]);
-		logger.info(`Room deleted: ${roomId}`);
-		return res.status(204).json();
+		const { deleted } = await roomService.bulkDeleteRooms([roomId], forceDelete);
+
+		if (deleted.length > 0) {
+			return res.status(204).send();
+		}
+
+		return res.status(202).json({ message: `Room ${roomId} marked as deleted` });
 	} catch (error) {
 		logger.error(`Error deleting room: ${roomId}`);
 		handleError(res, error);
@@ -79,15 +85,26 @@ export const deleteRoom = async (req: Request, res: Response) => {
 export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { roomIds } = req.query;
-
+	const { roomIds, force } = req.query;
+	const forceDelete = force === 'true';
 	logger.info(`Deleting rooms: ${roomIds}`);
 
 	try {
 		const roomIdsArray = (roomIds as string).split(',');
-		 await roomService.bulkDeleteRooms(roomIdsArray);
+		const { deleted, markedAsDeleted } = await roomService.bulkDeleteRooms(roomIdsArray, forceDelete);
 
-		return res.status(204).send();
+		if (roomIdsArray.length === 1) {
+			if (deleted.length > 0) {
+				return res.status(204).send();
+			}
+
+			return res.status(202).json({ message: `Room ${roomIds} marked as deleted` });
+		}
+
+		return res.status(200).json({
+			deleted,
+			markedAsDeleted
+		});
 	} catch (error) {
 		logger.error(`Error deleting rooms: ${error}`);
 		handleError(res, error);

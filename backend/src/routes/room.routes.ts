@@ -13,7 +13,8 @@ import {
 	configureRoomAuthorization,
 	withValidRoomPreferences,
 	withValidRoomBulkDeleteRequest,
-	withValidRoomId
+	withValidRoomId,
+	withValidRoomDeleteRequest
 } from '../middlewares/index.js';
 
 import { UserRole } from '@typings-ce';
@@ -43,7 +44,12 @@ roomRouter.get(
 	withValidRoomId,
 	roomCtrl.getRoom
 );
-roomRouter.delete('/:roomId', withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)), roomCtrl.deleteRoom);
+roomRouter.delete(
+	'/:roomId',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomDeleteRequest,
+	roomCtrl.deleteRoom
+);
 
 // Internal room routes
 export const internalRoomRouter = Router();

@@ -25,6 +25,17 @@ const nonEmptySanitizedString = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
+const validForceQueryParam = () =>
+	z
+		.preprocess((val) => {
+			if (typeof val === 'string') {
+				return val.toLowerCase() === 'true';
+			}
+
+			return val;
+		}, z.boolean())
+		.default(false);
+
 const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z.object({
 	enabled: z.boolean()
 });
@@ -46,8 +57,8 @@ const RoomPreferencesSchema: z.ZodType<MeetRoomPreferences> = z.object({
 const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	autoDeletionDate: z
 		.number()
-		.positive('Expiration date must be a positive integer')
-		.refine((date) => date >= Date.now() + 60 * 60 * 1000, 'Expiration date must be at least 1 hour in the future')
+		.positive('autoDeletionDate must be a positive integer')
+		.refine((date) => date >= Date.now() + 60 * 60 * 1000, 'autoDeletionDate must be at least 1 hour in the future')
 		.optional(),
 	roomIdPrefix: z
 		.string()
@@ -103,7 +114,8 @@ const BulkDeleteRoomsSchema = z.object({
 			return arg;
 		},
 		z.array(nonEmptySanitizedString('roomId')).default([])
-	)
+	),
+	force: validForceQueryParam()
 });
 
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
@@ -162,6 +174,27 @@ export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next
 	}
 
 	req.query.roomIds = data.roomIds.join(',');
+	req.query.force = data.force ? 'true' : 'false';
+	next();
+};
+
+export const withValidRoomDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
+	const roomIdResult = nonEmptySanitizedString('roomId').safeParse(req.params.roomId);
+
+	if (!roomIdResult.success) {
+		return rejectRequest(res, roomIdResult.error);
+	}
+
+	req.params.roomId = roomIdResult.data;
+
+	const forceResult = validForceQueryParam().safeParse(req.query.force);
+
+	if (!forceResult.success) {
+		return rejectRequest(res, forceResult.error);
+	}
+
+	req.query.force = forceResult.data ? 'true' : 'false';
+
 	next();
 };
 
