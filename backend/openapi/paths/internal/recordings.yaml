@@ -26,8 +26,8 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
-/recordings/{recordingId}:
-    put:
+/recordings/{recordingId}/stop:
+    post:
         operationId: stopRecording
         summary: Stop a recording
         description: >
@@ -40,7 +40,7 @@
         parameters:
             - $ref: '../../components/parameters/recording-id.yaml'
         responses:
-            '200':
+            '202':
                 $ref: '../../components/responses/success-stop-recording.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'

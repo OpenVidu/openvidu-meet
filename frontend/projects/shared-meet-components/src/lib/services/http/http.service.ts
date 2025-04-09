@@ -9,7 +9,7 @@ import {
 	TokenOptions,
 	User
 } from '@lib/typings/ce';
-import { RecordingInfo, Room } from 'openvidu-components-angular';
+import { RecordingInfo } from 'openvidu-components-angular';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable({
@@ -124,7 +124,7 @@ export class HttpService {
 	}
 
 	stopRecording(recordingId: string): Promise<RecordingInfo> {
-		return this.putRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}`);
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}/stop`);
 	}
 
 	deleteRecording(recordingId: string): Promise<RecordingInfo> {

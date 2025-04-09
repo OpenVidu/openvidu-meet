@@ -66,8 +66,8 @@ internalRecordingRouter.post(
 	recordingCtrl.startRecording
 );
 
-internalRecordingRouter.put(
-	'/:recordingId',
+internalRecordingRouter.post(
+	'/:recordingId/stop',
 	withValidRecordingId,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),

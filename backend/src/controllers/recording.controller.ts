@@ -95,7 +95,7 @@ export const stopRecording = async (req: Request, res: Response) => {
 
 		const recordingInfo = await recordingService.stopRecording(recordingId);
 		res.setHeader('Location', `${req.protocol}://${req.get('host')}${req.originalUrl}`);
-		return res.status(200).json(recordingInfo);
+		return res.status(202).json(recordingInfo);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error stopping recording: ${error.message}`);
