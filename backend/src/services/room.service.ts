@@ -159,11 +159,13 @@ export class RoomService {
 	}
 
 	/**
-	 * Deletes a room by its ID.
+	 * Deletes multiple rooms in bulk, with the option to force delete or gracefully handle rooms with active participants.
+	 * For rooms with participants, when `forceDelete` is false, the method performs a "graceful deletion"
+	 * by marking the room as deleted without disrupting active sessions.
 	 *
-	 * @param roomId - The unique identifier of the room to delete.
-	 * @param forceDelete - Whether to force delete the room even if it has participants.
-	 * @returns A promise that resolves to an object containing the deleted and marked rooms.
+	 * @param roomIds - Array of room identifiers to be deleted
+	 * @param forceDelete - If true, deletes rooms even if they have active participants.
+	 *                      If false, rooms with participants will be marked for deletion instead of being deleted immediately.
 	 */
 	async bulkDeleteRooms(
 		roomIds: string[],
@@ -187,10 +189,7 @@ export class RoomService {
 					}
 
 					this.logger.verbose(`Room ${roomId} has participants. Marking as deleted (graceful deletion).`);
-					// Mark room as deleted
-					const room = await this.storageService.getMeetRoom(roomId);
-					room.markedForDeletion = true;
-					await this.storageService.saveMeetRoom(room);
+					await this.markRoomAsDeleted(roomId);
 					return { roomId, status: 'marked' } as const;
 				})
 			);
@@ -220,6 +219,19 @@ export class RoomService {
 			this.logger.error('Error deleting rooms:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Marks a room as deleted in the storage system.
+	 *
+	 * @param roomId - The unique identifier of the room to mark for deletion
+	 * @returns A promise that resolves when the room has been successfully marked as deleted
+	 * @throws May throw an error if the room cannot be found or if saving fails
+	 */
+	protected async markRoomAsDeleted(roomId: string): Promise<void> {
+		const room = await this.storageService.getMeetRoom(roomId);
+		room.markedForDeletion = true;
+		await this.storageService.saveMeetRoom(room);
 	}
 
 	/**
@@ -290,69 +302,44 @@ export class RoomService {
 	}
 
 	/**
-	 * Deletes OpenVidu expired rooms and consequently LiveKit rooms.
+	 * Gracefully deletes expired rooms.
 	 *
-	 * This method delete the rooms that have an expiration date earlier than the current time.
-	 *
-	 * @returns {Promise<void>} A promise that resolves when the deletion process is complete.
-	 **/
+	 * This method checks for rooms that have an auto-deletion date in the past and deletes them.
+	 * It also marks rooms as deleted if they have participants.
+	 */
 	protected async deleteExpiredRooms(): Promise<void> {
+		let nextPageToken: string | undefined;
+		const deletedRooms: string[] = [];
+		const markedAsDeletedRooms: string[] = [];
+		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
+
 		try {
-			const ovExpiredRooms = await this.deleteExpiredMeetRooms();
+			do {
+				const now = Date.now();
 
-			if (ovExpiredRooms.length === 0) return;
+				const { rooms, nextPageToken: token } = await this.getAllMeetRooms({ maxItems: 100, nextPageToken });
+				nextPageToken = token;
 
-			const livekitResults = await Promise.allSettled(
-				ovExpiredRooms.map((roomId) => this.livekitService.deleteRoom(roomId))
-			);
+				const expiredRoomIds = rooms
+					.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now)
+					.map((room) => room.roomId);
 
-			const successfulRooms: string[] = [];
+				if (expiredRoomIds.length > 0) {
+					this.logger.verbose(
+						`Trying to delete ${expiredRoomIds.length} expired Meet rooms: ${expiredRoomIds.join(', ')}`
+					);
 
-			livekitResults.forEach((result, index) => {
-				if (result.status === 'fulfilled') {
-					successfulRooms.push(ovExpiredRooms[index]);
-				} else {
-					this.logger.error(`Failed to delete OpenVidu room "${ovExpiredRooms[index]}": ${result.reason}`);
+					const { deleted, markedAsDeleted } = await this.bulkDeleteRooms(expiredRoomIds, false);
+
+					deletedRooms.push(...deleted);
+					markedAsDeletedRooms.push(...markedAsDeleted);
 				}
-			});
+			} while (nextPageToken);
 
-			this.logger.verbose(
-				`Successfully deleted ${successfulRooms.length} expired rooms: ${successfulRooms.join(', ')}`
-			);
+			this.logger.verbose(`Successfully deleted ${deletedRooms.length} expired rooms}`);
+			this.logger.verbose(`Marked as deleted ${markedAsDeletedRooms.length} expired rooms}`);
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);
 		}
-	}
-
-	/**
-	 * Deletes expired Meet rooms by iterating through all paged results.
-	 *
-	 * @returns A promise that resolves with an array of room IDs that were successfully deleted.
-	 */
-	protected async deleteExpiredMeetRooms(): Promise<string[]> {
-		const now = Date.now();
-		this.logger.verbose(`Checking Meet expired rooms at ${new Date(now).toISOString()}`);
-		let nextPageToken: string | undefined;
-		const deletedRooms: string[] = [];
-
-		do {
-			const { rooms, nextPageToken: token } = await this.getAllMeetRooms({ maxItems: 100, nextPageToken });
-			nextPageToken = token;
-
-			const expiredRoomIds = rooms
-				.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now)
-				.map((room) => room.roomId);
-
-			if (expiredRoomIds.length > 0) {
-				this.logger.verbose(
-					`Deleting ${expiredRoomIds.length} expired Meet rooms: ${expiredRoomIds.join(', ')}`
-				);
-				// const deletedOnPage = await this.deleteMeetRooms(expiredRooms);
-				await this.storageService.deleteMeetRooms(expiredRoomIds);
-				deletedRooms.push(...expiredRoomIds);
-			}
-		} while (nextPageToken);
-
-		return deletedRooms;
 	}
 }
