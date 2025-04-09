@@ -90,8 +90,9 @@ export class RoomService {
 				createdBy: MEET_NAME_ID,
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			}),
-			emptyTimeout: ms('20s'),
-			departureTimeout: ms('20s')
+			//TODO: Uncomment this when bug in LiveKit is fixed
+			// emptyTimeout: ms('20s') / 1000,
+			departureTimeout: ms('20s') / 1000
 			// maxParticipants: maxParticipants || undefined,
 		};
 
