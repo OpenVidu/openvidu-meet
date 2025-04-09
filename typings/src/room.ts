@@ -19,6 +19,7 @@ export interface MeetRoom extends BaseRoomOptions {
 	creationDate: number;
 	moderatorRoomUrl: string;
 	publisherRoomUrl: string;
+	markedForDeletion?: boolean;
 }
 
 export type MeetRoomFilters = {
