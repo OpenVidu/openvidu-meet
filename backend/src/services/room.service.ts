@@ -336,8 +336,13 @@ export class RoomService {
 				}
 			} while (nextPageToken);
 
-			this.logger.verbose(`Successfully deleted ${deletedRooms.length} expired rooms}`);
-			this.logger.verbose(`Marked as deleted ${markedAsDeletedRooms.length} expired rooms}`);
+			if (deletedRooms.length > 0) {
+				this.logger.verbose(`Successfully deleted ${deletedRooms.length} expired rooms`);
+			}
+
+			if (markedAsDeletedRooms.length > 0) {
+				this.logger.verbose(`Marked as deleted ${markedAsDeletedRooms.length} expired rooms`);
+			}
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);
 		}
