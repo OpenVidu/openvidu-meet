@@ -70,10 +70,12 @@ export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
+	const fields = req.query.fields as string | undefined;
+
 	logger.info(`Getting recording ${recordingId}`);
 
 	try {
-		const recordingInfo = await recordingService.getRecording(recordingId);
+		const recordingInfo = await recordingService.getRecording(recordingId, fields);
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {

@@ -37,6 +37,7 @@ import { MeetLock } from '../helpers/redis.helper.js';
 import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
 import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
+import { UtilsHelper } from '../helpers/utils.helper.js';
 
 @injectable()
 export class RecordingService {
@@ -228,10 +229,10 @@ export class RecordingService {
 	 * @param recordingId - The unique identifier of the recording.
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
-	async getRecording(recordingId: string): Promise<MeetRecordingInfo> {
+	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
 		const { recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
 
-		return recordingInfo;
+		return UtilsHelper.filterObjectFields(recordingInfo, fields) as MeetRecordingInfo;
 	}
 
 	/**
@@ -245,7 +246,7 @@ export class RecordingService {
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings({ maxItems, nextPageToken, roomId }: MeetRecordingFilters): Promise<{
+	async getAllRecordings({ maxItems, nextPageToken, roomId, fields }: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		isTruncated: boolean;
 		nextPageToken?: string;
@@ -274,7 +275,9 @@ export class RecordingService {
 				}
 			});
 
-			const recordings: MeetRecordingInfo[] = await Promise.all(promises);
+			let recordings: MeetRecordingInfo[] = await Promise.all(promises);
+
+			recordings = recordings.map((rec) => UtilsHelper.filterObjectFields(rec, fields)) as MeetRecordingInfo[];
 
 			this.logger.info(`Retrieved ${recordings.length} recordings.`);
 			// Return the paginated list of recordings

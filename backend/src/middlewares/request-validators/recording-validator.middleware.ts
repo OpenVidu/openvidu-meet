@@ -52,7 +52,8 @@ const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 		.default(10),
 	// status: z.string().optional(),
 	roomId: z.string().optional(),
-	nextPageToken: z.string().optional()
+	nextPageToken: z.string().optional(),
+	fields: z.string().optional(),
 });
 
 export const withValidStartRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
@@ -77,7 +78,7 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 	next();
 };
 
-export const withValidGetRecordingsRequest = (req: Request, res: Response, next: NextFunction) => {
+export const withValidRecordingFiltersRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = GetRecordingsFiltersSchema.safeParse(req.query);
 
 	if (!success) {

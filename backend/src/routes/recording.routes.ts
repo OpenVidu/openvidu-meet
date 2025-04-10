@@ -8,7 +8,7 @@ import {
 	tokenAndRoleValidator,
 	withRecordingEnabled,
 	withCorrectPermissions,
-	withValidGetRecordingsRequest,
+	withValidRecordingFiltersRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingId,
 	withValidStartRecordingRequest,
@@ -35,7 +35,7 @@ recordingRouter.get(
 recordingRouter.get(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
-	withValidGetRecordingsRequest,
+	withValidRecordingFiltersRequest,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(

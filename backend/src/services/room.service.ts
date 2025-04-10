@@ -89,7 +89,7 @@ export class RoomService {
 			metadata: JSON.stringify({
 				createdBy: MEET_NAME_ID,
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
-			}),
+			})
 			//TODO: Uncomment this when bug in LiveKit is fixed
 			// When it is defined, the room will be closed although there are participants
 			// emptyTimeout: ms('20s') / 1000,
@@ -129,13 +129,8 @@ export class RoomService {
 	}> {
 		const response = await this.storageService.getMeetRooms(maxItems, nextPageToken);
 
-		if (fields && fields.length > 0) {
-			const fieldsArray = Array.isArray(fields) ? fields : fields.split(',').map((f) => f.trim());
-			const filteredRooms = response.rooms.map((room) =>
-				UtilsHelper.filterObjectFields(room as unknown as Record<string, unknown>, fieldsArray)
-			);
-			response.rooms = filteredRooms as MeetRoom[];
-		}
+		const filteredRooms = response.rooms.map((room) => UtilsHelper.filterObjectFields(room, fields));
+		response.rooms = filteredRooms as MeetRoom[];
 
 		return response;
 	}
@@ -149,16 +144,7 @@ export class RoomService {
 	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
 		const meetRoom = await this.storageService.getMeetRoom(roomId);
 
-		if (fields && fields.length > 0) {
-			const fieldsArray = Array.isArray(fields) ? fields : fields.split(',').map((f) => f.trim());
-			const filteredRoom = UtilsHelper.filterObjectFields(
-				meetRoom as unknown as Record<string, unknown>,
-				fieldsArray
-			);
-			return filteredRoom as MeetRoom;
-		}
-
-		return meetRoom;
+		return UtilsHelper.filterObjectFields(meetRoom, fields) as MeetRoom;
 	}
 
 	/**
