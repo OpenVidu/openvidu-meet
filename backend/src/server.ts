@@ -27,6 +27,7 @@ import {
 } from './routes/index.js';
 import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
+import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 
 const createApp = () => {
 	const app: Express = express();
@@ -44,6 +45,7 @@ const createApp = () => {
 	// Serve static files
 	app.use(express.static(publicFilesPath));
 	app.use(express.json());
+	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
 
 	// Public API routes
