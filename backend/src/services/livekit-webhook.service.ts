@@ -12,6 +12,7 @@ import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { MutexService } from './mutex.service.js';
 import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -154,7 +155,9 @@ export class LivekitWebhookService {
 
 			if (meetRoom.markedForDeletion) {
 				// If the room is marked for deletion, we need to delete it
-				this.logger.info(`Deleting room ${room.name} after meeting finished because it was marked for deletion`);
+				this.logger.info(
+					`Deleting room ${room.name} after meeting finished because it was marked for deletion`
+				);
 				this.roomService.bulkDeleteRooms([room.name], true);
 			}
 		} catch (error) {
@@ -195,7 +198,10 @@ export class LivekitWebhookService {
 		// Send webhook notification
 		switch (webhookAction) {
 			case 'started':
-				tasks.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
+				tasks.push(
+					this.saveRoomSecretsIfNeeded(roomId),
+					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
+				);
 				break;
 			case 'updated':
 				tasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
@@ -226,6 +232,40 @@ export class LivekitWebhookService {
 			this.logger.warn(
 				`Error processing recording ${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
+		}
+	}
+
+	/**
+	 * Saves room secrets to an S3 bucket if they haven't been saved already.
+	 *
+	 * This method checks if secrets for the specified room exist in the S3 storage.
+	 * If they don't exist, it retrieves the room information, extracts the publisher
+	 * and moderator secrets, and saves them to an S3 bucket under the path
+	 * `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`.
+	 */
+	protected async saveRoomSecretsIfNeeded(roomId: string): Promise<void> {
+		try {
+			const filePath = `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+			const fileExists = await this.s3Service.exists(filePath);
+
+			if (fileExists) {
+				this.logger.debug(`Room secrets already saved for room ${roomId}`);
+				return;
+			}
+
+			const room = await this.roomService.getMeetRoom(roomId);
+
+			if (room) {
+				const { publisherSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+				const secrets = {
+					publisherSecret,
+					moderatorSecret
+				};
+				await this.s3Service.saveObject(filePath, secrets);
+				this.logger.debug(`Room secrets saved for room ${roomId}`);
+			}
+		} catch (error) {
+			this.logger.error(`Error saving room secrets for room ${roomId}: ${error}`);
 		}
 	}
 
