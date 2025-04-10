@@ -385,6 +385,7 @@ export class RecordingService {
 		recordingId: string
 	): Promise<{ filesToDelete: string[]; recordingInfo: MeetRecordingInfo }> {
 		const { metadataFilePath, recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
+		const filesToDelete: string[] = [metadataFilePath];
 
 		if (
 			recordingInfo.status === MeetRecordingStatus.STARTING ||
@@ -400,7 +401,15 @@ export class RecordingService {
 			throw internalError(`Error extracting path from recording ${recordingId}`);
 		}
 
-		return { filesToDelete: [metadataFilePath, recordingPath], recordingInfo };
+		filesToDelete.push(recordingPath);
+
+		const secretsFilePath = await this.getSecretsFilePathIfOnlyRemaining(recordingInfo.roomId, metadataFilePath);
+
+		if (secretsFilePath) {
+			filesToDelete.push(secretsFilePath);
+		}
+
+		return { filesToDelete, recordingInfo };
 	}
 
 	protected async getMeetRecordingInfoFromMetadata(
@@ -520,6 +529,44 @@ export class RecordingService {
 			rejectRequest(
 				new Error(`Timeout waiting for '${SystemEventType.RECORDING_ACTIVE}' event in room '${roomId}'`)
 			);
+		}
+	}
+
+	/**
+	 * Checks if the secrets.json file is the only remaining file in a room's metadata directory
+	 * (besides the specified metadata file) and returns its path if that's the case.
+	 *
+	 * This method examines the S3 bucket for the specified room's metadata directory.
+	 * It expects to find exactly 2 files (the metadata file and potentially the secrets.json file).
+	 */
+	protected async getSecretsFilePathIfOnlyRemaining(
+		roomId: string,
+		metadataFilePath: string
+	): Promise<string | null> {
+		try {
+			// List all objects in the metadata directory for the room
+			const { Contents } = await this.s3Service.listObjectsPaginated(
+				`${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}`
+			);
+
+			// Check if the contents number are valid.
+			// If the contents are empty or not exactly 2, return null
+			// (one for the metadata file and one for the secrets.json file)
+			if (!Contents || Contents.length !== 2) {
+				return null;
+			}
+
+			// Filter out the metadata file path
+			const otherFiles = Contents.filter((item) => (item.Key?.endsWith(metadataFilePath) ? false : true));
+
+			// If the only other file is the secrets.json file, add it to the filesToDelete array
+			if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('secrets.json')) {
+				return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+			}
+
+			return null;
+		} catch (error) {
+			return null;
 		}
 	}
 
