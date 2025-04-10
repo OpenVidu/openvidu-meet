@@ -79,9 +79,14 @@ export const deleteAllRooms = async (app: Express) => {
 
 	do {
 		const response: any = await request(app)
-			.get(`${BASE_URL}/rooms?fields=roomId&maxItems=100&nextPageToken=${nextPageToken}`)
+			.get(`${BASE_URL}/rooms`)
 			// set header to accept json
 			.set('X-API-KEY', 'meet-api-key')
+			.query({
+				fields: 'roomId',
+				maxItems: 100,
+				nextPageToken
+			})
 			.expect(200);
 
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
@@ -92,7 +97,11 @@ export const deleteAllRooms = async (app: Express) => {
 		}
 
 		await request(app)
-			.delete(`${BASE_URL}/rooms?roomIds=${roomIds.join(',')}`)
+			.delete(`${BASE_URL}/rooms`)
+			.query({
+				roomIds: roomIds.join(','),
+				force: true
+			})
 			.set('X-API-KEY', 'meet-api-key');
 	} while (nextPageToken);
 };
