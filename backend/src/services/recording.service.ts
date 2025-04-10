@@ -267,7 +267,7 @@ export class RecordingService {
 			const promises: Promise<MeetRecordingInfo>[] = [];
 			// Retrieve the metadata for each recording
 			Contents.forEach((item) => {
-				if (item?.Key && item.Key.endsWith('.json')) {
+				if (item?.Key && item.Key.endsWith('.json') && !item.Key.endsWith('secrets.json')) {
 					promises.push(this.s3Service.getObjectAsJson(item.Key) as Promise<MeetRecordingInfo>);
 				}
 			});
