@@ -75,7 +75,7 @@ export const login = async (app: Express, username?: string, password?: string) 
 };
 
 export const deleteAllRooms = async (app: Express) => {
-	let nextPageToken = '';
+	let nextPageToken = undefined;
 
 	do {
 		const response: any = await request(app)
