@@ -146,7 +146,7 @@ export class S3Service {
 			Bucket: bucket,
 			Prefix: basePrefix,
 			MaxKeys: maxKeys,
-			ContinuationToken: continuationToken
+			ContinuationToken: continuationToken ? continuationToken : undefined
 		});
 
 		try {
