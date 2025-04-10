@@ -13,9 +13,9 @@ import {
 	MEET_ADMIN_USER,
 	MEET_ADMIN_SECRET
 } from '../../src/environment.js';
-import { AuthMode, AuthType, UserRole } from '../../src/typings/ce/index.js';
+import { AuthMode, AuthType, MeetRoom, UserRole } from '../../src/typings/ce/index.js';
 
-export const API_KEY_HEADER = 'X-Meet-API-Key';
+export const API_KEY_HEADER = 'X-API-Key';
 
 const CREDENTIALS = {
 	user: {
@@ -32,7 +32,7 @@ let app: Express;
 let server: Server;
 
 /**
- * Starts the test server.
+ * Starts the test server
  */
 export const startTestServer = async (): Promise<Express> => {
 	registerDependencies();
@@ -61,7 +61,7 @@ export const startTestServer = async (): Promise<Express> => {
 };
 
 /**
- * Stops the test server.
+ * Stops the test server
  */
 export const stopTestServer = async (): Promise<void> => {
 	if (!server) {
@@ -81,7 +81,36 @@ export const stopTestServer = async (): Promise<void> => {
 };
 
 /**
- * Logs in a user as a specific role (admin or user) and returns the access token cookie.
+ * Updates global security preferences
+ */
+export const changeSecurityPreferences = async (
+	adminCookie: string,
+	{ usersCanCreateRooms = true, authRequired = true, authMode = AuthMode.NONE }
+) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	await request(app)
+		.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.set('Cookie', adminCookie)
+		.send({
+			roomCreationPolicy: {
+				allowRoomCreation: usersCanCreateRooms,
+				requireAuthentication: authRequired
+			},
+			authentication: {
+				authMode: authMode,
+				method: {
+					type: AuthType.SINGLE_USER
+				}
+			}
+		})
+		.expect(200);
+};
+
+/**
+ * Logs in a user as a specific role (admin or user) and returns the access token cookie
  */
 export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 	if (!app) {
@@ -97,6 +126,22 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 	const cookies = response.headers['set-cookie'] as unknown as string[];
 	const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken=')) as string;
 	return accessTokenCookie;
+};
+
+/**
+ * Creates a room with the given prefix
+ */
+export const createRoom = async (roomPrefix?: string): Promise<MeetRoom> => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const response = await request(app)
+		.post(`${MEET_API_BASE_PATH_V1}/rooms`)
+		.set(API_KEY_HEADER, MEET_API_KEY)
+		.send({ roomPrefix })
+		.expect(200);
+	return response.body;
 };
 
 /**
@@ -127,36 +172,37 @@ export const deleteAllRooms = async () => {
 			.delete(`${MEET_API_BASE_PATH_V1}/rooms`)
 			.query({ roomIds: roomIds.join(','), force: true })
 			.set(API_KEY_HEADER, MEET_API_KEY);
-			
+
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
 };
 
 /**
- * Updates global security preferences.
+ * Generates a participant token for a room and returns the cookie containing the token
  */
-export const changeSecurityPreferences = async (
+export const generateParticipantToken = async (
 	adminCookie: string,
-	{ usersCanCreateRooms = true, authRequired = true, authMode = AuthMode.NONE }
-) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	roomId: string,
+	participantName: string,
+	secret: string
+): Promise<string> => {
+	// Disable authentication to generate the token
+	await changeSecurityPreferences(adminCookie, {
+		authMode: AuthMode.NONE
+	});
 
-	await request(app)
-		.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences/security`)
-		.set('Cookie', adminCookie)
+	// Generate the participant token
+	const response = await request(app)
+		.post(`${MEET_INTERNAL_API_BASE_PATH_V1}/participants/token`)
 		.send({
-			roomCreationPolicy: {
-				allowRoomCreation: usersCanCreateRooms,
-				requireAuthentication: authRequired
-			},
-			authentication: {
-				authMode: authMode,
-				method: {
-					type: AuthType.SINGLE_USER
-				}
-			}
+			roomId,
+			participantName,
+			secret
 		})
 		.expect(200);
+
+	// Return the participant token cookie
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	const participantTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetParticipantToken=')) as string;
+	return participantTokenCookie;
 };
