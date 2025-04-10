@@ -1,27 +1,48 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createApp, registerDependencies } from '../../src/server.js';
 import request from 'supertest';
 import { Express } from 'express';
-
-import { SERVER_PORT } from '../../src/environment.js';
 import { Server } from 'http';
+import { createApp, registerDependencies } from '../../src/server.js';
+import {
+	SERVER_PORT,
+	MEET_API_BASE_PATH_V1,
+	MEET_INTERNAL_API_BASE_PATH_V1,
+	MEET_API_KEY,
+	MEET_USER,
+	MEET_SECRET,
+	MEET_ADMIN_USER,
+	MEET_ADMIN_SECRET
+} from '../../src/environment.js';
+import { AuthMode, AuthType, UserRole } from '../../src/typings/ce/index.js';
 
+export const API_KEY_HEADER = 'X-Meet-API-Key';
+
+const CREDENTIALS = {
+	user: {
+		username: MEET_USER,
+		password: MEET_SECRET
+	},
+	admin: {
+		username: MEET_ADMIN_USER,
+		password: MEET_ADMIN_SECRET
+	}
+};
+
+let app: Express;
 let server: Server;
-const baseUrl = '/meet/health';
 
-const BASE_URL = '/meet/api/v1';
-const INTERNAL_BASE_URL = '/meet/internal-api/v1';
-const AUTH_URL = `${INTERNAL_BASE_URL}/auth`;
-
+/**
+ * Starts the test server.
+ */
 export const startTestServer = async (): Promise<Express> => {
 	registerDependencies();
-	const app = createApp();
+	app = createApp();
 
 	return await new Promise<Express>((resolve, reject) => {
 		server = app.listen(SERVER_PORT, async () => {
 			try {
 				// Check if the server is responding by hitting the health check route
-				const response = await request(app).get(baseUrl);
+				const response = await request(app).get('/meet/health');
 
 				if (response.status === 200) {
 					console.log('Test server started and healthy!');
@@ -41,32 +62,36 @@ export const startTestServer = async (): Promise<Express> => {
 
 /**
  * Stops the test server.
- * It will call `server.close()` to gracefully shut down the server.
  */
 export const stopTestServer = async (): Promise<void> => {
-	if (server) {
-		return new Promise<void>((resolve, reject) => {
-			server.close((err) => {
-				if (err) {
-					reject(new Error(`Failed to stop server: ${err.message}`));
-				} else {
-					console.log('Test server stopped.');
-					resolve();
-				}
-			});
-		});
-	} else {
-		console.log('Server is not running.');
+	if (!server) {
+		throw new Error('Server is not running');
 	}
+
+	return new Promise<void>((resolve, reject) => {
+		server.close((err) => {
+			if (err) {
+				reject(new Error(`Failed to stop server: ${err.message}`));
+			} else {
+				console.log('Test server stopped.');
+				resolve();
+			}
+		});
+	});
 };
 
-export const login = async (app: Express, username?: string, password?: string) => {
+/**
+ * Logs in a user as a specific role (admin or user) and returns the access token cookie.
+ */
+export const loginUserAsRole = async (role: UserRole): Promise<string> => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const credentials = role === UserRole.ADMIN ? CREDENTIALS.admin : CREDENTIALS.user;
 	const response = await request(app)
-		.post(`${AUTH_URL}/login`)
-		.send({
-			username,
-			password
-		})
+		.post(`${MEET_INTERNAL_API_BASE_PATH_V1}/auth/login`)
+		.send(credentials)
 		.expect(200);
 
 	const cookies = response.headers['set-cookie'] as unknown as string[];
@@ -74,19 +99,21 @@ export const login = async (app: Express, username?: string, password?: string) 
 	return accessTokenCookie;
 };
 
-export const deleteAllRooms = async (app: Express) => {
-	let nextPageToken = undefined;
+/**
+ * Deletes all rooms
+ */
+export const deleteAllRooms = async () => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	let nextPageToken: string | undefined;
 
 	do {
 		const response: any = await request(app)
-			.get(`${BASE_URL}/rooms`)
-			// set header to accept json
-			.set('X-API-KEY', 'meet-api-key')
-			.query({
-				fields: 'roomId',
-				maxItems: 100,
-				nextPageToken
-			})
+			.get(`${MEET_API_BASE_PATH_V1}/rooms`)
+			.query({ fields: 'roomId', maxItems: 100, nextPageToken })
+			.set(API_KEY_HEADER, MEET_API_KEY)
 			.expect(200);
 
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
@@ -97,11 +124,39 @@ export const deleteAllRooms = async (app: Express) => {
 		}
 
 		await request(app)
-			.delete(`${BASE_URL}/rooms`)
-			.query({
-				roomIds: roomIds.join(','),
-				force: true
-			})
-			.set('X-API-KEY', 'meet-api-key');
+			.delete(`${MEET_API_BASE_PATH_V1}/rooms`)
+			.query({ roomIds: roomIds.join(','), force: true })
+			.set(API_KEY_HEADER, MEET_API_KEY)
+			.expect(200);
+		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
+};
+
+/**
+ * Updates global security preferences.
+ */
+export const changeSecurityPreferences = async (
+	adminCookie: string,
+	{ usersCanCreateRooms = true, authRequired = true, authMode = AuthMode.NONE }
+) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	await request(app)
+		.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.set('Cookie', adminCookie)
+		.send({
+			roomCreationPolicy: {
+				allowRoomCreation: usersCanCreateRooms,
+				requireAuthentication: authRequired
+			},
+			authentication: {
+				authMode: authMode,
+				method: {
+					type: AuthType.SINGLE_USER
+				}
+			}
+		})
+		.expect(200);
 };
