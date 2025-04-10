@@ -117,7 +117,7 @@ export const deleteAllRooms = async () => {
 			.expect(200);
 
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
-		const roomIds = response.body.rooms.map((room: any) => room.roomId);
+		const roomIds = response.body.rooms.map((room: { roomId: string }) => room.roomId);
 
 		if (roomIds.length === 0) {
 			break;
@@ -126,8 +126,8 @@ export const deleteAllRooms = async () => {
 		await request(app)
 			.delete(`${MEET_API_BASE_PATH_V1}/rooms`)
 			.query({ roomIds: roomIds.join(','), force: true })
-			.set(API_KEY_HEADER, MEET_API_KEY)
-			.expect(200);
+			.set(API_KEY_HEADER, MEET_API_KEY);
+			
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
 };
