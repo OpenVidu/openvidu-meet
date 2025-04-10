@@ -91,8 +91,10 @@ export class RoomService {
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			}),
 			//TODO: Uncomment this when bug in LiveKit is fixed
+			// When it is defined, the room will be closed although there are participants
 			// emptyTimeout: ms('20s') / 1000,
-			departureTimeout: ms('20s') / 1000
+			// !FIXME: When this is defined, the room will be closed although there are participants
+			// departureTimeout: ms('20s') / 1000
 			// maxParticipants: maxParticipants || undefined,
 		};
 
