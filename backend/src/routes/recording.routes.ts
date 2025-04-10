@@ -47,7 +47,7 @@ recordingRouter.delete(
 
 recordingRouter.get(
 	'/:recordingId/media',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
 	withValidRecordingId,
 	recordingCtrl.getRecordingMedia
 );
