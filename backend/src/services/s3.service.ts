@@ -65,22 +65,6 @@ export class S3Service {
 		}
 	}
 
-	// copyObject(
-	// 	path: string,
-	// 	newFileName: string,
-	// 	bucket: string = MEET_AWS_S3_BUCKET
-	// ): Promise<CopyObjectCommandOutput> {
-	// 	const newKey = path.replace(path.substring(path.lastIndexOf('/') + 1), newFileName);
-
-	// 	const command = new CopyObjectCommand({
-	// 		Bucket: bucket,
-	// 		CopySource: `${MEET_AWS_S3_BUCKET}/${path}`,
-	// 		Key: newKey
-	// 	});
-
-	// 	return this.run(command);
-	// }
-
 	/**
 	 * Saves an object to a S3 bucket.
 	 * Uses an internal retry mechanism in case of errors.
@@ -201,83 +185,6 @@ export class S3Service {
 			return response;
 		} catch (error: any) {
 			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix "${basePrefix}": ${error}`);
-			throw internalError(error);
-		}
-	}
-
-	/**
-	 * Lists all objects in an S3 bucket with optional subbucket and search pattern filtering.
-	 *
-	 * @param {string} [subbucket=''] - The subbucket within the main bucket to list objects from.
-	 * @param {string} [searchPattern=''] - A regex pattern to filter the objects by their keys.
-	 * @param {string} [bucket=MEET_S3_BUCKET] - The name of the S3 bucket. Defaults to MEET_S3_BUCKET.
-	 * @param {number} [maxObjects=1000] - The maximum number of objects to retrieve in one request. Defaults to 1000.
-	 * @returns {Promise<ListObjectsV2CommandOutput>} - A promise that resolves to the output of the ListObjectsV2Command.
-	 * @throws {Error} - Throws an error if there is an issue listing the objects.
-	 */
-	async listObjects(
-		additionalPrefix = '',
-		searchPattern = '',
-		bucket: string = MEET_S3_BUCKET,
-		maxObjects = 1000
-	): Promise<ListObjectsV2CommandOutput> {
-		const basePrefix = `${MEET_S3_SUBBUCKET}/${additionalPrefix}`.replace(/\/+$/, '');
-		let allContents: _Object[] = [];
-		let continuationToken: string | undefined = undefined;
-		let isTruncated = true;
-		let fullResponse: ListObjectsV2CommandOutput | undefined = undefined;
-
-		try {
-			this.logger.verbose(`S3 listObjects: starting listing objects with prefix "${basePrefix}"`);
-
-			while (isTruncated) {
-				const command = new ListObjectsV2Command({
-					Bucket: bucket,
-					Prefix: basePrefix,
-					MaxKeys: maxObjects,
-					ContinuationToken: continuationToken
-				});
-
-				const response: ListObjectsV2CommandOutput = await this.run(command);
-
-				if (!fullResponse) {
-					fullResponse = response;
-				}
-
-				// Filter the objects by the search pattern if it is provided
-				let objects = response.Contents || [];
-
-				if (searchPattern) {
-					const regex = new RegExp(searchPattern);
-					objects = objects.filter((object) => object.Key && regex.test(object.Key));
-				}
-
-				// Add the objects to the list of all objects
-				allContents = allContents.concat(objects);
-
-				// Update the loop control variables
-				isTruncated = response.IsTruncated ?? false;
-				continuationToken = response.NextContinuationToken;
-				this.logger.verbose(`S3 listObjects: fetched ${objects.length} objects; isTruncated=${isTruncated}`);
-			}
-
-			if (fullResponse) {
-				fullResponse.Contents = allContents;
-				fullResponse.IsTruncated = false;
-				fullResponse.NextContinuationToken = undefined;
-				fullResponse.MaxKeys = allContents.length;
-				fullResponse.KeyCount = allContents.length;
-			}
-
-			this.logger.info(`S3 listObjects: total objects found under prefix "${basePrefix}": ${allContents.length}`);
-			return fullResponse!;
-		} catch (error) {
-			this.logger.error(`S3 listObjects: error listing objects under prefix "${basePrefix}": ${error}`);
-
-			if ((error as any).code === 'ECONNREFUSED') {
-				throw errorS3NotAvailable(error);
-			}
-
 			throw internalError(error);
 		}
 	}
