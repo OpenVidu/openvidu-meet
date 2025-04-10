@@ -93,29 +93,6 @@ export class S3Service {
 	}
 
 	/**
-	 * Deletes an object from an S3 bucket.
-	 *
-	 * @param name - The name of the object to delete.
-	 * @param bucket - The name of the S3 bucket (optional, defaults to the `${MEET_S3_BUCKET}/${MEET_S3_SUBBUCKET}`
-	 * @returns A promise that resolves to the result of the delete operation.
-	 * @throws Throws an error if there was an error deleting the object.
-	 */
-	async deleteObject(name: string, bucket: string = MEET_S3_BUCKET): Promise<DeleteObjectCommandOutput> {
-		const fullKey = this.getFullKey(name);
-
-		try {
-			this.logger.verbose(`S3 deleteObject: attempting to delete object ${fullKey} in bucket ${bucket}`);
-			const command = new DeleteObjectCommand({ Bucket: bucket, Key: name });
-			const result = await this.run(command);
-			this.logger.info(`S3 deleteObject: successfully deleted object ${fullKey} in bucket ${bucket}`);
-			return result;
-		} catch (error) {
-			this.logger.error(`S3 deleteObject: error deleting object ${fullKey} in bucket ${bucket}: ${error}`);
-			throw internalError(error);
-		}
-	}
-
-	/**
 	 * Bulk deletes objects from S3.
 	 * @param keys Array of object keys to delete. Estos keys deben incluir el subbucket (se obtiene con getFullKey).
 	 * @param bucket S3 bucket name (default: MEET_S3_BUCKET)

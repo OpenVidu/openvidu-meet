@@ -337,7 +337,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	): Promise<void> {
 		if (s3Result.status === 'fulfilled') {
 			try {
-				await this.s3Service.deleteObject(s3Path);
+				await this.s3Service.deleteObjects([s3Path]);
 			} catch (rollbackError) {
 				this.logger.error(`Error rolling back S3 save for room ${roomId}: ${rollbackError}`);
 			}
