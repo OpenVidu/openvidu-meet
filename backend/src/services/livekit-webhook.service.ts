@@ -198,10 +198,7 @@ export class LivekitWebhookService {
 		// Send webhook notification
 		switch (webhookAction) {
 			case 'started':
-				tasks.push(
-					this.saveRoomSecretsIfNeeded(roomId),
-					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
-				);
+				tasks.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
 				break;
 			case 'updated':
 				tasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
@@ -219,6 +216,7 @@ export class LivekitWebhookService {
 				break;
 			case 'ended':
 				tasks.push(
+					this.saveRoomSecretsFileIfNeeded(roomId),
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
 					this.recordingService.releaseRoomRecordingActiveLock(roomId)
 				);
@@ -243,7 +241,7 @@ export class LivekitWebhookService {
 	 * and moderator secrets, and saves them to an S3 bucket under the path
 	 * `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`.
 	 */
-	protected async saveRoomSecretsIfNeeded(roomId: string): Promise<void> {
+	protected async saveRoomSecretsFileIfNeeded(roomId: string): Promise<void> {
 		try {
 			const filePath = `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
 			const fileExists = await this.s3Service.exists(filePath);
