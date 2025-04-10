@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { startTestServer, stopTestServer } from '../../../utils/server-setup.js';
+import { startTestServer, stopTestServer } from '../../../utils/helpers.js';
 
 const INTERNAL_BASE_URL = '/meet/internal-api/v1';
 const AUTH_URL = `${INTERNAL_BASE_URL}/auth`;

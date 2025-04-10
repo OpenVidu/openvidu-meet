@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createApp, registerDependencies, initializeGlobalPreferences } from '../../src/server.js';
+import { createApp, registerDependencies } from '../../src/server.js';
 import request from 'supertest';
 import { Express } from 'express';
 
 import { SERVER_PORT } from '../../src/environment.js';
 import { Server } from 'http';
 
-let server: Server
+let server: Server;
 const baseUrl = '/meet/health';
+
+const BASE_URL = '/meet/api/v1';
+const INTERNAL_BASE_URL = '/meet/internal-api/v1';
+const AUTH_URL = `${INTERNAL_BASE_URL}/auth`;
 
 export const startTestServer = async (): Promise<Express> => {
 	registerDependencies();
@@ -16,9 +20,6 @@ export const startTestServer = async (): Promise<Express> => {
 	return await new Promise<Express>((resolve, reject) => {
 		server = app.listen(SERVER_PORT, async () => {
 			try {
-				// Initialize global preferences once the server is ready
-				await initializeGlobalPreferences();
-
 				// Check if the server is responding by hitting the health check route
 				const response = await request(app).get(baseUrl);
 
@@ -57,4 +58,38 @@ export const stopTestServer = async (): Promise<void> => {
 	} else {
 		console.log('Server is not running.');
 	}
+};
+
+export const login = async (app: Express, username?: string, password?: string) => {
+	const response = await request(app)
+		.post(`${AUTH_URL}/login`)
+		.send({
+			username,
+			password
+		})
+		.expect(200);
+
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken=')) as string;
+	return accessTokenCookie;
+};
+
+export const deleteAllRooms = async (app: Express) => {
+	let nextPageToken = '';
+
+	do {
+		const response: any = await request(app)
+			.get(`${BASE_URL}/rooms?fields=roomId&maxItems=100&nextPageToken=${nextPageToken}`)
+			// set header to accept json
+			.set('X-API-KEY', 'meet-api-key')
+			.expect(200);
+
+		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
+		const roomIds = response.body.rooms.map((room: any) => room.roomId);
+
+		await request(app)
+			.delete(`${BASE_URL}/rooms?roomIds=${roomIds.join(',')}`)
+			.set('X-API-KEY', 'meet-api-key');
+		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+	} while (nextPageToken);
 };
