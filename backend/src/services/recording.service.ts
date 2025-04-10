@@ -73,7 +73,9 @@ export class RecordingService {
 
 			if (!lkRoom) throw errorRoomNotFound(roomId);
 
-			if (lkRoom.numParticipants === 0) throw errorRoomHasNoParticipants(roomId);
+			const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
+
+			if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
 
 			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
