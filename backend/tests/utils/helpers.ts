@@ -87,9 +87,12 @@ export const deleteAllRooms = async (app: Express) => {
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
 		const roomIds = response.body.rooms.map((room: any) => room.roomId);
 
+		if (roomIds.length === 0) {
+			break;
+		}
+
 		await request(app)
 			.delete(`${BASE_URL}/rooms?roomIds=${roomIds.join(',')}`)
 			.set('X-API-KEY', 'meet-api-key');
-		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
 };
