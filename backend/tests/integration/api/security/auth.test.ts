@@ -1,10 +1,11 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { loginUserAsRole, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { MEET_INTERNAL_API_BASE_PATH_V1 } from '../../../../src/environment.js';
+import { UserRole } from '../../../../src/typings/ce/index.js';
 
-const INTERNAL_BASE_URL = '/meet/internal-api/v1';
-const AUTH_URL = `${INTERNAL_BASE_URL}/auth`;
+const AUTH_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/auth`;
 
 describe('OpenVidu Meet Authentication API Tests', () => {
 	let app: Express;
@@ -20,7 +21,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 	describe('Login Tests', () => {
 		it('should successfully login with valid credentials', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'user',
 					password: 'user'
@@ -41,7 +42,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 404 for invalid credentials', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'user',
 					password: 'invalidpassword'
@@ -54,7 +55,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 422 when username is missing', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					password: 'user'
 				})
@@ -67,7 +68,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 422 when password is missing', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'user'
 				})
@@ -80,7 +81,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 422 when username is too short', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'usr',
 					password: 'user'
@@ -94,7 +95,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 422 when password is too short', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'user',
 					password: 'usr'
@@ -109,7 +110,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 	describe('Logout Tests', () => {
 		it('should successfully logout', async () => {
-			const response = await request(app).post(`${AUTH_URL}/logout`).expect(200);
+			const response = await request(app).post(`${AUTH_PATH}/logout`).expect(200);
 
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toBe('Logout successful');
@@ -127,7 +128,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 		it('should successfully refresh token with valid refresh token', async () => {
 			// First, login to get a valid refresh token
 			const loginResponse = await request(app)
-				.post(`${AUTH_URL}/login`)
+				.post(`${AUTH_PATH}/login`)
 				.send({
 					username: 'user',
 					password: 'user'
@@ -138,7 +139,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 			const refreshTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetRefreshToken=')) as string;
 
 			const response = await request(app)
-				.post(`${AUTH_URL}/refresh`)
+				.post(`${AUTH_PATH}/refresh`)
 				.set('Cookie', [refreshTokenCookie])
 				.expect(200);
 
@@ -152,7 +153,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 		});
 
 		it('should return 400 when no refresh token is provided', async () => {
-			const response = await request(app).post(`${AUTH_URL}/refresh`).expect(400);
+			const response = await request(app).post(`${AUTH_PATH}/refresh`).expect(400);
 
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('No refresh token provided');
@@ -160,7 +161,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 400 when refresh token is invalid', async () => {
 			const response = await request(app)
-				.post(`${AUTH_URL}/refresh`)
+				.post(`${AUTH_PATH}/refresh`)
 				.set('Cookie', 'OvMeetRefreshToken=invalidtoken')
 				.expect(400);
 
@@ -170,19 +171,17 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 	});
 
 	describe('Profile Tests', () => {
+		let userCookie: string;
+		let adminCookie: string;
+
+		beforeAll(async () => {
+			// Get cookies for admin and user
+			userCookie = await loginUserAsRole(UserRole.USER);
+			adminCookie = await loginUserAsRole(UserRole.ADMIN);
+		});
+
 		it('should return 200 and user profile', async () => {
-			// First, login to get a valid access token
-			const loginResponse = await request(app)
-				.post(`${AUTH_URL}/login`)
-				.send({
-					username: 'user',
-					password: 'user'
-				})
-				.expect(200);
-
-			const cookies = loginResponse.headers['set-cookie'] as unknown as string[];
-
-			const response = await request(app).get(`${AUTH_URL}/profile`).set('Cookie', cookies).expect(200);
+			const response = await request(app).get(`${AUTH_PATH}/profile`).set('Cookie', userCookie).expect(200);
 
 			expect(response.body).toHaveProperty('username');
 			expect(response.body.username).toBe('user');
@@ -191,18 +190,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 		});
 
 		it('should return 200 and admin profile', async () => {
-			// First, login to get a valid access token
-			const loginResponse = await request(app)
-				.post(`${AUTH_URL}/login`)
-				.send({
-					username: 'admin',
-					password: 'admin'
-				})
-				.expect(200);
-
-			const cookies = loginResponse.headers['set-cookie'] as unknown as string[];
-
-			const response = await request(app).get(`${AUTH_URL}/profile`).set('Cookie', cookies).expect(200);
+			const response = await request(app).get(`${AUTH_PATH}/profile`).set('Cookie', adminCookie).expect(200);
 
 			expect(response.body).toHaveProperty('username');
 			expect(response.body.username).toBe('admin');
@@ -211,7 +199,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 		});
 
 		it('should return 401 when no access token is provided', async () => {
-			const response = await request(app).get(`${AUTH_URL}/profile`).expect(401);
+			const response = await request(app).get(`${AUTH_PATH}/profile`).expect(401);
 
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Unauthorized');
@@ -219,7 +207,7 @@ describe('OpenVidu Meet Authentication API Tests', () => {
 
 		it('should return 401 when access token is invalid', async () => {
 			const response = await request(app)
-				.get(`${AUTH_URL}/profile`)
+				.get(`${AUTH_PATH}/profile`)
 				.set('Cookie', 'OvMeetAccessToken=invalidtoken')
 				.expect(401);
 
