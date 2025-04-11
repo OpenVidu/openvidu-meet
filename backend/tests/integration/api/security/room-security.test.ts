@@ -8,6 +8,7 @@ import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { API_KEY_HEADER, changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
 
 const ROOMS_PATH = `${MEET_API_BASE_PATH_V1}/rooms`;
+const INTERNAL_ROOMS_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/rooms`;
 
 describe('Room API Security Tests', () => {
 	let app: Express;
@@ -121,9 +122,8 @@ describe('Room API Security Tests', () => {
 		let roomId: string;
 
 		beforeEach(async () => {
-			// Create a room and extract the roomId
-			const response = await request(app).post(ROOMS_PATH).set(API_KEY_HEADER, MEET_API_KEY).send({});
-			roomId = response.body.roomId;
+			const room = await createRoom();
+			roomId = room.roomId;
 		});
 
 		it('should succeed when request includes API key', async () => {
@@ -306,7 +306,7 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
+				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
 				.set('Cookie', adminCookie)
 				.send(roomPreferences);
 			expect(response.status).toBe(200);
@@ -314,16 +314,14 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when user is authenticated as user', async () => {
 			const response = await request(app)
-				.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
+				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
 				.set('Cookie', userCookie)
 				.send(roomPreferences);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app)
-				.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
-				.send(roomPreferences);
+			const response = await request(app).put(`${INTERNAL_ROOMS_PATH}/${roomId}`).send(roomPreferences);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -341,11 +339,9 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed if user is not authenticated', async () => {
-			const response = await request(app)
-				.get(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/participant-role`)
-				.query({
-					secret: moderatorSecret
-				});
+			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/participant-role`).query({
+				secret: moderatorSecret
+			});
 			expect(response.status).toBe(200);
 		});
 	});
