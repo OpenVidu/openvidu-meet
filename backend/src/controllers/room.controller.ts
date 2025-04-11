@@ -30,9 +30,9 @@ export const getRooms = async (req: Request, res: Response) => {
 	logger.verbose('Getting all rooms');
 
 	try {
-		const response = await roomService.getAllMeetRooms(queryParams);
-
-		return res.status(200).json(response);
+		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(queryParams);
+		const maxItems = Number(queryParams.maxItems);
+		return res.status(200).json({ rooms, pagination: { isTruncated, nextPageToken, maxItems } });
 	} catch (error) {
 		logger.error('Error getting rooms');
 		handleError(res, error);
