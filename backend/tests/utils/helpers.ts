@@ -13,7 +13,8 @@ import {
 	MEET_ADMIN_USER,
 	MEET_ADMIN_SECRET
 } from '../../src/environment.js';
-import { AuthMode, AuthType, MeetRoom, UserRole } from '../../src/typings/ce/index.js';
+import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../src/typings/ce/index.js';
+import { expect } from '@jest/globals';
 
 export const API_KEY_HEADER = 'X-API-Key';
 
@@ -131,7 +132,7 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 /**
  * Creates a room with the given prefix
  */
-export const createRoom = async (roomIdPrefix = 'test'): Promise<MeetRoom> => {
+export const createRoom = async (options: MeetRoomOptions): Promise<MeetRoom> => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
@@ -139,9 +140,60 @@ export const createRoom = async (roomIdPrefix = 'test'): Promise<MeetRoom> => {
 	const response = await request(app)
 		.post(`${MEET_API_BASE_PATH_V1}/rooms`)
 		.set(API_KEY_HEADER, MEET_API_KEY)
-		.send({ roomIdPrefix })
+		.send(options)
 		.expect(200);
 	return response.body;
+};
+
+/**
+ * Performs a GET /rooms request with provided query parameters.
+ * Returns the parsed response.
+ */
+export const getRooms = async (app: Express, query: Record<string, any> = {}) => {
+	const response = await request(app)
+		.get(`${MEET_API_BASE_PATH_V1}/rooms`)
+		.set(API_KEY_HEADER, MEET_API_KEY)
+		.query(query)
+		.expect(200);
+	return response.body;
+};
+
+/**
+ * Asserts that a rooms response matches the expected values for testing purposes.
+ * Validates the room array length and pagination properties.
+ *
+ * @param body - The API response body to validate
+ * @param expectedRoomLength - The expected number of rooms in the response
+ * @param expectedMaxItems - The expected maximum number of items in pagination
+ * @param expectedTruncated - The expected value for pagination.isTruncated flag
+ * @param expectedNextPageToken - The expected presence of pagination.nextPageToken
+ *                               (if true, expects nextPageToken to be defined;
+ *                                if false, expects nextPageToken to be undefined)
+ */
+export const assertRoomsResponse = (
+	body: any,
+	expectedRoomLength: number,
+	expectedMaxItems: number,
+	expectedTruncated: boolean,
+	expectedNextPageToken: boolean
+) => {
+	expect(body).toBeDefined();
+	expect(body.rooms).toBeDefined();
+	expect(Array.isArray(body.rooms)).toBe(true);
+	expect(body.rooms.length).toBe(expectedRoomLength);
+	expect(body.pagination).toBeDefined();
+	expect(body.pagination.isTruncated).toBe(expectedTruncated);
+
+	expectedNextPageToken
+		? expect(body.pagination.nextPageToken).toBeDefined()
+		: expect(body.pagination.nextPageToken).toBeUndefined();
+	expect(body.pagination.maxItems).toBe(expectedMaxItems);
+};
+
+export const assertEmptyRooms = async (app: Express) => {
+	const body = await getRooms(app);
+
+	assertRoomsResponse(body, 0, 10, false, false);
 };
 
 /**
