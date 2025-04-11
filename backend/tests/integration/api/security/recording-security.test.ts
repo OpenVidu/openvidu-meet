@@ -1,17 +1,21 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { startTestServer, stopTestServer } from '../../../utils/helpers.js';
-import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
+import {
+	API_KEY_HEADER,
+	createRoom,
+	deleteAllRooms,
+	generateParticipantToken,
+	loginUserAsRole,
+	startTestServer,
+	stopTestServer
+} from '../../../utils/helpers.js';
+import { MEET_API_BASE_PATH_V1, MEET_INTERNAL_API_BASE_PATH_V1, MEET_API_KEY } from '../../../../src/environment.js';
+import { UserRole } from '../../../../src/typings/ce/index.js';
+import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 
-const BASE_URL = '/meet/api/v1';
-const INTERNAL_BASE_URL = '/meet/internal-api/v1';
-const RECORDINGS_URL = `${BASE_URL}/recordings`;
-
-const API_KEY_HEADER = 'X-API-Key';
-const API_KEY = 'meet-api-key';
-
-const EXPIRATION_DATE = 1772129829000;
+const RECORDINGS_PATH = `${MEET_API_BASE_PATH_V1}/recordings`;
+const INTERNAL_RECORDINGS_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/recordings`;
 
 describe('Room API Security Tests', () => {
 	let app: Express;
@@ -25,128 +29,57 @@ describe('Room API Security Tests', () => {
 	let moderatorCookie: string;
 	let publisherCookie: string;
 
-	const loginUser = async (username: string, password: string): Promise<string> => {
-		const response = await request(app)
-			.post(`${INTERNAL_BASE_URL}/auth/login`)
-			.send({
-				username,
-				password
-			})
-			.expect(200);
-
-		const cookies = response.headers['set-cookie'] as unknown as string[];
-		const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken=')) as string;
-		return accessTokenCookie;
-	};
-
-	const extractSecretByRoomUrl = (urlString: string, type: string): string => {
-		const url = new URL(urlString);
-		const secret = url.searchParams.get('secret');
-
-		if (!secret) throw new Error(`${type} secret not found`);
-
-		return secret;
-	};
-
-	const changeSecurityPreferences = async (authMode: AuthMode) => {
-		await request(app)
-			.put(`${BASE_URL}/preferences/security`)
-			.set(API_KEY_HEADER, API_KEY)
-			.send({
-				authentication: {
-					authMode: authMode,
-					method: {
-						type: AuthType.SINGLE_USER
-					}
-				}
-			});
-	};
-
-	const generateParticipantToken = async (
-		roomId: string,
-		participantName: string,
-		secret: string
-	): Promise<string> => {
-		// Disable authentication to generate the token
-		await changeSecurityPreferences(AuthMode.NONE);
-
-		// Generate the participant token
-		const response = await request(app)
-			.post(`${INTERNAL_BASE_URL}/participants/token`)
-			.send({
-				roomId,
-				participantName,
-				secret
-			})
-			.expect(200);
-
-		// Return the participant token cookie
-		const cookies = response.headers['set-cookie'] as unknown as string[];
-		const participantTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetParticipantToken=')) as string;
-		return participantTokenCookie;
-	};
-
 	beforeAll(async () => {
 		app = await startTestServer();
 
 		// Get cookies for admin and user
-		userCookie = await loginUser('user', 'user');
-		adminCookie = await loginUser('admin', 'admin');
+		userCookie = await loginUserAsRole(UserRole.USER);
+		adminCookie = await loginUserAsRole(UserRole.ADMIN);
 
 		// Create a room and extract the roomId
-		const response = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
-			autoDeletionDate: EXPIRATION_DATE
-		});
-		roomId = response.body.roomId;
+		const room = await createRoom();
+		roomId = room.roomId;
 		recordingId = `${roomId}--recordingId--uid`;
 
-		// Extract the moderator and publisher secrets from the room URL
-		const { moderatorRoomUrl, publisherRoomUrl } = response.body;
-		const moderatorSecret = extractSecretByRoomUrl(moderatorRoomUrl, 'Moderator');
-		const publisherSecret = extractSecretByRoomUrl(publisherRoomUrl, 'Publisher');
-
-		// Generate participant tokens for the room and extract the cookies
-		moderatorCookie = await generateParticipantToken(roomId, 'Moderator', moderatorSecret);
-		publisherCookie = await generateParticipantToken(roomId, 'Publisher', publisherSecret);
+		// Extract the room secrets and generate participant tokens, saved as cookies
+		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		moderatorCookie = await generateParticipantToken(adminCookie, roomId, 'Moderator', moderatorSecret);
+		publisherCookie = await generateParticipantToken(adminCookie, roomId, 'Publisher', publisherSecret);
 	});
 
 	afterAll(async () => {
-		// Clean up created rooms
-		const roomsResponse = await request(app).get(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY);
-
-		for (const room of roomsResponse.body) {
-			await request(app).delete(`${BASE_URL}/rooms/${room.roomId}`).set(API_KEY_HEADER, API_KEY);
-		}
-
+		await deleteAllRooms();
 		await stopTestServer();
 	}, 20000);
 
 	describe('Start Recording Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
-				.post(`${RECORDINGS_URL}`)
+				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId })
 				.set('Cookie', moderatorCookie);
 
-			// The response code should be 500 to consider a success
+			// The response code should be 409 to consider a success
 			// This is because there is no real participant inside the room and the recording will fail
-			expect(response.status).toBe(500);
-			expect(response.body).toHaveProperty('message', 'Failed to start recording');
-		}, 40000); // Increase timeout for this test because of the timeout until the recording fails to start
+			expect(response.status).toBe(409);
+		});
 
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
-			const roomResponse = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
-				autoDeletionDate: EXPIRATION_DATE
-			});
-			const newRoomId = roomResponse.body.roomId;
+			const newRoom = await createRoom();
+			const newRoomId = newRoom.roomId;
 
 			// Extract the moderator secret and generate a participant token for the new room
-			const newModeratorSecret = extractSecretByRoomUrl(roomResponse.body.moderatorRoomUrl, 'Moderator');
-			const newModeratorCookie = await generateParticipantToken(newRoomId, 'Moderator', newModeratorSecret);
+			const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(newRoom);
+			const newModeratorCookie = await generateParticipantToken(
+				adminCookie,
+				newRoomId,
+				'Moderator',
+				moderatorSecret
+			);
 
 			const response = await request(app)
-				.post(`${RECORDINGS_URL}`)
+				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId })
 				.set('Cookie', newModeratorCookie);
 			expect(response.status).toBe(403);
@@ -154,7 +87,7 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
-				.post(`${RECORDINGS_URL}`)
+				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId })
 				.set('Cookie', publisherCookie);
 			expect(response.status).toBe(403);
@@ -163,100 +96,111 @@ describe('Room API Security Tests', () => {
 
 	describe('Stop Recording Tests', () => {
 		it('should succeed when participant is moderator', async () => {
-			const response = await request(app).put(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', moderatorCookie);
+			const response = await request(app)
+				.post(`${INTERNAL_RECORDINGS_PATH}/${recordingId}/stop`)
+				.set('Cookie', moderatorCookie);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
-			const roomResponse = await request(app).post(`${BASE_URL}/rooms`).set(API_KEY_HEADER, API_KEY).send({
-				autoDeletionDate: EXPIRATION_DATE
-			});
-			const newRoomId = roomResponse.body.roomId;
+			const newRoom = await createRoom();
+			const newRoomId = newRoom.roomId;
 
 			// Extract the moderator secret and generate a participant token for the new room
-			const newModeratorSecret = extractSecretByRoomUrl(roomResponse.body.moderatorRoomUrl, 'Moderator');
-			const newModeratorCookie = await generateParticipantToken(newRoomId, 'Moderator', newModeratorSecret);
+			const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(newRoom);
+			const newModeratorCookie = await generateParticipantToken(
+				adminCookie,
+				newRoomId,
+				'Moderator',
+				moderatorSecret
+			);
 
 			const response = await request(app)
-				.put(`${RECORDINGS_URL}/${recordingId}`)
+				.post(`${INTERNAL_RECORDINGS_PATH}/${recordingId}/stop`)
 				.set('Cookie', newModeratorCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
-			const response = await request(app).put(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', publisherCookie);
+			const response = await request(app)
+				.post(`${INTERNAL_RECORDINGS_PATH}/${recordingId}/stop`)
+				.set('Cookie', publisherCookie);
 			expect(response.status).toBe(403);
 		});
 	});
 
 	describe('Get Recordings Tests', () => {
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).get(RECORDINGS_URL).set(API_KEY_HEADER, API_KEY);
+			const response = await request(app).get(RECORDINGS_PATH).set(API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(RECORDINGS_URL).set('Cookie', adminCookie);
+			const response = await request(app).get(RECORDINGS_PATH).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(RECORDINGS_URL).set('Cookie', userCookie);
+			const response = await request(app).get(RECORDINGS_PATH).set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(RECORDINGS_URL);
+			const response = await request(app).get(RECORDINGS_PATH);
 			expect(response.status).toBe(401);
 		});
 	});
 
 	describe('Get Recording Tests', () => {
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).get(`${RECORDINGS_URL}/${recordingId}`).set(API_KEY_HEADER, API_KEY);
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}`)
+				.set(API_KEY_HEADER, MEET_API_KEY);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', adminCookie);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', adminCookie);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', userCookie);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${RECORDINGS_URL}/${recordingId}`);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}`);
 			expect(response.status).toBe(401);
 		});
 	});
 
 	describe('Delete Recording Tests', () => {
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).delete(`${RECORDINGS_URL}/${recordingId}`).set(API_KEY_HEADER, API_KEY);
+			const response = await request(app)
+				.delete(`${RECORDINGS_PATH}/${recordingId}`)
+				.set(API_KEY_HEADER, MEET_API_KEY);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).delete(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', adminCookie);
+			const response = await request(app).delete(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', adminCookie);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).delete(`${RECORDINGS_URL}/${recordingId}`).set('Cookie', userCookie);
+			const response = await request(app).delete(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).delete(`${RECORDINGS_URL}/${recordingId}`);
+			const response = await request(app).delete(`${RECORDINGS_PATH}/${recordingId}`);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -264,31 +208,31 @@ describe('Room API Security Tests', () => {
 	describe('Bulk Delete Recordings Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.delete(RECORDINGS_URL)
-				.set(API_KEY_HEADER, API_KEY)
-				.query({ recordingIds: [recordingId] });
+				.delete(RECORDINGS_PATH)
+				.query({ recordingIds: [recordingId] })
+				.set(API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.delete(RECORDINGS_URL)
-				.set('Cookie', adminCookie)
-				.query({ recordingIds: [recordingId] });
+				.delete(RECORDINGS_PATH)
+				.query({ recordingIds: [recordingId] })
+				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as user', async () => {
 			const response = await request(app)
-				.delete(RECORDINGS_URL)
-				.set('Cookie', userCookie)
-				.query({ recordingIds: [recordingId] });
+				.delete(RECORDINGS_PATH)
+				.query({ recordingIds: [recordingId] })
+				.set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app)
-				.delete(RECORDINGS_URL)
+				.delete(RECORDINGS_PATH)
 				.query({ recordingIds: [recordingId] });
 			expect(response.status).toBe(401);
 		});
@@ -297,7 +241,7 @@ describe('Room API Security Tests', () => {
 	describe('Stream Recording Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.get(`${INTERNAL_BASE_URL}/recordings/${recordingId}/stream`)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.set('Cookie', adminCookie);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
@@ -305,13 +249,13 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when user is authenticated as user', async () => {
 			const response = await request(app)
-				.get(`${INTERNAL_BASE_URL}/recordings/${recordingId}/stream`)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.set('Cookie', userCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${INTERNAL_BASE_URL}/recordings/${recordingId}/stream`);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/media`);
 			expect(response.status).toBe(401);
 		});
 	});
