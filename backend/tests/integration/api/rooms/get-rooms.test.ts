@@ -32,17 +32,17 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 	describe('List Rooms Tests', () => {
 		it('should return an empty list of rooms', async () => {
-			await assertEmptyRooms(app);
+			await assertEmptyRooms();
 		});
 
 		it('should return a list of rooms', async () => {
-			await assertEmptyRooms(app);
+			await assertEmptyRooms();
 
-			await createRoom(app, {
+			await createRoom({
 				roomIdPrefix: 'test-room'
 			});
 
-			const body = await getRooms(app);
+			const body = await getRooms();
 			const { rooms } = body;
 
 			assertRoomsResponse(body, 1, 10, false, false);
@@ -57,14 +57,14 @@ describe('OpenVidu Meet Room API Tests', () => {
 		});
 
 		it('should return a list of rooms applying fields filter', async () => {
-			await assertEmptyRooms(app);
+			await assertEmptyRooms();
 
-			await createRoom(app, {
+			await createRoom({
 				roomIdPrefix: 'test-room',
 				autoDeletionDate: validAutoDeletionDate
 			});
 
-			const body = await getRooms(app, { fields: 'roomId,createdAt' });
+			const body = await getRooms({ fields: 'roomId,createdAt' });
 			const { rooms } = body;
 
 			assertRoomsResponse(body, 1, 10, false, false);
@@ -83,34 +83,34 @@ describe('OpenVidu Meet Room API Tests', () => {
 		});
 
 		it('should return a list of rooms with pagination', async () => {
-			await assertEmptyRooms(app);
+			await assertEmptyRooms();
 			const promises = [1, 2, 3, 4, 5, 6].map((i) => {
-				return createRoom(app, {
+				return createRoom({
 					roomIdPrefix: `test-room-${i}`,
 					autoDeletionDate: validAutoDeletionDate
 				});
 			});
 			await Promise.all(promises);
 
-			let body = await getRooms(app, { maxItems: 3 });
+			let body = await getRooms({ maxItems: 3 });
 			const { pagination } = body;
 
 			assertRoomsResponse(body, 3, 3, true, true);
 
 			const nextPageToken = pagination.nextPageToken;
-			body = await getRooms(app, { maxItems: 3, nextPageToken });
+			body = await getRooms({ maxItems: 3, nextPageToken });
 
 			assertRoomsResponse(body, 3, 3, false, false);
 		});
 
 		it('should capped maxItems to the maximum allowed', async () => {
-			const body = await getRooms(app, { maxItems: 101 });
+			const body = await getRooms({ maxItems: 101 });
 
 			assertRoomsResponse(body, 0, 100, false, false);
 		});
 
 		it('should coerce a floating number to an integer for maxItems', async () => {
-			const body = await getRooms(app, { maxItems: 12.78 });
+			const body = await getRooms({ maxItems: 12.78 });
 
 			assertRoomsResponse(body, 0, 12, false, false);
 		});

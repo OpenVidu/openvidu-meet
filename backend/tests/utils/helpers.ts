@@ -77,6 +77,10 @@ export const stopTestServer = async (): Promise<void> => {
 				console.log('Test server stopped.');
 				resolve();
 			}
+
+			// Clear the app instance
+			app = undefined as unknown as Express;
+			server = undefined as unknown as Server;
 		});
 	});
 };
@@ -149,7 +153,11 @@ export const createRoom = async (options: MeetRoomOptions): Promise<MeetRoom> =>
  * Performs a GET /rooms request with provided query parameters.
  * Returns the parsed response.
  */
-export const getRooms = async (app: Express, query: Record<string, any> = {}) => {
+export const getRooms = async (query: Record<string, any> = {}) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
 	const response = await request(app)
 		.get(`${MEET_API_BASE_PATH_V1}/rooms`)
 		.set(API_KEY_HEADER, MEET_API_KEY)
@@ -190,8 +198,12 @@ export const assertRoomsResponse = (
 	expect(body.pagination.maxItems).toBe(expectedMaxItems);
 };
 
-export const assertEmptyRooms = async (app: Express) => {
-	const body = await getRooms(app);
+export const assertEmptyRooms = async () => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const body = await getRooms();
 
 	assertRoomsResponse(body, 0, 10, false, false);
 };
