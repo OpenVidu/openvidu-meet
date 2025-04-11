@@ -136,7 +136,7 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 /**
  * Creates a room with the given prefix
  */
-export const createRoom = async (options: MeetRoomOptions): Promise<MeetRoom> => {
+export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
