@@ -4,15 +4,13 @@ import { AuthService } from '../services/auth.service.js';
 import { TokenService } from '../services/token.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import {
-	ACCESS_TOKEN_COOKIE_NAME,
 	MEET_ACCESS_TOKEN_EXPIRATION,
-	MEET_INTERNAL_API_BASE_PATH_V1,
 	MEET_REFRESH_TOKEN_EXPIRATION,
-	REFRESH_TOKEN_COOKIE_NAME
 } from '../environment.js';
 import { ClaimGrants } from 'livekit-server-sdk';
 import { getCookieOptions } from '../utils/cookie-utils.js';
 import { UserService } from '../services/user.service.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -31,11 +29,11 @@ export const login = async (req: Request, res: Response) => {
 		const tokenService = container.get(TokenService);
 		const accessToken = await tokenService.generateAccessToken(user);
 		const refreshToken = await tokenService.generateRefreshToken(user);
-		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
+		res.cookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
 		res.cookie(
-			REFRESH_TOKEN_COOKIE_NAME,
+			INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME,
 			refreshToken,
-			getCookieOptions(`${MEET_INTERNAL_API_BASE_PATH_V1}/auth`, MEET_REFRESH_TOKEN_EXPIRATION)
+			getCookieOptions(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, MEET_REFRESH_TOKEN_EXPIRATION)
 		);
 		logger.info(`Login succeeded for user ${username}`);
 		return res.status(200).json({ message: 'Login succeeded' });
@@ -46,9 +44,9 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = (_req: Request, res: Response) => {
-	res.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
-	res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
-		path: `${MEET_INTERNAL_API_BASE_PATH_V1}/auth`
+	res.clearCookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME);
+	res.clearCookie(INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME, {
+		path: `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`
 	});
 	return res.status(200).json({ message: 'Logout successful' });
 };
@@ -56,7 +54,7 @@ export const logout = (_req: Request, res: Response) => {
 export const refreshToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Refresh token request received');
-	const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
+	const refreshToken = req.cookies[INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME];
 
 	if (!refreshToken) {
 		logger.warn('No refresh token provided');
@@ -84,7 +82,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	try {
 		const accessToken = await tokenService.generateAccessToken(user);
-		res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
+		res.cookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
 		logger.info(`Token refreshed for user ${username}`);
 		return res.status(200).json({ message: 'Token refreshed' });
 	} catch (error) {

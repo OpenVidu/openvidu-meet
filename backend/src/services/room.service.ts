@@ -11,9 +11,9 @@ import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.j
 import { errorParticipantUnauthorized, internalError } from '../models/error.model.js';
 import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
 import { uid } from 'uid/single';
-import { MEET_NAME_ID, MEET_ROOM_GC_INTERVAL } from '../environment.js';
-import ms from 'ms';
+import { MEET_NAME_ID } from '../environment.js';
 import { UtilsHelper } from '../helpers/utils.helper.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -33,7 +33,7 @@ export class RoomService {
 		const roomGarbageCollectorTask: IScheduledTask = {
 			name: 'roomGarbageCollector',
 			type: 'cron',
-			scheduleOrDelay: MEET_ROOM_GC_INTERVAL,
+			scheduleOrDelay: INTERNAL_CONFIG.ROOM_GC_INTERVAL,
 			callback: this.deleteExpiredRooms.bind(this)
 		};
 		this.taskSchedulerService.registerTask(roomGarbageCollectorTask);

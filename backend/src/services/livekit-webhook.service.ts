@@ -3,7 +3,7 @@ import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { LiveKitService } from './livekit.service.js';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID, MEET_S3_RECORDINGS_PREFIX } from '../environment.js';
+import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID } from '../environment.js';
 import { LoggerService } from './logger.service.js';
 import { RoomService } from './room.service.js';
 import { S3Service } from './s3.service.js';
@@ -13,6 +13,7 @@ import { MutexService } from './mutex.service.js';
 import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -239,11 +240,11 @@ export class LivekitWebhookService {
 	 * This method checks if secrets for the specified room exist in the S3 storage.
 	 * If they don't exist, it retrieves the room information, extracts the publisher
 	 * and moderator secrets, and saves them to an S3 bucket under the path
-	 * `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`.
+	 * `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`.
 	 */
 	protected async saveRoomSecretsFileIfNeeded(roomId: string): Promise<void> {
 		try {
-			const filePath = `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
 			const fileExists = await this.s3Service.exists(filePath);
 
 			if (fileExists) {
@@ -270,6 +271,6 @@ export class LivekitWebhookService {
 	protected buildMetadataFilePath(recordingId: string): string {
 		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
-		return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
+		return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
 	}
 }

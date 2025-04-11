@@ -1,13 +1,6 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { LoggerService, TokenService, UserService } from '../services/index.js';
-import {
-	ACCESS_TOKEN_COOKIE_NAME,
-	API_KEY_HEADER,
-	MEET_ANONYMOUS_USER,
-	MEET_API_KEY,
-	MEET_API_USER,
-	PARTICIPANT_TOKEN_COOKIE_NAME
-} from '../environment.js';
+import { MEET_API_KEY } from '../environment.js';
 import { container } from '../config/dependency-injector.config.js';
 import { ClaimGrants } from 'livekit-server-sdk';
 import { User, UserRole } from '@typings-ce';
@@ -21,6 +14,7 @@ import {
 } from '../models/index.js';
 import rateLimit from 'express-rate-limit';
 import ms from 'ms';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -58,7 +52,7 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 // Configure token validatior for role-based access
 export const tokenAndRoleValidator = (role: UserRole) => {
 	return async (req: Request) => {
-		const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
+		const token = req.cookies[INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME];
 
 		if (!token) {
 			throw errorUnauthorized();
@@ -92,7 +86,7 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 
 // Configure token validatior for participant access
 export const participantTokenValidator = async (req: Request) => {
-	const token = req.cookies[PARTICIPANT_TOKEN_COOKIE_NAME];
+	const token = req.cookies[INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME];
 
 	if (!token) {
 		throw errorUnauthorized();
@@ -111,7 +105,7 @@ export const participantTokenValidator = async (req: Request) => {
 
 // Configure API key validatior
 export const apiKeyValidator = async (req: Request) => {
-	const apiKey = req.headers[API_KEY_HEADER];
+	const apiKey = req.headers[INTERNAL_CONFIG.API_KEY_HEADER];
 
 	if (!apiKey) {
 		throw errorUnauthorized();
@@ -122,7 +116,7 @@ export const apiKeyValidator = async (req: Request) => {
 	}
 
 	const apiUser = {
-		username: MEET_API_USER,
+		username: INTERNAL_CONFIG.API_USER,
 		role: UserRole.APP
 	};
 
@@ -135,7 +129,7 @@ export const allowAnonymous = async (req: Request) => {
 	let user: User | null = null;
 
 	// Check if there is a user already authenticated
-	const token = req.cookies[ACCESS_TOKEN_COOKIE_NAME];
+	const token = req.cookies[INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME];
 
 	if (token) {
 		try {
@@ -152,7 +146,7 @@ export const allowAnonymous = async (req: Request) => {
 
 	if (!user) {
 		user = {
-			username: MEET_ANONYMOUS_USER,
+			username: INTERNAL_CONFIG.ANONYMOUS_USER,
 			role: UserRole.USER
 		};
 	}

@@ -1,12 +1,15 @@
 import dotenv from 'dotenv';
 import chalk from 'chalk';
-import ms from 'ms';
 
-const envPath = process.env.MEET_CONFIG_DIR
-	? process.env.MEET_CONFIG_DIR
-	: process.env.NODE_ENV === 'development'
-		? '.env.development'
-		: undefined;
+let envPath: string | undefined;
+
+if (process.env.MEET_CONFIG_DIR) {
+	envPath = process.env.MEET_CONFIG_DIR;
+} else if (process.env.NODE_ENV === 'development') {
+	envPath = '.env.development';
+} else {
+	envPath = undefined;
+}
 
 dotenv.config(envPath ? { path: envPath } : {});
 
@@ -61,34 +64,6 @@ export const {
 	MODULE_NAME = 'openviduMeet',
 	ENABLED_MODULES = ''
 } = process.env;
-
-// Base paths for the API
-export const MEET_API_BASE_PATH = '/meet/api';
-export const MEET_INTERNAL_API_BASE_PATH_V1 = '/meet/internal-api/v1';
-export const MEET_API_BASE_PATH_V1 = MEET_API_BASE_PATH + '/v1';
-
-// Cookie names
-export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
-export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
-export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
-
-// Headers for API requests
-export const API_KEY_HEADER = 'x-api-key';
-
-// Fixed usernames
-export const MEET_ANONYMOUS_USER = 'anonymous';
-export const MEET_API_USER = 'api-user';
-
-// S3 prefixes
-export const MEET_S3_ROOMS_PREFIX = 'rooms';
-export const MEET_S3_RECORDINGS_PREFIX = 'recordings';
-
-export const MEET_ROOM_GC_INTERVAL: ms.StringValue = '1h';
-
-// Time to live for the active recording lock in Redis
-export const MEET_RECORDING_LOCK_TTL: ms.StringValue = '6h';
-export const MEET_RECORDING_STARTED_TIMEOUT: ms.StringValue = '30s';
-export const MEET_RECORDING_LOCK_GC_INTERVAL: ms.StringValue = '30m';
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {

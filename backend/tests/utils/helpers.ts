@@ -5,17 +5,15 @@ import { Server } from 'http';
 import { createApp, registerDependencies } from '../../src/server.js';
 import {
 	SERVER_PORT,
-	MEET_API_BASE_PATH_V1,
-	MEET_INTERNAL_API_BASE_PATH_V1,
 	MEET_API_KEY,
 	MEET_USER,
 	MEET_SECRET,
 	MEET_ADMIN_USER,
-	MEET_ADMIN_SECRET,
-	API_KEY_HEADER
+	MEET_ADMIN_SECRET
 } from '../../src/environment.js';
 import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../src/typings/ce/index.js';
 import { expect } from '@jest/globals';
+import INTERNAL_CONFIG from '../../src/config/internal-config.js';
 
 const CREDENTIALS = {
 	user: {
@@ -96,7 +94,7 @@ export const changeSecurityPreferences = async (
 	}
 
 	await request(app)
-		.put(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
 		.set('Cookie', adminCookie)
 		.send({
 			roomCreationPolicy: {
@@ -123,7 +121,7 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 
 	const credentials = role === UserRole.ADMIN ? CREDENTIALS.admin : CREDENTIALS.user;
 	const response = await request(app)
-		.post(`${MEET_INTERNAL_API_BASE_PATH_V1}/auth/login`)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
 		.send(credentials)
 		.expect(200);
 
@@ -141,8 +139,8 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 	}
 
 	const response = await request(app)
-		.post(`${MEET_API_BASE_PATH_V1}/rooms`)
-		.set(API_KEY_HEADER, MEET_API_KEY)
+		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.send(options)
 		.expect(200);
 	return response.body;
@@ -157,7 +155,10 @@ export const getRooms = async (query: Record<string, any> = {}) => {
 		throw new Error('App instance is not defined');
 	}
 
-	return await request(app).get(`${MEET_API_BASE_PATH_V1}/rooms`).set(API_KEY_HEADER, MEET_API_KEY).query(query);
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+		.query(query);
 };
 
 /**
@@ -208,8 +209,8 @@ export const getRoom = async (roomId: string, fields?: string) => {
 	}
 
 	return await request(app)
-		.get(`${MEET_API_BASE_PATH_V1}/rooms/${roomId}`)
-		.set(API_KEY_HEADER, MEET_API_KEY)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query({ fields });
 };
 
@@ -235,9 +236,9 @@ export const deleteAllRooms = async () => {
 
 	do {
 		const response: any = await request(app)
-			.get(`${MEET_API_BASE_PATH_V1}/rooms`)
+			.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 			.query({ fields: 'roomId', maxItems: 100, nextPageToken })
-			.set(API_KEY_HEADER, MEET_API_KEY)
+			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 			.expect(200);
 
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
@@ -248,9 +249,9 @@ export const deleteAllRooms = async () => {
 		}
 
 		await request(app)
-			.delete(`${MEET_API_BASE_PATH_V1}/rooms`)
+			.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 			.query({ roomIds: roomIds.join(','), force: true })
-			.set(API_KEY_HEADER, MEET_API_KEY);
+			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
@@ -272,7 +273,7 @@ export const generateParticipantToken = async (
 
 	// Generate the participant token
 	const response = await request(app)
-		.post(`${MEET_INTERNAL_API_BASE_PATH_V1}/participants/token`)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token`)
 		.send({
 			roomId,
 			participantName,
@@ -284,4 +285,8 @@ export const generateParticipantToken = async (
 	const cookies = response.headers['set-cookie'] as unknown as string[];
 	const participantTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetParticipantToken=')) as string;
 	return participantTokenCookie;
+};
+
+export const sleep = (ms: number) => {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 };

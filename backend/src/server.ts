@@ -6,8 +6,6 @@ import {
 	SERVER_PORT,
 	SERVER_CORS_ORIGIN,
 	logEnvVars,
-	MEET_API_BASE_PATH_V1,
-	MEET_INTERNAL_API_BASE_PATH_V1
 } from './environment.js';
 import {
 	publicApiHtmlFilePath,
@@ -28,6 +26,7 @@ import {
 import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
+import INTERNAL_CONFIG from './config/internal-config.js';
 
 const createApp = () => {
 	const app: Express = express();
@@ -49,19 +48,19 @@ const createApp = () => {
 	app.use(cookieParser());
 
 	// Public API routes
-	app.use(`${MEET_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(publicApiHtmlFilePath));
-	app.use(`${MEET_API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
-	app.use(`${MEET_API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
+	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(publicApiHtmlFilePath));
+	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
+	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 
 	// Internal API routes
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
 		res.sendFile(internalApiHtmlFilePath)
 	);
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantsRouter);
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
-	app.use(`${MEET_INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantsRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
 
 	app.use('/meet/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
@@ -85,7 +84,7 @@ const startServer = (app: express.Application) => {
 		console.log('OpenVidu Meet is listening on port', chalk.cyanBright(SERVER_PORT));
 		console.log(
 			'REST API Docs: ',
-			chalk.cyanBright(`http://localhost:${SERVER_PORT}${MEET_API_BASE_PATH_V1}/docs`)
+			chalk.cyanBright(`http://localhost:${SERVER_PORT}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
 		);
 		logEnvVars();
 	});

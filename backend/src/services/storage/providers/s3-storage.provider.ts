@@ -5,9 +5,9 @@ import { LoggerService } from '../../logger.service.js';
 import { RedisService } from '../../redis.service.js';
 import { OpenViduMeetError } from '../../../models/error.model.js';
 import { inject, injectable } from '../../../config/dependency-injector.config.js';
-import { MEET_S3_ROOMS_PREFIX } from '../../../environment.js';
 import { RedisKeyName } from '../../../models/redis.model.js';
 import { PutObjectCommandOutput } from '@aws-sdk/client-s3';
+import INTERNAL_CONFIG from '../../../config/internal-config.js';
 
 /**
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage
@@ -142,7 +142,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 */
 	async saveMeetRoom(ovRoom: R): Promise<R> {
 		const { roomId } = ovRoom;
-		const s3Path = `${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
+		const s3Path = `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 		const redisPayload = JSON.stringify(ovRoom);
 		const redisKey = RedisKeyName.ROOM + roomId;
 
@@ -186,7 +186,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 				Contents: roomFiles,
 				IsTruncated,
 				NextContinuationToken
-			} = await this.s3Service.listObjectsPaginated(MEET_S3_ROOMS_PREFIX, maxItems, nextPageToken);
+			} = await this.s3Service.listObjectsPaginated(INTERNAL_CONFIG.S3_ROOMS_PREFIX, maxItems, nextPageToken);
 
 			if (!roomFiles || roomFiles.length === 0) {
 				this.logger.verbose('No room files found in S3.');
@@ -226,7 +226,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 			const room: R | null = await this.getFromRedis<R>(roomId);
 
 			if (!room) {
-				const s3RoomPath = `${MEET_S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
+				const s3RoomPath = `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 				this.logger.debug(`Room ${roomId} not found in Redis. Fetching from S3 at ${s3RoomPath}...`);
 
 				return await this.getFromS3<R>(s3RoomPath);
@@ -241,7 +241,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	}
 
 	async deleteMeetRooms(roomIds: string[]): Promise<void> {
-		const roomsToDelete = roomIds.map((id) => `${MEET_S3_ROOMS_PREFIX}/${id}/${id}.json`);
+		const roomsToDelete = roomIds.map((id) => `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${id}/${id}.json`);
 		const redisKeysToDelete = roomIds.map((id) => RedisKeyName.ROOM + id);
 
 		try {

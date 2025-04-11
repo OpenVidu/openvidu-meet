@@ -22,11 +22,7 @@ import { LoggerService } from './logger.service.js';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
-	MEET_RECORDING_LOCK_GC_INTERVAL,
-	MEET_RECORDING_LOCK_TTL,
-	MEET_RECORDING_STARTED_TIMEOUT,
 	MEET_S3_BUCKET,
-	MEET_S3_RECORDINGS_PREFIX,
 	MEET_S3_SUBBUCKET
 } from '../environment.js';
 import { RoomService } from './room.service.js';
@@ -38,6 +34,7 @@ import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.j
 import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
 import { UtilsHelper } from '../helpers/utils.helper.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 @injectable()
 export class RecordingService {
@@ -54,7 +51,7 @@ export class RecordingService {
 		const recordingGarbageCollectorTask: IScheduledTask = {
 			name: 'activeRecordingGarbageCollector',
 			type: 'cron',
-			scheduleOrDelay: MEET_RECORDING_LOCK_GC_INTERVAL,
+			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_LOCK_GC_INTERVAL,
 			callback: this.deleteOrphanLocks.bind(this)
 		};
 		this.taskSchedulerService.registerTask(recordingGarbageCollectorTask);
@@ -93,7 +90,7 @@ export class RecordingService {
 				this.taskSchedulerService.registerTask({
 					name: `${roomId}_recording_timeout`,
 					type: 'timeout',
-					scheduleOrDelay: MEET_RECORDING_STARTED_TIMEOUT,
+					scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT,
 					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
 				});
 
@@ -257,7 +254,7 @@ export class RecordingService {
 
 			// Retrieve the recordings from the S3 bucket
 			const { Contents, IsTruncated, NextContinuationToken } = await this.s3Service.listObjectsPaginated(
-				`${MEET_S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`,
+				`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`,
 				maxItems,
 				nextPageToken
 			);
@@ -294,7 +291,7 @@ export class RecordingService {
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
 		const RECORDING_FILE_PORTION_SIZE = 5 * 1024 * 1024; // 5MB
 		const recordingInfo: MeetRecordingInfo = await this.getRecording(recordingId);
-		const recordingPath = `${MEET_S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
+		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
 
 		if (!recordingPath) throw new Error(`Error extracting path from recording ${recordingId}`);
 
@@ -332,7 +329,7 @@ export class RecordingService {
 		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
-			const lock = await this.mutexService.acquire(lockName, ms(MEET_RECORDING_LOCK_TTL));
+			const lock = await this.mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_LOCK_TTL));
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
@@ -422,7 +419,7 @@ export class RecordingService {
 	): Promise<{ metadataFilePath: string; recordingInfo: MeetRecordingInfo }> {
 		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
-		const metadataPath = `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
+		const metadataPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
 		this.logger.debug(`Retrieving metadata for recording ${recordingId} from ${metadataPath}`);
 		const recordingInfo = (await this.s3Service.getObjectAsJson(metadataPath)) as MeetRecordingInfo;
 
@@ -455,7 +452,7 @@ export class RecordingService {
 		const recordingName = `${roomId}--${uid(10)}`;
 
 		// Generate the file path with the openviud-meet subbucket and the recording prefix
-		const filepath = `${MEET_S3_SUBBUCKET}/${MEET_S3_RECORDINGS_PREFIX}/${roomId}/${recordingName}`;
+		const filepath = `${MEET_S3_SUBBUCKET}/${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${roomId}/${recordingName}`;
 
 		return new EncodedFileOutput({
 			fileType: EncodedFileType.DEFAULT_FILETYPE,
@@ -551,7 +548,7 @@ export class RecordingService {
 		try {
 			// List all objects in the metadata directory for the room
 			const { Contents } = await this.s3Service.listObjectsPaginated(
-				`${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}`
+				`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`
 			);
 
 			// Check if the contents number are valid.
@@ -566,7 +563,7 @@ export class RecordingService {
 
 			// If the only other file is the secrets.json file, add it to the filesToDelete array
 			if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('secrets.json')) {
-				return `${MEET_S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+				return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
 			}
 
 			return null;
