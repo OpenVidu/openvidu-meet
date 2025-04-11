@@ -1,30 +1,32 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { deleteAllRooms, login, startTestServer, stopTestServer } from '../../../utils/helpers.js';
-const apiVersion = 'v1';
-const baseUrl = `/meet/api/`;
-const endpoint = '/rooms';
+import { deleteAllRooms, loginUserAsRole, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { UserRole } from '../../../../src/typings/ce/user.js';
+import { MEET_API_BASE_PATH_V1 } from '../../../../src/environment.js';
+
+const ROOMS_PATH = `${MEET_API_BASE_PATH_V1}/rooms`;
+
 describe('OpenVidu Meet Room API Tests', () => {
+	const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
+
 	let app: Express;
 	let userCookie: string;
-	const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		userCookie = await login(app, 'user', 'user');
+		userCookie = await loginUserAsRole(UserRole.USER);
 	});
 
 	afterAll(async () => {
-		// Remove all rooms created
-		await deleteAllRooms(app);
+		await deleteAllRooms();
 		await stopTestServer();
 	});
 
 	describe('Room Creation Tests', () => {
 		it('✅ Should create a room without autoDeletionDate (default behavior)', async () => {
 			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
+				.post(ROOMS_PATH)
 				.set('Cookie', userCookie)
 				.send({
 					roomIdPrefix: '   Test Room   '
@@ -46,7 +48,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 		it('✅ Should create a room with a valid autoDeletionDate', async () => {
 			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
+				.post(ROOMS_PATH)
 				.set('Cookie', userCookie)
 				.send({
 					autoDeletionDate: validAutoDeletionDate,
@@ -74,11 +76,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(200);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(200);
 
 			expect(response.body).toHaveProperty('creationDate');
 			expect(response.body).toHaveProperty('autoDeletionDate');
@@ -103,11 +101,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'TestRoom'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			// Check that the error message contains the positive number validation
 			expect(response.body.error).toContain('Unprocessable Entity');
@@ -120,11 +114,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'TestRoom'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain(
@@ -138,11 +128,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'TestRoom'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -153,11 +139,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'TestRoom'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -168,11 +150,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'TestRoom'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -183,11 +161,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
@@ -198,11 +172,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
@@ -214,11 +184,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				preferences: 'invalid-preferences'
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected object');
 		});
@@ -236,11 +202,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
-				.set('Cookie', userCookie)
-				.send(payload)
-				.expect(422);
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected boolean');
 		});
@@ -248,7 +210,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should fail with invalid JSON payload', async () => {
 			// In this case, instead of sending JSON object, send an invalid JSON string.
 			const response = await request(app)
-				.post(`${baseUrl}${apiVersion}${endpoint}`)
+				.post(ROOMS_PATH)
 				.set('Cookie', userCookie)
 				.set('Content-Type', 'application/json')
 				.send('{"roomIdPrefix": "TestRoom",') // invalid JSON syntax
