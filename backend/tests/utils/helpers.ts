@@ -131,7 +131,7 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 /**
  * Creates a room with the given prefix
  */
-export const createRoom = async (roomPrefix?: string): Promise<MeetRoom> => {
+export const createRoom = async (roomIdPrefix = 'test'): Promise<MeetRoom> => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
@@ -139,7 +139,7 @@ export const createRoom = async (roomPrefix?: string): Promise<MeetRoom> => {
 	const response = await request(app)
 		.post(`${MEET_API_BASE_PATH_V1}/rooms`)
 		.set(API_KEY_HEADER, MEET_API_KEY)
-		.send({ roomPrefix })
+		.send({ roomIdPrefix })
 		.expect(200);
 	return response.body;
 };
