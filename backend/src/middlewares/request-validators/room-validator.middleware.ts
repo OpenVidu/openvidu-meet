@@ -20,7 +20,13 @@ const nonEmptySanitizedString = (fieldName: string) =>
 	z
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.transform(sanitizeId)
+		.transform((val) => {
+			let transformed = sanitizeId(val);
+
+			if (transformed.startsWith('-')) transformed = transformed.substring(1);
+
+			return transformed;
+		})
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
 		});
