@@ -52,7 +52,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				.set('Cookie', userCookie)
 				.send({
 					autoDeletionDate: validAutoDeletionDate,
-					roomIdPrefix: '   My Room *123  '
+					roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
 				})
 				.expect(200);
 
