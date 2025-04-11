@@ -122,7 +122,7 @@ describe('Room API Security Tests', () => {
 		let roomId: string;
 
 		beforeEach(async () => {
-			const room = await createRoom({});
+			const room = await createRoom();
 			roomId = room.roomId;
 		});
 
@@ -159,7 +159,7 @@ describe('Room API Security Tests', () => {
 		let publisherCookie: string;
 
 		beforeAll(async () => {
-			const room = await createRoom({});
+			const room = await createRoom();
 			roomId = room.roomId;
 
 			// Extract the room secrets and generate participant tokens, saved as cookies
@@ -195,7 +195,7 @@ describe('Room API Security Tests', () => {
 
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
-			const newRoom = await createRoom({});
+			const newRoom = await createRoom();
 			const newRoomId = newRoom.roomId;
 
 			// Extract the moderator secret and generate a participant token for the new room
@@ -265,7 +265,7 @@ describe('Room API Security Tests', () => {
 		let roomId: string;
 
 		beforeEach(async () => {
-			const room = await createRoom({});
+			const room = await createRoom();
 			roomId = room.roomId;
 		});
 
@@ -300,7 +300,7 @@ describe('Room API Security Tests', () => {
 		let roomId: string;
 
 		beforeAll(async () => {
-			const room = await createRoom({});
+			const room = await createRoom();
 			roomId = room.roomId;
 		});
 
@@ -331,7 +331,7 @@ describe('Room API Security Tests', () => {
 		let moderatorSecret: string;
 
 		beforeAll(async () => {
-			const room = await createRoom({});
+			const room = await createRoom();
 			roomId = room.roomId;
 
 			// Extract the moderator secret

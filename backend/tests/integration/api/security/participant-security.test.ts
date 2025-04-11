@@ -29,7 +29,7 @@ describe('Participant API Security Tests', () => {
 		adminCookie = await loginUserAsRole(UserRole.ADMIN);
 
 		// Create a room and extract the roomId
-		const room = await createRoom({});
+		const room = await createRoom();
 		roomId = room.roomId;
 
 		// Extract the moderator and publisher secrets from the room
@@ -286,7 +286,7 @@ describe('Participant API Security Tests', () => {
 
 		it('should fail when participant is moderator of a different room', async () => {
 			// Create a new room to get a different roomId
-			const newRoom = await createRoom({});
+			const newRoom = await createRoom();
 			const newRoomId = newRoom.roomId;
 
 			// Extract the moderator secret and generate a participant token for the new room
