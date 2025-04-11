@@ -10,7 +10,7 @@ import {
 	stopTestServer,
 	assertRoomsResponse
 } from '../../../utils/helpers.js';
-import { MEET_API_BASE_PATH_V1, MEET_API_KEY } from '../../../../src/environment.js';
+import { MEET_API_BASE_PATH_V1, MEET_API_KEY, API_KEY_HEADER } from '../../../../src/environment.js';
 
 const endpoint = '/rooms';
 describe('OpenVidu Meet Room API Tests', () => {
@@ -120,7 +120,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should fail when maxItems is not a number', async () => {
 			const response = await request(app)
 				.get(`${MEET_API_BASE_PATH_V1}${endpoint}`)
-				.set('X-API-KEY', MEET_API_KEY)
+				.set(API_KEY_HEADER, MEET_API_KEY)
 				.query({ maxItems: 'not-a-number' })
 				.expect(422);
 
@@ -132,7 +132,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should fail when maxItems is negative', async () => {
 			const response = await request(app)
 				.get(`${MEET_API_BASE_PATH_V1}${endpoint}`)
-				.set('X-API-KEY', MEET_API_KEY)
+				.set(API_KEY_HEADER, MEET_API_KEY)
 				.query({ maxItems: -1 })
 				.expect(422);
 
@@ -144,7 +144,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should fail when maxItems is zero', async () => {
 			const response = await request(app)
 				.get(`${MEET_API_BASE_PATH_V1}${endpoint}`)
-				.set('X-API-KEY', MEET_API_KEY)
+				.set(API_KEY_HEADER, MEET_API_KEY)
 				.query({ maxItems: 0 })
 				.expect(422);
 
@@ -155,7 +155,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should fail when fields is not a string', async () => {
 			const response = await request(app)
 				.get(`${MEET_API_BASE_PATH_V1}${endpoint}`)
-				.set('X-API-KEY', MEET_API_KEY)
+				.set(API_KEY_HEADER, MEET_API_KEY)
 				.query({ fields: { invalid: 'data' } })
 				.expect(422);
 
