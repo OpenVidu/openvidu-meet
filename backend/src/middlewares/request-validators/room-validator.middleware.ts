@@ -99,9 +99,11 @@ const GetParticipantRoleSchema = z.object({
 const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	maxItems: z.coerce
 		.number()
+		.positive('maxItems must be a positive number')
 		.transform((val) => {
 			// Convert the value to a number
 			const intVal = Math.floor(val);
+			// Ensure it's not greater than 100
 			return intVal > 100 ? 100 : intVal;
 		})
 		.default(10),
