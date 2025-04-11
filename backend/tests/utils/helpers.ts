@@ -194,6 +194,25 @@ export const assertSuccessRoomsResponse = (
 	expect(body.pagination.maxItems).toBe(expectedMaxItems);
 };
 
+/**
+ * Retrieves information about a specific room from the API.
+ *
+ * @param roomId - The unique identifier of the room to retrieve
+ * @param fields - Optional fields to filter in the response
+ * @returns A Promise that resolves to the room data
+ * @throws Error if the app instance is not defined
+ */
+export const getRoom = async (roomId: string, fields?: string) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.get(`${MEET_API_BASE_PATH_V1}/rooms/${roomId}`)
+		.set(API_KEY_HEADER, MEET_API_KEY)
+		.query({ fields });
+};
+
 export const assertEmptyRooms = async () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
