@@ -11,12 +11,11 @@ import {
 	MEET_USER,
 	MEET_SECRET,
 	MEET_ADMIN_USER,
-	MEET_ADMIN_SECRET
+	MEET_ADMIN_SECRET,
+	API_KEY_HEADER
 } from '../../src/environment.js';
 import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../src/typings/ce/index.js';
 import { expect } from '@jest/globals';
-
-export const API_KEY_HEADER = 'X-API-Key';
 
 const CREDENTIALS = {
 	user: {

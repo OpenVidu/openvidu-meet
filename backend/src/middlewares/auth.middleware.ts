@@ -2,6 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { LoggerService, TokenService, UserService } from '../services/index.js';
 import {
 	ACCESS_TOKEN_COOKIE_NAME,
+	API_KEY_HEADER,
 	MEET_ANONYMOUS_USER,
 	MEET_API_KEY,
 	MEET_API_USER,
@@ -110,7 +111,7 @@ export const participantTokenValidator = async (req: Request) => {
 
 // Configure API key validatior
 export const apiKeyValidator = async (req: Request) => {
-	const apiKey = req.headers['x-api-key'];
+	const apiKey = req.headers[API_KEY_HEADER];
 
 	if (!apiKey) {
 		throw errorUnauthorized();

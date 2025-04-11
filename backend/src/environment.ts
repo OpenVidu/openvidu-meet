@@ -72,6 +72,9 @@ export const PARTICIPANT_TOKEN_COOKIE_NAME = 'OvMeetParticipantToken';
 export const ACCESS_TOKEN_COOKIE_NAME = 'OvMeetAccessToken';
 export const REFRESH_TOKEN_COOKIE_NAME = 'OvMeetRefreshToken';
 
+// Headers for API requests
+export const API_KEY_HEADER = 'X-API-KEY';
+
 // Fixed usernames
 export const MEET_ANONYMOUS_USER = 'anonymous';
 export const MEET_API_USER = 'api-user';
