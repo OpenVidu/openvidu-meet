@@ -62,15 +62,21 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.optional(),
 	roomIdPrefix: z
 		.string()
-		.transform(
-			(val) =>
-				val
-					.trim() // Remove leading and trailing spaces
-					.replace(/\s+/g, '') // Remove all whitespace instead of replacing it with hyphens
-					.replace(/[^a-zA-Z0-9-]/g, '') // Remove any character except letters, numbers, and hyphens
-					.replace(/-+/g, '-') // Replace multiple consecutive hyphens with a single one
-					.replace(/-+$/, '') // Remove trailing hyphens
-		)
+		.transform((val) => {
+			let transformed = val
+				.trim() // Remove leading and trailing spaces
+				.replace(/\s+/g, '') // Remove all whitespace instead of replacing it with hyphens
+				.replace(/[^a-zA-Z0-9-]/g, '') // Remove any character except letters, numbers, and hyphens
+				.replace(/-+/g, '-') // Replace multiple consecutive hyphens with a single one
+				.replace(/-+$/, ''); // Remove trailing hyphens
+
+			// If the transformed string starts with a hyphen, remove it.
+			if (transformed.startsWith('-')) {
+				transformed = transformed.substring(1);
+			}
+
+			return transformed;
+		})
 		.optional()
 		.default(''),
 	preferences: RoomPreferencesSchema.optional().default({
@@ -93,8 +99,11 @@ const GetParticipantRoleSchema = z.object({
 const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	maxItems: z.coerce
 		.number()
-		.int()
-		.transform((val) => (val > 100 ? 100 : val))
+		.transform((val) => {
+			// Convert the value to a number
+			const intVal = Math.floor(val);
+			return intVal > 100 ? 100 : intVal;
+		})
 		.default(10),
 	nextPageToken: z.string().optional(),
 	fields: z.string().optional()
