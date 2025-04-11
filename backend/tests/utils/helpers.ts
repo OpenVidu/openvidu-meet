@@ -157,12 +157,7 @@ export const getRooms = async (query: Record<string, any> = {}) => {
 		throw new Error('App instance is not defined');
 	}
 
-	const response = await request(app)
-		.get(`${MEET_API_BASE_PATH_V1}/rooms`)
-		.set(API_KEY_HEADER, MEET_API_KEY)
-		.query(query)
-		.expect(200);
-	return response.body;
+	return await request(app).get(`${MEET_API_BASE_PATH_V1}/rooms`).set(API_KEY_HEADER, MEET_API_KEY).query(query);
 };
 
 /**
@@ -177,13 +172,15 @@ export const getRooms = async (query: Record<string, any> = {}) => {
  *                               (if true, expects nextPageToken to be defined;
  *                                if false, expects nextPageToken to be undefined)
  */
-export const assertRoomsResponse = (
-	body: any,
+export const assertSuccessRoomsResponse = (
+	response: any,
 	expectedRoomLength: number,
 	expectedMaxItems: number,
 	expectedTruncated: boolean,
 	expectedNextPageToken: boolean
 ) => {
+	const { body } = response;
+	expect(response.status).toBe(200);
 	expect(body).toBeDefined();
 	expect(body.rooms).toBeDefined();
 	expect(Array.isArray(body.rooms)).toBe(true);
@@ -202,9 +199,9 @@ export const assertEmptyRooms = async () => {
 		throw new Error('App instance is not defined');
 	}
 
-	const body = await getRooms();
+	const response = await getRooms();
 
-	assertRoomsResponse(body, 0, 10, false, false);
+	assertSuccessRoomsResponse(response, 0, 10, false, false);
 };
 
 /**
