@@ -98,10 +98,6 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
-const GetParticipantRoleSchema = z.object({
-	secret: z.string()
-});
-
 const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	maxItems: z.coerce
 		.number()
@@ -212,17 +208,6 @@ export const withValidRoomDeleteRequest = (req: Request, res: Response, next: Ne
 
 	req.query.force = forceResult.data ? 'true' : 'false';
 
-	next();
-};
-
-export const validateGetParticipantRoleRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetParticipantRoleSchema.safeParse(req.query);
-
-	if (!success) {
-		return rejectRequest(res, error);
-	}
-
-	req.query = data;
 	next();
 };
 

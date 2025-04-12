@@ -6,7 +6,6 @@ import {
 	tokenAndRoleValidator,
 	apiKeyValidator,
 	participantTokenValidator,
-	validateGetParticipantRoleRequest,
 	withValidRoomFiltersRequest,
 	withValidRoomOptions,
 	configureCreateRoomAuth,
@@ -63,4 +62,6 @@ internalRoomRouter.put(
 	roomCtrl.updateRoomPreferences
 );
 
-internalRoomRouter.get('/:roomId/participant-role', validateGetParticipantRoleRequest, roomCtrl.getParticipantRole);
+// Roles and permissions
+internalRoomRouter.get('/:roomId/roles', roomCtrl.getRoomRolesAndPermissions);
+internalRoomRouter.get('/:roomId/roles/:secret', roomCtrl.getRoomRoleAndPermissions);

@@ -2,8 +2,8 @@ import { container } from '../config/dependency-injector.config.js';
 import { Request, Response } from 'express';
 import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/error.model.js';
-import { RoomService } from '../services/room.service.js';
-import { MeetRoomFilters, MeetRoomOptions } from '@typings-ce';
+import { RoomService, ParticipantService } from '../services/index.js';
+import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, ParticipantRole } from '@typings-ce';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -111,20 +111,47 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	}
 };
 
-export const getParticipantRole = async (req: Request, res: Response) => {
+export const getRoomRolesAndPermissions = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const participantService = container.get(ParticipantService);
+	const { roomId } = req.params;
+
+	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);
+	const moderatorPermissions = participantService.getParticipantPermissions(ParticipantRole.MODERATOR, roomId);
+	const publisherPermissions = participantService.getParticipantPermissions(ParticipantRole.PUBLISHER, roomId);
+
+	const rolesAndPermissions = [
+		{
+			role: ParticipantRole.MODERATOR,
+			permissions: moderatorPermissions
+		},
+		{
+			role: ParticipantRole.PUBLISHER,
+			permissions: publisherPermissions
+		}
+	];
+	res.status(200).json(rolesAndPermissions);
+};
+
+export const getRoomRoleAndPermissions = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
+	const participantService = container.get(ParticipantService);
 
-	const { roomId } = req.params;
-	const { secret } = req.query as { secret: string };
+	const { roomId, secret } = req.params;
 
 	try {
-		logger.verbose(`Getting participant role for room '${roomId}'`);
+		logger.verbose(`Getting room role and associated permissions for room '${roomId}' and secret '${secret}'`);
 
-		const role = await roomService.getRoomSecretRole(roomId, secret);
-		return res.status(200).json(role);
+		const role = await roomService.getRoomRoleBySecret(roomId, secret);
+		const permissions = participantService.getParticipantPermissions(role, roomId);
+		const roleAndPermissions: MeetRoomRoleAndPermissions = {
+			role,
+			permissions
+		};
+		return res.status(200).json(roleAndPermissions);
 	} catch (error) {
-		logger.error(`Error getting participant role for room '${roomId}'`);
+		logger.error(`Error getting room role and permissions for room '${roomId}' and secret '${secret}'`);
 		handleError(res, error);
 	}
 };
