@@ -232,21 +232,9 @@ export class RoomService {
 	 * @throws Error if the moderator or publisher secrets cannot be extracted from their URLs
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
-	async getRoomSecretRole(roomId: string, secret: string): Promise<ParticipantRole> {
+	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
 		const room = await this.getMeetRoom(roomId);
-		const { moderatorRoomUrl, publisherRoomUrl } = room;
-
-		const extractSecret = (urlString: string, type: string): string => {
-			const url = new URL(urlString);
-			const secret = url.searchParams.get('secret');
-
-			if (!secret) throw new Error(`${type} secret not found`);
-
-			return secret;
-		};
-
-		const publisherSecret = extractSecret(publisherRoomUrl, 'Publisher');
-		const moderatorSecret = extractSecret(moderatorRoomUrl, 'Moderator');
+		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
 			case moderatorSecret:

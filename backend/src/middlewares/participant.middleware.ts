@@ -20,7 +20,7 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 
 	try {
 		const { roomId, secret } = req.body as TokenOptions;
-		role = await roomService.getRoomSecretRole(roomId, secret);
+		role = await roomService.getRoomRoleBySecret(roomId, secret);
 	} catch (error) {
 		logger.error('Error getting room secret role', error);
 		return res.status(500).json({ message: 'Internal server error' });

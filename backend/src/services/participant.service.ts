@@ -30,7 +30,7 @@ export class ParticipantService {
 			throw errorParticipantNotFound(participantName, roomId);
 		}
 
-		const role = await this.roomService.getRoomSecretRole(roomId, secret);
+		const role = await this.roomService.getRoomRoleBySecret(roomId, secret);
 		const token = await this.generateParticipantToken(role, options);
 		this.logger.verbose(`Participant token generated for room ${roomId}`);
 		return token;

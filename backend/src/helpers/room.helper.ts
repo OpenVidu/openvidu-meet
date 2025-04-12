@@ -34,7 +34,6 @@ export class MeetRoomHelper {
 	static extractSecretsFromRoom(room: MeetRoom): { publisherSecret: string; moderatorSecret: string } {
 		const { publisherRoomUrl, moderatorRoomUrl } = room;
 
-
 		const publisherUrl = new URL(publisherRoomUrl);
 		const publisherSecret = publisherUrl.searchParams.get('secret') || '';
 		const moderatorUrl = new URL(moderatorRoomUrl);
