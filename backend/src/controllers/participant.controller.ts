@@ -69,8 +69,7 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 export const deleteParticipant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const participantService = container.get(ParticipantService);
-	const { participantName } = req.params;
-	const roomId: string = req.query.roomId as string;
+	const { roomId, participantName } = req.params;
 
 	try {
 		await participantService.deleteParticipant(participantName, roomId);
