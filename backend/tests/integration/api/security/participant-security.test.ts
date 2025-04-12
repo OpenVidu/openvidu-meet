@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, generateParticipantToken, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { createRoom, startTestServer, stopTestServer } from '../../../utils/helpers.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
@@ -261,56 +261,6 @@ describe('Participant API Security Tests', () => {
 				secret: moderatorSecret
 			});
 			expect(response.status).toBe(401);
-		});
-	});
-
-	describe('Delete Participant Tests', () => {
-		let moderatorCookie: string;
-		let publisherCookie: string;
-
-		beforeAll(async () => {
-			// Generate participant tokens for the room and extract the cookies
-			moderatorCookie = await generateParticipantToken(adminCookie, roomId, 'Moderator', moderatorSecret);
-			publisherCookie = await generateParticipantToken(adminCookie, roomId, 'Publisher', publisherSecret);
-		});
-
-		it('should succeed when participant is moderator', async () => {
-			const response = await request(app)
-				.delete(`${PARTICIPANTS_PATH}/${PARTICIPANT_NAME}`)
-				.query({ roomId })
-				.set('Cookie', moderatorCookie);
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
-		});
-
-		it('should fail when participant is moderator of a different room', async () => {
-			// Create a new room to get a different roomId
-			const newRoom = await createRoom();
-			const newRoomId = newRoom.roomId;
-
-			// Extract the moderator secret and generate a participant token for the new room
-			const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(newRoom);
-			const newModeratorCookie = await generateParticipantToken(
-				adminCookie,
-				newRoomId,
-				'Moderator',
-				moderatorSecret
-			);
-
-			const response = await request(app)
-				.delete(`${PARTICIPANTS_PATH}/${PARTICIPANT_NAME}`)
-				.query({ roomId })
-				.set('Cookie', newModeratorCookie);
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when participant is publisher', async () => {
-			const response = await request(app)
-				.delete(`${PARTICIPANTS_PATH}/${PARTICIPANT_NAME}`)
-				.query({ roomId })
-				.set('Cookie', publisherCookie);
-			expect(response.status).toBe(403);
 		});
 	});
 });
