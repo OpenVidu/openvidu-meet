@@ -8,24 +8,24 @@ import {
 import { configureTokenAuth, withModeratorPermissions } from '../middlewares/participant.middleware.js';
 import { participantTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 
-export const internalParticipantsRouter = Router();
-internalParticipantsRouter.use(bodyParser.urlencoded({ extended: true }));
-internalParticipantsRouter.use(bodyParser.json());
+export const internalParticipantRouter = Router();
+internalParticipantRouter.use(bodyParser.urlencoded({ extended: true }));
+internalParticipantRouter.use(bodyParser.json());
 
 // Internal Participant Routes
-internalParticipantsRouter.post(
+internalParticipantRouter.post(
 	'/token',
 	validateParticipantTokenRequest,
 	configureTokenAuth,
 	participantCtrl.generateParticipantToken
 );
-internalParticipantsRouter.post(
+internalParticipantRouter.post(
 	'/token/refresh',
 	validateParticipantTokenRequest,
 	configureTokenAuth,
 	participantCtrl.refreshParticipantToken
 );
-internalParticipantsRouter.delete(
+internalParticipantRouter.delete(
 	'/:participantName',
 	withAuth(participantTokenValidator),
 	validateParticipantDeletionRequest,

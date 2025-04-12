@@ -2,11 +2,7 @@ import express, { Request, Response, Express } from 'express';
 import cors from 'cors';
 import chalk from 'chalk';
 import { registerDependencies, initializeEagerServices } from './config/dependency-injector.config.js';
-import {
-	SERVER_PORT,
-	SERVER_CORS_ORIGIN,
-	logEnvVars,
-} from './environment.js';
+import { SERVER_PORT, SERVER_CORS_ORIGIN, logEnvVars } from './environment.js';
 import {
 	publicApiHtmlFilePath,
 	indexHtmlPath,
@@ -16,6 +12,7 @@ import {
 } from './utils/path-utils.js';
 import {
 	authRouter,
+	internalParticipantRouter,
 	internalRecordingRouter,
 	internalRoomRouter,
 	livekitWebhookRouter,
@@ -23,7 +20,6 @@ import {
 	recordingRouter,
 	roomRouter
 } from './routes/index.js';
-import { internalParticipantsRouter } from './routes/participants.routes.js';
 import cookieParser from 'cookie-parser';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import INTERNAL_CONFIG from './config/internal-config.js';
@@ -48,7 +44,9 @@ const createApp = () => {
 	app.use(cookieParser());
 
 	// Public API routes
-	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) => res.sendFile(publicApiHtmlFilePath));
+	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+		res.sendFile(publicApiHtmlFilePath)
+	);
 	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 
@@ -58,7 +56,7 @@ const createApp = () => {
 	);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantsRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
 
