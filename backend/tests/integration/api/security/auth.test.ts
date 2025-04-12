@@ -7,7 +7,7 @@ import { UserRole } from '../../../../src/typings/ce/index.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
-describe('OpenVidu Meet Authentication API Tests', () => {
+describe('Authentication API Tests', () => {
 	let app: Express;
 
 	beforeAll(async () => {
