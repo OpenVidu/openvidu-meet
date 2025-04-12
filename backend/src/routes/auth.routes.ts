@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import bodyParser from 'body-parser';
 import * as authCtrl from '../controllers/auth.controller.js';
-import { loginLimiter, tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
-import { validateLoginRequest } from '../middlewares/request-validators/auth-validator.middleware.js';
+import { validateLoginRequest, loginLimiter, tokenAndRoleValidator, withAuth } from '../middlewares/index.js';
 import { UserRole } from '@typings-ce';
 
 export const authRouter = Router();

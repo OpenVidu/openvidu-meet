@@ -16,7 +16,6 @@ import {
 	withValidRoomId,
 	withValidRoomDeleteRequest
 } from '../middlewares/index.js';
-
 import { UserRole } from '@typings-ce';
 
 export const roomRouter = Router();

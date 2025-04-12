@@ -3,12 +3,13 @@ import bodyParser from 'body-parser';
 import * as appearancePrefCtrl from '../controllers/global-preferences/appearance-preferences.controller.js';
 import * as webhookPrefCtrl from '../controllers/global-preferences/webhook-preferences.controller.js';
 import * as securityPrefCtrl from '../controllers/global-preferences/security-preferences.controller.js';
-import { withAuth, tokenAndRoleValidator } from '../middlewares/auth.middleware.js';
-import { UserRole } from '@typings-ce';
 import {
 	validateSecurityPreferences,
-	validateWebhookPreferences
-} from '../middlewares/request-validators/preferences-validator.middleware.js';
+	validateWebhookPreferences,
+	withAuth,
+	tokenAndRoleValidator
+} from '../middlewares/index.js';
+import { UserRole } from '@typings-ce';
 
 export const preferencesRouter = Router();
 preferencesRouter.use(bodyParser.urlencoded({ extended: true }));

@@ -8,10 +8,6 @@ const ParticipantTokenRequestSchema: z.ZodType<TokenOptions> = z.object({
 	secret: z.string().nonempty('Secret is required')
 });
 
-const DeleteParticipantSchema = z.object({
-	roomId: z.string().trim().min(1, 'Room ID is required')
-});
-
 export const validateParticipantTokenRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = ParticipantTokenRequestSchema.safeParse(req.body);
 
@@ -20,17 +16,6 @@ export const validateParticipantTokenRequest = (req: Request, res: Response, nex
 	}
 
 	req.body = data;
-	next();
-};
-
-export const validateParticipantDeletionRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = DeleteParticipantSchema.safeParse(req.query);
-
-	if (!success) {
-		return rejectRequest(res, error);
-	}
-
-	req.query = data!;
 	next();
 };
 
