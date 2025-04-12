@@ -10,13 +10,13 @@ internalMeetingRouter.use(bodyParser.json());
 
 // Internal Meetings Routes
 internalMeetingRouter.delete(
-	':roomId',
+	'/:roomId',
 	withAuth(participantTokenValidator),
 	withModeratorPermissions,
 	meetingCtrl.endMeeting
 );
 internalMeetingRouter.delete(
-	':roomId/participants/:participantName',
+	'/:roomId/participants/:participantName',
 	withAuth(participantTokenValidator),
 	withModeratorPermissions,
 	participantCtrl.deleteParticipant

@@ -55,7 +55,7 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 };
 
 export const withModeratorPermissions = async (req: Request, res: Response, next: NextFunction) => {
-	const roomId = req.query.roomId as string;
+	const { roomId } = req.params;
 	const payload = req.session?.tokenClaims;
 
 	if (!payload) {
