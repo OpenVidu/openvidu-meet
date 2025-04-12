@@ -2,10 +2,10 @@ import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
 import { loginUserAsRole, startTestServer, stopTestServer } from '../../../utils/helpers.js';
-import { MEET_INTERNAL_API_BASE_PATH_V1 } from '../../../../src/environment.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { UserRole } from '../../../../src/typings/ce/index.js';
 
-const AUTH_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/auth`;
+const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
 describe('OpenVidu Meet Authentication API Tests', () => {
 	let app: Express;

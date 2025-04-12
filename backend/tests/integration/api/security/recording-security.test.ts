@@ -2,7 +2,6 @@ import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
 import {
-	API_KEY_HEADER,
 	createRoom,
 	deleteAllRooms,
 	generateParticipantToken,
@@ -10,12 +9,13 @@ import {
 	startTestServer,
 	stopTestServer
 } from '../../../utils/helpers.js';
-import { MEET_API_BASE_PATH_V1, MEET_INTERNAL_API_BASE_PATH_V1, MEET_API_KEY } from '../../../../src/environment.js';
+import { MEET_API_KEY } from '../../../../src/environment.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { UserRole } from '../../../../src/typings/ce/index.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 
-const RECORDINGS_PATH = `${MEET_API_BASE_PATH_V1}/recordings`;
-const INTERNAL_RECORDINGS_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/recordings`;
+const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
+const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
 describe('Room API Security Tests', () => {
 	let app: Express;
@@ -133,7 +133,7 @@ describe('Room API Security Tests', () => {
 
 	describe('Get Recordings Tests', () => {
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).get(RECORDINGS_PATH).set(API_KEY_HEADER, MEET_API_KEY);
+			const response = await request(app).get(RECORDINGS_PATH).set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -157,7 +157,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}`)
-				.set(API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
@@ -183,7 +183,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${RECORDINGS_PATH}/${recordingId}`)
-				.set(API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			// The response code should be 404 to consider a success because the recording does not exist
 			expect(response.status).toBe(404);
 		});
@@ -210,7 +210,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(RECORDINGS_PATH)
 				.query({ recordingIds: [recordingId] })
-				.set(API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 

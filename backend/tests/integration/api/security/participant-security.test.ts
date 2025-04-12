@@ -3,11 +3,11 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
 import { createRoom, generateParticipantToken, startTestServer, stopTestServer } from '../../../utils/helpers.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
-import { MEET_INTERNAL_API_BASE_PATH_V1 } from '../../../../src/environment.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
 
-const PARTICIPANTS_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/participants`;
+const PARTICIPANTS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`;
 
 describe('Participant API Security Tests', () => {
 	const PARTICIPANT_NAME = 'testParticipant';

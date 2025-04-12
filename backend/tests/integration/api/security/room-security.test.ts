@@ -3,12 +3,13 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/glo
 import { Express } from 'express';
 import { createRoom, generateParticipantToken, startTestServer, stopTestServer } from '../../../utils/helpers.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
-import { MEET_API_BASE_PATH_V1, MEET_INTERNAL_API_BASE_PATH_V1, MEET_API_KEY } from '../../../../src/environment.js';
+import { MEET_API_KEY } from '../../../../src/environment.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import { API_KEY_HEADER, changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
+import { changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
 
-const ROOMS_PATH = `${MEET_API_BASE_PATH_V1}/rooms`;
-const INTERNAL_ROOMS_PATH = `${MEET_INTERNAL_API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;
 
 describe('Room API Security Tests', () => {
 	let app: Express;
@@ -34,7 +35,10 @@ describe('Room API Security Tests', () => {
 				usersCanCreateRooms: false
 			});
 
-			const response = await request(app).post(ROOMS_PATH).set(API_KEY_HEADER, MEET_API_KEY).send({});
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+				.send({});
 			expect(response.status).toBe(200);
 		});
 
@@ -98,7 +102,7 @@ describe('Room API Security Tests', () => {
 
 	describe('Get Rooms Tests', () => {
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).get(ROOMS_PATH).set(API_KEY_HEADER, MEET_API_KEY);
+			const response = await request(app).get(ROOMS_PATH).set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -130,7 +134,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
-				.set(API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(204);
 		});
 
@@ -169,7 +173,9 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).get(`${ROOMS_PATH}/${roomId}`).set(API_KEY_HEADER, MEET_API_KEY);
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -270,7 +276,9 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when request includes API key', async () => {
-			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`).set(API_KEY_HEADER, MEET_API_KEY);
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 			expect(response.status).toBe(204);
 		});
 

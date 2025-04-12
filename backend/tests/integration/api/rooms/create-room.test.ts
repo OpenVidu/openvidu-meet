@@ -3,9 +3,9 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
 import { deleteAllRooms, loginUserAsRole, startTestServer, stopTestServer } from '../../../utils/helpers.js';
 import { UserRole } from '../../../../src/typings/ce/user.js';
-import { MEET_API_BASE_PATH_V1 } from '../../../../src/environment.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 
-const ROOMS_PATH = `${MEET_API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 
 describe('OpenVidu Meet Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
