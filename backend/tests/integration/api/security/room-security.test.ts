@@ -334,7 +334,21 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
-	describe('Get Participant Role Tests', () => {
+	describe('Get Room Roles and Permissions Tests', () => {
+		let roomId: string;
+
+		beforeAll(async () => {
+			const room = await createRoom();
+			roomId = room.roomId;
+		});
+
+		it('should succeed if user is not authenticated', async () => {
+			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/roles`);
+			expect(response.status).toBe(200);
+		});
+	});
+
+	describe('Get Room Role and Permissions Tests', () => {
 		let roomId: string;
 		let moderatorSecret: string;
 
@@ -347,9 +361,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed if user is not authenticated', async () => {
-			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/participant-role`).query({
-				secret: moderatorSecret
-			});
+			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/roles/${moderatorSecret}`);
 			expect(response.status).toBe(200);
 		});
 	});
