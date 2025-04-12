@@ -1,9 +1,9 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
 import {
-	GlobalPreferences,
-	ParticipantRole,
+	MeetRoom,
+	MeetRoomOptions,
+	MeetRoomRoleAndPermissions,
 	MeetRoomPreferences,
 	SecurityPreferencesDTO,
 	TokenOptions,
@@ -16,7 +16,6 @@ import { lastValueFrom } from 'rxjs';
 	providedIn: 'root'
 })
 export class HttpService {
-	// private baseHref: string;
 	protected API_PATH_PREFIX = 'meet/api';
 	protected INTERNAL_API_PATH_PREFIX = 'meet/internal-api';
 	protected API_V1_VERSION = 'v1';
@@ -44,9 +43,9 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
-	getParticipantRole(roomId: string, secret: string): Promise<ParticipantRole> {
+	getRoomRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomRoleAndPermissions> {
 		return this.getRequest(
-			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomId}/participant-role?secret=${secret}`
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/rooms/${roomId}/roles/${secret}`
 		);
 	}
 
@@ -124,7 +123,9 @@ export class HttpService {
 	}
 
 	stopRecording(recordingId: string): Promise<RecordingInfo> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}/stop`);
+		return this.postRequest(
+			`${this.INTERNAL_API_PATH_PREFIX}/${this.API_V1_VERSION}/recordings/${recordingId}/stop`
+		);
 	}
 
 	deleteRecording(recordingId: string): Promise<RecordingInfo> {

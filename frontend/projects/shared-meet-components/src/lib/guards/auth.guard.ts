@@ -53,7 +53,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	const sessionStorageService = inject(SessionStorageService);
 	const httpService = inject(HttpService);
 
-	// Get participant role by room secret
+	// Get the role that the participant will have in the room based on the room ID and secret
 	let participantRole: ParticipantRole;
 
 	try {
@@ -61,7 +61,8 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const secret = contextService.getSecret();
 		const storageSecret = sessionStorageService.getModeratorSecret(roomId);
 
-		participantRole = await httpService.getParticipantRole(roomId, storageSecret || secret);
+		const roomRoleAndPermissions = await httpService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
+		participantRole = roomRoleAndPermissions.role;
 	} catch (error) {
 		console.error('Error getting participant role:', error);
 		return router.createUrlTree(['unauthorized'], { queryParams: { reason: 'unauthorized-participant' } });
