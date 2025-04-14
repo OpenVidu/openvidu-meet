@@ -71,7 +71,7 @@ export class WebComponentManagerService {
 					// Moderator only
 					if (this.contextService.isModeratorParticipant()) {
 						const roomId = this.contextService.getRoomId();
-						await this.httpService.deleteRoom(roomId);
+						await this.httpService.endMeeting(roomId);
 					}
 					break;
 				case WebComponentActionType.TOGGLE_CHAT:

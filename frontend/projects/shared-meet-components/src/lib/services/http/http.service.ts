@@ -47,6 +47,10 @@ export class HttpService {
 		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/roles/${secret}`);
 	}
 
+	endMeeting(roomId: string): Promise<any> {
+		return this.deleteRequest(`${this.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}`);
+	}
+
 	generateParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token`, tokenOptions);
 	}
