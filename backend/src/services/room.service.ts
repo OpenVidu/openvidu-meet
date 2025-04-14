@@ -159,7 +159,7 @@ export class RoomService {
 	async bulkDeleteRooms(
 		roomIds: string[],
 		forceDelete: boolean
-	): Promise<{ deleted: string[]; markedAsDeleted: string[] }> {
+	): Promise<{ deleted: string[]; markedForDeletion: string[] }> {
 		try {
 			const results = await Promise.allSettled(
 				roomIds.map(async (roomId) => {
@@ -184,26 +184,26 @@ export class RoomService {
 			);
 
 			const deleted: string[] = [];
-			const markedAsDeleted: string[] = [];
+			const markedForDeletion: string[] = [];
 
 			results.forEach((result) => {
 				if (result.status === 'fulfilled') {
 					if (result.value.status === 'deleted') {
 						deleted.push(result.value.roomId);
 					} else if (result.value.status === 'marked') {
-						markedAsDeleted.push(result.value.roomId);
+						markedForDeletion.push(result.value.roomId);
 					}
 				} else {
 					this.logger.error(`Failed to process deletion for a room: ${result.reason}`);
 				}
 			});
 
-			if (deleted.length === 0 && markedAsDeleted.length === 0) {
+			if (deleted.length === 0 && markedForDeletion.length === 0) {
 				this.logger.error('No rooms were deleted or marked as deleted.');
 				throw internalError('No rooms were deleted or marked as deleted.');
 			}
 
-			return { deleted, markedAsDeleted };
+			return { deleted, markedForDeletion };
 		} catch (error) {
 			this.logger.error('Error deleting rooms:', error);
 			throw error;
@@ -287,7 +287,7 @@ export class RoomService {
 	protected async deleteExpiredRooms(): Promise<void> {
 		let nextPageToken: string | undefined;
 		const deletedRooms: string[] = [];
-		const markedAsDeletedRooms: string[] = [];
+		const markedForDeletionRooms: string[] = [];
 		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
@@ -306,10 +306,10 @@ export class RoomService {
 						`Trying to delete ${expiredRoomIds.length} expired Meet rooms: ${expiredRoomIds.join(', ')}`
 					);
 
-					const { deleted, markedAsDeleted } = await this.bulkDeleteRooms(expiredRoomIds, false);
+					const { deleted, markedForDeletion } = await this.bulkDeleteRooms(expiredRoomIds, false);
 
 					deletedRooms.push(...deleted);
-					markedAsDeletedRooms.push(...markedAsDeleted);
+					markedForDeletionRooms.push(...markedForDeletion);
 				}
 			} while (nextPageToken);
 
@@ -317,8 +317,8 @@ export class RoomService {
 				this.logger.verbose(`Successfully deleted ${deletedRooms.length} expired rooms`);
 			}
 
-			if (markedAsDeletedRooms.length > 0) {
-				this.logger.verbose(`Marked as deleted ${markedAsDeletedRooms.length} expired rooms`);
+			if (markedForDeletionRooms.length > 0) {
+				this.logger.verbose(`Marked for deletion ${markedForDeletionRooms.length} expired rooms`);
 			}
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);

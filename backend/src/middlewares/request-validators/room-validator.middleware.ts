@@ -8,25 +8,37 @@ import {
 } from '@typings-ce';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import ms from 'ms';
+import INTERNAL_CONFIG from '../../config/internal-config.js';
 
+/**
+ * Sanitizes an identifier by removing/replacing invalid characters
+ * and normalizing format.
+ *
+ * @param val The string to sanitize
+ * @returns A sanitized string safe for use as an identifier
+ */
 const sanitizeId = (val: string): string => {
-	return val
-		.trim() // Remove leading and trailing spaces
-		.replace(/\s+/g, '-') // Replace spaces with hyphens
-		.replace(/[^a-zA-Z0-9_-]/g, ''); // Remove special characters (allow alphanumeric, hyphens and underscores)
+	let transformed = val
+		.trim() // Remove leading/trailing spaces
+		.replace(/\s+/g, '') // Remove all spaces
+		.replace(/[^a-zA-Z0-9_-]/g, '') // Allow alphanumeric, underscores and hyphens
+		.replace(/-+/g, '-') // Replace multiple consecutive hyphens
+		.replace(/-+$/, ''); // Remove trailing hyphens
+
+	// Remove leading hyphens
+	if (transformed.startsWith('-')) {
+		transformed = transformed.substring(1);
+	}
+
+	return transformed;
 };
 
 const nonEmptySanitizedString = (fieldName: string) =>
 	z
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.transform((val) => {
-			let transformed = sanitizeId(val);
-
-			if (transformed.startsWith('-')) transformed = transformed.substring(1);
-
-			return transformed;
-		})
+		.transform(sanitizeId)
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
 		});
@@ -64,25 +76,14 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	autoDeletionDate: z
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
-		.refine((date) => date >= Date.now() + 60 * 60 * 1000, 'autoDeletionDate must be at least 1 hour in the future')
+		.refine(
+			(date) => date >= Date.now() + ms(INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE),
+			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
+		)
 		.optional(),
 	roomIdPrefix: z
 		.string()
-		.transform((val) => {
-			let transformed = val
-				.trim() // Remove leading and trailing spaces
-				.replace(/\s+/g, '') // Remove all whitespace instead of replacing it with hyphens
-				.replace(/[^a-zA-Z0-9-]/g, '') // Remove any character except letters, numbers, and hyphens
-				.replace(/-+/g, '-') // Replace multiple consecutive hyphens with a single one
-				.replace(/-+$/, ''); // Remove trailing hyphens
-
-			// If the transformed string starts with a hyphen, remove it.
-			if (transformed.startsWith('-')) {
-				transformed = transformed.substring(1);
-			}
-
-			return transformed;
-		})
+		.transform(sanitizeId)
 		.optional()
 		.default(''),
 	preferences: RoomPreferencesSchema.optional().default({
@@ -116,17 +117,37 @@ const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 const BulkDeleteRoomsSchema = z.object({
 	roomIds: z.preprocess(
 		(arg) => {
+			// First, convert input to array of strings
+			let roomIds: string[] = [];
+
 			if (typeof arg === 'string') {
-				// If the argument is a string, it is expected to be a comma-separated list of recording IDs.
-				return arg
+				roomIds = arg
 					.split(',')
 					.map((s) => s.trim())
 					.filter((s) => s !== '');
+			} else if (Array.isArray(arg)) {
+				roomIds = arg.map((item) => String(item)).filter((s) => s !== '');
 			}
 
-			return arg;
+			// Apply sanitization BEFORE validation and deduplicate
+			// This prevents identical IDs from being processed separately
+			const sanitizedIds = new Set();
+
+			// Pre-sanitize to check for duplicates that would become identical
+			for (const id of roomIds) {
+				const transformed = sanitizeId(id);
+
+				// Only add non-empty IDs
+				if (transformed !== '') {
+					sanitizedIds.add(transformed);
+				}
+			}
+
+			return Array.from(sanitizedIds);
 		},
-		z.array(nonEmptySanitizedString('roomId')).default([])
+		z.array(z.string()).min(1, {
+			message: 'At least one valid roomId is required after sanitization'
+		})
 	),
 	force: validForceQueryParam()
 });
@@ -186,7 +207,7 @@ export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next
 		return rejectRequest(res, error);
 	}
 
-	req.query.roomIds = data.roomIds.join(',');
+	req.query.roomIds = data.roomIds as any;
 	req.query.force = data.force ? 'true' : 'false';
 	next();
 };
