@@ -8,7 +8,7 @@ import { MeetRoom, MeetRoomFilters, MeetRoomOptions, MeetRoomPreferences, Partic
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { SystemEventService } from './system-event.service.js';
 import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
-import { errorParticipantUnauthorized, internalError } from '../models/error.model.js';
+import { errorInvalidRoomSecret, internalError } from '../models/error.model.js';
 import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
 import { uid } from 'uid/single';
 import { MEET_NAME_ID } from '../environment.js';
@@ -242,7 +242,7 @@ export class RoomService {
 			case publisherSecret:
 				return ParticipantRole.PUBLISHER;
 			default:
-				throw errorParticipantUnauthorized(roomId);
+				throw errorInvalidRoomSecret(roomId, secret);
 		}
 	}
 

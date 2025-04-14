@@ -104,19 +104,16 @@ export const isErrorRecordingCannotBeStoppedWhileStarting = (
 };
 
 // Room errors
+
 export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `The room '${roomId}' does not exist`, 404);
 };
 
-// Participant errors
-
-export const errorParticipantUnauthorized = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Participant Error',
-		`Unauthorized generating token with received credentials in room '${roomId}'`,
-		406
-	);
+export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `The secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };
+
+// Participant errors
 
 export const errorParticipantNotFound = (participantName: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant Error', `'${participantName}' not found in room '${roomId}'`, 404);
