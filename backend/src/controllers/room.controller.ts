@@ -113,8 +113,19 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 
 export const getRoomRolesAndPermissions = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
 	const participantService = container.get(ParticipantService);
+
 	const { roomId } = req.params;
+
+	// Check if the room exists
+	try {
+		await roomService.getMeetRoom(roomId);
+	} catch (error) {
+		logger.error(`Error getting room '${roomId}'`);
+		handleError(res, error);
+		return;
+	}
 
 	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);
 	const moderatorPermissions = participantService.getParticipantPermissions(ParticipantRole.MODERATOR, roomId);
