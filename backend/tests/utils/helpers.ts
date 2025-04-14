@@ -231,6 +231,17 @@ export const deleteRoom = async (roomId: string, query: Record<string, any> = {}
 		.query(query);
 };
 
+export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+		.query({ roomIds: roomIds.join(','), force });
+};
+
 export const assertEmptyRooms = async () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
