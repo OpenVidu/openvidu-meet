@@ -18,8 +18,10 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1profile'
     /rooms/{roomId}:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
-    /rooms/{roomId}/participant-role:
-        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1participant-role'
+    /rooms/{roomId}/roles:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles'
+    /rooms/{roomId}/roles/{secret}:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles~1{secret}'
     /recordings:
         $ref: './paths/internal/recordings.yaml#/~1recordings'
     /recordings/{recordingId}/stop:
@@ -28,12 +30,14 @@ paths:
         $ref: './paths/internal/participants.yaml#/~1participants~1token'
     /participants/token/refresh:
         $ref: './paths/internal/participants.yaml#/~1participants~1token~1refresh'
-    /participants/{participantName}:
-        $ref: './paths/internal/participants.yaml#/~1participants~1{participantName}'
+    /meetings/{roomId}:
+        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
+    /meetings/{roomId}/participants/{participantName}:
+        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantName}'
 
 components:
     securitySchemes:
-        $ref: './components/security.yaml'
+        $ref: components/security.yaml
     schemas:
         User:
             $ref: components/schemas/internal/user.yaml
@@ -42,7 +46,9 @@ components:
         MeetRoomOptions:
             $ref: components/schemas/meet-room-options.yaml
         MeetRoomPreferences:
-            $ref: './components/schemas/meet-room-preferences.yaml#/MeetRoomPreferences'
+            $ref: components/schemas/meet-room-preferences.yaml#/MeetRoomPreferences
+        MeetRoomRoleAndPermissions:
+            $ref: components/schemas/internal/meet-room-role-permissions.yaml
         MeetRecording:
             $ref: components/schemas/meet-recording.yaml
         Error:

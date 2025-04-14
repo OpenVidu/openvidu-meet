@@ -1,0 +1,52 @@
+description: Successfully retrieved all roles and associated permissions in a room
+content:
+    application/json:
+        schema:
+            type: array
+            items:
+                $ref: '../../schemas/internal/meet-room-role-permissions.yaml'
+        example:
+            - role: 'moderator'
+              permissions:
+                  livekit:
+                      roomCreate: true
+                      roomJoin: true
+                      roomList: true
+                      roomRecord: true
+                      roomAdmin: true
+                      room: 'room-123'
+                      ingressAdmin: true
+                      canPublish: true
+                      canSubscribe: true
+                      canPublishData: true
+                      canUpdateOwnMetadata: true
+                      hidden: false
+                      recorder: false
+                      agent: false
+                  openvidu:
+                      canPublishScreen: true
+                      canRecord: true
+                      canChat: true
+                      canChangeVirtualBackground: true
+            - role: 'publisher'
+              permissions:
+                  livekit:
+                      roomCreate: false
+                      roomJoin: true
+                      roomList: true
+                      roomRecord: false
+                      roomAdmin: false
+                      room: 'room-123'
+                      ingressAdmin: false
+                      canPublish: true
+                      canSubscribe: true
+                      canPublishData: true
+                      canUpdateOwnMetadata: true
+                      hidden: false
+                      recorder: false
+                      agent: false
+                  openvidu:
+                      canPublishScreen: true
+                      canRecord: false
+                      canChat: true
+                      canChangeVirtualBackground: true

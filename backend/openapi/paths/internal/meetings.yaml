@@ -1,0 +1,49 @@
+/meetings/{roomId}:
+    delete:
+        operationId: endMeeting
+        summary: End a meeting
+        description: >
+            Ends a meeting in an OpenVidu Meet room. This will stop all recordings and disconnect all participants.
+
+            This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
+        tags:
+            - Internal API - Meetings
+        security:
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-end-meeting.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            # '404':
+            #     $ref: '../../components/responses/error-room-not-found.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/meetings/{roomId}/participants/{participantName}:
+    delete:
+        operationId: disconnectParticipant
+        summary: Delete a participant from a meeting
+        description: >
+            Deletes a participant from an OpenVidu Meet room. This will disconnect the participant from the meeting.
+        tags:
+            - Internal API - Meetings
+        security:
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/internal/participant-name.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-delete-participant.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-participant-not-found.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

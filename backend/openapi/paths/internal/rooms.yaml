@@ -25,32 +25,42 @@
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
-/rooms/{roomId}/participant-role:
+/rooms/{roomId}/roles:
     get:
-        operationId: getParticipantRole
-        summary: Get participant role in a room
+        operationId: getRoomRolesAndPermissions
+        summary: Get room roles and permissions
         description: >
-            Retrieves the role that a participant will have in a specified OpenVidu Meet room when using the URL thant contains the secret token.
-            This endpoint is useful for checking the participant's role before joining the room.
+            Retrieves the roles and associated permissions that a participant can have in a specified OpenVidu Meet room.
         tags:
             - Internal API - Rooms
-        security:
-            - accessTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-room-roles.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/roles/{secret}:
+    get:
+        operationId: getRoomRoleAndPermissions
+        summary: Get room role and permissions
+        description: >
+            Retrieves the role and associated permissions that a participant will have in a specified OpenVidu Meet room
+            when using the URL thant contains the given secret value.
+            This endpoint is useful for checking the participant's role and permissions before joining the room.
+        tags:
+            - Internal API - Rooms
         parameters:
             - $ref: '../../components/parameters/room-id.yaml'
             - $ref: '../../components/parameters/internal/secret.yaml'
         responses:
             '200':
-                description: Successfully retrieved participant role
-                content:
-                    application/json:
-                        schema:
-                            type: string
-                            example: 'moderator'
-                            description: The role that the participant will have in the room.
+                $ref: '../../components/responses/internal/success-get-room-role.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
-            '422':
-                $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'

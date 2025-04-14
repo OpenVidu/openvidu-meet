@@ -1,0 +1,110 @@
+type: object
+properties:
+    role:
+        type: string
+        enum: ['moderator', 'publisher']
+        description: >
+            A role that a participant can have in a room.
+            The role determines the permissions of the participant in the room.
+            - `moderator`: Can manage the room and its participants.
+            - `publisher`: Can publish media streams to the room.
+        example: 'moderator'
+    permissions:
+        type: object
+        properties:
+            livekit:
+                type: object
+                properties:
+                    roomCreate:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can create a room.
+                        example: true
+                    roomJoin:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can join a room.
+                        example: true
+                    roomList:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can list available rooms.
+                        example: true
+                    roomRecord:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can record a room.
+                        example: true
+                    roomAdmin:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant has administrative privileges in the room.
+                        example: true
+                    room:
+                        type: string
+                        description: >
+                            The ID of the room associated with the participant.
+                        example: roomId
+                    ingressAdmin:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can manage ingress settings.
+                        example: true
+                    canPublish:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can publish media streams to the room.
+                        example: true
+                    canSubscribe:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can subscribe to media streams in the room.
+                        example: true
+                    canPublishData:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can publish data messages to the room.
+                        example: true
+                    canUpdateOwnMetadata:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can update their own metadata.
+                        example: true
+                    hidden:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant is hidden in the room.
+                        example: false
+                    recorder:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant is a recorder in the room.
+                        example: false
+                    agent:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant is an agent in the room.
+                        example: false
+            openvidu:
+                type: object
+                properties:
+                    canPublishScreen:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can publish screen sharing in the room.
+                        example: true
+                    canRecord:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can record the room.
+                        example: true
+                    canChat:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can send and receive chat messages in the room.
+                        example: true
+                    canChangeVirtualBackground:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can change virtual background in the room.
+                        example: true
