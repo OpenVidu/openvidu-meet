@@ -72,9 +72,11 @@ export const deleteRoom = async (req: Request, res: Response) => {
 		const { deleted } = await roomService.bulkDeleteRooms([roomId], forceDelete);
 
 		if (deleted.length > 0) {
+			// Room was deleted
 			return res.status(204).send();
 		}
 
+		// Room was marked as deleted
 		return res.status(202).json({ message: `Room ${roomId} marked as deleted` });
 	} catch (error) {
 		logger.error(`Error deleting room: ${roomId}`);

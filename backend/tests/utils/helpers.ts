@@ -9,11 +9,15 @@ import {
 	MEET_USER,
 	MEET_SECRET,
 	MEET_ADMIN_USER,
-	MEET_ADMIN_SECRET
+	MEET_ADMIN_SECRET,
+	LIVEKIT_API_SECRET,
+	LIVEKIT_API_KEY,
+	MEET_NAME_ID
 } from '../../src/environment.js';
 import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../src/typings/ce/index.js';
 import { expect } from '@jest/globals';
 import INTERNAL_CONFIG from '../../src/config/internal-config.js';
+import { ChildProcess, execSync, spawn } from 'child_process';
 
 const CREDENTIALS = {
 	user: {
@@ -28,6 +32,8 @@ const CREDENTIALS = {
 
 let app: Express;
 let server: Server;
+
+const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
 /**
  * Starts the test server
@@ -214,6 +220,17 @@ export const getRoom = async (roomId: string, fields?: string) => {
 		.query({ fields });
 };
 
+export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+		.query(query);
+};
+
 export const assertEmptyRooms = async () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
@@ -287,6 +304,74 @@ export const generateParticipantToken = async (
 	return participantTokenCookie;
 };
 
+/**
+ * Adds a fake participant to a LiveKit room for testing purposes.
+ *
+ * This workflow involves three key steps:
+ * 1. Create the LiveKit room manually
+ * 2. Set room metadata to mark it as managed by OpenVidu Meet
+ * 3. Connect a fake participant to the room
+ *
+ * @param roomId The ID of the room to join
+ * @param participantName The name for the fake participant
+ */
+export const joinFakeParticipant = (roomId: string, participantName: string) => {
+	// Step 1: Manually create the LiveKit room
+	// In normal operation, the room is created when a real participant requests a token,
+	// but for testing we need to create it ourselves since we're bypassing the token flow.
+	// We set a short departureTimeout (1s) to ensure the room is quickly cleaned up
+	// when our tests disconnect participants, preventing lingering test resources.
+	const createRoomCommand = `lk room create --api-key ${LIVEKIT_API_KEY} --api-secret ${LIVEKIT_API_SECRET} --departure-timeout 1 ${roomId}`;
+	runCommandSync(createRoomCommand);
+
+	// Step 2: Set required room metadata
+	// The room must have the createdBy field set to MEET_NAME_ID so that:
+	// 1. OpenVidu Meet recognizes it as a managed room
+	// 2. The room can be properly deleted through our API later
+	// 3. Other OpenVidu Meet features know this room belongs to our system
+	const metadata = JSON.stringify({ createdBy: MEET_NAME_ID });
+	const updateMetadataCommand = `lk room update --metadata '${metadata}' --api-key ${LIVEKIT_API_KEY} --api-secret ${LIVEKIT_API_SECRET} ${roomId}`;
+	runCommandSync(updateMetadataCommand);
+
+	// Step 3: Join a fake participant with demo audio/video
+	const process = spawn('lk', [
+		'room',
+		'join',
+		'--identity',
+		participantName,
+		'--publish-demo',
+		roomId,
+		'--api-key',
+		LIVEKIT_API_KEY,
+		'--api-secret',
+		LIVEKIT_API_SECRET
+	]);
+
+	// Store the process to be able to terminate it later
+	fakeParticipantsProcesses.set(participantName, process);
+};
+
+export const disconnectFakeParticipants = () => {
+	fakeParticipantsProcesses.forEach((process, participantName) => {
+		process.kill();
+		console.log(`Stopped process for participant ${participantName}`);
+	});
+
+	fakeParticipantsProcesses.clear();
+};
+
 export const sleep = (ms: number) => {
 	return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+// PRIVATE METHODS
+
+const runCommandSync = (command: string): string => {
+	try {
+		const stdout = execSync(command, { encoding: 'utf-8' });
+		return stdout;
+	} catch (error) {
+		console.error(`Error running command: ${error}`);
+		throw error;
+	}
 };
