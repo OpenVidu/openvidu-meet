@@ -123,8 +123,7 @@ export const getRoomRolesAndPermissions = async (req: Request, res: Response) =>
 		await roomService.getMeetRoom(roomId);
 	} catch (error) {
 		logger.error(`Error getting room '${roomId}'`);
-		handleError(res, error);
-		return;
+		return handleError(res, error);
 	}
 
 	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);

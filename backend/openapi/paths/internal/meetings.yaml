@@ -19,8 +19,8 @@
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
-            # '404':
-            #     $ref: '../../components/responses/error-room-not-found.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 /meetings/{roomId}/participants/{participantName}:

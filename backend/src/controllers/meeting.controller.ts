@@ -1,13 +1,22 @@
 import { container } from '../config/dependency-injector.config.js';
 import { Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/index.js';
-import { LiveKitService } from '../services/livekit.service.js';
+import { LoggerService, RoomService, LiveKitService } from '../services/index.js';
 
 export const endMeeting = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
 	const livekitService = container.get(LiveKitService);
+	
 	const { roomId } = req.params;
+
+	// Check if the room exists
+	try {
+		await roomService.getMeetRoom(roomId);
+	} catch (error) {
+		logger.error(`Error getting room '${roomId}'`);
+		return handleError(res, error);
+	}
 
 	try {
 		// To end a meeting, we need to delete the room from LiveKit
