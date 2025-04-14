@@ -167,6 +167,18 @@ export const getRooms = async (query: Record<string, any> = {}) => {
 		.query(query);
 };
 
+export const updateRoomPreferences = async (roomId: string, preferences: any) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const userCookie = await loginUserAsRole(UserRole.ADMIN);
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
+		.set('Cookie', userCookie)
+		.send(preferences);
+};
+
 /**
  * Asserts that a rooms response matches the expected values for testing purposes.
  * Validates the room array length and pagination properties.

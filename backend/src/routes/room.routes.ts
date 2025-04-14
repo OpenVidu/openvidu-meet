@@ -58,6 +58,7 @@ internalRoomRouter.use(bodyParser.json());
 internalRoomRouter.put(
 	'/:roomId',
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomId,
 	withValidRoomPreferences,
 	roomCtrl.updateRoomPreferences
 );
