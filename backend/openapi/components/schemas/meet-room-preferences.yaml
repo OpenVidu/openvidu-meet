@@ -3,18 +3,13 @@ MeetRoomPreferences:
     properties:
         chatPreferences:
             $ref: '#/MeetChatPreferences'
-            description: >
-                Preferences for the chat feature in the room.
-
+            description: Preferences for the chat feature in the room.
         recordingPreferences:
             $ref: '#/MeetRecordingPreferences'
-            description: >
-                Preferences for recording the room.
-
+            description: Preferences for recording the room.
         virtualBackgroundPreferences:
             $ref: '#/MeetVirtualBackgroundPreferences'
-            description: >
-                Preferences for virtual background in the room.
+            description: Preferences for virtual background in the room.
 
 MeetChatPreferences:
     type: object
@@ -23,8 +18,7 @@ MeetChatPreferences:
             type: boolean
             default: true
             example: true
-            description: >
-                If true, the room will be allowed to send and receive chat messages.
+            description: If true, the room will be allowed to send and receive chat messages.
 MeetRecordingPreferences:
     type: object
     properties:
@@ -32,8 +26,7 @@ MeetRecordingPreferences:
             type: boolean
             default: true
             example: true
-            description: >
-                If true, the room will be allowed to record the video of the participants.
+            description: If true, the room will be allowed to record the video of the participants.
 MeetVirtualBackgroundPreferences:
     type: object
     properties:
@@ -41,5 +34,4 @@ MeetVirtualBackgroundPreferences:
             type: boolean
             default: true
             example: true
-            description: >
-                If true, the room will be allowed to use virtual background.
+            description: If true, the room will be allowed to use virtual background.

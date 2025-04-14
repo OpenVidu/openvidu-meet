@@ -1,0 +1,9 @@
+description: Successfully disconnect the participant
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Participant deleted'

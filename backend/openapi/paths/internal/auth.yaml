@@ -11,7 +11,6 @@
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-user-login.yaml'
-            # Should be 401
             '404':
                 $ref: '../../components/responses/internal/error-invalid-credentials.yaml'
             '422':
@@ -28,8 +27,24 @@
             - Internal API - Authentication
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-user-logout.yaml'
-
+                description: Successfully logged out
+                headers:
+                    Set-Cookie:
+                        schema:
+                            type: string
+                            example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
+                    Set-Cookie-Refresh:
+                        schema:
+                            type: string
+                            example: 'OvMeetRefreshToken=; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                message:
+                                    type: string
+                                    example: 'Logout successful'
 /auth/refresh:
     post:
         operationId: refreshAccessToken
@@ -60,19 +75,6 @@
             - accessTokenCookie: []
         responses:
             '200':
-                description: Successfully retrieved user profile
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                username:
-                                    type: string
-                                    example: 'admin'
-                                    description: The username of the authenticated user.
-                                role:
-                                    type: string
-                                    example: 'admin'
-                                    description: The role assigned to the authenticated user.
+                $ref: '../../components/responses/internal/success-get-profile.yaml'
             '401':
-                $ref: '../../components/responses/internal/error-invalid-refresh-token.yaml'
+                $ref: '../../components/responses/unauthorized-error.yaml'

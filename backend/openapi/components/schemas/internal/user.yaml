@@ -1,0 +1,10 @@
+type: object
+properties:
+    username:
+        type: string
+        example: 'admin'
+        description: The username of the authenticated user.
+    role:
+        type: string
+        example: 'admin'
+        description: The role assigned to the authenticated user.

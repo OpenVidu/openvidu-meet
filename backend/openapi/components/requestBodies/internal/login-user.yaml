@@ -3,13 +3,4 @@ required: true
 content:
     application/json:
         schema:
-            type: object
-            properties:
-                username:
-                    type: string
-                    example: 'admin'
-                    description: The username of the user.
-                password:
-                    type: string
-                    example: 'password123'
-                    description: The password of the user.
+            $ref: '../../schemas/internal/user-credentials.yaml'

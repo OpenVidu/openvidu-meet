@@ -14,12 +14,12 @@ content:
                         - 'room-456'
                 markedAsDeleted:
                     type: array
-                    description: List of rooms that were marked for deletion but not actually deleted. The rooms will be deleted when all participants leave the room.
                     items:
                         type: string
-                        example:
-                            - 'room-789'
-                            - 'room-101'
+                    description: List of rooms that were marked for deletion but not actually deleted. The rooms will be deleted when all participants leave the room.
+                    example:
+                        - 'room-789'
+                        - 'room-101'
         examples:
             successful_deletion:
                 summary: All rooms were successfully deleted

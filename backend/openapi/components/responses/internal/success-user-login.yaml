@@ -1,19 +1,9 @@
 description: Successfully logged in
 headers:
     Set-Cookie:
-        description: >
-            The cookie containing the access token.
-            This cookie is used to authenticate the user in subsequent requests.
-        schema:
-            type: string
-            example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+        $ref: '../../headers/set-cookie-access-token.yaml'
     Set-Cookie-Refresh:
-        description: >
-            The cookie containing the refresh token.
-            This cookie is used to refresh the access token when it expires.
-        schema:
-            type: string
-            example: 'OvMeetRefreshToken=token_123456; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+        $ref: '../../headers/set-cookie-refresh-token.yaml'
 content:
     application/json:
         schema:

@@ -6,16 +6,13 @@ required:
 properties:
     roomId:
         type: string
+        description: The unique identifier of the room where the participant will join.
         example: 'room-123'
-        description: >
-            The ID of the room where the participant will join.
     participantName:
         type: string
+        description: The name of the participant.
         example: 'Alice'
-        description: >
-            The name of the participant.
     secret:
         type: string
+        description: The secret token from the room Url
         example: 'abc123456'
-        description: >
-            The secret token from the room Url

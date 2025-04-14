@@ -1,0 +1,9 @@
+description: Room deletion accepted. The room will be deleted when all participants leave.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Room marked for deletion'

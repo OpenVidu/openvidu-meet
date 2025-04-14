@@ -31,7 +31,7 @@ content:
                 summary: A paginated response indicating more recordings are available
                 value:
                     recordings:
-                        - recordingId: 'room-456--EG_XYZ--XX678'
+                        - recordingId: 'room-456--EG_ZYX--XX678'
                           roomId: 'room-456'
                           status: 'COMPLETE'
                           filename: 'room-456--XX678.mp4'

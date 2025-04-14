@@ -8,4 +8,4 @@ properties:
         type: string
     code:
         type: integer
-description: HTTP status code associated with the error
+        description: HTTP status code associated with the error

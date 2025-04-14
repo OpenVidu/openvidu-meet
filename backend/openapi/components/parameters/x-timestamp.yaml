@@ -1,6 +1,6 @@
 name: X-Timestamp
 in: header
-description: Timestamp of the webhook event (in Unix Epoch seconds)
-example: 1678901234
+description: Timestamp of the webhook event (in Unix Epoch milliseconds).
 schema:
     type: string
+    example: '1697030400000'

@@ -1,0 +1,8 @@
+description: Conflict — The participant already exists in the room
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            name: 'Participant Error'
+            message: '"Alice" already exists in the room "room_123"'

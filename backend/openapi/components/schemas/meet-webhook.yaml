@@ -3,19 +3,19 @@ MeetWebhookEvent:
     properties:
         creationDate:
             type: number
-            description: 'The timestamp when the webhook event was created.'
+            description: The timestamp when the webhook event was created.
         event:
             $ref: '#/MeetWebhookEventType'
-            description: 'The type of event.'
+            description: The type of event.
         data:
             oneOf:
                 - allOf:
                       - title: Recording Event Data
-                      - description: 'Data for recording-related events (started, updated, ended)'
+                      - description: Data for recording-related events (started, updated, ended)
                       - $ref: './meet-recording.yaml'
                 # - allOf:
                 #       - title: Room Event Data
-                #       - description: 'Data for room-related events (created, updated, deleted)'
+                #       - description: Data for room-related events (created, updated, deleted)
                 #       - $ref: './meet-room.yaml'
             discriminator:
                 propertyName: eventType
@@ -26,7 +26,7 @@ MeetWebhookEvent:
                     # roomCreated: './meet-room.yaml'
                     # roomUpdated: './meet-room.yaml'
                     # roomDeleted: './meet-room.yaml'
-            description: 'The event payload data, determined by the event type.'
+            description: The event payload data, determined by the event type.
 
 MeetWebhookEventType:
     type: string

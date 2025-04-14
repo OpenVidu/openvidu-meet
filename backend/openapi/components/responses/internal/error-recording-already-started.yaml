@@ -2,7 +2,7 @@ description: Conflict — The room is already being recorded
 content:
     application/json:
         schema:
-            $ref: '../schemas/error.yaml'
+            $ref: '../../schemas/error.yaml'
         example:
             name: 'Recording Error'
             message: 'The room "room-123" is already being recorded'

@@ -2,7 +2,7 @@ description: Room update details
 content:
     application/json:
         schema:
-            $ref: '../schemas/meet-room-preferences.yaml#/MeetRoomPreferences'
+            $ref: '../../schemas/meet-room-preferences.yaml#/MeetRoomPreferences'
         examples:
             default:
                 summary: Standard preferences

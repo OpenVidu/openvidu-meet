@@ -56,14 +56,7 @@
             - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
-            - name: recordingIds
-              in: query
-              required: true
-              description: |
-                  The unique IDs of the recordings to delete.
-                  You can provide multiple recording IDs as a comma-separated list (e.g., `recordingIds=room-123--EG_XYZ--XX445,room-123--EG_XYZ--XX446`).
-              schema:
-                  type: string
+            - $ref: '../components/parameters/recording-ids.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-bulk-delete-recordings.yaml'
@@ -138,7 +131,6 @@
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
@@ -194,7 +186,7 @@
             '403':
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
-                $ref: '../components/responses/error-room-not-found.yaml'
+                $ref: '../components/responses/error-recording-not-found.yaml'
             '416':
                 description: Requested range not satisfiable
                 content:

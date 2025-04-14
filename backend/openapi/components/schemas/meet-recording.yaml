@@ -7,7 +7,7 @@ properties:
     roomId:
         type: string
         example: 'room-123'
-        description: The ID of the room where the recording was made.
+        description: The unique identifier of the room where the recording was made.
     # outputMode:
     #   type: string
     #   example: 'COMPOSED'
@@ -15,16 +15,13 @@ properties:
     #     The output mode of the recording. Possible value: "COMPOSED".
     status:
         type: string
-        enum: ['STARTING', 'ACTIVE', 'ENDING', 'COMPLETE', 'FAILED', 'ABORTED', 'LIMITED_REACHED']
+        enum: ['STARTING', 'ACTIVE', 'ENDING', 'COMPLETE', 'FAILED', 'ABORTED', 'LIMIT_REACHED']
         example: 'ACTIVE'
-        description: >
-            The status of the recording.
+        description: The status of the recording.
     filename:
         type: string
         example: 'room-123--XX445.mp4'
-        description: >
-            The URL for the publisher to join the room. The publisher has permissions to publish audio and
-            video streams to the room.
+        description: The name of the recording file.
     startDate:
         type: [number, 'null']
         example: 1620000000000

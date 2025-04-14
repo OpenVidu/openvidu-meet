@@ -53,22 +53,27 @@
         summary: Bulk delete rooms
         description: >
             Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
+
+            If a room has active participants, it will be marked for deletion
+            and will be removed once all participants leave.
+
+            If the "force" parameter is set to true, all rooms will be deleted immediately
+            regardless of active participants.
         tags:
             - OpenVidu Meet - Room
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
-            - name: roomIds
-              in: query
-              required: true
-              description: A comma-separated list of room IDs to delete.
-              schema:
-                  type: string
-                  example: 'room-123,room-456'
+            - $ref: '../components/parameters/room-ids.yaml'
+            - $ref: '../components/parameters/force-deletion.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-bulk-delete-rooms.yaml'
+            '202':
+                $ref: '../components/responses/success-room-marked-for-deletion.yaml'
+            '204':
+                description: Successfully deleted the OpenVidu Meet room
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -107,18 +112,13 @@
         operationId: deleteRoom
         summary: Delete a room
         description: >
-            Permanently removes an OpenVidu Meet room with the specified room ID.
-            When a room is deleted:
+            Deletes an OpenVidu Meet room with the specified room ID.
 
-            - All active participants are immediately disconnected
+            If the room has active participants, it will be marked for deletion
+            and will be removed once all participants leave.
 
-            - All associated resources and session data are removed
-
-            - The room ID becomes available for reuse
-
-            This operation is idempotent - deleting a non-existent room or
-            attempting to delete an already removed room will return a successful
-            response.
+            If the "force" parameter is set to true, the room will be deleted immediately
+            regardless of active participants.
         tags:
             - OpenVidu Meet - Room
         security:
@@ -128,7 +128,7 @@
             - $ref: '../components/parameters/room-id.yaml'
         responses:
             '202':
-                description: Room deletion accepted. The room will be deleted when all participants leave.
+                $ref: '../components/responses/success-room-marked-for-deletion.yaml'
             '204':
                 description: Successfully deleted the OpenVidu Meet room
             '401':

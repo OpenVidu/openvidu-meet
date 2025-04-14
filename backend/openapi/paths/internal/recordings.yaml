@@ -12,7 +12,7 @@
             $ref: '../../components/requestBodies/start-recording-request.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/success-start-recording.yaml'
+                $ref: '../../components/responses/internal/success-start-recording.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -20,12 +20,11 @@
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
             '409':
-                $ref: '../../components/responses/error-recording-already-started.yaml'
+                $ref: '../../components/responses/internal/error-recording-already-started.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
-
 /recordings/{recordingId}/stop:
     post:
         operationId: stopRecording
@@ -41,7 +40,7 @@
             - $ref: '../../components/parameters/recording-id.yaml'
         responses:
             '202':
-                $ref: '../../components/responses/success-stop-recording.yaml'
+                $ref: '../../components/responses/internal/success-stop-recording.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -49,7 +48,7 @@
             '404':
                 $ref: '../../components/responses/error-recording-not-found.yaml'
             '409':
-                $ref: '../../components/responses/error-recording-in-progress.yaml'
+                $ref: '../../components/responses/internal/error-recording-not-active.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 

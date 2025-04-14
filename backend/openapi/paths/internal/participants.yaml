@@ -12,41 +12,15 @@
             $ref: '../../components/requestBodies/internal/participant-token-request.yaml'
         responses:
             '200':
-                description: Successfully generated the participant token
-                headers:
-                    Set-Cookie:
-                        description: >
-                            The cookie containing the participant token.
-                            This cookie is used to authenticate the participant in the room.
-                        schema:
-                            type: string
-                            example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                token:
-                                    type: string
-                                    example: 'token_123456'
-                                    description: >
-                                        The token to authenticate the participant.
+                $ref: '../../components/responses/internal/success-generate-participant-token.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
-
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
             '409':
-                description: Conflict — The participant already exists in the room
-                content:
-                    application/json:
-                        schema:
-                            $ref: '../../components/schemas/error.yaml'
-                        example:
-                            name: 'Participant Error'
-                            message: 'Participant already exists in the room'
+                $ref: '../../components/responses/internal/error-participant-already-exists.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
@@ -64,25 +38,7 @@
             $ref: '../../components/requestBodies/internal/participant-token-request.yaml'
         responses:
             '200':
-                description: Successfully refreshed the participant token
-                headers:
-                    Set-Cookie:
-                        description: >
-                            The cookie containing the participant token.
-                            This cookie is used to authenticate the participant in the room.
-                        schema:
-                            type: string
-                            example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                token:
-                                    type: string
-                                    example: 'token_123456'
-                                    description: >
-                                        The token to authenticate the participant.
+                $ref: '../../components/responses/internal/success-generate-participant-token.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -90,13 +46,7 @@
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
             '409':
-                description: Conflict — Current token is still valid
-                content:
-                    application/json:
-                        schema:
-                            $ref: '../../components/schemas/error.yaml'
-                        example:
-                            message: 'Participant token is still valid'
+                $ref: '../../components/responses/internal/error-participant-token-still-valid.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 /participants/{participantName}:
@@ -110,16 +60,16 @@
         security:
             - participantTokenCookie: []
         parameters:
-            - $ref: '../../components/parameters/internal/participant-name.yaml'
             - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/internal/participant-name.yaml'
         responses:
-            '204':
-                description: Successfully disconnect the participant
+            '200':
+                $ref: '../../components/responses/internal/success-delete-participant.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
-                $ref: '../../components/responses/error-room-not-found.yaml'
+                $ref: '../../components/responses/internal/error-participant-not-found.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'

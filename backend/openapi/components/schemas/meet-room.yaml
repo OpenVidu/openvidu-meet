@@ -23,14 +23,13 @@ properties:
 
             After this date, the room will be automatically deleted and no new participants can join.
 
-            If this value is set, the room is marked for deletion but will only be removed after the last
-              participant leaves ("graceful deletion").
+            If this value is set and the date has already passed, the room is marked for deletion but will only be removed after the last 
+            participant leaves ("graceful deletion").
 
             If this value is not defined, the room will exist indefinitely until manually deleted.
     preferences:
         $ref: meet-room-preferences.yaml#/MeetRoomPreferences
-        description: >
-            The preferences for the room.
+        description: The preferences for the room.
     # maxParticipants:
     #     type: integer
     #     example: 10
@@ -39,13 +38,13 @@ properties:
     #         this limit, new participants will not be allowed to join.
     moderatorURL:
         type: string
-        example: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+        example: 'http://localhost:6080/room/room-123/?secret=123456'
         description: >
             The URL for the moderator to join the room. The moderator has special permissions to manage the
             room and participants.
     publisherURL:
         type: string
-        example: 'http://localhost:6080/room/room-123/?secret=tok_123456'
+        example: 'http://localhost:6080/room/room-123/?secret=654321'
         description: >
             The URL for the publisher to join the room. The publisher has permissions to publish audio and
             video streams to the room.

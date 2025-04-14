@@ -30,70 +30,13 @@ paths:
         $ref: './paths/internal/participants.yaml#/~1participants~1token~1refresh'
     /participants/{participantName}:
         $ref: './paths/internal/participants.yaml#/~1participants~1{participantName}'
-        delete:
-            operationId: disconnectParticipant
-            summary: Delete a participant from a room
-            description: >
-                Deletes a participant from an OpenVidu Meet room.
-            tags:
-                - Internal API - Participant
-            security:
-                - participantTokenCookie: []
-            parameters:
-                - name: participantName
-                  in: path
-                  required: true
-                  description: The name of the participant to delete
-                  schema:
-                      type: string
-                - name: roomId
-                  in: query
-                  required: true
-                  description: The ID of the room where the participant is connected
-                  schema:
-                      type: string
-            responses:
-                '204':
-                    description: Successfully disconnect the participant
-                '401':
-                    description: Unauthorized — The participant access token is missing or invalid
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                message: 'Unauthorized'
-                '403':
-                    description: Forbidden — The participant authenticated with the access token is not moderator of the room
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                message: 'Insufficient permissions to access this resource'
-                '404':
-                    description: Participant not found
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                code: 404
-                                message: 'Participant not found'
-                '500':
-                    description: Internal server error
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Error'
-                            example:
-                                code: 500
-                                message: 'Internal server error'
 
 components:
     securitySchemes:
         $ref: './components/security.yaml'
     schemas:
+        User:
+            $ref: components/schemas/internal/user.yaml
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
         MeetRoomOptions:
@@ -104,5 +47,3 @@ components:
             $ref: components/schemas/meet-recording.yaml
         Error:
             $ref: components/schemas/error.yaml
-        MeetWebhookEvent:
-            $ref: components/schemas/meet-webhook.yaml#/MeetWebhookEvent

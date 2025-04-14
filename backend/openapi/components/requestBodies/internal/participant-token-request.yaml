@@ -1,4 +1,5 @@
 description: Participant details
+required: true
 content:
     application/json:
         schema:

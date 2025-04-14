@@ -1,0 +1,9 @@
+name: force
+in: query
+description: >
+    Force deletion of the room even if there are active participants.
+    This will immediately disconnect all participants and remove the room.
+required: false
+schema:
+    type: string
+    example: 'true'

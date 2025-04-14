@@ -10,6 +10,7 @@ recordingStarted:
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
+        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:
@@ -60,6 +61,7 @@ recordingUpdated:
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
+        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:
@@ -112,6 +114,7 @@ recordingEnded:
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
+        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:

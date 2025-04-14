@@ -1,0 +1,7 @@
+description: Conflict — Current token is still valid
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        example:
+            message: 'Participant token is still valid'

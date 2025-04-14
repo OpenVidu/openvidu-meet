@@ -1,6 +1,5 @@
 name: X-Signature
 in: header
-description: HMAC signature for webhook verification
-example: 1234567890abcdef
+description: HMAC signature for webhook verification.
 schema:
     type: string

@@ -4,5 +4,5 @@ content:
         schema:
             $ref: '../schemas/error.yaml'
         example:
-            code: 404
-            message: 'Room not found'
+            name: 'Room Error'
+            message: 'The room "room_123" does not exist'

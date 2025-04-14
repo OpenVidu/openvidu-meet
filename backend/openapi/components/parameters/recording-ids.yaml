@@ -1,0 +1,7 @@
+name: recordingIds
+in: query
+required: true
+description: A comma-separated list of recording IDs to delete.
+schema:
+    type: string
+    example: 'room-123--EG_XYZ--XX445,room-123--EG_ZYX--XX446'

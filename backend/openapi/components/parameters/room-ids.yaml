@@ -1,0 +1,7 @@
+name: roomIds
+in: query
+required: true
+description: A comma-separated list of room IDs to delete.
+schema:
+    type: string
+    example: 'room-123,room-456'

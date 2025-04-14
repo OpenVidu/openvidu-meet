@@ -8,8 +8,8 @@ properties:
 
             After this date, the room will be automatically deleted and no new participants can join.
 
-            If this value is set, the room is marked for deletion but will only be removed after the last
-              participant leaves ("graceful deletion").
+            If this value is set and the date has already passed, the room is marked for deletion but will only be removed after the last 
+            participant leaves ("graceful deletion").
 
             If this value is not defined, the room will exist indefinitely until manually deleted.
     roomIdPrefix:
