@@ -28,6 +28,7 @@ const INTERNAL_CONFIG = {
 	RECORDING_STARTED_TIMEOUT: '30s' as StringValue, // Timeout for recording start
 	RECORDING_LOCK_GC_INTERVAL: '30m' as StringValue, // Garbage collection interval for recording locks
 
+	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
 	// Additional intervals
 	MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '1h' as StringValue
 };
