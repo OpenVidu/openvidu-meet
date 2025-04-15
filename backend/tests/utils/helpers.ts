@@ -18,6 +18,8 @@ import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../s
 import { expect } from '@jest/globals';
 import INTERNAL_CONFIG from '../../src/config/internal-config.js';
 import { ChildProcess, execSync, spawn } from 'child_process';
+import { container } from '../../src/config/dependency-injector.config.js';
+import { RoomService } from '../../src/services/room.service.js';
 
 const CREDENTIALS = {
 	user: {
@@ -34,6 +36,10 @@ let app: Express;
 let server: Server;
 
 const fakeParticipantsProcesses = new Map<string, ChildProcess>();
+
+export const sleep = (ms: number) => {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 /**
  * Starts the test server
@@ -265,6 +271,24 @@ export const assertEmptyRooms = async () => {
 };
 
 /**
+ * Runs the room garbage collector to delete expired rooms.
+ *
+ * This function retrieves the RoomService from the dependency injection container
+ * and calls its deleteExpiredRooms method to clean up expired rooms.
+ * It then waits for 1 second before completing.
+ */
+export const runRoomGarbageCollector = async () => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const roomService = container.get(RoomService);
+	await (roomService as any)['deleteExpiredRooms']();
+
+	await sleep(1000);
+};
+
+/**
  * Deletes all rooms
  */
 export const deleteAllRooms = async () => {
@@ -381,10 +405,6 @@ export const disconnectFakeParticipants = () => {
 	});
 
 	fakeParticipantsProcesses.clear();
-};
-
-export const sleep = (ms: number) => {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 // PRIVATE METHODS
