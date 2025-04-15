@@ -13,7 +13,7 @@
         requestBody:
             $ref: '../components/requestBodies/create-room-request.yaml'
         responses:
-            '200':
+            '201':
                 $ref: '../components/responses/success-create-room.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'

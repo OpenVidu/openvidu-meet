@@ -154,7 +154,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.send(options)
-		.expect(200);
+		.expect(201);
 	return response.body;
 };
 

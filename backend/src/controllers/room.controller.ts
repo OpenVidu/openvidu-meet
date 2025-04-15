@@ -4,6 +4,7 @@ import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { RoomService, ParticipantService } from '../services/index.js';
 import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, ParticipantRole } from '@typings-ce';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -15,7 +16,8 @@ export const createRoom = async (req: Request, res: Response) => {
 		const baseUrl = `${req.protocol}://${req.get('host')}`;
 
 		const room = await roomService.createMeetRoom(baseUrl, options);
-		return res.status(200).json(room);
+		res.set('Location', `${baseUrl}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
+		return res.status(201).json(room);
 	} catch (error) {
 		logger.error(`Error creating room with options '${JSON.stringify(options)}'`);
 		handleError(res, error);

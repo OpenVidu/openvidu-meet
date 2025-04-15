@@ -1,5 +1,12 @@
-description: Success response for creating a room
+description: Room created successfully
 content:
     application/json:
         schema:
             $ref: '../schemas/meet-room.yaml'
+headers:
+    Location:
+        description: URL of the newly created room
+        schema:
+            type: string
+            format: uri
+        example: https://your-api.com/meet/api/v1/rooms/room-id-123
