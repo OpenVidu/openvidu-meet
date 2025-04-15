@@ -136,6 +136,9 @@
             - $ref: '../components/parameters/room-id.yaml'
         responses:
             '202':
+                description: >
+                    The room was marked for deletion (due to active participants)
+                    and will be removed once all participants leave.
                 $ref: '../components/responses/success-room-marked-for-deletion.yaml'
             '204':
                 description: Successfully deleted the OpenVidu Meet room

@@ -7,4 +7,4 @@ content:
                 message:
                     type: string
         example:
-            message: Rooms room-123, room-456 marked for deletion
+            message: Rooms room-123 marked for deletion
