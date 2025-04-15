@@ -6,15 +6,5 @@ content:
             properties:
                 message:
                     type: string
-                markedForDeletion:
-                    type: array
-                    items:
-                        type: string
-                        example:
-                            - room-123
-                            - room-456
         example:
             message: Rooms room-123, room-456 marked for deletion
-            markedForDeletion:
-                - room-123
-                - room-456
