@@ -39,7 +39,7 @@ describe('Recording API Security Tests', () => {
 		// Create a room and extract the roomId
 		const room = await createRoom();
 		roomId = room.roomId;
-		recordingId = `${roomId}--recordingId--uid`;
+		recordingId = `${roomId}--EG_recordingId--uid`;
 
 		// Extract the room secrets and generate participant tokens, saved as cookies
 		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
