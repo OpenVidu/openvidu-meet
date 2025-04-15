@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
 import { createRoom, deleteAllRooms, startTestServer, stopTestServer, getRoom } from '../../../utils/helpers.js';
+import ms from 'ms';
 
 describe('OpenVidu Meet Room API Tests', () => {
 	beforeAll(async () => {
@@ -103,7 +104,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 		it('should retrieve a room with autoDeletionDate', async () => {
 			// Use validAutoDeletionDate that's defined in the test file or create here
-			const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
+			const validAutoDeletionDate = Date.now() + ms('2h');
 
 			// Create a room with autoDeletionDate
 			const createdRoom = await createRoom({

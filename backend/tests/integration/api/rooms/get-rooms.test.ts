@@ -8,9 +8,10 @@ import {
 	stopTestServer,
 	assertSuccessRoomsResponse
 } from '../../../utils/helpers.js';
+import ms from 'ms';
 
 describe('OpenVidu Meet Room API Tests', () => {
-	const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
+	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	beforeAll(async () => {
 		await startTestServer();
