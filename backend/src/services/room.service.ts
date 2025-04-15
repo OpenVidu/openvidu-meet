@@ -178,6 +178,7 @@ export class RoomService {
 					}
 
 					this.logger.verbose(`Room ${roomId} has participants. Marking as deleted (graceful deletion).`);
+					// Mark the room as deleted in the storage system. They will be deleted later when all participants leave.
 					await this.markRoomAsDeleted(roomId);
 					return { roomId, status: 'marked' } as const;
 				})
