@@ -1,14 +1,21 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { deleteAllRooms, loginUserAsRole, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	loginUserAsRole,
+	startTestServer,
+	stopTestServer
+} from '../../../utils/helpers.js';
 import { UserRole } from '../../../../src/typings/ce/user.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import ms from 'ms';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 
 describe('OpenVidu Meet Room API Tests', () => {
-	const validAutoDeletionDate = Date.now() + 2 * 60 * 60 * 1000; // 2 hours ahead
+	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	let app: Express;
 	let userCookie: string;
@@ -25,44 +32,35 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 	describe('Room Creation Tests', () => {
 		it('✅ Should create a room without autoDeletionDate (default behavior)', async () => {
-			const response = await request(app)
-				.post(ROOMS_PATH)
-				.set('Cookie', userCookie)
-				.send({
-					roomIdPrefix: '   Test Room   '
-				})
-				.expect(200);
-
-			expect(response.body).toHaveProperty('creationDate');
-			expect(response.body).not.toHaveProperty('autoDeletionDate');
-			expect(response.body.roomIdPrefix).toBe('TestRoom');
-			expect(response.body).toHaveProperty('preferences');
-			expect(response.body.preferences).toEqual({
+			const room = await createRoom({
+				roomIdPrefix: '   Test Room   '
+			});
+			expect(room).toHaveProperty('creationDate');
+			expect(room).not.toHaveProperty('autoDeletionDate');
+			expect(room.roomIdPrefix).toBe('TestRoom');
+			expect(room).toHaveProperty('preferences');
+			expect(room.preferences).toEqual({
 				recordingPreferences: { enabled: true },
 				chatPreferences: { enabled: true },
 				virtualBackgroundPreferences: { enabled: true }
 			});
-			expect(response.body).toHaveProperty('moderatorRoomUrl');
-			expect(response.body).toHaveProperty('publisherRoomUrl');
+			expect(room).toHaveProperty('moderatorRoomUrl');
+			expect(room).toHaveProperty('publisherRoomUrl');
 		});
 
 		it('✅ Should create a room with a valid autoDeletionDate', async () => {
-			const response = await request(app)
-				.post(ROOMS_PATH)
-				.set('Cookie', userCookie)
-				.send({
-					autoDeletionDate: validAutoDeletionDate,
-					roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
-				})
-				.expect(200);
+			const room = await createRoom({
+				autoDeletionDate: validAutoDeletionDate,
+				roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
+			});
 
-			expect(response.body).toHaveProperty('creationDate');
-			expect(response.body).toHaveProperty('autoDeletionDate');
-			expect(response.body.autoDeletionDate).toBe(validAutoDeletionDate);
-			expect(response.body.roomIdPrefix).toBe('MyRoom123');
-			expect(response.body).toHaveProperty('preferences');
-			expect(response.body).toHaveProperty('moderatorRoomUrl');
-			expect(response.body).toHaveProperty('publisherRoomUrl');
+			expect(room).toHaveProperty('creationDate');
+			expect(room).toHaveProperty('autoDeletionDate');
+			expect(room.autoDeletionDate).toBe(validAutoDeletionDate);
+			expect(room.roomIdPrefix).toBe('MyRoom123');
+			expect(room).toHaveProperty('preferences');
+			expect(room).toHaveProperty('moderatorRoomUrl');
+			expect(room).toHaveProperty('publisherRoomUrl');
 		});
 
 		it('✅ Should create a room when sending full valid payload', async () => {
@@ -76,25 +74,23 @@ describe('OpenVidu Meet Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(200);
+			const room = await createRoom(payload);
 
-			expect(response.body).toHaveProperty('creationDate');
-			expect(response.body).toHaveProperty('autoDeletionDate');
-			expect(response.body.autoDeletionDate).toBe(validAutoDeletionDate);
-			expect(response.body.roomIdPrefix).toBe('ExampleRoom');
-			expect(response.body.preferences).toEqual({
+			expect(room).toHaveProperty('creationDate');
+			expect(room).toHaveProperty('autoDeletionDate');
+			expect(room.autoDeletionDate).toBe(validAutoDeletionDate);
+			expect(room.roomIdPrefix).toBe('ExampleRoom');
+			expect(room.preferences).toEqual({
 				recordingPreferences: { enabled: false },
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: true }
 			});
-			expect(response.body).toHaveProperty('moderatorRoomUrl');
-			expect(response.body).toHaveProperty('publisherRoomUrl');
+			expect(room).toHaveProperty('moderatorRoomUrl');
+			expect(room).toHaveProperty('publisherRoomUrl');
 		});
 	});
 
 	describe('Room Creation Validation failures', () => {
-		// Helper to get a valid autoDeletionDate (2 hours in the future)
-
 		it('should fail when autoDeletionDate is negative', async () => {
 			const payload = {
 				autoDeletionDate: -5000,
@@ -110,7 +106,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 		it('should fail when autoDeletionDate is less than 1 hour in the future', async () => {
 			const payload = {
-				autoDeletionDate: Date.now() + 30 * 60 * 1000, // 30 minutes in the future
+				autoDeletionDate: Date.now() + ms('30m'),
 				roomIdPrefix: 'TestRoom'
 			};
 
@@ -118,7 +114,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain(
-				'autoDeletionDate must be at least 1 hour in the future'
+				`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
 			);
 		});
 
