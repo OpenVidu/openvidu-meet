@@ -61,6 +61,12 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 		const recordingIdsArray = (recordingIds as string).split(',');
 		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordings(recordingIdsArray);
 
+		// All recordings were successfully deleted
+		if (deleted.length > 0 && notDeleted.length === 0) {
+			return res.sendStatus(204);
+		}
+
+		// Some or all recordings could not be deleted
 		return res.status(200).json({ deleted, notDeleted });
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {

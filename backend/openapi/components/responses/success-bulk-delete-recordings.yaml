@@ -1,4 +1,4 @@
-description: Bulk deletion completed. Includes lists of successfully deleted IDs and errors.
+description: Mixed results for bulk deletion operation
 content:
     application/json:
         schema:
@@ -8,10 +8,7 @@ content:
                     type: array
                     items:
                         type: string
-                    description: List of successfully deleted recording IDs.
-                    example:
-                        - 'room-123--EG_XYZ--XX445'
-                        - 'room-123--EG_ZYX--XX446'
+                    description: List of recordings that were deleted successfully.
                 notDeleted:
                     type: array
                     description: List of recordings that could not be deleted along with the corresponding error messages.
@@ -27,14 +24,6 @@ content:
                                 description: A message explaining why the deletion failed.
                                 example: 'Recording not found'
         examples:
-            successful_deletion:
-                summary: All recordings were successfully deleted
-                value:
-                    deleted:
-                        - 'room-123--EG_XYZ--XX445'
-                        - 'room-123--EG_ZYX--XX446'
-                    notDeleted: []
-
             partial_deletion_with_errors:
                 summary: Some recordings were deleted successfully, others failed
                 value:
