@@ -18,7 +18,7 @@ import INTERNAL_CONFIG from '../../config/internal-config.js';
  * @param val The string to sanitize
  * @returns A sanitized string safe for use as an identifier
  */
-const sanitizeId = (val: string): string => {
+const sanitizeRoomId = (val: string): string => {
 	let transformed = val
 		.trim() // Remove leading/trailing spaces
 		.replace(/\s+/g, '') // Remove all spaces
@@ -34,11 +34,12 @@ const sanitizeId = (val: string): string => {
 	return transformed;
 };
 
-const nonEmptySanitizedString = (fieldName: string) =>
+export const nonEmptySanitizedRoomId = (fieldName: string) =>
 	z
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.transform(sanitizeId)
+		.max(100, { message: `${fieldName} cannot exceed 100 characters` })
+		.transform(sanitizeRoomId)
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
 		});
@@ -83,7 +84,8 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.optional(),
 	roomIdPrefix: z
 		.string()
-		.transform(sanitizeId)
+		.max(50, 'roomIdPrefix cannot exceed 50 characters')
+		.transform(sanitizeRoomId)
 		.optional()
 		.default(''),
 	preferences: RoomPreferencesSchema.optional().default({
@@ -135,7 +137,7 @@ const BulkDeleteRoomsSchema = z.object({
 
 			// Pre-sanitize to check for duplicates that would become identical
 			for (const id of roomIds) {
-				const transformed = sanitizeId(id);
+				const transformed = sanitizeRoomId(id);
 
 				// Only add non-empty IDs
 				if (transformed !== '') {
@@ -190,7 +192,7 @@ export const withValidRoomPreferences = (req: Request, res: Response, next: Next
 };
 
 export const withValidRoomId = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = nonEmptySanitizedString('roomId').safeParse(req.params.roomId);
+	const { success, error, data } = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
 	if (!success) {
 		return rejectRequest(res, error);
@@ -213,7 +215,7 @@ export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next
 };
 
 export const withValidRoomDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
-	const roomIdResult = nonEmptySanitizedString('roomId').safeParse(req.params.roomId);
+	const roomIdResult = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
 	if (!roomIdResult.success) {
 		return rejectRequest(res, roomIdResult.error);

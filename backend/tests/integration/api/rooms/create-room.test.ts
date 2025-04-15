@@ -215,5 +215,17 @@ describe('OpenVidu Meet Room API Tests', () => {
 			expect(response.body.error).toContain('Bad Request');
 			expect(response.body.message).toContain('Malformed Body');
 		});
+
+		it('should fail when roomIdPrefix is too long', async () => {
+			const longRoomId = 'a'.repeat(51);
+			const payload = {
+				roomIdPrefix: longRoomId,
+				autoDeletionDate: validAutoDeletionDate
+			};
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send(payload).expect(422);
+
+			expect(JSON.stringify(response.body.details)).toContain('roomIdPrefix cannot exceed 50 characters');
+		});
 	});
 });
