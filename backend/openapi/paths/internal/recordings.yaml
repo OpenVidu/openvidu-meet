@@ -11,7 +11,7 @@
         requestBody:
             $ref: '../../components/requestBodies/start-recording-request.yaml'
         responses:
-            '200':
+            '201':
                 $ref: '../../components/responses/internal/success-start-recording.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'

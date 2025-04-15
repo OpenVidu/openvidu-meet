@@ -3,6 +3,7 @@ import { LoggerService } from '../services/logger.service.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { RecordingService } from '../services/recording.service.js';
 import { container } from '../config/dependency-injector.config.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -12,7 +13,12 @@ export const startRecording = async (req: Request, res: Response) => {
 
 	try {
 		const recordingInfo = await recordingService.startRecording(roomId);
-		return res.status(200).json(recordingInfo);
+		res.setHeader(
+			'Location',
+			`${req.protocol}://${req.get('host')}/${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
+		);
+
+		return res.status(201).json(recordingInfo);
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error starting recording: ${error.message}`);
@@ -180,6 +186,5 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error streaming recording' });
 	}
 };
-
 
 // Internal Recording methods
