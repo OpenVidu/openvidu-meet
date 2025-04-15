@@ -21,13 +21,13 @@ content:
                     moderatorURL: 'http://localhost:6080/room/room-123/?secret=123456'
                     publisherURL: 'http://localhost:6080/room/room-123/?secret=654321'
 
-            roomId_fields_only:
+            fields=roomId:
                 summary: Response with only the roomId
                 value:
                     roomId: 'room-123'
 
-            no_urls:
-                summary: Room details including preferences but no URLs
+            fields=roomId,roomIdPrefix,creationDate,autoDeletionDate,preferences:
+                summary: Room details with roomId, roomIdPrefix, creationDate, autoDeletionDate, and preferences
                 value:
                     roomId: 'room-123'
                     roomIdPrefix: 'room'
@@ -41,7 +41,7 @@ content:
                         virtualBackgroundPreferences:
                             enabled: true
 
-            urls_only:
+            fields=moderatorURL,publisherURL:
                 summary: Response containing only moderator and publisher URLs
                 value:
                     moderatorURL: 'http://localhost:6080/room/room-123/?secret=123456'

@@ -57,7 +57,7 @@ content:
                     pagination:
                         isTruncated: false
                         maxItems: 10
-            roomId_fields_only:
+            fields=roomId:
                 summary: Response with only roomId for each room
                 value:
                     rooms:
@@ -67,7 +67,7 @@ content:
                         isTruncated: false
                         maxItems: 10
 
-            no_urls:
+            fields=roomId,roomIdPrefix,creationDate,autoDeletionDate,preferences:
                 summary: Room details including preferences but no URLs
                 value:
                     rooms:
@@ -98,7 +98,7 @@ content:
                         nextPageToken: 'abc123'
                         maxItems: 10
 
-            urls_only:
+            fields=moderatorURL,publisherURL:
                 summary: Response containing only moderator and publisher URLs
                 value:
                     rooms:
