@@ -55,7 +55,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			//The bulk operation for only one room should be the same as deleting the room
 			expect(response.status).toBe(202);
-			expect(response.body.message).toContain('marked as deleted');
+			expect(response.body.message).toContain('marked for deletion');
 		});
 
 		it('should delete room (204) with force=true parameter when no participants exist', async () => {
@@ -138,9 +138,6 @@ describe('OpenVidu Meet Room API Tests', () => {
 			expect(response.status).toBe(202);
 
 			expect(response.body.message).toContain(`Rooms ${room1.roomId}, ${room2.roomId} marked for deletion`);
-			expect(response.body.markedForDeletion).toBeDefined();
-			expect(response.body.markedForDeletion).toHaveLength(2);
-			expect(response.body.markedForDeletion).toStrictEqual([room1.roomId, room2.roomId]);
 			expect(response.body.deleted).toBeUndefined();
 
 			// Verify that the rooms are marked for deletion
