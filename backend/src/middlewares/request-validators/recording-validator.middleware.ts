@@ -1,29 +1,61 @@
 import { MeetRecordingFilters } from '@typings-ce';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 
-const sanitizeId = (val: string): string => {
-	return val
-		.trim() // Remove leading and trailing spaces
-		.replace(/\s+/g, '-') // Replace spaces with hyphens
-		.replace(/[^a-zA-Z0-9_-]/g, ''); // Remove special characters (allow alphanumeric, hyphens and underscores)
-};
-
-const nonEmptySanitizedString = (fieldName: string) =>
+const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
-		.transform(sanitizeId)
+		.transform((val) => {
+			const sanitizedValue = val.trim();
+
+			// Verify the format of the recording ID
+			// The recording ID should be in the format 'roomId--EG_xxx--uid'
+			const parts = sanitizedValue.split('--');
+
+			// If the recording ID is not in the expected format, return the sanitized value
+			// The next validation will check if the format is correct
+			if (parts.length !== 3) return sanitizedValue;
+
+			// If the recording ID is in the expected format, sanitize the roomId part
+			const { success, data } = nonEmptySanitizedRoomId('roomId').safeParse(parts[0]);
+
+			if (!success) {
+				// If the roomId part is not valid, return the sanitized value
+				return sanitizedValue;
+			}
+
+			return `${data}--${parts[1]}--${parts[2]}`;
+		})
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
-		});
+		})
+		.refine(
+			(data) => {
+				const parts = data.split('--');
+
+				if (parts.length !== 3) return false;
+
+				if (parts[0].length === 0) return false;
+
+				if (!parts[1].startsWith('EG_') || parts[1].length <= 3) return false;
+
+				if (parts[2].length === 0) return false;
+
+				return true;
+			},
+			{
+				message: `${fieldName} does not follow the expected format`
+			}
+		);
 
 const StartRecordingRequestSchema = z.object({
-	roomId: nonEmptySanitizedString('roomId')
+	roomId: nonEmptySanitizedRoomId('roomId')
 });
 
 const GetRecordingSchema = z.object({
-	recordingId: nonEmptySanitizedString('recordingId')
+	recordingId: nonEmptySanitizedRecordingId('recordingId')
 });
 
 const BulkDeleteRecordingsSchema = z.object({
@@ -39,7 +71,7 @@ const BulkDeleteRecordingsSchema = z.object({
 
 			return arg;
 		},
-		z.array(nonEmptySanitizedString('recordingId')).default([])
+		z.array(nonEmptySanitizedRecordingId('recordingId')).default([])
 	)
 });
 
@@ -53,7 +85,7 @@ const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 	// status: z.string().optional(),
 	roomId: z.string().optional(),
 	nextPageToken: z.string().optional(),
-	fields: z.string().optional(),
+	fields: z.string().optional()
 });
 
 export const withValidStartRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
