@@ -4,57 +4,52 @@ import { OpenViduMeetPermissions, MeetRoom } from '@typings-ce';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
+import { OpenViduMeetError } from '../models/index.js';
+
+const extractRoomIdFromRequest = (req: Request): string => {
+	if (req.body.roomId) {
+		return req.body.roomId as string;
+	}
+
+	// If roomId is not in the body, check if it's in the params
+	const recordingId = req.params.recordingId as string;
+
+	const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+	return roomId;
+};
 
 export const withRecordingEnabled = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
-	const roomIdParam = req.body.roomId;
-	let roomId: string;
-
-	// Extract roomId from body or from recordingId
-	if (roomIdParam) {
-		roomId = roomIdParam as string;
-	} else {
-		const recordingId = req.params.recordingId as string;
-		({ roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId));
-	}
-
-	let room: MeetRoom;
+	const roomService = container.get(RoomService);
 
 	try {
-		const roomService = container.get(RoomService);
-		room = await roomService.getMeetRoom(roomId);
+		const roomId = extractRoomIdFromRequest(req);
+
+		const room: MeetRoom = await roomService.getMeetRoom(roomId);
+
+		if (!room.preferences?.recordingPreferences?.enabled) {
+			logger.debug(`Recording is disabled for room ${roomId}`);
+			return res.status(403).json({
+				message: 'Recording is disabled in this room'
+			});
+		}
+
+		return next();
 	} catch (error) {
-		logger.error('Error checking recording preferences:' + error);
-		return res.status(403).json({ message: 'Recording is disabled in this room' });
+		logger.error(`Error checking recording preferences: ${error}`);
+
+		if (error instanceof OpenViduMeetError) {
+			return res.status(error.statusCode).json({ name: error.name, message: error.message });
+		}
+
+		return res.status(500).json({
+			message: 'Unexpected error checking recording permissions'
+		});
 	}
-
-	if (!room.preferences) {
-		logger.error('No room preferences found checking recording preferences. Refusing access');
-		return res.status(403).json({ message: 'Recording is disabled in this room' });
-	}
-
-	const { recordingPreferences } = room.preferences;
-	const { enabled: recordingEnabled } = recordingPreferences;
-
-	if (!recordingEnabled) {
-		return res.status(403).json({ message: 'Recording is disabled in this room' });
-	}
-
-	return next();
 };
 
 export const withCorrectPermissions = async (req: Request, res: Response, next: NextFunction) => {
-	const roomIdParam = req.body.roomId;
-	let roomId: string;
-
-	// Extract roomId from body or from recordingId
-	if (roomIdParam) {
-		roomId = roomIdParam as string;
-	} else {
-		const recordingId = req.params.recordingId as string;
-		({ roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId));
-	}
-
+	const roomId = extractRoomIdFromRequest(req);
 	const payload = req.session?.tokenClaims;
 
 	if (!payload) {
