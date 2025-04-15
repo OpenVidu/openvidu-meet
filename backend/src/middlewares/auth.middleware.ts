@@ -156,8 +156,17 @@ export const allowAnonymous = async (req: Request) => {
 };
 
 // Limit login attempts to avoid brute force attacks
-export const loginLimiter = rateLimit({
+const loginLimiter = rateLimit({
 	windowMs: ms('15m'),
 	limit: 5,
 	message: 'Too many login attempts, please try again later'
 });
+
+export const withLoginLimiter = (req: Request, res: Response, next: NextFunction) => {
+	// Bypass rate limiting in test environment
+	if (process.env.NODE_ENV === 'test') {
+		return next();
+	}
+
+	return loginLimiter(req, res, next);
+};
