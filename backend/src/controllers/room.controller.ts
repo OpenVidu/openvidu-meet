@@ -91,37 +91,31 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 	const { roomIds, force } = req.query;
 	const forceDelete = force === 'true';
-	logger.info(`Deleting rooms: ${roomIds}`);
+	logger.verbose(`Deleting rooms: ${roomIds}`);
 
 	try {
 		const roomIdsArray = roomIds as string[];
 
 		const { deleted, markedForDeletion } = await roomService.bulkDeleteRooms(roomIdsArray, forceDelete);
-		const isSingleRoom = roomIdsArray.length === 1;
 
-		if (isSingleRoom) {
-			// For a single room, no content is sent if fully deleted.
-			if (deleted.length > 0) {
-				return res.sendStatus(204);
-			}
+		logger.info(`Deleted rooms: ${deleted.length}, marked for deletion: ${markedForDeletion.length}`);
 
-			// For a single room marked as deleted, return a message.
-			return res.status(202).json({ message: `Room ${roomIdsArray[0]} marked as deleted` });
-		}
-
-		// For multiple rooms
+		// All rooms were deleted
 		if (deleted.length > 0 && markedForDeletion.length === 0) {
-			// All rooms were deleted
 			return res.sendStatus(204);
 		}
 
+		// All room were marked for deletion
 		if (deleted.length === 0 && markedForDeletion.length > 0) {
-			// All rooms were marked as deleted
-			return res
-				.status(202)
-				.json({ message: `Rooms ${markedForDeletion.join(', ')} marked for deletion`, markedForDeletion });
+			const message =
+				markedForDeletion.length === 1
+					? `Room ${markedForDeletion[0]} marked for deletion`
+					: `Rooms ${markedForDeletion.join(', ')} marked for deletion`;
+
+			return res.status(202).json({ message });
 		}
 
+		// Mixed result (some rooms deleted, some marked for deletion)
 		return res.status(200).json({ deleted, markedForDeletion });
 	} catch (error) {
 		logger.error(`Error deleting rooms: ${error}`);
