@@ -75,6 +75,14 @@ export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError 
 	return new OpenViduMeetError('Recording Error', `The room '${roomId}' is already being recorded`, 409);
 };
 
+export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Recording in room '${roomId}' timed out while starting`,
+		503
+	);
+};
+
 export const errorRoomHasNoParticipants = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `The room '${roomId}' has no participants`, 409);
 };

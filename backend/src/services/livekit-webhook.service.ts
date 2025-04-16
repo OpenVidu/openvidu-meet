@@ -207,10 +207,10 @@ export class LivekitWebhookService {
 				if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
 					// Send system event for active recording with the aim of cancelling the cleanup timer
 					tasks.push(
-						this.systemEventService.publishEvent(SystemEventType.RECORDING_ACTIVE, {
-							roomId,
-							recordingId
-						})
+						this.systemEventService.publishEvent(
+							SystemEventType.RECORDING_ACTIVE,
+							recordingInfo as unknown as Record<string, unknown>
+						)
 					);
 				}
 

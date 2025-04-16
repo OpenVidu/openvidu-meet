@@ -9,6 +9,7 @@ import {
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
+	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
 	errorRoomNotFound,
 	internalError,
@@ -21,10 +22,7 @@ import { S3Service } from './s3.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
-import {
-	MEET_S3_BUCKET,
-	MEET_S3_SUBBUCKET
-} from '../environment.js';
+import { MEET_S3_BUCKET, MEET_S3_SUBBUCKET } from '../environment.js';
 import { RoomService } from './room.service.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { MutexService, RedisLock } from './mutex.service.js';
@@ -94,17 +92,16 @@ export class RecordingService {
 					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
 				});
 
-				this.systemEventService.once(SystemEventType.RECORDING_ACTIVE, (payload: Record<string, unknown>) => {
+				this.systemEventService.once(SystemEventType.RECORDING_ACTIVE, (info: Record<string, unknown>) => {
 					// This listener is triggered only for the instance that started the recording.
 					// Check if the recording ID matches the one that was started
-					const isEventForCurrentRecording =
-						payload?.recordingId === recordingId && payload?.roomId === roomId;
+					const isEventForCurrentRecording = info?.recordingId === recordingId && info?.roomId === roomId;
 
 					if (isEventForCurrentRecording) {
 						this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
-						resolve(recordingInfo);
+						resolve(info as unknown as MeetRecordingInfo);
 					} else {
-						this.logger.error('Received recording active event with mismatched recording ID:', payload);
+						this.logger.error('Received recording active event with mismatched recording ID:', info);
 					}
 				});
 			});
@@ -528,9 +525,7 @@ export class RecordingService {
 			}
 
 			// Reject the REST request with a timeout error.
-			rejectRequest(
-				new Error(`Timeout waiting for '${SystemEventType.RECORDING_ACTIVE}' event in room '${roomId}'`)
-			);
+			rejectRequest(errorRecordingStartTimeout(roomId));
 		}
 	}
 

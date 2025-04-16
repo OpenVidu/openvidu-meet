@@ -36,7 +36,7 @@ const INTERNAL_CONFIG = {
 // This function is used to set private configuration values for testing purposes.
 // It allows you to override the default values defined in the INTERNAL_CONFIG object.
 // This is useful for testing different scenarios without modifying the actual configuration file.
-export const setPrivateConfig = (overrides: Partial<typeof INTERNAL_CONFIG>): void => {
+export const setInternalConfig = (overrides: Partial<typeof INTERNAL_CONFIG>): void => {
 	Object.assign(INTERNAL_CONFIG, overrides);
 };
 
