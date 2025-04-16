@@ -1,0 +1,16 @@
+description: Conflict — The recording cannot be started due to resource state conflicts
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        examples:
+            already_recording:
+                summary: Room is already being recorded
+                value:
+                    name: 'Recording Error'
+                    message: 'The room "room-123" is already being recorded'
+            no_participants:
+                summary: Room has no participants
+                value:
+                    name: 'Recording Error'
+                    message: 'The room "room-123" has no participants'

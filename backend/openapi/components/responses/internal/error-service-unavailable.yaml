@@ -1,0 +1,11 @@
+description: Service Unavailable — The recording service is unavailable
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        examples:
+            starting_timeout:
+                summary: Recording service timed out
+                value:
+                    name: 'Recording Error'
+                    message: Recording in room 'room-123' timed out while starting

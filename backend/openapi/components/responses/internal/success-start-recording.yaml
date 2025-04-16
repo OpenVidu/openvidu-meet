@@ -6,7 +6,7 @@ content:
         example:
             recordingId: 'room-123--EG_XYZ--XX445'
             roomId: 'room-123'
-            status: 'STARTING'
+            status: 'ACTIVE'
             filename: 'room-123--XX445.mp4'
             startDate: 1600000000000
 headers:
