@@ -14,18 +14,36 @@ export class LoggerService {
 					format: 'YYYY-MM-DD HH:mm:ss'
 				}),
 				winston.format.printf((info) => {
-					return `${info.timestamp} [${info.level}] ${info.message}`;
+					const meta =
+						typeof info.metadata === 'object' && info.metadata !== null
+							? Object.keys(info.metadata).length
+								? JSON.stringify(info.metadata)
+								: ''
+							: '';
+					return `${info.timestamp} [${info.level}] ${info.message} ${meta}`;
+
+					// return `${info.timestamp} [${info.level}] ${info.message}`;
 				}),
 				winston.format.errors({ stack: true })
-				// winston.format.splat(),
-				// winston.format.json()
 			),
 			transports: [
 				new winston.transports.Console({
 					format: winston.format.combine(
 						winston.format.colorize(),
+						winston.format.timestamp({
+							format: 'YYYY-MM-DD HH:mm:ss'
+						}),
+						winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
 						winston.format.printf((info) => {
-							return `${info.timestamp} [${info.level}] ${info.message}`;
+							const meta =
+								typeof info.metadata === 'object' && info.metadata !== null
+									? Object.keys(info.metadata).length
+										? JSON.stringify(info.metadata)
+										: ''
+									: '';
+							return `${info.timestamp} [${info.level}] ${info.message} ${meta}`;
+
+							// return `${info.timestamp} [${info.level}] ${info.message}`;
 						})
 					)
 				})
