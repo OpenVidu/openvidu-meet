@@ -349,7 +349,7 @@ export class RecordingService {
 				this.logger.verbose(
 					`Active egress found for room ${roomId}: ${egress.map((e) => e.egressId).join(', ')}`
 				);
-				this.logger.error(`Cannot release recorgin lock for room '${roomId}'.`);
+				this.logger.error(`Cannot release recording lock for room '${roomId}'.`);
 				return;
 			}
 
@@ -394,7 +394,7 @@ export class RecordingService {
 			throw errorRecordingNotStopped(recordingId);
 		}
 
-		const recordingPath = RecordingHelper.extractFilename(recordingInfo);
+		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
 
 		if (!recordingPath) {
 			throw internalError(`Error extracting path from recording ${recordingId}`);
