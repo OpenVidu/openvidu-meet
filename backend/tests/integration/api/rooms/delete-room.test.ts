@@ -53,9 +53,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'test-room'
 			});
 
-			joinFakeParticipant(roomId, 'test-participant');
-
-			await sleep(500);
+			await joinFakeParticipant(roomId, 'test-participant');
 
 			// The force parameter is not a boolean so it should be defined as false
 			// and the room should be marked for deletion
@@ -122,9 +120,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				autoDeletionDate: Date.now() + ms('5h')
 			});
 
-			joinFakeParticipant(roomId, 'test-participant');
-
-			await sleep(500);
+			await joinFakeParticipant(roomId, 'test-participant');
 
 			const response = await deleteRoom(roomId, { force: false });
 
@@ -148,9 +144,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'test-room'
 			});
 
-			joinFakeParticipant(roomId, 'test-participant');
-
-			await sleep(500);
+			await joinFakeParticipant(roomId, 'test-participant');
 
 			const response = await deleteRoom(roomId, { force: true });
 
@@ -165,8 +159,8 @@ describe('OpenVidu Meet Room API Tests', () => {
 			const { roomId } = await createRoom({ roomIdPrefix: 'test-marked' });
 
 			// First mark it for deletion
-			joinFakeParticipant(roomId, 'test-participant');
-			await sleep(500);
+			await joinFakeParticipant(roomId, 'test-participant');
+
 			await deleteRoom(roomId, { force: false });
 
 			// Then try to delete it again

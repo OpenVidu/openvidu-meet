@@ -48,9 +48,8 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should mark room for deletion (202) with invalid force parameter when participants exist', async () => {
 			const { roomId } = await createRoom({ roomIdPrefix: 'test-invalid-force' });
 
-			joinFakeParticipant(roomId, 'test-participant-1');
+			await joinFakeParticipant(roomId, 'test-participant-1');
 
-			await sleep(1000);
 			const response = await bulkDeleteRooms([roomId]);
 
 			//The bulk operation for only one room should be the same as deleting the room
@@ -71,9 +70,8 @@ describe('OpenVidu Meet Room API Tests', () => {
 		it('should delete room (204) with force=true parameter when participants exist', async () => {
 			const { roomId } = await createRoom({ roomIdPrefix: 'test-force' });
 
-			joinFakeParticipant(roomId, 'test-participant-1');
+			await joinFakeParticipant(roomId, 'test-participant-1');
 
-			await sleep(1000);
 			const response = await bulkDeleteRooms([roomId], true);
 
 			//The bulk operation for only one room should be the same as deleting the room
@@ -128,9 +126,10 @@ describe('OpenVidu Meet Room API Tests', () => {
 				createRoom({ roomIdPrefix: 'test-bulk-2' })
 			]);
 
-			joinFakeParticipant(room1.roomId, 'test-participant-1');
-			joinFakeParticipant(room2.roomId, 'test-participant-2');
-			await sleep(1000);
+			await Promise.all([
+				joinFakeParticipant(room1.roomId, 'test-participant-1'),
+				joinFakeParticipant(room2.roomId, 'test-participant-2')
+			]);
 
 			// Delete both rooms
 			const response = await bulkDeleteRooms([room1.roomId, room2.roomId]);
@@ -171,10 +170,10 @@ describe('OpenVidu Meet Room API Tests', () => {
 			]);
 
 			// Join a participant to the room
-			joinFakeParticipant(room1.roomId, 'test-participant-1');
-			joinFakeParticipant(room2.roomId, 'test-participant-2');
-
-			await sleep(1000);
+			await Promise.all([
+				joinFakeParticipant(room1.roomId, 'test-participant-1'),
+				joinFakeParticipant(room2.roomId, 'test-participant-2')
+			]);
 
 			// Attempt to delete the room with force=false
 			const response = await bulkDeleteRooms([room1.roomId, room2.roomId], true);
@@ -197,8 +196,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 			const room2 = await createRoom({ roomIdPrefix: 'occupied-room' });
 
 			// Add participant to only one room
-			joinFakeParticipant(room2.roomId, 'test-participant');
-			await sleep(1000);
+			await joinFakeParticipant(room2.roomId, 'test-participant');
 
 			// Delete both rooms (without force)
 			const response = await bulkDeleteRooms([room1.roomId, room2.roomId], false);
@@ -239,8 +237,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				Array.from({ length: 20 }, (_, i) => createRoom({ roomIdPrefix: `bulk-${i}` }))
 			);
 
-			joinFakeParticipant(rooms[0].roomId, 'test-participant-1');
-			await sleep(1000);
+			await joinFakeParticipant(rooms[0].roomId, 'test-participant-1');
 
 			const response = await bulkDeleteRooms([
 				...rooms.map((r) => r.roomId),

@@ -12,11 +12,11 @@ import {
 	getRooms
 } from '../../../utils/helpers.js';
 import ms from 'ms';
-import { setPrivateConfig } from '../../../../src/config/internal-config.js';
+import { setInternalConfig } from '../../../../src/config/internal-config.js';
 
 describe('OpenVidu Meet Room Garbage Collector Tests', () => {
 	beforeAll(async () => {
-		setPrivateConfig({
+		setInternalConfig({
 			MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '0s'
 		});
 		await startTestServer();
@@ -56,8 +56,7 @@ describe('OpenVidu Meet Room Garbage Collector Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
-		joinFakeParticipant(createdRoom.roomId, 'test-participant');
-		await sleep(2000);
+		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
 
 		await runRoomGarbageCollector();
 
@@ -86,7 +85,7 @@ describe('OpenVidu Meet Room Garbage Collector Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
-		joinFakeParticipant(createdRoom.roomId, 'test-participant');
+		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
 
 		// Wait for the auto-deletion date to pass
 		await sleep(1000);
