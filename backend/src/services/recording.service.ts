@@ -164,10 +164,11 @@ export class RecordingService {
 			// Get the recording metada and recording info from the S3 bucket
 			const { filesToDelete, recordingInfo } = await this.getDeletableRecordingData(recordingId);
 
+			const filesToDeleteArray = Array.from(filesToDelete);
 			this.logger.verbose(
-				`Deleting recording from S3. Files: ${filesToDelete.join(', ')} for recordingId ${recordingId}`
+				`Deleting recording from S3. Files: ${filesToDeleteArray.join(', ')} for recordingId ${recordingId}`
 			);
-			await this.s3Service.deleteObjects(filesToDelete);
+			await this.s3Service.deleteObjects(filesToDeleteArray);
 			this.logger.info(`Deletion successful for recording ${recordingId}`);
 
 			return recordingInfo;
@@ -187,26 +188,26 @@ export class RecordingService {
 	async bulkDeleteRecordings(
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
-		const keysToDelete: string[] = [];
-		const deletedRecordings: string[] = [];
-		const notDeletedRecordings: { recordingId: string; error: string }[] = [];
+		let keysToDelete: Set<string> = new Set<string>();
+		const deletedRecordings: Set<string> = new Set<string>();
+		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 
 		for (const recordingId of recordingIds) {
 			try {
 				const { filesToDelete } = await this.getDeletableRecordingData(recordingId, keysToDelete);
-				keysToDelete.push(...filesToDelete);
-				deletedRecordings.push(recordingId);
+				keysToDelete = new Set([...keysToDelete, ...filesToDelete]);
+				deletedRecordings.add(recordingId);
 				this.logger.verbose(`BulkDelete: Prepared recording ${recordingId} for deletion.`);
 			} catch (error) {
 				this.logger.error(`BulkDelete: Error processing recording ${recordingId}: ${error}`);
-				notDeletedRecordings.push({ recordingId, error: (error as OpenViduMeetError).message });
+				notDeletedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
 			}
 		}
 
-		if (keysToDelete.length > 0) {
+		if (keysToDelete.size > 0) {
 			try {
-				await this.s3Service.deleteObjects(keysToDelete);
-				this.logger.info(`BulkDelete: Successfully deleted ${keysToDelete.length} objects from S3.`);
+				await this.s3Service.deleteObjects(Array.from(keysToDelete));
+				this.logger.info(`BulkDelete: Successfully deleted ${keysToDelete.size} objects from S3.`);
 			} catch (error) {
 				this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 				throw error;
@@ -215,7 +216,7 @@ export class RecordingService {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
 		}
 
-		return { deleted: deletedRecordings, notDeleted: notDeletedRecordings };
+		return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
 	}
 
 	/**
@@ -382,11 +383,13 @@ export class RecordingService {
 	 */
 	protected async getDeletableRecordingData(
 		recordingId: string,
-		filesToDeleteArray: string[] = []
-	): Promise<{ filesToDelete: string[]; recordingInfo: MeetRecordingInfo }> {
+		filesAlreadyAddedForDeletion: Set<string> = new Set<string>()
+	): Promise<{ filesToDelete: Set<string>; recordingInfo: MeetRecordingInfo }> {
 		const { metadataFilePath, recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
-		const filesToDelete: string[] = [metadataFilePath];
+		const newFilesToDelete: Set<string> = new Set();
+		newFilesToDelete.add(metadataFilePath);
 
+		// Validate the recording status
 		if (
 			recordingInfo.status === MeetRecordingStatus.STARTING ||
 			recordingInfo.status === MeetRecordingStatus.ACTIVE ||
@@ -395,27 +398,27 @@ export class RecordingService {
 			throw errorRecordingNotStopped(recordingId);
 		}
 
-		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
+		const filename = RecordingHelper.extractFilename(recordingInfo);
 
-		if (!recordingPath) {
+		if (!filename) {
 			throw internalError(`Error extracting path from recording ${recordingId}`);
 		}
 
-		filesToDelete.push(recordingPath);
+		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
+		newFilesToDelete.add(recordingPath);
 
-		filesToDeleteArray.push(...filesToDelete);
-
+		// Get secrets.json file path if it is the only file remaining in the room's metadata directory
 		const secretsFilePath = await this.getSecretsFilePathIfOnlyRemaining(
 			recordingInfo.roomId,
 			metadataFilePath,
-			filesToDeleteArray
+			Array.from(new Set([...filesAlreadyAddedForDeletion, ...newFilesToDelete]))
 		);
 
 		if (secretsFilePath) {
-			filesToDelete.push(secretsFilePath);
+			newFilesToDelete.add(secretsFilePath);
 		}
 
-		return { filesToDelete, recordingInfo };
+		return { filesToDelete: newFilesToDelete, recordingInfo };
 	}
 
 	protected async getMeetRecordingInfoFromMetadata(
