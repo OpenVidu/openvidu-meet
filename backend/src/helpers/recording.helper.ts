@@ -1,6 +1,7 @@
 import { EgressInfo } from 'livekit-server-sdk';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { EgressStatus } from '@livekit/protocol';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 export class RecordingHelper {
 	private constructor() {
@@ -29,7 +30,7 @@ export class RecordingHelper {
 			size,
 			errorCode: errorCode ? Number(errorCode) : undefined,
 			error: error ? String(error) : undefined,
-			details: details ? String(details) : undefined,
+			details: details ? String(details) : undefined
 		};
 	}
 
@@ -172,6 +173,12 @@ export class RecordingHelper {
 	static extractSize(egressInfo: EgressInfo): number | undefined {
 		const size = Number(egressInfo.fileResults?.[0]?.size ?? 0);
 		return size !== 0 ? size : undefined;
+	}
+
+	static buildMetadataFilePath(recordingId: string): string {
+		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+
+		return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
 	}
 
 	private static toSeconds(nanoseconds: number): number {

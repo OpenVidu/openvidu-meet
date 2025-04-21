@@ -498,6 +498,7 @@ export class RecordingService {
 		let shouldReleaseLock = false;
 
 		try {
+			await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
 			await this.stopRecording(recordingId);
 			// The recording was stopped successfully
 			// the cleanup timer will be cancelled when the egress_ended event is received.
@@ -596,6 +597,13 @@ export class RecordingService {
 		} catch (error) {
 			return null;
 		}
+	}
+
+	protected async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
+		const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
+		const recordingInfo = await this.getRecording(recordingId);
+		recordingInfo.status = status;
+		await this.s3Service.saveObject(metadataPath, recordingInfo);
 	}
 
 	/**

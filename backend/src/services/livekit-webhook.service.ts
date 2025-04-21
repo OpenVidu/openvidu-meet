@@ -184,7 +184,7 @@ export class LivekitWebhookService {
 
 		const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
 		const { roomId, recordingId, status } = recordingInfo;
-		const metadataPath = this.buildMetadataFilePath(recordingId);
+		const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
 
 		this.logger.debug(`Recording '${recordingId}' status: '${status}'`);
 
@@ -266,11 +266,5 @@ export class LivekitWebhookService {
 		} catch (error) {
 			this.logger.error(`Error saving room secrets for room ${roomId}: ${error}`);
 		}
-	}
-
-	protected buildMetadataFilePath(recordingId: string): string {
-		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
-		return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
 	}
 }
