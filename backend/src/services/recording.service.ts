@@ -85,25 +85,28 @@ export class RecordingService {
 			const { recordingId } = recordingInfo;
 
 			const recordingPromise = new Promise<MeetRecordingInfo>((resolve, reject) => {
-				this.taskSchedulerService.registerTask({
-					name: `${roomId}_recording_timeout`,
-					type: 'timeout',
-					scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT,
-					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, reject)
-				});
-
-				this.systemEventService.once(SystemEventType.RECORDING_ACTIVE, (info: Record<string, unknown>) => {
+				const eventListener = (info: Record<string, unknown>) => {
 					// This listener is triggered only for the instance that started the recording.
 					// Check if the recording ID matches the one that was started
 					const isEventForCurrentRecording = info?.recordingId === recordingId && info?.roomId === roomId;
 
 					if (isEventForCurrentRecording) {
 						this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
+						this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
 						resolve(info as unknown as MeetRecordingInfo);
 					} else {
 						this.logger.error('Received recording active event with mismatched recording ID:', info);
 					}
+				};
+
+				this.taskSchedulerService.registerTask({
+					name: `${roomId}_recording_timeout`,
+					type: 'timeout',
+					scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT,
+					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, eventListener, reject)
 				});
+
+				this.systemEventService.on(SystemEventType.RECORDING_ACTIVE, eventListener);
 			});
 
 			return await recordingPromise;
@@ -128,8 +131,6 @@ export class RecordingService {
 
 			// Cancel the recording cleanup timer if it is running
 			this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
-			// Remove the listener for the EGRESS_STARTED event.
-			this.systemEventService.off(SystemEventType.RECORDING_ACTIVE);
 
 			switch (egress.status) {
 				case EgressStatus.EGRESS_ACTIVE:
@@ -491,8 +492,10 @@ export class RecordingService {
 	protected async handleRecordingLockTimeout(
 		recordingId: string,
 		roomId: string,
+		listener: (info: Record<string, unknown>) => void,
 		rejectRequest: (reason?: unknown) => void
 	) {
+		this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, listener);
 		this.logger.debug(`Recording cleanup timer triggered for room '${roomId}'.`);
 
 		let shouldReleaseLock = false;
