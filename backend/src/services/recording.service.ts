@@ -193,7 +193,7 @@ export class RecordingService {
 
 		for (const recordingId of recordingIds) {
 			try {
-				const { filesToDelete } = await this.getDeletableRecordingData(recordingId);
+				const { filesToDelete } = await this.getDeletableRecordingData(recordingId, keysToDelete);
 				keysToDelete.push(...filesToDelete);
 				deletedRecordings.push(recordingId);
 				this.logger.verbose(`BulkDelete: Prepared recording ${recordingId} for deletion.`);
@@ -381,7 +381,8 @@ export class RecordingService {
 	 * @param recordingId - The unique identifier of the recording egress.
 	 */
 	protected async getDeletableRecordingData(
-		recordingId: string
+		recordingId: string,
+		filesToDeleteArray: string[] = []
 	): Promise<{ filesToDelete: string[]; recordingInfo: MeetRecordingInfo }> {
 		const { metadataFilePath, recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
 		const filesToDelete: string[] = [metadataFilePath];
@@ -402,7 +403,13 @@ export class RecordingService {
 
 		filesToDelete.push(recordingPath);
 
-		const secretsFilePath = await this.getSecretsFilePathIfOnlyRemaining(recordingInfo.roomId, metadataFilePath);
+		filesToDeleteArray.push(...filesToDelete);
+
+		const secretsFilePath = await this.getSecretsFilePathIfOnlyRemaining(
+			recordingInfo.roomId,
+			metadataFilePath,
+			filesToDeleteArray
+		);
 
 		if (secretsFilePath) {
 			filesToDelete.push(secretsFilePath);
@@ -530,35 +537,56 @@ export class RecordingService {
 	}
 
 	/**
-	 * Checks if the secrets.json file is the only remaining file in a room's metadata directory
-	 * (besides the specified metadata file) and returns its path if that's the case.
+	 * Determines if the secrets.json file should be deleted by checking if it would be
+	 * the only file remaining in the room's metadata directory after deletion.
 	 *
-	 * This method examines the S3 bucket for the specified room's metadata directory.
-	 * It expects to find exactly 2 files (the metadata file and potentially the secrets.json file).
+	 * @param roomId - Room identifier
+	 * @param metadataFilePath - Path of the metadata file being deleted (for single deletion)
+	 * @param filesToDeleteArray - Array of all files being deleted (for bulk deletion)
+	 * @returns Path of the secrets.json file if it should be deleted, or null otherwise
 	 */
 	protected async getSecretsFilePathIfOnlyRemaining(
 		roomId: string,
-		metadataFilePath: string
+		metadataFilePath: string,
+		filesToDeleteArray: string[] = []
 	): Promise<string | null> {
 		try {
-			// List all objects in the metadata directory for the room
-			const { Contents } = await this.s3Service.listObjectsPaginated(
-				`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`
-			);
+			// Get metadata directory contents for the room
+			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
+			const { Contents } = await this.s3Service.listObjectsPaginated(metadataPrefix);
 
-			// Check if the contents number are valid.
-			// If the contents are empty or not exactly 2, return null
-			// (one for the metadata file and one for the secrets.json file)
-			if (!Contents || Contents.length !== 2) {
-				return null;
-			}
+			if (!Contents || Contents.length === 0) return null;
 
-			// Filter out the metadata file path
-			const otherFiles = Contents.filter((item) => (item.Key?.endsWith(metadataFilePath) ? false : true));
+			const metadataFilesToDelete = filesToDeleteArray.filter((file) => file.includes(`/.metadata/${roomId}/`));
 
-			// If the only other file is the secrets.json file, add it to the filesToDelete array
-			if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('secrets.json')) {
-				return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+			if (metadataFilesToDelete.length > 0) {
+				// Handle bulk deletion case
+
+				// Find files that will remain after deletion
+				const remainingFiles = Contents.filter(
+					(item) => item.Key && !metadataFilesToDelete.some((deleteFile) => item.Key!.includes(deleteFile))
+				).map((item) => item.Key!);
+
+				// If only secrets.json remains, return its path
+				if (remainingFiles.length === 1 && remainingFiles[0].endsWith('secrets.json')) {
+					return remainingFiles[0];
+				}
+			} else {
+				// Handle single deletion case
+
+				// For single deletion, we expect exactly 2 files (metadata and secrets.json)
+				if (Contents.length !== 2) return null;
+
+				// Get the metadata file's basename
+				const metadataBaseName = metadataFilePath.split('/').pop();
+
+				// Find any file that is not the metadata file being deleted
+				const otherFiles = Contents.filter((item) => !item.Key?.endsWith(metadataBaseName || ''));
+
+				// If the only other file is secrets.json, return its path
+				if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('secrets.json')) {
+					return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+				}
 			}
 
 			return null;
