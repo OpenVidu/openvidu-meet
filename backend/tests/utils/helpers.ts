@@ -20,6 +20,8 @@ import INTERNAL_CONFIG from '../../src/config/internal-config.js';
 import { ChildProcess, execSync, spawn } from 'child_process';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { RoomService } from '../../src/services/room.service.js';
+import { MeetRoomHelper } from '../../src/helpers/room.helper.js';
+import { RecordingService } from '../../src/services/recording.service.js';
 
 const CREDENTIALS = {
 	user: {
@@ -288,6 +290,15 @@ export const runRoomGarbageCollector = async () => {
 	await sleep(1000);
 };
 
+export const runReleaseActiveRecordingLock = async (roomId: string) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const recordingService = container.get(RecordingService);
+	await recordingService.releaseRoomRecordingActiveLock(roomId);
+};
+
 /**
  * Deletes all rooms
  */
@@ -362,7 +373,7 @@ export const generateParticipantToken = async (
  * @param roomId The ID of the room to join
  * @param participantName The name for the fake participant
  */
-export const joinFakeParticipant = (roomId: string, participantName: string) => {
+export const joinFakeParticipant = async (roomId: string, participantName: string) => {
 	// Step 1: Manually create the LiveKit room
 	// In normal operation, the room is created when a real participant requests a token,
 	// but for testing we need to create it ourselves since we're bypassing the token flow.
@@ -396,15 +407,115 @@ export const joinFakeParticipant = (roomId: string, participantName: string) => 
 
 	// Store the process to be able to terminate it later
 	fakeParticipantsProcesses.set(participantName, process);
+	await sleep(1000);
 };
 
-export const disconnectFakeParticipants = () => {
+export const disconnectFakeParticipants = async () => {
 	fakeParticipantsProcesses.forEach((process, participantName) => {
 		process.kill();
 		console.log(`Stopped process for participant ${participantName}`);
 	});
 
 	fakeParticipantsProcesses.clear();
+	await sleep(1000);
+};
+
+export const startRecording = async (roomId: string, moderatorCookie = '') => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`)
+		.set('Cookie', moderatorCookie)
+		.send({
+			roomId
+		});
+};
+
+export const stopRecording = async (recordingId: string, moderatorCookie = '') => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const response = await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+		.set('Cookie', moderatorCookie)
+		.send();
+	await sleep(2500);
+
+	return response;
+};
+
+export const stopAllRecordings = async (moderatorCookie: string) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const response = await getAllRecordings({ fields: 'recordingId' });
+	const recordingIds: string[] = response.body.recordings.map(
+		(recording: { recordingId: string }) => recording.recordingId
+	);
+
+	if (recordingIds.length === 0) {
+		return;
+	}
+
+	console.log(`Stopping ${recordingIds.length} recordings...`);
+	const tasks = recordingIds.map((recordingId: string) =>
+		request(app)
+			.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+			.set('Cookie', moderatorCookie)
+			.send()
+	);
+	await Promise.all(tasks);
+	await sleep(1000); // Wait for 1 second
+};
+
+export const getAllRecordings = async (query: Record<string, any> = {}) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+		.query(query);
+};
+
+export const deleteAllRecordings = async () => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	let nextPageToken: string | undefined;
+
+	do {
+		const response: any = await getAllRecordings({
+			fields: 'recordingId',
+			maxItems: 100,
+			nextPageToken
+		});
+		expect(response.status).toBe(200);
+
+		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
+		const recordingIds = response.body.recordings.map(
+			(recording: { recordingId: string }) => recording.recordingId
+		);
+
+		if (recordingIds.length === 0) {
+			break;
+		}
+
+		console.log(`Deleting ${recordingIds.length} recordings...`);
+		console.log('Recording IDs:', recordingIds);
+		await request(app)
+			.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+			.query({ recordingIds: recordingIds.join(',')})
+			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+
+		await sleep(1000); // Wait for 1 second
+	} while (nextPageToken);
 };
 
 // PRIVATE METHODS
