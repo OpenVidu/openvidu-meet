@@ -94,17 +94,10 @@ export class RecordingService {
 						this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
 						this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
 						resolve(info as unknown as MeetRecordingInfo);
-					} else {
-						this.logger.error('Received recording active event with mismatched recording ID:', info);
 					}
 				};
 
-				this.taskSchedulerService.registerTask({
-					name: `${roomId}_recording_timeout`,
-					type: 'timeout',
-					scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT,
-					callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, eventListener, reject)
-				});
+				this.registerRecordingTimeout(roomId, recordingId, eventListener, reject);
 
 				this.systemEventService.on(SystemEventType.RECORDING_ACTIVE, eventListener);
 			});
@@ -607,6 +600,20 @@ export class RecordingService {
 		const recordingInfo = await this.getRecording(recordingId);
 		recordingInfo.status = status;
 		await this.s3Service.saveObject(metadataPath, recordingInfo);
+	}
+
+	protected registerRecordingTimeout(
+		roomId: string,
+		recordingId: string,
+		eventListener: (info: Record<string, unknown>) => void,
+		reject: (reason?: unknown) => void
+	): void {
+		this.taskSchedulerService.registerTask({
+			name: `${roomId}_recording_timeout`,
+			type: 'timeout',
+			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT,
+			callback: this.handleRecordingLockTimeout.bind(this, recordingId, roomId, eventListener, reject)
+		});
 	}
 
 	/**
