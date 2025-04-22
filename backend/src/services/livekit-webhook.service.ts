@@ -14,6 +14,7 @@ import { SystemEventService } from './system-event.service.js';
 import { SystemEventType } from '../models/system-event.model.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MeetStorageService } from './storage/storage.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -23,6 +24,7 @@ export class LivekitWebhookService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
+		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
@@ -200,7 +202,7 @@ export class LivekitWebhookService {
 		switch (webhookAction) {
 			case 'started':
 				tasks.push(
-					this.saveRoomMetadataFileIfNeeded(roomId),
+					this.storageService.archiveRoomMetadata(roomId),
 					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
 				);
 				break;
@@ -233,45 +235,6 @@ export class LivekitWebhookService {
 			this.logger.warn(
 				`Error processing recording ${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
-		}
-	}
-
-	/**
-	 * Saves room metadata to a JSON file in the S3 bucket if it doesn't already exist.
-	 *
-	 * This method checks if the metadata file for the given room already exists in the
-	 * S3 bucket. If not, it retrieves the room information, extracts the necessary
-	 * secrets and preferences, and saves them to a metadata JSON file in the
-	 * .metadata/{roomId}/ directory of the S3 bucket.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 */
-	protected async saveRoomMetadataFileIfNeeded(roomId: string): Promise<void> {
-		try {
-			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
-			const fileExists = await this.s3Service.exists(filePath);
-
-			if (fileExists) {
-				this.logger.debug(`Room metadata already saved for room ${roomId} in recordings bucket`);
-				return;
-			}
-
-			const room = await this.roomService.getMeetRoom(roomId);
-
-			if (room) {
-				const { publisherSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-				const roomMetadata = {
-					publisherSecret,
-					moderatorSecret,
-					preferences: {
-						recordingPreferences: room.preferences?.recordingPreferences
-					}
-				};
-				await this.s3Service.saveObject(filePath, roomMetadata);
-				this.logger.debug(`Room metadata saved for room ${roomId} in recordings bucket`);
-			}
-		} catch (error) {
-			this.logger.error(`Error saving room metadata for room ${roomId} in recordings bucket: ${error}`);
 		}
 	}
 }

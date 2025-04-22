@@ -78,4 +78,35 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 * @returns A promise that resolves when the room have been deleted.
 	 **/
 	deleteMeetRooms(roomIds: string[]): Promise<void>;
+
+	/**
+	 * Gets the archived metadata for a specific room.
+	 *
+	 * The archived metadata is necessary for checking the permissions of the recording viewer when the room is deleted.
+	 *
+	 * @param roomId - The name of the room to retrieve.
+	 */
+	getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null>;
+
+	/**
+	 * Archives the metadata for a specific room.
+	 *
+	 * This is necessary for persisting the metadata of a room although it is deleted.
+	 * The metadata will be used to check the permissions of the recording viewer.
+	 *
+	 * @param roomId: The room ID to archive.
+	 */
+	archiveRoomMetadata(roomId: string): Promise<void>;
+
+	//TODO:
+	// deleteArchivedRoomMetadata(roomId: string): Promise<void>;
+
+	//TODO:
+	// saveRecordingMetadata;
+
+	//TODO:
+	// getRecordingMetadata;
+
+	//TODO:
+	// deleteRecordingMetadata;
 }
