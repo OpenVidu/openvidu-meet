@@ -401,15 +401,15 @@ export class RecordingService {
 		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
 		newFilesToDelete.add(recordingPath);
 
-		// Get secrets.json file path if it is the only file remaining in the room's metadata directory
-		const secretsFilePath = await this.getSecretsFilePathIfOnlyRemaining(
+		// Get room_metadata.json file path under recordings bucket if it is the only file remaining in the room's metadata directory
+		const roomMetadataFilePath = await this.getRoomMetadataFilePathIfOnlyRemaining(
 			recordingInfo.roomId,
 			metadataFilePath,
 			Array.from(new Set([...filesAlreadyAddedForDeletion, ...newFilesToDelete]))
 		);
 
-		if (secretsFilePath) {
-			newFilesToDelete.add(secretsFilePath);
+		if (roomMetadataFilePath) {
+			newFilesToDelete.add(roomMetadataFilePath);
 		}
 
 		return { filesToDelete: newFilesToDelete, recordingInfo };
@@ -537,15 +537,21 @@ export class RecordingService {
 	}
 
 	/**
-	 * Determines if the secrets.json file should be deleted by checking if it would be
-	 * the only file remaining in the room's metadata directory after deletion.
+	 * Determines if the room_metadata.json file would be the only file remaining in a room's metadata
+	 * directory after specified files are deleted.
 	 *
-	 * @param roomId - Room identifier
-	 * @param metadataFilePath - Path of the metadata file being deleted (for single deletion)
-	 * @param filesToDeleteArray - Array of all files being deleted (for bulk deletion)
-	 * @returns Path of the secrets.json file if it should be deleted, or null otherwise
+	 * This method examines the contents of a room's metadata directory in S3 storage and checks whether,
+	 * after the deletion of specified files, only the room_metadata.json file would remain. The method
+	 * handles both single file deletion and bulk deletion scenarios.
+	 *
+	 * @param roomId - The identifier of the room whose metadata directory is being checked
+	 * @param metadataFilePath - The full path of the metadata file being considered for deletion
+	 * @param filesToDeleteArray - Optional array of file paths that are planned for deletion
+	 *
+	 * @returns The path to the room_metadata.json file if it would be the only remaining file after deletion,
+	 *          or null if multiple files would remain or if an error occurs during the process
 	 */
-	protected async getSecretsFilePathIfOnlyRemaining(
+	protected async getRoomMetadataFilePathIfOnlyRemaining(
 		roomId: string,
 		metadataFilePath: string,
 		filesToDeleteArray: string[] = []
@@ -568,7 +574,7 @@ export class RecordingService {
 				).map((item) => item.Key!);
 
 				// If only secrets.json remains, return its path
-				if (remainingFiles.length === 1 && remainingFiles[0].endsWith('secrets.json')) {
+				if (remainingFiles.length === 1 && remainingFiles[0].endsWith('room_metadata.json')) {
 					return remainingFiles[0];
 				}
 			} else {
@@ -584,8 +590,8 @@ export class RecordingService {
 				const otherFiles = Contents.filter((item) => !item.Key?.endsWith(metadataBaseName || ''));
 
 				// If the only other file is secrets.json, return its path
-				if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('secrets.json')) {
-					return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+				if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('room_metadata.json')) {
+					return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
 				}
 			}
 

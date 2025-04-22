@@ -199,7 +199,10 @@ export class LivekitWebhookService {
 		// Send webhook notification
 		switch (webhookAction) {
 			case 'started':
-				tasks.push(this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo));
+				tasks.push(
+					this.saveRoomMetadataFileIfNeeded(roomId),
+					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
+				);
 				break;
 			case 'updated':
 				tasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
@@ -217,7 +220,6 @@ export class LivekitWebhookService {
 				break;
 			case 'ended':
 				tasks.push(
-					this.saveRoomSecretsFileIfNeeded(roomId),
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
 					this.recordingService.releaseRoomRecordingActiveLock(roomId)
 				);
@@ -235,20 +237,22 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Saves room secrets to an S3 bucket if they haven't been saved already.
+	 * Saves room metadata to a JSON file in the S3 bucket if it doesn't already exist.
 	 *
-	 * This method checks if secrets for the specified room exist in the S3 storage.
-	 * If they don't exist, it retrieves the room information, extracts the publisher
-	 * and moderator secrets, and saves them to an S3 bucket under the path
-	 * `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`.
+	 * This method checks if the metadata file for the given room already exists in the
+	 * S3 bucket. If not, it retrieves the room information, extracts the necessary
+	 * secrets and preferences, and saves them to a metadata JSON file in the
+	 * .metadata/{roomId}/ directory of the S3 bucket.
+	 *
+	 * @param roomId - The unique identifier of the room
 	 */
-	protected async saveRoomSecretsFileIfNeeded(roomId: string): Promise<void> {
+	protected async saveRoomMetadataFileIfNeeded(roomId: string): Promise<void> {
 		try {
-			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/secrets.json`;
+			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
 			const fileExists = await this.s3Service.exists(filePath);
 
 			if (fileExists) {
-				this.logger.debug(`Room secrets already saved for room ${roomId}`);
+				this.logger.debug(`Room metadata already saved for room ${roomId} in recordings bucket`);
 				return;
 			}
 
@@ -256,15 +260,18 @@ export class LivekitWebhookService {
 
 			if (room) {
 				const { publisherSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-				const secrets = {
+				const roomMetadata = {
 					publisherSecret,
-					moderatorSecret
+					moderatorSecret,
+					preferences: {
+						recordingPreferences: room.preferences?.recordingPreferences
+					}
 				};
-				await this.s3Service.saveObject(filePath, secrets);
-				this.logger.debug(`Room secrets saved for room ${roomId}`);
+				await this.s3Service.saveObject(filePath, roomMetadata);
+				this.logger.debug(`Room metadata saved for room ${roomId} in recordings bucket`);
 			}
 		} catch (error) {
-			this.logger.error(`Error saving room secrets for room ${roomId}: ${error}`);
+			this.logger.error(`Error saving room metadata for room ${roomId} in recordings bucket: ${error}`);
 		}
 	}
 }
