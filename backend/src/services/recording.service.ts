@@ -57,56 +57,53 @@ export class RecordingService {
 
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
+		let eventListener!: (info: Record<string, unknown>) => void;
 
 		try {
-			const room = await this.roomService.getMeetRoom(roomId);
-
-			if (!room) throw errorRoomNotFound(roomId);
-
-			//TODO: Check if the room has participants before starting the recording
-			//room.numParticipants === 0 ? throw errorNoParticipants(roomId);
-			const lkRoom = await this.livekitService.getRoom(roomId);
-
-			if (!lkRoom) throw errorRoomNotFound(roomId);
-
-			const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
-
-			if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
-
+			await this.validateRoomsPreconditions(roomId);
 			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
 			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
+			let resolveRecording!: (r: MeetRecordingInfo) => void;
+			let rejectRecording!: (e: unknown) => void;
+			const recordingPromise = new Promise<MeetRecordingInfo>((res, rej) => {
+				resolveRecording = res;
+				rejectRecording = rej;
+			});
+			let recordingId = '';
+
+			eventListener = (info: Record<string, unknown>) => {
+				// This listener is triggered only for the instance that started the recording.
+				// Check if the recording ID matches the one that was started
+				const isEventForCurrentRecording = info?.recordingId === recordingId && info?.roomId === roomId;
+
+				if (isEventForCurrentRecording) {
+					this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
+					this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+					resolveRecording(info as unknown as MeetRecordingInfo);
+				}
+			};
+
+			this.systemEventService.on(SystemEventType.RECORDING_ACTIVE, eventListener);
+			this.registerRecordingTimeout(roomId, recordingId, eventListener, rejectRecording);
+
 			const options = this.generateCompositeOptionsFromRequest();
 			const output = this.generateFileOutputFromRequest(roomId);
 			const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 			const recordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
-			const { recordingId } = recordingInfo;
-
-			const recordingPromise = new Promise<MeetRecordingInfo>((resolve, reject) => {
-				const eventListener = (info: Record<string, unknown>) => {
-					// This listener is triggered only for the instance that started the recording.
-					// Check if the recording ID matches the one that was started
-					const isEventForCurrentRecording = info?.recordingId === recordingId && info?.roomId === roomId;
-
-					if (isEventForCurrentRecording) {
-						this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
-						this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
-						resolve(info as unknown as MeetRecordingInfo);
-					}
-				};
-
-				this.registerRecordingTimeout(roomId, recordingId, eventListener, reject);
-
-				this.systemEventService.on(SystemEventType.RECORDING_ACTIVE, eventListener);
-			});
+			recordingId = recordingInfo.recordingId;
 
 			return await recordingPromise;
 		} catch (error) {
 			this.logger.error(`Error starting recording in room '${roomId}': ${error}`);
 
 			if (acquiredLock) await this.releaseRoomRecordingActiveLock(roomId);
+
+			if (eventListener) this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+
+			this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
 
 			throw error;
 		}
@@ -367,6 +364,22 @@ export class RecordingService {
 	sendRecordingSignalToOpenViduComponents(roomId: string, recordingInfo: MeetRecordingInfo) {
 		const { payload, options } = OpenViduComponentsAdapterHelper.generateRecordingSignal(recordingInfo);
 		return this.roomService.sendSignal(roomId, payload, options);
+	}
+
+	protected async validateRoomsPreconditions(roomId: string): Promise<void> {
+		const room = await this.roomService.getMeetRoom(roomId);
+
+		if (!room) throw errorRoomNotFound(roomId);
+
+		//TODO: Check if the room has participants before starting the recording
+		//room.numParticipants === 0 ? throw errorNoParticipants(roomId);
+		const lkRoom = await this.livekitService.getRoom(roomId);
+
+		if (!lkRoom) throw errorRoomNotFound(roomId);
+
+		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
+
+		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
 	}
 
 	/**
