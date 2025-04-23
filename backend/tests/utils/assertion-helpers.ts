@@ -121,8 +121,12 @@ export const expectValidRoom = (
 	expect(room.publisherRoomUrl).toBeDefined();
 	expect(room.moderatorRoomUrl).toContain(room.roomId);
 	expect(room.publisherRoomUrl).toContain(room.roomId);
-	expect(room.markedForDeletion).toBeDefined();
-	expect(room.markedForDeletion).toBe(markedForDeletion ?? false);
+
+	if (markedForDeletion !== undefined) {
+		expect(room.autoDeletionDate).toBeDefined();
+
+		expect(room.markedForDeletion).toBe(markedForDeletion ?? false);
+	}
 };
 
 export const expectValidRoomWithFields = (room: MeetRoom, fields: string[] = []) => {
