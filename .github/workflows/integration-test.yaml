@@ -49,6 +49,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Setup yarn
+        run: npm install -g yarn
       - name: Run tests
         run: |
           ./prepare.sh
@@ -57,7 +59,7 @@ jobs:
           npm run test:integration-rooms
 
   test-recordings:
-    name: Recording API Tests
+    name: Recordings API Tests
     runs-on: ov-actions-runner
     steps:
       - name: Checkout OpenVidu Local Deployment
@@ -95,6 +97,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Setup yarn
+        run: npm install -g yarn
       - name: Run tests
         run: |
           ./prepare.sh
@@ -102,23 +106,3 @@ jobs:
           npm install
           npm run test:integration-recordings
 
-#   openvidu_webhook_tests:
-#     name: OpenVidu Webhooks
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#         with:
-#           ref: next
-#           path: openvidu-meet
-
-#       - uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-
-#       - name: Run openvidu-meet backend
-#         run: |
-#           cd openvidu-meet
-#           ./prepare.sh
-#           cd backend
-#           npm install
-#           npm run test:integration-webhooks
