@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, startTestServer,  } from '../../../utils/helpers.js';
+import { createRoom, startTestServer } from '../../../utils/helpers.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
@@ -38,7 +38,6 @@ describe('Participant API Security Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
-
 	}, 20000);
 
 	describe('Generate Participant Token Tests', () => {

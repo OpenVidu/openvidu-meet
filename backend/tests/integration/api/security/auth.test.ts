@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { loginUserAsRole, startTestServer,  } from '../../../utils/helpers.js';
+import { loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { UserRole } from '../../../../src/typings/ce/index.js';
 
@@ -14,9 +14,7 @@ describe('Authentication API Tests', () => {
 		app = startTestServer();
 	});
 
-	afterAll(async () => {
-
-	});
+	afterAll(async () => {});
 
 	describe('Login Tests', () => {
 		it('should successfully login with valid credentials', async () => {

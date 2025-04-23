@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, startTestServer, , getRoom } from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, startTestServer, getRoom } from '../../../utils/helpers.js';
 import ms from 'ms';
 import {
 	expectSuccessRoomResponse,
@@ -13,9 +13,7 @@ describe('Room API Tests', () => {
 		startTestServer();
 	});
 
-	afterAll(async () => {
-
-	});
+	afterAll(async () => {});
 
 	afterEach(async () => {
 		// Remove all rooms created

@@ -1,21 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import {
-	createRoom,
-	deleteAllRooms,
-	startTestServer,
-	,
-	getRoom,
-	updateRoomPreferences
-} from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, startTestServer, getRoom, updateRoomPreferences } from '../../../utils/helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
 	});
 
-	afterAll(async () => {
-
-	});
+	afterAll(async () => {});
 
 	afterEach(async () => {
 		// Remove all rooms created

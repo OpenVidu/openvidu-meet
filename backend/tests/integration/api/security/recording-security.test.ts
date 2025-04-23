@@ -6,8 +6,7 @@ import {
 	deleteAllRooms,
 	generateParticipantToken,
 	loginUserAsRole,
-	startTestServer,
-
+	startTestServer
 } from '../../../utils/helpers.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
@@ -49,7 +48,6 @@ describe('Recording API Security Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
-
 	}, 20000);
 
 	describe('Start Recording Tests', () => {

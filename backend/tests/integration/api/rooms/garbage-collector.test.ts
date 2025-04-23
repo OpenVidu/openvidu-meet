@@ -3,7 +3,6 @@ import {
 	createRoom,
 	deleteAllRooms,
 	startTestServer,
-	,
 	getRoom,
 	sleep,
 	joinFakeParticipant,

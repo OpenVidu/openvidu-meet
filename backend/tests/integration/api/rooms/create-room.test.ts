@@ -1,13 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import {
-	createRoom,
-	deleteAllRooms,
-	loginUserAsRole,
-	startTestServer,
-
-} from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
 import { UserRole } from '../../../../src/typings/ce/user.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import ms from 'ms';
@@ -28,7 +22,6 @@ describe('Room API Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
-
 	});
 
 	describe('Room Creation Tests', () => {
