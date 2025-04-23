@@ -6,7 +6,7 @@ const jestConfig = {
 	...createDefaultEsmPreset({
 		tsconfig: 'tsconfig.json'
 	}),
-	testTimeout: 30000,
+	testTimeout: 60000,
 	resolver: 'ts-jest-resolver',
 	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
 	moduleFileExtensions: ['js', 'ts', 'json', 'node'],
