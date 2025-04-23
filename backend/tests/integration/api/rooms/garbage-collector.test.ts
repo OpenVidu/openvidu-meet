@@ -98,7 +98,7 @@ describe('Room Garbage Collector Tests', () => {
 		expect(response.body.autoDeletionDate).toBeTruthy();
 		expect(response.body.autoDeletionDate).toBeLessThan(Date.now());
 
-		disconnectFakeParticipants();
+		await disconnectFakeParticipants();
 
 		// Wait to receive webhook room_finished
 		await sleep('2s');

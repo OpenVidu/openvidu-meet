@@ -9,6 +9,8 @@ import {
 	disconnectFakeParticipants
 } from '../../../utils/helpers.js';
 import ms from 'ms';
+import { setupMultiRoomTestContext } from '../../../utils/test-scenarios.js';
+import { expectValidRoom } from '../../../utils/assertion-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -21,7 +23,7 @@ describe('Room API Tests', () => {
 
 	afterEach(async () => {
 		// Remove all rooms created
-		disconnectFakeParticipants();
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 
@@ -113,9 +115,10 @@ describe('Room API Tests', () => {
 		});
 
 		it('should mark room for deletion (202) when participants exist and force=false', async () => {
+			const autoDeletionDate = Date.now() + ms('5h');
 			const { roomId } = await createRoom({
 				roomIdPrefix: 'test-room',
-				autoDeletionDate: Date.now() + ms('5h')
+				autoDeletionDate
 			});
 
 			await joinFakeParticipant(roomId, 'test-participant');
@@ -125,12 +128,9 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(202);
 
 			const roomResponse = await getRoom(roomId);
-			expect(roomResponse.body).toBeDefined();
-			expect(roomResponse.body.roomId).toBe(roomId);
-			expect(roomResponse.body.markedForDeletion).toBeDefined();
-			expect(roomResponse.body.markedForDeletion).toBe(true);
+			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
 
-			disconnectFakeParticipants();
+			await disconnectFakeParticipants();
 
 			const responseAfterDelete = await getRoom(roomId);
 			expect(responseAfterDelete.status).toBe(404);

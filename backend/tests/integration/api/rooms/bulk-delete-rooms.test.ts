@@ -20,7 +20,7 @@ describe('Room API Tests', () => {
 
 	afterEach(async () => {
 		// Remove all rooms created
-		disconnectFakeParticipants();
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 
