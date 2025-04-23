@@ -36,8 +36,10 @@
 		"package:build": "npm run build:prod && npm pack",
 		"lib:sync-pro": "npm run package:build && cp openvidu-meet-server-*.tgz ../../openvidu-meet-pro/backend",
 		"typings:sync": "npm run sync-ce --prefix ../typings",
-		"test:embedded-auth-api": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/api/embedded/participants.test.ts",
-		"test:integration-webhooks": "node --experimental-vm-modules node_modules/.bin/jest --forceExit tests/services/openvidu-webhook.service.test.ts",
+		"test:integration": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration\"",
+		"test:integration-rooms": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/rooms\"",
+		"test:integration-recordings": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/recordings\"",
+		"test:integration-security": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/security\"",
 		"lint:fix": "eslint src --fix",
 		"format:code": "prettier --ignore-path .gitignore --write '**/*.{ts,js,json,md}'"
 	},
