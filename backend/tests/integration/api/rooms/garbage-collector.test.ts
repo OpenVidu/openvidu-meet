@@ -3,7 +3,7 @@ import {
 	createRoom,
 	deleteAllRooms,
 	startTestServer,
-	stopTestServer,
+	,
 	getRoom,
 	sleep,
 	joinFakeParticipant,
@@ -19,11 +19,11 @@ describe('Room Garbage Collector Tests', () => {
 		setInternalConfig({
 			MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '0s'
 		});
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {

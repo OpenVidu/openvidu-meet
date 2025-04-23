@@ -7,13 +7,13 @@ import {
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
-	stopRecording,
-	stopTestServer
+	stopRecording
 } from '../../../utils/helpers.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import {
+	expectValidationError,
 	expectValidRecordingLocationHeader,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
@@ -26,7 +26,7 @@ describe('Recording API Tests', () => {
 	let room: MeetRoom, moderatorCookie: string;
 
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
@@ -34,7 +34,6 @@ describe('Recording API Tests', () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
 		await deleteAllRecordings();
-		await stopTestServer();
 	});
 
 	describe('Start Recording Tests', () => {
@@ -133,44 +132,19 @@ describe('Recording API Tests', () => {
 		it('should reject request with roomId that becomes empty after sanitization', async () => {
 			const response = await startRecording('!@#$%^&*()', moderatorCookie);
 
-			expect(response.status).toBe(422);
-			expect(response.body.details).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						field: 'roomId',
-						message: expect.stringContaining('cannot be empty after sanitization')
-					})
-				])
-			);
+			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
 		});
 
 		it('should reject request with non-string roomId', async () => {
 			const response = await startRecording(123 as unknown as string, moderatorCookie);
-
-			expect(response.status).toBe(422);
-			expect(response.body.details).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						field: 'roomId',
-						message: expect.stringContaining('Expected string')
-					})
-				])
-			);
+			expectValidationError(response, 'roomId', 'Expected string');
 		});
 
 		it('should reject request with very long roomId', async () => {
 			const longRoomId = 'a'.repeat(101);
 			const response = await startRecording(longRoomId, moderatorCookie);
 
-			expect(response.status).toBe(422);
-			expect(response.body.details).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						field: 'roomId',
-						message: expect.stringContaining('cannot exceed 100 characters')
-					})
-				])
-			);
+			expectValidationError(response, 'roomId', 'cannot exceed 100 characters');
 		});
 
 		it('should handle room that does not exist', async () => {

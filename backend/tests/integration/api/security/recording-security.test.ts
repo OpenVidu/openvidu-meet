@@ -7,7 +7,7 @@ import {
 	generateParticipantToken,
 	loginUserAsRole,
 	startTestServer,
-	stopTestServer
+
 } from '../../../utils/helpers.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
@@ -30,7 +30,7 @@ describe('Recording API Security Tests', () => {
 	let publisherCookie: string;
 
 	beforeAll(async () => {
-		app = await startTestServer();
+		app = startTestServer();
 
 		// Get cookies for admin and user
 		userCookie = await loginUserAsRole(UserRole.USER);
@@ -49,7 +49,7 @@ describe('Recording API Security Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
-		await stopTestServer();
+
 	}, 20000);
 
 	describe('Start Recording Tests', () => {

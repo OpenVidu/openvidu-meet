@@ -1,5 +1,5 @@
 import { describe, it, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, getRooms, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, getRooms, startTestServer,  } from '../../../utils/helpers.js';
 import ms from 'ms';
 import {
 	expectSuccessRoomsResponse,
@@ -13,11 +13,11 @@ describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {

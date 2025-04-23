@@ -6,7 +6,7 @@ import {
 	deleteAllRooms,
 	loginUserAsRole,
 	startTestServer,
-	stopTestServer
+
 } from '../../../utils/helpers.js';
 import { UserRole } from '../../../../src/typings/ce/user.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
@@ -22,13 +22,13 @@ describe('Room API Tests', () => {
 	let userCookie: string;
 
 	beforeAll(async () => {
-		app = await startTestServer();
+		app = startTestServer();
 		userCookie = await loginUserAsRole(UserRole.USER);
 	});
 
 	afterAll(async () => {
 		await deleteAllRooms();
-		await stopTestServer();
+
 	});
 
 	describe('Room Creation Tests', () => {

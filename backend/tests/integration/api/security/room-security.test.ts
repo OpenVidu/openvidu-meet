@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, generateParticipantToken, startTestServer, stopTestServer } from '../../../utils/helpers.js';
+import { createRoom, generateParticipantToken, startTestServer,  } from '../../../utils/helpers.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
@@ -17,7 +17,7 @@ describe('Room API Security Tests', () => {
 	let adminCookie: string;
 
 	beforeAll(async () => {
-		app = await startTestServer();
+		app = startTestServer();
 
 		// Get cookies for admin and user
 		userCookie = await loginUserAsRole(UserRole.USER);
@@ -26,7 +26,7 @@ describe('Room API Security Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
-		await stopTestServer();
+
 	}, 20000);
 
 	describe('Create Room Tests', () => {

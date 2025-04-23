@@ -3,22 +3,21 @@ import {
 	createRoom,
 	deleteAllRooms,
 	startTestServer,
-	stopTestServer,
+	,
 	getRoom,
 	deleteRoom,
 	joinFakeParticipant,
-	sleep,
 	disconnectFakeParticipants
 } from '../../../utils/helpers.js';
 import ms from 'ms';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {

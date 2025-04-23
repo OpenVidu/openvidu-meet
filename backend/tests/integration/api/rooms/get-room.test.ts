@@ -1,19 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, startTestServer, stopTestServer, getRoom } from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, startTestServer, , getRoom } from '../../../utils/helpers.js';
 import ms from 'ms';
 import {
 	expectSuccessRoomResponse,
+	expectValidationError,
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../utils/assertion-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {
@@ -100,10 +101,7 @@ describe('Room API Tests', () => {
 		it('should fail when roomId becomes empty after sanitization', async () => {
 			const response = await getRoom('!!-*!@#$%^&*()_+{}|:"<>?');
 
-			expect(response.status).toBe(422);
-			// Expect an error message indicating the resulting roomId is empty.
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('roomId cannot be empty after sanitization');
+			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
 		});
 	});
 });

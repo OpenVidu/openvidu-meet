@@ -3,18 +3,18 @@ import {
 	createRoom,
 	deleteAllRooms,
 	startTestServer,
-	stopTestServer,
+	,
 	getRoom,
 	updateRoomPreferences
 } from '../../../utils/helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {

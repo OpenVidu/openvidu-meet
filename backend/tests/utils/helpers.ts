@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import request, { Response } from 'supertest';
 import { Express } from 'express';
-import { Server } from 'http';
 import { createApp, registerDependencies } from '../../src/server.js';
 import {
-	SERVER_PORT,
 	MEET_API_KEY,
 	MEET_USER,
 	MEET_SECRET,
@@ -35,8 +33,6 @@ const CREDENTIALS = {
 };
 
 let app: Express;
-let server: Server;
-
 const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
 export const sleep = (time: StringValue) => {
@@ -46,55 +42,16 @@ export const sleep = (time: StringValue) => {
 /**
  * Starts the test server
  */
-export const startTestServer = async (): Promise<Express> => {
-	registerDependencies();
-	app = createApp();
-
-	return await new Promise<Express>((resolve, reject) => {
-		server = app.listen(SERVER_PORT, async () => {
-			try {
-				// Check if the server is responding by hitting the health check route
-				const response = await request(app).get('/meet/health');
-
-				if (response.status === 200) {
-					console.log('Test server started and healthy!');
-					resolve(app);
-				} else {
-					reject(new Error('Test server not healthy'));
-				}
-			} catch (error: any) {
-				reject(new Error('Failed to initialize server or global preferences: ' + error.message));
-			}
-		});
-
-		// Handle server errors
-		server.on('error', (error: any) => reject(new Error(`Test server startup error: ${error.message}`)));
-	});
-};
-
-/**
- * Stops the test server
- */
-export const stopTestServer = async (): Promise<void> => {
-	if (!server) {
-		throw new Error('Server is not running');
+export const startTestServer = (): Express => {
+	if (app) {
+		return app;
 	}
 
-	return new Promise<void>((resolve, reject) => {
-		server.close((err) => {
-			if (err) {
-				reject(new Error(`Failed to stop server: ${err.message}`));
-			} else {
-				console.log('Test server stopped.');
-				resolve();
-			}
-
-			// Clear the app instance
-			app = undefined as unknown as Express;
-			server = undefined as unknown as Server;
-		});
-	});
+	registerDependencies();
+	app = createApp();
+	return app;
 };
+
 
 /**
  * Updates global security preferences

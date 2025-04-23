@@ -4,21 +4,19 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	startTestServer,
-	stopRecording,
-	stopTestServer
+	stopRecording
 } from '../../../utils/helpers';
 import { setupMultiRecordingsTestContext } from '../../../utils/test-scenarios';
 import { expectValidationError } from '../../../utils/assertion-helpers';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
 		await deleteAllRooms();
 		await deleteAllRecordings();
-		await stopTestServer();
 	});
 
 	describe('Bulk Delete Recording Tests', () => {

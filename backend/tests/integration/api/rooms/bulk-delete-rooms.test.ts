@@ -3,7 +3,7 @@ import {
 	createRoom,
 	deleteAllRooms,
 	startTestServer,
-	stopTestServer,
+	,
 	getRoom,
 	joinFakeParticipant,
 	disconnectFakeParticipants,
@@ -12,11 +12,11 @@ import {
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
-		await startTestServer();
+		startTestServer();
 	});
 
 	afterAll(async () => {
-		await stopTestServer();
+
 	});
 
 	afterEach(async () => {
