@@ -47,11 +47,15 @@ jobs:
       - name: Install LK CLI
         run: |
           curl -sSL https://get.livekit.io/cli | bash
-      - name: Run tests
+      - name: Setup OpenVidu Meet
         run: |
           ./prepare.sh
           cd backend
           npm install
+          npm run start:prod &
+      - name: Run tests
+        run: |
+          cd backend
           npm run test:integration-rooms
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
