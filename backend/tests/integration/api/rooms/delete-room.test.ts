@@ -6,7 +6,8 @@ import {
 	getRoom,
 	deleteRoom,
 	joinFakeParticipant,
-	disconnectFakeParticipants
+	disconnectFakeParticipants,
+	sleep
 } from '../../../utils/helpers.js';
 import ms from 'ms';
 import { setupMultiRoomTestContext } from '../../../utils/test-scenarios.js';
@@ -131,6 +132,8 @@ describe('Room API Tests', () => {
 			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
 
 			await disconnectFakeParticipants();
+
+			await sleep('6s');
 
 			const responseAfterDelete = await getRoom(roomId);
 			expect(responseAfterDelete.status).toBe(404);
