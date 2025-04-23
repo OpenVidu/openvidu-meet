@@ -195,6 +195,7 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 	const { success, error, data } = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
 	if (!success) {
+		error.errors[0].path = ['roomId'];
 		return rejectRequest(res, error);
 	}
 
