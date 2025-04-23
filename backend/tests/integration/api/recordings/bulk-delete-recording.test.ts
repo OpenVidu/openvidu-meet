@@ -8,6 +8,7 @@ import {
 	stopTestServer
 } from '../../../utils/helpers';
 import { setupMultiRecordingsTestContext } from '../../../utils/test-scenarios';
+import { expectValidationError } from '../../../utils/assertion-helpers';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -121,67 +122,30 @@ describe('Recording API Tests', () => {
 
 	describe('Bulk Delete Recording Validation', () => {
 		it('should handle empty recordingIds array gracefully', async () => {
-			const deleteResponse = await bulkDeleteRecordings([]);
+			const response = await bulkDeleteRecordings([]);
 
-			expect(deleteResponse.status).toBe(422);
-			expect(deleteResponse.body).toEqual({
-				details: [
-					{
-						field: 'recordingIds',
-						message: 'recordingIds must contain at least one item'
-					}
-				],
-				error: 'Unprocessable Entity',
-				message: 'Invalid request'
-			});
+			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
 		});
 
 		it('should reject a CSV string with invalid format', async () => {
 			const invalidRecordingIds = 'invalid--recording.id,invalid--EG_111--5678';
-			const deleteResponse = await bulkDeleteRecordings([invalidRecordingIds]);
+			const response = await bulkDeleteRecordings([invalidRecordingIds]);
 
-			expect(deleteResponse.status).toBe(422);
-			expect(deleteResponse.body).toMatchObject({
-				details: [
-					{
-						message: 'recordingId does not follow the expected format'
-					}
-				],
-				error: 'Unprocessable Entity',
-				message: 'Invalid request'
-			});
+			expectValidationError(response, 'recordingIds.0', 'recordingId does not follow the expected format');
 		});
 
 		it('should reject an array containing empty strings after sanitization', async () => {
 			const invalidRecordingIds = ['', '   '];
-			const deleteResponse = await bulkDeleteRecordings(invalidRecordingIds);
+			const response = await bulkDeleteRecordings(invalidRecordingIds);
 
-			expect(deleteResponse.status).toBe(422);
-			expect(deleteResponse.body).toMatchObject({
-				details: [
-					{
-						message: 'recordingIds must contain at least one item'
-					}
-				],
-				error: 'Unprocessable Entity',
-				message: 'Invalid request'
-			});
+			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
 		});
 
 		it('should reject an array with mixed valid and totally invalid IDs', async () => {
 			const invalidRecordingIds = ['valid--EG_111--5678', 'invalid--recording.id'];
-			const deleteResponse = await bulkDeleteRecordings(invalidRecordingIds);
+			const response = await bulkDeleteRecordings(invalidRecordingIds);
 
-			expect(deleteResponse.status).toBe(422);
-			expect(deleteResponse.body).toMatchObject({
-				details: [
-					{
-						message: 'recordingId does not follow the expected format'
-					}
-				],
-				error: 'Unprocessable Entity',
-				message: 'Invalid request'
-			});
+			expectValidationError(response, 'recordingIds.1', 'recordingId does not follow the expected format');
 		});
 	});
 });

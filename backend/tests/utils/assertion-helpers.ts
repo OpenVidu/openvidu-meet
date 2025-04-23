@@ -3,15 +3,21 @@ import INTERNAL_CONFIG from '../../src/config/internal-config';
 import { MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
-export const expectErrorResponse = (
+const expectErrorResponse = (
 	response: any,
 	status = 422,
 	error = 'Unprocessable Entity',
 	message = 'Invalid request',
-	details: Array<{ field?: string; message: string }>
+	details?: Array<{ field?: string; message: string }>
 ) => {
 	expect(response.status).toBe(status);
 	expect(response.body).toMatchObject({ error, message });
+
+	if (details === undefined) {
+		expect(response.body.details).toBeUndefined();
+		return;
+	}
+
 	expect(Array.isArray(response.body.details)).toBe(true);
 	expect(response.body.details).toEqual(
 		expect.arrayContaining(
