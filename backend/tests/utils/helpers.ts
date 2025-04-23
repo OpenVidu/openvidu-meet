@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import { Express } from 'express';
 import { Server } from 'http';
 import { createApp, registerDependencies } from '../../src/server.js';
@@ -20,8 +20,8 @@ import INTERNAL_CONFIG from '../../src/config/internal-config.js';
 import { ChildProcess, execSync, spawn } from 'child_process';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { RoomService } from '../../src/services/room.service.js';
-import { MeetRoomHelper } from '../../src/helpers/room.helper.js';
 import { RecordingService } from '../../src/services/recording.service.js';
+import ms, { StringValue } from 'ms';
 
 const CREDENTIALS = {
 	user: {
@@ -39,8 +39,8 @@ let server: Server;
 
 const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
-export const sleep = (ms: number) => {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (time: StringValue) => {
+	return new Promise((resolve) => setTimeout(resolve, ms(time)));
 };
 
 /**
@@ -188,40 +188,6 @@ export const updateRoomPreferences = async (roomId: string, preferences: any) =>
 };
 
 /**
- * Asserts that a rooms response matches the expected values for testing purposes.
- * Validates the room array length and pagination properties.
- *
- * @param body - The API response body to validate
- * @param expectedRoomLength - The expected number of rooms in the response
- * @param expectedMaxItems - The expected maximum number of items in pagination
- * @param expectedTruncated - The expected value for pagination.isTruncated flag
- * @param expectedNextPageToken - The expected presence of pagination.nextPageToken
- *                               (if true, expects nextPageToken to be defined;
- *                                if false, expects nextPageToken to be undefined)
- */
-export const assertSuccessRoomsResponse = (
-	response: any,
-	expectedRoomLength: number,
-	expectedMaxItems: number,
-	expectedTruncated: boolean,
-	expectedNextPageToken: boolean
-) => {
-	const { body } = response;
-	expect(response.status).toBe(200);
-	expect(body).toBeDefined();
-	expect(body.rooms).toBeDefined();
-	expect(Array.isArray(body.rooms)).toBe(true);
-	expect(body.rooms.length).toBe(expectedRoomLength);
-	expect(body.pagination).toBeDefined();
-	expect(body.pagination.isTruncated).toBe(expectedTruncated);
-
-	expectedNextPageToken
-		? expect(body.pagination.nextPageToken).toBeDefined()
-		: expect(body.pagination.nextPageToken).toBeUndefined();
-	expect(body.pagination.maxItems).toBe(expectedMaxItems);
-};
-
-/**
  * Retrieves information about a specific room from the API.
  *
  * @param roomId - The unique identifier of the room to retrieve
@@ -262,16 +228,6 @@ export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
 		.query({ roomIds: roomIds.join(','), force });
 };
 
-export const assertEmptyRooms = async () => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
-
-	const response = await getRooms();
-
-	assertSuccessRoomsResponse(response, 0, 10, false, false);
-};
-
 /**
  * Runs the room garbage collector to delete expired rooms.
  *
@@ -286,8 +242,6 @@ export const runRoomGarbageCollector = async () => {
 
 	const roomService = container.get(RoomService);
 	await (roomService as any)['deleteExpiredRooms']();
-
-	await sleep(1000);
 };
 
 export const runReleaseActiveRecordingLock = async (roomId: string) => {
@@ -327,8 +281,6 @@ export const deleteAllRooms = async () => {
 			.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 			.query({ roomIds: roomIds.join(','), force: true })
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-
-		await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
 	} while (nextPageToken);
 };
 
@@ -407,7 +359,7 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 
 	// Store the process to be able to terminate it later
 	fakeParticipantsProcesses.set(participantName, process);
-	await sleep(1000);
+	await sleep('1s');
 };
 
 export const disconnectFakeParticipants = async () => {
@@ -417,7 +369,7 @@ export const disconnectFakeParticipants = async () => {
 	});
 
 	fakeParticipantsProcesses.clear();
-	await sleep(1000);
+	await sleep('1s');
 };
 
 export const startRecording = async (roomId: string, moderatorCookie = '') => {
@@ -442,7 +394,7 @@ export const stopRecording = async (recordingId: string, moderatorCookie = '') =
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
 		.set('Cookie', moderatorCookie)
 		.send();
-	await sleep(2500);
+	await sleep('2.5s');
 
 	return response;
 };
@@ -469,7 +421,7 @@ export const stopAllRecordings = async (moderatorCookie: string) => {
 			.send()
 	);
 	await Promise.all(tasks);
-	await sleep(1000); // Wait for 1 second
+	await sleep('1s');
 };
 
 export const getAllRecordings = async (query: Record<string, any> = {}) => {
@@ -481,6 +433,18 @@ export const getAllRecordings = async (query: Record<string, any> = {}) => {
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query(query);
+};
+
+export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Response> => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.query({ recordingIds: recordingIds.join(',') })
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+	return response;
 };
 
 export const deleteAllRecordings = async () => {
@@ -507,14 +471,7 @@ export const deleteAllRecordings = async () => {
 			break;
 		}
 
-		console.log(`Deleting ${recordingIds.length} recordings...`);
-		console.log('Recording IDs:', recordingIds);
-		await request(app)
-			.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-			.query({ recordingIds: recordingIds.join(',')})
-			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-
-		await sleep(1000); // Wait for 1 second
+		await bulkDeleteRecordings(recordingIds);
 	} while (nextPageToken);
 };
 
