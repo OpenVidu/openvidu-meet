@@ -6,6 +6,6 @@ export const enum SystemEventType {
 }
 
 export interface SystemEventPayload {
-	eventType: string;
+	eventType: SystemEventType;
 	payload: Record<string, unknown>;
 }
