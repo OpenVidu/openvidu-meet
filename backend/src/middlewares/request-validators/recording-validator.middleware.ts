@@ -69,9 +69,11 @@ const BulkDeleteRecordingsSchema = z.object({
 					.filter((s) => s !== '');
 			}
 
-			return arg;
+			return [];
 		},
-		z.array(nonEmptySanitizedRecordingId('recordingId')).default([])
+		z
+			.array(nonEmptySanitizedRecordingId('recordingId'))
+			.nonempty({ message: 'recordingIds must contain at least one item' })
 	)
 });
 
