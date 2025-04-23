@@ -6,12 +6,11 @@ import {
 	stopTestServer,
 	getRoom,
 	joinFakeParticipant,
-	sleep,
 	disconnectFakeParticipants,
 	bulkDeleteRooms
 } from '../../../utils/helpers.js';
 
-describe('OpenVidu Meet Room API Tests', () => {
+describe('Room API Tests', () => {
 	beforeAll(async () => {
 		await startTestServer();
 	});

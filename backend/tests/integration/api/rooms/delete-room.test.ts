@@ -12,7 +12,7 @@ import {
 } from '../../../utils/helpers.js';
 import ms from 'ms';
 
-describe('OpenVidu Meet Room API Tests', () => {
+describe('Room API Tests', () => {
 	beforeAll(async () => {
 		await startTestServer();
 	});
@@ -134,7 +134,6 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			disconnectFakeParticipants();
 
-			await sleep(2000);
 			const responseAfterDelete = await getRoom(roomId);
 			expect(responseAfterDelete.status).toBe(404);
 		});

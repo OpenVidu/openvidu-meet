@@ -1,16 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import {
-	createRoom,
-	deleteAllRooms,
-	assertEmptyRooms,
-	getRooms,
-	startTestServer,
-	stopTestServer,
-	assertSuccessRoomsResponse
-} from '../../../utils/helpers.js';
+import { describe, it, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { createRoom, deleteAllRooms, getRooms, startTestServer, stopTestServer } from '../../../utils/helpers.js';
 import ms from 'ms';
+import {
+	expectSuccessRoomsResponse,
+	expectValidationError,
+	expectValidRoom,
+	expectValidRoomWithFields
+} from '../../../utils/assertion-helpers.js';
+import { MeetRoom } from '../../../../src/typings/ce/room.js';
 
-describe('OpenVidu Meet Room API Tests', () => {
+describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	beforeAll(async () => {
@@ -28,33 +27,23 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 	describe('List Rooms Tests', () => {
 		it('should return an empty list of rooms', async () => {
-			await assertEmptyRooms();
+			const response = await getRooms();
+
+			expectSuccessRoomsResponse(response, 0, 10, false, false);
 		});
 
 		it('should return a list of rooms', async () => {
-			await assertEmptyRooms();
-
 			await createRoom({
 				roomIdPrefix: 'test-room'
 			});
 
 			const response = await getRooms();
-			const { rooms } = response.body;
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
-			assertSuccessRoomsResponse(response, 1, 10, false, false);
-			expect(rooms[0].roomId).toBeDefined();
-			expect(rooms[0].roomId).toContain('test-room');
-			expect(rooms[0].creationDate).toBeDefined();
-			expect(rooms[0].roomIdPrefix).toBeDefined();
-			expect(rooms[0].autoDeletionDate).not.toBeDefined();
-			expect(rooms[0].preferences).toBeDefined();
-			expect(rooms[0].moderatorRoomUrl).toBeDefined();
-			expect(rooms[0].publisherRoomUrl).toBeDefined();
+			expectValidRoom(response.body.rooms[0], 'test-room');
 		});
 
 		it('should return a list of rooms applying fields filter', async () => {
-			await assertEmptyRooms();
-
 			await createRoom({
 				roomIdPrefix: 'test-room',
 				autoDeletionDate: validAutoDeletionDate
@@ -63,24 +52,13 @@ describe('OpenVidu Meet Room API Tests', () => {
 			const response = await getRooms({ fields: 'roomId,createdAt' });
 			const { rooms } = response.body;
 
-			assertSuccessRoomsResponse(response, 1, 10, false, false);
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
-			expect(rooms[0].roomId).toBeDefined();
-			expect(rooms[0].roomId).toContain('test-room');
-
-			expect(rooms[0].creationDate).not.toBeDefined();
-			expect(rooms[0].roomIdPrefix).not.toBeDefined();
-			//CreatedAt does not exist in the room
-			expect(rooms[0].createdAt).not.toBeDefined();
-			expect(rooms[0].autoDeletionDate).not.toBeDefined();
-			expect(rooms[0].preferences).not.toBeDefined();
-			expect(rooms[0].moderatorRoomUrl).not.toBeDefined();
-			expect(rooms[0].publisherRoomUrl).not.toBeDefined();
+			expectValidRoomWithFields(rooms[0], ['roomId']);
 		});
 
 		it('should return a list of rooms with pagination', async () => {
-			await assertEmptyRooms();
-			const promises = [1, 2, 3, 4, 5, 6].map((i) => {
+			const promises = [0, 1, 2, 3, 4, 5].map((i) => {
 				return createRoom({
 					roomIdPrefix: `test-room-${i}`,
 					autoDeletionDate: validAutoDeletionDate
@@ -89,60 +67,54 @@ describe('OpenVidu Meet Room API Tests', () => {
 			await Promise.all(promises);
 
 			let response = await getRooms({ maxItems: 3 });
-			const { pagination } = response.body;
+			let { pagination, rooms } = response.body;
 
-			assertSuccessRoomsResponse(response, 3, 3, true, true);
+			expectSuccessRoomsResponse(response, 3, 3, true, true);
+			rooms.forEach((room: MeetRoom, i: number) => {
+				expectValidRoom(room, `test-room-${i}`, validAutoDeletionDate);
+			});
 
 			const nextPageToken = pagination.nextPageToken;
 			response = await getRooms({ maxItems: 3, nextPageToken });
-
-			assertSuccessRoomsResponse(response, 3, 3, false, false);
+			({ pagination, rooms } = response.body);
+			expectSuccessRoomsResponse(response, 3, 3, false, false);
+			rooms.forEach((room: MeetRoom, i: number) => {
+				expectValidRoom(room, `test-room-${i + 3}`, validAutoDeletionDate);
+			});
 		});
 
 		it('should capped maxItems to the maximum allowed', async () => {
 			const response = await getRooms({ maxItems: 101 });
 
-			assertSuccessRoomsResponse(response, 0, 100, false, false);
+			expectSuccessRoomsResponse(response, 0, 100, false, false);
 		});
 
 		it('should coerce a floating number to an integer for maxItems', async () => {
 			const response = await getRooms({ maxItems: 12.78 });
 
-			assertSuccessRoomsResponse(response, 0, 12, false, false);
+			expectSuccessRoomsResponse(response, 0, 12, false, false);
 		});
 	});
 
 	describe('List Room Validation failures', () => {
 		it('should fail when maxItems is not a number', async () => {
 			const response = await getRooms({ maxItems: 'not-a-number' });
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			// Check that the error details mention an invalid number.
-			expect(JSON.stringify(response.body.details)).toContain('Expected number, received nan');
+			expectValidationError(response, 'maxItems', 'Expected number, received nan');
 		});
 
 		it('should fail when maxItems is negative', async () => {
 			const response = await getRooms({ maxItems: -1 });
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('positive number');
+			expectValidationError(response, 'maxItems', 'must be a positive number');
 		});
 
 		it('should fail when maxItems is zero', async () => {
 			const response = await getRooms({ maxItems: 0 });
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('positive number');
+			expectValidationError(response, 'maxItems', 'must be a positive number');
 		});
 
 		it('should fail when fields is not a string', async () => {
 			const response = await getRooms({ fields: { invalid: 'data' } });
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('Expected string');
+			expectValidationError(response, 'fields', 'Expected string');
 		});
 	});
 });

@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
 import { createRoom, deleteAllRooms, startTestServer, stopTestServer, getRoom } from '../../../utils/helpers.js';
 import ms from 'ms';
+import {
+	expectSuccessRoomResponse,
+	expectValidRoom,
+	expectValidRoomWithFields
+} from '../../../utils/assertion-helpers.js';
 
-describe('OpenVidu Meet Room API Tests', () => {
+describe('Room API Tests', () => {
 	beforeAll(async () => {
 		await startTestServer();
 	});
@@ -22,48 +27,28 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: 'test-room'
 			});
 
-			const response = await getRoom(createdRoom.roomId);
-			expect(response.status).toBe(200);
-			expect(response.body).toBeDefined();
-			expect(response.body.roomIdPrefix).toBe('test-room');
+			expectValidRoom(createdRoom, 'test-room');
 
-			expect(response.body.roomId).toBe(createdRoom.roomId);
-			expect(response.body.creationDate).toBeDefined();
-			expect(response.body.autoDeletionDate).not.toBeDefined();
-			expect(response.body.preferences).toEqual({
-				recordingPreferences: { enabled: true },
-				chatPreferences: { enabled: true },
-				virtualBackgroundPreferences: { enabled: true }
-			});
-			expect(response.body.moderatorRoomUrl).toBeDefined();
-			expect(response.body.publisherRoomUrl).toBeDefined();
+			const response = await getRoom(createdRoom.roomId);
+			expectSuccessRoomResponse(response, 'test-room');
 		});
 
 		it('should retrieve a room with custom preferences', async () => {
-			// Create a room with custom preferences
-			const createdRoom = await createRoom({
+			const payload = {
 				roomIdPrefix: 'custom-prefs',
 				preferences: {
-					recordingPreferences: { enabled: false },
-					chatPreferences: { enabled: false },
-					virtualBackgroundPreferences: { enabled: true }
+					recordingPreferences: { enabled: true },
+					chatPreferences: { enabled: true },
+					virtualBackgroundPreferences: { enabled: false }
 				}
-			});
-
-			// Get the roomId from the created room
-			const roomId = createdRoom.roomId;
+			};
+			// Create a room with custom preferences
+			const { roomId } = await createRoom(payload);
 
 			// Retrieve the room by its ID
 			const response = await getRoom(roomId);
 
-			// Verify custom preferences
-			expect(response.status).toBe(200);
-			expect(response.body.roomId).toBe(roomId);
-			expect(response.body.preferences).toEqual({
-				recordingPreferences: { enabled: false },
-				chatPreferences: { enabled: false },
-				virtualBackgroundPreferences: { enabled: true }
-			});
+			expectSuccessRoomResponse(response, 'custom-prefs', undefined, payload.preferences);
 		});
 
 		it('should retrieve only specified fields when using fields parameter', async () => {
@@ -77,14 +62,8 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			// Verify that only the requested fields are returned
 			expect(response.status).toBe(200);
-			expect(response.body.roomId).toBeDefined();
-			expect(response.body.roomIdPrefix).toBeDefined();
 
-			// Other fields should not be present
-			expect(response.body.creationDate).not.toBeDefined();
-			expect(response.body.preferences).not.toBeDefined();
-			expect(response.body.moderatorRoomUrl).not.toBeDefined();
-			expect(response.body.publisherRoomUrl).not.toBeDefined();
+			expectValidRoomWithFields(response.body, ['roomId', 'roomIdPrefix']);
 		});
 
 		it('should handle roomId with characters that need sanitization', async () => {
@@ -97,9 +76,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			const response = await getRoom(dirtyRoomId);
 
-			// The endpoint should sanitize the roomId and still find the room
-			expect(response.status).toBe(200);
-			expect(response.body.roomId).toBe(createdRoom.roomId);
+			expectSuccessRoomResponse(response, 'test-room');
 		});
 
 		it('should retrieve a room with autoDeletionDate', async () => {
@@ -115,9 +92,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 			// Get the room
 			const response = await getRoom(createdRoom.roomId);
 
-			// Verify autoDeletionDate
-			expect(response.status).toBe(200);
-			expect(response.body.autoDeletionDate).toBe(validAutoDeletionDate);
+			expectSuccessRoomResponse(response, 'deletion-date', validAutoDeletionDate);
 		});
 	});
 

@@ -11,10 +11,11 @@ import {
 import { UserRole } from '../../../../src/typings/ce/user.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import ms from 'ms';
+import { expectValidRoom } from '../../../utils/assertion-helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 
-describe('OpenVidu Meet Room API Tests', () => {
+describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	let app: Express;
@@ -35,17 +36,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 			const room = await createRoom({
 				roomIdPrefix: '   Test Room   '
 			});
-			expect(room).toHaveProperty('creationDate');
-			expect(room).not.toHaveProperty('autoDeletionDate');
-			expect(room.roomIdPrefix).toBe('TestRoom');
-			expect(room).toHaveProperty('preferences');
-			expect(room.preferences).toEqual({
-				recordingPreferences: { enabled: true },
-				chatPreferences: { enabled: true },
-				virtualBackgroundPreferences: { enabled: true }
-			});
-			expect(room).toHaveProperty('moderatorRoomUrl');
-			expect(room).toHaveProperty('publisherRoomUrl');
+			expectValidRoom(room, 'TestRoom');
 		});
 
 		it('✅ Should create a room with a valid autoDeletionDate', async () => {
@@ -54,13 +45,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 				roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
 			});
 
-			expect(room).toHaveProperty('creationDate');
-			expect(room).toHaveProperty('autoDeletionDate');
-			expect(room.autoDeletionDate).toBe(validAutoDeletionDate);
-			expect(room.roomIdPrefix).toBe('MyRoom123');
-			expect(room).toHaveProperty('preferences');
-			expect(room).toHaveProperty('moderatorRoomUrl');
-			expect(room).toHaveProperty('publisherRoomUrl');
+			expectValidRoom(room, 'MyRoom123', validAutoDeletionDate);
 		});
 
 		it('✅ Should create a room when sending full valid payload', async () => {
@@ -76,17 +61,7 @@ describe('OpenVidu Meet Room API Tests', () => {
 
 			const room = await createRoom(payload);
 
-			expect(room).toHaveProperty('creationDate');
-			expect(room).toHaveProperty('autoDeletionDate');
-			expect(room.autoDeletionDate).toBe(validAutoDeletionDate);
-			expect(room.roomIdPrefix).toBe('ExampleRoom');
-			expect(room.preferences).toEqual({
-				recordingPreferences: { enabled: false },
-				chatPreferences: { enabled: false },
-				virtualBackgroundPreferences: { enabled: true }
-			});
-			expect(room).toHaveProperty('moderatorRoomUrl');
-			expect(room).toHaveProperty('publisherRoomUrl');
+			expectValidRoom(room, 'ExampleRoom', validAutoDeletionDate, payload.preferences);
 		});
 	});
 
