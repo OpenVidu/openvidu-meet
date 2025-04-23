@@ -101,7 +101,7 @@ describe('Room Garbage Collector Tests', () => {
 		await disconnectFakeParticipants();
 
 		// Wait to receive webhook room_finished
-		await sleep('2s');
+		await sleep('4s');
 
 		// Verify that the room is deleted
 		response = await getRoom(createdRoom.roomId);
