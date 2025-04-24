@@ -127,6 +127,7 @@ export class TaskSchedulerService {
 			}
 
 			this.scheduledTasks.delete(name);
+			this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
 			this.logger.debug(`Task "${name}" cancelled.`);
 		}
 	}

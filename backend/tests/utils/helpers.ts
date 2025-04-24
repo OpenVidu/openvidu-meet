@@ -207,7 +207,7 @@ export const runReleaseActiveRecordingLock = async (roomId: string) => {
 	}
 
 	const recordingService = container.get(RecordingService);
-	await recordingService.releaseRoomRecordingActiveLock(roomId);
+	await recordingService.releaseRecordingLockIfNoEgress(roomId);
 };
 
 /**

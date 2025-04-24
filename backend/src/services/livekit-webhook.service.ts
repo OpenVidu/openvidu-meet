@@ -152,7 +152,7 @@ export class LivekitWebhookService {
 		try {
 			const [meetRoom] = await Promise.all([
 				this.roomService.getMeetRoom(room.name),
-				this.recordingService.releaseRoomRecordingActiveLock(room.name),
+				this.recordingService.releaseRecordingLockIfNoEgress(room.name),
 				this.openViduWebhookService.sendRoomFinishedWebhook(room)
 			]);
 
@@ -223,7 +223,7 @@ export class LivekitWebhookService {
 			case 'ended':
 				tasks.push(
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
-					this.recordingService.releaseRoomRecordingActiveLock(roomId)
+					this.recordingService.releaseRecordingLockIfNoEgress(roomId)
 				);
 				break;
 		}
