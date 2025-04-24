@@ -9,19 +9,7 @@ content:
                     items:
                         $ref: '../schemas/meet-room.yaml'
                 pagination:
-                    type: object
-                    properties:
-                        isTruncated:
-                            type: boolean
-                            description: Indicates if there are more rooms to retrieve.
-                        nextPageToken:
-                            type: [string, 'null']
-                            description: The token to retrieve the next page of rooms.
-                        maxItems:
-                            type: integer
-                            description: >
-                                Maximum number of rooms returned in a single response page.
-                                Corresponds to the `maxItems` query parameter in the request.
+                    $ref: '../schemas/meet-pagination.yaml'
 
         examples:
             complete_room_details:
