@@ -43,31 +43,21 @@ jobs:
         with:
           node-version: '20'
       - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
+      #   run: npm install -g yarn
+      # - name: Install wait-on
+        run: npm install -g wait-on
       - name: Install LK CLI
         run: |
           curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Meet
+        shell: bash
         run: |
           ./prepare.sh
           cd backend
           npm install
           npm run start:prod &
-      - name: Wait for OpenVidu Meet to Start
-        shell: bash
-        run: |
-          MAX_WAIT_SECONDS=30
-          SECONDS=0
-          until curl -s -f -o /dev/null http://localhost:6080; do
-            if [ $SECONDS -gt $MAX_WAIT_SECONDS ]; then
-              echo "OpenVidu Meet did not start in $MAX_WAIT_SECONDS seconds"
-              exit 1
-            fi
-            echo "Waiting for OpenVidu Meet to be ready ..."
-            sleep 5
-            SECONDS=$((SECONDS+5))
-          done
-          echo "OpenVidu Meet started in $SECONDS seconds"
+      # - name: Wait for OpenVidu Meet to Start
+      #   run: wait-on --timeout 30000 http://localhost:6080
       - name: Run tests
         run: |
           cd backend
@@ -123,6 +113,8 @@ jobs:
           node-version: '20'
       - name: Setup yarn # Needed for the redlock package
         run: npm install -g yarn
+      # - name: Install wait-on
+      #   run: npm install -g wait-on
       - name: Install LK CLI
         run: |
           curl -sSL https://get.livekit.io/cli | bash
@@ -132,21 +124,9 @@ jobs:
           cd backend
           npm install
           npm run start:prod &
-      - name: Wait for OpenVidu Meet to Start
-        shell: bash
-        run: |
-          MAX_WAIT_SECONDS=30
-          SECONDS=0
-          until curl -s -f -o /dev/null http://localhost:6080; do
-            if [ $SECONDS -gt $MAX_WAIT_SECONDS ]; then
-              echo "OpenVidu Meet did not start in $MAX_WAIT_SECONDS seconds"
-              exit 1
-            fi
-            echo "Waiting for OpenVidu Meet to be ready ..."
-            sleep 5
-            SECONDS=$((SECONDS+5))
-          done
-          echo "OpenVidu Meet started in $SECONDS seconds"
+      # - name: Wait for OpenVidu Meet to Start
+      #   shell: bash
+      #   run: wait-on --timeout 30000 http://localhost:6080
       - name: Run tests
         run: |
           cd backend
