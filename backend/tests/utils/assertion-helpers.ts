@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals';
 import INTERNAL_CONFIG from '../../src/config/internal-config';
-import { MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
+import { MeetRecordingStatus, MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
 const expectErrorResponse = (
@@ -179,4 +179,39 @@ export const expectValidStopRecordingResponse = (response: any, recordingId: str
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('duration', expect.any(Number));
+};
+
+export const expectValidGetRecordingResponse = (
+	response: any,
+	recordingId: string,
+	roomId: string,
+	status: MeetRecordingStatus,
+	maxSecDuration: number
+) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toBeDefined();
+	const body = response.body;
+
+	expect(body).toMatchObject({ recordingId, roomId, status });
+
+	expect(body).toEqual(
+		expect.objectContaining({
+			duration: expect.any(Number),
+			startDate: expect.any(Number),
+			endDate: expect.any(Number),
+			size: expect.any(Number),
+			filename: expect.any(String),
+			details: expect.any(String)
+		})
+	);
+
+	expect(body.duration).toBeGreaterThanOrEqual(0);
+	expect(body.duration).toBeLessThanOrEqual(maxSecDuration);
+
+	expect(body.endDate).toBeGreaterThanOrEqual(body.startDate);
+
+	const computedSec = (body.endDate - body.startDate) / 1000;
+	const diffSec = Math.abs(body.duration - computedSec);
+	// Estimate 5 seconds of tolerace because of time to start/stop recording
+	expect(diffSec).toBeLessThanOrEqual(5);
 };

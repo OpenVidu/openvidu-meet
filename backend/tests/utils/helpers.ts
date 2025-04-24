@@ -356,6 +356,16 @@ export const stopRecording = async (recordingId: string, moderatorCookie = '') =
 	return response;
 };
 
+export const getRecording = async (recordingId: string) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+}
+
 export const stopAllRecordings = async (moderatorCookie: string) => {
 	if (!app) {
 		throw new Error('App instance is not defined');
