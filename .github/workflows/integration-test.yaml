@@ -53,6 +53,21 @@ jobs:
           cd backend
           npm install
           npm run start:prod &
+      - name: Wait for OpenVidu Meet to Start
+        shell: bash
+        run: |
+          MAX_WAIT_SECONDS=30
+          SECONDS=0
+          until curl -s -f -o /dev/null http://localhost:6080; do
+            if [ $SECONDS -gt $MAX_WAIT_SECONDS ]; then
+              echo "OpenVidu Meet did not start in $MAX_WAIT_SECONDS seconds"
+              exit 1
+            fi
+            echo "Waiting for OpenVidu Meet to be ready ..."
+            sleep 5
+            SECONDS=$((SECONDS+5))
+          done
+          echo "OpenVidu Meet started in $SECONDS seconds"
       - name: Run tests
         run: |
           cd backend
@@ -117,6 +132,21 @@ jobs:
           cd backend
           npm install
           npm run start:prod &
+      - name: Wait for OpenVidu Meet to Start
+        shell: bash
+        run: |
+          MAX_WAIT_SECONDS=30
+          SECONDS=0
+          until curl -s -f -o /dev/null http://localhost:6080; do
+            if [ $SECONDS -gt $MAX_WAIT_SECONDS ]; then
+              echo "OpenVidu Meet did not start in $MAX_WAIT_SECONDS seconds"
+              exit 1
+            fi
+            echo "Waiting for OpenVidu Meet to be ready ..."
+            sleep 5
+            SECONDS=$((SECONDS+5))
+          done
+          echo "OpenVidu Meet started in $SECONDS seconds"
       - name: Run tests
         run: |
           cd backend
