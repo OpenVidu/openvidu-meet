@@ -1,9 +1,9 @@
-import { TokenOptions } from '@typings-ce';
+import { ParticipantOptions } from '@typings-ce';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 
-const ParticipantTokenRequestSchema: z.ZodType<TokenOptions> = z.object({
+const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
 	participantName: z.string().nonempty('Participant name is required'),
 	secret: z.string().nonempty('Secret is required')

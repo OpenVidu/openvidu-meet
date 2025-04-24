@@ -1,7 +1,4 @@
 import {
-	_Object,
-	DeleteObjectCommand,
-	DeleteObjectCommandOutput,
 	DeleteObjectsCommand,
 	DeleteObjectsCommandOutput,
 	GetObjectCommand,

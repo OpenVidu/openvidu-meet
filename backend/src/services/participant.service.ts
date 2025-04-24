@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
+import { ParticipantPermissions, ParticipantRole, ParticipantOptions } from '@typings-ce';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/index.js';
 import { LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
@@ -13,8 +13,8 @@ export class ParticipantService {
 		@inject(TokenService) protected tokenService: TokenService
 	) {}
 
-	async generateOrRefreshParticipantToken(options: TokenOptions, refresh = false): Promise<string> {
-		const { roomId, participantName, secret } = options;
+	async generateOrRefreshParticipantToken(participantOptions: ParticipantOptions, refresh = false): Promise<string> {
+		const { roomId, participantName, secret } = participantOptions;
 
 		// Check if participant with same participantName exists in the room
 		const participantExists = await this.participantExists(roomId, participantName);
@@ -30,14 +30,17 @@ export class ParticipantService {
 		}
 
 		const role = await this.roomService.getRoomRoleBySecret(roomId, secret);
-		const token = await this.generateParticipantToken(role, options);
+		const token = await this.generateParticipantToken(role, participantOptions);
 		this.logger.verbose(`Participant token generated for room ${roomId}`);
 		return token;
 	}
 
-	protected async generateParticipantToken(role: ParticipantRole, options: TokenOptions): Promise<string> {
-		const permissions = this.getParticipantPermissions(role, options.roomId);
-		return this.tokenService.generateParticipantToken(options, permissions, role);
+	protected async generateParticipantToken(
+		role: ParticipantRole,
+		participantOptions: ParticipantOptions
+	): Promise<string> {
+		const permissions = this.getParticipantPermissions(role, participantOptions.roomId);
+		return this.tokenService.generateParticipantToken(participantOptions, permissions, role);
 	}
 
 	async getParticipant(roomId: string, participantName: string): Promise<ParticipantInfo | null> {

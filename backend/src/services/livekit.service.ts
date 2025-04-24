@@ -1,6 +1,5 @@
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import {
-	AccessToken,
 	CreateOptions,
 	DataPacket_Kind,
 	EgressClient,
@@ -15,13 +14,7 @@ import {
 	SendDataOptions,
 	StreamOutput
 } from 'livekit-server-sdk';
-import {
-	LIVEKIT_API_KEY,
-	LIVEKIT_API_SECRET,
-	LIVEKIT_URL,
-	LIVEKIT_URL_PRIVATE,
-	MEET_PARTICIPANT_TOKEN_EXPIRATION
-} from '../environment.js';
+import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL_PRIVATE } from '../environment.js';
 import { LoggerService } from './logger.service.js';
 import {
 	errorLivekitIsNotAvailable,
@@ -30,7 +23,6 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 
 @injectable()

@@ -6,7 +6,7 @@ import {
 	MeetRoomRoleAndPermissions,
 	MeetRoomPreferences,
 	SecurityPreferencesDTO,
-	TokenOptions,
+	ParticipantOptions,
 	User
 } from '@lib/typings/ce';
 import { RecordingInfo } from 'openvidu-components-angular';
@@ -51,12 +51,12 @@ export class HttpService {
 		return this.deleteRequest(`${this.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}`);
 	}
 
-	generateParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token`, tokenOptions);
+	generateParticipantToken(participantOptions: ParticipantOptions): Promise<{ token: string }> {
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token`, participantOptions);
 	}
 
-	refreshParticipantToken(tokenOptions: TokenOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token/refresh`, tokenOptions);
+	refreshParticipantToken(participantOptions: ParticipantOptions): Promise<{ token: string }> {
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token/refresh`, participantOptions);
 	}
 
 	/**

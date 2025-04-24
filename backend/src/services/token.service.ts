@@ -8,7 +8,7 @@ import {
 } from '../environment.js';
 import { inject, injectable } from '../config/dependency-injector.config.js';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
-import { ParticipantPermissions, ParticipantRole, TokenOptions, User } from '@typings-ce';
+import { ParticipantPermissions, ParticipantRole, ParticipantOptions, User } from '@typings-ce';
 import { LoggerService } from './index.js';
 
 @injectable()
@@ -38,7 +38,7 @@ export class TokenService {
 	}
 
 	async generateParticipantToken(
-		participantOptions: TokenOptions,
+		participantOptions: ParticipantOptions,
 		permissions: ParticipantPermissions,
 		role: ParticipantRole
 	): Promise<string> {

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthMode, ParticipantRole, UserRole, TokenOptions } from '@typings-ce';
+import { AuthMode, ParticipantRole, UserRole, ParticipantOptions } from '@typings-ce';
 import { container } from '../config/dependency-injector.config.js';
 import { MeetStorageService, LoggerService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
@@ -19,7 +19,7 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 	let role: ParticipantRole;
 
 	try {
-		const { roomId, secret } = req.body as TokenOptions;
+		const { roomId, secret } = req.body as ParticipantOptions;
 		role = await roomService.getRoomRoleBySecret(roomId, secret);
 	} catch (error) {
 		logger.error('Error getting room secret role', error);
