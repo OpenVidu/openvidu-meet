@@ -8,3 +8,8 @@ properties:
     nextPageToken:
         type: [string, 'null']
         description: The token to retrieve the next page of recordings.
+    maxItems:
+        type: integer
+        description: >
+            Maximum number of rooms returned in a single response page.
+            Corresponds to the `maxItems` query parameter in the request.

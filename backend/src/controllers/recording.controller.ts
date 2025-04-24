@@ -36,8 +36,17 @@ export const getRecordings = async (req: Request, res: Response) => {
 	logger.verbose('Getting all recordings');
 
 	try {
-		const response = await recordingService.getAllRecordings(queryParams);
-		return res.status(200).json(response);
+		const { recordings, isTruncated, nextPageToken } = await recordingService.getAllRecordings(queryParams);
+		const maxItems = Number(queryParams.maxItems);
+
+		return res.status(200).json({
+			recordings,
+			pagination: {
+				isTruncated,
+				nextPageToken,
+				maxItems
+			}
+		});
 	} catch (error) {
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error getting all recordings: ${error.message}`);

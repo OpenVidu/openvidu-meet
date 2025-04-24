@@ -12,7 +12,7 @@ content:
                     $ref: '../schemas/meet-pagination.yaml'
         examples:
             successful_recording_retrieval:
-                summary: Successfully retrieved a list of recordings
+                summary: Full recording details response with multiple recordings
                 value:
                     recordings:
                         - recordingId: 'room-123--EG_XYZ--XX445'
@@ -24,13 +24,6 @@ content:
                           duration: 3.6
                           size: 1024
                           details: 'Stopped using API'
-                    pagination:
-                        isTruncated: false
-
-            paginated_recording_list:
-                summary: A paginated response indicating more recordings are available
-                value:
-                    recordings:
                         - recordingId: 'room-456--EG_ZYX--XX678'
                           roomId: 'room-456'
                           status: 'COMPLETE'
@@ -41,12 +34,30 @@ content:
                           size: 2048
                           details: 'Recording completed successfully'
                     pagination:
-                        isTruncated: true
-                        nextPageToken: 'NEXT_PAGE_ABC123'
+                        isTruncated: false
+                        maxItems: 10
 
-            no_recordings_found:
-                summary: No recordings found for the given query
+            fields=recordingId:
+                summary: Response with only recordingId for each recording
                 value:
-                    recordings: []
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                        - recordingId: 'room-456--EG_ZYX--XX678'
                     pagination:
                         isTruncated: false
+                        maxItems: 10
+            fields=recordingId,roomId,status,size:
+                summary: Recording details including recordingId, roomId, status, and size
+                value:
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                          roomId: 'room-123'
+                          status: 'ACTIVE'
+                          size: 1024
+                        - recordingId: 'room-456--EG_ZYX--XX678'
+                          roomId: 'room-456'
+                          status: 'COMPLETE'
+                          size: 2048
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10

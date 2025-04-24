@@ -1,0 +1,9 @@
+name: fields
+in: query
+description: >
+    The fields to retrieve from the recording.
+    Comma-separated list of fields to include in the response.
+required: false
+schema:
+    type: string
+    example: 'recordingId,roomId'

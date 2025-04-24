@@ -32,6 +32,7 @@
             #       > ⚠️ **Note:** Using this filter may impact performance for large datasets.
             #   schema:
             #       type: string
+            - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/room-id.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
