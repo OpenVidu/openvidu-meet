@@ -7,7 +7,7 @@ import {
 	participantTokenValidator,
 	tokenAndRoleValidator,
 	withRecordingEnabled,
-	withCorrectPermissions,
+	withCanRecordPermission,
 	withValidRecordingFiltersRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingId,
@@ -62,7 +62,7 @@ internalRecordingRouter.post(
 	withValidStartRecordingRequest,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
-	withCorrectPermissions,
+	withCanRecordPermission,
 	recordingCtrl.startRecording
 );
 
@@ -71,6 +71,6 @@ internalRecordingRouter.post(
 	withValidRecordingId,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
-	withCorrectPermissions,
+	withCanRecordPermission,
 	recordingCtrl.stopRecording
 );

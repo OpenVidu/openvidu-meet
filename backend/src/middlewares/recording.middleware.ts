@@ -48,7 +48,7 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 	}
 };
 
-export const withCorrectPermissions = async (req: Request, res: Response, next: NextFunction) => {
+export const withCanRecordPermission = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = extractRoomIdFromRequest(req);
 	const payload = req.session?.tokenClaims;
 
