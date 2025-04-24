@@ -96,8 +96,11 @@ export const participantTokenValidator = async (req: Request) => {
 
 	try {
 		const payload = await tokenService.verifyToken(token);
+		const user = await getAuthenticatedUserOrAnonymous(req);
+		
 		req.session = req.session || {};
 		req.session.tokenClaims = payload;
+		req.session.user = user;
 	} catch (error) {
 		throw errorInvalidToken();
 	}
@@ -126,6 +129,14 @@ export const apiKeyValidator = async (req: Request) => {
 
 // Allow anonymous access
 export const allowAnonymous = async (req: Request) => {
+	const user = await getAuthenticatedUserOrAnonymous(req);
+
+	req.session = req.session || {};
+	req.session.user = user;
+};
+
+// Return the authenticated user if available, otherwise return an anonymous user
+const getAuthenticatedUserOrAnonymous = async (req: Request) => {
 	let user: User | null = null;
 
 	// Check if there is a user already authenticated
@@ -151,8 +162,7 @@ export const allowAnonymous = async (req: Request) => {
 		};
 	}
 
-	req.session = req.session || {};
-	req.session.user = user;
+	return user;
 };
 
 // Limit login attempts to avoid brute force attacks
