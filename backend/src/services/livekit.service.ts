@@ -174,28 +174,6 @@ export class LiveKitService {
 		}
 	}
 
-	async generateToken(
-		options: TokenOptions,
-		permissions: ParticipantPermissions,
-		role: ParticipantRole
-	): Promise<string> {
-		const { roomId, participantName } = options;
-		this.logger.info(`Generating token for ${participantName} in room ${roomId}`);
-
-		const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
-			identity: participantName,
-			name: participantName,
-			ttl: MEET_PARTICIPANT_TOKEN_EXPIRATION,
-			metadata: JSON.stringify({
-				livekitUrl: LIVEKIT_URL,
-				role,
-				permissions: permissions.openvidu
-			})
-		});
-		at.addGrant(permissions.livekit);
-		return at.toJwt();
-	}
-
 	async startRoomComposite(
 		roomName: string,
 		output: EncodedFileOutput | StreamOutput,

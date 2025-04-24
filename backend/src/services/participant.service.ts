@@ -1,17 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { LiveKitService } from './livekit.service.js';
-import { LoggerService } from './logger.service.js';
 import { ParticipantPermissions, ParticipantRole, TokenOptions } from '@typings-ce';
 import { ParticipantInfo } from 'livekit-server-sdk';
-import { RoomService } from './room.service.js';
 import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/index.js';
+import { LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
 
 @injectable()
 export class ParticipantService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(RoomService) protected roomService: RoomService,
-		@inject(LiveKitService) protected livekitService: LiveKitService
+		@inject(LiveKitService) protected livekitService: LiveKitService,
+		@inject(TokenService) protected tokenService: TokenService
 	) {}
 
 	async generateOrRefreshParticipantToken(options: TokenOptions, refresh = false): Promise<string> {
@@ -38,7 +37,7 @@ export class ParticipantService {
 
 	protected async generateParticipantToken(role: ParticipantRole, options: TokenOptions): Promise<string> {
 		const permissions = this.getParticipantPermissions(role, options.roomId);
-		return this.livekitService.generateToken(options, permissions, role);
+		return this.tokenService.generateParticipantToken(options, permissions, role);
 	}
 
 	async getParticipant(roomId: string, participantName: string): Promise<ParticipantInfo | null> {

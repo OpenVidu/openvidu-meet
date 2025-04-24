@@ -1,4 +1,4 @@
-import { AuthMode, AuthType, GlobalPreferences, MeetRoom, MeetRoomPreferences } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, MeetRoom } from '@typings-ce';
 import { LoggerService } from '../logger.service.js';
 import { StorageProvider } from './storage.interface.js';
 import { StorageFactory } from './storage.factory.js';
