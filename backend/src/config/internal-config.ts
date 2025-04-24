@@ -25,7 +25,7 @@ const INTERNAL_CONFIG = {
 	// Garbage collection and recording lock intervals
 	ROOM_GC_INTERVAL: '1h' as StringValue, // e.g. garbage collector interval for rooms
 	RECORDING_LOCK_TTL: '6h' as StringValue, // TTL for recording lock in Redis
-	RECORDING_STARTED_TIMEOUT: '30s' as StringValue, // Timeout for recording start
+	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording start
 	RECORDING_LOCK_GC_INTERVAL: '30m' as StringValue, // Garbage collection interval for recording locks
 
 	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
