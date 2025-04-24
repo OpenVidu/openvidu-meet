@@ -1,20 +1,20 @@
-import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { LoggerService, TokenService, UserService } from '../services/index.js';
-import { MEET_API_KEY } from '../environment.js';
-import { container } from '../config/dependency-injector.config.js';
-import { ClaimGrants } from 'livekit-server-sdk';
 import { User, UserRole } from '@typings-ce';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import { ClaimGrants } from 'livekit-server-sdk';
+import ms from 'ms';
+import { container } from '../config/index.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_API_KEY } from '../environment.js';
 import {
-	errorUnauthorized,
-	errorInvalidToken,
-	errorInvalidTokenSubject,
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
+	errorInvalidToken,
+	errorInvalidTokenSubject,
+	errorUnauthorized,
 	OpenViduMeetError
 } from '../models/index.js';
-import rateLimit from 'express-rate-limit';
-import ms from 'ms';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { LoggerService, TokenService, UserService } from '../services/index.js';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -97,7 +97,7 @@ export const participantTokenValidator = async (req: Request) => {
 	try {
 		const payload = await tokenService.verifyToken(token);
 		const user = await getAuthenticatedUserOrAnonymous(req);
-		
+
 		req.session = req.session || {};
 		req.session.tokenClaims = payload;
 		req.session.user = user;

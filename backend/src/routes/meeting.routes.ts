@@ -1,8 +1,8 @@
-import { Router } from 'express';
 import bodyParser from 'body-parser';
+import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import * as participantCtrl from '../controllers/participant.controller.js';
-import { withModeratorPermissions, participantTokenValidator, withAuth } from '../middlewares/index.js';
+import { participantTokenValidator, withAuth, withModeratorPermissions } from '../middlewares/index.js';
 
 export const internalMeetingRouter = Router();
 internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));

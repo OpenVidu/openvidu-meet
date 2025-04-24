@@ -1,7 +1,7 @@
-import { injectable, inject } from 'inversify';
-import { ParticipantPermissions, ParticipantRole, ParticipantOptions } from '@typings-ce';
+import { ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@typings-ce';
+import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
-import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/index.js';
+import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/error.model.js';
 import { LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
 
 @injectable()

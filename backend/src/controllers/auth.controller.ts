@@ -1,16 +1,10 @@
-import { container } from '../config/dependency-injector.config.js';
 import { Request, Response } from 'express';
-import { AuthService } from '../services/auth.service.js';
-import { TokenService } from '../services/token.service.js';
-import { LoggerService } from '../services/logger.service.js';
-import {
-	MEET_ACCESS_TOKEN_EXPIRATION,
-	MEET_REFRESH_TOKEN_EXPIRATION,
-} from '../environment.js';
 import { ClaimGrants } from 'livekit-server-sdk';
-import { getCookieOptions } from '../utils/cookie-utils.js';
-import { UserService } from '../services/user.service.js';
+import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_ACCESS_TOKEN_EXPIRATION, MEET_REFRESH_TOKEN_EXPIRATION } from '../environment.js';
+import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
+import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -29,7 +23,11 @@ export const login = async (req: Request, res: Response) => {
 		const tokenService = container.get(TokenService);
 		const accessToken = await tokenService.generateAccessToken(user);
 		const refreshToken = await tokenService.generateRefreshToken(user);
-		res.cookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
+		res.cookie(
+			INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME,
+			accessToken,
+			getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION)
+		);
 		res.cookie(
 			INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME,
 			refreshToken,
@@ -82,7 +80,11 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	try {
 		const accessToken = await tokenService.generateAccessToken(user);
-		res.cookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME, accessToken, getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION));
+		res.cookie(
+			INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME,
+			accessToken,
+			getCookieOptions('/', MEET_ACCESS_TOKEN_EXPIRATION)
+		);
 		logger.info(`Token refreshed for user ${username}`);
 		return res.status(200).json({ message: 'Token refreshed' });
 	} catch (error) {

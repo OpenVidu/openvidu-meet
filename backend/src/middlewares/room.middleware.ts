@@ -1,9 +1,8 @@
-import { container } from '../config/dependency-injector.config.js';
-import { NextFunction, Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
-import { MeetStorageService } from '../services/index.js';
-import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 import { AuthMode, ParticipantRole, UserRole } from '@typings-ce';
+import { NextFunction, Request, Response } from 'express';
+import { container } from '../config/index.js';
+import { LoggerService, MeetStorageService } from '../services/index.js';
+import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
  * Middleware that configures authentication for creating a room based on global settings.

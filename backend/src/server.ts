@@ -1,15 +1,11 @@
-import express, { Request, Response, Express } from 'express';
-import cors from 'cors';
 import chalk from 'chalk';
-import { registerDependencies, initializeEagerServices } from './config/dependency-injector.config.js';
-import { SERVER_PORT, SERVER_CORS_ORIGIN, logEnvVars } from './environment.js';
-import {
-	publicApiHtmlFilePath,
-	indexHtmlPath,
-	publicFilesPath,
-	webcomponentBundlePath,
-	internalApiHtmlFilePath
-} from './utils/path-utils.js';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express, { Express, Request, Response } from 'express';
+import { initializeEagerServices, registerDependencies } from './config/index.js';
+import INTERNAL_CONFIG from './config/internal-config.js';
+import { SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
+import { jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {
 	authRouter,
 	internalMeetingRouter,
@@ -21,9 +17,13 @@ import {
 	recordingRouter,
 	roomRouter
 } from './routes/index.js';
-import cookieParser from 'cookie-parser';
-import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
-import INTERNAL_CONFIG from './config/internal-config.js';
+import {
+	indexHtmlPath,
+	internalApiHtmlFilePath,
+	publicApiHtmlFilePath,
+	publicFilesPath,
+	webcomponentBundlePath
+} from './utils/path-utils.js';
 
 const createApp = () => {
 	const app: Express = express();
@@ -115,4 +115,4 @@ if (isMainModule()) {
 	await initializeEagerServices();
 }
 
-export { registerDependencies, createApp };
+export { createApp, registerDependencies };

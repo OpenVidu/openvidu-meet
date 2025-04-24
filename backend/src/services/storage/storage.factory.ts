@@ -1,8 +1,6 @@
-import { StorageProvider } from './storage.interface.js';
-import { S3StorageProvider } from './providers/s3-storage.provider.js';
+import { inject, injectable } from 'inversify';
 import { MEET_PREFERENCES_STORAGE_MODE } from '../../environment.js';
-import { inject, injectable } from '../../config/dependency-injector.config.js';
-import { LoggerService } from '../logger.service.js';
+import { LoggerService, S3StorageProvider, StorageProvider } from '../index.js';
 
 /**
  * Factory class responsible for creating the appropriate storage provider based on configuration.

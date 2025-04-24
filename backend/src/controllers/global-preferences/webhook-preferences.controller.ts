@@ -1,9 +1,8 @@
-import { container } from '../../config/dependency-injector.config.js';
-import { Request, Response } from 'express';
-import { LoggerService } from '../../services/logger.service.js';
-import { MeetStorageService } from '../../services/storage/index.js';
-import { OpenViduMeetError } from '../../models/error.model.js';
 import { WebhookPreferences } from '@typings-ce';
+import { Request, Response } from 'express';
+import { container } from '../../config/index.js';
+import { OpenViduMeetError } from '../../models/error.model.js';
+import { LoggerService, MeetStorageService } from '../../services/index.js';
 
 export const updateWebhookPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

@@ -1,13 +1,9 @@
-import { GlobalPreferences, MeetRoom } from '@typings-ce';
-import { StorageProvider } from '../storage.interface.js';
-import { S3Service } from '../../s3.service.js';
-import { LoggerService } from '../../logger.service.js';
-import { RedisService } from '../../redis.service.js';
-import { OpenViduMeetError } from '../../../models/error.model.js';
-import { inject, injectable } from '../../../config/dependency-injector.config.js';
-import { RedisKeyName } from '../../../models/redis.model.js';
 import { PutObjectCommandOutput } from '@aws-sdk/client-s3';
+import { GlobalPreferences, MeetRoom } from '@typings-ce';
+import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../../../config/internal-config.js';
+import { OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
+import { LoggerService, RedisService, S3Service, StorageProvider } from '../../index.js';
 
 /**
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage

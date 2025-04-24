@@ -1,14 +1,11 @@
-import { container } from '../config/dependency-injector.config.js';
-import { Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
 import { ParticipantOptions } from '@typings-ce';
-import { OpenViduMeetError } from '../models/index.js';
-import { ParticipantService } from '../services/participant.service.js';
-import { MEET_PARTICIPANT_TOKEN_EXPIRATION } from '../environment.js';
-import { getCookieOptions } from '../utils/cookie-utils.js';
-import { TokenService } from '../services/token.service.js';
-import { RoomService } from '../services/room.service.js';
+import { Request, Response } from 'express';
+import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_PARTICIPANT_TOKEN_EXPIRATION } from '../environment.js';
+import { OpenViduMeetError } from '../models/error.model.js';
+import { LoggerService, ParticipantService, RoomService, TokenService } from '../services/index.js';
+import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

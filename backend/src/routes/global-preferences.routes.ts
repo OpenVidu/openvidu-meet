@@ -1,15 +1,15 @@
-import { Router } from 'express';
+import { UserRole } from '@typings-ce';
 import bodyParser from 'body-parser';
+import { Router } from 'express';
 import * as appearancePrefCtrl from '../controllers/global-preferences/appearance-preferences.controller.js';
-import * as webhookPrefCtrl from '../controllers/global-preferences/webhook-preferences.controller.js';
 import * as securityPrefCtrl from '../controllers/global-preferences/security-preferences.controller.js';
+import * as webhookPrefCtrl from '../controllers/global-preferences/webhook-preferences.controller.js';
 import {
+	tokenAndRoleValidator,
 	validateSecurityPreferences,
 	validateWebhookPreferences,
-	withAuth,
-	tokenAndRoleValidator
+	withAuth
 } from '../middlewares/index.js';
-import { UserRole } from '@typings-ce';
 
 export const preferencesRouter = Router();
 preferencesRouter.use(bodyParser.urlencoded({ extended: true }));

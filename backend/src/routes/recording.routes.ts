@@ -1,18 +1,18 @@
-import { Router } from 'express';
-import bodyParser from 'body-parser';
-import * as recordingCtrl from '../controllers/recording.controller.js';
 import { UserRole } from '@typings-ce';
+import bodyParser from 'body-parser';
+import { Router } from 'express';
+import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
-	withAuth,
+	apiKeyValidator,
 	participantTokenValidator,
 	tokenAndRoleValidator,
-	withRecordingEnabled,
+	withAuth,
 	withCanRecordPermission,
-	withValidRecordingFiltersRequest,
+	withRecordingEnabled,
 	withValidRecordingBulkDeleteRequest,
+	withValidRecordingFiltersRequest,
 	withValidRecordingId,
-	withValidStartRecordingRequest,
-	apiKeyValidator
+	withValidStartRecordingRequest
 } from '../middlewares/index.js';
 
 export const recordingRouter = Router();

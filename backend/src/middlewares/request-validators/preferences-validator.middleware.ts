@@ -8,7 +8,7 @@ import {
 	ValidAuthMethodDTO,
 	WebhookPreferences
 } from '@typings-ce';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
 const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z.object({

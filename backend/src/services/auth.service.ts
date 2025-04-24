@@ -1,10 +1,8 @@
-import { MEET_ADMIN_SECRET, MEET_ADMIN_USER } from '../environment.js';
-import { inject, injectable } from '../config/dependency-injector.config.js';
 import { User } from '@typings-ce';
-import { UserService } from './user.service.js';
-import { MeetStorageService } from './storage/storage.service.js';
-import { LoggerService } from './logger.service.js';
-import { PasswordHelper } from '../helpers/password.helper.js';
+import { inject, injectable } from 'inversify';
+import { MEET_ADMIN_SECRET, MEET_ADMIN_USER } from '../environment.js';
+import { PasswordHelper } from '../helpers/index.js';
+import { LoggerService, MeetStorageService, UserService } from './index.js';
 
 @injectable()
 export class AuthService {

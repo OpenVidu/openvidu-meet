@@ -1,22 +1,21 @@
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import * as config from '../environment.js';
+import { EventEmitter } from 'events';
+import { inject, injectable } from 'inversify';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
+import ms from 'ms';
+import Redlock from 'redlock';
 import {
+	checkModuleEnabled,
 	REDIS_DB,
 	REDIS_HOST,
 	REDIS_PASSWORD,
 	REDIS_PORT,
-	REDIS_SENTINEL_MASTER_NAME,
 	REDIS_SENTINEL_HOST_LIST,
+	REDIS_SENTINEL_MASTER_NAME,
 	REDIS_SENTINEL_PASSWORD,
 	REDIS_USERNAME
 } from '../environment.js';
-import { internalError } from '../models/error.model.js';
-import { LoggerService } from './logger.service.js';
-import { EventEmitter } from 'events';
-import Redlock from 'redlock';
-import ms from 'ms';
-import { SystemEventPayload } from '../models/system-event.model.js';
+import { internalError, SystemEventPayload } from '../models/index.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class RedisService extends EventEmitter {
@@ -249,7 +248,7 @@ export class RedisService extends EventEmitter {
 
 	private loadRedisConfig(): RedisOptions {
 		// Check if openviduCall module is enabled. If not, exit the process
-		config.checkModuleEnabled();
+		checkModuleEnabled();
 
 		//Check if Redis Sentinel is configured
 		if (REDIS_SENTINEL_HOST_LIST) {

@@ -1,8 +1,7 @@
-import { inject, injectable } from 'inversify';
-import { RedisService } from './redis.service.js';
-import { LoggerService } from './logger.service.js';
 import { EventEmitter } from 'events';
+import { inject, injectable } from 'inversify';
 import { SystemEventPayload, SystemEventType } from '../models/system-event.model.js';
+import { LoggerService, RedisService } from './index.js';
 
 @injectable()
 export class SystemEventService {

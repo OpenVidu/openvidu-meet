@@ -1,10 +1,9 @@
-import { container } from '../config/dependency-injector.config.js';
-import { Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
-import { OpenViduMeetError } from '../models/error.model.js';
-import { RoomService, ParticipantService } from '../services/index.js';
 import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, ParticipantRole } from '@typings-ce';
+import { Request, Response } from 'express';
+import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { OpenViduMeetError } from '../models/error.model.js';
+import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

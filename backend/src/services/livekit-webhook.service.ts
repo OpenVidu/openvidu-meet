@@ -1,20 +1,20 @@
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
-import { RecordingHelper } from '../helpers/recording.helper.js';
-import { LiveKitService } from './livekit.service.js';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { inject, injectable } from 'inversify';
+import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID } from '../environment.js';
-import { LoggerService } from './logger.service.js';
-import { RoomService } from './room.service.js';
-import { S3Service } from './s3.service.js';
-import { RecordingService } from './recording.service.js';
-import { OpenViduWebhookService } from './openvidu-webhook.service.js';
-import { MutexService } from './mutex.service.js';
-import { SystemEventService } from './system-event.service.js';
+import { RecordingHelper } from '../helpers/index.js';
 import { SystemEventType } from '../models/system-event.model.js';
-import { MeetRoomHelper } from '../helpers/room.helper.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
-import { MeetStorageService } from './storage/storage.service.js';
+import {
+	LiveKitService,
+	LoggerService,
+	MeetStorageService,
+	MutexService,
+	OpenViduWebhookService,
+	RecordingService,
+	RoomService,
+	S3Service,
+	SystemEventService
+} from './index.js';
 
 @injectable()
 export class LivekitWebhookService {

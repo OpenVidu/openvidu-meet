@@ -1,10 +1,9 @@
-import { container } from '../config/dependency-injector.config.js';
-import { Request, Response, NextFunction } from 'express';
-import { OpenViduMeetPermissions, MeetRoom } from '@typings-ce';
-import { LoggerService } from '../services/logger.service.js';
-import { RoomService } from '../services/room.service.js';
-import { RecordingHelper } from '../helpers/recording.helper.js';
-import { OpenViduMeetError } from '../models/index.js';
+import { MeetRoom, OpenViduMeetPermissions } from '@typings-ce';
+import { NextFunction, Request, Response } from 'express';
+import { container } from '../config/index.js';
+import { RecordingHelper } from '../helpers/index.js';
+import { OpenViduMeetError } from '../models/error.model.js';
+import { LoggerService, RoomService } from '../services/index.js';
 
 const extractRoomIdFromRequest = (req: Request): string => {
 	if (req.body.roomId) {

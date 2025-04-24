@@ -1,16 +1,15 @@
-import crypto from 'crypto';
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import { Room } from 'livekit-server-sdk';
-import { LoggerService } from './logger.service.js';
-import { MEET_API_KEY } from '../environment.js';
 import {
+	MeetRecordingInfo,
 	MeetWebhookEvent,
 	MeetWebhookEventType,
-	MeetRecordingInfo,
 	MeetWebhookPayload,
 	WebhookPreferences
 } from '@typings-ce';
-import { MeetStorageService } from './storage/storage.service.js';
+import crypto from 'crypto';
+import { inject, injectable } from 'inversify';
+import { Room } from 'livekit-server-sdk';
+import { MEET_API_KEY } from '../environment.js';
+import { LoggerService, MeetStorageService } from './index.js';
 
 @injectable()
 export class OpenViduWebhookService {

@@ -1,19 +1,19 @@
 import { Container } from 'inversify';
 import {
 	AuthService,
-	MeetStorageService,
-	StorageFactory,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
+	MeetStorageService,
 	MutexService,
 	OpenViduWebhookService,
 	ParticipantService,
 	RecordingService,
 	RedisService,
 	RoomService,
-	S3StorageProvider,
 	S3Service,
+	S3StorageProvider,
+	StorageFactory,
 	SystemEventService,
 	TaskSchedulerService,
 	TokenService,
@@ -60,5 +60,3 @@ export const initializeEagerServices = async () => {
 	container.get(RecordingService);
 	await container.get(MeetStorageService).initializeGlobalPreferences();
 };
-
-export { injectable, inject } from 'inversify';

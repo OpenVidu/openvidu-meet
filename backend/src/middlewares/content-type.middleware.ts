@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: NextFunction) => {
 	if (req.method === 'GET') {

@@ -1,4 +1,4 @@
-import { injectable } from '../config/dependency-injector.config.js';
+import { injectable } from 'inversify';
 import winston from 'winston';
 import { MEET_LOG_LEVEL } from '../environment.js';
 

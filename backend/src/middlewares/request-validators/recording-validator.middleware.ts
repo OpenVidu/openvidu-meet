@@ -1,5 +1,5 @@
 import { MeetRecordingFilters } from '@typings-ce';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 

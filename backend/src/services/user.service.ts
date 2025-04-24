@@ -1,8 +1,7 @@
+import { SingleUserAuth, SingleUserCredentials, User, UserRole } from '@typings-ce';
+import { inject, injectable } from 'inversify';
 import { MEET_ADMIN_USER } from '../environment.js';
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import { UserRole, SingleUserAuth, User, SingleUserCredentials } from '@typings-ce';
-import { LoggerService } from './logger.service.js';
-import { MeetStorageService } from './storage/storage.service.js';
+import { LoggerService, MeetStorageService } from './index.js';
 
 @injectable()
 export class UserService {

@@ -1,14 +1,10 @@
 import { AuthMode, AuthType, GlobalPreferences, MeetRoom } from '@typings-ce';
-import { LoggerService } from '../logger.service.js';
-import { StorageProvider } from './storage.interface.js';
-import { StorageFactory } from './storage.factory.js';
-import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
-import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
-import { injectable, inject } from '../../config/dependency-injector.config.js';
-import { PasswordHelper } from '../../helpers/password.helper.js';
-import { MutexService } from '../mutex.service.js';
-import { MeetLock } from '../../helpers/redis.helper.js';
+import { inject, injectable } from 'inversify';
 import ms from 'ms';
+import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
+import { MeetLock, PasswordHelper } from '../../helpers/index.js';
+import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
+import { LoggerService, MutexService, StorageFactory, StorageProvider } from '../index.js';
 
 /**
  * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
@@ -124,7 +120,6 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	async getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null> {
 		return this.storageProvider.getArchivedRoomMetadata(roomId) as Promise<Partial<R> | null>;
 	}
-
 
 	async archiveRoomMetadata(roomId: string): Promise<void> {
 		return this.storageProvider.archiveRoomMetadata(roomId);

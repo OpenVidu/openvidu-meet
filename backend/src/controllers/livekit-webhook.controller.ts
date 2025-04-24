@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
-import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { WebhookEvent } from 'livekit-server-sdk';
-import { container } from '../config/dependency-injector.config.js';
+import { container } from '../config/index.js';
+import { LivekitWebhookService, LoggerService } from '../services/index.js';
 
 export const lkWebhookHandler = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

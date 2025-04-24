@@ -1,4 +1,4 @@
-import { inject, injectable } from '../config/dependency-injector.config.js';
+import { inject, injectable } from 'inversify';
 import {
 	CreateOptions,
 	DataPacket_Kind,
@@ -15,7 +15,7 @@ import {
 	StreamOutput
 } from 'livekit-server-sdk';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL_PRIVATE } from '../environment.js';
-import { LoggerService } from './logger.service.js';
+import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorLivekitIsNotAvailable,
 	errorParticipantNotFound,
@@ -23,7 +23,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { RecordingHelper } from '../helpers/recording.helper.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class LiveKitService {

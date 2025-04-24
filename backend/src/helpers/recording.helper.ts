@@ -1,6 +1,6 @@
-import { EgressInfo } from 'livekit-server-sdk';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { EgressStatus } from '@livekit/protocol';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { EgressInfo } from 'livekit-server-sdk';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 
 export class RecordingHelper {

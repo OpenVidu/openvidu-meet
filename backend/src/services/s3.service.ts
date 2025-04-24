@@ -12,22 +12,21 @@ import {
 	S3Client,
 	S3ClientConfig
 } from '@aws-sdk/client-s3';
-
+import { inject, injectable } from 'inversify';
+import { Readable } from 'stream';
 import {
-	MEET_S3_ACCESS_KEY,
 	MEET_AWS_REGION,
+	MEET_S3_ACCESS_KEY,
 	MEET_S3_BUCKET,
-	MEET_S3_SERVICE_ENDPOINT,
-	MEET_S3_SECRET_KEY,
-	MEET_S3_WITH_PATH_STYLE_ACCESS,
-	MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR,
 	MEET_S3_INITIAL_RETRY_DELAY_MS,
-	MEET_S3_SUBBUCKET
+	MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR,
+	MEET_S3_SECRET_KEY,
+	MEET_S3_SERVICE_ENDPOINT,
+	MEET_S3_SUBBUCKET,
+	MEET_S3_WITH_PATH_STYLE_ACCESS
 } from '../environment.js';
 import { errorS3NotAvailable, internalError } from '../models/error.model.js';
-import { Readable } from 'stream';
-import { LoggerService } from './logger.service.js';
-import { inject, injectable } from '../config/dependency-injector.config.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class S3Service {

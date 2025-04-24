@@ -1,7 +1,7 @@
-import { Router } from 'express';
 import bodyParser from 'body-parser';
+import { Router } from 'express';
 import * as participantCtrl from '../controllers/participant.controller.js';
-import { validateParticipantTokenRequest, configureTokenAuth } from '../middlewares/index.js';
+import { configureTokenAuth, validateParticipantTokenRequest } from '../middlewares/index.js';
 
 export const internalParticipantRouter = Router();
 internalParticipantRouter.use(bodyParser.urlencoded({ extended: true }));

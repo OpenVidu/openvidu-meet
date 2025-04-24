@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuthMode, ParticipantRole, UserRole, ParticipantOptions } from '@typings-ce';
-import { container } from '../config/dependency-injector.config.js';
-import { MeetStorageService, LoggerService, RoomService } from '../services/index.js';
+import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@typings-ce';
+import { NextFunction, Request, Response } from 'express';
+import { container } from '../config/index.js';
+import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**

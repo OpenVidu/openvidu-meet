@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { LoggerService } from '../services/logger.service.js';
-import { OpenViduMeetError } from '../models/error.model.js';
-import { RecordingService } from '../services/recording.service.js';
-import { container } from '../config/dependency-injector.config.js';
+import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { OpenViduMeetError } from '../models/error.model.js';
+import { LoggerService, RecordingService } from '../services/index.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

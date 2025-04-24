@@ -1,21 +1,21 @@
-import { Router } from 'express';
+import { UserRole } from '@typings-ce';
 import bodyParser from 'body-parser';
+import { Router } from 'express';
 import * as roomCtrl from '../controllers/room.controller.js';
 import {
-	withAuth,
-	tokenAndRoleValidator,
 	apiKeyValidator,
-	participantTokenValidator,
-	withValidRoomFiltersRequest,
-	withValidRoomOptions,
 	configureCreateRoomAuth,
 	configureRoomAuthorization,
-	withValidRoomPreferences,
+	participantTokenValidator,
+	tokenAndRoleValidator,
+	withAuth,
 	withValidRoomBulkDeleteRequest,
+	withValidRoomDeleteRequest,
+	withValidRoomFiltersRequest,
 	withValidRoomId,
-	withValidRoomDeleteRequest
+	withValidRoomOptions,
+	withValidRoomPreferences
 } from '../middlewares/index.js';
-import { UserRole } from '@typings-ce';
 
 export const roomRouter = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));

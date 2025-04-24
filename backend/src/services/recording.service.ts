@@ -1,8 +1,12 @@
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { inject, injectable } from 'inversify';
 import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
-import { uid } from 'uid';
 import ms from 'ms';
 import { Readable } from 'stream';
-import { LiveKitService } from './livekit.service.js';
+import { uid } from 'uid';
+import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_S3_BUCKET, MEET_S3_SUBBUCKET } from '../environment.js';
+import { MeetLock, OpenViduComponentsAdapterHelper, RecordingHelper, UtilsHelper } from '../helpers/index.js';
 import {
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
@@ -16,23 +20,20 @@ import {
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
-	OpenViduMeetError
-} from '../models/error.model.js';
-import { S3Service } from './s3.service.js';
-import { LoggerService } from './logger.service.js';
-import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
-import { RecordingHelper } from '../helpers/recording.helper.js';
-import { MEET_S3_BUCKET, MEET_S3_SUBBUCKET } from '../environment.js';
-import { RoomService } from './room.service.js';
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import { MutexService, RedisLock } from './mutex.service.js';
-import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
-import { MeetLock } from '../helpers/redis.helper.js';
-import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
-import { SystemEventService } from './system-event.service.js';
-import { SystemEventType } from '../models/system-event.model.js';
-import { UtilsHelper } from '../helpers/utils.helper.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+	OpenViduMeetError,
+	SystemEventType
+} from '../models/index.js';
+import {
+	IScheduledTask,
+	LiveKitService,
+	LoggerService,
+	MutexService,
+	RedisLock,
+	RoomService,
+	S3Service,
+	SystemEventService,
+	TaskSchedulerService
+} from './index.js';
 
 @injectable()
 export class RecordingService {

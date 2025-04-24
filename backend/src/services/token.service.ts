@@ -1,14 +1,14 @@
+import { ParticipantOptions, ParticipantPermissions, ParticipantRole, User } from '@typings-ce';
+import { inject, injectable } from 'inversify';
+import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
 import {
-	MEET_ACCESS_TOKEN_EXPIRATION,
-	MEET_REFRESH_TOKEN_EXPIRATION,
 	LIVEKIT_API_KEY,
 	LIVEKIT_API_SECRET,
+	LIVEKIT_URL,
+	MEET_ACCESS_TOKEN_EXPIRATION,
 	MEET_PARTICIPANT_TOKEN_EXPIRATION,
-	LIVEKIT_URL
+	MEET_REFRESH_TOKEN_EXPIRATION
 } from '../environment.js';
-import { inject, injectable } from '../config/dependency-injector.config.js';
-import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
-import { ParticipantPermissions, ParticipantRole, ParticipantOptions, User } from '@typings-ce';
 import { LoggerService } from './index.js';
 
 @injectable()
