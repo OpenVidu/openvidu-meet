@@ -32,26 +32,27 @@ export const container: Container = new Container();
  */
 export const registerDependencies = () => {
 	console.log('Registering CE dependencies');
+	container.bind(LoggerService).toSelf().inSingletonScope();
+	container.bind(RedisService).toSelf().inSingletonScope();
 	container.bind(SystemEventService).toSelf().inSingletonScope();
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
-	container.bind(LoggerService).toSelf().inSingletonScope();
-	container.bind(AuthService).toSelf().inSingletonScope();
-	container.bind(UserService).toSelf().inSingletonScope();
-	container.bind(TokenService).toSelf().inSingletonScope();
-	container.bind(LiveKitService).toSelf().inSingletonScope();
-	container.bind(RoomService).toSelf().inSingletonScope();
-	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
-	container.bind(RedisService).toSelf().inSingletonScope();
+
 	container.bind(S3Service).toSelf().inSingletonScope();
-	container.bind(RecordingService).toSelf().inSingletonScope();
-
-	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
-	container.bind(MeetStorageService).toSelf().inSingletonScope();
-	container.bind(ParticipantService).toSelf().inSingletonScope();
-
 	container.bind(S3StorageProvider).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
+	container.bind(MeetStorageService).toSelf().inSingletonScope();
+
+	container.bind(TokenService).toSelf().inSingletonScope();
+	container.bind(UserService).toSelf().inSingletonScope();
+	container.bind(AuthService).toSelf().inSingletonScope();
+
+	container.bind(LiveKitService).toSelf().inSingletonScope();
+	container.bind(RoomService).toSelf().inSingletonScope();
+	container.bind(ParticipantService).toSelf().inSingletonScope();
+	container.bind(RecordingService).toSelf().inSingletonScope();
+	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
+	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
 };
 
 export const initializeEagerServices = async () => {
