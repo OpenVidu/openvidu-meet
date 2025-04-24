@@ -2,7 +2,6 @@ name: Integration Tests
 on: [push, pull_request]
 
 jobs:
-
   test-rooms:
     name: Rooms API Tests
     runs-on: ov-actions-runner
@@ -43,8 +42,8 @@ jobs:
         with:
           node-version: '20'
       - name: Setup yarn # Needed for the redlock package
-      #   run: npm install -g yarn
-      # - name: Install wait-on
+        run: npm install -g yarn
+      - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: |
@@ -56,8 +55,8 @@ jobs:
           cd backend
           npm install
           npm run start:prod &
-      # - name: Wait for OpenVidu Meet to Start
-      #   run: wait-on --timeout 30000 http://localhost:6080
+      - name: Wait for OpenVidu Meet to Start
+        run: wait-on --timeout 30000 http://localhost:6080/meet/health
       - name: Run tests
         run: |
           cd backend
@@ -113,8 +112,8 @@ jobs:
           node-version: '20'
       - name: Setup yarn # Needed for the redlock package
         run: npm install -g yarn
-      # - name: Install wait-on
-      #   run: npm install -g wait-on
+      - name: Install wait-on
+        run: npm install -g wait-on
       - name: Install LK CLI
         run: |
           curl -sSL https://get.livekit.io/cli | bash
@@ -124,9 +123,9 @@ jobs:
           cd backend
           npm install
           npm run start:prod &
-      # - name: Wait for OpenVidu Meet to Start
-      #   shell: bash
-      #   run: wait-on --timeout 30000 http://localhost:6080
+      - name: Wait for OpenVidu Meet to Start
+        shell: bash
+        run: wait-on --timeout 30000 http://localhost:6080/meet/health
       - name: Run tests
         run: |
           cd backend
@@ -140,5 +139,3 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
-
-
