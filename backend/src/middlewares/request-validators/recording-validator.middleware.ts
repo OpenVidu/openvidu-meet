@@ -80,12 +80,16 @@ const BulkDeleteRecordingsSchema = z.object({
 const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 	maxItems: z.coerce
 		.number()
-		.int()
-		.optional()
-		.transform((val = 10) => (val > 100 ? 100 : val))
+		.positive('maxItems must be a positive number')
+		.transform((val) => {
+			// Convert the value to a number
+			const intVal = Math.floor(val);
+			// Ensure it's not greater than 100
+			return intVal > 100 ? 100 : intVal;
+		})
 		.default(10),
 	// status: z.string().optional(),
-	roomId: z.string().optional(),
+	roomId: nonEmptySanitizedRoomId('roomId').optional(),
 	nextPageToken: z.string().optional(),
 	fields: z.string().optional()
 });

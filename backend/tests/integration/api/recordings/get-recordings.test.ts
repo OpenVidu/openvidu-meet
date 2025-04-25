@@ -1,0 +1,141 @@
+import { describe, it, expect, beforeAll, afterEach, afterAll } from '@jest/globals';
+import {
+	deleteAllRecordings,
+	deleteAllRooms,
+	disconnectFakeParticipants,
+	getAllRecordings,
+	startTestServer
+} from '../../../utils/helpers.js';
+
+import {
+	expectValidationError,
+	expectSuccessListRecordingResponse,
+	expectValidRecordingWithFields,
+	expectValidRecording
+} from '../../../utils/assertion-helpers.js';
+import { RoomData, setupMultiRecordingsTestContext, TestContext } from '../../../utils/test-scenarios.js';
+import { MeetRoom } from '../../../../src/typings/ce/room.js';
+import { MeetRecordingInfo, MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
+
+describe('Recordings API Tests', () => {
+	let context: TestContext | null = null;
+	let room: MeetRoom;
+
+	beforeAll(async () => {
+		startTestServer();
+		await deleteAllRecordings();
+	});
+
+	describe('List Recordings Tests', () => {
+		afterEach(async () => {
+			await deleteAllRecordings();
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await deleteAllRooms();
+			context = null;
+		});
+
+		it('should return an empty list of recordings when none exist', async () => {
+			const response = await getAllRecordings();
+			expect(response.status).toBe(200);
+			expectSuccessListRecordingResponse(response, 0, false, false);
+		});
+
+		it('should return a list of recordings', async () => {
+			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			({ room } = context.getRoomByIndex(0)!);
+			const response = await getAllRecordings();
+			expectSuccessListRecordingResponse(response, 1, false, false);
+		});
+
+		it('should filter recordings by roomId', async () => {
+			context = await setupMultiRecordingsTestContext(2, 2, 2, '0s');
+			({ room } = context.getRoomByIndex(0)!);
+			const response = await getAllRecordings({ roomId: room.roomId });
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomId).toBe(room.roomId);
+		});
+
+		it('should return recordings with fields filter applied', async () => {
+			context = await setupMultiRecordingsTestContext(2, 2, 2, '0s');
+			({ room } = context.getRoomByIndex(0)!);
+			const response = await getAllRecordings({ fields: 'roomId,recordingId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			context.rooms.forEach((roomData: RoomData) => {
+				const room = roomData.room;
+				const recording = response.body.recordings.find(
+					(recording: MeetRecordingInfo) => recording.roomId === room.roomId
+				);
+				expect(recording).toBeDefined();
+				expectValidRecordingWithFields(recording, ['roomId', 'recordingId']);
+				expect(recording).toHaveProperty('roomId', room.roomId);
+				expect(recording.recordingId).toContain(room.roomId);
+			});
+		});
+
+		it('should return recordings with pagination', async () => {
+			context = await setupMultiRecordingsTestContext(6, 6, 6, '0s');
+			const rooms = context.rooms;
+			const response = await getAllRecordings({ maxItems: 3 });
+			expectSuccessListRecordingResponse(response, 3, true, true, 3);
+			response.body.recordings.forEach((recording: MeetRecordingInfo, i: number) => {
+				expectValidRecording(
+					recording,
+					rooms[i].recordingId!,
+					rooms[i].room.roomId,
+					MeetRecordingStatus.COMPLETE
+				);
+			});
+
+			const nextPageToken = response.body.pagination.nextPageToken;
+			const nextResponse = await getAllRecordings({ maxItems: 3, nextPageToken });
+
+			expectSuccessListRecordingResponse(nextResponse, 3, false, false, 3);
+			nextResponse.body.recordings.forEach((recording: MeetRecordingInfo, i: number) => {
+				expectValidRecording(
+					recording,
+					rooms[3 + i].recordingId!,
+					rooms[3 + i].room.roomId,
+					MeetRecordingStatus.COMPLETE
+				);
+			});
+		});
+
+		it('should cap maxItems to the maximum allowed (100)', async () => {
+			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			const response = await getAllRecordings({ maxItems: 101 });
+			expectSuccessListRecordingResponse(response, 1, false, false, 100);
+		});
+
+		it('should coerce a floating point number to integer for maxItems', async () => {
+			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			const response = await getAllRecordings({ maxItems: 3.5 });
+			expectSuccessListRecordingResponse(response, 1, false, false, 3);
+		});
+	});
+
+	describe('List Recordings Validation', () => {
+		it('should fail when maxItems is not a number', async () => {
+			const response = await getAllRecordings({ maxItems: 'not-a-number' });
+			expectValidationError(response, 'maxItems', 'Expected number');
+		});
+
+		it('should fail when maxItems is negative', async () => {
+			const response = await getAllRecordings({ maxItems: -5 });
+			expectValidationError(response, 'maxItems', 'must be a positive number');
+		});
+
+		it('should fail when maxItems is zero', async () => {
+			const response = await getAllRecordings({ maxItems: 0 });
+			expectValidationError(response, 'maxItems', 'must be a positive number');
+		});
+
+		it('should fail when fields is not a string', async () => {
+			const response = await getAllRecordings({ fields: { invalid: 'object' } });
+			expectValidationError(response, 'fields', 'Expected string');
+		});
+	});
+});
