@@ -11,9 +11,20 @@ import {
 	OpenViduComponentsUiModule
 } from 'openvidu-components-angular';
 
-import { MeetChatPreferences, MeetRecordingPreferences, MeetVirtualBackgroundPreferences } from '@lib/typings/ce';
+import {
+	MeetChatPreferences,
+	MeetRecordingAccess,
+	MeetRecordingPreferences,
+	MeetVirtualBackgroundPreferences
+} from '@lib/typings/ce';
 
-import { HttpService, WebComponentManagerService, ContextService, RoomService, SessionStorageService } from '../../services';
+import {
+	HttpService,
+	WebComponentManagerService,
+	ContextService,
+	RoomService,
+	SessionStorageService
+} from '../../services';
 import { OpenViduMeetMessage, WebComponentEventType } from 'webcomponent/src/types/message.type';
 
 @Component({
@@ -30,7 +41,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	serverError = '';
 	loading = true;
 	chatPreferences: MeetChatPreferences = { enabled: true };
-	recordingPreferences: MeetRecordingPreferences = { enabled: true };
+	recordingPreferences: MeetRecordingPreferences = {
+		enabled: true,
+		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+	};
 	virtualBackgroundPreferences: MeetVirtualBackgroundPreferences = { enabled: true };
 	featureFlags = {
 		videoEnabled: true,
