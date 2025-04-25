@@ -11,7 +11,7 @@
         security:
             - participantTokenCookie: []
         parameters:
-            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/room-id-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-end-meeting.yaml'
@@ -34,7 +34,7 @@
         security:
             - participantTokenCookie: []
         parameters:
-            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/participant-name.yaml'
         responses:
             '200':

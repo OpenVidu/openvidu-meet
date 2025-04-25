@@ -1,0 +1,7 @@
+name: roomId
+in: query
+required: false
+description: The unique identifier of the room. Specify the room ID to filter recordings by their associated room.
+schema:
+    type: string
+    example: 'room-123'

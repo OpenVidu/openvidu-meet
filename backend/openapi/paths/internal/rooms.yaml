@@ -9,7 +9,7 @@
         security:
             - accessTokenCookie: []
         parameters:
-            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/room-id-path.yaml'
         requestBody:
             $ref: '../../components/requestBodies/internal/update-room-request.yaml'
         responses:
@@ -34,7 +34,7 @@
         tags:
             - Internal API - Rooms
         parameters:
-            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/room-id-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-room-roles.yaml'
@@ -53,7 +53,7 @@
         tags:
             - Internal API - Rooms
         parameters:
-            - $ref: '../../components/parameters/room-id.yaml'
+            - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/secret.yaml'
         responses:
             '200':
