@@ -60,3 +60,5 @@ export const initializeEagerServices = async () => {
 	container.get(RecordingService);
 	await container.get(MeetStorageService).initializeGlobalPreferences();
 };
+
+export { injectable, inject } from 'inversify';
