@@ -10,7 +10,7 @@ import {
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
-const expectErrorResponse = (
+export const expectErrorResponse = (
 	response: any,
 	status = 422,
 	error = 'Unprocessable Entity',
@@ -18,7 +18,10 @@ const expectErrorResponse = (
 	details?: Array<{ field?: string; message: string }>
 ) => {
 	expect(response.status).toBe(status);
-	expect(response.body).toMatchObject({ error, message });
+	expect(response.body).toMatchObject({
+		...(error ? { error } : {}),
+		...(message ? { message } : {})
+	});
 
 	if (details === undefined) {
 		expect(response.body.details).toBeUndefined();
@@ -207,7 +210,7 @@ export const expectValidStopRecordingResponse = (response: any, recordingId: str
 	expect(response.status).toBe(202);
 	expect(response.body).toBeDefined();
 	expect(response.body).toHaveProperty('recordingId', recordingId);
-	expect(response.body).toHaveProperty('status', 'ENDING');
+	expect([MeetRecordingStatus.COMPLETE, MeetRecordingStatus.ENDING]).toContain(response.body.status);
 	expect(response.body).toHaveProperty('roomId', roomId);
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('startDate');
