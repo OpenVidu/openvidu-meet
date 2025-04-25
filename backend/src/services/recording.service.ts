@@ -142,9 +142,6 @@ export class RecordingService {
 				throw errorRecordingNotFound(egressId);
 			}
 
-			// Cancel the recording cleanup timer if it is running
-			this.taskSchedulerService.cancelTask(`${roomId}_recording_timeout`);
-
 			switch (egress.status) {
 				case EgressStatus.EGRESS_ACTIVE:
 					// Everything is fine, the recording can be stopped.
