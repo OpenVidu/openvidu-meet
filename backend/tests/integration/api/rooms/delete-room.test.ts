@@ -8,6 +8,7 @@ import {
 	disconnectFakeParticipants,
 	getRoom,
 	joinFakeParticipant,
+	sleep,
 	startTestServer
 } from '../../../utils/helpers.js';
 
@@ -127,6 +128,8 @@ describe('Room API Tests', () => {
 
 			await disconnectFakeParticipants();
 
+			// Wait for room deletion
+			await sleep('2s');
 			const responseAfterDelete = await getRoom(roomId);
 			expect(responseAfterDelete.status).toBe(404);
 		});
