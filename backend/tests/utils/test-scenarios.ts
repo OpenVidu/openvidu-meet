@@ -1,16 +1,16 @@
 import { MeetRoomHelper } from '../../src/helpers';
 import {
 	createRoom,
-	loginUserAsRole,
 	generateParticipantToken,
 	joinFakeParticipant,
+	loginUserAsRole,
+	sleep,
 	startRecording,
-	stopRecording,
-	sleep
+	stopRecording
 } from './helpers';
 
-import { MeetRoom, UserRole } from '../../src/typings/ce';
 import ms, { StringValue } from 'ms';
+import { MeetRoom, UserRole } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 
 export interface RoomData {

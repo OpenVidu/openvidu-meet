@@ -1,11 +1,16 @@
-import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, startTestServer } from '../../../utils/helpers.js';
-import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
+import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import { changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
+import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
+import {
+	changeSecurityPreferences,
+	createRoom,
+	deleteAllRooms,
+	loginUserAsRole,
+	startTestServer
+} from '../../../utils/helpers.js';
 
 const PARTICIPANTS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`;
 

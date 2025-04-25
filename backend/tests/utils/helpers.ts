@@ -1,25 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import request, { Response } from 'supertest';
-import { Express } from 'express';
-import { createApp, registerDependencies } from '../../src/server.js';
-import {
-	MEET_API_KEY,
-	MEET_USER,
-	MEET_SECRET,
-	MEET_ADMIN_USER,
-	MEET_ADMIN_SECRET,
-	LIVEKIT_API_SECRET,
-	LIVEKIT_API_KEY,
-	MEET_NAME_ID
-} from '../../src/environment.js';
-import { AuthMode, AuthType, MeetRoom, UserRole, MeetRoomOptions } from '../../src/typings/ce/index.js';
 import { expect } from '@jest/globals';
-import INTERNAL_CONFIG from '../../src/config/internal-config.js';
 import { ChildProcess, execSync, spawn } from 'child_process';
-import { container } from '../../src/config/dependency-injector.config.js';
-import { RoomService } from '../../src/services/room.service.js';
-import { RecordingService } from '../../src/services/recording.service.js';
+import { Express } from 'express';
 import ms, { StringValue } from 'ms';
+import request, { Response } from 'supertest';
+import { container } from '../../src/config/index.js';
+import INTERNAL_CONFIG from '../../src/config/internal-config.js';
+import {
+	LIVEKIT_API_KEY,
+	LIVEKIT_API_SECRET,
+	MEET_ADMIN_SECRET,
+	MEET_ADMIN_USER,
+	MEET_API_KEY,
+	MEET_NAME_ID,
+	MEET_SECRET,
+	MEET_USER
+} from '../../src/environment.js';
+import { createApp, registerDependencies } from '../../src/server.js';
+import { RecordingService, RoomService } from '../../src/services/index.js';
+import { AuthMode, AuthType, MeetRoom, MeetRoomOptions, UserRole } from '../../src/typings/ce/index.js';
 
 const CREDENTIALS = {
 	user: {
@@ -51,7 +50,6 @@ export const startTestServer = (): Express => {
 	app = createApp();
 	return app;
 };
-
 
 /**
  * Updates global security preferences
@@ -364,7 +362,7 @@ export const getRecording = async (recordingId: string) => {
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-}
+};
 
 export const stopAllRecordings = async (moderatorCookie: string) => {
 	if (!app) {

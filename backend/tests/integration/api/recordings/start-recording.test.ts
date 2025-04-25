@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -9,9 +10,9 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../utils/helpers.js';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
 
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
+import { MeetRoom } from '../../../../src/typings/ce/room.js';
 import {
 	expectValidationError,
 	expectValidRecordingLocationHeader,
@@ -19,13 +20,12 @@ import {
 	expectValidStopRecordingResponse
 } from '../../../utils/assertion-helpers.js';
 import { setupMultiRoomTestContext, TestContext } from '../../../utils/test-scenarios.js';
-import { MeetRoom } from '../../../../src/typings/ce/room.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
 	let room: MeetRoom, moderatorCookie: string;
 
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
 	});
 

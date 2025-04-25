@@ -1,23 +1,19 @@
-import { describe, it, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, getRooms, startTestServer,  } from '../../../utils/helpers.js';
+import { afterEach, beforeAll, describe, it } from '@jest/globals';
 import ms from 'ms';
+import { MeetRoom } from '../../../../src/typings/ce/index.js';
 import {
 	expectSuccessRoomsResponse,
 	expectValidationError,
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../utils/assertion-helpers.js';
-import { MeetRoom } from '../../../../src/typings/ce/room.js';
+import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../utils/helpers.js';
 
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
-	});
-
-	afterAll(async () => {
-
 	});
 
 	afterEach(async () => {

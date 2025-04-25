@@ -1,12 +1,18 @@
-import request from 'supertest';
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, generateParticipantToken, startTestServer } from '../../../utils/helpers.js';
-import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
-import { MEET_API_KEY } from '../../../../src/environment.js';
+import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { MEET_API_KEY } from '../../../../src/environment.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import { changeSecurityPreferences, deleteAllRooms, loginUserAsRole } from '../../../utils/helpers.js';
+import { AuthMode, MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
+import {
+	changeSecurityPreferences,
+	createRoom,
+	deleteAllRooms,
+	generateParticipantToken,
+	loginUserAsRole,
+	startTestServer
+} from '../../../utils/helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;
@@ -38,7 +44,7 @@ describe('Room API Security Tests', () => {
 				.post(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 				.send({});
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(201);
 		});
 
 		it('should succeed when users cannot create rooms, and user is authenticated as admin', async () => {
@@ -47,7 +53,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send({});
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(201);
 		});
 
 		it('should fail when users cannot create rooms, and user is authenticated as user', async () => {
@@ -75,7 +81,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_PATH).send({});
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(201);
 		});
 
 		it('should succeed when users can create rooms and auth is required, and user is authenticated', async () => {
@@ -85,7 +91,7 @@ describe('Room API Security Tests', () => {
 			});
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send({});
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(201);
 		});
 
 		it('should fail when users can create rooms and auth is required, and user is not authenticated', async () => {
@@ -299,7 +305,10 @@ describe('Room API Security Tests', () => {
 
 	describe('Update Room Preferences Tests', () => {
 		const roomPreferences = {
-			recordingPreferences: { enabled: true },
+			recordingPreferences: {
+				enabled: false,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			},
 			chatPreferences: { enabled: true },
 			virtualBackgroundPreferences: { enabled: true }
 		};

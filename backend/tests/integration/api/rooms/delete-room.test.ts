@@ -1,22 +1,20 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import ms from 'ms';
+import { expectValidRoom } from '../../../utils/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
-	startTestServer,
-	getRoom,
 	deleteRoom,
+	disconnectFakeParticipants,
+	getRoom,
 	joinFakeParticipant,
-	disconnectFakeParticipants
+	startTestServer
 } from '../../../utils/helpers.js';
-import ms from 'ms';
-import { expectValidRoom } from '../../../utils/assertion-helpers.js';
 
 describe('Room API Tests', () => {
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
 	});
-
-	afterAll(async () => {});
 
 	afterEach(async () => {
 		// Remove all rooms created

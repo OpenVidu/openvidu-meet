@@ -1,20 +1,18 @@
-import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
-import { loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
+import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { UserRole } from '../../../../src/typings/ce/index.js';
+import { loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
 describe('Authentication API Tests', () => {
 	let app: Express;
 
-	beforeAll(async () => {
+	beforeAll(() => {
 		app = startTestServer();
 	});
-
-	afterAll(async () => {});
 
 	describe('Login Tests', () => {
 		it('should successfully login with valid credentials', async () => {

@@ -1,28 +1,24 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import ms from 'ms';
+import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import {
 	createRoom,
 	deleteAllRooms,
-	startTestServer,
+	disconnectFakeParticipants,
 	getRoom,
-	sleep,
+	getRooms,
 	joinFakeParticipant,
 	runRoomGarbageCollector,
-	disconnectFakeParticipants,
-	getRooms
+	sleep,
+	startTestServer
 } from '../../../utils/helpers.js';
-import ms from 'ms';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
 
 describe('Room Garbage Collector Tests', () => {
-	beforeAll(async () => {
+	beforeAll(() => {
 		setInternalConfig({
 			MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '0s'
 		});
 		startTestServer();
-	});
-
-	afterAll(async () => {
-
 	});
 
 	afterEach(async () => {

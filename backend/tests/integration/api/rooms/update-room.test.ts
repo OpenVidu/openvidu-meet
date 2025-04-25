@@ -1,12 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, startTestServer, getRoom, updateRoomPreferences } from '../../../utils/helpers.js';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { createRoom, deleteAllRooms, getRoom, startTestServer, updateRoomPreferences } from '../../../utils/helpers.js';
 
 describe('Room API Tests', () => {
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
 	});
-
-	afterAll(async () => {});
 
 	afterEach(async () => {
 		// Remove all rooms created
@@ -18,7 +17,10 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({
 				roomIdPrefix: 'update-test',
 				preferences: {
-					recordingPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: true }
 				}
@@ -26,7 +28,10 @@ describe('Room API Tests', () => {
 
 			// Update the room preferences
 			const updatedPreferences = {
-				recordingPreferences: { enabled: false },
+				recordingPreferences: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN
+				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
@@ -49,7 +54,10 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({
 				roomIdPrefix: 'partial-update',
 				preferences: {
-					recordingPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: true }
 				}
@@ -57,7 +65,10 @@ describe('Room API Tests', () => {
 
 			// Update only one preference
 			const partialPreferences = {
-				recordingPreferences: { enabled: false },
+				recordingPreferences: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				},
 				chatPreferences: { enabled: true },
 				virtualBackgroundPreferences: { enabled: true }
 			};
@@ -83,7 +94,10 @@ describe('Room API Tests', () => {
 
 			// Invalid preferences (missing required fields)
 			const invalidPreferences = {
-				recordingPreferences: { enabled: false },
+				recordingPreferences: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				},
 				// Missing chatPreferences
 				virtualBackgroundPreferences: { enabled: false }
 			};
@@ -102,7 +116,10 @@ describe('Room API Tests', () => {
 
 			// Invalid preferences (wrong types)
 			const invalidPreferences = {
-				recordingPreferences: { enabled: 'true' }, // String instead of boolean
+				recordingPreferences: {
+					enabled: 'true', // String instead of boolean
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
@@ -131,7 +148,10 @@ describe('Room API Tests', () => {
 			const invalidRoomId = '!@#$%^&*()';
 
 			const preferences = {
-				recordingPreferences: { enabled: false },
+				recordingPreferences: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
@@ -146,7 +166,10 @@ describe('Room API Tests', () => {
 			const nonExistentRoomId = 'non-existent-room';
 
 			const preferences = {
-				recordingPreferences: { enabled: false },
+				recordingPreferences: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};

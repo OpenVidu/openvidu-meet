@@ -1,6 +1,7 @@
 import { expect } from '@jest/globals';
 import INTERNAL_CONFIG from '../../src/config/internal-config';
-import { MeetRecordingStatus, MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
+import { MeetRecordingAccess, MeetRecordingStatus, MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
+
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
 const expectErrorResponse = (
@@ -111,7 +112,10 @@ export const expectValidRoom = (
 		expect(room.preferences).toEqual(preferences);
 	} else {
 		expect(room.preferences).toEqual({
-			recordingPreferences: { enabled: true },
+			recordingPreferences: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			},
 			chatPreferences: { enabled: true },
 			virtualBackgroundPreferences: { enabled: true }
 		});

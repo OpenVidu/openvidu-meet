@@ -1,19 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from '@jest/globals';
-import { createRoom, deleteAllRooms, startTestServer, getRoom } from '../../../utils/helpers.js';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
+import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
 import {
 	expectSuccessRoomResponse,
 	expectValidationError,
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../utils/assertion-helpers.js';
+import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../utils/helpers.js';
 
 describe('Room API Tests', () => {
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
 	});
-
-	afterAll(async () => {});
 
 	afterEach(async () => {
 		// Remove all rooms created
@@ -36,7 +35,10 @@ describe('Room API Tests', () => {
 			const payload = {
 				roomIdPrefix: 'custom-prefs',
 				preferences: {
-					recordingPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: false }
 				}

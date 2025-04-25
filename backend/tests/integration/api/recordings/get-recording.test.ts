@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -9,10 +9,10 @@ import {
 } from '../../../utils/helpers.js';
 
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
+import { MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
+import { MeetRoom } from '../../../../src/typings/ce/room.js';
 import { expectValidationError, expectValidGetRecordingResponse } from '../../../utils/assertion-helpers.js';
 import { setupMultiRecordingsTestContext, TestContext } from '../../../utils/test-scenarios.js';
-import { MeetRoom } from '../../../../src/typings/ce/room.js';
-import { MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

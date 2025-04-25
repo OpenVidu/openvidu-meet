@@ -1,6 +1,10 @@
-import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
+import request from 'supertest';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { MEET_API_KEY } from '../../../../src/environment.js';
+import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
+import { UserRole } from '../../../../src/typings/ce/index.js';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -8,10 +12,6 @@ import {
 	loginUserAsRole,
 	startTestServer
 } from '../../../utils/helpers.js';
-import { MEET_API_KEY } from '../../../../src/environment.js';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { UserRole } from '../../../../src/typings/ce/index.js';
-import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
 const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;

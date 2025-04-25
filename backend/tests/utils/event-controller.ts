@@ -1,4 +1,4 @@
-import { container } from '../../src/config/dependency-injector.config';
+import { container } from '../../src/config/index.js';
 import { SystemEventType } from '../../src/models/system-event.model.js';
 import { SystemEventService } from '../../src/services/index.js';
 

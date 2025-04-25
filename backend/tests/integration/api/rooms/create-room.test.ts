@@ -1,11 +1,11 @@
-import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
-import { createRoom, deleteAllRooms, loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
-import { UserRole } from '../../../../src/typings/ce/user.js';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import ms from 'ms';
+import request from 'supertest';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
 import { expectValidRoom } from '../../../utils/assertion-helpers.js';
+import { createRoom, deleteAllRooms, loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 
@@ -46,7 +46,10 @@ describe('Room API Tests', () => {
 				roomIdPrefix: ' =Example Room&/ ',
 				autoDeletionDate: validAutoDeletionDate,
 				preferences: {
-					recordingPreferences: { enabled: false },
+					recordingPreferences: {
+						enabled: false,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
 					chatPreferences: { enabled: false },
 					virtualBackgroundPreferences: { enabled: true }
 				}
@@ -160,7 +163,10 @@ describe('Room API Tests', () => {
 				roomIdPrefix: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
 				preferences: {
-					recordingPreferences: { enabled: 'yes' }, // invalid boolean
+					recordingPreferences: {
+						enabled: 'yes', // invalid boolean
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: true }
 				}
