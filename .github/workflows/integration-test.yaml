@@ -112,7 +112,6 @@ jobs:
   test-security:
     name: Security API Tests
     runs-on: ov-actions-runner
-    if: false
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
