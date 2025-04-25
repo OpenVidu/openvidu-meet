@@ -3,13 +3,13 @@ properties:
     isTruncated:
         type: boolean
         description: >
-            Indicates if there are more recordings to retrieve.
-            If true, use the `nextPageToken` to fetch the next set of recordings.
+            Indicates if there are more elements to retrieve.
+            If true, use the `nextPageToken` to fetch the next set of elements.
     nextPageToken:
         type: [string, 'null']
-        description: The token to retrieve the next page of recordings.
+        description: The token to retrieve the next page of elements.
     maxItems:
         type: integer
         description: >
-            Maximum number of rooms returned in a single response page.
+            Maximum number of elements returned in a single response page.
             Corresponds to the `maxItems` query parameter in the request.
