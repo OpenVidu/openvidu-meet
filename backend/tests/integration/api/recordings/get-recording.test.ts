@@ -37,8 +37,21 @@ describe('Recording API Tests', () => {
 		it('should return 200 when recording exists', async () => {
 			const response = await getRecording(recordingId);
 
-			console.log(response.body);
 			expectValidGetRecordingResponse(response, recordingId, room.roomId, MeetRecordingStatus.COMPLETE, 1);
+		});
+
+		it('should get an ACTIVE recording status', async () => {
+			const contextAux = await setupMultiRecordingsTestContext(1, 1, 0, '0s');
+			const {
+				room: roomAux,
+				recordingId: recordingIdAux = '',
+				moderatorCookie: moderatorCookieAux
+			} = contextAux.getRoomByIndex(0)!;
+			const response = await getRecording(recordingIdAux);
+
+			expectValidGetRecordingResponse(response, recordingIdAux, roomAux.roomId, MeetRecordingStatus.ACTIVE);
+
+			await stopAllRecordings(moderatorCookieAux);
 		});
 
 		it('should return 404 when recording does not exist', async () => {

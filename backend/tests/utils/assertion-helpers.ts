@@ -1,6 +1,12 @@
 import { expect } from '@jest/globals';
 import INTERNAL_CONFIG from '../../src/config/internal-config';
-import { MeetRecordingAccess, MeetRecordingStatus, MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
+import {
+	MeetRecordingAccess,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRoom,
+	MeetRoomPreferences
+} from '../../src/typings/ce';
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
@@ -133,9 +139,32 @@ export const expectValidRoom = (
 	}
 };
 
+export const expectValidRecording = (
+	recording: MeetRecordingInfo,
+	recordingId: string,
+	roomId: string,
+	status: MeetRecordingStatus
+) => {
+	expect(recording).toBeDefined();
+	expect(recording.recordingId).toBeDefined();
+	expect(recording.roomId).toBeDefined();
+	expect(recording.recordingId).toBe(recordingId);
+	expect(recording.roomId).toBe(roomId);
+	expect(recording.startDate).toBeDefined();
+	expect(recording.status).toBeDefined();
+	expect(recording.status).toBe(status);
+	expect(recording.filename).toBeDefined();
+	expect(recording.details).toBeDefined();
+};
+
 export const expectValidRoomWithFields = (room: MeetRoom, fields: string[] = []) => {
 	expect(room).toBeDefined();
 	expectObjectFields(room, fields);
+};
+
+export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: string[] = []) => {
+	expect(rec).toBeDefined();
+	expectObjectFields(rec, fields);
 };
 
 const expectObjectFields = (obj: any, present: string[] = [], absent: string[] = []) => {
@@ -198,29 +227,35 @@ export const expectValidGetRecordingResponse = (
 
 	expect(body).toMatchObject({ recordingId, roomId });
 
+	const isRecFinished =
+		status &&
+		(status === MeetRecordingStatus.COMPLETE ||
+			status === MeetRecordingStatus.ABORTED ||
+			status === MeetRecordingStatus.FAILED ||
+			status === MeetRecordingStatus.LIMIT_REACHED);
 	expect(body).toEqual(
 		expect.objectContaining({
-			duration: expect.any(Number),
-			startDate: expect.any(Number),
-			endDate: expect.any(Number),
-			size: expect.any(Number),
+			...(isRecFinished ? { duration: expect.any(Number) } : {}),
+			...(isRecFinished ? { startDate: expect.any(Number) } : {}),
+			...(isRecFinished ? { endDate: expect.any(Number) } : {}),
+			...(isRecFinished ? { size: expect.any(Number) } : {}),
 			filename: expect.any(String),
-			details: expect.any(String)
+			...(isRecFinished ? { details: expect.any(Number) } : {})
 		})
 	);
 
-	expect(body.duration).toBeGreaterThanOrEqual(0);
 	expect(body.status).toBeDefined();
 
 	if (status !== undefined) {
 		expect(body.status).toBe(status);
-	} else {
-		expect(body.status).toBe('COMPLETE');
 	}
 
-	expect(body.endDate).toBeGreaterThanOrEqual(body.startDate);
+	if (isRecFinished) {
+		expect(body.endDate).toBeGreaterThanOrEqual(body.startDate);
+		expect(body.duration).toBeGreaterThanOrEqual(0);
+	}
 
-	if (maxSecDuration) {
+	if (isRecFinished && maxSecDuration) {
 		expect(body.duration).toBeLessThanOrEqual(maxSecDuration);
 
 		const computedSec = (body.endDate - body.startDate) / 1000;
