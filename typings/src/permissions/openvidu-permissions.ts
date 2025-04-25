@@ -6,12 +6,14 @@ export interface OpenViduMeetPermissions {
 
     // Permissions for recording
     canRecord: boolean; // Can start/stop recording the room.
-    // canWatchRecording?: boolean; // Can watch the recording.
-    // canDownloadRecording?: boolean; // Can download the recording.
-    // canDeleteRecording?: boolean; // Can delete the recording.
 
     // Permissions for chat
     canChat: boolean; // Can send chat messages in the room.
 
     canChangeVirtualBackground: boolean; // Can change the virtual background.
+}
+
+export interface RecordingPermissions {
+    canRetrieveRecordings: boolean; // Can list and play recordings.
+    canDeleteRecordings: boolean; // Can delete recordings.
 }

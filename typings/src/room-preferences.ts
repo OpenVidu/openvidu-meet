@@ -2,19 +2,30 @@
  * Interface representing the preferences for a room.
  */
 export interface MeetRoomPreferences {
-	chatPreferences: MeetChatPreferences;
-	recordingPreferences: MeetRecordingPreferences;
-	virtualBackgroundPreferences: MeetVirtualBackgroundPreferences;
+    chatPreferences: MeetChatPreferences;
+    recordingPreferences: MeetRecordingPreferences;
+    virtualBackgroundPreferences: MeetVirtualBackgroundPreferences;
 }
+
 /**
  * Interface representing the preferences for recording.
  */
 export interface MeetRecordingPreferences {
-	enabled: boolean;
+    enabled: boolean;
+    allowAccessTo: MeetRecordingAccess;
 }
+
+export const enum MeetRecordingAccess {
+    ADMIN = 'admin', // Only admins can access the recording
+    ADMIN_MODERATOR = 'admin-moderator', // Admins and moderators can access
+    ADMIN_MODERATOR_PUBLISHER = 'admin-moderator-publisher', // Admins, moderators and publishers can access
+    PUBLIC = 'public' // Everyone can access
+}
+
 export interface MeetChatPreferences {
-	enabled: boolean;
+    enabled: boolean;
 }
+
 export interface MeetVirtualBackgroundPreferences {
-	enabled: boolean;
+    enabled: boolean;
 }
