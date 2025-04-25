@@ -104,6 +104,9 @@ openvidu/
 │       │   └── room-123/
 │       │       └── {egressId}/
 │       │           └── {uid}.json
+|       |   └── .room_metadata/
+│       │       └── room-123/
+│       │           └── room_metadata.json
 │       └── room-123/
 │           └── room-123--{uid}.mp4
 ```
