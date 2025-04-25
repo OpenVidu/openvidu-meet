@@ -168,22 +168,29 @@ export class RecordingService {
 	}
 
 	/**
-	 * Deletes a recording from the S3 bucket based on the provided egress ID.
+	 * Deletes a recording and its associated metadata from the S3 bucket.
+	 * If this was the last recording for this room, the room_metadata.json file is also deleted.
 	 *
-	 * The recording is deleted only if it is not in progress state (STARTING, ACTIVE, ENDING).
-	 * @param recordingId - The egress ID of the recording.
+	 * @param recordingId - The unique identifier of the recording to delete.
+	 * @returns The recording information that was deleted.
 	 */
 	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
 		try {
 			// Get the recording metada and recording info from the S3 bucket
-			const { filesToDelete, recordingInfo } = await this.getDeletableRecordingData(recordingId);
+			const { filesToDelete, recordingInfo } = await this.getDeletableRecordingFiles(recordingId);
+			const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
-			const filesToDeleteArray = Array.from(filesToDelete);
-			this.logger.verbose(
-				`Deleting recording from S3. Files: ${filesToDeleteArray.join(', ')} for recordingId ${recordingId}`
-			);
-			await this.s3Service.deleteObjects(filesToDeleteArray);
-			this.logger.info(`Deletion successful for recording ${recordingId}`);
+			await this.s3Service.deleteObjects(Array.from(filesToDelete));
+			this.logger.info(`Successfully deleted ${recordingId}`);
+
+			const roomMetadataFilePath = await this.shouldDeleteRoomMetadata(roomId);
+
+			if (roomMetadataFilePath) {
+				await this.s3Service.deleteObjects([
+					`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`
+				]);
+				this.logger.verbose(`Successfully deleted room metadata for room ${roomId}`);
+			}
 
 			return recordingInfo;
 		} catch (error) {
@@ -199,38 +206,89 @@ export class RecordingService {
 	 * @param recordingIds Array of recording identifiers.
 	 * @returns An array with the MeetRecordingInfo of the successfully deleted recordings.
 	 */
-	async bulkDeleteRecordings(
+	async bulkDeleteRecordingsAndAssociatedFiles(
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
-		let keysToDelete: Set<string> = new Set<string>();
+		const allFilesToDelete: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
+		const roomsToCheck: Set<string> = new Set();
 
+		// Check if the recording is in progress
 		for (const recordingId of recordingIds) {
 			try {
-				const { filesToDelete } = await this.getDeletableRecordingData(recordingId, keysToDelete);
-				keysToDelete = new Set([...keysToDelete, ...filesToDelete]);
+				const { filesToDelete } = await this.getDeletableRecordingFiles(recordingId);
+				filesToDelete.forEach((file) => allFilesToDelete.add(file));
 				deletedRecordings.add(recordingId);
-				this.logger.verbose(`BulkDelete: Prepared recording ${recordingId} for deletion.`);
+
+				// Track the roomId for checking if the room metadata file should be deleted
+				const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+				roomsToCheck.add(roomId);
 			} catch (error) {
 				this.logger.error(`BulkDelete: Error processing recording ${recordingId}: ${error}`);
 				notDeletedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
 			}
 		}
 
-		if (keysToDelete.size > 0) {
-			try {
-				await this.s3Service.deleteObjects(Array.from(keysToDelete));
-				this.logger.info(`BulkDelete: Successfully deleted ${keysToDelete.size} objects from S3.`);
-			} catch (error) {
-				this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
-				throw error;
-			}
-		} else {
+		if (allFilesToDelete.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
+			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+		}
+
+		// Delete recordings and its metadata from S3
+		try {
+			await this.s3Service.deleteObjects(Array.from(allFilesToDelete));
+			this.logger.info(`BulkDelete: Successfully deleted ${allFilesToDelete.size} objects from S3.`);
+		} catch (error) {
+			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
+			throw error;
+		}
+
+		// Check if the room metadata file should be deleted
+		const roomMetadataToDelete = [];
+
+		for (const roomId of roomsToCheck) {
+			const roomMetadataFilePath = await this.shouldDeleteRoomMetadata(roomId);
+
+			if (roomMetadataFilePath) {
+				roomMetadataToDelete.push(roomMetadataFilePath);
+			}
+		}
+
+		try {
+			this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomsToCheck}`);
+			await this.s3Service.deleteObjects(roomMetadataToDelete);
+			this.logger.verbose(`BulkDelete: Successfully deleted ${allFilesToDelete.size} room metadata files.`);
+		} catch (error) {
+			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
+			throw error;
 		}
 
 		return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+	}
+
+	/**
+	 * Checks if a room's metadata file should be deleted by determining if there
+	 * are any remaining recording metadata files for the room.
+	 *
+	 * @param roomId - The identifier of the room to check
+	 * @returns The full path to the room metadata file if it should be deleted, or null otherwise
+	 */
+	protected async shouldDeleteRoomMetadata(roomId: string): Promise<string | null> {
+		try {
+			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
+			const { Contents } = await this.s3Service.listObjectsPaginated(metadataPrefix);
+
+			// If no metadata files exist or the list is empty, the room metadata should be deleted
+			if (!Contents || Contents.length === 0) {
+				return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
+			}
+
+			return null;
+		} catch (error) {
+			this.logger.warn(`Error checking room metadata for deletion (room ${roomId}): ${error}`);
+			return null;
+		}
 	}
 
 	/**
@@ -396,22 +454,14 @@ export class RecordingService {
 	 *
 	 * @param recordingId - The unique identifier of the recording egress.
 	 */
-	protected async getDeletableRecordingData(
-		recordingId: string,
-		filesAlreadyAddedForDeletion: Set<string> = new Set<string>()
+	protected async getDeletableRecordingFiles(
+		recordingId: string
 	): Promise<{ filesToDelete: Set<string>; recordingInfo: MeetRecordingInfo }> {
 		const { metadataFilePath, recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
-		const newFilesToDelete: Set<string> = new Set();
-		newFilesToDelete.add(metadataFilePath);
+		const filesToDelete: Set<string> = new Set();
 
 		// Validate the recording status
-		if (
-			recordingInfo.status === MeetRecordingStatus.STARTING ||
-			recordingInfo.status === MeetRecordingStatus.ACTIVE ||
-			recordingInfo.status === MeetRecordingStatus.ENDING
-		) {
-			throw errorRecordingNotStopped(recordingId);
-		}
+		if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
 
 		const filename = RecordingHelper.extractFilename(recordingInfo);
 
@@ -419,21 +469,10 @@ export class RecordingService {
 			throw internalError(`Error extracting path from recording ${recordingId}`);
 		}
 
-		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
-		newFilesToDelete.add(recordingPath);
+		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${filename}`;
+		filesToDelete.add(recordingPath).add(metadataFilePath);
 
-		// Get room_metadata.json file path under recordings bucket if it is the only file remaining in the room's metadata directory
-		const roomMetadataFilePath = await this.getRoomMetadataFilePathIfOnlyRemaining(
-			recordingInfo.roomId,
-			metadataFilePath,
-			Array.from(new Set([...filesAlreadyAddedForDeletion, ...newFilesToDelete]))
-		);
-
-		if (roomMetadataFilePath) {
-			newFilesToDelete.add(roomMetadataFilePath);
-		}
-
-		return { filesToDelete: newFilesToDelete, recordingInfo };
+		return { filesToDelete, recordingInfo };
 	}
 
 	protected async getMeetRecordingInfoFromMetadata(
@@ -552,71 +591,6 @@ export class RecordingService {
 
 			// Reject the REST request with a timeout error.
 			rejectRequest(errorRecordingStartTimeout(roomId));
-		}
-	}
-
-	/**
-	 * Determines if the room_metadata.json file would be the only file remaining in a room's metadata
-	 * directory after specified files are deleted.
-	 *
-	 * This method examines the contents of a room's metadata directory in S3 storage and checks whether,
-	 * after the deletion of specified files, only the room_metadata.json file would remain. The method
-	 * handles both single file deletion and bulk deletion scenarios.
-	 *
-	 * @param roomId - The identifier of the room whose metadata directory is being checked
-	 * @param metadataFilePath - The full path of the metadata file being considered for deletion
-	 * @param filesToDeleteArray - Optional array of file paths that are planned for deletion
-	 *
-	 * @returns The path to the room_metadata.json file if it would be the only remaining file after deletion,
-	 *          or null if multiple files would remain or if an error occurs during the process
-	 */
-	protected async getRoomMetadataFilePathIfOnlyRemaining(
-		roomId: string,
-		metadataFilePath: string,
-		filesToDeleteArray: string[] = []
-	): Promise<string | null> {
-		try {
-			// Get metadata directory contents for the room
-			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
-			const { Contents } = await this.s3Service.listObjectsPaginated(metadataPrefix);
-
-			if (!Contents || Contents.length === 0) return null;
-
-			const metadataFilesToDelete = filesToDeleteArray.filter((file) => file.includes(`/.metadata/${roomId}/`));
-
-			if (metadataFilesToDelete.length > 0) {
-				// Handle bulk deletion case
-
-				// Find files that will remain after deletion
-				const remainingFiles = Contents.filter(
-					(item) => item.Key && !metadataFilesToDelete.some((deleteFile) => item.Key!.includes(deleteFile))
-				).map((item) => item.Key!);
-
-				// If only secrets.json remains, return its path
-				if (remainingFiles.length === 1 && remainingFiles[0].endsWith('room_metadata.json')) {
-					return remainingFiles[0];
-				}
-			} else {
-				// Handle single deletion case
-
-				// For single deletion, we expect exactly 2 files (metadata and secrets.json)
-				if (Contents.length !== 2) return null;
-
-				// Get the metadata file's basename
-				const metadataBaseName = metadataFilePath.split('/').pop();
-
-				// Find any file that is not the metadata file being deleted
-				const otherFiles = Contents.filter((item) => !item.Key?.endsWith(metadataBaseName || ''));
-
-				// If the only other file is secrets.json, return its path
-				if (otherFiles.length === 1 && otherFiles[0].Key?.endsWith('room_metadata.json')) {
-					return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
-				}
-			}
-
-			return null;
-		} catch (error) {
-			return null;
 		}
 	}
 

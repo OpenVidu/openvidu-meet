@@ -67,7 +67,7 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	try {
 		// TODO: Check role to determine if the request is from an admin or a participant
 		const recordingIdsArray = (recordingIds as string).split(',');
-		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordings(recordingIdsArray);
+		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(recordingIdsArray);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && notDeleted.length === 0) {

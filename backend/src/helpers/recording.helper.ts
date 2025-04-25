@@ -44,6 +44,17 @@ export class RecordingHelper {
 		return fileResults.length > 0 && streamResults.length === 0;
 	}
 
+	static canBeDeleted(recordingInfo: MeetRecordingInfo): boolean {
+		const { status } = recordingInfo;
+		const isFinished = [
+			MeetRecordingStatus.COMPLETE,
+			MeetRecordingStatus.FAILED,
+			MeetRecordingStatus.ABORTED,
+			MeetRecordingStatus.LIMIT_REACHED
+		].includes(status);
+		return isFinished;
+	}
+
 	static extractOpenViduStatus(status: EgressStatus | undefined): MeetRecordingStatus {
 		switch (status) {
 			case EgressStatus.EGRESS_STARTING:

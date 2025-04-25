@@ -253,7 +253,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 
 	async getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null> {
 		try {
-			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
+			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
 			const roomMetadata = await this.getFromS3<Partial<R>>(filePath);
 
 			if (!roomMetadata) {
@@ -280,7 +280,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 */
 	async archiveRoomMetadata(roomId: string): Promise<void> {
 		try {
-			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/room_metadata.json`;
+			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
 			const fileExists = await this.s3Service.exists(filePath);
 
 			if (fileExists) {
