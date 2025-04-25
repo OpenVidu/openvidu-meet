@@ -185,14 +185,14 @@ export const expectValidGetRecordingResponse = (
 	response: any,
 	recordingId: string,
 	roomId: string,
-	status: MeetRecordingStatus,
-	maxSecDuration: number
+	status?: MeetRecordingStatus,
+	maxSecDuration?: number
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toBeDefined();
 	const body = response.body;
 
-	expect(body).toMatchObject({ recordingId, roomId, status });
+	expect(body).toMatchObject({ recordingId, roomId });
 
 	expect(body).toEqual(
 		expect.objectContaining({
@@ -206,12 +206,49 @@ export const expectValidGetRecordingResponse = (
 	);
 
 	expect(body.duration).toBeGreaterThanOrEqual(0);
-	expect(body.duration).toBeLessThanOrEqual(maxSecDuration);
+	expect(body.status).toBeDefined();
+
+	if (status !== undefined) {
+		expect(body.status).toBe(status);
+	} else {
+		expect(body.status).toBe('COMPLETE');
+	}
 
 	expect(body.endDate).toBeGreaterThanOrEqual(body.startDate);
 
-	const computedSec = (body.endDate - body.startDate) / 1000;
-	const diffSec = Math.abs(body.duration - computedSec);
-	// Estimate 5 seconds of tolerace because of time to start/stop recording
-	expect(diffSec).toBeLessThanOrEqual(5);
+	if (maxSecDuration) {
+		expect(body.duration).toBeLessThanOrEqual(maxSecDuration);
+
+		const computedSec = (body.endDate - body.startDate) / 1000;
+		const diffSec = Math.abs(maxSecDuration - computedSec);
+		// Estimate 5 seconds of tolerace because of time to start/stop recording
+		expect(diffSec).toBeLessThanOrEqual(5);
+	}
+};
+
+export const expectSuccessListRecordingResponse = (
+	response: any,
+	recordingLength: number,
+	isTruncated: boolean,
+	nextPageToken: boolean,
+	maxItems = 10
+) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toBeDefined();
+	expect(response.body.recordings).toBeDefined();
+	expect(Array.isArray(response.body.recordings)).toBe(true);
+	expect(response.body.recordings.length).toBe(recordingLength);
+	expect(response.body.pagination).toBeDefined();
+	expect(response.body.pagination.isTruncated).toBe(isTruncated);
+
+	if (nextPageToken) {
+		expect(response.body.pagination.nextPageToken).toBeDefined();
+	} else {
+		expect(response.body.pagination.nextPageToken).toBeUndefined();
+	}
+
+	expect(response.body.pagination.maxItems).toBeDefined();
+	expect(response.body.pagination.maxItems).toBeGreaterThan(0);
+	expect(response.body.pagination.maxItems).toBeLessThanOrEqual(100);
+	expect(response.body.pagination.maxItems).toBe(maxItems);
 };

@@ -3,11 +3,14 @@ import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
+	startRecording,
 	startTestServer,
 	stopRecording
 } from '../../../utils/helpers';
 import { setupMultiRecordingsTestContext } from '../../../utils/test-scenarios';
-import { expectValidationError } from '../../../utils/assertion-helpers';
+import { expectValidationError, expectValidStartRecordingResponse } from '../../../utils/assertion-helpers';
+import { container } from '../../../../src/config/dependency-injector.config';
+import { MeetStorageService } from '../../../../src/services';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -115,6 +118,53 @@ describe('Recording API Tests', () => {
 
 			expect(deleteResponse.status).toBe(204);
 			expect(deleteResponse.body).toStrictEqual({});
+		});
+
+		it('should delete room metadata when deleting the last recording', async () => {
+			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
+			// Create two recordings in the same room
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			const { room, recordingId: firstRecordingId, moderatorCookie } = testContext.rooms[0];
+
+			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
+
+			expect(roomMetadata).toBeDefined();
+			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.publisherRoomUrl).toContain(room.roomId);
+
+			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
+
+			expect(roomMetadata).toBeDefined();
+			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.publisherRoomUrl).toContain(room.roomId);
+
+			const response = await startRecording(room.roomId, moderatorCookie);
+			console.log('Start recording response:', response.body);
+			expectValidStartRecordingResponse(response, room.roomId);
+			const secondRecordingId = response.body.recordingId;
+
+			await stopRecording(secondRecordingId, moderatorCookie);
+			// Delete first recording - room metadata should remain
+			const bulkResponse = await bulkDeleteRecordings([firstRecordingId, secondRecordingId]);
+			expect(bulkResponse.status).toBe(204);
+
+			// // Verify second recording still exists
+			// const secondRecordingResponse = await getRecording(secondRecordingId);
+			// console.log('Second recording response:', secondRecordingId);
+			// console.log('Second recording response:', secondRecordingResponse.body);
+			// expectValidGetRecordingResponse(
+			// 	secondRecordingResponse,
+			// 	secondRecordingId,
+			// 	room.roomId,
+			// 	MeetRecordingStatus.COMPLETE,
+			// 	3
+			// );
+
+			// // Delete second recording - room metadata should be deleted
+			// await bulkDeleteRecordings([secondRecordingId]);
+
+			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
+			expect(roomMetadata).toBe(null);
 		});
 	});
 
