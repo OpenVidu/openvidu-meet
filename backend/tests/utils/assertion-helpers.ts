@@ -235,12 +235,15 @@ export const expectValidGetRecordingResponse = (
 			status === MeetRecordingStatus.LIMIT_REACHED);
 	expect(body).toEqual(
 		expect.objectContaining({
+			recordingId: expect.stringMatching(new RegExp(`^${recordingId}$`)),
+			roomId: expect.stringMatching(new RegExp(`^${roomId}$`)),
+			...(isRecFinished ? { status: expect.any(String) } : {}),
 			...(isRecFinished ? { duration: expect.any(Number) } : {}),
 			...(isRecFinished ? { startDate: expect.any(Number) } : {}),
 			...(isRecFinished ? { endDate: expect.any(Number) } : {}),
 			...(isRecFinished ? { size: expect.any(Number) } : {}),
 			filename: expect.any(String),
-			...(isRecFinished ? { details: expect.any(Number) } : {})
+			...(isRecFinished ? { details: expect.any(String) } : {})
 		})
 	);
 
