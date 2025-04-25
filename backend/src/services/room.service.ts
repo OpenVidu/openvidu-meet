@@ -1,19 +1,29 @@
-import { uid as secureUid } from 'uid/secure';
-import { inject, injectable } from '../config/dependency-injector.config.js';
+import {
+	MeetRecordingAccess,
+	MeetRoom,
+	MeetRoomFilters,
+	MeetRoomOptions,
+	MeetRoomPreferences,
+	ParticipantRole,
+	RecordingPermissions
+} from '@typings-ce';
+import { inject, injectable } from 'inversify';
 import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
-import { LoggerService } from './logger.service.js';
-import { LiveKitService } from './livekit.service.js';
-import { MeetStorageService } from './storage/storage.service.js';
-import { MeetRoom, MeetRoomFilters, MeetRoomOptions, MeetRoomPreferences, ParticipantRole } from '@typings-ce';
-import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { SystemEventService } from './system-event.service.js';
-import { IScheduledTask, TaskSchedulerService } from './task-scheduler.service.js';
-import { errorInvalidRoomSecret, internalError } from '../models/error.model.js';
-import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
+import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
-import { MEET_NAME_ID } from '../environment.js';
-import { UtilsHelper } from '../helpers/utils.helper.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_NAME_ID } from '../environment.js';
+import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
+import { errorInvalidRoomSecret, errorRoomNotFoundOrEmptyRecordings, internalError } from '../models/error.model.js';
+import {
+	IScheduledTask,
+	LiveKitService,
+	LoggerService,
+	MeetStorageService,
+	SystemEventService,
+	TaskSchedulerService,
+	TokenService
+} from './index.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -28,7 +38,8 @@ export class RoomService {
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
-		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService
+		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
+		@inject(TokenService) protected tokenService: TokenService
 	) {
 		const roomGarbageCollectorTask: IScheduledTask = {
 			name: 'roomGarbageCollector',
@@ -235,6 +246,10 @@ export class RoomService {
 	 */
 	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
 		const room = await this.getMeetRoom(roomId);
+		return this.getRoomRoleBySecretFromRoom(room, secret);
+	}
+
+	protected getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
 		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
@@ -243,8 +258,51 @@ export class RoomService {
 			case publisherSecret:
 				return ParticipantRole.PUBLISHER;
 			default:
-				throw errorInvalidRoomSecret(roomId, secret);
+				throw errorInvalidRoomSecret(room.roomId, secret);
 		}
+	}
+
+	/**
+	 * Generates a token with recording permissions for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the room for which the recording token is being generated.
+	 * @param secret - The secret associated with the room, used to determine the user's role.
+	 * @returns A promise that resolves to the generated recording token as a string.
+	 * @throws An error if the room with the given `roomId` is not found.
+	 */
+	async generateRecordingToken(roomId: string, secret: string): Promise<string> {
+		const room = await this.storageService.getArchivedRoomMetadata(roomId);
+
+		if (!room) {
+			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
+			throw errorRoomNotFoundOrEmptyRecordings(roomId);
+		}
+
+		const role = this.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);
+		const permissions = this.getRecordingPermissions(room, role);
+		return await this.tokenService.generateRecordingToken(roomId, role, permissions);
+	}
+
+	protected getRecordingPermissions(room: Partial<MeetRoom>, role: ParticipantRole): RecordingPermissions {
+		const recordingAccess = room.preferences!.recordingPreferences.allowAccessTo;
+
+		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
+		const canDeleteRecordings = role === ParticipantRole.MODERATOR && recordingAccess !== MeetRecordingAccess.ADMIN;
+
+		/* A participant can retrieve recordings if
+			- they can delete recordings
+			- the recording access is public
+			- they are a publisher and the recording access includes publishers
+		*/
+		const canRetrieveRecordings =
+			canDeleteRecordings ||
+			recordingAccess === MeetRecordingAccess.PUBLIC ||
+			(role === ParticipantRole.PUBLISHER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER);
+
+		return {
+			canRetrieveRecordings,
+			canDeleteRecordings
+		};
 	}
 
 	async sendRoomStatusSignalToOpenViduComponents(roomId: string, participantSid: string) {

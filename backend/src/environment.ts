@@ -18,25 +18,33 @@ dotenv.config(envPath ? { path: envPath } : {});
 export const {
 	SERVER_PORT = 6080,
 	SERVER_CORS_ORIGIN = '*',
+	MEET_LOG_LEVEL = 'info',
 	MEET_NAME_ID = 'openviduMeet',
+
+	// Authentication configuration
 	MEET_API_KEY = 'meet-api-key',
 	MEET_USER = 'user',
 	MEET_SECRET = 'user',
 	MEET_ADMIN_USER = 'admin',
 	MEET_ADMIN_SECRET = 'admin',
-	MEET_PARTICIPANT_TOKEN_EXPIRATION = '6h',
+
+	// Token expiration times
 	MEET_ACCESS_TOKEN_EXPIRATION = '2h',
 	MEET_REFRESH_TOKEN_EXPIRATION = '1d',
-	MEET_PREFERENCES_STORAGE_MODE = 's3',
+	MEET_PARTICIPANT_TOKEN_EXPIRATION = '6h',
+	MEET_RECORDING_TOKEN_EXPIRATION = '2h',
+
+	// Webhook configuration
 	MEET_WEBHOOK_ENABLED = 'false',
 	MEET_WEBHOOK_URL = 'http://localhost:5080/webhook',
-	MEET_LOG_LEVEL = 'info',
 
 	// LiveKit configuration
 	LIVEKIT_URL = 'ws://localhost:7880',
 	LIVEKIT_URL_PRIVATE = LIVEKIT_URL, // Uses LIVEKIT_URL if not explicitly set
 	LIVEKIT_API_KEY = 'devkey',
 	LIVEKIT_API_SECRET = 'secret',
+
+	MEET_PREFERENCES_STORAGE_MODE = 's3',
 
 	// S3 configuration
 	MEET_S3_BUCKET = 'openvidu',

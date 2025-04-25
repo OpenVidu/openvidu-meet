@@ -1,4 +1,4 @@
-import { ParticipantOptions, ParticipantPermissions, ParticipantRole, User } from '@typings-ce';
+import { ParticipantOptions, ParticipantPermissions, ParticipantRole, RecordingPermissions, User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
 import {
@@ -7,6 +7,7 @@ import {
 	LIVEKIT_URL,
 	MEET_ACCESS_TOKEN_EXPIRATION,
 	MEET_PARTICIPANT_TOKEN_EXPIRATION,
+	MEET_RECORDING_TOKEN_EXPIRATION,
 	MEET_REFRESH_TOKEN_EXPIRATION
 } from '../environment.js';
 import { LoggerService } from './index.js';
@@ -56,6 +57,25 @@ export class TokenService {
 			})
 		};
 		return await this.generateJwtToken(tokenOptions, permissions.livekit);
+	}
+
+	async generateRecordingToken(
+		roomId: string,
+		role: ParticipantRole,
+		permissions: RecordingPermissions
+	): Promise<string> {
+		this.logger.info(`Generating recording token for room ${roomId}`);
+		const tokenOptions: AccessTokenOptions = {
+			ttl: MEET_RECORDING_TOKEN_EXPIRATION,
+			metadata: JSON.stringify({
+				role,
+				recordingPermissions: permissions
+			})
+		};
+		const grants: VideoGrant = {
+			room: roomId
+		};
+		return await this.generateJwtToken(tokenOptions, grants);
 	}
 
 	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {

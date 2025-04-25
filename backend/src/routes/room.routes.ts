@@ -14,7 +14,8 @@ import {
 	withValidRoomFiltersRequest,
 	withValidRoomId,
 	withValidRoomOptions,
-	withValidRoomPreferences
+	withValidRoomPreferences,
+	withValidRoomSecret
 } from '../middlewares/index.js';
 
 export const roomRouter = Router();
@@ -61,6 +62,13 @@ internalRoomRouter.put(
 	withValidRoomId,
 	withValidRoomPreferences,
 	roomCtrl.updateRoomPreferences
+);
+
+internalRoomRouter.post(
+	'/:roomId/recording-token',
+	configureCreateRoomAuth,
+	withValidRoomSecret,
+	roomCtrl.generateRecordingToken
 );
 
 // Roles and permissions

@@ -7,9 +7,10 @@ const INTERNAL_CONFIG = {
 	API_BASE_PATH_V1: '/meet/api/v1',
 
 	// Cookie names
-	PARTICIPANT_TOKEN_COOKIE_NAME: 'OvMeetParticipantToken',
 	ACCESS_TOKEN_COOKIE_NAME: 'OvMeetAccessToken',
 	REFRESH_TOKEN_COOKIE_NAME: 'OvMeetRefreshToken',
+	PARTICIPANT_TOKEN_COOKIE_NAME: 'OvMeetParticipantToken',
+	RECORDING_TOKEN_COOKIE_NAME: 'OvMeetRecordingToken',
 
 	// Headers for API requests
 	API_KEY_HEADER: 'x-api-key',

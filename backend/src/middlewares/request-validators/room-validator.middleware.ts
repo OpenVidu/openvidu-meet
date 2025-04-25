@@ -1,14 +1,15 @@
 import {
 	MeetChatPreferences,
-	MeetRoomOptions,
+	MeetRecordingAccess,
 	MeetRecordingPreferences,
+	MeetRoomFilters,
+	MeetRoomOptions,
 	MeetRoomPreferences,
-	MeetVirtualBackgroundPreferences,
-	MeetRoomFilters
+	MeetVirtualBackgroundPreferences
 } from '@typings-ce';
-import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
+import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
+import { z } from 'zod';
 import INTERNAL_CONFIG from '../../config/internal-config.js';
 
 /**
@@ -55,8 +56,16 @@ const validForceQueryParam = () =>
 		}, z.boolean())
 		.default(false);
 
+const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
+	MeetRecordingAccess.ADMIN,
+	MeetRecordingAccess.ADMIN_MODERATOR,
+	MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER,
+	MeetRecordingAccess.PUBLIC
+]);
+
 const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z.object({
-	enabled: z.boolean()
+	enabled: z.boolean(),
+	allowAccessTo: RecordingAccessSchema
 });
 
 const ChatPreferencesSchema: z.ZodType<MeetChatPreferences> = z.object({
@@ -89,7 +98,7 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.optional()
 		.default(''),
 	preferences: RoomPreferencesSchema.optional().default({
-		recordingPreferences: { enabled: true },
+		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER },
 		chatPreferences: { enabled: true },
 		virtualBackgroundPreferences: { enabled: true }
 	})
@@ -152,6 +161,10 @@ const BulkDeleteRoomsSchema = z.object({
 		})
 	),
 	force: validForceQueryParam()
+});
+
+const RecordingTokenRequestSchema = z.object({
+	secret: z.string().nonempty('Secret is required')
 });
 
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
@@ -232,6 +245,17 @@ export const withValidRoomDeleteRequest = (req: Request, res: Response, next: Ne
 
 	req.query.force = forceResult.data ? 'true' : 'false';
 
+	next();
+};
+
+export const withValidRoomSecret = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = RecordingTokenRequestSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectRequest(res, error);
+	}
+
+	req.body = data;
 	next();
 };
 

@@ -2,8 +2,10 @@ import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, Participa
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_RECORDING_TOKEN_EXPIRATION } from '../environment.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
+import { getCookieOptions } from '../utils/cookie-utils.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -122,6 +124,46 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	}
 };
 
+export const updateRoomPreferences = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const roomPreferences = req.body;
+	const { roomId } = req.params;
+
+	logger.verbose(`Updating room preferences`);
+
+	try {
+		const room = await roomService.updateMeetRoomPreferences(roomId, roomPreferences);
+		return res.status(200).json(room);
+	} catch (error) {
+		logger.error(`Error saving room preferences: ${error}`);
+		handleError(res, error);
+	}
+};
+
+export const generateRecordingToken = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { roomId } = req.params;
+	const { secret } = req.body;
+
+	logger.verbose(`Generating recording token for room '${roomId}'`);
+
+	try {
+		const token = await roomService.generateRecordingToken(roomId, secret);
+
+		res.cookie(
+			INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME,
+			token,
+			getCookieOptions('/', MEET_RECORDING_TOKEN_EXPIRATION)
+		);
+		return res.status(200).json({ token });
+	} catch (error) {
+		logger.error(`Error generating recording token for room '${roomId}'`);
+		handleError(res, error);
+	}
+};
+
 export const getRoomRolesAndPermissions = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
@@ -173,23 +215,6 @@ export const getRoomRoleAndPermissions = async (req: Request, res: Response) => 
 		return res.status(200).json(roleAndPermissions);
 	} catch (error) {
 		logger.error(`Error getting room role and permissions for room '${roomId}' and secret '${secret}'`);
-		handleError(res, error);
-	}
-};
-
-export const updateRoomPreferences = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const roomService = container.get(RoomService);
-	const roomPreferences = req.body;
-	const { roomId } = req.params;
-
-	logger.verbose(`Updating room preferences`);
-
-	try {
-		const room = await roomService.updateMeetRoomPreferences(roomId, roomPreferences);
-		return res.status(200).json(room);
-	} catch (error) {
-		logger.error(`Error saving room preferences: ${error}`);
 		handleError(res, error);
 	}
 };

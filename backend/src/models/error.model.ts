@@ -113,6 +113,10 @@ export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `The room '${roomId}' does not exist`, 404);
 };
 
+export const errorRoomNotFoundOrEmptyRecordings = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `The room '${roomId}' does not exist or has no recordings`, 404);
+};
+
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `The secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };
