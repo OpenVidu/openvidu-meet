@@ -33,7 +33,16 @@ export const getRecordings = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 	const queryParams = req.query;
 
-	logger.verbose('Getting all recordings');
+	// If recording token is present, retrieve only recordings for the room associated with the token
+	const payload = req.session?.tokenClaims;
+
+	if (payload && payload.video) {
+		const roomId = payload.video.room;
+		queryParams.roomId = roomId;
+		logger.debug(`Getting recordings for room ${roomId}`);
+	} else {
+		logger.verbose('Getting all recordings');
+	}
 
 	try {
 		const { recordings, isTruncated, nextPageToken } = await recordingService.getAllRecordings(queryParams);
@@ -67,7 +76,8 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	try {
 		// TODO: Check role to determine if the request is from an admin or a participant
 		const recordingIdsArray = (recordingIds as string).split(',');
-		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(recordingIdsArray);
+		const { deleted, notDeleted } =
+			await recordingService.bulkDeleteRecordingsAndAssociatedFiles(recordingIdsArray);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && notDeleted.length === 0) {
@@ -200,5 +210,3 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error streaming recording' });
 	}
 };
-
-// Internal Recording methods
