@@ -5,6 +5,7 @@ import * as roomCtrl from '../controllers/room.controller.js';
 import {
 	apiKeyValidator,
 	configureCreateRoomAuth,
+	configureRecordingTokenAuth,
 	configureRoomAuthorization,
 	participantTokenValidator,
 	tokenAndRoleValidator,
@@ -66,7 +67,7 @@ internalRoomRouter.put(
 
 internalRoomRouter.post(
 	'/:roomId/recording-token',
-	configureCreateRoomAuth,
+	configureRecordingTokenAuth,
 	withValidRoomSecret,
 	roomCtrl.generateRecordingToken
 );

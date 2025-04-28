@@ -249,7 +249,7 @@ export class RoomService {
 		return this.getRoomRoleBySecretFromRoom(room, secret);
 	}
 
-	protected getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
+	getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
 		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
