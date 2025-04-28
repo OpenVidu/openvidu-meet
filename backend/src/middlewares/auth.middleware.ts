@@ -84,9 +84,21 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 	};
 };
 
-// Configure token validatior for participant access
+// Configure token validator for participant access
 export const participantTokenValidator = async (req: Request) => {
-	const token = req.cookies[INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME];
+	await validateTokenAndSetSession(req, INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME);
+};
+
+// Configure token validator for recording access
+export const recordingTokenValidator = async (req: Request) => {
+	await validateTokenAndSetSession(req, INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME);
+};
+
+const validateTokenAndSetSession = async (
+	req: Request,
+	cookieName: string
+) => {
+	const token = req.cookies[cookieName];
 
 	if (!token) {
 		throw errorUnauthorized();
