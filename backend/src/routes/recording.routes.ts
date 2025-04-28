@@ -4,10 +4,14 @@ import { Router } from 'express';
 import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
 	apiKeyValidator,
+	configureRecordingMediaAuth,
 	participantTokenValidator,
+	recordingTokenValidator,
 	tokenAndRoleValidator,
 	withAuth,
+	withCanDeleteRecordingsPermission,
 	withCanRecordPermission,
+	withCanRetrieveRecordingsPermission,
 	withRecordingEnabled,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingFiltersRequest,
@@ -22,19 +26,22 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.delete(
 	'/:recordingId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
 	withValidRecordingId,
+	withCanDeleteRecordingsPermission,
 	recordingCtrl.deleteRecording
 );
 recordingRouter.get(
 	'/:recordingId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
 	withValidRecordingId,
+	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecording
 );
 recordingRouter.get(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withCanRetrieveRecordingsPermission,
 	withValidRecordingFiltersRequest,
 	recordingCtrl.getRecordings
 );
@@ -44,11 +51,11 @@ recordingRouter.delete(
 	withValidRecordingBulkDeleteRequest,
 	recordingCtrl.bulkDeleteRecordings
 );
-
 recordingRouter.get(
 	'/:recordingId/media',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	configureRecordingMediaAuth,
 	withValidRecordingId,
+	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingMedia
 );
 
