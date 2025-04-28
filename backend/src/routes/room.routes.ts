@@ -68,10 +68,16 @@ internalRoomRouter.put(
 internalRoomRouter.post(
 	'/:roomId/recording-token',
 	configureRecordingTokenAuth,
+	withValidRoomId,
 	withValidRoomSecret,
 	roomCtrl.generateRecordingToken
 );
 
 // Roles and permissions
-internalRoomRouter.get('/:roomId/roles', roomCtrl.getRoomRolesAndPermissions);
-internalRoomRouter.get('/:roomId/roles/:secret', roomCtrl.getRoomRoleAndPermissions);
+internalRoomRouter.get('/:roomId/roles', withValidRoomId, roomCtrl.getRoomRolesAndPermissions);
+internalRoomRouter.get(
+	'/:roomId/roles/:secret',
+	withValidRoomId,
+	withValidRoomSecret,
+	roomCtrl.getRoomRoleAndPermissions
+);

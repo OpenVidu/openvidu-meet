@@ -40,6 +40,8 @@
                 $ref: '../../components/responses/internal/success-get-room-roles.yaml'
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 /rooms/{roomId}/roles/{secret}:
@@ -62,5 +64,7 @@
                 $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
