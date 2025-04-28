@@ -1,6 +1,7 @@
 import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
+import { OpenViduMeetError } from '../models/error.model.js';
 import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
@@ -11,7 +12,7 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  * - If the authentication mode is ALL_USERS, configure user authentication.
  * - Otherwise, allow anonymous access.
  */
-export const configureTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const configureParticipantTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(MeetStorageService);
 	const roomService = container.get(RoomService);
@@ -22,8 +23,16 @@ export const configureTokenAuth = async (req: Request, res: Response, next: Next
 		const { roomId, secret } = req.body as ParticipantOptions;
 		role = await roomService.getRoomRoleBySecret(roomId, secret);
 	} catch (error) {
-		logger.error('Error getting room secret role', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		logger.error('Error getting room role by secret', error);
+
+		if (error instanceof OpenViduMeetError) {
+			return res.status(error.statusCode).json({ name: error.name, message: error.message });
+		} else {
+			return res.status(500).json({
+				name: 'Participant Error',
+				message: 'Internal server error. Participant operation failed'
+			});
+		}
 	}
 
 	let authMode: AuthMode;
