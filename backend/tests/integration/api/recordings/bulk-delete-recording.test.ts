@@ -18,8 +18,7 @@ describe('Recording API Tests', () => {
 	});
 
 	afterAll(async () => {
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Bulk Delete Recording Tests', () => {
