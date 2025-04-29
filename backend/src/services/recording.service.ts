@@ -64,6 +64,11 @@ export class RecordingService {
 		let timeoutId: NodeJS.Timeout | undefined;
 
 		try {
+			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
+			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
+
+			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
+
 			const room = await this.roomService.getMeetRoom(roomId);
 
 			if (!room) throw errorRoomNotFound(roomId);
@@ -77,11 +82,6 @@ export class RecordingService {
 			const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 			if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
-
-			// Attempt to acquire lock. If the lock is not acquired, the recording is already active.
-			acquiredLock = await this.acquireRoomRecordingActiveLock(roomId);
-
-			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
 			const startTimeoutPromise = new Promise<never>((_, reject) => {
 				timeoutId = setTimeout(() => {
@@ -123,10 +123,14 @@ export class RecordingService {
 			throw error;
 		} finally {
 			try {
-				clearTimeout(timeoutId);
-				this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
-
-				if (acquiredLock) await this.releaseRecordingLockIfNoEgress(roomId);
+				if (acquiredLock) {
+					// Only clean up resources if the lock was successfully acquired.
+					// This prevents unnecessary cleanup operations when the request was rejected
+					// due to another recording already in progress in this room.
+					clearTimeout(timeoutId);
+					this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+					await this.releaseRecordingLockIfNoEgress(roomId);
+				}
 			} catch (e) {
 				this.logger.warn(`Failed to release recording lock: ${e}`);
 			}
