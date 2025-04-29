@@ -43,6 +43,8 @@
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
 
@@ -99,6 +101,8 @@
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../components/responses/error-recording-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
     delete:
@@ -125,6 +129,8 @@
                 $ref: '../components/responses/error-recording-not-found.yaml'
             '409':
                 $ref: '../components/responses/error-recording-in-progress.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
 /recordings/{recordingId}/media:
