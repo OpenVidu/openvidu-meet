@@ -54,8 +54,8 @@ recordingRouter.delete(
 );
 recordingRouter.get(
 	'/:recordingId/media',
+	withValidGetMediaRequest,
 	configureRecordingMediaAuth,
-	withValidRecordingId,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingMedia
 );

@@ -4,7 +4,7 @@ import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
 import { OpenViduMeetError } from '../models/error.model.js';
 import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
-import { allowAnonymous, recordingTokenValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
+import { allowAnonymous, apiKeyValidator, recordingTokenValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 export const withRecordingEnabled = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
@@ -130,7 +130,7 @@ export const configureRecordingMediaAuth = async (req: Request, res: Response, n
 		});
 	}
 
-	const authValidators = [tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator];
+	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator];
 
 	if (recordingAccess === MeetRecordingAccess.PUBLIC) {
 		authValidators.push(allowAnonymous);
