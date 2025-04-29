@@ -180,21 +180,14 @@
                         schema:
                             type: string
                             format: binary
-            '400':
-                description: Bad Request — Invalid range header format
-                content:
-                    application/json:
-                        schema:
-                            $ref: '../components/schemas/error.yaml'
-                        example:
-                            code: 400
-                            message: 'Invalid Range header'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../components/responses/error-recording-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-in-progress.yaml'
             '416':
                 description: Requested range not satisfiable
                 content:
@@ -204,5 +197,7 @@
                         example:
                             code: 416
                             message: 'Requested range not satisfiable'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
