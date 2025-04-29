@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
-import { createRoom, deleteAllRooms, getRoom, startTestServer, updateRoomPreferences } from '../../../utils/helpers.js';
+import { createRoom, deleteAllRooms, getRoom, startTestServer, updateRoomPreferences } from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {

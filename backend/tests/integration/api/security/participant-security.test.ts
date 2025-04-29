@@ -10,7 +10,7 @@ import {
 	deleteAllRooms,
 	loginUserAsRole,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 const PARTICIPANTS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`;
 

@@ -6,13 +6,13 @@ import {
 	getRecording,
 	startTestServer,
 	stopAllRecordings
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
 import { MeetRoom } from '../../../../src/typings/ce/room.js';
-import { expectValidationError, expectValidGetRecordingResponse } from '../../../utils/assertion-helpers.js';
-import { setupMultiRecordingsTestContext, TestContext } from '../../../utils/test-scenarios.js';
+import { expectValidationError, expectValidGetRecordingResponse } from '../../../helpers/assertion-helpers.js';
+import { setupMultiRecordingsTestContext, TestContext } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

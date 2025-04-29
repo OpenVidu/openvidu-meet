@@ -11,7 +11,7 @@ import {
 	runRoomGarbageCollector,
 	sleep,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 describe('Room Garbage Collector Tests', () => {
 	beforeAll(() => {

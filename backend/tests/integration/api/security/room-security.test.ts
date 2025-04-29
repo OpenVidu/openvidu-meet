@@ -12,7 +12,7 @@ import {
 	generateParticipantToken,
 	loginUserAsRole,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;

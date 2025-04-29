@@ -4,8 +4,8 @@ import ms from 'ms';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
-import { expectValidRoom } from '../../../utils/assertion-helpers.js';
-import { createRoom, deleteAllRooms, loginUserAsRole, startTestServer } from '../../../utils/helpers.js';
+import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import { createRoom, deleteAllRooms, loginUserAsRole, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 

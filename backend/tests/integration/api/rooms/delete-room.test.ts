@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-import { expectValidRoom } from '../../../utils/assertion-helpers.js';
+import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -10,7 +10,7 @@ import {
 	joinFakeParticipant,
 	sleep,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {

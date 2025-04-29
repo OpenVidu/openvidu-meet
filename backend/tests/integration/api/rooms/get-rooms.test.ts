@@ -6,8 +6,8 @@ import {
 	expectValidationError,
 	expectValidRoom,
 	expectValidRoomWithFields
-} from '../../../utils/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../utils/helpers.js';
+} from '../../../helpers/assertion-helpers.js';
+import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');

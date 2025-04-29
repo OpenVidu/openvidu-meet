@@ -9,7 +9,7 @@ import {
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { MeetRoom } from '../../../../src/typings/ce/room.js';
@@ -18,8 +18,8 @@ import {
 	expectValidRecordingLocationHeader,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
-} from '../../../utils/assertion-helpers.js';
-import { setupMultiRoomTestContext, TestContext } from '../../../utils/test-scenarios.js';
+} from '../../../helpers/assertion-helpers.js';
+import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config';
 import { MeetStorageService } from '../../../../src/services';
-import { expectValidationError, expectValidStartRecordingResponse } from '../../../utils/assertion-helpers';
+import { expectValidationError, expectValidStartRecordingResponse } from '../../../helpers/assertion-helpers';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
@@ -9,8 +9,8 @@ import {
 	startRecording,
 	startTestServer,
 	stopRecording
-} from '../../../utils/helpers';
-import { setupMultiRecordingsTestContext } from '../../../utils/test-scenarios';
+} from '../../../helpers/request-helpers';
+import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
 	beforeAll(() => {

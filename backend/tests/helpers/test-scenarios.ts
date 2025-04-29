@@ -7,7 +7,7 @@ import {
 	sleep,
 	startRecording,
 	stopRecording
-} from './helpers';
+} from './request-helpers';
 
 import ms, { StringValue } from 'ms';
 import { MeetRoom, UserRole } from '../../src/typings/ce';

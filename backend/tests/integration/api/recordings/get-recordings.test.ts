@@ -5,15 +5,15 @@ import {
 	disconnectFakeParticipants,
 	getAllRecordings,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 import {
 	expectValidationError,
 	expectSuccessListRecordingResponse,
 	expectValidRecordingWithFields,
 	expectValidRecording
-} from '../../../utils/assertion-helpers.js';
-import { RoomData, setupMultiRecordingsTestContext, TestContext } from '../../../utils/test-scenarios.js';
+} from '../../../helpers/assertion-helpers.js';
+import { RoomData, setupMultiRecordingsTestContext, TestContext } from '../../../helpers/test-scenarios.js';
 import { MeetRoom } from '../../../../src/typings/ce/room.js';
 import { MeetRecordingInfo, MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
 

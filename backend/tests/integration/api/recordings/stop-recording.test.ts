@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { expectValidStopRecordingResponse, expectErrorResponse } from '../../../utils/assertion-helpers';
+import { expectValidStopRecordingResponse, expectErrorResponse } from '../../../helpers/assertion-helpers';
 import {
 	startRecording,
 	disconnectFakeParticipants,
@@ -8,9 +8,9 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	startTestServer
-} from '../../../utils/helpers';
+} from '../../../helpers/request-helpers';
 import { MeetRoom } from '../../../../src/typings/ce';
-import { setupMultiRoomTestContext, TestContext } from '../../../utils/test-scenarios';
+import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

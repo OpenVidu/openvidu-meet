@@ -6,8 +6,8 @@ import {
 	expectValidationError,
 	expectValidRoom,
 	expectValidRoomWithFields
-} from '../../../utils/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../utils/helpers.js';
+} from '../../../helpers/assertion-helpers.js';
+import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {

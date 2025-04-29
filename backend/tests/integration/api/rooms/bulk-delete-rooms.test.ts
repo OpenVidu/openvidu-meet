@@ -7,7 +7,7 @@ import {
 	getRoom,
 	joinFakeParticipant,
 	startTestServer
-} from '../../../utils/helpers.js';
+} from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
