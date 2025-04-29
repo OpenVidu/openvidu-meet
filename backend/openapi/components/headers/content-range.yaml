@@ -1,0 +1,4 @@
+description: Specifies the range of bytes being sent and the total size of the resource
+schema:
+    type: string
+example: bytes 0-1023/10240

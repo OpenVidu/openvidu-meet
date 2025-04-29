@@ -1,0 +1,4 @@
+description: Directives for caching mechanisms in requests/responses
+schema:
+    type: string
+example: public, max-age=3600

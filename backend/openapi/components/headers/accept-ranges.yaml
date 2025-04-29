@@ -1,0 +1,4 @@
+description: Indicates that the server supports range requests for content retrieval
+schema:
+    type: string
+example: bytes

@@ -2,7 +2,10 @@ name: Range
 in: header
 required: false
 description: >
-    Byte range for partial content retrieval.
-    Example: `bytes=0-1023` to request the first 1024 bytes of the file.
+    This endpoint accepts a `Range` header to specify the byte range of the recording file to be streamed.
+    The format of the `Range` header should be `bytes=start-end`, where `start` is required and `end` is optional.
+    For example,
+      - `bytes=0-1023` to request the first 1024 bytes of the file.
+      - `bytes=1000-` to request from byte 1000 to the end of the file.
 schema:
     type: string

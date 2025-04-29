@@ -135,7 +135,7 @@
                 $ref: '../components/responses/internal-server-error.yaml'
 /recordings/{recordingId}/media:
     get:
-        operationId: getRecordingMeedia
+        operationId: getRecordingMedia
         summary: Get recording media
         description: >
             Retrieves the media of a recording with the specified recording ID.
@@ -145,6 +145,7 @@
         tags:
             - OpenVidu Meet - Recordings
         security:
+            - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
@@ -154,13 +155,11 @@
                 description: Successfully streaming the full recording
                 headers:
                     Accept-Ranges:
-                        description: Indicates that byte-range requests are supported
-                        schema:
-                            type: string
+                        $ref: '../components/headers/accept-ranges.yaml'
                     Content-Length:
-                        description: The total file size in bytes
-                        schema:
-                            type: integer
+                        $ref: '../components/headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: '../components/headers/cache-control.yaml'
                 content:
                     video/mp4:
                         schema:
@@ -170,17 +169,13 @@
                 description: Partial content streaming based on byte range
                 headers:
                     Accept-Ranges:
-                        description: Indicates that byte-range requests are supported
-                        schema:
-                            type: string
-                    Content-Range:
-                        description: Specifies the range of bytes being sent
-                        schema:
-                            type: string
+                        $ref: '../components/headers/accept-ranges.yaml'
                     Content-Length:
-                        description: The length of the partial content in bytes
-                        schema:
-                            type: integer
+                        $ref: '../components/headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: '../components/headers/cache-control.yaml'
+                    Content-Range:
+                        $ref: '../components/headers/content-range.yaml'
                 content:
                     video/mp4:
                         schema:
