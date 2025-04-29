@@ -192,6 +192,136 @@ export const expectValidRecordingLocationHeader = (response: any) => {
 	expect(response.headers.location).toContain(response.body.recordingId);
 };
 
+/**
+ * Validates a successful recording media response, supporting edge cases and range requests.
+ *
+ * @param response - The HTTP response object to validate
+ * @param range - Optional range header that was sent in the request
+ * @param fullSize - Optional total file size for range validation
+ * @param options - Optional configuration to handle edge cases:
+ *   - allowSizeDifference: Allows a difference between content-length and actual body size (default: false)
+ *   - ignoreRangeFormat: Ignores exact range format checking (useful for adjusted ranges) (default: false)
+ *   - expectedStatus: Override the expected status code (default: auto-determined based on range)
+ */
+export const expectSuccessRecordingMediaResponse = (
+	response: any,
+	range?: string,
+	fullSize?: number,
+	options?: {
+		allowSizeDifference?: boolean;
+		ignoreRangeFormat?: boolean;
+		expectedStatus?: number;
+	}
+) => {
+	// Default options
+	const opts = {
+		allowSizeDifference: false,
+		ignoreRangeFormat: false,
+		...options
+	};
+
+	// Determine expected status
+	const expectedStatus = opts.expectedStatus ?? (range ? 206 : 200);
+
+	// Basic validations for any successful response
+	expect(response.status).toBe(expectedStatus);
+	expect(response.headers['content-type']).toBe('video/mp4');
+	expect(response.headers['accept-ranges']).toBe('bytes');
+	expect(response.headers['content-length']).toBeDefined();
+	expect(parseInt(response.headers['content-length'])).toBeGreaterThan(0);
+	expect(response.headers['cache-control']).toBeDefined();
+
+	// Verify response is binary data with some size
+	expect(response.body).toBeInstanceOf(Buffer);
+	expect(response.body.length).toBeGreaterThan(0);
+
+	// Handle range responses (206 Partial Content)
+	if (range && expectedStatus === 206) {
+		// Verify the content-range header
+		expect(response.headers['content-range']).toBeDefined();
+
+		// If ignoreRangeFormat is true, only check the format of the content-range header
+		if (opts.ignoreRangeFormat) {
+			expect(response.headers['content-range']).toMatch(/^bytes \d+-\d+\/\d+$/);
+
+			if (fullSize) {
+				// Verify the total size in content-range header
+				const totalSizeMatch = response.headers['content-range'].match(/\/(\d+)$/);
+
+				if (totalSizeMatch) {
+					expect(parseInt(totalSizeMatch[1])).toBe(fullSize);
+				}
+			}
+		} else {
+			// Extract the requested range from the request header
+			const rangeMatch = range.match(/^bytes=(\d+)-(\d*)$/);
+
+			if (!rangeMatch) {
+				throw new Error(`Invalid range format: ${range}`);
+			}
+
+			const requestedStart = parseInt(rangeMatch[1]);
+			const requestedEnd = rangeMatch[2] ? parseInt(rangeMatch[2]) : fullSize ? fullSize - 1 : undefined;
+
+			expect(requestedStart).not.toBeNaN();
+
+			// Verify the range in the response
+			const contentRangeMatch = response.headers['content-range'].match(/^bytes (\d+)-(\d+)\/(\d+)$/);
+
+			if (!contentRangeMatch) {
+				throw new Error(`Invalid content-range format: ${response.headers['content-range']}`);
+			}
+
+			const actualStart = parseInt(contentRangeMatch[1]);
+			const actualEnd = parseInt(contentRangeMatch[2]);
+			const actualTotal = parseInt(contentRangeMatch[3]);
+
+			// Verify the start matches
+			expect(actualStart).toBe(requestedStart);
+
+			// If full size is provided, verify the total is correct
+			if (fullSize) {
+				expect(actualTotal).toBe(fullSize);
+
+				// The end may be adjusted if it exceeds the total size
+				if (requestedEnd !== undefined && requestedEnd >= fullSize) {
+					expect(actualEnd).toBe(fullSize - 1);
+				} else if (requestedEnd !== undefined) {
+					expect(actualEnd).toBe(requestedEnd);
+				}
+			}
+		}
+
+		// Verify that Content-Length is consistent
+		const declaredLength = parseInt(response.headers['content-length']);
+		expect(declaredLength).toBeGreaterThan(0);
+
+		// If size differences are not allowed, body length must match exactly
+		if (!opts.allowSizeDifference) {
+			expect(response.body.length).toBe(declaredLength);
+		} else {
+			// Allow some difference but ensure it's within a reasonable tolerance
+			const bodyLength = response.body.length;
+			const diff = Math.abs(bodyLength - declaredLength);
+			const tolerance = Math.max(declaredLength * 0.05, 10); // 5% or at least 10 bytes
+
+			expect(diff).toBeLessThanOrEqual(tolerance);
+		}
+	} else if (expectedStatus === 200) {
+		// For full content responses
+		const declaredLength = parseInt(response.headers['content-length']);
+
+		if (!opts.allowSizeDifference) {
+			expect(response.body.length).toBe(declaredLength);
+		}
+
+		// If full size is provided, content-length must match
+		if (fullSize !== undefined) {
+			expect(declaredLength).toBe(fullSize);
+		}
+	}
+};
+
 export const expectValidStartRecordingResponse = (response: any, roomId: string) => {
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('recordingId');

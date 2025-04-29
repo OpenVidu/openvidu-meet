@@ -372,7 +372,23 @@ export const deleteRecording = async (recordingId: string) => {
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-}
+};
+
+export const getRecordingMedia = async (recordingId: string, range?: string) => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+
+	const req = request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+
+	if (range) {
+		req.set('range', range);
+	}
+
+	return await req;
+};
 
 export const stopAllRecordings = async (moderatorCookie: string) => {
 	if (!app) {
