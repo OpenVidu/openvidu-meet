@@ -36,6 +36,8 @@ export const getWebhookPreferences = async (_req: Request, res: Response) => {
 		const preferences = await preferenceService.getGlobalPreferences();
 
 		if (!preferences) {
+			//TODO: Creare OpenViduMeetError for this case
+			logger.error('Webhooks preferences not found');
 			return res.status(404).json({ message: 'Webhooks preferences not found' });
 		}
 

@@ -48,6 +48,8 @@ export const getSecurityPreferences = async (_req: Request, res: Response) => {
 		const preferences = await preferenceService.getGlobalPreferences();
 
 		if (!preferences) {
+			//TODO: Create OpenViduMeetError for this case
+			logger.error('Security preferences not found');
 			return res.status(404).json({ message: 'Security preferences not found' });
 		}
 

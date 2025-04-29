@@ -33,7 +33,7 @@ export const login = async (req: Request, res: Response) => {
 			refreshToken,
 			getCookieOptions(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, MEET_REFRESH_TOKEN_EXPIRATION)
 		);
-		logger.info(`Login succeeded for user ${username}`);
+		logger.info(`Login succeeded for user '${username}'`);
 		return res.status(200).json({ message: 'Login succeeded' });
 	} catch (error) {
 		logger.error('Error generating token' + error);
