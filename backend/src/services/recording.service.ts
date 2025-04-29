@@ -52,7 +52,7 @@ export class RecordingService {
 			name: 'activeRecordingGarbageCollector',
 			type: 'cron',
 			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_LOCK_GC_INTERVAL,
-			callback: this.deleteOrphanLocks.bind(this)
+			callback: this.performRecordingLocksGarbageCollection.bind(this)
 		};
 		this.taskSchedulerService.registerTask(recordingGarbageCollectorTask);
 	}
@@ -641,7 +641,7 @@ export class RecordingService {
 	}
 
 	/**
-	 * Cleans up orphaned recording locks in the system.
+	 * Performs garbage collection for orphaned recording locks in the system.
 	 *
 	 * This method identifies and releases locks that are no longer needed by:
 	 * 1. Finding all active recording locks in the system
@@ -659,7 +659,7 @@ export class RecordingService {
 	 * @throws {OpenViduMeetError} Rethrows any errors except 404 (room not found)
 	 * @protected
 	 */
-	protected async deleteOrphanLocks(): Promise<void> {
+	protected async performRecordingLocksGarbageCollection(): Promise<void> {
 		this.logger.debug('Starting orphaned recording locks cleanup process');
 		// Create the lock pattern for finding all recording locks
 		const lockPattern = MeetLock.getRecordingActiveLock('roomId').replace('roomId', '*');
@@ -682,7 +682,7 @@ export class RecordingService {
 			// Check each room id if it exists in LiveKit
 			// If the room does not exist, release the lock
 			for (const roomId of roomIds) {
-				await this.processOrphanLock(roomId, lockPrefix);
+				await this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix);
 			}
 		} catch (error) {
 			this.logger.error('Error retrieving recording locks:', error);
@@ -690,12 +690,12 @@ export class RecordingService {
 	}
 
 	/**
-	 * Process an orphaned lock by checking if the associated room exists and releasing the lock if necessary.
+	 * Evaluates and releases orphaned locks for a specific room.
 	 *
 	 * @param roomId - The ID of the room associated with the lock.
 	 * @param lockPrefix - The prefix used to identify the lock.
 	 */
-	protected async processOrphanLock(roomId: string, lockPrefix: string): Promise<void> {
+	protected async evaluateAndReleaseOrphanedLock(roomId: string, lockPrefix: string): Promise<void> {
 		const lockKey = `${lockPrefix}${roomId}`;
 		const LOCK_GRACE_PERIOD = ms('1m');
 
@@ -735,7 +735,7 @@ export class RecordingService {
 					this.logger.debug(`Room ${roomId} has no publishers, checking for in-progress recordings`);
 				}
 			} else {
-				// Room does not exist, and no in-progress recordings, release the lock
+				// Room does not exist
 				this.logger.debug(`Room ${roomId} no longer exists, checking for in-progress recordings`);
 			}
 
