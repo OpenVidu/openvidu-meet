@@ -77,6 +77,22 @@ const BulkDeleteRecordingsSchema = z.object({
 	)
 });
 
+const GetRecordingMediaSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	headers: z
+		.object({
+			range: z
+				.string()
+				.regex(/^bytes=\d+-\d*$/, {
+					message: 'Invalid range header format. Expected: bytes=start-end'
+				})
+				.optional()
+		})
+		.passthrough() // Allow other headers to pass through
+});
+
 const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 	maxItems: z.coerce
 		.number()
@@ -138,6 +154,21 @@ export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response,
 	}
 
 	req.query.recordingIds = data.recordingIds.join(',');
+	next();
+};
+
+export const withValidGetMediaRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingMediaSchema.safeParse({
+		params: req.params,
+		headers: req.headers
+	});
+
+	if (!success) {
+		return rejectRequest(res, error);
+	}
+
+	req.params.recordingId = data.params.recordingId;
+	req.headers.range = data.headers.range;
 	next();
 };
 

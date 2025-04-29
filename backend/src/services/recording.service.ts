@@ -13,6 +13,7 @@ import {
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
+	errorRecordingRangeNotSatisfiable,
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
 	errorRoomNotFound,
@@ -356,8 +357,13 @@ export class RecordingService {
 		recordingId: string,
 		range?: string
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
-		const RECORDING_FILE_PORTION_SIZE = 5 * 1024 * 1024; // 5MB
+		const DEFAULT_RECORDING_FILE_PORTION_SIZE = 5 * 1024 * 1024; // 5MB
 		const recordingInfo: MeetRecordingInfo = await this.getRecording(recordingId);
+
+		if (recordingInfo.status !== MeetRecordingStatus.COMPLETE) {
+			throw errorRecordingNotStopped(recordingId);
+		}
+
 		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
 
 		if (!recordingPath) throw new Error(`Error extracting path from recording ${recordingId}`);
@@ -365,21 +371,57 @@ export class RecordingService {
 		const data = await this.s3Service.getHeaderObject(recordingPath);
 		const fileSize = data.ContentLength;
 
-		if (range && fileSize) {
+		if (!fileSize) {
+			this.logger.error(`Error getting file size for recording ${recordingId}`);
+			throw internalError(`Error getting file size for recording ${recordingId}`);
+		}
+
+		if (range) {
 			// Parse the range header
-			const parts = range.replace(/bytes=/, '').split('-');
-			const start = parseInt(parts[0], 10);
-			const endRange = parts[1] ? parseInt(parts[1], 10) : start + RECORDING_FILE_PORTION_SIZE;
-			const end = Math.min(endRange, fileSize - 1);
+			const matches = range.match(/^bytes=(\d+)-(\d*)$/)!;
+
+			const start = parseInt(matches[1], 10);
+			let end = matches[2] ? parseInt(matches[2], 10) : start + DEFAULT_RECORDING_FILE_PORTION_SIZE;
+
+			// Validate the range values
+			if (isNaN(start) || isNaN(end) || start < 0) {
+				this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${end}`);
+				this.logger.warn(`Returning full stream for recording ${recordingId}`);
+				return this.getFullStreamResponse(recordingPath, fileSize);
+			}
+
+			if (start >= fileSize) {
+				this.logger.error(
+					`Invalid range values for recording ${recordingId}: start=${start}, end=${end}, fileSize=${fileSize}`
+				);
+				throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
+			}
+
+			// Adjust the end value to ensure it doesn't exceed the file size
+			end = Math.min(end, fileSize - 1);
+
+			// If the start is greater than the end, return the full stream
+			if (start > end) {
+				this.logger.warn(`Invalid range values after adjustment: start=${start}, end=${end}`);
+				return this.getFullStreamResponse(recordingPath, fileSize);
+			}
+
 			const fileStream = await this.s3Service.getObjectAsStream(recordingPath, MEET_S3_BUCKET, {
 				start,
 				end
 			});
 			return { fileSize, fileStream, start, end };
 		} else {
-			const fileStream = await this.s3Service.getObjectAsStream(recordingPath);
-			return { fileSize, fileStream };
+			return this.getFullStreamResponse(recordingPath, fileSize);
 		}
+	}
+
+	protected async getFullStreamResponse(
+		recordingPath: string,
+		fileSize: number
+	): Promise<{ fileSize: number; fileStream: Readable }> {
+		const fileStream = await this.s3Service.getObjectAsStream(recordingPath, MEET_S3_BUCKET);
+		return { fileSize, fileStream };
 	}
 
 	/**

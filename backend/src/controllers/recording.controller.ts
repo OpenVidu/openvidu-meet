@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { OpenViduMeetError } from '../models/error.model.js';
+import { internalError, OpenViduMeetError } from '../models/error.model.js';
 import { LoggerService, RecordingService } from '../services/index.js';
+import { Readable } from 'stream';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -170,43 +171,84 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 
 	const recordingId = req.params.recordingId;
 	const range = req.headers.range;
+	let fileStream: Readable | undefined;
 
 	try {
 		logger.info(`Streaming recording ${recordingId}`);
 		const recordingService = container.get(RecordingService);
 
-		const { fileSize, fileStream, start, end } = await recordingService.getRecordingAsStream(recordingId, range);
+		const result = await recordingService.getRecordingAsStream(recordingId, range);
+		const { fileSize, start, end } = result;
+		fileStream = result.fileStream;
 
+		fileStream.on('error', (streamError) => {
+			logger.error(`Error streaming recording ${recordingId}: ${streamError.message}`);
+
+			if (!res.headersSent) {
+				const error = internalError(streamError);
+				res.status(error.statusCode).json({ name: 'Recording Error', message: error.message });
+			}
+
+			res.end();
+		});
+
+		// Handle client disconnection
+		req.on('close', () => {
+			if (fileStream && !fileStream.destroyed) {
+				logger.debug(`Client closed connection for recording media ${recordingId}`);
+				fileStream.destroy();
+			}
+		});
+
+		// Handle partial requests (HTTP Range requests)
 		if (range && fileSize && start !== undefined && end !== undefined) {
 			const contentLength = end - start + 1;
 
+			// Set headers for partial content response
 			res.writeHead(206, {
 				'Content-Range': `bytes ${start}-${end}/${fileSize}`,
 				'Accept-Ranges': 'bytes',
 				'Content-Length': contentLength,
-				'Content-Type': 'video/mp4'
+				'Content-Type': 'video/mp4',
+				'Cache-Control': 'public, max-age=3600'
 			});
-
-			fileStream.on('error', (streamError) => {
-				logger.error(`Error while streaming the file: ${streamError.message}`);
-				res.end();
-			});
-
-			fileStream.pipe(res).on('finish', () => res.end());
 		} else {
-			res.setHeader('Accept-Ranges', 'bytes');
-			res.setHeader('Content-Type', 'video/mp4');
-
-			if (fileSize) res.setHeader('Content-Length', fileSize);
-
-			fileStream.pipe(res).on('finish', () => res.end());
+			// Set headers for full content response
+			res.writeHead(200, {
+				'Accept-Ranges': 'bytes',
+				'Content-Type': 'video/mp4',
+				'Content-Length': fileSize || undefined,
+				'Cache-Control': 'public, max-age=3600'
+			});
 		}
+
+		fileStream
+			.pipe(res)
+			.on('finish', () => {
+				logger.debug(`Finished streaming recording ${recordingId}`);
+
+				res.end();
+			})
+			.on('error', (err) => {
+				logger.error(`Error in response stream for ${recordingId}: ${err.message}`);
+
+				if (!res.headersSent) {
+					res.status(500).end();
+				}
+			});
 	} catch (error) {
+		if (fileStream && !fileStream.destroyed) {
+			fileStream.destroy();
+		}
+
 		if (error instanceof OpenViduMeetError) {
 			logger.error(`Error streaming recording: ${error.message}`);
 			return res.status(error.statusCode).json({ name: error.name, message: error.message });
 		}
 
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error streaming recording' });
+		logger.error(`Unexpected error streaming recording ${recordingId}: ${error}`);
+		return res
+			.status(500)
+			.json({ name: 'Recording Error', message: 'An unexpected error occurred while processing the recording' });
 	}
 };

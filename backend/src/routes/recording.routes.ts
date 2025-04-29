@@ -13,6 +13,7 @@ import {
 	withCanRecordPermission,
 	withCanRetrieveRecordingsPermission,
 	withRecordingEnabled,
+	withValidGetMediaRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingFiltersRequest,
 	withValidRecordingId,

@@ -1,4 +1,4 @@
-type StatusError = 400 | 401 | 403 | 404 | 406 | 409 | 422 | 500 | 503;
+type StatusError = 400 | 401 | 403 | 404 | 406 | 409 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
 	name: string;
 	statusCode: StatusError;
@@ -77,6 +77,14 @@ export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError 
 
 export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Recording in room '${roomId}' timed out while starting`, 503);
+};
+
+export const errorRecordingRangeNotSatisfiable = (recordingId: string, fileSize: number): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Recording '${recordingId}' range not satisfiable. File size: ${fileSize}`,
+		416
+	);
 };
 
 export const errorRoomHasNoParticipants = (roomId: string): OpenViduMeetError => {
