@@ -125,6 +125,23 @@ describe('Room API Tests', () => {
 
 			const roomResponse = await getRoom(roomId);
 			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
+		});
+
+		it('should delete a room marked for deletion when the webhook room_finished is received', async () => {
+			const autoDeletionDate = Date.now() + ms('5h');
+			const { roomId } = await createRoom({
+				roomIdPrefix: 'test-room',
+				autoDeletionDate
+			});
+
+			await joinFakeParticipant(roomId, 'test-participant');
+
+			const response = await deleteRoom(roomId, { force: false });
+
+			expect(response.status).toBe(202);
+
+			const roomResponse = await getRoom(roomId);
+			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
 
 			await disconnectFakeParticipants();
 
