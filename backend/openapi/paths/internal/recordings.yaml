@@ -9,7 +9,7 @@
         security:
             - participantTokenCookie: []
         requestBody:
-            $ref: '../../components/requestBodies/start-recording-request.yaml'
+            $ref: '../../components/requestBodies/internal/start-recording-request.yaml'
         responses:
             '201':
                 $ref: '../../components/responses/internal/success-start-recording.yaml'

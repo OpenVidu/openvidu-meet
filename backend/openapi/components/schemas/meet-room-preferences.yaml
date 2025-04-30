@@ -10,7 +10,6 @@ MeetRoomPreferences:
         virtualBackgroundPreferences:
             $ref: '#/MeetVirtualBackgroundPreferences'
             description: Preferences for virtual background in the room.
-
 MeetChatPreferences:
     type: object
     properties:

@@ -2,4 +2,10 @@ description: Unprocessable Entity — Invalid request body
 content:
     application/json:
         schema:
-            $ref: '../schemas/validation-error.yaml'
+            $ref: '../schemas/error.yaml'
+        example:
+            error: 'Unprocessable Entity'
+            message: 'Invalid request'
+            details:
+                - field: '{{field}}'
+                  message: 'Expected {{type}} but got {{value}}'

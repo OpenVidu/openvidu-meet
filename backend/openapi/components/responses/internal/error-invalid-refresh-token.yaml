@@ -4,4 +4,5 @@ content:
         schema:
             $ref: ../../schemas/error.yaml
         example:
+            error: Refresh Token Error
             message: 'No refresh token provided'

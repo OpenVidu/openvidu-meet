@@ -85,7 +85,7 @@ export const errorInvalidRefreshToken = (): OpenViduMeetError => {
 };
 
 export const errorInsufficientPermissions = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Authorization Error', 'You do not have permission to access this resource', 403);
+	return new OpenViduMeetError('Authorization Error', 'Insufficient permissions to access this resource', 403);
 };
 
 export const errorInvalidApiKey = (): OpenViduMeetError => {

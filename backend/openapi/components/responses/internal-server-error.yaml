@@ -4,4 +4,5 @@ content:
         schema:
             $ref: '../schemas/error.yaml'
         example:
-            message: 'Internal server error'
+            error: 'Internal Server Error'
+            message: 'Unexpected error occurred'

@@ -4,5 +4,5 @@ content:
         schema:
             $ref: '../schemas/error.yaml'
         example:
-            name: 'Recording Error'
+            error: 'Recording Error'
             message: 'Recording "room-123--EG_XYZ--XX445" not found'

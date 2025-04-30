@@ -4,5 +4,5 @@ content:
         schema:
             $ref: '../../schemas/error.yaml'
         example:
-            name: 'Participant Error'
-            message: '"Alice" not found in room "room_123"'
+            error: 'Participant Error'
+            message: 'Participant "Alice" not found in room "room_123"'

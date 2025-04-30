@@ -3,4 +3,4 @@ required: true
 content:
     application/json:
         schema:
-            $ref: '../../schemas/internal/meet-token-options.yaml'
+            $ref: '../../schemas/internal/meet-participant-options.yaml'

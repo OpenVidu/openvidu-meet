@@ -3,6 +3,14 @@ content:
     application/json:
         schema:
             $ref: '../../schemas/error.yaml'
-        example:
-            name: 'Recording Error'
-            message: 'Recording "room-123--EG_XYZ--XX445" is already stopped'
+        examples:
+            starting_recording:
+                summary: Recording is starting
+                value:
+                    error: 'Recording Error'
+                    message: 'Recording "room-123--EG_XYZ--XX445" cannot be stopped while starting'
+            already_stopped:
+                summary: Recording is already stopped
+                value:
+                    error: 'Recording Error'
+                    message: 'Recording "room-123--EG_XYZ--XX445" is already stopped'
