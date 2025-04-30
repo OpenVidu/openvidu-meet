@@ -75,9 +75,4 @@ internalRoomRouter.post(
 
 // Roles and permissions
 internalRoomRouter.get('/:roomId/roles', withValidRoomId, roomCtrl.getRoomRolesAndPermissions);
-internalRoomRouter.get(
-	'/:roomId/roles/:secret',
-	withValidRoomId,
-	withValidRoomSecret,
-	roomCtrl.getRoomRoleAndPermissions
-);
+internalRoomRouter.get('/:roomId/roles/:secret', withValidRoomId, roomCtrl.getRoomRoleAndPermissions);
