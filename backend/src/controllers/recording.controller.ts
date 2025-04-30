@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
+import { Readable } from 'stream';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { internalError, OpenViduMeetError } from '../models/error.model.js';
+import { handleError, internalError, rejectRequestFromMeetError } from '../models/error.model.js';
 import { LoggerService, RecordingService } from '../services/index.js';
-import { Readable } from 'stream';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { roomId } = req.body;
-	logger.info(`Initiating recording for room ${roomId}`);
+	logger.info(`Starting recording in room '${roomId}'`);
 
 	try {
 		const recordingInfo = await recordingService.startRecording(roomId);
@@ -20,12 +20,7 @@ export const startRecording = async (req: Request, res: Response) => {
 
 		return res.status(201).json(recordingInfo);
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error starting recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Failed to start recording' });
+		handleError(res, error, `starting recording in room '${roomId}'`);
 	}
 };
 
@@ -40,9 +35,9 @@ export const getRecordings = async (req: Request, res: Response) => {
 	if (payload && payload.video) {
 		const roomId = payload.video.room;
 		queryParams.roomId = roomId;
-		logger.debug(`Getting recordings for room ${roomId}`);
+		logger.info(`Getting recordings for room '${roomId}'`);
 	} else {
-		logger.verbose('Getting all recordings');
+		logger.info('Getting all recordings');
 	}
 
 	try {
@@ -58,12 +53,7 @@ export const getRecordings = async (req: Request, res: Response) => {
 			}
 		});
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error getting all recordings: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error getting recordings' });
+		handleError(res, error, 'getting recordings');
 	}
 };
 
@@ -88,12 +78,7 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 		// Some or all recordings could not be deleted
 		return res.status(200).json({ deleted, notDeleted });
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error deleting recordings: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error deleting recordings' });
+		handleError(res, error, 'deleting recordings');
 	}
 };
 
@@ -103,18 +88,13 @@ export const getRecording = async (req: Request, res: Response) => {
 	const recordingId = req.params.recordingId;
 	const fields = req.query.fields as string | undefined;
 
-	logger.info(`Getting recording ${recordingId}`);
+	logger.info(`Getting recording '${recordingId}'`);
 
 	try {
 		const recordingInfo = await recordingService.getRecording(recordingId, fields);
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error getting recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error getting recording' });
+		handleError(res, error, `getting recording '${recordingId}'`);
 	}
 };
 
@@ -123,19 +103,14 @@ export const stopRecording = async (req: Request, res: Response) => {
 	const recordingId = req.params.recordingId;
 
 	try {
-		logger.info(`Initiating stop for recording ${recordingId}`);
+		logger.info(`Stopping recording '${recordingId}'`);
 		const recordingService = container.get(RecordingService);
 
 		const recordingInfo = await recordingService.stopRecording(recordingId);
 		res.setHeader('Location', `${req.protocol}://${req.get('host')}${req.originalUrl}`);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error stopping recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error stopping recording' });
+		handleError(res, error, `stopping recording '${recordingId}'`);
 	}
 };
 
@@ -143,19 +118,14 @@ export const deleteRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	logger.info(`Deleting recording ${recordingId}`);
+	logger.info(`Deleting recording '${recordingId}'`);
 
 	try {
 		// TODO: Check role to determine if the request is from an admin or a participant
 		await recordingService.deleteRecording(recordingId);
 		return res.status(204).send();
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error deleting recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({ name: 'Recording Error', message: 'Unexpected error deleting recording' });
+		handleError(res, error, `deleting recording '${recordingId}'`);
 	}
 };
 
@@ -174,7 +144,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 	let fileStream: Readable | undefined;
 
 	try {
-		logger.info(`Streaming recording ${recordingId}`);
+		logger.info(`Streaming recording '${recordingId}'`);
 		const recordingService = container.get(RecordingService);
 
 		const result = await recordingService.getRecordingAsStream(recordingId, range);
@@ -182,11 +152,11 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		fileStream = result.fileStream;
 
 		fileStream.on('error', (streamError) => {
-			logger.error(`Error streaming recording ${recordingId}: ${streamError.message}`);
+			logger.error(`Error streaming recording '${recordingId}': ${streamError.message}`);
 
 			if (!res.headersSent) {
-				const error = internalError(streamError);
-				res.status(error.statusCode).json({ name: 'Recording Error', message: error.message });
+				const error = internalError(`streaming recording '${recordingId}'`);
+				rejectRequestFromMeetError(res, error);
 			}
 
 			res.end();
@@ -195,7 +165,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		// Handle client disconnection
 		req.on('close', () => {
 			if (fileStream && !fileStream.destroyed) {
-				logger.debug(`Client closed connection for recording media ${recordingId}`);
+				logger.debug(`Client closed connection for recording media '${recordingId}'`);
 				fileStream.destroy();
 			}
 		});
@@ -225,12 +195,11 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		fileStream
 			.pipe(res)
 			.on('finish', () => {
-				logger.debug(`Finished streaming recording ${recordingId}`);
-
+				logger.debug(`Finished streaming recording '${recordingId}'`);
 				res.end();
 			})
 			.on('error', (err) => {
-				logger.error(`Error in response stream for ${recordingId}: ${err.message}`);
+				logger.error(`Error in response stream for recording '${recordingId}': ${err.message}`);
 
 				if (!res.headersSent) {
 					res.status(500).end();
@@ -241,14 +210,6 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 			fileStream.destroy();
 		}
 
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error streaming recording: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		logger.error(`Unexpected error streaming recording ${recordingId}: ${error}`);
-		return res
-			.status(500)
-			.json({ name: 'Recording Error', message: 'An unexpected error occurred while processing the recording' });
+		handleError(res, error, `streaming recording '${recordingId}'`);
 	}
 };

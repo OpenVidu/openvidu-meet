@@ -84,7 +84,7 @@ export class S3Service {
 				throw errorS3NotAvailable(error);
 			}
 
-			throw internalError(error);
+			throw internalError('saving object to S3');
 		}
 	}
 
@@ -109,7 +109,7 @@ export class S3Service {
 			return result;
 		} catch (error: any) {
 			this.logger.error(`S3 bulk delete: error deleting objects in bucket ${bucket}: ${error}`);
-			throw internalError(error);
+			throw internalError('deleting objects from S3');
 		}
 	}
 
@@ -158,7 +158,7 @@ export class S3Service {
 			return response;
 		} catch (error: any) {
 			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix "${basePrefix}": ${error}`);
-			throw internalError(error);
+			throw internalError('listing objects from S3');
 		}
 	}
 
@@ -182,7 +182,7 @@ export class S3Service {
 			}
 
 			this.logger.error(`S3 getObjectAsJson: error retrieving object ${name} from bucket ${bucket}: ${error}`);
-			throw internalError(error);
+			throw internalError('getting object as JSON from S3');
 		}
 	}
 
@@ -212,7 +212,7 @@ export class S3Service {
 				throw errorS3NotAvailable(error);
 			}
 
-			throw internalError(error);
+			throw internalError('getting object as stream from S3');
 		}
 	}
 
@@ -230,7 +230,7 @@ export class S3Service {
 				`S3 getHeaderObject: error getting header for object ${this.getFullKey(name)} in bucket ${bucket}: ${error}`
 			);
 
-			throw internalError(error);
+			throw internalError('getting header for object from S3');
 		}
 	}
 

@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
 import { MeetLock, PasswordHelper } from '../../helpers/index.js';
-import { errorRoomNotFound, OpenViduMeetError } from '../../models/error.model.js';
+import { errorRoomNotFound, internalError, OpenViduMeetError } from '../../models/error.model.js';
 import { LoggerService, MutexService, StorageFactory, StorageProvider } from '../index.js';
 
 /**
@@ -56,13 +56,19 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	 * @returns {Promise<GlobalPreferences>}
 	 */
 	async getGlobalPreferences(): Promise<G> {
-		const preferences = await this.storageProvider.getGlobalPreferences();
+		let preferences = await this.storageProvider.getGlobalPreferences();
 
 		if (preferences) return preferences as G;
 
 		await this.initializeGlobalPreferences();
+		preferences = await this.storageProvider.getGlobalPreferences();
 
-		return this.storageProvider.getGlobalPreferences() as Promise<G>;
+		if (!preferences) {
+			this.logger.error('Global preferences not found after initialization');
+			throw internalError('getting global preferences');
+		}
+
+		return preferences as G;
 	}
 
 	/**

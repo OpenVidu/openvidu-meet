@@ -3,6 +3,15 @@ import { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_ACCESS_TOKEN_EXPIRATION, MEET_REFRESH_TOKEN_EXPIRATION } from '../environment.js';
+import {
+	errorInvalidCredentials,
+	errorInvalidRefreshToken,
+	errorInvalidTokenSubject,
+	errorRefreshTokenNotPresent,
+	errorUnauthorized,
+	handleError,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
 import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
 
@@ -16,7 +25,8 @@ export const login = async (req: Request, res: Response) => {
 
 	if (!user) {
 		logger.warn('Login failed');
-		return res.status(404).json({ message: 'Login failed. Invalid username or password' });
+		const error = errorInvalidCredentials();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	try {
@@ -36,8 +46,7 @@ export const login = async (req: Request, res: Response) => {
 		logger.info(`Login succeeded for user '${username}'`);
 		return res.status(200).json({ message: 'Login succeeded' });
 	} catch (error) {
-		logger.error('Error generating token' + error);
-		return res.status(500).json({ message: 'Internal server error' });
+		handleError(res, error, 'generating token');
 	}
 };
 
@@ -56,7 +65,8 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	if (!refreshToken) {
 		logger.warn('No refresh token provided');
-		return res.status(400).json({ message: 'No refresh token provided' });
+		const error = errorRefreshTokenNotPresent();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	const tokenService = container.get(TokenService);
@@ -65,8 +75,9 @@ export const refreshToken = async (req: Request, res: Response) => {
 	try {
 		payload = await tokenService.verifyToken(refreshToken);
 	} catch (error) {
-		logger.error('Error verifying refresh token' + error);
-		return res.status(400).json({ message: 'Invalid refresh token' });
+		logger.error('Error verifying refresh token:', error);
+		const meetError = errorInvalidRefreshToken();
+		return rejectRequestFromMeetError(res, meetError);
 	}
 
 	const username = payload.sub;
@@ -75,7 +86,8 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	if (!user) {
 		logger.warn('Invalid refresh token subject');
-		return res.status(403).json({ message: 'Invalid refresh token subject' });
+		const error = errorInvalidTokenSubject();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	try {
@@ -88,8 +100,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 		logger.info(`Token refreshed for user ${username}`);
 		return res.status(200).json({ message: 'Token refreshed' });
 	} catch (error) {
-		logger.error('Error refreshing token' + error);
-		return res.status(500).json({ message: 'Internal server error' });
+		handleError(res, error, 'refreshing token');
 	}
 };
 
@@ -97,7 +108,8 @@ export const getProfile = (req: Request, res: Response) => {
 	const user = req.session?.user;
 
 	if (!user) {
-		return res.status(401).json({ message: 'Unauthorized' });
+		const error = errorUnauthorized();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	return res.status(200).json(user);

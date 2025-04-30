@@ -14,7 +14,7 @@ import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
-import { errorInvalidRoomSecret, errorRoomNotFoundOrEmptyRecordings, internalError } from '../models/error.model.js';
+import { errorInvalidRoomSecret, errorRoomMetadataNotFound, internalError } from '../models/error.model.js';
 import {
 	IScheduledTask,
 	LiveKitService,
@@ -212,7 +212,7 @@ export class RoomService {
 
 			if (deleted.length === 0 && markedForDeletion.length === 0) {
 				this.logger.error('No rooms were deleted or marked as deleted.');
-				throw internalError('No rooms were deleted or marked as deleted.');
+				throw internalError('while deleting rooms. No rooms were deleted or marked as deleted.');
 			}
 
 			return { deleted, markedForDeletion };
@@ -275,7 +275,7 @@ export class RoomService {
 
 		if (!room) {
 			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
-			throw errorRoomNotFoundOrEmptyRecordings(roomId);
+			throw errorRoomMetadataNotFound(roomId);
 		}
 
 		const role = this.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);

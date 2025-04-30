@@ -11,6 +11,7 @@ import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
 import { z } from 'zod';
 import INTERNAL_CONFIG from '../../config/internal-config.js';
+import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 /**
  * Sanitizes an identifier by removing/replacing invalid characters
@@ -171,7 +172,7 @@ export const withValidRoomOptions = (req: Request, res: Response, next: NextFunc
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
@@ -182,14 +183,13 @@ export const withValidRoomFiltersRequest = (req: Request, res: Response, next: N
 	const { success, error, data } = GetRoomFiltersSchema.safeParse(req.query);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.query = {
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
-
 	next();
 };
 
@@ -197,7 +197,7 @@ export const withValidRoomPreferences = (req: Request, res: Response, next: Next
 	const { success, error, data } = RoomPreferencesSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
@@ -209,7 +209,7 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 
 	if (!success) {
 		error.errors[0].path = ['roomId'];
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.params.roomId = data;
@@ -220,7 +220,7 @@ export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next
 	const { success, error, data } = BulkDeleteRoomsSchema.safeParse(req.query);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.query.roomIds = data.roomIds as any;
@@ -232,7 +232,7 @@ export const withValidRoomDeleteRequest = (req: Request, res: Response, next: Ne
 	const roomIdResult = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
 	if (!roomIdResult.success) {
-		return rejectRequest(res, roomIdResult.error);
+		return rejectUnprocessableRequest(res, roomIdResult.error);
 	}
 
 	req.params.roomId = roomIdResult.data;
@@ -240,11 +240,10 @@ export const withValidRoomDeleteRequest = (req: Request, res: Response, next: Ne
 	const forceResult = validForceQueryParam().safeParse(req.query.force);
 
 	if (!forceResult.success) {
-		return rejectRequest(res, forceResult.error);
+		return rejectUnprocessableRequest(res, forceResult.error);
 	}
 
 	req.query.force = forceResult.data ? 'true' : 'false';
-
 	next();
 };
 
@@ -252,22 +251,9 @@ export const withValidRoomSecret = (req: Request, res: Response, next: NextFunct
 	const { success, error, data } = RecordingTokenRequestSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
 	next();
-};
-
-const rejectRequest = (res: Response, error: z.ZodError) => {
-	const errors = error.errors.map((error) => ({
-		field: error.path.join('.'),
-		message: error.message
-	}));
-
-	return res.status(422).json({
-		error: 'Unprocessable Entity',
-		message: 'Invalid request',
-		details: errors
-	});
 };

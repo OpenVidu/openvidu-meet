@@ -377,7 +377,7 @@ export class RecordingService {
 
 		if (!fileSize) {
 			this.logger.error(`Error getting file size for recording ${recordingId}`);
-			throw internalError(`Error getting file size for recording ${recordingId}`);
+			throw internalError(`getting file size for recording '${recordingId}'`);
 		}
 
 		if (range) {
@@ -509,7 +509,7 @@ export class RecordingService {
 		const filename = RecordingHelper.extractFilename(recordingInfo);
 
 		if (!filename) {
-			throw internalError(`Error extracting path from recording ${recordingId}`);
+			throw internalError(`extracting path from recording '${recordingId}'`);
 		}
 
 		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${filename}`;

@@ -1,7 +1,7 @@
 import { SecurityPreferencesDTO, UpdateSecurityPreferencesDTO } from '@typings-ce';
 import { Request, Response } from 'express';
 import { container } from '../../config/index.js';
-import { OpenViduMeetError } from '../../models/error.model.js';
+import { handleError } from '../../models/error.model.js';
 import { LoggerService, MeetStorageService } from '../../services/index.js';
 
 export const updateSecurityPreferences = async (req: Request, res: Response) => {
@@ -30,13 +30,7 @@ export const updateSecurityPreferences = async (req: Request, res: Response) => 
 
 		return res.status(200).json({ message: 'Security preferences updated successfully' });
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error updating security preferences: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		logger.error('Error updating security preferences:' + error);
-		return res.status(500).json({ message: 'Error updating security preferences' });
+		handleError(res, error, 'updating security preferences');
 	}
 };
 
@@ -44,14 +38,10 @@ export const getSecurityPreferences = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const preferenceService = container.get(MeetStorageService);
 
+	logger.verbose('Getting security preferences');
+
 	try {
 		const preferences = await preferenceService.getGlobalPreferences();
-
-		if (!preferences) {
-			//TODO: Create OpenViduMeetError for this case
-			logger.error('Security preferences not found');
-			return res.status(404).json({ message: 'Security preferences not found' });
-		}
 
 		// Convert the preferences to the DTO format by removing credentials
 		const securityPreferences = preferences.securityPreferences;
@@ -66,12 +56,6 @@ export const getSecurityPreferences = async (_req: Request, res: Response) => {
 		};
 		return res.status(200).json(securityPreferencesDTO);
 	} catch (error) {
-		if (error instanceof OpenViduMeetError) {
-			logger.error(`Error getting security preferences: ${error.message}`);
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		logger.error('Error getting security preferences:' + error);
-		return res.status(500).json({ message: 'Error fetching security preferences from database' });
+		handleError(res, error, 'getting security preferences');
 	}
 };

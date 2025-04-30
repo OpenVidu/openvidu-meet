@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { errorMalformedBody, errorUnsupportedMediaType, rejectRequestFromMeetError } from '../models/error.model.js';
 
 export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: NextFunction) => {
 	if (req.method === 'GET') {
@@ -9,9 +10,8 @@ export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: 
 	const contentType = req.headers['content-type'];
 
 	if (!contentType || !supportedMediaTypes.includes(contentType)) {
-		return res.status(415).json({
-			error: `Unsupported Media Type. Supported types: ${supportedMediaTypes.join(', ')}`
-		});
+		const error = errorUnsupportedMediaType(supportedMediaTypes);
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	next();
@@ -29,12 +29,9 @@ export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: 
  * @param next - Express next function to continue to the next middleware
  */
 export const jsonSyntaxErrorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
-	// This middleware handles JSON syntax errors
 	if (err instanceof SyntaxError && (err as any).status === 400 && 'body' in err) {
-		res.status(400).json({
-			error: 'Bad Request',
-			message: 'Malformed Body'
-		});
+		const error = errorMalformedBody();
+		rejectRequestFromMeetError(res, error);
 	} else {
 		next(err);
 	}

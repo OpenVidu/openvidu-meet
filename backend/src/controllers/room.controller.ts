@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_RECORDING_TOKEN_EXPIRATION } from '../environment.js';
-import { OpenViduMeetError } from '../models/error.model.js';
+import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
 
@@ -20,8 +20,7 @@ export const createRoom = async (req: Request, res: Response) => {
 		res.set('Location', `${baseUrl}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
 		return res.status(201).json(room);
 	} catch (error) {
-		logger.error(`Error creating room with options '${JSON.stringify(options)}'`);
-		handleError(res, error);
+		handleError(res, error, 'creating room');
 	}
 };
 
@@ -37,8 +36,7 @@ export const getRooms = async (req: Request, res: Response) => {
 		const maxItems = Number(queryParams.maxItems);
 		return res.status(200).json({ rooms, pagination: { isTruncated, nextPageToken, maxItems } });
 	} catch (error) {
-		logger.error('Error getting rooms');
-		handleError(res, error);
+		handleError(res, error, 'getting rooms');
 	}
 };
 
@@ -49,15 +47,14 @@ export const getRoom = async (req: Request, res: Response) => {
 	const fields = req.query.fields as string | undefined;
 
 	try {
-		logger.verbose(`Getting room with id '${roomId}'`);
+		logger.verbose(`Getting room '${roomId}'`);
 
 		const roomService = container.get(RoomService);
 		const room = await roomService.getMeetRoom(roomId, fields);
 
 		return res.status(200).json(room);
 	} catch (error) {
-		logger.error(`Error getting room with id '${roomId}'`);
-		handleError(res, error);
+		handleError(res, error, `getting room '${roomId}'`);
 	}
 };
 
@@ -70,7 +67,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const forceDelete = force === 'true';
 
 	try {
-		logger.verbose(`Deleting room: ${roomId}`);
+		logger.verbose(`Deleting room '${roomId}'`);
 
 		const { deleted } = await roomService.bulkDeleteRooms([roomId], forceDelete);
 
@@ -80,10 +77,9 @@ export const deleteRoom = async (req: Request, res: Response) => {
 		}
 
 		// Room was marked as deleted
-		return res.status(202).json({ message: `Room ${roomId} marked as deleted` });
+		return res.status(202).json({ message: `Room '${roomId}' marked as deleted` });
 	} catch (error) {
-		logger.error(`Error deleting room: ${roomId}`);
-		handleError(res, error);
+		handleError(res, error, `deleting room '${roomId}'`);
 	}
 };
 
@@ -110,8 +106,8 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 		if (deleted.length === 0 && markedForDeletion.length > 0) {
 			const message =
 				markedForDeletion.length === 1
-					? `Room ${markedForDeletion[0]} marked for deletion`
-					: `Rooms ${markedForDeletion.join(', ')} marked for deletion`;
+					? `Room '${markedForDeletion[0]}' marked for deletion`
+					: `Rooms '${markedForDeletion.join(', ')}' marked for deletion`;
 
 			return res.status(202).json({ message });
 		}
@@ -119,8 +115,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 		// Mixed result (some rooms deleted, some marked for deletion)
 		return res.status(200).json({ deleted, markedForDeletion });
 	} catch (error) {
-		logger.error(`Error deleting rooms: ${error}`);
-		handleError(res, error);
+		handleError(res, error, `deleting rooms`);
 	}
 };
 
@@ -130,14 +125,13 @@ export const updateRoomPreferences = async (req: Request, res: Response) => {
 	const roomPreferences = req.body;
 	const { roomId } = req.params;
 
-	logger.verbose(`Updating room preferences`);
+	logger.verbose(`Updating room preferences for room '${roomId}'`);
 
 	try {
 		const room = await roomService.updateMeetRoomPreferences(roomId, roomPreferences);
 		return res.status(200).json(room);
 	} catch (error) {
-		logger.error(`Error saving room preferences: ${error}`);
-		handleError(res, error);
+		handleError(res, error, `updating room preferences for room '${roomId}'`);
 	}
 };
 
@@ -159,8 +153,7 @@ export const generateRecordingToken = async (req: Request, res: Response) => {
 		);
 		return res.status(200).json({ token });
 	} catch (error) {
-		logger.error(`Error generating recording token for room '${roomId}'`);
-		handleError(res, error);
+		handleError(res, error, `generating recording token for room '${roomId}'`);
 	}
 };
 
@@ -175,8 +168,7 @@ export const getRoomRolesAndPermissions = async (req: Request, res: Response) =>
 	try {
 		await roomService.getMeetRoom(roomId);
 	} catch (error) {
-		logger.error(`Error getting room '${roomId}'`);
-		return handleError(res, error);
+		return handleError(res, error, `getting room '${roomId}'`);
 	}
 
 	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);
@@ -214,18 +206,6 @@ export const getRoomRoleAndPermissions = async (req: Request, res: Response) => 
 		};
 		return res.status(200).json(roleAndPermissions);
 	} catch (error) {
-		logger.error(`Error getting room role and permissions for room '${roomId}' and secret '${secret}'`);
-		handleError(res, error);
-	}
-};
-
-const handleError = (res: Response, error: OpenViduMeetError | unknown) => {
-	const logger = container.get(LoggerService);
-	logger.error(String(error));
-
-	if (error instanceof OpenViduMeetError) {
-		res.status(error.statusCode).json({ name: error.name, message: error.message });
-	} else {
-		res.status(500).json({ name: 'Room Error', message: 'Internal server error. Room operation failed' });
+		handleError(res, error, `getting room role and permissions for room '${roomId}' and secret '${secret}'`);
 	}
 };

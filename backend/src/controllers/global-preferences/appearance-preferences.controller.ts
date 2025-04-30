@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
+import { errorProFeature, rejectRequestFromMeetError } from '../../models/error.model.js';
 
-export const updateAppearancePreferences = async (req: Request, res: Response) => {
-	return res
-		.status(402)
-		.json({ message: 'Storing appearance preference is a PRO feature. Please, Updrade to OpenVidu PRO' });
+export const updateAppearancePreferences = async (_req: Request, res: Response) => {
+	const error = errorProFeature('update appearance preferences');
+	rejectRequestFromMeetError(res, error);
 };
 
-export const getAppearancePreferences = async (req: Request, res: Response) => {
-	return res
-		.status(402)
-		.json({ message: 'Getting appearance preference is a PRO feature. Please, Updrade to OpenVidu PRO' });
+export const getAppearancePreferences = async (_req: Request, res: Response) => {
+	const error = errorProFeature('get appearance preferences');
+	rejectRequestFromMeetError(res, error);
 };

@@ -183,7 +183,7 @@ export class RedisService extends EventEmitter {
 			}
 		} catch (error) {
 			this.logger.error('Error getting value from Redis', error);
-			throw internalError(error);
+			throw internalError('getting value from Redis');
 		}
 	}
 
@@ -234,7 +234,7 @@ export class RedisService extends EventEmitter {
 
 			return this.redisPublisher.del(keys);
 		} catch (error) {
-			throw internalError(`Error deleting key from Redis ${error}`);
+			throw internalError(`deleting key from Redis`);
 		}
 	}
 

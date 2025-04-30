@@ -1,8 +1,8 @@
 import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
-import { OpenViduMeetError } from '../models/error.model.js';
-import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
+import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
+import { MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -13,7 +13,6 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  * - Otherwise, allow anonymous access.
  */
 export const configureParticipantTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(MeetStorageService);
 	const roomService = container.get(RoomService);
 
@@ -23,16 +22,7 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 		const { roomId, secret } = req.body as ParticipantOptions;
 		role = await roomService.getRoomRoleBySecret(roomId, secret);
 	} catch (error) {
-		logger.error('Error getting room role by secret', error);
-
-		if (error instanceof OpenViduMeetError) {
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		} else {
-			return res.status(500).json({
-				name: 'Participant Error',
-				message: 'Internal server error. Participant operation failed'
-			});
-		}
+		return handleError(res, error, 'getting room role by secret');
 	}
 
 	let authMode: AuthMode;
@@ -41,8 +31,7 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
 		authMode = securityPreferences.authentication.authMode;
 	} catch (error) {
-		logger.error('Error checking authentication preferences', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return handleError(res, error, 'checking authentication preferences');
 	}
 
 	const authValidators = [];
@@ -68,7 +57,8 @@ export const withModeratorPermissions = async (req: Request, res: Response, next
 	const payload = req.session?.tokenClaims;
 
 	if (!payload) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	const sameRoom = payload.video?.room === roomId;
@@ -76,7 +66,8 @@ export const withModeratorPermissions = async (req: Request, res: Response, next
 	const role = metadata.role as ParticipantRole;
 
 	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	return next();

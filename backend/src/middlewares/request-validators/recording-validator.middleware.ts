@@ -1,6 +1,7 @@
 import { MeetRecordingFilters } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 
 const nonEmptySanitizedRecordingId = (fieldName: string) =>
@@ -114,7 +115,7 @@ export const withValidStartRecordingRequest = (req: Request, res: Response, next
 	const { success, error, data } = StartRecordingRequestSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
@@ -125,7 +126,7 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 	const { success, error, data } = GetRecordingSchema.safeParse({ recordingId: req.params.recordingId });
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.params.recordingId = data.recordingId;
@@ -136,7 +137,7 @@ export const withValidRecordingFiltersRequest = (req: Request, res: Response, ne
 	const { success, error, data } = GetRecordingsFiltersSchema.safeParse(req.query);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.query = {
@@ -150,7 +151,7 @@ export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response,
 	const { success, error, data } = BulkDeleteRecordingsSchema.safeParse(req.query);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.query.recordingIds = data.recordingIds.join(',');
@@ -164,23 +165,10 @@ export const withValidGetMediaRequest = (req: Request, res: Response, next: Next
 	});
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.params.recordingId = data.params.recordingId;
 	req.headers.range = data.headers.range;
 	next();
-};
-
-const rejectRequest = (res: Response, error: z.ZodError) => {
-	const errors = error.errors.map((error) => ({
-		field: error.path.join('.'),
-		message: error.message
-	}));
-
-	return res.status(422).json({
-		error: 'Unprocessable Entity',
-		message: 'Invalid request',
-		details: errors
-	});
 };

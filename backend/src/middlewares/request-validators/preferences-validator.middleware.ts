@@ -10,6 +10,7 @@ import {
 } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z.object({
 	enabled: z.boolean(),
@@ -49,7 +50,7 @@ export const validateWebhookPreferences = (req: Request, res: Response, next: Ne
 	const { success, error, data } = WebhookPreferencesSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
@@ -60,22 +61,9 @@ export const validateSecurityPreferences = (req: Request, res: Response, next: N
 	const { success, error, data } = UpdateSecurityPreferencesDTOSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
 	next();
-};
-
-const rejectRequest = (res: Response, error: z.ZodError) => {
-	const errors = error.errors.map((error) => ({
-		field: error.path.join('.'),
-		message: error.message
-	}));
-
-	return res.status(422).json({
-		error: 'Unprocessable Entity',
-		message: 'Invalid request',
-		details: errors
-	});
 };

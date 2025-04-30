@@ -3,10 +3,11 @@ import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import {
 	errorInsufficientPermissions,
-	errorRoomNotFoundOrEmptyRecordings,
-	OpenViduMeetError
+	errorRoomMetadataNotFound,
+	handleError,
+	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
+import { MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -17,7 +18,6 @@ import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from
  * - If room creation is allowed and does not require authentication, anonymous users are allowed.
  */
 export const configureCreateRoomAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(MeetStorageService);
 	let allowRoomCreation: boolean;
 	let requireAuthentication: boolean;
@@ -26,8 +26,7 @@ export const configureCreateRoomAuth = async (req: Request, res: Response, next:
 		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
 		({ allowRoomCreation, requireAuthentication } = securityPreferences.roomCreationPolicy);
 	} catch (error) {
-		logger.error('Error checking room creation policy:' + error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return handleError(res, error, 'checking room creation policy');
 	}
 
 	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)];
@@ -70,10 +69,10 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 	const role = metadata.role as ParticipantRole;
 
 	if (!sameRoom) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
-	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(MeetStorageService);
 	let authMode: AuthMode;
 
@@ -81,8 +80,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
 		authMode = securityPreferences.authentication.authMode;
 	} catch (error) {
-		logger.error('Error checking authentication preferences', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return handleError(res, error, 'checking authentication preferences');
 	}
 
 	// If the user is a moderator, it is necessary to add the user role validator
@@ -96,7 +94,8 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 	}
 
 	// If the user is not a moderator, it is not allowed to access the resource
-	return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+	const error = errorInsufficientPermissions();
+	return rejectRequestFromMeetError(res, error);
 };
 
 /**
@@ -108,7 +107,6 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
  * - Otherwise, allow anonymous access.
  */
 export const configureRecordingTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const logger = container.get(LoggerService);
 	const storageService = container.get(MeetStorageService);
 	const roomService = container.get(RoomService);
 
@@ -121,7 +119,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 
 		if (!room) {
 			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
-			throw errorRoomNotFoundOrEmptyRecordings(roomId);
+			throw errorRoomMetadataNotFound(roomId);
 		}
 
 		const recordingAccess = room.preferences!.recordingPreferences.allowAccessTo;
@@ -133,16 +131,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 
 		role = roomService.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);
 	} catch (error) {
-		logger.error('Error getting room role by secret', error);
-
-		if (error instanceof OpenViduMeetError) {
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		} else {
-			return res.status(500).json({
-				name: 'Room Error',
-				message: 'Internal server error. Room operation failed'
-			});
-		}
+		return handleError(res, error, 'getting room role by secret');
 	}
 
 	let authMode: AuthMode;
@@ -151,8 +140,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 		const { securityPreferences } = await storageService.getGlobalPreferences();
 		authMode = securityPreferences.authentication.authMode;
 	} catch (error) {
-		logger.error('Error checking authentication preferences', error);
-		return res.status(500).json({ message: 'Internal server error' });
+		return handleError(res, error, 'checking authentication preferences');
 	}
 
 	const authValidators = [];

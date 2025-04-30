@@ -1,6 +1,7 @@
 import { ParticipantOptions } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 
 const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
@@ -13,24 +14,9 @@ export const validateParticipantTokenRequest = (req: Request, res: Response, nex
 	const { success, error, data } = ParticipantTokenRequestSchema.safeParse(req.body);
 
 	if (!success) {
-		return rejectRequest(res, error);
+		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
 	next();
-};
-
-const rejectRequest = (res: Response, error: z.ZodError) => {
-	const errors = error.errors.map((error) => ({
-		field: error.path.join('.'),
-		message: error.message
-	}));
-
-	console.log(errors);
-
-	return res.status(422).json({
-		error: 'Unprocessable Entity',
-		message: 'Invalid request',
-		details: errors
-	});
 };

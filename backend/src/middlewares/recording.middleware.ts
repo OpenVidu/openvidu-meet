@@ -2,9 +2,21 @@ import { MeetRecordingAccess, MeetRoom, OpenViduMeetPermissions, RecordingPermis
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
-import { OpenViduMeetError } from '../models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorRecordingDisabled,
+	errorRoomMetadataNotFound,
+	handleError,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
 import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
-import { allowAnonymous, apiKeyValidator, recordingTokenValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
+import {
+	allowAnonymous,
+	apiKeyValidator,
+	recordingTokenValidator,
+	tokenAndRoleValidator,
+	withAuth
+} from './auth.middleware.js';
 
 export const withRecordingEnabled = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
@@ -15,23 +27,14 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 		const room: MeetRoom = await roomService.getMeetRoom(roomId!);
 
 		if (!room.preferences?.recordingPreferences?.enabled) {
-			logger.debug(`Recording is disabled for room ${roomId}`);
-			return res.status(403).json({
-				message: 'Recording is disabled in this room'
-			});
+			logger.debug(`Recording is disabled for room '${roomId}'`);
+			const error = errorRecordingDisabled(roomId!);
+			return rejectRequestFromMeetError(res, error);
 		}
 
 		return next();
 	} catch (error) {
-		logger.error(`Error checking recording preferences: ${error}`);
-
-		if (error instanceof OpenViduMeetError) {
-			return res.status(error.statusCode).json({ name: error.name, message: error.message });
-		}
-
-		return res.status(500).json({
-			message: 'Unexpected error checking recording preferences'
-		});
+		handleError(res, error, 'checking recording preferences');
 	}
 };
 
@@ -40,7 +43,8 @@ export const withCanRecordPermission = async (req: Request, res: Response, next:
 	const payload = req.session?.tokenClaims;
 
 	if (!payload) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	const sameRoom = payload.video?.room === roomId;
@@ -49,7 +53,8 @@ export const withCanRecordPermission = async (req: Request, res: Response, next:
 	const canRecord = permissions?.canRecord;
 
 	if (!sameRoom || !canRecord) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	return next();
@@ -72,7 +77,8 @@ export const withCanRetrieveRecordingsPermission = async (req: Request, res: Res
 	const canRetrieveRecordings = permissions?.canRetrieveRecordings;
 
 	if (!sameRoom || !canRetrieveRecordings) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	return next();
@@ -94,7 +100,8 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
 	const canDeleteRecordings = permissions?.canDeleteRecordings;
 
 	if (!sameRoom || !canDeleteRecordings) {
-		return res.status(403).json({ message: 'Insufficient permissions to access this resource' });
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	return next();
@@ -107,7 +114,6 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
  * - If recording access is public, anonymous users are allowed
  */
 export const configureRecordingMediaAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const logger = container.get(LoggerService);
 	const storageService = container.get(MeetStorageService);
 
 	let recordingAccess: MeetRecordingAccess;
@@ -117,17 +123,13 @@ export const configureRecordingMediaAuth = async (req: Request, res: Response, n
 		const room = await storageService.getArchivedRoomMetadata(roomId!);
 
 		if (!room) {
-			return res.status(404).json({
-				message: 'Room metadata associated with the recording not found'
-			});
+			const error = errorRoomMetadataNotFound(roomId!);
+			return rejectRequestFromMeetError(res, error);
 		}
 
 		recordingAccess = room.preferences!.recordingPreferences.allowAccessTo;
 	} catch (error) {
-		logger.error(`Error checking recording permissions: ${error}`);
-		return res.status(500).json({
-			message: 'Unexpected error checking recording permissions'
-		});
+		return handleError(res, error, 'checking recording permissions');
 	}
 
 	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator];

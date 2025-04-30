@@ -12,7 +12,9 @@ import {
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorUnauthorized,
-	OpenViduMeetError
+	internalError,
+	OpenViduMeetError,
+	rejectRequestFromMeetError
 } from '../models/index.js';
 import { LoggerService, TokenService, UserService } from '../services/index.js';
 
@@ -42,10 +44,11 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 		}
 
 		if (lastError) {
-			return res.status(lastError.statusCode).json({ message: lastError.message });
+			return rejectRequestFromMeetError(res, lastError);
 		}
 
-		return res.status(500).json({ message: 'Internal server error' });
+		const error = internalError('authenticating user');
+		return rejectRequestFromMeetError(res, error);
 	};
 };
 
@@ -94,10 +97,7 @@ export const recordingTokenValidator = async (req: Request) => {
 	await validateTokenAndSetSession(req, INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME);
 };
 
-const validateTokenAndSetSession = async (
-	req: Request,
-	cookieName: string
-) => {
+const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 	const token = req.cookies[cookieName];
 
 	if (!token) {
