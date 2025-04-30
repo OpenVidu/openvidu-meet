@@ -130,7 +130,7 @@ describe('Room API Tests', () => {
 
 			expect(response.status).toBe(202);
 
-			expect(response.body.message).toContain(`Rooms ${room1.roomId}, ${room2.roomId} marked for deletion`);
+			expect(response.body.message).toContain(`Rooms '${room1.roomId}, ${room2.roomId}' marked for deletion`);
 			expect(response.body.deleted).toBeUndefined();
 
 			// Verify that the rooms are marked for deletion

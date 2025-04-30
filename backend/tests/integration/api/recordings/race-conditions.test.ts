@@ -1,35 +1,34 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, jest } from '@jest/globals';
-
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { container } from '../../../../src/config/index.js';
+import { RecordingService, TaskSchedulerService } from '../../../../src/services';
+import {
+	expectValidStartRecordingResponse,
+	expectValidStopRecordingResponse
+} from '../../../helpers/assertion-helpers';
 import { eventController } from '../../../helpers/event-controller';
 import {
-	startRecording,
-	sleep,
+	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
-	startTestServer,
-	stopRecording,
-	stopAllRecordings,
-	getRecordingMedia,
 	deleteRecording,
-	bulkDeleteRecordings
+	getRecordingMedia,
+	sleep,
+	startRecording,
+	startTestServer,
+	stopAllRecordings,
+	stopRecording
 } from '../../../helpers/request-helpers';
-
 import {
 	setupMultiRecordingsTestContext,
 	setupMultiRoomTestContext,
 	TestContext
 } from '../../../helpers/test-scenarios';
-import {
-	expectValidStartRecordingResponse,
-	expectValidStopRecordingResponse
-} from '../../../helpers/assertion-helpers';
-import { RecordingService, TaskSchedulerService } from '../../../../src/services';
-import { container } from '../../../../src/config/dependency-injector.config';
 
 describe('Recording API Race Conditions Tests', () => {
 	let context: TestContext | null = null;
 	let recordingService: RecordingService;
 	let taskSchedulerService: TaskSchedulerService;
+
 	beforeAll(async () => {
 		startTestServer();
 		recordingService = container.get(RecordingService);
@@ -47,8 +46,6 @@ describe('Recording API Race Conditions Tests', () => {
 		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 		jest.clearAllMocks();
 	});
-
-	afterAll(async () => {});
 
 	it('should start recordings concurrently in two rooms and stop one before RECORDING_ACTIVE is received for the other', async () => {
 		context = await setupMultiRoomTestContext(2, true);

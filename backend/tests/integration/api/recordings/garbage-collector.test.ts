@@ -1,18 +1,17 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { EgressInfo, EgressStatus, Room } from 'livekit-server-sdk';
 import ms from 'ms';
+import { Lock } from 'redlock';
+import { container } from '../../../../src/config/index.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetLock } from '../../../../src/helpers/index.js';
 import {
-	RecordingService,
-	MutexService,
 	LiveKitService,
 	LoggerService,
+	MutexService,
+	RecordingService,
 	RedisLock
 } from '../../../../src/services/index.js';
-
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { EgressInfo, EgressStatus, Room } from 'livekit-server-sdk';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { Lock } from 'redlock';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Recording Garbage Collector Tests', () => {

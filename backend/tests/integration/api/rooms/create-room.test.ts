@@ -187,7 +187,7 @@ describe('Room API Tests', () => {
 				.expect(400);
 
 			expect(response.body.error).toContain('Bad Request');
-			expect(response.body.message).toContain('Malformed Body');
+			expect(response.body.message).toContain('Malformed body');
 		});
 
 		it('should fail when roomIdPrefix is too long', async () => {

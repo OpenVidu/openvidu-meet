@@ -1,5 +1,13 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
+import { errorRoomNotFound } from '../../../../src/models/error.model.js';
+import { MeetRoom } from '../../../../src/typings/ce/index.js';
+import {
+	expectValidationError,
+	expectValidRecordingLocationHeader,
+	expectValidStartRecordingResponse,
+	expectValidStopRecordingResponse
+} from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -10,15 +18,6 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
-
-import { errorRoomNotFound } from '../../../../src/models/error.model.js';
-import { MeetRoom } from '../../../../src/typings/ce/room.js';
-import {
-	expectValidationError,
-	expectValidRecordingLocationHeader,
-	expectValidStartRecordingResponse,
-	expectValidStopRecordingResponse
-} from '../../../helpers/assertion-helpers.js';
 import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
@@ -117,7 +116,7 @@ describe('Recording API Tests', () => {
 			const response = await startRecording(room.roomId, moderatorCookie);
 			// Room exists but it has no participants
 			expect(response.status).toBe(409);
-			expect(response.body.message).toContain(`The room '${room.roomId}' has no participants`);
+			expect(response.body.message).toContain(`Room '${room.roomId}' has no participants`);
 		});
 
 		it('should sanitize roomId and reject the request with 409 due to no participants', async () => {
@@ -126,7 +125,7 @@ describe('Recording API Tests', () => {
 
 			console.log('Response:', response.body);
 			expect(response.status).toBe(409);
-			expect(response.body.message).toContain(`The room '${room.roomId}' has no participants`);
+			expect(response.body.message).toContain(`Room '${room.roomId}' has no participants`);
 		});
 
 		it('should reject request with roomId that becomes empty after sanitization', async () => {
@@ -152,7 +151,7 @@ describe('Recording API Tests', () => {
 			const error = errorRoomNotFound('non-existing-room-id');
 			expect(response.status).toBe(404);
 			expect(response.body).toEqual({
-				name: error.name,
+				error: error.name,
 				message: error.message
 			});
 		});

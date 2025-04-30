@@ -1,4 +1,11 @@
-import { describe, it, expect, beforeAll, afterEach, afterAll } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetRoom } from '../../../../src/typings/ce/index.js';
+import {
+	expectSuccessListRecordingResponse,
+	expectValidationError,
+	expectValidRecording,
+	expectValidRecordingWithFields
+} from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -6,16 +13,7 @@ import {
 	getAllRecordings,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-
-import {
-	expectValidationError,
-	expectSuccessListRecordingResponse,
-	expectValidRecordingWithFields,
-	expectValidRecording
-} from '../../../helpers/assertion-helpers.js';
 import { RoomData, setupMultiRecordingsTestContext, TestContext } from '../../../helpers/test-scenarios.js';
-import { MeetRoom } from '../../../../src/typings/ce/room.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
 
 describe('Recordings API Tests', () => {
 	let context: TestContext | null = null;

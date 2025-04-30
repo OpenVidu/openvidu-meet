@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoom } from '../../../../src/typings/ce';
 import { expectSuccessRecordingMediaResponse, expectValidationError } from '../../../helpers/assertion-helpers';
 import {
 	deleteAllRecordings,
@@ -9,7 +10,6 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers';
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
-import { MeetRoom } from '../../../../src/typings/ce';
 
 describe('Recording API Tests', () => {
 	let room: MeetRoom, recordingId: string, moderatorCookie: string;
@@ -27,6 +27,7 @@ describe('Recording API Tests', () => {
 		await stopAllRecordings(moderatorCookie);
 		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 	});
+
 	describe('Recording Media Tests', () => {
 		it('should return 200 when requesting the full media content', async () => {
 			const response = await getRecordingMedia(recordingId);
@@ -157,7 +158,7 @@ describe('Recording API Tests', () => {
 			// Request a range beyond the file size
 			const response = await getRecordingMedia(recordingId, `bytes=${fullSize + 1}-${fullSize + 1000}`);
 			expect(response.status).toBe(416);
-			expect(response.body).toHaveProperty('name', 'Recording Error');
+			expect(response.body).toHaveProperty('error', 'Recording Error');
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain(`Recording '${recordingId}' range not satisfiable`);
 			expect(response.body.message).toMatch(/File size: \d+/);
@@ -170,7 +171,7 @@ describe('Recording API Tests', () => {
 			// Attempt to get the media of an active recording
 			const response = await getRecordingMedia(activeRecordingId);
 			expect(response.status).toBe(409);
-			expect(response.body).toHaveProperty('name', 'Recording Error');
+			expect(response.body).toHaveProperty('error', 'Recording Error');
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not stopped yet`);
 

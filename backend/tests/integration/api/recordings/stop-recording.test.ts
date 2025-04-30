@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { expectValidStopRecordingResponse, expectErrorResponse } from '../../../helpers/assertion-helpers';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoom } from '../../../../src/typings/ce';
+import { expectErrorResponse, expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers';
 import {
-	startRecording,
-	disconnectFakeParticipants,
-	stopAllRecordings,
-	stopRecording,
 	deleteAllRecordings,
 	deleteAllRooms,
-	startTestServer
+	disconnectFakeParticipants,
+	startRecording,
+	startTestServer,
+	stopAllRecordings,
+	stopRecording
 } from '../../../helpers/request-helpers';
-import { MeetRoom } from '../../../../src/typings/ce';
 import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
@@ -19,6 +19,7 @@ describe('Recording API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
 	});
+
 	afterAll(async () => {
 		await stopAllRecordings(moderatorCookie);
 		await disconnectFakeParticipants();
@@ -67,7 +68,7 @@ describe('Recording API Tests', () => {
 			it('should return 404 when recordingId does not exist', async () => {
 				const response = await stopRecording(`${room.roomId}--EG_123--444`, moderatorCookie);
 				expect(response.status).toBe(404);
-				expect(response.body.name).toBe('Recording Error');
+				expect(response.body.error).toBe('Recording Error');
 				expect(response.body.message).toContain('not found');
 			});
 
