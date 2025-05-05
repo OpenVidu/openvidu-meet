@@ -4,6 +4,8 @@ import { MeetRoom } from './room.js';
 export type MeetWebhookPayload = MeetRecordingInfo | MeetRoom;
 
 export const enum MeetWebhookEventType {
+    MEETING_STARTED = 'meetingStarted',
+    MEETING_ENDED = 'meetingEnded',
     RECORDING_STARTED = 'recordingStarted',
     RECORDING_UPDATED = 'recordingUpdated',
     RECORDING_ENDED = 'recordingEnded',

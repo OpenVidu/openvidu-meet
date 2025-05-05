@@ -140,6 +140,28 @@ export class LivekitWebhookService {
 	}
 
 	/**
+	 * Handles a room started event from LiveKit.
+	 *
+	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
+	 * If the meet room is found, it sends a webhook notification indicating that the meeting has started.
+	 * If the meet room is not found, it logs a warning message.
+	 */
+	async handleRoomStarted(room: Room) {
+		try {
+			const meetRoom = await this.roomService.getMeetRoom(room.name);
+
+			if (!meetRoom) {
+				this.logger.warn(`Room ${room.name} not found in OpenVidu Meet.`);
+				return;
+			}
+
+			await this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
+		} catch (error) {
+			this.logger.error('Error sending meeting started webhook:', error);
+		}
+	}
+
+	/**
 	 * Handles the event when a room is finished.
 	 *
 	 * This method sends a webhook notification indicating that the room has finished.
@@ -148,12 +170,18 @@ export class LivekitWebhookService {
 	 * @param {Room} room - The room object that has finished.
 	 * @returns {Promise<void>} A promise that resolves when the webhook has been sent.
 	 */
-	async handleMeetingFinished(room: Room): Promise<void> {
+	async handleRoomFinished(room: Room): Promise<void> {
 		try {
-			const [meetRoom] = await Promise.all([
-				this.roomService.getMeetRoom(room.name),
+			const meetRoom = await this.roomService.getMeetRoom(room.name);
+
+			if (!meetRoom) {
+				this.logger.warn(`Room ${room.name} not found in OpenVidu Meet.`);
+				return;
+			}
+
+			await Promise.all([
 				this.recordingService.releaseRecordingLockIfNoEgress(room.name),
-				this.openViduWebhookService.sendRoomFinishedWebhook(room)
+				this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom)
 			]);
 
 			if (meetRoom.markedForDeletion) {

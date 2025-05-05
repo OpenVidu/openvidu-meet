@@ -1,5 +1,6 @@
 import {
 	MeetRecordingInfo,
+	MeetRoom,
 	MeetWebhookEvent,
 	MeetWebhookEventType,
 	MeetWebhookPayload,
@@ -7,7 +8,6 @@ import {
 } from '@typings-ce';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
-import { Room } from 'livekit-server-sdk';
 import { MEET_API_KEY } from '../environment.js';
 import { LoggerService, MeetStorageService } from './index.js';
 
@@ -18,13 +18,20 @@ export class OpenViduWebhookService {
 		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
 	) {}
 
-	// TODO: Implement Room webhooks
-	async sendRoomFinishedWebhook(room: Room) {
-		// try {
-		// 	await this.sendWebhookEvent(MeetWebhookEventType.ROOM_FINISHED, data);
-		// } catch (error) {
-		// 	this.logger.error(`Error sending room finished webhook: ${error}`);
-		// }
+	async sendMeetingStartedWebhook(room: MeetRoom) {
+		try {
+			await this.sendWebhookEvent(MeetWebhookEventType.MEETING_STARTED, room);
+		} catch (error) {
+			this.logger.error(`Error sending meeting started webhook: ${error}`);
+		}
+	}
+
+	async sendMeetingEndedWebhook(room: MeetRoom) {
+		try {
+			await this.sendWebhookEvent(MeetWebhookEventType.MEETING_ENDED, room);
+		} catch (error) {
+			this.logger.error(`Error sending meeting ended webhook: ${error}`);
+		}
 	}
 
 	async sendRecordingStartedWebhook(recordingInfo: MeetRecordingInfo) {
