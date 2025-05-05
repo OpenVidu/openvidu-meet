@@ -1,22 +1,22 @@
+import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
+import { MeetRoom } from '../../src/typings/ce';
+import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
 	generateParticipantToken,
 	joinFakeParticipant,
-	loginUserAsRole,
 	sleep,
 	startRecording,
 	stopRecording
 } from './request-helpers';
 
-import ms, { StringValue } from 'ms';
-import { MeetRoom, UserRole } from '../../src/typings/ce';
-import { expectValidStartRecordingResponse } from './assertion-helpers';
-
 export interface RoomData {
 	room: MeetRoom;
-	moderatorCookie: string;
 	moderatorSecret: string;
+	moderatorCookie: string;
+	publisherSecret: string;
+	publisherCookie: string;
 	recordingId?: string;
 }
 
@@ -27,29 +27,47 @@ export interface TestContext {
 }
 
 /**
- * Configura un escenario de prueba con dos salas para pruebas de grabación concurrente
+ * Creates a single room with optional participant.
+ *
+ * @param withParticipant Whether to join a fake participant in the room.
+ * @returns               Room data including secrets and cookies.
  */
-export async function setupMultiRoomTestContext(numRooms: number, withParticipants: boolean): Promise<TestContext> {
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+export const setupSingleRoom = async (withParticipant = false): Promise<RoomData> => {
+	const room = await createRoom({
+		roomIdPrefix: 'TEST_ROOM'
+	});
+
+	// Extract the room secrets and generate participant tokens, saved as cookies
+	const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+	const [moderatorCookie, publisherCookie] = await Promise.all([
+		generateParticipantToken(room.roomId, 'MODERATOR', moderatorSecret),
+		generateParticipantToken(room.roomId, 'PUBLISHER', publisherSecret),
+		// Join participant if needed
+		withParticipant ? joinFakeParticipant(room.roomId, 'TEST_PARTICIPANT') : Promise.resolve()
+	]);
+
+	return {
+		room,
+		moderatorSecret,
+		moderatorCookie,
+		publisherSecret,
+		publisherCookie
+	};
+};
+
+/**
+ * Creates a test context with multiple rooms and optional participants.
+ *
+ * @param numRooms         Number of rooms to create.
+ * @param withParticipants Whether to join fake participants in the rooms.
+ * @returns                Test context with created rooms and their data.
+ */
+export const setupMultiRoomTestContext = async (numRooms: number, withParticipants: boolean): Promise<TestContext> => {
 	const rooms: RoomData[] = [];
 
-	// Create additional rooms
 	for (let i = 0; i < numRooms; i++) {
-		const room = await createRoom({
-			roomIdPrefix: `test-recording-room-${i + 1}`
-		});
-		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-		const [moderatorCookie, _] = await Promise.all([
-			generateParticipantToken(adminCookie, room.roomId, `Moderator-${i + 1}`, moderatorSecret),
-			// Join participant (if needed) concurrently with token generation
-			withParticipants ? joinFakeParticipant(room.roomId, `TEST_P-${i + 1}`) : Promise.resolve()
-		]);
-
-		rooms.push({
-			room,
-			moderatorCookie,
-			moderatorSecret
-		});
+		const roomData = await setupSingleRoom(withParticipants);
+		rooms.push(roomData);
 	}
 
 	return {
@@ -70,24 +88,24 @@ export async function setupMultiRoomTestContext(numRooms: number, withParticipan
 			return rooms[rooms.length - 1];
 		}
 	};
-}
+};
 
 /**
- * Quickly creates multiple recordings for bulk delete testing.
+ * Quickly creates multiple recordings
  * Allows customizing how many recordings to start and how many to stop after a delay.
  *
- * @param numRooms    Number of rooms to use.
- * @param numStarts   Number of recordings to start.
- * @param numStops    Number of recordings to stop after the delay.
- * @param stopDelayMs Delay in milliseconds before stopping recordings.
- * @returns           Test context with created recordings (some stopped, some still running).
+ * @param numRooms  Number of rooms to use.
+ * @param numStarts Number of recordings to start.
+ * @param numStops  Number of recordings to stop after the delay.
+ * @param stopDelay Delay before stopping recordings.
+ * @returns         Test context with created recordings (some stopped, some still running).
  */
-export async function setupMultiRecordingsTestContext(
+export const setupMultiRecordingsTestContext = async (
 	numRooms: number,
 	numStarts: number,
 	numStops: number,
-	stopDelay: StringValue
-): Promise<TestContext> {
+	stopDelay?: StringValue
+): Promise<TestContext> => {
 	// Setup rooms with participants
 	const testContext = await setupMultiRoomTestContext(numRooms, true);
 
@@ -111,7 +129,7 @@ export async function setupMultiRecordingsTestContext(
 	const startedRooms = await Promise.all(startPromises);
 
 	// Wait for the configured delay before stopping recordings
-	if (ms(stopDelay) > 0) {
+	if (stopDelay) {
 		await sleep(stopDelay);
 	}
 
@@ -129,4 +147,4 @@ export async function setupMultiRecordingsTestContext(
 	console.log(`Stopped ${stoppedIds.length} recordings after ${stopDelay}ms:`, stoppedIds);
 
 	return testContext;
-}
+};
