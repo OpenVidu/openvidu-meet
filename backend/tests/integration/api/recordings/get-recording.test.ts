@@ -19,7 +19,7 @@ describe('Recording API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
 		// Create a room and join a participant
-		context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+		context = await setupMultiRecordingsTestContext(1, 1, 1);
 		({ room, moderatorCookie, recordingId = '' } = context.getRoomByIndex(0)!);
 	});
 
@@ -39,7 +39,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should get an ACTIVE recording status', async () => {
-			const contextAux = await setupMultiRecordingsTestContext(1, 1, 0, '0s');
+			const contextAux = await setupMultiRecordingsTestContext(1, 1, 0);
 			const {
 				room: roomAux,
 				recordingId: recordingIdAux = '',

@@ -165,7 +165,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should return a 409 when the recording is in progress', async () => {
-			const testContext = await setupMultiRecordingsTestContext(1, 1, 0, '0s');
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 0);
 			const { recordingId: activeRecordingId = '', moderatorCookie } = testContext.rooms[0];
 
 			// Attempt to get the media of an active recording

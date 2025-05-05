@@ -42,14 +42,14 @@ describe('Recordings API Tests', () => {
 		});
 
 		it('should return a list of recordings', async () => {
-			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			context = await setupMultiRecordingsTestContext(1, 1, 1);
 			({ room } = context.getRoomByIndex(0)!);
 			const response = await getAllRecordings();
 			expectSuccessListRecordingResponse(response, 1, false, false);
 		});
 
 		it('should filter recordings by roomId', async () => {
-			context = await setupMultiRecordingsTestContext(2, 2, 2, '0s');
+			context = await setupMultiRecordingsTestContext(2, 2, 2);
 			({ room } = context.getRoomByIndex(0)!);
 			const response = await getAllRecordings({ roomId: room.roomId });
 			expectSuccessListRecordingResponse(response, 1, false, false);
@@ -57,7 +57,7 @@ describe('Recordings API Tests', () => {
 		});
 
 		it('should return recordings with fields filter applied', async () => {
-			context = await setupMultiRecordingsTestContext(2, 2, 2, '0s');
+			context = await setupMultiRecordingsTestContext(2, 2, 2);
 			({ room } = context.getRoomByIndex(0)!);
 			const response = await getAllRecordings({ fields: 'roomId,recordingId' });
 			expectSuccessListRecordingResponse(response, 2, false, false);
@@ -75,7 +75,7 @@ describe('Recordings API Tests', () => {
 		});
 
 		it('should return recordings with pagination', async () => {
-			context = await setupMultiRecordingsTestContext(6, 6, 6, '0s');
+			context = await setupMultiRecordingsTestContext(6, 6, 6);
 			const rooms = context.rooms;
 			const response = await getAllRecordings({ maxItems: 3 });
 			expectSuccessListRecordingResponse(response, 3, true, true, 3);
@@ -103,13 +103,13 @@ describe('Recordings API Tests', () => {
 		});
 
 		it('should cap maxItems to the maximum allowed (100)', async () => {
-			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			context = await setupMultiRecordingsTestContext(1, 1, 1);
 			const response = await getAllRecordings({ maxItems: 101 });
 			expectSuccessListRecordingResponse(response, 1, false, false, 100);
 		});
 
 		it('should coerce a floating point number to integer for maxItems', async () => {
-			context = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			context = await setupMultiRecordingsTestContext(1, 1, 1);
 			const response = await getAllRecordings({ maxItems: 3.5 });
 			expectSuccessListRecordingResponse(response, 1, false, false, 3);
 		});

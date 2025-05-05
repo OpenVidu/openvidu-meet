@@ -23,7 +23,7 @@ describe('Recording API Tests', () => {
 		let room: MeetRoom, recordingId: string, moderatorCookie: string;
 
 		beforeEach(async () => {
-			const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
 			({ room, recordingId = '', moderatorCookie } = roomData);
@@ -85,7 +85,7 @@ describe('Recording API Tests', () => {
 		let room: MeetRoom, recordingId: string, moderatorCookie: string;
 		beforeAll(async () => {
 			await deleteAllRecordings();
-			const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '0s');
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
 			({ room, recordingId = '', moderatorCookie } = roomData);
@@ -132,7 +132,7 @@ describe('Recording API Tests', () => {
 		});
 
 		it('should return 409 when attempting to delete an active recording', async () => {
-			const testContext = await setupMultiRecordingsTestContext(1, 1, 0, '0s');
+			const testContext = await setupMultiRecordingsTestContext(1, 1, 0);
 			const { recordingId: activeRecordingId = '', moderatorCookie } = testContext.rooms[0];
 
 			// Attempt to delete the active recording
