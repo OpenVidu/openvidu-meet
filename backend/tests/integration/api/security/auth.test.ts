@@ -3,6 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { UserRole } from '../../../../src/typings/ce/index.js';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { loginUserAsRole, startTestServer } from '../../../helpers/request-helpers.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
@@ -61,9 +62,7 @@ describe('Authentication API Tests', () => {
 				})
 				.expect(422);
 
-			expect(response.body).toHaveProperty('error', 'Unprocessable Entity');
-			expect(response.body.details[0].field).toBe('username');
-			expect(response.body.details[0].message).toContain('Required');
+			expectValidationError(response, 'username', 'Required');
 		});
 
 		it('should return 422 when password is missing', async () => {
@@ -74,9 +73,7 @@ describe('Authentication API Tests', () => {
 				})
 				.expect(422);
 
-			expect(response.body).toHaveProperty('error', 'Unprocessable Entity');
-			expect(response.body.details[0].field).toBe('password');
-			expect(response.body.details[0].message).toContain('Required');
+			expectValidationError(response, 'password', 'Required');
 		});
 
 		it('should return 422 when username is too short', async () => {
@@ -88,9 +85,7 @@ describe('Authentication API Tests', () => {
 				})
 				.expect(422);
 
-			expect(response.body).toHaveProperty('error', 'Unprocessable Entity');
-			expect(response.body.details[0].field).toBe('username');
-			expect(response.body.details[0].message).toContain('Username must be at least 4 characters long');
+			expectValidationError(response, 'username', 'Username must be at least 4 characters long');
 		});
 
 		it('should return 422 when password is too short', async () => {
@@ -102,9 +97,7 @@ describe('Authentication API Tests', () => {
 				})
 				.expect(422);
 
-			expect(response.body).toHaveProperty('error', 'Unprocessable Entity');
-			expect(response.body.details[0].field).toBe('password');
-			expect(response.body.details[0].message).toContain('Password must be at least 4 characters long');
+			expectValidationError(response, 'password', 'Password must be at least 4 characters long');
 		});
 	});
 
