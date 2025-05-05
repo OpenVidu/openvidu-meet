@@ -58,9 +58,7 @@ export const changeSecurityPreferences = async (
 	adminCookie: string,
 	{ usersCanCreateRooms = true, authRequired = true, authMode = AuthMode.NONE }
 ) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
@@ -84,9 +82,7 @@ export const changeSecurityPreferences = async (
  * Logs in a user as a specific role (admin or user) and returns the access token cookie
  */
 export const loginUserAsRole = async (role: UserRole): Promise<string> => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const credentials = role === UserRole.ADMIN ? CREDENTIALS.admin : CREDENTIALS.user;
 	const response = await request(app)
@@ -95,7 +91,9 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 		.expect(200);
 
 	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken=')) as string;
+	const accessTokenCookie = cookies.find((cookie) =>
+		cookie.startsWith(`${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=`)
+	) as string;
 	return accessTokenCookie;
 };
 
@@ -103,9 +101,7 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
  * Creates a room with the given prefix
  */
 export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
@@ -120,9 +116,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
  * Returns the parsed response.
  */
 export const getRooms = async (query: Record<string, any> = {}) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
@@ -131,9 +125,7 @@ export const getRooms = async (query: Record<string, any> = {}) => {
 };
 
 export const updateRoomPreferences = async (roomId: string, preferences: any) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const userCookie = await loginUserAsRole(UserRole.ADMIN);
 	return await request(app)
@@ -151,9 +143,7 @@ export const updateRoomPreferences = async (roomId: string, preferences: any) =>
  * @throws Error if the app instance is not defined
  */
 export const getRoom = async (roomId: string, fields?: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
@@ -162,9 +152,7 @@ export const getRoom = async (roomId: string, fields?: string) => {
 };
 
 export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
@@ -173,9 +161,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, any> = {}
 };
 
 export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
@@ -191,18 +177,14 @@ export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
  * It then waits for 1 second before completing.
  */
 export const runRoomGarbageCollector = async () => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const roomService = container.get(RoomService);
 	await (roomService as any)['deleteExpiredRooms']();
 };
 
 export const runReleaseActiveRecordingLock = async (roomId: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const recordingService = container.get(RecordingService);
 	await recordingService.releaseRecordingLockIfNoEgress(roomId);
@@ -212,9 +194,7 @@ export const runReleaseActiveRecordingLock = async (roomId: string) => {
  * Deletes all rooms
  */
 export const deleteAllRooms = async () => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	let nextPageToken: string | undefined;
 
@@ -248,6 +228,8 @@ export const generateParticipantToken = async (
 	participantName: string,
 	secret: string
 ): Promise<string> => {
+	checkAppIsRunning();
+
 	// Disable authentication to generate the token
 	await changeSecurityPreferences(adminCookie, {
 		authMode: AuthMode.NONE
@@ -265,7 +247,9 @@ export const generateParticipantToken = async (
 
 	// Return the participant token cookie
 	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const participantTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetParticipantToken=')) as string;
+	const participantTokenCookie = cookies.find((cookie) =>
+		cookie.startsWith(`${INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME}=`)
+	) as string;
 	return participantTokenCookie;
 };
 
@@ -328,9 +312,7 @@ export const disconnectFakeParticipants = async () => {
 };
 
 export const startRecording = async (roomId: string, moderatorCookie = '') => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`)
@@ -341,9 +323,7 @@ export const startRecording = async (roomId: string, moderatorCookie = '') => {
 };
 
 export const stopRecording = async (recordingId: string, moderatorCookie = '') => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
@@ -355,9 +335,7 @@ export const stopRecording = async (recordingId: string, moderatorCookie = '') =
 };
 
 export const getRecording = async (recordingId: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
@@ -365,9 +343,7 @@ export const getRecording = async (recordingId: string) => {
 };
 
 export const deleteRecording = async (recordingId: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
@@ -375,9 +351,7 @@ export const deleteRecording = async (recordingId: string) => {
 };
 
 export const getRecordingMedia = async (recordingId: string, range?: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const req = request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`)
@@ -391,9 +365,7 @@ export const getRecordingMedia = async (recordingId: string, range?: string) => 
 };
 
 export const stopAllRecordings = async (moderatorCookie: string) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const response = await getAllRecordings({ fields: 'recordingId' });
 	const recordingIds: string[] = response.body.recordings.map(
@@ -416,9 +388,7 @@ export const stopAllRecordings = async (moderatorCookie: string) => {
 };
 
 export const getAllRecordings = async (query: Record<string, any> = {}) => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
@@ -427,9 +397,7 @@ export const getAllRecordings = async (query: Record<string, any> = {}) => {
 };
 
 export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Response> => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
@@ -439,9 +407,7 @@ export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Respons
 };
 
 export const deleteAllRecordings = async () => {
-	if (!app) {
-		throw new Error('App instance is not defined');
-	}
+	checkAppIsRunning();
 
 	let nextPageToken: string | undefined;
 
@@ -467,6 +433,12 @@ export const deleteAllRecordings = async () => {
 };
 
 // PRIVATE METHODS
+
+const checkAppIsRunning = () => {
+	if (!app) {
+		throw new Error('App instance is not defined');
+	}
+};
 
 const runCommandSync = (command: string): string => {
 	try {
