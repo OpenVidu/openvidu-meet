@@ -51,7 +51,7 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	private async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
+	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
 		const webhookPreferences = await this.getWebhookPreferences();
 
 		if (!webhookPreferences.enabled) return;
@@ -83,14 +83,14 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	private generateWebhookSignature(timestamp: number, payload: object): string {
+	protected generateWebhookSignature(timestamp: number, payload: object): string {
 		return crypto
 			.createHmac('sha256', MEET_API_KEY)
 			.update(`${timestamp}.${JSON.stringify(payload)}`)
 			.digest('hex');
 	}
 
-	private async fetchWithRetry(url: string, options: RequestInit, retries = 5, delay = 300): Promise<void> {
+	protected async fetchWithRetry(url: string, options: RequestInit, retries = 5, delay = 300): Promise<void> {
 		try {
 			const response = await fetch(url, options);
 
@@ -109,7 +109,7 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	private async getWebhookPreferences(): Promise<WebhookPreferences> {
+	protected async getWebhookPreferences(): Promise<WebhookPreferences> {
 		try {
 			const { webhooksPreferences } = await this.globalPrefService.getGlobalPreferences();
 			return webhooksPreferences;
