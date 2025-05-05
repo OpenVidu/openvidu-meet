@@ -30,8 +30,12 @@ describe('Authentication API Tests', () => {
 			// Check for access token and refresh token cookies
 			expect(response.headers['set-cookie']).toBeDefined();
 			const cookies = response.headers['set-cookie'] as unknown as string[];
-			const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken='));
-			const refreshTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetRefreshToken='));
+			const accessTokenCookie = cookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=`)
+			);
+			const refreshTokenCookie = cookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME}=`)
+			);
 			expect(accessTokenCookie).toBeDefined();
 			expect(refreshTokenCookie).toBeDefined();
 		});
@@ -113,8 +117,12 @@ describe('Authentication API Tests', () => {
 
 			// Check for cleared cookies
 			const cookies = response.headers['set-cookie'] as unknown as string[];
-			const accessTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetAccessToken=;'));
-			const refreshTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetRefreshToken=;'));
+			const accessTokenCookie = cookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=;`)
+			);
+			const refreshTokenCookie = cookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME}=;`)
+			);
 			expect(accessTokenCookie).toBeDefined();
 			expect(refreshTokenCookie).toBeDefined();
 		});
@@ -132,7 +140,9 @@ describe('Authentication API Tests', () => {
 				.expect(200);
 
 			const cookies = loginResponse.headers['set-cookie'] as unknown as string[];
-			const refreshTokenCookie = cookies.find((cookie) => cookie.startsWith('OvMeetRefreshToken=')) as string;
+			const refreshTokenCookie = cookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME}=`)
+			) as string;
 
 			const response = await request(app)
 				.post(`${AUTH_PATH}/refresh`)
@@ -144,7 +154,9 @@ describe('Authentication API Tests', () => {
 
 			// Check for new access token cookie
 			const newCookies = response.headers['set-cookie'] as unknown as string[];
-			const newAccessTokenCookie = newCookies.find((cookie) => cookie.startsWith('OvMeetAccessToken='));
+			const newAccessTokenCookie = newCookies.find((cookie) =>
+				cookie.startsWith(`${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=`)
+			);
 			expect(newAccessTokenCookie).toBeDefined();
 		});
 
@@ -158,7 +170,7 @@ describe('Authentication API Tests', () => {
 		it('should return 400 when refresh token is invalid', async () => {
 			const response = await request(app)
 				.post(`${AUTH_PATH}/refresh`)
-				.set('Cookie', 'OvMeetRefreshToken=invalidtoken')
+				.set('Cookie', `${INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME}=invalidtoken`)
 				.expect(400);
 
 			expect(response.body).toHaveProperty('message');
@@ -204,7 +216,7 @@ describe('Authentication API Tests', () => {
 		it('should return 401 when access token is invalid', async () => {
 			const response = await request(app)
 				.get(`${AUTH_PATH}/profile`)
-				.set('Cookie', 'OvMeetAccessToken=invalidtoken')
+				.set('Cookie', `${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=invalidtoken`)
 				.expect(401);
 
 			expect(response.body).toHaveProperty('message');
