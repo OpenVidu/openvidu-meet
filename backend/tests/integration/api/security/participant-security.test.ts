@@ -19,7 +19,6 @@ describe('Participant API Security Tests', () => {
 
 	let app: Express;
 	let userCookie: string;
-	let roomData: RoomData;
 
 	beforeAll(async () => {
 		app = startTestServer();
@@ -32,6 +31,8 @@ describe('Participant API Security Tests', () => {
 	});
 
 	describe('Generate Participant Token Tests', () => {
+		let roomData: RoomData;
+
 		beforeAll(async () => {
 			roomData = await setupSingleRoom();
 		});
@@ -137,6 +138,8 @@ describe('Participant API Security Tests', () => {
 	});
 
 	describe('Refresh Participant Token Tests', () => {
+		let roomData: RoomData;
+
 		beforeAll(async () => {
 			roomData = await setupSingleRoom(true);
 		});

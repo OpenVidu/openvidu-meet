@@ -90,6 +90,27 @@ export const setupMultiRoomTestContext = async (numRooms: number, withParticipan
 	};
 };
 
+export const setupSingleRoomWithRecording = async (
+	stopRecordingCond = false,
+	stopDelay?: StringValue
+): Promise<RoomData> => {
+	const roomData = await setupSingleRoom(true);
+	const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+	expectValidStartRecordingResponse(response, roomData.room.roomId);
+	roomData.recordingId = response.body.recordingId;
+
+	// Wait for the configured delay before stopping the recording
+	if (stopRecordingCond && stopDelay) {
+		await sleep(stopDelay);
+	}
+
+	if (stopRecordingCond) {
+		await stopRecording(roomData.recordingId!, roomData.moderatorCookie);
+	}
+
+	return roomData;
+};
+
 /**
  * Quickly creates multiple recordings
  * Allows customizing how many recordings to start and how many to stop after a delay.
