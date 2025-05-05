@@ -44,8 +44,8 @@ export const expectErrorResponse = (
 	);
 };
 
-export const expectValidationError = (response: any, path: string, message: string) => {
-	expectErrorResponse(response, 422, 'Unprocessable Entity', 'Invalid request', [{ field: path, message }]);
+export const expectValidationError = (response: any, field: string, message: string) => {
+	expectErrorResponse(response, 422, 'Unprocessable Entity', 'Invalid request', [{ field, message }]);
 };
 
 /**
