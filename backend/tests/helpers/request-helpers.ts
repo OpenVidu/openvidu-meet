@@ -311,6 +311,33 @@ export const disconnectFakeParticipants = async () => {
 	await sleep('1s');
 };
 
+/**
+ * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
+ */
+export const generateRecordingToken = async (adminCookie: string, roomId: string, secret: string) => {
+	checkAppIsRunning();
+
+	// Disable authentication to generate the token
+	await changeSecurityPreferences(adminCookie, {
+		authMode: AuthMode.NONE
+	});
+
+	// Generate the recording token
+	const response = await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/recording-token`)
+		.send({
+			secret
+		})
+		.expect(200);
+
+	// Return the recording token cookie
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	const recordingTokenCookie = cookies.find((cookie) =>
+		cookie.startsWith(`${INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME}=`)
+	) as string;
+	return recordingTokenCookie;
+};
+
 export const startRecording = async (roomId: string, moderatorCookie = '') => {
 	checkAppIsRunning();
 
