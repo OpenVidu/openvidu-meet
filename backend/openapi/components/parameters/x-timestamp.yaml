@@ -1,6 +1,10 @@
-name: X-Timestamp
+name: x-timestamp
 in: header
-description: Timestamp of the webhook event (in Unix Epoch milliseconds).
+description: >
+  Unix timestamp (in seconds) when the webhook was sent.
+
+  Can be used to validate webhook age and prevent replay attacks.
+required: true
 schema:
     type: string
     example: '1697030400000'

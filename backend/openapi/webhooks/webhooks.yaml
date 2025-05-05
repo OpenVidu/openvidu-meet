@@ -5,51 +5,39 @@ recordingStarted:
             This webhook is triggered when a recording starts.
 
             > The recording can be in the `STARTING` status for a few seconds before it becomes `ACTIVE`.
-
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
-        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:
                 application/json:
                     schema:
-                        properties:
-                            creationDate:
-                                type: number
-                                description: The date when the event was created (milliseconds since the Unix epoch).
-                                example: 1620000000000
-                            event:
-                                type: string
-                                description: Event type identifier.
-                                example: recordingStarted
-                            data:
-                                properties:
-                                    recordingId:
-                                        type: string
-                                        description: The unique identifier of the recording.
-                                        example: room-123--EG_XYZ--XX445
-                                    roomId:
-                                        type: string
-                                        description: The ID of the room where the recording was made.
-                                        example: room-123
-                                    status:
-                                        type: string
-                                        description: The status of the recording.
-                                        example: STARTING
-                                    filename:
-                                        type: string
-                                        description: The name of the recording file.
-                                        example: room-123--XX445.mp4
-                                    startDate:
-                                        type: number
-                                        description: The date when the recording started (milliseconds since the Unix epoch).
-                                        example: 1620000000000
+                        type: object
+                        allOf:
+                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: recordingStarted
+                                  data:
+                                      type: object
+                                      required:
+                                          - recordingId
+                                          - roomId
+                                          - status
+                                      allOf:
+                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - properties:
+                                                status:
+                                                    type: string
+                                                    enum: [STARTING]
+                                                    description: The status of the recording.
+                                                    example: STARTING
         responses:
             '200':
-                description: Webhook received successfully
+                $ref: ../components/responses/webhook-success.yaml
+
 recordingUpdated:
     post:
         summary: Recording updated
@@ -61,48 +49,35 @@ recordingUpdated:
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
-        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:
                 application/json:
                     schema:
                         type: object
-                        properties:
-                            creationDate:
-                                type: number
-                                description: The date when the event was created (milliseconds since the Unix epoch).
-                                example: 1620000000000
-                            event:
-                                type: string
-                                description: Event type identifier.
-                                example: recordingUpdated
-                            data:
-                                properties:
-                                    recordingId:
-                                        type: string
-                                        description: The unique identifier of the recording.
-                                        example: room-123--EG_XYZ--XX445
-                                    roomId:
-                                        type: string
-                                        description: The ID of the room where the recording was made.
-                                        example: room-123
-                                    status:
-                                        type: string
-                                        enum: [ACTIVE, ENDING]
-                                        description: The status of the recording.
-                                        example: ACTIVE
-                                    filename:
-                                        type: string
-                                        description: The name of the recording file.
-                                        example: room-123--XX445.mp4
-                                    startDate:
-                                        type: number
-                                        description: The date when the recording started (milliseconds since the Unix epoch).
-                                        example: 1620000000000
+                        allOf:
+                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: recordingUpdated
+                                  data:
+                                      type: object
+                                      required:
+                                          - recordingId
+                                          - roomId
+                                          - status
+                                      allOf:
+                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - properties:
+                                                status:
+                                                    type: string
+                                                    enum: [ACTIVE, ENDING]
+                                                    description: The status of the recording.
+                                                    example: ACTIVE
         responses:
             '200':
-                description: Webhook received successfully
+                $ref: ../components/responses/webhook-success.yaml
+
 recordingEnded:
     post:
         summary: Recording ended
@@ -114,62 +89,100 @@ recordingEnded:
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
             - $ref: ../components/parameters/x-signature.yaml
-        # TODO: Use defined schema for request body
         requestBody:
             required: true
             content:
                 application/json:
                     schema:
                         type: object
-                        properties:
-                            creationDate:
-                                type: number
-                                description: The date when the event was created (milliseconds since the Unix epoch).
-                                example: 1620000000000
-                            event:
-                                type: string
-                                description: Event type identifier.
-                                example: recordingEnded
-                            data:
-                                properties:
-                                    recordingId:
-                                        type: string
-                                        description: The unique identifier of the recording.
-                                        example: room-123--EG_XYZ--XX445
-                                    roomId:
-                                        type: string
-                                        description: The ID of the room where the recording was made.
-                                        example: room-123
-                                    status:
-                                        type: string
-                                        enum: [COMPLETE, FAILED, ABORTED, LIMITED_REACHED]
-                                        description: The status of the recording.
-                                        example: COMPLETE
-                                    filename:
-                                        type: string
-                                        description: The name of the recording file.
-                                        example: room-123--XX445.mp4
-                                    startDate:
-                                        type: number
-                                        description: The date when the recording started (milliseconds since the Unix epoch).
-                                        example: 1620000000000
-                                    endDate:
-                                        type: number
-                                        description: The date when the recording ended (milliseconds since the Unix epoch).
-                                        example: 1620000003600
-                                    duration:
-                                        type: number
-                                        description: The duration of the recording in seconds.
-                                        example: 3.6
-                                    size:
-                                        type: number
-                                        description: The size of the recording file in bytes.
-                                        example: 1024
-                                    details:
-                                        type: string
-                                        description: Additional details about the recording.
-                                        example: Stopped using API
-
+                        allOf:
+                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: recordingEnded
+                                  data:
+                                      type: object
+                                      required:
+                                          - recordingId
+                                          - roomId
+                                          - status
+                                          - endDate
+                                      allOf:
+                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - properties:
+                                                status:
+                                                    type: string
+                                                    enum: [COMPLETE, FAILED, ABORTED, LIMITED_REACHED]
+                                                    description: The status of the recording.
+                                                    example: COMPLETE
+                                                endDate:
+                                                    type: number
+                                                    description: The date when the recording ended (milliseconds since the Unix epoch).
+                                                    example: 1620000003600
+                                                duration:
+                                                    type: number
+                                                    description: The duration of the recording in seconds.
+                                                    example: 3.6
+                                                size:
+                                                    type: number
+                                                    description: The size of the recording file in bytes.
+                                                    example: 1024
+                                                details:
+                                                    type: string
+                                                    description: Additional details about the recording.
+                                                    example: Stopped using API
         responses:
             '200':
-                description: Webhook received successfully
+                $ref: ../components/responses/webhook-success.yaml
+
+meetingStarted:
+    post:
+        summary: Meeting started
+        description: >
+            This webhook is triggered when a meeting starts.
+        operationId: meetingStartedWebhook
+        parameters:
+            - $ref: ../components/parameters/x-timestamp.yaml
+            - $ref: ../components/parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: meetingStarted
+                                  data:
+                                      $ref: ../components/schemas/meet-room.yaml
+        responses:
+            '200':
+                $ref: ../components/responses/webhook-success.yaml
+
+meetingEnded:
+    post:
+        summary: Meeting ended
+        description: >
+            This webhook is triggered when a meeting ends.
+        operationId: meetingEndedWebhook
+        parameters:
+            - $ref: ../components/parameters/x-timestamp.yaml
+            - $ref: ../components/parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: meetingEnded
+                                  data:
+                                      $ref: ../components/schemas/meet-room.yaml
+        responses:
+            '200':
+                $ref: ../components/responses/webhook-success.yaml

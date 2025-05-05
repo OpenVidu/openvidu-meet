@@ -1,0 +1,23 @@
+type: object
+required:
+  - recordingId
+  - roomId
+  - filename
+  - startDate
+properties:
+  recordingId:
+    type: string
+    description: The unique identifier of the recording.
+    example: room-123--EG_XYZ--XX445
+  roomId:
+    type: string
+    description: The ID of the room where the recording was made.
+    example: room-123
+  filename:
+    type: string
+    description: The name of the recording file.
+    example: room-123--XX445.mp4
+  startDate:
+    type: number
+    description: The date when the recording started (milliseconds since the Unix epoch).
+    example: 1620000000000
