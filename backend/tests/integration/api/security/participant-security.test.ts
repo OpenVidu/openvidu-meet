@@ -2,267 +2,249 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
 import {
 	changeSecurityPreferences,
-	createRoom,
 	deleteAllRooms,
+	disconnectFakeParticipants,
 	loginUserAsRole,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 const PARTICIPANTS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`;
 
 describe('Participant API Security Tests', () => {
-	const PARTICIPANT_NAME = 'testParticipant';
+	const PARTICIPANT_NAME = 'TEST_PARTICIPANT';
 
 	let app: Express;
-
 	let userCookie: string;
-	let adminCookie: string;
-
-	let roomId: string;
-	let moderatorSecret: string;
-	let publisherSecret: string;
+	let roomData: RoomData;
 
 	beforeAll(async () => {
 		app = startTestServer();
-
-		// Get cookies for admin and user
 		userCookie = await loginUserAsRole(UserRole.USER);
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
-
-		// Create a room and extract the roomId
-		const room = await createRoom();
-		roomId = room.roomId;
-
-		// Extract the moderator and publisher secrets from the room
-		({ moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room));
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
-	}, 20000);
+	});
 
 	describe('Generate Participant Token Tests', () => {
+		beforeAll(async () => {
+			roomData = await setupSingleRoom();
+		});
+
 		it('should succeed when no authentication is required and participant is publisher', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.NONE });
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.NONE });
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(401);
 		});
 	});
 
 	describe('Refresh Participant Token Tests', () => {
+		beforeAll(async () => {
+			roomData = await setupSingleRoom(true);
+		});
+
 		it('should succeed when no authentication is required and participant is publisher', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.NONE });
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.NONE });
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
 				.set('Cookie', userCookie)
 				.send({
-					roomId,
+					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
-					secret: moderatorSecret
+					secret: roomData.moderatorSecret
 				});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
 				.set('Cookie', userCookie)
 				.send({
-					roomId,
+					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
-					secret: publisherSecret
+					secret: roomData.publisherSecret
 				});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: publisherSecret
+				secret: roomData.publisherSecret
 			});
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
 				.set('Cookie', userCookie)
 				.send({
-					roomId,
+					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
-					secret: moderatorSecret
+					secret: roomData.moderatorSecret
 				});
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(adminCookie, { authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId,
+				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
-				secret: moderatorSecret
+				secret: roomData.moderatorSecret
 			});
 			expect(response.status).toBe(401);
 		});

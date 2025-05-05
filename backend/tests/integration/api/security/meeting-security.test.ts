@@ -1,113 +1,77 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import { UserRole } from '../../../../src/typings/ce/index.js';
-import {
-	createRoom,
-	deleteAllRooms,
-	generateParticipantToken,
-	loginUserAsRole,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
+import { deleteAllRooms, disconnectFakeParticipants, startTestServer } from '../../../helpers/request-helpers.js';
+import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
 
 describe('Meeting API Security Tests', () => {
 	let app: Express;
-	let roomId: string;
+	let roomData: RoomData;
 
-	let adminCookie: string;
-	let moderatorCookie: string;
-	let publisherCookie: string;
-
-	beforeAll(async () => {
+	beforeAll(() => {
 		app = startTestServer();
+	});
 
-		// Get cookie for admin
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
-
-		// Create a room and extract the roomId
-		const room = await createRoom();
-		roomId = room.roomId;
-
-		// Extract the room secrets and generate participant tokens, saved as cookies
-		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-		moderatorCookie = await generateParticipantToken(adminCookie, roomId, 'Moderator', moderatorSecret);
-		publisherCookie = await generateParticipantToken(adminCookie, roomId, 'Publisher', publisherSecret);
+	beforeEach(async () => {
+		roomData = await setupSingleRoom(true);
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
-	}, 20000);
+	});
 
 	describe('End Meeting Tests', () => {
 		it('should succeed when participant is moderator', async () => {
-			const response = await request(app).delete(`${MEETINGS_PATH}/${roomId}`).set('Cookie', moderatorCookie);
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set('Cookie', roomData.moderatorCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
-			// Create a new room to get a different roomId
-			const newRoom = await createRoom();
-			const newRoomId = newRoom.roomId;
+			const newRoomData = await setupSingleRoom();
 
-			// Extract the moderator secret and generate a participant token for the new room
-			const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(newRoom);
-			const newModeratorCookie = await generateParticipantToken(
-				adminCookie,
-				newRoomId,
-				'Moderator',
-				moderatorSecret
-			);
-
-			const response = await request(app).delete(`${MEETINGS_PATH}/${roomId}`).set('Cookie', newModeratorCookie);
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set('Cookie', newRoomData.moderatorCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
-			const response = await request(app).delete(`${MEETINGS_PATH}/${roomId}`).set('Cookie', publisherCookie);
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set('Cookie', roomData.publisherCookie);
 			expect(response.status).toBe(403);
 		});
 	});
 
 	describe('Delete Participant from Meeting Tests', () => {
-		const PARTICIPANT_NAME = 'testParticipant';
+		const PARTICIPANT_NAME = 'TEST_PARTICIPANT';
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
-				.delete(`${MEETINGS_PATH}/${roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', moderatorCookie);
-
-			// The response code should be 404 to consider a success because there is no real participant inside the room
-			expect(response.status).toBe(404);
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set('Cookie', roomData.moderatorCookie);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
-			// Create a new room to get a different roomId
-			const newRoom = await createRoom();
-			const newRoomId = newRoom.roomId;
-
-			// Extract the moderator secret and generate a participant token for the new room
-			const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(newRoom);
-			const newModeratorCookie = await generateParticipantToken(
-				adminCookie,
-				newRoomId,
-				'Moderator',
-				moderatorSecret
-			);
+			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.delete(`${MEETINGS_PATH}/${roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', newModeratorCookie);
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set('Cookie', newRoomData.moderatorCookie);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
-				.delete(`${MEETINGS_PATH}/${roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', publisherCookie);
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set('Cookie', roomData.publisherCookie);
 			expect(response.status).toBe(403);
 		});
 	});
