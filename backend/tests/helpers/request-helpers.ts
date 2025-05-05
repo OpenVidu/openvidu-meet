@@ -54,12 +54,14 @@ export const startTestServer = (): Express => {
 /**
  * Updates global security preferences
  */
-export const changeSecurityPreferences = async (
-	adminCookie: string,
-	{ usersCanCreateRooms = true, authRequired = true, authMode = AuthMode.NONE }
-) => {
+export const changeSecurityPreferences = async ({
+	usersCanCreateRooms = true,
+	authRequired = true,
+	authMode = AuthMode.NONE
+}) => {
 	checkAppIsRunning();
 
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
 	await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
 		.set('Cookie', adminCookie)
@@ -223,7 +225,6 @@ export const deleteAllRooms = async () => {
  * Generates a participant token for a room and returns the cookie containing the token
  */
 export const generateParticipantToken = async (
-	adminCookie: string,
 	roomId: string,
 	participantName: string,
 	secret: string
@@ -231,7 +232,7 @@ export const generateParticipantToken = async (
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences(adminCookie, {
+	await changeSecurityPreferences({
 		authMode: AuthMode.NONE
 	});
 
@@ -297,7 +298,7 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 	]);
 
 	// Store the process to be able to terminate it later
-	fakeParticipantsProcesses.set(participantName, process);
+	fakeParticipantsProcesses.set(`${roomId}-${participantName}`, process);
 	await sleep('1s');
 };
 
@@ -314,11 +315,11 @@ export const disconnectFakeParticipants = async () => {
 /**
  * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
  */
-export const generateRecordingToken = async (adminCookie: string, roomId: string, secret: string) => {
+export const generateRecordingToken = async (roomId: string, secret: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences(adminCookie, {
+	await changeSecurityPreferences({
 		authMode: AuthMode.NONE
 	});
 
