@@ -109,6 +109,58 @@ jobs:
           fail_on_failure: true
           require_tests: true
 
+  test-webhooks:
+    name: Webhook Tests
+    runs-on: ov-actions-runner
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Setup yarn # Needed for the redlock package
+        run: npm install -g yarn
+      - name: Install wait-on
+        run: npm install -g wait-on
+      - name: Install LK CLI
+        run: curl -sSL https://get.livekit.io/cli | bash
+      - name: Checkout OpenVidu Local Deployment
+        uses: actions/checkout@v4
+        with:
+          repository: OpenVidu/openvidu-local-deployment
+          ref: development
+          path: openvidu-local-deployment
+      - name: Configure Local Deployment
+        shell: bash
+        run: |
+          cd openvidu-local-deployment/community
+          ./configure_lan_private_ip_linux.sh
+          docker compose up -d
+
+      - name: Wait for OpenVidu Local Deployment to Start
+        run: wait-on --timeout 60000 http://localhost:7880
+      - uses: actions/checkout@v4
+      - name: Setup OpenVidu Meet
+        run: |
+          ./prepare.sh
+          cd backend
+          npm install
+          npm run start:prod &
+      - name: Wait for OpenVidu Meet to Start
+        run: wait-on --timeout 30000 http://localhost:6080/meet/health
+      - name: Run tests
+        run: |
+          cd backend
+          npm run test:integration-webhooks
+        env:
+          JEST_JUNIT_OUTPUT_DIR: './reports/'
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: '**/reports/junit.xml'
+          fail_on_failure: true
+          require_tests: true
+
   test-security:
     name: Security API Tests
     runs-on: ov-actions-runner

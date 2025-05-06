@@ -39,6 +39,7 @@
 		"test:integration": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-rooms": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/rooms\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-recordings": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/recordings\" --ci --reporters=default --reporters=jest-junit",
+		"test:integration-webhooks": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/webhooks\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-security": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/security\" --ci --reporters=default --reporters=jest-junit",
 		"lint:fix": "eslint src --fix",
 		"format:code": "prettier --ignore-path .gitignore --write '**/*.{ts,js,json,md}'"

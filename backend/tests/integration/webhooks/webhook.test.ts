@@ -1,24 +1,24 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Request } from 'express';
 import http from 'http';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
+import { container } from '../../../src/config/dependency-injector.config.js';
+import { MeetStorageService } from '../../../src/services/index.js';
 import {
 	startTestServer,
 	deleteAllRecordings,
 	sleep,
 	endMeeting,
 	updateWebbhookPreferences
-} from '../../../helpers/request-helpers';
-import { MeetWebhookEvent, MeetWebhookEventType } from '../../../../src/typings/ce/webhook.model.js';
+} from '../../helpers/request-helpers.js';
+import { MeetWebhookEvent, MeetWebhookEventType } from '../../../src/typings/ce/webhook.model.js';
 
 import {
 	setupSingleRoom,
 	setupSingleRoomWithRecording,
 	startWebhookServer,
 	stopWebhookServer
-} from '../../../helpers/test-scenarios.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '../../../../src/typings/ce/recording.model.js';
+} from '../../helpers/test-scenarios.js';
+import { MeetRecordingInfo, MeetRecordingStatus } from '../../../src/typings/ce/recording.model.js';
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
