@@ -49,47 +49,31 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * !KNOWN ISSUE: Room metadata may be empty when track_publish and track_unpublish events are received.
-	 * This does not affect OpenVidu Meet but is a limitation of the LiveKit server.
-	 *
-	 * We prioritize using the `room` object from the webhook if available.
-	 * Otherwise, fallback to the extracted `roomName`.
+	 * Checks if the webhook event belongs to OpenVidu Meet by verifying if the room exist in Opnevidu Meet.
 	 */
 	async webhookEventBelongsToOpenViduMeet(webhookEvent: WebhookEvent): Promise<boolean> {
 		// Extract relevant properties from the webhook event
 		const { room, egressInfo, ingressInfo } = webhookEvent;
 
-		if (room) {
-			// Check update room  if webhook is not room_destroyed
-			const metadata = room.metadata ? JSON.parse(room.metadata) : {};
-			return metadata?.createdBy === MEET_NAME_ID;
+		// Determine the room name from room object or egress/ingress info
+		const roomName = room?.name ?? egressInfo?.roomName ?? ingressInfo?.roomName;
+
+		if (!roomName) {
+			this.logger.debug('Room name not found in webhook event');
+			return false;
 		}
 
-		// Get room from roomName
 		try {
-			// Determine the room name from available sources
-			const roomName = egressInfo?.roomName ?? ingressInfo?.roomName ?? '';
+			const meetRoom = await this.roomService.getMeetRoom(roomName);
 
-			if (!roomName) {
-				this.logger.debug('Room name not found in webhook event');
+			if (!meetRoom) {
+				this.logger.debug(`Room ${roomName} not found in OpenVidu Meet.`);
 				return false;
 			}
 
-			const roomExists = await this.livekitService.roomExists(roomName);
-
-			if (!roomExists) {
-				this.logger.debug(`Room ${roomName} not found or no longer exists.`);
-				return false;
-			}
-
-			// Fetch the room information from LiveKit
-			const livekitRoom = await this.livekitService.getRoom(roomName);
-
-			// Parse metadata safely, defaulting to an empty object if null/undefined
-			const metadata = livekitRoom.metadata ? JSON.parse(livekitRoom.metadata) : {};
-			return metadata?.createdBy === MEET_NAME_ID;
+			return true;
 		} catch (error) {
-			this.logger.error('Error checking if room was created by OpenVidu Meet:' + String(error));
+			this.logger.error(`Error checking if room ${roomName} was created by OpenVidu Meet:`, error);
 			return false;
 		}
 	}
