@@ -104,6 +104,11 @@ export const logEnvVars = () => {
 	console.log('MEET ACCESS TOKEN EXPIRATION: ', text(MEET_ACCESS_TOKEN_EXPIRATION));
 	console.log('MEET REFRESH TOKEN EXPIRATION: ', text(MEET_REFRESH_TOKEN_EXPIRATION));
 	console.log('MEET PREFERENCES STORAGE:', text(MEET_PREFERENCES_STORAGE_MODE));
+	console.log('MEET_WEBHOOK_ENABLED:', text(MEET_WEBHOOK_ENABLED));
+
+	if (MEET_WEBHOOK_ENABLED === 'true') {
+		console.log('MEET_WEBHOOK_URL:', text(MEET_WEBHOOK_URL));
+	}
 
 	console.log('---------------------------------------------------------');
 	console.log('LIVEKIT Configuration');
