@@ -22,7 +22,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 			return res.status(200).send();
 		}
 
-		logger.verbose(`Webhook received: ${eventType}`);
+		logger.info(`Webhook received: ${eventType}`);
 
 		switch (eventType) {
 			case 'egress_started':
