@@ -6,13 +6,6 @@ jobs:
     name: Rooms API Tests
     runs-on: ov-actions-runner
     steps:
-      - name: Pre-cleanup problematic directories
-        run: |
-          # Check if directory exists and clean it up with elevated permissions
-          if [ -d "/__w/openvidu-meet/openvidu-meet/openvidu-local-deployment" ]; then
-            sudo rm -rf /__w/openvidu-meet/openvidu-meet/openvidu-local-deployment
-          fi
-        continue-on-error: true
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -71,14 +64,6 @@ jobs:
     runs-on: ov-actions-runner
     if: false
     steps:
-      - name: Pre-cleanup problematic directories
-        run: |
-          # Check if directory exists and clean it up with elevated permissions
-          if [ -d "/__w/openvidu-meet/openvidu-meet/openvidu-local-deployment" ]; then
-            sudo rm -rf /__w/openvidu-meet/openvidu-meet/openvidu-local-deployment
-          fi
-        continue-on-error: true
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -136,13 +121,6 @@ jobs:
     name: Webhook Tests
     runs-on: ov-actions-runner
     steps:
-      - name: Pre-cleanup problematic directories
-        run: |
-          # Check if directory exists and clean it up with elevated permissions
-          if [ -d "/__w/openvidu-meet/openvidu-meet/openvidu-local-deployment" ]; then
-            sudo rm -rf /__w/openvidu-meet/openvidu-meet/openvidu-local-deployment
-          fi
-        continue-on-error: true
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -199,13 +177,6 @@ jobs:
     name: Security API Tests
     runs-on: ov-actions-runner
     steps:
-      - name: Pre-cleanup problematic directories
-        run: |
-          # Check if directory exists and clean it up with elevated permissions
-          if [ -d "/__w/openvidu-meet/openvidu-meet/openvidu-local-deployment" ]; then
-            sudo rm -rf /__w/openvidu-meet/openvidu-meet/openvidu-local-deployment
-          fi
-        continue-on-error: true
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

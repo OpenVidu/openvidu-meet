@@ -36,3 +36,9 @@ runs:
         free -h
         docker ps -a
       shell: bash
+    - name: Remove OpenVidu Meet directory
+      run: |
+        if [ -d "/__w/openvidu-meet/openvidu-meet" ]; then
+          sudo rm -rf /__w/openvidu-meet/openvidu-meet
+        fi
+      shell: bash
