@@ -1,7 +1,7 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, MEET_NAME_ID } from '../environment.js';
+import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
 import { RecordingHelper } from '../helpers/index.js';
 import { SystemEventType } from '../models/system-event.model.js';
 import {

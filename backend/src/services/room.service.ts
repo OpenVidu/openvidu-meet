@@ -12,7 +12,6 @@ import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
 import { errorInvalidRoomSecret, errorRoomMetadataNotFound, internalError } from '../models/error.model.js';
 import {
@@ -98,7 +97,6 @@ export class RoomService {
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
 			metadata: JSON.stringify({
-				createdBy: MEET_NAME_ID,
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			})
 			//TODO: Uncomment this when bug in LiveKit is fixed

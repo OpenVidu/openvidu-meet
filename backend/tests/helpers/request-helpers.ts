@@ -12,7 +12,6 @@ import {
 	MEET_ADMIN_SECRET,
 	MEET_ADMIN_USER,
 	MEET_API_KEY,
-	MEET_NAME_ID,
 	MEET_SECRET,
 	MEET_USER
 } from '../../src/environment.js';
@@ -264,33 +263,10 @@ export const generateParticipantToken = async (
 /**
  * Adds a fake participant to a LiveKit room for testing purposes.
  *
- * This workflow involves three key steps:
- * 1. Create the LiveKit room manually
- * 2. Set room metadata to mark it as managed by OpenVidu Meet
- * 3. Connect a fake participant to the room
- *
  * @param roomId The ID of the room to join
  * @param participantName The name for the fake participant
  */
 export const joinFakeParticipant = async (roomId: string, participantName: string) => {
-	// Step 1: Manually create the LiveKit room
-	// In normal operation, the room is created when a real participant requests a token,
-	// but for testing we need to create it ourselves since we're bypassing the token flow.
-	// We set a short departureTimeout (1s) to ensure the room is quickly cleaned up
-	// when our tests disconnect participants, preventing lingering test resources.
-	const createRoomCommand = `lk room create --api-key ${LIVEKIT_API_KEY} --api-secret ${LIVEKIT_API_SECRET} --departure-timeout 1 ${roomId}`;
-	runCommandSync(createRoomCommand);
-
-	// Step 2: Set required room metadata
-	// The room must have the createdBy field set to MEET_NAME_ID so that:
-	// 1. OpenVidu Meet recognizes it as a managed room
-	// 2. The room can be properly deleted through our API later
-	// 3. Other OpenVidu Meet features know this room belongs to our system
-	const metadata = JSON.stringify({ createdBy: MEET_NAME_ID });
-	const updateMetadataCommand = `lk room update --metadata '${metadata}' --api-key ${LIVEKIT_API_KEY} --api-secret ${LIVEKIT_API_SECRET} ${roomId}`;
-	runCommandSync(updateMetadataCommand);
-
-	// Step 3: Join a fake participant with demo audio/video
 	const process = spawn('lk', [
 		'room',
 		'join',
