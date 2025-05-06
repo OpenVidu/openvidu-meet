@@ -12,7 +12,7 @@ export interface GlobalPreferences {
 
 export interface WebhookPreferences {
     enabled: boolean;
-    url: string;
+    url?: string;
     // events: WebhookEvent[];
 }
 
