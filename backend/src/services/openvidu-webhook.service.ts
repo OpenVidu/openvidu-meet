@@ -75,7 +75,7 @@ export class OpenViduWebhookService {
 		this.logger.info(`Sending webhook event ${data.event}`);
 
 		try {
-			await this.fetchWithRetry(webhookPreferences.url, {
+			await this.fetchWithRetry(webhookPreferences.url!, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

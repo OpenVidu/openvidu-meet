@@ -12,10 +12,21 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
-const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z.object({
-	enabled: z.boolean(),
-	url: z.string().url()
-});
+const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z
+	.object({
+		enabled: z.boolean(),
+		url: z.string().url().optional()
+	})
+	.refine(
+		(data) => {
+			// If webhooks are enabled, URL must be provided
+			return !data.enabled || Boolean(data.url);
+		},
+		{
+			message: 'URL is required when webhooks are enabled',
+			path: ['url']
+		}
+	);
 
 const AuthModeSchema: z.ZodType<AuthMode> = z.enum([AuthMode.NONE, AuthMode.MODERATORS_ONLY, AuthMode.ALL_USERS]);
 

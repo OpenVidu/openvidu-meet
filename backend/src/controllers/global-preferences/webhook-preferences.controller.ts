@@ -8,12 +8,17 @@ export const updateWebhookPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const globalPrefService = container.get(MeetStorageService);
 
-	logger.verbose(`Updating webhooks preferences: ${JSON.stringify(req.body)}`);
+	logger.info(`Updating webhooks preferences: ${JSON.stringify(req.body)}`);
 	const webhookPreferences = req.body as WebhookPreferences;
 
 	try {
 		const globalPreferences = await globalPrefService.getGlobalPreferences();
-		globalPreferences.webhooksPreferences = webhookPreferences;
+		globalPreferences.webhooksPreferences.enabled = webhookPreferences.enabled;
+
+		if (webhookPreferences.url) {
+			globalPreferences.webhooksPreferences.url = webhookPreferences.url;
+		}
+
 		await globalPrefService.saveGlobalPreferences(globalPreferences);
 
 		return res.status(200).json({ message: 'Webhooks preferences updated successfully' });
