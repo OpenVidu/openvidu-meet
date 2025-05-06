@@ -1,0 +1,38 @@
+name: 'OpenVidu Meet Cleanup'
+description: 'Clean up OpenVidu Meet test environment'
+runs:
+  using: "composite"
+  steps:
+    - name: Kill backend process
+      run: pkill -f "npm run start:prod" || true
+      shell: bash
+
+    - name: Stop OpenVidu Local Deployment containers
+      run: |
+        cd openvidu-local-deployment/community
+        docker compose down -v
+      shell: bash
+
+    - name: Clean up temporary files
+      run: |
+        rm -rf /tmp/openvidu-*
+        rm -rf /tmp/livekit-*
+      shell: bash
+
+    - name: Clean up Docker resources
+      run: docker system prune -f
+      shell: bash
+
+    - name: Kill orphaned processes
+      run: |
+        ps aux | grep -i 'npm\|node\|livekit' | grep -v grep || true
+        ps aux | grep -i 'npm\|node\|livekit' | grep -v grep | awk '{print $2}' | xargs kill -9 || true
+      shell: bash
+
+    - name: Show system status
+      run: |
+        echo "=== System status after cleanup ==="
+        df -h
+        free -h
+        docker ps -a
+      shell: bash

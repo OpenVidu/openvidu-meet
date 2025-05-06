@@ -16,6 +16,8 @@ jobs:
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
       - name: Checkout OpenVidu Local Deployment
         uses: actions/checkout@v4
         with:
@@ -31,7 +33,6 @@ jobs:
           docker compose up -d
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
-      - uses: actions/checkout@v4
       - name: Setup OpenVidu Meet
         shell: bash
         run: |
@@ -54,6 +55,9 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
+      - name: Clean up
+        if: always()
+        uses: ./.github/actions/cleanup
 
   test-recordings:
     name: Recordings API Tests
@@ -70,6 +74,8 @@ jobs:
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
       - name: Checkout OpenVidu Local Deployment
         uses: actions/checkout@v4
         with:
@@ -86,7 +92,6 @@ jobs:
 
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
-      - uses: actions/checkout@v4
       - name: Setup OpenVidu Meet
         run: |
           ./prepare.sh
@@ -108,6 +113,9 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
+      - name: Clean up
+        if: always()
+        uses: ./.github/actions/cleanup
 
   test-webhooks:
     name: Webhook Tests
@@ -123,6 +131,8 @@ jobs:
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
       - name: Checkout OpenVidu Local Deployment
         uses: actions/checkout@v4
         with:
@@ -138,7 +148,6 @@ jobs:
 
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
-      - uses: actions/checkout@v4
       - name: Setup OpenVidu Meet
         run: |
           ./prepare.sh
@@ -160,6 +169,9 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
+      - name: Clean up
+        if: always()
+        uses: ./.github/actions/cleanup
 
   test-security:
     name: Security API Tests
@@ -175,13 +187,14 @@ jobs:
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
       - name: Checkout OpenVidu Local Deployment
         uses: actions/checkout@v4
         with:
           repository: OpenVidu/openvidu-local-deployment
           ref: development
           path: openvidu-local-deployment
-
       - name: Configure Local Deployment
         shell: bash
         run: |
@@ -191,7 +204,6 @@ jobs:
 
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
-      - uses: actions/checkout@v4
       - name: Setup OpenVidu Meet
         run: |
           ./prepare.sh
@@ -213,3 +225,6 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
+      - name: Clean up
+        if: always()
+        uses: ./.github/actions/cleanup
