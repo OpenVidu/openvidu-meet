@@ -49,7 +49,7 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Checks if the webhook event belongs to OpenVidu Meet by verifying if the room exist in Opnevidu Meet.
+	 * Checks if the webhook event belongs to OpenVidu Meet by verifying if the room exist in OpenVidu Meet.
 	 */
 	async webhookEventBelongsToOpenViduMeet(webhookEvent: WebhookEvent): Promise<boolean> {
 		// Extract relevant properties from the webhook event
