@@ -1,6 +1,6 @@
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
-import { MeetRoom } from '../../src/typings/ce';
+import { MeetRoom, MeetWebhookEvent } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
@@ -10,6 +10,10 @@ import {
 	startRecording,
 	stopRecording
 } from './request-helpers';
+import express, { Request, Response } from 'express';
+import http from 'http';
+
+let mockWebhookServer: http.Server;
 
 export interface RoomData {
 	room: MeetRoom;
@@ -168,4 +172,32 @@ export const setupMultiRecordingsTestContext = async (
 	console.log(`Stopped ${stoppedIds.length} recordings after ${stopDelay}ms:`, stoppedIds);
 
 	return testContext;
+};
+
+export const startWebhookServer = async (
+	port: number,
+	webhookReceivedCallback: (event: Request) => void
+): Promise<void> => {
+	const app = express();
+	app.use(express.json());
+
+	app.post('/webhook', (req: Request, res: Response) => {
+		webhookReceivedCallback(req);
+		res.status(200).send({ success: true });
+	});
+
+	return new Promise<void>((resolve) => {
+		mockWebhookServer = app.listen(port, () => {
+			console.log(`Webhook server listening on port ${port}`);
+			resolve();
+		});
+	});
+};
+
+export const stopWebhookServer = async (): Promise<void> => {
+	if (mockWebhookServer) {
+		await new Promise<void>((resolve) => {
+			mockWebhookServer.close(() => resolve());
+		});
+	}
 };

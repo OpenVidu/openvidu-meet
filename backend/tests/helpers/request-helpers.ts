@@ -18,7 +18,14 @@ import {
 } from '../../src/environment.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { RecordingService, RoomService } from '../../src/services/index.js';
-import { AuthMode, AuthType, MeetRoom, MeetRoomOptions, UserRole } from '../../src/typings/ce/index.js';
+import {
+	AuthMode,
+	AuthType,
+	MeetRoom,
+	MeetRoomOptions,
+	UserRole,
+	WebhookPreferences
+} from '../../src/typings/ce/index.js';
 
 const CREDENTIALS = {
 	user: {
@@ -302,6 +309,17 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 	await sleep('1s');
 };
 
+export const endMeeting = async (roomId: string, moderatorCookie: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
+		.set('Cookie', moderatorCookie)
+		.send();
+	await sleep('1s');
+	return response;
+};
+
 export const disconnectFakeParticipants = async () => {
 	fakeParticipantsProcesses.forEach((process, participantName) => {
 		process.kill();
@@ -310,6 +328,18 @@ export const disconnectFakeParticipants = async () => {
 
 	fakeParticipantsProcesses.clear();
 	await sleep('1s');
+};
+
+export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
+	checkAppIsRunning();
+
+	const userCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.set('Cookie', userCookie)
+		.send(preferences);
+
+	return response;
 };
 
 /**
