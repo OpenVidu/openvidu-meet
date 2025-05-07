@@ -13,11 +13,15 @@ export const updateWebhookPreferences = async (req: Request, res: Response) => {
 
 	try {
 		const globalPreferences = await globalPrefService.getGlobalPreferences();
-		globalPreferences.webhooksPreferences.enabled = webhookPreferences.enabled;
 
-		if (webhookPreferences.url) {
-			globalPreferences.webhooksPreferences.url = webhookPreferences.url;
-		}
+		// TODO: Validate the URL if webhooks are enabled by making a test request
+		globalPreferences.webhooksPreferences = {
+			enabled: webhookPreferences.enabled,
+			url:
+				webhookPreferences.url === undefined
+					? globalPreferences.webhooksPreferences.url
+					: webhookPreferences.url
+		};
 
 		await globalPrefService.saveGlobalPreferences(globalPreferences);
 

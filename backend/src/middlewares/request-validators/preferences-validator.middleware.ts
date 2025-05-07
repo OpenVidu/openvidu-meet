@@ -15,7 +15,11 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
 const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z
 	.object({
 		enabled: z.boolean(),
-		url: z.string().url().optional()
+		url: z
+			.string()
+			.url('Must be a valid URL')
+			.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
+			.optional()
 	})
 	.refine(
 		(data) => {
