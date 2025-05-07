@@ -2,7 +2,7 @@ import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
-import { RecordingHelper } from '../helpers/index.js';
+import { MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { SystemEventType } from '../models/system-event.model.js';
 import {
 	LiveKitService,
@@ -49,33 +49,49 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Checks if the webhook event belongs to OpenVidu Meet by verifying if the room exist in OpenVidu Meet.
+	 * Checks if the webhook event belongs to OpenVidu Meet.
+	 * Uses a systematic approach to verify through different sources.
+	 * !KNOWN ISSUE: Room metadata may be empty when track_publish and track_unpublish events are received.
 	 */
 	async webhookEventBelongsToOpenViduMeet(webhookEvent: WebhookEvent): Promise<boolean> {
 		// Extract relevant properties from the webhook event
 		const { room, egressInfo, ingressInfo } = webhookEvent;
+		this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Checking webhook event: ${webhookEvent.event}`);
 
-		// Determine the room name from room object or egress/ingress info
-		const roomName = room?.name ?? egressInfo?.roomName ?? ingressInfo?.roomName;
+		// Case 1: Check using room object from the event
+		if (room) {
+			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Checking room metadata for room: ${room.name}`);
 
-		if (!roomName) {
-			this.logger.debug('Room name not found in webhook event');
-			return false;
-		}
+			if (!room.metadata) {
+				this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata is empty for room: ${room.name}`);
 
-		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomName);
+				const updatedMetadata = await this.livekitService.getRoomMetadata(room.name);
 
-			if (!meetRoom) {
-				this.logger.debug(`Room ${roomName} not found in OpenVidu Meet.`);
-				return false;
+				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
+
+				return await this.roomService.meetRoomExists(room.name);
 			}
 
-			return true;
-		} catch (error) {
-			this.logger.error(`Error checking if room ${roomName} was created by OpenVidu Meet:`, error);
+			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata found for room: ${room.name}`);
+			return (
+				MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(room.metadata) ||
+				(await this.roomService.meetRoomExists(room.name))
+			);
+		}
+
+		// Case 2: No room in event - use roomName from egress/ingress info
+		const roomName = egressInfo?.roomName ?? ingressInfo?.roomName;
+
+		if (!roomName) {
+			this.logger.debug('[webhookEventBelongsToOpenViduMeet] Room name not found in webhook event');
 			return false;
 		}
+
+		const updatedMetadata = await this.livekitService.getRoomMetadata(roomName);
+
+		if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
+
+		return await this.roomService.meetRoomExists(roomName);
 	}
 
 	/**

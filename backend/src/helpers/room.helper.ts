@@ -1,4 +1,5 @@
 import { MeetRoom, MeetRoomOptions } from '@typings-ce';
+import { MEET_NAME_ID } from '../environment.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -39,5 +40,21 @@ export class MeetRoomHelper {
 		const moderatorUrl = new URL(moderatorRoomUrl);
 		const moderatorSecret = moderatorUrl.searchParams.get('secret') || '';
 		return { publisherSecret, moderatorSecret };
+	}
+
+	/**
+	 * Safely parses JSON metadata and checks if createdBy matches MEET_NAME_ID.
+	 * @returns true if metadata indicates OpenVidu Meet as creator, false otherwise
+	 */
+	static checkIfMeetingBelogsToOpenViduMeet(metadata?: string): boolean {
+		if (!metadata) return false;
+
+		try {
+			const parsed = JSON.parse(metadata);
+			const isOurs = parsed?.createdBy === MEET_NAME_ID;
+			return isOurs;
+		} catch (err: unknown) {
+			return false;
+		}
 	}
 }

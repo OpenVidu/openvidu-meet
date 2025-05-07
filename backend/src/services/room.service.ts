@@ -24,6 +24,7 @@ import {
 	TokenService
 } from './index.js';
 import ms from 'ms';
+import { MEET_NAME_ID } from '../environment.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -99,6 +100,7 @@ export class RoomService {
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
 			metadata: JSON.stringify({
+				createdBy: MEET_NAME_ID,
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			}),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
@@ -123,6 +125,24 @@ export class RoomService {
 		room.preferences = preferences;
 
 		return await this.storageService.saveMeetRoom(room);
+	}
+
+	/**
+	 * Checks if a meeting room with the specified name exists
+	 *
+	 * @param roomName - The name of the meeting room to check
+	 * @returns A Promise that resolves to true if the room exists, false otherwise
+	 */
+	async meetRoomExists(roomName: string): Promise<boolean> {
+		try {
+			const meetRoom = await this.getMeetRoom(roomName);
+
+			if (meetRoom) return true;
+
+			return false;
+		} catch (err: unknown) {
+			return false;
+		}
 	}
 
 	/**

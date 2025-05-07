@@ -100,6 +100,26 @@ export class LiveKitService {
 		return rooms[0];
 	}
 
+	/**
+	 * Retrieves the metadata associated with a LiveKit room.
+	 *
+	 * @param roomName - The name of the room to get metadata from
+	 * @returns The room's metadata as a string if it exists, or undefined if the room has no metadata or an error occurs
+	 */
+	async getRoomMetadata(roomName: string): Promise<string | undefined> {
+		try {
+			const room = await this.getRoom(roomName);
+
+			if (room.metadata) {
+				return room.metadata;
+			}
+
+			return undefined;
+		} catch (error) {
+			return undefined;
+		}
+	}
+
 	async listRooms(): Promise<Room[]> {
 		try {
 			return await this.roomClient.listRooms();
