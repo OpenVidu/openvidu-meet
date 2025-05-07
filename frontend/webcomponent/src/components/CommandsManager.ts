@@ -1,4 +1,4 @@
-import { ParentMessage } from '../types/message.type';
+import { InboundCommandMessage } from '../models/message.type';
 
 /**
  * Handles sending messages to the iframe.
@@ -12,7 +12,7 @@ export class CommandsManager {
 		this.allowedOrigin = allowedOrigin;
 	}
 
-	public sendMessage(message: ParentMessage, targetOrigin?: string): void {
+	public sendMessage(message: InboundCommandMessage, targetOrigin?: string): void {
 		targetOrigin = targetOrigin || this.allowedOrigin;
 		this.iframe.contentWindow?.postMessage(message, targetOrigin);
 	}

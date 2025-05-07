@@ -1,4 +1,5 @@
-import { ParentMessage, WebComponentActionType } from '../types/message.type';
+import { WebComponentCommand } from '../models/command.model';
+import { InboundCommandMessage } from '../models/message.type';
 import { CommandsManager } from './CommandsManager';
 import { EventsManager } from './EventsManager';
 
@@ -68,8 +69,8 @@ export class OpenViduMeet extends HTMLElement {
 		this.shadowRoot?.appendChild(style);
 		this.shadowRoot?.appendChild(this.iframe);
 		this.iframe.onload = () => {
-			const message: ParentMessage = {
-				action: WebComponentActionType.INITIALIZE,
+			const message: InboundCommandMessage = {
+				command: WebComponentCommand.INITIALIZE,
 				payload: { domain: window.location.origin }
 			};
 			this.commandsManager.sendMessage(message);
@@ -101,17 +102,17 @@ export class OpenViduMeet extends HTMLElement {
 	// Public methods
 
 	public endMeeting() {
-		const message: ParentMessage = { action: WebComponentActionType.END_MEETING };
+		const message: InboundCommandMessage = { command: WebComponentCommand.END_MEETING };
 		this.commandsManager.sendMessage(message);
 	}
 
 	public leaveRoom() {
-		const message: ParentMessage = { action: WebComponentActionType.LEAVE_ROOM };
+		const message: InboundCommandMessage = { command: WebComponentCommand.LEAVE_ROOM };
 		this.commandsManager.sendMessage(message);
 	}
 
-	public toggleChat() {
-		const message: ParentMessage = { action: WebComponentActionType.TOGGLE_CHAT };
-		this.commandsManager.sendMessage(message);
-	}
+	// public toggleChat() {
+	// 	const message: ParentMessage = { action: WebComponentActionType.TOGGLE_CHAT };
+	// 	this.commandsManager.sendMessage(message);
+	// }
 }

@@ -8,12 +8,8 @@ import {
 	OpenViduService,
 	LoggerService
 } from 'projects/shared-meet-components/src/public-api';
-import {
-	OpenViduMeetMessage,
-	ParentMessage,
-	WebComponentActionType,
-	WebComponentEventType
-} from 'webcomponent/src/types/message.type';
+import { WebComponentCommand } from 'webcomponent/src/models/command.model';
+import { OutboundEventMessage, InboundCommandMessage } from 'webcomponent/src/models/message.type';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
@@ -43,12 +39,12 @@ export class WebComponentManagerService {
 		this.isListenerStarted = true;
 		// Listen for messages from the iframe
 		window.addEventListener('message', async (event) => {
-			const message: ParentMessage = event.data;
+			const message: InboundCommandMessage = event.data;
 			const parentDomain = this.contextService.getParentDomain();
-			const { action, payload } = message;
+			const { command, payload } = message;
 
 			if (!parentDomain) {
-				if (action === WebComponentActionType.INITIALIZE) {
+				if (command === WebComponentCommand.INITIALIZE) {
 					if (!payload || !('domain' in payload)) {
 						console.error('Parent domain not provided in message payload');
 						return;
@@ -66,19 +62,19 @@ export class WebComponentManagerService {
 
 			console.debug('Message received from parent:', event.data);
 			// TODO: reject if room is not connected
-			switch (action) {
-				case WebComponentActionType.END_MEETING:
+			switch (command) {
+				case WebComponentCommand.END_MEETING:
 					// Moderator only
 					if (this.contextService.isModeratorParticipant()) {
 						const roomId = this.contextService.getRoomId();
 						await this.httpService.endMeeting(roomId);
 					}
 					break;
-				case WebComponentActionType.TOGGLE_CHAT:
-					// Toggle chat
-					this.panelService.togglePanel(PanelType.CHAT);
-					break;
-				case WebComponentActionType.LEAVE_ROOM:
+				// case WebComponentCommand.TOGGLE_CHAT:
+				// Toggle chat
+				// this.panelService.togglePanel(PanelType.CHAT);
+				// break;
+				case WebComponentCommand.LEAVE_ROOM:
 					// Leave room.
 					await this.openviduService.disconnectRoom();
 					break;
@@ -94,7 +90,7 @@ export class WebComponentManagerService {
 		window.removeEventListener('message', this.startCommandsListener);
 	}
 
-	sendMessageToParent(event: OpenViduMeetMessage /*| RoomDisconnectedEvent*/) {
+	sendMessageToParent(event: OutboundEventMessage) {
 		if (!this.contextService.isEmbeddedMode()) return;
 		this.log.d('Sending message to parent :', event);
 		const origin = this.contextService.getParentDomain();

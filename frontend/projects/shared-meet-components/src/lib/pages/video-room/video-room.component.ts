@@ -25,7 +25,8 @@ import {
 	RoomService,
 	SessionStorageService
 } from '../../services';
-import { OpenViduMeetMessage, WebComponentEventType } from 'webcomponent/src/types/message.type';
+import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
+import { WebComponentEvent } from 'webcomponent/src/models/event.model';
 
 @Component({
 	selector: 'app-video-room',
@@ -114,11 +115,11 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
-		const message: OpenViduMeetMessage = {
-			eventType: WebComponentEventType.LOCAL_PARTICIPANT_CONNECTED,
+		const message: OutboundEventMessage = {
+			event: WebComponentEvent.JOIN,
 			payload: {
-				roomId: event.getProperties().room?.name,
-				participantName: event.name
+				roomId: event.getProperties().room?.name || '',
+				participantName: event.name!
 			}
 		};
 		this.wcManagerService.sendMessageToParent(message);
@@ -129,8 +130,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		const redirectURL = this.ctxService.getLeaveRedirectURL() || '/disconnected';
 		const isExternalURL = /^https?:\/\//.test(redirectURL);
 
-		const message: OpenViduMeetMessage = {
-			eventType: WebComponentEventType.LOCAL_PARTICIPANT_LEFT,
+		const message: OutboundEventMessage = {
+			event: WebComponentEvent.LEFT,
 			payload: {
 				roomId: event.roomName,
 				participantName: event.participantName

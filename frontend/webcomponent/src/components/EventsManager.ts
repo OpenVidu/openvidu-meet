@@ -1,4 +1,4 @@
-import { OpenViduMeetMessage } from '../types/message.type';
+import { OutboundEventMessage } from '../models/message.type';
 
 export class EventsManager {
 	private element: HTMLElement;
@@ -12,9 +12,9 @@ export class EventsManager {
 	}
 
 	private handleMessage(event: MessageEvent) {
-		const message: OpenViduMeetMessage = event.data;
+		const message: OutboundEventMessage = event.data;
 		// Validate message origin (security measure)
-		if (!message || !message.eventType) {
+		if (!message || !message.event) {
 			// console.warn('Invalid message:', message);
 			return;
 		}
@@ -22,8 +22,8 @@ export class EventsManager {
 		this.dispatchEvent(message);
 	}
 
-	private dispatchEvent(message: OpenViduMeetMessage) {
-		const event = new CustomEvent(message.eventType, {
+	private dispatchEvent(message: OutboundEventMessage) {
+		const event = new CustomEvent(message.event, {
 			detail: message.payload,
 			bubbles: true,
 			composed: true
