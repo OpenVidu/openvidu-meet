@@ -23,6 +23,7 @@ import {
 	TaskSchedulerService,
 	TokenService
 } from './index.js';
+import ms from 'ms';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -94,21 +95,19 @@ export class RoomService {
 		}
 
 		const meetRoom: MeetRoom = await this.getMeetRoom(roomId);
+		const { MEETING_DEPARTURE_TIMEOUT, MEETING_EMPTY_TIMEOUT } = INTERNAL_CONFIG;
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
 			metadata: JSON.stringify({
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
-			})
-			//TODO: Uncomment this when bug in LiveKit is fixed
-			// When it is defined, the room will be closed although there are participants
-			// emptyTimeout: ms('20s') / 1000,
-			// !FIXME: When this is defined, the room will be closed although there are participants
-			// departureTimeout: ms('20s') / 1000
+			}),
+			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
+			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined
 			// maxParticipants: maxParticipants || undefined,
 		};
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);
-		this.logger.verbose(`Room ${roomId} created in LiveKit.`);
+		this.logger.verbose(`Room ${roomId} created in LiveKit with options: ${JSON.stringify(livekitRoomOptions)}.`);
 		return room;
 	}
 
