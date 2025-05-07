@@ -170,26 +170,32 @@ export class LivekitWebhookService {
 	 * @param {Room} room - The room object that has finished.
 	 * @returns {Promise<void>} A promise that resolves when the webhook has been sent.
 	 */
-	async handleRoomFinished(room: Room): Promise<void> {
+	async handleRoomFinished({ name: roomName }: Room): Promise<void> {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(room.name);
+			const meetRoom = await this.roomService.getMeetRoom(roomName);
 
 			if (!meetRoom) {
-				this.logger.warn(`Room ${room.name} not found in OpenVidu Meet.`);
+				this.logger.warn(`Room ${roomName} not found in OpenVidu Meet.`);
 				return;
 			}
 
-			await Promise.all([
-				this.recordingService.releaseRecordingLockIfNoEgress(room.name),
+			this.logger.info(`Processing room_finished event for room: ${roomName}`);
+
+			const results = await Promise.allSettled([
+				this.recordingService.releaseRecordingLockIfNoEgress(roomName),
 				this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom)
 			]);
 
+			results.forEach((result) => {
+				if (result.status === 'rejected') {
+					this.logger.error(`Error processing room_finished event: ${result.reason}`);
+				}
+			});
+
 			if (meetRoom.markedForDeletion) {
 				// If the room is marked for deletion, we need to delete it
-				this.logger.info(
-					`Deleting room ${room.name} after meeting finished because it was marked for deletion`
-				);
-				this.roomService.bulkDeleteRooms([room.name], true);
+				this.logger.info(`Deleting room ${roomName} after meeting finished because it was marked for deletion`);
+				this.roomService.bulkDeleteRooms([roomName], true);
 			}
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);
@@ -210,58 +216,58 @@ export class LivekitWebhookService {
 	): Promise<void> {
 		if (!RecordingHelper.isRecordingEgress(egressInfo)) return;
 
-		this.logger.debug(`Handling recording_${webhookAction} webhook.`);
-
-		const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
-		const { roomId, recordingId, status } = recordingInfo;
-		const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
-
-		this.logger.debug(`Recording '${recordingId}' status: '${status}'`);
-
-		const tasks: Promise<unknown>[] = [];
-
-		// Update recording metadata
-		tasks.push(
-			this.s3Service.saveObject(metadataPath, recordingInfo),
-			this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
-		);
-
-		// Send webhook notification
-		switch (webhookAction) {
-			case 'started':
-				tasks.push(
-					this.storageService.archiveRoomMetadata(roomId),
-					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
-				);
-				break;
-			case 'updated':
-				tasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
-
-				if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
-					// Send system event for active recording with the aim of cancelling the cleanup timer
-					tasks.push(
-						this.systemEventService.publishEvent(
-							SystemEventType.RECORDING_ACTIVE,
-							recordingInfo as unknown as Record<string, unknown>
-						)
-					);
-				}
-
-				break;
-			case 'ended':
-				tasks.push(
-					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
-					this.recordingService.releaseRecordingLockIfNoEgress(roomId)
-				);
-				break;
-		}
+		this.logger.debug(`Processing recording_${webhookAction} webhook for egress: ${egressInfo.egressId}.`);
 
 		try {
+			const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
+			const { roomId, recordingId, status } = recordingInfo;
+			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
+
+			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
+
+			// Common tasks for all webhook types
+			const commonTasks = [
+				this.s3Service.saveObject(metadataPath, recordingInfo),
+				this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+			];
+
+			const specificTasks: Promise<unknown>[] = [];
+
+			// Send webhook notification
+			switch (webhookAction) {
+				case 'started':
+					specificTasks.push(
+						this.storageService.archiveRoomMetadata(roomId),
+						this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
+					);
+					break;
+				case 'updated':
+					specificTasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
+
+					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
+						// Send system event for active recording with the aim of cancelling the cleanup timer
+						specificTasks.push(
+							this.systemEventService.publishEvent(
+								SystemEventType.RECORDING_ACTIVE,
+								recordingInfo as unknown as Record<string, unknown>
+							)
+						);
+					}
+
+					break;
+				case 'ended':
+					specificTasks.push(
+						this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
+						this.recordingService.releaseRecordingLockIfNoEgress(roomId)
+					);
+					break;
+			}
+
 			// Wait for all promises to resolve
-			await Promise.all(tasks);
+			await Promise.all([...commonTasks, ...specificTasks]);
 		} catch (error) {
 			this.logger.warn(
-				`Error processing recording ${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
+				`Error processing recording_${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
 		}
 	}
