@@ -12,6 +12,8 @@ import {
 	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { RoomService } from '../../../../src/services/room.service.js';
 
 describe('Room Garbage Collector Tests', () => {
 	beforeAll(() => {
@@ -75,12 +77,21 @@ describe('Room Garbage Collector Tests', () => {
 	});
 
 	it('should delete a room after the last participant leaves when it was marked for deletion', async () => {
-		const createdRoom = await createRoom({
+		const { roomId } = await createRoom({
 			roomIdPrefix: 'test-gc-lifecycle',
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
-		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
+		const roomService = container.get(RoomService);
+		// Set MEETING_DEPARTURE_TIMEOUT to 1s to force the room to be closed immediately
+		setInternalConfig({
+			MEETING_DEPARTURE_TIMEOUT: '1s'
+		});
+		// Create livekit room with custom departure timeout
+		// This is needed to trigger the room_finished event
+		await roomService.createLivekitRoom(roomId);
+
+		await joinFakeParticipant(roomId, 'test-participant');
 
 		// Wait for the auto-deletion date to pass
 		await sleep('1s');
@@ -88,7 +99,7 @@ describe('Room Garbage Collector Tests', () => {
 		// Should mark the room for deletion but not delete it yet
 		await runRoomGarbageCollector();
 
-		let response = await getRoom(createdRoom.roomId);
+		let response = await getRoom(roomId);
 		expect(response.status).toBe(200);
 		expect(response.body.markedForDeletion).toBe(true);
 		expect(response.body.autoDeletionDate).toBeTruthy();
@@ -97,10 +108,10 @@ describe('Room Garbage Collector Tests', () => {
 		await disconnectFakeParticipants();
 
 		// Wait to receive webhook room_finished
-		await sleep('4s');
+		await sleep('1s');
 
 		// Verify that the room is deleted
-		response = await getRoom(createdRoom.roomId);
+		response = await getRoom(roomId);
 		expect(response.status).toBe(404);
 	});
 

@@ -11,6 +11,9 @@ import {
 	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+import { RoomService } from '../../../../src/services/room.service.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { setInternalConfig } from '../../../../src/config/internal-config.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
@@ -134,6 +137,16 @@ describe('Room API Tests', () => {
 				autoDeletionDate
 			});
 
+			const roomService = container.get(RoomService);
+			// Set MEETING_DEPARTURE_TIMEOUT to 1s to force the room to be closed immediately
+			setInternalConfig({
+				MEETING_DEPARTURE_TIMEOUT: '1s'
+			});
+			// Create livekit room with custom departure timeout
+			// This is needed to trigger the room_finished event
+			await roomService.createLivekitRoom(roomId);
+
+			// Join a participant to the room
 			await joinFakeParticipant(roomId, 'test-participant');
 
 			const response = await deleteRoom(roomId, { force: false });
