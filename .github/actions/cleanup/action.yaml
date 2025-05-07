@@ -29,16 +29,16 @@ runs:
         ps aux | grep -i 'npm\|node\|livekit' | grep -v grep | awk '{print $2}' | xargs kill -9 || true
       shell: bash
 
+    - name: Remove OpenVidu Meet directory
+      run: |
+        if [ -d "/__w/openvidu-meet/openvidu-meet" ]; then
+          sudo rm -rf /__w/openvidu-meet/openvidu-meet
+        fi
+      shell: bash
     - name: Show system status
       run: |
         echo "=== System status after cleanup ==="
         df -h
         free -h
         docker ps -a
-      shell: bash
-    - name: Remove OpenVidu Meet directory
-      run: |
-        if [ -d "/__w/openvidu-meet/openvidu-meet" ]; then
-          sudo rm -rf /__w/openvidu-meet/openvidu-meet
-        fi
       shell: bash
