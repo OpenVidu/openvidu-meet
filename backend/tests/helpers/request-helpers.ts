@@ -338,6 +338,17 @@ export const updateWebbhookPreferences = async (preferences: WebhookPreferences)
 	return response;
 };
 
+export const getWebbhookPreferences = async () => {
+	checkAppIsRunning();
+
+	const userCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.set('Cookie', userCookie)
+		.send();
+	return response;
+};
+
 /**
  * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
  */
