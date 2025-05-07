@@ -306,6 +306,26 @@ export const disconnectFakeParticipants = async () => {
 	await sleep('1s');
 };
 
+export const updateAppearancePreferences = async (preferences: any) => {
+	checkAppIsRunning();
+	const userCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.set('Cookie', userCookie)
+		.send(preferences);
+	return response;
+};
+
+export const getAppearancePreferences = async () => {
+	checkAppIsRunning();
+	const userCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.set('Cookie', userCookie)
+		.send();
+	return response;
+};
+
 export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
 	checkAppIsRunning();
 
