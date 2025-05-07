@@ -18,8 +18,6 @@ import {
 	MEET_AWS_REGION,
 	MEET_S3_ACCESS_KEY,
 	MEET_S3_BUCKET,
-	MEET_S3_INITIAL_RETRY_DELAY_MS,
-	MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR,
 	MEET_S3_SECRET_KEY,
 	MEET_S3_SERVICE_ENDPOINT,
 	MEET_S3_SUBBUCKET,
@@ -27,6 +25,7 @@ import {
 } from '../environment.js';
 import { errorS3NotAvailable, internalError } from '../models/error.model.js';
 import { LoggerService } from './index.js';
+import INTERNAL_CONFIG from '../config/internal-config.js';
 
 @injectable()
 export class S3Service {
@@ -280,8 +279,8 @@ export class S3Service {
 	 */
 	protected async retryOperation<T>(operation: () => Promise<T>): Promise<T> {
 		let attempt = 0;
-		let delayMs = Number(MEET_S3_INITIAL_RETRY_DELAY_MS);
-		const maxRetries = Number(MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR);
+		let delayMs = Number(INTERNAL_CONFIG.S3_INITIAL_RETRY_DELAY_MS);
+		const maxRetries = Number(INTERNAL_CONFIG.S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR);
 
 		while (true) {
 			try {

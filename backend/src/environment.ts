@@ -54,8 +54,6 @@ export const {
 	MEET_S3_SECRET_KEY = 'minioadmin',
 	MEET_AWS_REGION = 'us-east-1',
 	MEET_S3_WITH_PATH_STYLE_ACCESS = 'true',
-	MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR = '5',
-	MEET_S3_INITIAL_RETRY_DELAY_MS = '100',
 
 	// Redis configuration
 	MEET_REDIS_HOST: REDIS_HOST = 'localhost',
@@ -126,8 +124,6 @@ export const logEnvVars = () => {
 	console.log('MEET S3 SECRET KEY:', credential('****' + MEET_S3_SECRET_KEY.slice(-3)));
 	console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
 	console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
-	console.log('MEET S3 MAX RETRIES ATTEMPTS ON SAVE ERROR:', text(MEET_S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR));
-	console.log('MEET S3 INITIAL RETRY DELAY MS:', text(MEET_S3_INITIAL_RETRY_DELAY_MS));
 	console.log('---------------------------------------------------------');
 	console.log('Redis Configuration');
 	console.log('---------------------------------------------------------');

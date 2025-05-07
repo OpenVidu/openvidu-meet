@@ -15,11 +15,13 @@ const INTERNAL_CONFIG = {
 	// Headers for API requests
 	API_KEY_HEADER: 'x-api-key',
 
-	// Fixed usernames
+	// Authentication usernames
 	ANONYMOUS_USER: 'anonymous',
 	API_USER: 'api-user',
 
-	// S3 prefixes
+	// S3 configuration
+	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',
+	S3_INITIAL_RETRY_DELAY_MS: '100',
 	S3_ROOMS_PREFIX: 'rooms',
 	S3_RECORDINGS_PREFIX: 'recordings',
 
