@@ -2,6 +2,7 @@ import { WebComponentCommand } from '../models/command.model';
 import { InboundCommandMessage } from '../models/message.type';
 import { CommandsManager } from './CommandsManager';
 import { EventsManager } from './EventsManager';
+import styles from '../assets/css/styles.css';
 
 /**
  * The `OpenViduMeet` web component provides an interface for embedding an OpenVidu Meet room within a web page.
@@ -27,7 +28,11 @@ export class OpenViduMeet extends HTMLElement {
 	private iframe: HTMLIFrameElement;
 	private commandsManager: CommandsManager;
 	private eventsManager: EventsManager;
+	//!FIXME: Insecure by default
 	private allowedOrigin: string = '*';
+	private loadTimeout: any;
+	private iframeLoaded = false;
+	private errorMessage: string | null = null;
 
 	constructor() {
 		super();
@@ -52,30 +57,81 @@ export class OpenViduMeet extends HTMLElement {
 		this.updateIframeSrc();
 	}
 
-	private render() {
-		const style = document.createElement('style');
-		style.textContent = `
-		:host {
-			display: block;
-			width: 100%;
-			height: 100%;
+	disconnectedCallback() {
+		// Clean up resources
+		if (this.loadTimeout) {
+			clearTimeout(this.loadTimeout);
 		}
-		  iframe {
-			width: 100%;
-			height: 100%;
-			border: none;
-		  }
-		`;
-		this.shadowRoot?.appendChild(style);
-		this.shadowRoot?.appendChild(this.iframe);
-		this.iframe.onload = () => {
+		this.eventsManager.cleanup();
+	}
+
+	/**
+	 * Renders the Web Component in the shadow DOM
+	 */
+	private render() {
+		// Add styles
+		const styleElement = document.createElement('style');
+		styleElement.textContent = styles;
+		this.shadowRoot?.appendChild(styleElement);
+
+		if (this.errorMessage) {
+			const errorContainer = document.createElement('div');
+			errorContainer.className = 'error-container';
+
+			const errorIcon = document.createElement('div');
+			errorIcon.className = 'error-icon';
+			errorIcon.textContent = '⚠️';
+
+			const errorMessageEl = document.createElement('div');
+			errorMessageEl.className = 'error-message';
+			errorMessageEl.textContent = this.errorMessage;
+
+			errorContainer.appendChild(errorIcon);
+			errorContainer.appendChild(errorMessageEl);
+			this.shadowRoot?.appendChild(errorContainer);
+		} else {
+			// Configure the iframe and Add it to the DOM
+			this.setupIframe();
+			this.shadowRoot?.appendChild(this.iframe);
+		}
+	}
+
+	/**
+	 * Sets up the iframe with error handlers and loading timeout
+	 */
+	private setupIframe() {
+		// Clear any previous timeout
+		if (this.loadTimeout) {
+			clearTimeout(this.loadTimeout);
+		}
+
+		// Reset states
+		this.iframeLoaded = false;
+
+		// Set up load handlers
+		this.iframe.onload = (event: Event) => {
+			console.warn('Iframe loaded', event);
 			const message: InboundCommandMessage = {
 				command: WebComponentCommand.INITIALIZE,
 				payload: { domain: window.location.origin }
 			};
 			this.commandsManager.sendMessage(message);
+			this.iframeLoaded = true;
+			clearTimeout(this.loadTimeout);
+			this.loadTimeout = null;
 			this.iframe.onload = null;
 		};
+		// this.iframe.onload = this.handleIframeLoaded.bind(this);
+		this.iframe.onerror = (event: Event | string) => {
+			console.error('Iframe error:', event);
+			clearTimeout(this.loadTimeout);
+			this.showErrorState('Failed to load meeting');
+		};
+
+		// Set loading timeout
+		this.loadTimeout = setTimeout(() => {
+			if (!this.iframeLoaded) this.showErrorState('Loading timed out');
+		}, 10_000);
 	}
 
 	private updateIframeSrc() {
@@ -99,7 +155,20 @@ export class OpenViduMeet extends HTMLElement {
 		this.iframe.src = url.toString();
 	}
 
-	// Public methods
+	/**
+	 * Shows error state in the component UI
+	 */
+	private showErrorState(message: string) {
+		this.errorMessage = message;
+		// Re-render to show error state
+		while (this.shadowRoot?.firstChild) {
+			this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+		}
+		this.render();
+	}
+
+	// ---- WebComponent Commands ----
+	// These methods send commands to the OpenVidu Meet iframe.
 
 	public endMeeting() {
 		const message: InboundCommandMessage = { command: WebComponentCommand.END_MEETING };

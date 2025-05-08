@@ -11,6 +11,10 @@ export class EventsManager {
 		window.addEventListener('message', this.handleMessage.bind(this));
 	}
 
+	public cleanup() {
+		window.removeEventListener('message', this.handleMessage);
+	}
+
 	private handleMessage(event: MessageEvent) {
 		const message: OutboundEventMessage = event.data;
 		// Validate message origin (security measure)
