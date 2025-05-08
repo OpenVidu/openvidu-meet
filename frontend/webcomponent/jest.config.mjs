@@ -17,7 +17,7 @@ const jestConfig = {
     }
   },
   moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js'
   }
 }
 
