@@ -1,9 +1,10 @@
 name: 'OpenVidu Meet Cleanup'
 description: 'Clean up OpenVidu Meet test environment'
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Show pre-cleanup status
+      continue-on-error: true
       run: |
         echo "=== System status before cleanup ==="
         df -h
@@ -19,6 +20,7 @@ runs:
       shell: bash
 
     - name: Stop OpenVidu Local Deployment containers
+      continue-on-error: true
       run: |
         if [ -d "openvidu-local-deployment/community" ]; then
           cd openvidu-local-deployment/community
@@ -29,6 +31,7 @@ runs:
       shell: bash
 
     - name: Clean up temporary files
+      continue-on-error: true
       run: |
         echo "Cleaning temporary files..."
         rm -rf /tmp/openvidu-* || echo "Warning: Failed to clean some OpenVidu temp files"
@@ -36,6 +39,7 @@ runs:
       shell: bash
 
     - name: Check for running containers
+      continue-on-error: true
       run: |
         CONTAINERS=$(docker ps -q)
         if [ -n "$CONTAINERS" ]; then
@@ -45,12 +49,14 @@ runs:
       shell: bash
 
     - name: Clean up Docker resources
+      continue-on-error: true
       run: |
         echo "Pruning Docker system..."
         docker system prune -f --volumes || echo "Warning: Docker system prune failed"
       shell: bash
 
     - name: Kill orphaned processes
+      continue-on-error: true
       run: |
         echo "Checking for orphaned processes..."
         ORPHANED=$(ps aux | grep -i 'npm\|node\|livekit' | grep -v grep | awk '{print $2}')
@@ -63,6 +69,7 @@ runs:
       shell: bash
 
     - name: Clean specific directories
+      continue-on-error: true
       run: |
         echo "Cleaning specific directories..."
         # Don't try to remove the entire working directory
@@ -79,6 +86,7 @@ runs:
       shell: bash
 
     - name: Show system status
+      continue-on-error: true
       run: |
         echo "=== System status after cleanup ==="
         df -h
