@@ -134,7 +134,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			event: WebComponentEvent.LEFT,
 			payload: {
 				roomId: event.roomName,
-				participantName: event.participantName
+				participantName: event.participantName,
+				reason: event.reason
 			}
 		};
 		this.wcManagerService.sendMessageToParent(message);
