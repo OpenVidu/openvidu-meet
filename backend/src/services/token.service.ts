@@ -56,7 +56,7 @@ export class TokenService {
 				permissions: permissions.openvidu
 			})
 		};
-		return await this.generateJwtToken(tokenOptions, permissions.livekit);
+		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
 	}
 
 	async generateRecordingToken(
