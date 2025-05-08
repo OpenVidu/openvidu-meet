@@ -2,7 +2,7 @@
  * All available events that can be emitted by the WebComponent.
  * @category Communication
  */
-export enum WebComponentEvent {
+export const enum WebComponentEvent {
 	/**
 	 * Event emitted when the local participant joins the room.
 	 */
