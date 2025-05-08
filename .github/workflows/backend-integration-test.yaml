@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Backend Integration Tests
 on: [push, pull_request]
 
 jobs:

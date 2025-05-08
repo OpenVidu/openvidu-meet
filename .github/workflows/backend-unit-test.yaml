@@ -1,9 +1,9 @@
-name: Unit Tests
+name: Backend Unit Tests
 on: [push, pull_request]
 
 jobs:
   unit-test:
-    name: Unit Tests
+    name: Backend Unit Tests
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js

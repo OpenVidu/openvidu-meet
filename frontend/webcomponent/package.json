@@ -4,7 +4,7 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "npm install && rollup -c",
-		"test": "jest",
+		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test",
 		"lint": "eslint 'src/**/*.ts'"
 	},
