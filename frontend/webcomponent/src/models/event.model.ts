@@ -30,6 +30,7 @@ export interface EventPayloads {
 	[WebComponentEvent.LEFT]: {
 		roomId: string;
 		participantName: string;
+		reason: string;
 	};
 	[WebComponentEvent.MEETING_ENDED]: {
 		roomId: string;
