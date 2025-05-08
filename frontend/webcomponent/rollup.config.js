@@ -61,7 +61,7 @@ export default {
       //   toplevel: true // Enable top-level variable renaming
       // },
       format: {
-        comments: false // Remove all comments
+        comments: !production
       }
     }),
     {

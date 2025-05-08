@@ -4,6 +4,7 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "npm install && rollup -c",
+		"build:watch": "npm install && rollup -c -w",
 		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test",
 		"lint": "eslint 'src/**/*.ts'"
