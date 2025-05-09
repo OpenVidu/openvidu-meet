@@ -1,22 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
-    "sourceMap": true,
-    "outDir": "./dist",
+    "target": "ES6",
+    "module": "commonjs",
+    "rootDir": "src",
+    "outDir": "dist",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "allowJs": true, // Allow JavaScript files to be compiled
-    "checkJs": true, // Type check JavaScript files
-    "lib": ["DOM", "ES2020", "DOM.Iterable"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*", "server.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"]
 }

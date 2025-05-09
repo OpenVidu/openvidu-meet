@@ -1,6 +1,0 @@
-{
-  "watch": ["src", "server.ts", ".env"],
-  "ignore": ["src/public"],
-  "ext": "ts,js,json",
-  "exec": "ts-node --esm server.ts"
-}

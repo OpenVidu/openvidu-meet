@@ -22,9 +22,9 @@ html {
 
 /* Left Sidebar Panel */
 #control-panel {
-	width: 300px;
+	width: 350px;
 	background: white;
-	padding: 10px 15px;
+	padding: 5px 5px;
 	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 	display: flex;
 	flex-direction: column;
@@ -48,6 +48,7 @@ html {
 	border-radius: 8px;
 	color: white;
 	list-style: none;
+	margin: 0;
 }
 
 #control-panel h3 {
@@ -64,10 +65,11 @@ html {
 }
 
 #control-panel .log-list li {
-	margin-bottom: 5px;
+	margin-bottom: 10px;
 	padding: 5px;
-	background-color: #3a3a3a;
+	background-color: #474747;
 	border-radius: 4px;
+	overflow-wrap: break-word;
 }
 
 /* Main Content Section (Web Component) */
@@ -87,4 +89,17 @@ html {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+}
+
+pre code {
+	white-space: pre-wrap;
+}
+
+.section {
+	padding: 0px;
+}
+
+.section .title {
+	font-size: 1rem;
+	margin: .5rem;
 }

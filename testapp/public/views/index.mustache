@@ -25,10 +25,11 @@
 					<ul class="list-group">
 						{{#rooms}}
 						<li
+							id="{{roomIdPrefix}}"
 							class="list-group-item d-flex justify-content-between align-items-center"
 						>
 							<span>{{ roomId }}</span>
-							<div class="dropdown">
+							<div class="dropdown-button">
 								<button
 									class="btn btn-primary btn-sm dropdown-toggle"
 									type="button"
@@ -50,7 +51,7 @@
 												value="moderator"
 											/>
 
-											<button type="submit" class="dropdown-item">
+											<button type="submit" id="join-as-moderator" class="dropdown-item">
 												Moderator
 											</button>
 										</form>
@@ -68,26 +69,8 @@
 												value="publisher"
 											/>
 
-											<button type="submit" class="dropdown-item">
+											<button type="submit" id="join-as-publisher" class="dropdown-item">
 												Publisher
-											</button>
-										</form>
-									</li>
-									<li>
-										<form action="/join-room" method="post">
-											<input
-												type="hidden"
-												name="roomUrl"
-												value="{{ viewerRoomUrl }}"
-											/>
-											<input
-												type="hidden"
-												name="participantRole"
-												value="viewer"
-											/>
-
-											<button type="submit" class="dropdown-item">
-												Viewer
 											</button>
 										</form>
 									</li>
@@ -130,11 +113,10 @@
 							name="autoDeletionDate"
 							id="expiration-date"
 							class="form-control"
-							required
 						/>
 					</div>
 
-					<button type="submit" class="btn btn-primary w-100">
+					<button type="submit" class="create-room-btn btn btn-primary w-100">
 						Create Room
 					</button>
 				</form>
