@@ -1,7 +1,7 @@
 /**
  * All available commands that can be sent to the WebComponent.
  */
-export const enum WebComponentCommand {
+export enum WebComponentCommand {
 	/**
 	 * Initializes the WebComponent with the given configuration.
 	 * @private
