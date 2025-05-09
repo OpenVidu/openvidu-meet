@@ -55,3 +55,5 @@ backend/src/typings/
 **/*/coverage
 
 frontend/webcomponent/**/openvidu-meet.**.js
+testapp/public/js/app.js
+testapp/public/js/webcomponent.js
