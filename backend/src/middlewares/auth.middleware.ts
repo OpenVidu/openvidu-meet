@@ -36,9 +36,13 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 				// If any middleware granted access, it is not necessary to continue checking the rest
 				return next();
 			} catch (error) {
-				// If no middleware granted access, return unauthorized
-				if (error instanceof OpenViduMeetError) {
-					lastError = error;
+				if (isErrorWithControl(error)) {
+					lastError = error.error;
+
+					if (error.stopValidation) {
+						// Stop checking other validators
+						break;
+					}
 				}
 			}
 		}
@@ -58,7 +62,7 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 		const token = req.cookies[INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME];
 
 		if (!token) {
-			throw errorUnauthorized();
+			throw errorWithControl(errorUnauthorized(), false);
 		}
 
 		const tokenService = container.get(TokenService);
@@ -67,7 +71,7 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 		try {
 			payload = await tokenService.verifyToken(token);
 		} catch (error) {
-			throw errorInvalidToken();
+			throw errorWithControl(errorInvalidToken(), true);
 		}
 
 		const username = payload.sub;
@@ -75,11 +79,11 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 		const user = username ? await userService.getUser(username) : null;
 
 		if (!user) {
-			throw errorInvalidTokenSubject();
+			throw errorWithControl(errorInvalidTokenSubject(), true);
 		}
 
 		if (user.role !== role) {
-			throw errorInsufficientPermissions();
+			throw errorWithControl(errorInsufficientPermissions(), false);
 		}
 
 		req.session = req.session || {};
@@ -101,7 +105,7 @@ const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 	const token = req.cookies[cookieName];
 
 	if (!token) {
-		throw errorUnauthorized();
+		throw errorWithControl(errorUnauthorized(), false);
 	}
 
 	const tokenService = container.get(TokenService);
@@ -114,7 +118,7 @@ const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 		req.session.tokenClaims = payload;
 		req.session.user = user;
 	} catch (error) {
-		throw errorInvalidToken();
+		throw errorWithControl(errorInvalidToken(), true);
 	}
 };
 
@@ -123,11 +127,11 @@ export const apiKeyValidator = async (req: Request) => {
 	const apiKey = req.headers[INTERNAL_CONFIG.API_KEY_HEADER];
 
 	if (!apiKey) {
-		throw errorUnauthorized();
+		throw errorWithControl(errorUnauthorized(), false);
 	}
 
 	if (apiKey !== MEET_API_KEY) {
-		throw errorInvalidApiKey();
+		throw errorWithControl(errorInvalidApiKey(), true);
 	}
 
 	const apiUser = {
@@ -191,4 +195,22 @@ export const withLoginLimiter = (req: Request, res: Response, next: NextFunction
 	}
 
 	return loginLimiter(req, res, next);
+};
+
+// OpenViduMeetError with control to stop checking other validators
+interface ErrorWithControl {
+	error: OpenViduMeetError;
+	stopValidation: boolean;
+}
+
+const errorWithControl = (error: OpenViduMeetError, stopValidation: boolean): ErrorWithControl => {
+	const errorWithControl: ErrorWithControl = {
+		error,
+		stopValidation
+	};
+	return errorWithControl;
+};
+
+const isErrorWithControl = (error: unknown): error is ErrorWithControl => {
+	return typeof error === 'object' && error !== null && 'error' in error && 'stopValidation' in error;
 };
