@@ -2,17 +2,32 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/glo
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { deleteAllRooms, disconnectFakeParticipants, startTestServer } from '../../../helpers/request-helpers.js';
+import { MEET_API_KEY } from '../../../../src/environment.js';
+import { UserRole } from '../../../../src/typings/ce/index.js';
+import {
+	deleteAllRooms,
+	disconnectFakeParticipants,
+	loginUserAsRole,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
 
 describe('Meeting API Security Tests', () => {
 	let app: Express;
+
+	let userCookie: string;
+	let adminCookie: string;
+
 	let roomData: RoomData;
 
-	beforeAll(() => {
+	beforeAll(async () => {
 		app = startTestServer();
+
+		// Get cookies for admin and user
+		userCookie = await loginUserAsRole(UserRole.USER);
+		adminCookie = await loginUserAsRole(UserRole.ADMIN);
 	});
 
 	beforeEach(async () => {
@@ -25,6 +40,27 @@ describe('Meeting API Security Tests', () => {
 	});
 
 	describe('End Meeting Tests', () => {
+		it('should fail when request includes API key', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set('Cookie', adminCookie);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is authenticated as user', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
+				.set('Cookie', userCookie);
+			expect(response.status).toBe(401);
+		});
+
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
@@ -51,6 +87,27 @@ describe('Meeting API Security Tests', () => {
 
 	describe('Delete Participant from Meeting Tests', () => {
 		const PARTICIPANT_NAME = 'TEST_PARTICIPANT';
+
+		it('should fail when request includes API key', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set('Cookie', adminCookie);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is authenticated as user', async () => {
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.set('Cookie', userCookie);
+			expect(response.status).toBe(401);
+		});
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
