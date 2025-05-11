@@ -111,30 +111,35 @@ export const getSecurityPreferences = async () => {
 	return response;
 };
 
+export const updateSecurityPreferences = async (preferences: any) => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.set('Cookie', adminCookie)
+		.send(preferences);
+	return response;
+};
+
 export const changeSecurityPreferences = async ({
 	usersCanCreateRooms = true,
 	authRequired = true,
 	authMode = AuthMode.NONE
 }) => {
-	checkAppIsRunning();
-
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
-	await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
-		.set('Cookie', adminCookie)
-		.send({
-			roomCreationPolicy: {
-				allowRoomCreation: usersCanCreateRooms,
-				requireAuthentication: authRequired
-			},
-			authentication: {
-				authMode: authMode,
-				method: {
-					type: AuthType.SINGLE_USER
-				}
+	const response = await updateSecurityPreferences({
+		roomCreationPolicy: {
+			allowRoomCreation: usersCanCreateRooms,
+			requireAuthentication: authRequired
+		},
+		authentication: {
+			authMode: authMode,
+			method: {
+				type: AuthType.SINGLE_USER
 			}
-		})
-		.expect(200);
+		}
+	});
+	expect(response.status).toBe(200);
 };
 
 /**

@@ -1,11 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import {
-	startTestServer,
-	updateWebbhookPreferences,
-	getWebbhookPreferences
-} from '../../../helpers/request-helpers.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../../../src/environment.js';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import {
+	getWebbhookPreferences,
+	startTestServer,
+	updateWebbhookPreferences
+} from '../../../helpers/request-helpers.js';
 
 const restoreDefaultWebhookPreferences = async () => {
 	const defaultPreferences = {
