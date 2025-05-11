@@ -124,7 +124,10 @@ export class RoomService {
 		const room = await this.getMeetRoom(roomId);
 		room.preferences = preferences;
 
-		return await this.storageService.saveMeetRoom(room);
+		await this.storageService.saveMeetRoom(room);
+		// Update the archived room metadata if it exists
+		await this.storageService.updateArchivedRoomMetadata(roomId);
+		return room;
 	}
 
 	/**
