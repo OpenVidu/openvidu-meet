@@ -3,16 +3,16 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import { AuthMode, MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
 import {
 	changeSecurityPreferences,
 	createRoom,
 	deleteAllRooms,
 	loginUserAsRole,
-	startTestServer
+	startTestServer,
+	updateRecordingAccessPreferencesInRoom
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { RoomData, setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;
@@ -191,11 +191,11 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.publisherCookie);
-			expect(response.status).toBe(403);
+				.set('Cookie', roomData.moderatorCookie);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
@@ -207,59 +207,11 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences({
-				authMode: AuthMode.NONE
-			});
-
+		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie);
-			expect(response.status).toBe(200);
-		});
-
-		it('should succeed when authentication is required for moderators, participant is moderator and user is authenticated', async () => {
-			await changeSecurityPreferences({
-				authMode: AuthMode.MODERATORS_ONLY
-			});
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', [roomData.moderatorCookie, userCookie]);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when authentication is required for moderators, participant is moderator and user is not authenticated', async () => {
-			await changeSecurityPreferences({
-				authMode: AuthMode.MODERATORS_ONLY
-			});
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie);
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when authentication is required for all participants, participant is moderator and user is authenticated', async () => {
-			await changeSecurityPreferences({
-				authMode: AuthMode.ALL_USERS
-			});
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', [roomData.moderatorCookie, userCookie]);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when authentication is required for all participants, participant is moderator and user is not authenticated', async () => {
-			await changeSecurityPreferences({
-				authMode: AuthMode.ALL_USERS
-			});
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie);
-			expect(response.status).toBe(401);
+				.set('Cookie', roomData.publisherCookie);
+			expect(response.status).toBe(403);
 		});
 	});
 
@@ -311,6 +263,14 @@ describe('Room API Security Tests', () => {
 			roomId = room.roomId;
 		});
 
+		it('should fail when request includes API key', async () => {
+			const response = await request(app)
+				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+				.send(roomPreferences);
+			expect(response.status).toBe(401);
+		});
+
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
@@ -333,6 +293,114 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
+	describe('Generate Recording Token Tests', () => {
+		let roomData: RoomData;
+
+		beforeAll(async () => {
+			roomData = await setupSingleRoomWithRecording(true);
+		});
+
+		beforeEach(async () => {
+			await updateRecordingAccessPreferencesInRoom(
+				roomData.room.roomId,
+				MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			);
+		});
+
+		it('should succeed when no authentication is required and participant is publisher', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.publisherSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when no authentication is required and participant is moderator', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.publisherSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.set('Cookie', userCookie)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.set('Cookie', userCookie)
+				.send({ secret: roomData.publisherSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.publisherSecret });
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.set('Cookie', userCookie)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
+			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when recording access is set to admin only', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN);
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(403);
+		});
+	});
+
 	describe('Get Room Roles and Permissions Tests', () => {
 		let roomId: string;
 
@@ -348,19 +416,16 @@ describe('Room API Security Tests', () => {
 	});
 
 	describe('Get Room Role and Permissions Tests', () => {
-		let roomId: string;
-		let moderatorSecret: string;
+		let roomData: RoomData;
 
 		beforeAll(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
-
-			// Extract the moderator secret
-			({ moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room));
+			roomData = await setupSingleRoom();
 		});
 
 		it('should succeed if user is not authenticated', async () => {
-			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/roles/${moderatorSecret}`);
+			const response = await request(app).get(
+				`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/roles/${roomData.moderatorSecret}`
+			);
 			expect(response.status).toBe(200);
 		});
 	});
