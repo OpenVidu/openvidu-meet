@@ -45,14 +45,10 @@ export const configureCreateRoomAuth = async (req: Request, res: Response, next:
 /**
  * Middleware that configures authorization for accessing a specific room.
  *
- * This middleware runs after authentication and applies additional authorization rules
- * based on the user's role and global authentication settings.
- *
  * - If there is no token in the session, the user is granted access (admin or API key).
  * - If the user does not belong to the requested room, access is denied.
- * - If the user is a moderator and global authentication requires it,
- *   an extra validation step is added with `withAuth(tokenAndRoleValidator(UserRole.USER))`.
  * - If the user is not a moderator, access is denied.
+ * - If the user is a moderator and belongs to the room, access is granted.
  */
 export const configureRoomAuthorization = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
@@ -73,29 +69,13 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const globalPrefService = container.get(MeetStorageService);
-	let authMode: AuthMode;
-
-	try {
-		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
-		authMode = securityPreferences.authentication.authMode;
-	} catch (error) {
-		return handleError(res, error, 'checking authentication preferences');
-	}
-
-	// If the user is a moderator, it is necessary to add the user role validator
-	// in case the room requires some authentication
-	if (role === ParticipantRole.MODERATOR) {
-		if (authMode !== AuthMode.NONE) {
-			return withAuth(tokenAndRoleValidator(UserRole.USER))(req, res, next);
-		}
-
-		return next();
-	}
-
 	// If the user is not a moderator, it is not allowed to access the resource
-	const error = errorInsufficientPermissions();
-	return rejectRequestFromMeetError(res, error);
+	if (role !== ParticipantRole.MODERATOR) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	return next();
 };
 
 /**
