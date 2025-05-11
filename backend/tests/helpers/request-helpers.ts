@@ -490,6 +490,12 @@ export const getAllRecordings = async (query: Record<string, any> = {}) => {
 		.query(query);
 };
 
+export const getAllRecordingsFromRoom = async (recordingTokenCookie: string) => {
+	checkAppIsRunning();
+
+	return await request(app).get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`).set('Cookie', recordingTokenCookie);
+};
+
 export const deleteAllRecordings = async () => {
 	checkAppIsRunning();
 

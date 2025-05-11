@@ -10,10 +10,17 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	generateRecordingToken,
 	getAllRecordings,
+	getAllRecordingsFromRoom,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupMultiRecordingsTestContext, TestContext } from '../../../helpers/test-scenarios.js';
+import {
+	RoomData,
+	setupMultiRecordingsTestContext,
+	setupSingleRoomWithRecording,
+	TestContext
+} from '../../../helpers/test-scenarios.js';
 
 describe('Recordings API Tests', () => {
 	let context: TestContext | null = null;
@@ -46,6 +53,22 @@ describe('Recordings API Tests', () => {
 			({ room } = context.getRoomByIndex(0)!);
 			const response = await getAllRecordings();
 			expectSuccessListRecordingResponse(response, 1, false, false);
+		});
+
+		it('should return a list of recordings belonging to the room when using recording token', async () => {
+			// Create a room and start a recording
+			let roomData = await setupSingleRoomWithRecording(true);
+			const roomId = roomData.room.roomId;
+
+			// Generate a recording token for the room
+			const recordingCookie = await generateRecordingToken(roomId, roomData.publisherSecret);
+
+			// Create a new room and start a recording
+			roomData = await setupSingleRoomWithRecording(true);
+
+			const response = await getAllRecordingsFromRoom(recordingCookie);
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomId).toBe(roomId);
 		});
 
 		it('should filter recordings by roomId', async () => {
