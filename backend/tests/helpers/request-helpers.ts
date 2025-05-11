@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
-import { ChildProcess, execSync, spawn } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
@@ -20,6 +20,7 @@ import { RecordingService, RoomService } from '../../src/services/index.js';
 import {
 	AuthMode,
 	AuthType,
+	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomOptions,
 	UserRole,
@@ -44,9 +45,6 @@ export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
 };
 
-/**
- * Starts the test server
- */
 export const startTestServer = (): Express => {
 	if (app) {
 		return app;
@@ -57,9 +55,62 @@ export const startTestServer = (): Express => {
 	return app;
 };
 
-/**
- * Updates global security preferences
- */
+export const getAppearancePreferences = async () => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.set('Cookie', adminCookie)
+		.send();
+	return response;
+};
+
+export const updateAppearancePreferences = async (preferences: any) => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.set('Cookie', adminCookie)
+		.send(preferences);
+	return response;
+};
+
+export const getWebbhookPreferences = async () => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.set('Cookie', adminCookie)
+		.send();
+	return response;
+};
+
+export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.set('Cookie', adminCookie)
+		.send(preferences);
+
+	return response;
+};
+
+export const getSecurityPreferences = async () => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.set('Cookie', adminCookie)
+		.send();
+	return response;
+};
+
 export const changeSecurityPreferences = async ({
 	usersCanCreateRooms = true,
 	authRequired = true,
@@ -105,9 +156,6 @@ export const loginUserAsRole = async (role: UserRole): Promise<string> => {
 	return accessTokenCookie;
 };
 
-/**
- * Creates a room with the given prefix
- */
 export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
 	checkAppIsRunning();
 
@@ -119,10 +167,6 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 	return response.body;
 };
 
-/**
- * Performs a GET /rooms request with provided query parameters.
- * Returns the parsed response.
- */
 export const getRooms = async (query: Record<string, any> = {}) => {
 	checkAppIsRunning();
 
@@ -130,16 +174,6 @@ export const getRooms = async (query: Record<string, any> = {}) => {
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query(query);
-};
-
-export const updateRoomPreferences = async (roomId: string, preferences: any) => {
-	checkAppIsRunning();
-
-	const userCookie = await loginUserAsRole(UserRole.ADMIN);
-	return await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
-		.set('Cookie', userCookie)
-		.send(preferences);
 };
 
 /**
@@ -157,6 +191,32 @@ export const getRoom = async (roomId: string, fields?: string) => {
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query({ fields });
+};
+
+export const updateRoomPreferences = async (roomId: string, preferences: any) => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
+		.set('Cookie', adminCookie)
+		.send(preferences);
+};
+
+export const updateRecordingAccessPreferencesInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
+	const response = await updateRoomPreferences(roomId, {
+		recordingPreferences: {
+			enabled: true,
+			allowAccessTo: recordingAccess
+		},
+		chatPreferences: {
+			enabled: true
+		},
+		virtualBackgroundPreferences: {
+			enabled: true
+		}
+	});
+	expect(response.status).toBe(200);
 };
 
 export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
@@ -177,30 +237,6 @@ export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
 		.query({ roomIds: roomIds.join(','), force });
 };
 
-/**
- * Runs the room garbage collector to delete expired rooms.
- *
- * This function retrieves the RoomService from the dependency injection container
- * and calls its deleteExpiredRooms method to clean up expired rooms.
- * It then waits for 1 second before completing.
- */
-export const runRoomGarbageCollector = async () => {
-	checkAppIsRunning();
-
-	const roomService = container.get(RoomService);
-	await (roomService as any)['deleteExpiredRooms']();
-};
-
-export const runReleaseActiveRecordingLock = async (roomId: string) => {
-	checkAppIsRunning();
-
-	const recordingService = container.get(RecordingService);
-	await recordingService.releaseRecordingLockIfNoEgress(roomId);
-};
-
-/**
- * Deletes all rooms
- */
 export const deleteAllRooms = async () => {
 	checkAppIsRunning();
 
@@ -225,6 +261,27 @@ export const deleteAllRooms = async () => {
 			.query({ roomIds: roomIds.join(','), force: true })
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 	} while (nextPageToken);
+};
+
+/**
+ * Runs the room garbage collector to delete expired rooms.
+ *
+ * This function retrieves the RoomService from the dependency injection container
+ * and calls its deleteExpiredRooms method to clean up expired rooms.
+ * It then waits for 1 second before completing.
+ */
+export const runRoomGarbageCollector = async () => {
+	checkAppIsRunning();
+
+	const roomService = container.get(RoomService);
+	await (roomService as any)['deleteExpiredRooms']();
+};
+
+export const runReleaseActiveRecordingLock = async (roomId: string) => {
+	checkAppIsRunning();
+
+	const recordingService = container.get(RecordingService);
+	await recordingService.releaseRecordingLockIfNoEgress(roomId);
 };
 
 /**
@@ -285,17 +342,6 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 	await sleep('1s');
 };
 
-export const endMeeting = async (roomId: string, moderatorCookie: string) => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
-		.set('Cookie', moderatorCookie)
-		.send();
-	await sleep('1s');
-	return response;
-};
-
 export const disconnectFakeParticipants = async () => {
 	fakeParticipantsProcesses.forEach((process, participantName) => {
 		process.kill();
@@ -306,46 +352,14 @@ export const disconnectFakeParticipants = async () => {
 	await sleep('1s');
 };
 
-export const updateAppearancePreferences = async (preferences: any) => {
+export const endMeeting = async (roomId: string, moderatorCookie: string) => {
 	checkAppIsRunning();
-	const userCookie = await loginUserAsRole(UserRole.ADMIN);
-	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
-		.set('Cookie', userCookie)
-		.send(preferences);
-	return response;
-};
 
-export const getAppearancePreferences = async () => {
-	checkAppIsRunning();
-	const userCookie = await loginUserAsRole(UserRole.ADMIN);
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
-		.set('Cookie', userCookie)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
+		.set('Cookie', moderatorCookie)
 		.send();
-	return response;
-};
-
-export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
-	checkAppIsRunning();
-
-	const userCookie = await loginUserAsRole(UserRole.ADMIN);
-	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
-		.set('Cookie', userCookie)
-		.send(preferences);
-
-	return response;
-};
-
-export const getWebbhookPreferences = async () => {
-	checkAppIsRunning();
-
-	const userCookie = await loginUserAsRole(UserRole.ADMIN);
-	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
-		.set('Cookie', userCookie)
-		.send();
+	await sleep('1s');
 	return response;
 };
 
@@ -407,14 +421,6 @@ export const getRecording = async (recordingId: string) => {
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 };
 
-export const deleteRecording = async (recordingId: string) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-};
-
 export const getRecordingMedia = async (recordingId: string, range?: string) => {
 	checkAppIsRunning();
 
@@ -427,6 +433,24 @@ export const getRecordingMedia = async (recordingId: string, range?: string) => 
 	}
 
 	return await req;
+};
+
+export const deleteRecording = async (recordingId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+};
+
+export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Response> => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.query({ recordingIds: recordingIds.join(',') })
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+	return response;
 };
 
 export const stopAllRecordings = async (moderatorCookie: string) => {
@@ -461,16 +485,6 @@ export const getAllRecordings = async (query: Record<string, any> = {}) => {
 		.query(query);
 };
 
-export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Response> => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-		.query({ recordingIds: recordingIds.join(',') })
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-	return response;
-};
-
 export const deleteAllRecordings = async () => {
 	checkAppIsRunning();
 
@@ -502,15 +516,5 @@ export const deleteAllRecordings = async () => {
 const checkAppIsRunning = () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
-	}
-};
-
-const runCommandSync = (command: string): string => {
-	try {
-		const stdout = execSync(command, { encoding: 'utf-8' });
-		return stdout;
-	} catch (error) {
-		console.error(`Error running command: ${error}`);
-		throw error;
 	}
 };

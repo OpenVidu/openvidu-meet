@@ -1,6 +1,8 @@
+import express, { Request, Response } from 'express';
+import http from 'http';
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
-import { MeetRoom, MeetWebhookEvent } from '../../src/typings/ce';
+import { MeetRoom } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
@@ -10,8 +12,6 @@ import {
 	startRecording,
 	stopRecording
 } from './request-helpers';
-import express, { Request, Response } from 'express';
-import http from 'http';
 
 let mockWebhookServer: http.Server;
 
