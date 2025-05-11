@@ -131,6 +131,10 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 		return this.storageProvider.archiveRoomMetadata(roomId);
 	}
 
+	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
+		return this.storageProvider.updateArchivedRoomMetadata(roomId);
+	}
+
 	/**
 	 * Returns the default global preferences.
 	 * @returns {G}

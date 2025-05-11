@@ -98,6 +98,15 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 */
 	archiveRoomMetadata(roomId: string): Promise<void>;
 
+	/**
+	 * Updates the archived metadata for a specific room.
+	 *
+	 * This is necessary for keeping the metadata of a room up to date.
+	 *
+	 * @param roomId: The room ID to update.
+	 */
+	updateArchivedRoomMetadata(roomId: string): Promise<void>;
+
 	//TODO:
 	// deleteArchivedRoomMetadata(roomId: string): Promise<void>;
 

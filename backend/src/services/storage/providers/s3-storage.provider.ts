@@ -274,7 +274,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 * This method checks if the metadata file for the given room already exists in the
 	 * S3 bucket. If not, it retrieves the room information, extracts the necessary
 	 * secrets and preferences, and saves them to a metadata JSON file in the
-	 * .metadata/{roomId}/ directory of the S3 bucket.
+	 * .room_metadata/{roomId}/ directory of the S3 bucket.
 	 *
 	 * @param roomId - The unique identifier of the room
 	 */
@@ -306,6 +306,43 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 			this.logger.error(`Error saving room metadata for room ${roomId} in recordings bucket`);
 		} catch (error) {
 			this.logger.error(`Error saving room metadata for room ${roomId} in recordings bucket: ${error}`);
+		}
+	}
+
+
+	/**
+	 * Updates the archived room metadata for a given room in the S3 recordings bucket if it exists.
+	 * 
+	 * @param roomId - The unique identifier of the room whose metadata needs to be updated.
+	 */
+	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
+		try {
+			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
+			const fileExists = await this.s3Service.exists(filePath);
+
+			if (!fileExists) {
+				this.logger.warn(`Room metadata not found for room ${roomId} in recordings bucket`);
+				return;
+			}
+
+			const room = await this.getMeetRoom(roomId);
+
+			if (room) {
+				const roomMetadata = {
+					moderatorRoomUrl: room.moderatorRoomUrl,
+					publisherRoomUrl: room.publisherRoomUrl,
+					preferences: {
+						recordingPreferences: room.preferences?.recordingPreferences
+					}
+				};
+				await this.s3Service.saveObject(filePath, roomMetadata);
+				this.logger.debug(`Room metadata updated for room ${roomId} in recordings bucket`);
+				return;
+			}
+
+			this.logger.error(`Error updating room metadata for room ${roomId} in recordings bucket`);
+		} catch (error) {
+			this.logger.error(`Error updating room metadata for room ${roomId} in recordings bucket: ${error}`);
 		}
 	}
 
