@@ -7,6 +7,7 @@ import { MeetWebhookEvent } from '../../../typings/src/webhook.model';
 interface JoinRoomRequest {
 	participantRole: ParticipantRole;
 	roomUrl: string;
+	roomId: string;
 	participantName?: string;
 }
 
@@ -15,6 +16,7 @@ export const joinRoom = (req: Request, res: Response) => {
 		const {
 			participantRole,
 			roomUrl,
+			roomId,
 			participantName = 'User',
 		} = req.body as JoinRoomRequest;
 		if (!roomUrl) {
@@ -24,6 +26,7 @@ export const joinRoom = (req: Request, res: Response) => {
 			roomUrl,
 			participantRole,
 			participantName,
+			roomId,
 			isModerator: participantRole === 'moderator',
 		});
 	} catch (error) {

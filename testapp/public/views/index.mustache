@@ -50,6 +50,11 @@
 												name="participantRole"
 												value="moderator"
 											/>
+											<input
+												type="hidden"
+												name="roomId"
+												value="{{ roomId }}"
+											/>
 
 											<button type="submit" id="join-as-moderator" class="dropdown-item">
 												Moderator
@@ -67,6 +72,11 @@
 												type="hidden"
 												name="participantRole"
 												value="publisher"
+											/>
+											<input
+												type="hidden"
+												name="roomId"
+												value="{{ roomId }}"
 											/>
 
 											<button type="submit" id="join-as-publisher" class="dropdown-item">
@@ -93,7 +103,7 @@
 
 				<form action="/room" method="post">
 					<div class="mb-3">
-						<label for="room-id-prefix" class="form-label">Room Prefix</label>
+						<label for="room-id-prefix" class="form-label">Room Prefix *</label>
 						<input
 							type="text"
 							name="roomIdPrefix"

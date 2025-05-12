@@ -17,14 +17,30 @@
 		<div class="container-fluid">
 			<!-- Left Sidebar Panel -->
 			<div id="control-panel" class="d-flex flex-column">
-				<h3>{{ participantRole }}</h3>
+				<span>
+					<span id="participant-role" class="h5">
+						{{#isModerator}}<span class="badge bg-success">Moderator</span
+						>{{/isModerator}}
+						{{^isModerator
+
+						}}<span class="badge bg-secondary">Participant</span
+						>{{/isModerator}}
+					</span>
+					<span id="room-id" class="text-muted">
+						{{ roomId }}
+					</span>
+				</span>
 				<!-- Commands -->
 				<div class="section">
 					<h5 class="title">Commands</h5>
 					{{#isModerator}}
-					<button id="end-meeting-btn" class="btn btn-danger">End Meeting</button>
+					<button id="end-meeting-btn" class="btn btn-danger">
+						End Meeting
+					</button>
 					{{/isModerator}}
-					<button id="leave-room-btn" class="btn btn-warning">Leave Room</button>
+					<button id="leave-room-btn" class="btn btn-warning">
+						Leave Room
+					</button>
 					<button id="toggle-chat-btn" class="btn btn-success">
 						Toggle Chat
 					</button>

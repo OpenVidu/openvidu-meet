@@ -44,5 +44,5 @@ server.listen(PORT, () => {
 	console.log(`Meet API URL: ${configService.meetApiUrl}`);
 	console.log('-----------------------------------------');
 	console.log('');
-	console.log('Visit http://localhost:3000/ to access the app');
+	console.log(`Visit http://localhost:${PORT}/ to access the app`);
 });
