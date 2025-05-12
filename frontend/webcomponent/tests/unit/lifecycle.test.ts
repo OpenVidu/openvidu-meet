@@ -23,7 +23,6 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(component.shadowRoot).not.toBeNull();
 	});
 
-
 	it('should remove message event listener on disconnection', () => {
 		const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
@@ -33,23 +32,20 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(removeEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
 	});
 
-	it('should call sendMessage only once when iframe loads', () => {
+	it('should call sendMessage when READY event is received', () => {
 		const sendMessageSpy = jest.spyOn(component['commandsManager'], 'sendMessage');
 
-		const iframe = component.shadowRoot?.querySelector('iframe');
-		expect(iframe).not.toBeNull();
-
-		// Emulate iframe load event
-		iframe?.dispatchEvent(new Event('load'));
+		// Mock a message event
+		const readyEvent = new MessageEvent('message', {
+			data: { event: 'READY' }
+		});
+		window.dispatchEvent(readyEvent);
 
 		expect(sendMessageSpy).toHaveBeenCalledTimes(1);
 		expect(sendMessageSpy).toHaveBeenCalledWith({
 			command: WebComponentCommand.INITIALIZE,
 			payload: { domain: window.location.origin }
 		});
-
-		// Dispatch load event again to check if sendMessage is not called again
-		iframe?.dispatchEvent(new Event('load'));
 
 		// Check if sendMessage was not called again
 		expect(sendMessageSpy).toHaveBeenCalledTimes(1);
@@ -75,13 +71,12 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(dispatchEventSpy.mock.calls[0][0].type).toBe('test-event');
 		expect(dispatchEventSpy.mock.calls[0][0].bubbles).toBe(true);
 		expect(dispatchEventSpy.mock.calls[0][0].composed).toBe(true);
-		expect((dispatchEventSpy.mock.calls[0][0]as any).detail).toBeInstanceOf(Object);
-		expect((dispatchEventSpy.mock.calls[0][0]as any).detail).toHaveProperty('foo');
-		expect((dispatchEventSpy.mock.calls[0][0]as any).detail.foo).toBe('bar');
+		expect((dispatchEventSpy.mock.calls[0][0] as any).detail).toBeInstanceOf(Object);
+		expect((dispatchEventSpy.mock.calls[0][0] as any).detail).toHaveProperty('foo');
+		expect((dispatchEventSpy.mock.calls[0][0] as any).detail.foo).toBe('bar');
 	});
 
 	it('should clean up resources when removed from DOM', () => {
-
 		// Set up spies
 		const clearTimeoutSpy = jest.spyOn(window, 'clearTimeout');
 		const eventsCleanupSpy = jest.spyOn(component['eventsManager'], 'cleanup');
