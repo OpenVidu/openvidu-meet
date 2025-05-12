@@ -143,6 +143,9 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 		//if (this.contextService.isEmbeddedMode()) this.sendMessageToParent(event);
 		this.redirectTo(redirectURL, isExternalURL);
+
+		// Stop listening to commands from the parent
+		this.wcManagerService.stopCommandsListener();
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
