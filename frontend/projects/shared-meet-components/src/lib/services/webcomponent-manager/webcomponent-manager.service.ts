@@ -9,6 +9,7 @@ import {
 	LoggerService
 } from 'projects/shared-meet-components/src/public-api';
 import { WebComponentCommand } from 'webcomponent/src/models/command.model';
+import { WebComponentEvent } from 'webcomponent/src/models/event.model';
 import { OutboundEventMessage, InboundCommandMessage } from 'webcomponent/src/models/message.type';
 
 /**
@@ -41,6 +42,14 @@ export class WebComponentManagerService {
 		this.isListenerStarted = true;
 		// Listen for messages from the iframe
 		window.addEventListener('message', this.boundHandleMessage);
+		// Send ready message to parent
+		window.parent.postMessage(
+			{
+				event: WebComponentEvent.READY,
+				payload: {}
+			},
+			'*'
+		);
 		this.log.d('Started commands listener');
 	}
 
