@@ -4,6 +4,7 @@
 export enum WebComponentCommand {
 	/**
 	 * Initializes the WebComponent with the given configuration.
+	 * This command is sent from the webcomponent to the iframe for intialice the domain.
 	 * @private
 	 */
 	INITIALIZE = 'INITIALIZE',

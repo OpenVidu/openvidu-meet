@@ -4,6 +4,11 @@
  */
 export enum WebComponentEvent {
 	/**
+	 * Event emitted when application is ready to receive commands.
+	 * @private
+	 */
+	READY = 'READY',
+	/**
 	 * Event emitted when the local participant joins the room.
 	 */
 	JOIN = 'JOIN',
@@ -23,6 +28,11 @@ export enum WebComponentEvent {
  * @category Communication
  */
 export interface EventPayloads {
+	/**
+	 * Payload for the {@link WebComponentEvent.READY} event.
+	 * @private
+	 */
+	[WebComponentEvent.READY]: {};
 	[WebComponentEvent.JOIN]: {
 		roomId: string;
 		participantName: string;

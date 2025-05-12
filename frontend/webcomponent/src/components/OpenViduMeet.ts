@@ -61,8 +61,17 @@ export class OpenViduMeet extends HTMLElement {
 	}
 
 	connectedCallback() {
-		this.render();
+		// Send initialization message to the iframe
+		// after READY event from the iframe is received
+		this.once(WebComponentEvent.READY, () => {
+			const message: InboundCommandMessage = {
+				command: WebComponentCommand.INITIALIZE,
+				payload: { domain: window.location.origin }
+			};
+			this.commandsManager.sendMessage(message);
+		});
 		this.eventsManager.listen();
+		this.render();
 		this.updateIframeSrc();
 	}
 
@@ -119,11 +128,6 @@ export class OpenViduMeet extends HTMLElement {
 
 		// Set up load handlers
 		this.iframe.onload = (event: Event) => {
-			const message: InboundCommandMessage = {
-				command: WebComponentCommand.INITIALIZE,
-				payload: { domain: window.location.origin }
-			};
-			this.commandsManager.sendMessage(message);
 			this.iframeLoaded = true;
 			clearTimeout(this.loadTimeout);
 			this.loadTimeout = null;
