@@ -8,7 +8,8 @@ import {
 	ApiDirectiveModule,
 	ParticipantLeftEvent,
 	ParticipantModel,
-	OpenViduComponentsUiModule
+	OpenViduComponentsUiModule,
+	ParticipantLeftReason
 } from 'openvidu-components-angular';
 
 import {
@@ -129,15 +130,28 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		console.warn('Participant left the room. Redirecting to:');
 		const redirectURL = this.ctxService.getLeaveRedirectURL() || '/disconnected';
 		const isExternalURL = /^https?:\/\//.test(redirectURL);
+		const isRoomDeleted = event.reason === ParticipantLeftReason.ROOM_DELETED;
 
-		const message: OutboundEventMessage = {
-			event: WebComponentEvent.LEFT,
-			payload: {
-				roomId: event.roomName,
-				participantName: event.participantName,
-				reason: event.reason
-			}
-		};
+		let message: OutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
+
+		if (isRoomDeleted) {
+			message = {
+				event: WebComponentEvent.MEETING_ENDED,
+				payload: {
+					roomId: event.roomName
+				}
+			} as OutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
+		} else {
+			message = {
+				event: WebComponentEvent.LEFT,
+				payload: {
+					roomId: event.roomName,
+					participantName: event.participantName,
+					reason: event.reason
+				}
+			} as OutboundEventMessage<WebComponentEvent.LEFT>;
+		}
+
 		this.wcManagerService.sendMessageToParent(message);
 		this.sessionStorageService.removeModeratorSecret(event.roomName);
 
