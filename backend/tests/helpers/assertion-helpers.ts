@@ -513,6 +513,40 @@ const getPermissions = (roomId: string, role: ParticipantRole) => {
 	}
 };
 
+export const expectValidParticipantTokenResponse = (
+	response: any,
+	roomId: string,
+	participantName: string,
+	participantRole: ParticipantRole
+) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toHaveProperty('token');
+
+	const token = response.body.token;
+	const decodedToken = decodeJWTToken(token);
+
+	const permissions = getPermissions(roomId, participantRole);
+
+	expect(decodedToken).toHaveProperty('sub', participantName);
+	expect(decodedToken).toHaveProperty('video', permissions.livekit);
+	expect(decodedToken).toHaveProperty('metadata');
+	const metadata = JSON.parse(decodedToken.metadata);
+	expect(metadata).toHaveProperty('role', participantRole);
+	expect(metadata).toHaveProperty('permissions', permissions.openvidu);
+
+	// Check that the token is included in a cookie
+	expect(response.headers['set-cookie']).toBeDefined();
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	const participantTokenCookie = cookies.find((cookie) =>
+		cookie.startsWith(`${INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME}=`)
+	) as string;
+	expect(participantTokenCookie).toBeDefined();
+	expect(participantTokenCookie).toContain(token);
+	expect(participantTokenCookie).toContain('HttpOnly');
+	expect(participantTokenCookie).toContain('SameSite=Strict');
+	expect(participantTokenCookie).toContain('Path=/');
+};
+
 export const expectValidRecordingTokenResponse = (
 	response: any,
 	roomId: string,
@@ -523,7 +557,8 @@ export const expectValidRecordingTokenResponse = (
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
 
-	const decodedToken = decodeJWTToken(response.body.token);
+	const token = response.body.token;
+	const decodedToken = decodeJWTToken(token);
 
 	expect(decodedToken).toHaveProperty('video', {
 		room: roomId
@@ -535,6 +570,18 @@ export const expectValidRecordingTokenResponse = (
 		canRetrieveRecordings,
 		canDeleteRecordings
 	});
+
+	// Check that the token is included in a cookie
+	expect(response.headers['set-cookie']).toBeDefined();
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	const participantTokenCookie = cookies.find((cookie) =>
+		cookie.startsWith(`${INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME}=`)
+	) as string;
+	expect(participantTokenCookie).toBeDefined();
+	expect(participantTokenCookie).toContain(token);
+	expect(participantTokenCookie).toContain('HttpOnly');
+	expect(participantTokenCookie).toContain('SameSite=Strict');
+	expect(participantTokenCookie).toContain('Path=/');
 };
 
 const decodeJWTToken = (token: string) => {

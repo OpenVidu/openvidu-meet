@@ -307,14 +307,7 @@ export const getRoomRoleBySecret = async (roomId: string, secret: string) => {
 	return response;
 };
 
-/**
- * Generates a participant token for a room and returns the cookie containing the token
- */
-export const generateParticipantToken = async (
-	roomId: string,
-	participantName: string,
-	secret: string
-): Promise<string> => {
+export const generateParticipantToken = async (participantOptions: any) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -325,12 +318,25 @@ export const generateParticipantToken = async (
 	// Generate the participant token
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token`)
-		.send({
-			roomId,
-			participantName,
-			secret
-		})
-		.expect(200);
+		.send(participantOptions);
+	return response;
+};
+
+/**
+ * Generates a participant token for a room and returns the cookie containing the token
+ */
+export const generateParticipantTokenCookie = async (
+	roomId: string,
+	participantName: string,
+	secret: string
+): Promise<string> => {
+	// Generate the participant token
+	const response = await generateParticipantToken({
+		roomId,
+		participantName,
+		secret
+	});
+	expect(response.status).toBe(200);
 
 	// Return the participant token cookie
 	const cookies = response.headers['set-cookie'] as unknown as string[];
@@ -406,8 +412,6 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
  * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
  */
 export const generateRecordingTokenCookie = async (roomId: string, secret: string) => {
-	checkAppIsRunning();
-
 	// Generate the recording token
 	const response = await generateRecordingToken(roomId, secret);
 	expect(response.status).toBe(200);

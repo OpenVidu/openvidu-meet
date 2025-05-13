@@ -6,7 +6,7 @@ import { MeetRoom } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
-	generateParticipantToken,
+	generateParticipantTokenCookie,
 	joinFakeParticipant,
 	sleep,
 	startRecording,
@@ -44,8 +44,8 @@ export const setupSingleRoom = async (withParticipant = false): Promise<RoomData
 	// Extract the room secrets and generate participant tokens, saved as cookies
 	const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 	const [moderatorCookie, publisherCookie] = await Promise.all([
-		generateParticipantToken(room.roomId, 'MODERATOR', moderatorSecret),
-		generateParticipantToken(room.roomId, 'PUBLISHER', publisherSecret),
+		generateParticipantTokenCookie(room.roomId, 'MODERATOR', moderatorSecret),
+		generateParticipantTokenCookie(room.roomId, 'PUBLISHER', publisherSecret),
 		// Join participant if needed
 		withParticipant ? joinFakeParticipant(room.roomId, 'TEST_PARTICIPANT') : Promise.resolve()
 	]);
