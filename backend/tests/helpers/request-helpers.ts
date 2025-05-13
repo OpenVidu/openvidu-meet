@@ -398,8 +398,19 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/recording-token`)
 		.send({
 			secret
-		})
-		.expect(200);
+		});
+	return response;
+};
+
+/**
+ * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
+ */
+export const generateRecordingTokenCookie = async (roomId: string, secret: string) => {
+	checkAppIsRunning();
+
+	// Generate the recording token
+	const response = await generateRecordingToken(roomId, secret);
+	expect(response.status).toBe(200);
 
 	// Return the recording token cookie
 	const cookies = response.headers['set-cookie'] as unknown as string[];

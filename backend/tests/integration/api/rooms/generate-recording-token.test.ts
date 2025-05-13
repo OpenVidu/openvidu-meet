@@ -1,0 +1,108 @@
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
+import { MeetRecordingAccess } from '../../../../src/typings/ce/room-preferences.js';
+import { expectValidRecordingTokenResponse } from '../../../helpers/assertion-helpers.js';
+import {
+	deleteAllRecordings,
+	deleteAllRooms,
+	deleteRoom,
+	generateRecordingToken,
+	startTestServer,
+	updateRecordingAccessPreferencesInRoom
+} from '../../../helpers/request-helpers.js';
+import { RoomData, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+
+describe('Room API Tests', () => {
+	let roomData: RoomData;
+
+	beforeAll(async () => {
+		startTestServer();
+		roomData = await setupSingleRoomWithRecording(true);
+	});
+
+	afterAll(async () => {
+		await deleteAllRecordings();
+		await deleteAllRooms();
+	});
+
+	describe('Generate Recording Token Tests', () => {
+		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin-moderator', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
+		});
+
+		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin-moderator-publisher', async () => {
+			await updateRecordingAccessPreferencesInRoom(
+				roomData.room.roomId,
+				MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
+		});
+
+		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is public', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
+		});
+
+		it('should generate a recording token without any permissions when using the publisher secret and recording access is admin-moderator', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.publisherSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER, false, false);
+		});
+
+		it('should generate a recording token with canRetrieve permission but not canDelete when using the publisher secret and recording access is admin-moderator-publisher', async () => {
+			await updateRecordingAccessPreferencesInRoom(
+				roomData.room.roomId,
+				MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.publisherSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER, true, false);
+		});
+
+		it('should generate a recording token with canRetrieve permission but not canDelete when using the publisher secret and recording access is public', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.publisherSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER, true, false);
+		});
+
+		it('should succeed even if the room is deleted', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+			await deleteRoom(roomData.room.roomId);
+
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
+
+			// Recreate the room with recording
+			roomData = await setupSingleRoomWithRecording(true);
+		});
+
+		it('should fail with a 404 error if there are no recordings in the room', async () => {
+			await deleteAllRecordings();
+            
+			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+			expect(response.status).toBe(404);
+
+			// Recreate the room with recording
+			roomData = await setupSingleRoomWithRecording(true);
+		});
+
+		it('should fail with a 404 error if the room does not exist', async () => {
+			const response = await generateRecordingToken('non-existent-room-id', roomData.moderatorSecret);
+			expect(response.status).toBe(404);
+		});
+
+		it('should fail with a 400 error if the secret is invalid', async () => {
+			const response = await generateRecordingToken(roomData.room.roomId, 'invalid-secret');
+			expect(response.status).toBe(400);
+		});
+	});
+});

@@ -512,3 +512,39 @@ const getPermissions = (roomId: string, role: ParticipantRole) => {
 			throw new Error(`Unknown role ${role}`);
 	}
 };
+
+export const expectValidRecordingTokenResponse = (
+	response: any,
+	roomId: string,
+	participantRole: ParticipantRole,
+	canRetrieveRecordings: boolean,
+	canDeleteRecordings: boolean
+) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toHaveProperty('token');
+
+	const decodedToken = decodeJWTToken(response.body.token);
+
+	expect(decodedToken).toHaveProperty('video', {
+		room: roomId
+	});
+	expect(decodedToken).toHaveProperty('metadata');
+	const metadata = JSON.parse(decodedToken.metadata);
+	expect(metadata).toHaveProperty('role', participantRole);
+	expect(metadata).toHaveProperty('recordingPermissions', {
+		canRetrieveRecordings,
+		canDeleteRecordings
+	});
+};
+
+const decodeJWTToken = (token: string) => {
+	const base64Url = token.split('.')[1];
+	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+	const jsonPayload = decodeURIComponent(
+		atob(base64)
+			.split('')
+			.map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+			.join('')
+	);
+	return JSON.parse(jsonPayload);
+};
