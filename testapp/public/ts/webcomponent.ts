@@ -1,5 +1,13 @@
 const socket = (window as any).io();
 
+let meet: {
+	endMeeting: () => void;
+	leaveRoom: () => void;
+	on: (event: string, callback: (event: CustomEvent<any>) => void) => void;
+};
+let roomId: string | undefined;
+let showAllWebhooksCheckbox: HTMLInputElement | null;
+
 /**
  * Add a component event to the events log
  */
@@ -46,20 +54,40 @@ const clearWebhookEventsByRoom = (roomId: string): void => {
 	}
 };
 
+const shouldShowWebhook = (event: any): boolean => {
+	return showAllWebhooksCheckbox?.checked || event.data.roomId === roomId;
+};
 const listenWebhookServerEvents = () => {
 	socket.on('webhookEvent', (event: any) => {
 		console.log('Webhook received:', event);
-		const isMeetingEnded = event.event === 'meetingEnded';
-		const roomId = event.data.roomId;
-		if (roomId) {
-			saveWebhookEventToStorage(roomId, event);
+		const webhookRoomId = event.data.roomId;
+
+		if (webhookRoomId) {
+			saveWebhookEventToStorage(webhookRoomId, event);
+		}
+
+		if (!shouldShowWebhook(event)) {
+			console.log('Ignoring webhook event:', event);
+			return;
 		}
 
 		addWebhookEventElement(event);
 
 		// Clean up the previous events
-		if (isMeetingEnded) clearWebhookEventsByRoom(roomId);
+		const isMeetingEnded = event.event === 'meetingEnded';
+		if (isMeetingEnded) clearWebhookEventsByRoom(webhookRoomId);
 	});
+};
+
+const renderStoredWebhookEvents = (roomId: string) => {
+	const webhookLogList = document.getElementById('webhook-log-list');
+	if (webhookLogList) {
+		while (webhookLogList.firstChild) {
+			webhookLogList.removeChild(webhookLogList.firstChild);
+		}
+	}
+	const events = getWebhookEventsFromStorage(roomId);
+	events.forEach((event) => addWebhookEventElement(event));
 };
 
 const addWebhookEventElement = (event: any) => {
@@ -167,11 +195,15 @@ const listenWebComponentEvents = () => {
 		console.log('LEFT event received:', event);
 		addEventToLog('LEFT', JSON.stringify(event));
 	});
+
+	meet.on('MEETING_ENDED', (event: CustomEvent<any>) => {
+		console.log('MEETING_ENDED event received:', event);
+		addEventToLog('MEETING_ENDED', JSON.stringify(event));
+	});
 };
 
+// Set up commands for the web component
 const setUpWebComponentCommands = () => {
-	const meet = document.querySelector('openvidu-meet') as any;
-
 	if (!meet) {
 		console.error('openvidu-meet component not found');
 		alert('openvidu-meet component not found in the DOM');
@@ -189,21 +221,29 @@ const setUpWebComponentCommands = () => {
 		?.addEventListener('click', () => meet.leaveRoom());
 
 	// Toggle chat button click handler
-	document
-		.getElementById('toggle-chat-btn')
-		?.addEventListener('click', () => meet.toggleChat());
+	// document
+	// 	.getElementById('toggle-chat-btn')
+	// 	?.addEventListener('click', () => meet.toggleChat());
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-	const roomId = document.getElementById('room-id')?.textContent?.trim();
+	roomId = document.getElementById('room-id')?.textContent?.trim();
+	showAllWebhooksCheckbox = document.getElementById(
+		'show-all-webhooks'
+	) as HTMLInputElement;
+	meet = document.querySelector('openvidu-meet') as any;
+
 	if (!roomId) {
 		console.error('Room ID not found in the DOM');
 		alert('Room ID not found in the DOM');
 		return;
 	}
-	const events = getWebhookEventsFromStorage(roomId);
-	events.forEach((event) => addWebhookEventElement(event));
+	renderStoredWebhookEvents(roomId);
 	listenWebhookServerEvents();
 	listenWebComponentEvents();
 	setUpWebComponentCommands();
+
+	showAllWebhooksCheckbox?.addEventListener('change', () =>
+		renderStoredWebhookEvents(roomId)
+	);
 });

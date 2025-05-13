@@ -57,3 +57,5 @@ backend/src/typings/
 frontend/webcomponent/**/openvidu-meet.**.js
 testapp/public/js/app.js
 testapp/public/js/webcomponent.js
+frontend/webcomponent/test-results/.last-run.json
+frontend/webcomponent/test_localstorage_state.json

@@ -19,12 +19,13 @@
 			<div id="control-panel" class="d-flex flex-column">
 				<span>
 					<span id="participant-role" class="h5">
-						{{#isModerator}}<span class="badge bg-success">Moderator</span
-						>{{/isModerator}}
-						{{^isModerator
+						{{#isModerator}}
+						<span class="badge bg-success">Moderator</span>
+						{{/isModerator}}
 
-						}}<span class="badge bg-secondary">Participant</span
-						>{{/isModerator}}
+						{{^isModerator}}
+						<span class="badge bg-secondary">Participant</span>
+						{{/isModerator}}
 					</span>
 					<span id="room-id" class="text-muted">
 						{{ roomId }}
@@ -41,9 +42,9 @@
 					<button id="leave-room-btn" class="btn btn-warning">
 						Leave Room
 					</button>
-					<button id="toggle-chat-btn" class="btn btn-success">
+					<!-- <button id="toggle-chat-btn" class="btn btn-success">
 						Toggle Chat
-					</button>
+					</button> -->
 				</div>
 
 				<!-- Events -->
@@ -57,6 +58,17 @@
 				<!-- Webhooks Log -->
 				<div class="section">
 					<h5 class="title">Webhook</h5>
+					<div class="form-check mb-2">
+						<input
+							class="form-check-input"
+							type="checkbox"
+							value=""
+							id="show-all-webhooks"
+						/>
+						<label class="form-check-label" for="show-all-webhooks">
+							Show all
+						</label>
+					</div>
 					<ul id="webhook-log-list" class="log-list">
 						<!-- Webhooks will be added dynamically here -->
 					</ul>

@@ -84,6 +84,30 @@
 											</button>
 										</form>
 									</li>
+									{{! ONLY RECORDINGS LINK }}
+									<li>
+										<form action="/join-room" method="post">
+											<input
+												type="hidden"
+												name="roomUrl"
+												value="{{ publisherRoomUrl + '?viewRecordings=true' }}"
+											/>
+											<input
+												type="hidden"
+												name="participantRole"
+												value="publisher"
+											/>
+											<input
+												type="hidden"
+												name="roomId"
+												value="{{ roomId }}"
+											/>
+
+											<button type="submit" id="join-as-publisher" class="dropdown-item">
+												View Recordings
+											</button>
+										</form>
+									</li>
 								</ul>
 							</div>
 						</li>
