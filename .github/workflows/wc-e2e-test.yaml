@@ -1,0 +1,28 @@
+name: WebComponent E2E Tests
+on: [push, pull_request]
+
+jobs:
+  unit-test:
+    name: WebComponent E2E Tests
+    runs-on: ov-actions-runner
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
+      - name: Setup OpenVidu Meet WebComponent
+        shell: bash
+        run: |
+          ./prepare.sh
+          cd frontend/webcomponent
+          npm install
+      - name: Run tests
+        run: |
+          cd frontend/webcomponent
+          npm run test:e2e
+      - name: Clean up
+        if: always()
+        uses: ./.github/actions/cleanup
