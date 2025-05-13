@@ -1,5 +1,6 @@
 // playwright.config.ts
 import { defineConfig } from '@playwright/test';
+import { RUN_MODE } from './tests/config';
 
 export default defineConfig({
 	testDir: './tests/e2e',
@@ -8,7 +9,7 @@ export default defineConfig({
 	workers: 1,
 	fullyParallel: false,
 	use: {
-		headless: false,
+		headless: RUN_MODE === 'CI',
 		viewport: { width: 1280, height: 720 },
 		ignoreHTTPSErrors: true,
 		permissions: ['camera', 'microphone'],

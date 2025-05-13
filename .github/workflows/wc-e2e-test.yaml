@@ -26,6 +26,8 @@ jobs:
         run: |
           cd frontend/webcomponent
           npm run test:e2e
+        env:
+          RUN_MODE: CI
       - name: Clean up
         if: always()
         uses: ./.github/actions/cleanup
