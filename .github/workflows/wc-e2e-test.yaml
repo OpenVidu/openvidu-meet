@@ -10,7 +10,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
       - name: Setup OpenVidu Meet WebComponent
@@ -19,6 +18,10 @@ jobs:
           ./prepare.sh
           cd frontend/webcomponent
           npm install
+      - name: Install Playwright browsers
+        run: |
+          cd frontend/webcomponent
+          npx playwright install --with-deps chromium
       - name: Run tests
         run: |
           cd frontend/webcomponent
