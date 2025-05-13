@@ -14,7 +14,7 @@ npm install
 npm run build:prod
 cd ..
 
-// Build webcomponent
+# Build webcomponent
 cd frontend/webcomponent
 npm install
 npm run build
