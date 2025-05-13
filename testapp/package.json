@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --rootDir ../",
+    "build": "tsc --rootDir ../ && cp -r public ./dist/testapp",
     "build:watch": "tsc --watch",
     "start": "node dist/testapp/src/index.js",
     "dev:server": "ts-node-dev --respawn --watch src,public/ts,public/views src/index.ts",
