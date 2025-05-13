@@ -346,6 +346,20 @@ export const generateParticipantTokenCookie = async (
 	return participantTokenCookie;
 };
 
+export const refreshParticipantToken = async (participantOptions: any) => {
+	checkAppIsRunning();
+
+	// Disable authentication to generate the token
+	await changeSecurityPreferences({
+		authMode: AuthMode.NONE
+	});
+
+	const response = await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token/refresh`)
+		.send(participantOptions);
+	return response;
+};
+
 /**
  * Adds a fake participant to a LiveKit room for testing purposes.
  *
