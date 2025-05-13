@@ -10,6 +10,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install wait-on
+        run: npm install -g wait-on
+
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
+      - name: Checkout OpenVidu Local Deployment
+        uses: actions/checkout@v4
+        with:
+          repository: OpenVidu/openvidu-local-deployment
+          ref: development
+          path: openvidu-local-deployment
+      - name: Configure Local Deployment
+        shell: bash
+        run: |
+          cd openvidu-local-deployment/community
+          ./configure_lan_private_ip_linux.sh
+          docker compose up -d
+      - name: Wait for OpenVidu Local Deployment to Start
+        run: wait-on --timeout 60000 http://localhost:7880
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
       - name: Setup OpenVidu Meet WebComponent
@@ -22,6 +41,22 @@ jobs:
         run: |
           cd frontend/webcomponent
           npx playwright install --with-deps chromium
+      - name: Setup OpenVidu Meet
+        shell: bash
+        run: |
+          ./prepare.sh
+          cd backend
+          npm install
+          npm run start:prod &
+      - name: Wait for OpenVidu Meet to Start
+        run: wait-on --timeout 30000 http://localhost:6080/meet/health
+      - name: Start testapp
+        shell: bash
+        run: |
+          cd frontend/testapp
+          npm run start &
+      - name: Wait for testapp to Start
+        run: wait-on --timeout 30000 http://localhost:5080
       - name: Run tests
         run: |
           cd frontend/webcomponent
