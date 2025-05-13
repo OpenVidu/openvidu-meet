@@ -1,30 +1,128 @@
-// tests/e2e/openvidu-meet.e2e.ts
-import { test, expect } from '@playwright/test';
+import { test, expect, BrowserContext, Browser, Page, chromium } from '@playwright/test';
+import { waitForElementInIframe } from '../helpers/function-helpers';
+import fs from 'fs';
 
-test.describe('OpenViduMeet E2E Tests', () => {
-	test('should load iframe with correct URL including additional parameters', async ({ page }) => {
-		await page.setContent(
-			`<openvidu-meet room-url="https://meet.example.com" room-name="Sala1" pepito-perez="55"></openvidu-meet>`
-		);
-		const iframe = page.locator('iframe');
-		await expect(iframe).toHaveAttribute('src', 'https://meet.example.com?room-name=Sala1&pepito-perez=55');
+test.describe('Web Component E2E Tests', () => {
+	const testAppUrl = 'http://localhost:5080';
+	const testRoomPrefix = 'test-room';
+
+	let browser: Browser;
+	let context: BrowserContext;
+	let page: Page;
+
+	test.beforeAll(async () => {
+		// Create a test room before all tests
+		const tempBrowser = await chromium.launch();
+		const tempContext = await tempBrowser.newContext();
+		const tempPage = await tempContext.newPage();
+		await tempPage.goto(testAppUrl);
+		await tempPage.waitForSelector('.create-room');
+		await tempPage.fill('#room-id-prefix', testRoomPrefix);
+		await tempPage.click('.create-room-btn');
+		await tempPage.waitForSelector(`#${testRoomPrefix}`);
+		await tempBrowser.close();
 	});
 
-	test('should handle postMessage interactions', async ({ page }) => {
-		await page.setContent(`<openvidu-meet room-url="https://meet.example.com" room-name="Sala1"></openvidu-meet>`);
+	test.beforeEach(async () => {
+		browser = await chromium.launch({ headless: false });
+		const storageState = fs.existsSync('test_localstorage_state.json')
+			? { storageState: 'test_localstorage_state.json' }
+			: {};
+		context = await browser.newContext(storageState);
+		page = await context.newPage();
+		await page.goto(testAppUrl);
+		await page.waitForSelector('.rooms-container');
+		await page.waitForSelector(`#${testRoomPrefix}`);
+		await page.click('.dropdown-button');
+		await page.waitForSelector('#join-as-moderator');
+		await page.waitForSelector('#join-as-publisher');
+	});
 
-		const [event] = await Promise.all([
-			page.evaluate(() => {
-				return new Promise((resolve) => {
-					const component = document.querySelector('openvidu-meet');
-					if (component) {
-						component.addEventListener('conference-event', (e) => resolve(e.detail));
-					}
-					window.postMessage({ event: 'participant-joined', participant: 'María Gómez' }, '*');
-				});
-			})
-		]);
+	test.afterEach(async () => {
+		await context.storageState({ path: 'test_localstorage_state.json' });
+		await browser.close();
+	});
 
-		expect(event).toEqual({ event: 'participant-joined', participant: 'María Gómez' });
+	test.describe('Component Rendering', () => {
+		test('should load the web component with proper iframe', async () => {
+			await page.click('#join-as-moderator');
+			const component = page.locator('openvidu-meet');
+			await expect(component).toBeVisible();
+
+			const hasIframe = await page.evaluate(() => {
+				const component = document.querySelector('openvidu-meet');
+				return !!component?.shadowRoot?.querySelector('iframe');
+			});
+			expect(hasIframe).toBeTruthy();
+		});
+	});
+
+	test.describe('Event Handling', () => {
+		test('should successfully join as moderator and receive JOIN event', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.waitForSelector('.event-JOIN');
+			const joinElements = await page.locator('.event-JOIN').all();
+			expect(joinElements.length).toBe(1);
+		});
+
+		test('should successfully join as publisher and receive JOIN event', async () => {
+			await page.click('#join-as-publisher');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.waitForSelector('.event-JOIN');
+			const joinElements = await page.locator('.event-JOIN').all();
+			expect(joinElements.length).toBe(1);
+		});
+
+		test('should successfully join to room and receive LEFT event when using leave command', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.click('#leave-room-btn');
+			await page.waitForSelector('.event-LEFT');
+			const leftElements = await page.locator('.event-LEFT').all();
+			expect(leftElements.length).toBe(1);
+		});
+
+		test('should successfully join to room and receive LEFT event when using disconnect button', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			const button = await waitForElementInIframe(page, '#leave-btn');
+			await button.click();
+			await page.waitForSelector('.event-LEFT');
+			const leftElements = await page.locator('.event-LEFT').all();
+			expect(leftElements.length).toBe(1);
+		});
+
+		test('should successfully join to room and receive MEETING_ENDED event when using end meeting command', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.click('#end-meeting-btn');
+			await page.waitForSelector('.event-MEETING_ENDED');
+			const meetingEndedElements = await page.locator('.event-MEETING_ENDED').all();
+			expect(meetingEndedElements.length).toBe(1);
+
+			// Check LEFT event does not exist
+			const leftEventElements = await page.locator('.event-LEFT').all();
+			expect(leftEventElements.length).toBe(0);
+		});
+	});
+
+	test.describe('Webhook Handling', () => {
+		test('should successfully join to room and receive meetingStarted webhook', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.waitForSelector('.webhook-meetingStarted');
+			const meetingStartedElements = await page.locator('.webhook-meetingStarted').all();
+			expect(meetingStartedElements.length).toBe(1);
+		});
+
+		test('should successfully join to room and receive meetingEnded webhook', async () => {
+			await page.click('#join-as-moderator');
+			await waitForElementInIframe(page, 'ov-session');
+			await page.click('#end-meeting-btn');
+			await page.waitForSelector('.webhook-meetingEnded');
+			const meetingEndedElements = await page.locator('.webhook-meetingEnded').all();
+			expect(meetingEndedElements.length).toBe(1);
+		});
 	});
 });
