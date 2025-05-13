@@ -289,6 +289,24 @@ export const runReleaseActiveRecordingLock = async (roomId: string) => {
 	await recordingService.releaseRecordingLockIfNoEgress(roomId);
 };
 
+export const getRoomRoles = async (roomId: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles`)
+		.send();
+	return response;
+};
+
+export const getRoomRoleBySecret = async (roomId: string, secret: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles/${secret}`)
+		.send();
+	return response;
+};
+
 /**
  * Generates a participant token for a room and returns the cookie containing the token
  */
@@ -368,9 +386,6 @@ export const endMeeting = async (roomId: string, moderatorCookie: string) => {
 	return response;
 };
 
-/**
- * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
- */
 export const generateRecordingToken = async (roomId: string, secret: string) => {
 	checkAppIsRunning();
 
@@ -379,7 +394,6 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
 		authMode: AuthMode.NONE
 	});
 
-	// Generate the recording token
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/recording-token`)
 		.send({

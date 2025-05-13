@@ -5,7 +5,8 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
-	MeetRoomPreferences
+	MeetRoomPreferences,
+	ParticipantRole
 } from '../../src/typings/ce';
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
@@ -426,4 +427,88 @@ export const expectSuccessListRecordingResponse = (
 	expect(response.body.pagination.maxItems).toBeGreaterThan(0);
 	expect(response.body.pagination.maxItems).toBeLessThanOrEqual(100);
 	expect(response.body.pagination.maxItems).toBe(maxItems);
+};
+
+export const expectValidRoomRolesAndPermissionsResponse = (response: any, roomId: string) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toEqual(
+		expect.arrayContaining([
+			{
+				role: ParticipantRole.MODERATOR,
+				permissions: getPermissions(roomId, ParticipantRole.MODERATOR)
+			},
+			{
+				role: ParticipantRole.PUBLISHER,
+				permissions: getPermissions(roomId, ParticipantRole.PUBLISHER)
+			}
+		])
+	);
+};
+
+export const expectValidRoomRoleAndPermissionsResponse = (
+	response: any,
+	roomId: string,
+	participantRole: ParticipantRole
+) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toEqual({
+		role: participantRole,
+		permissions: getPermissions(roomId, participantRole)
+	});
+};
+
+const getPermissions = (roomId: string, role: ParticipantRole) => {
+	switch (role) {
+		case ParticipantRole.MODERATOR:
+			return {
+				livekit: {
+					roomCreate: true,
+					roomJoin: true,
+					roomList: true,
+					roomRecord: true,
+					roomAdmin: true,
+					room: roomId,
+					ingressAdmin: true,
+					canPublish: true,
+					canSubscribe: true,
+					canPublishData: true,
+					canUpdateOwnMetadata: true,
+					hidden: false,
+					recorder: true,
+					agent: false
+				},
+				openvidu: {
+					canPublishScreen: true,
+					canRecord: true,
+					canChat: true,
+					canChangeVirtualBackground: true
+				}
+			};
+		case ParticipantRole.PUBLISHER:
+			return {
+				livekit: {
+					roomJoin: true,
+					roomList: true,
+					roomRecord: false,
+					roomAdmin: false,
+					room: roomId,
+					ingressAdmin: false,
+					canPublish: true,
+					canSubscribe: true,
+					canPublishData: true,
+					canUpdateOwnMetadata: true,
+					hidden: false,
+					recorder: false,
+					agent: false
+				},
+				openvidu: {
+					canPublishScreen: true,
+					canRecord: false,
+					canChat: true,
+					canChangeVirtualBackground: true
+				}
+			};
+		default:
+			throw new Error(`Unknown role ${role}`);
+	}
 };
