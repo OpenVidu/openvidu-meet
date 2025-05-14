@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { waitForElementInIframe } from '../helpers/function-helpers';
-import fs from 'fs';
-import defaultConfig from '../../playwright.config';
+
+let subscribedToAppErrors = false;
 
 test.describe('Web Component E2E Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
@@ -21,11 +21,14 @@ test.describe('Web Component E2E Tests', () => {
 	});
 
 	test.beforeEach(async ({ page }) => {
-		page.on('console', (msg) => {
-			if (msg.type() === 'error') {
-				console.error(`Console Error: ${msg.text()}`);
-			}
-		});
+		if (!subscribedToAppErrors) {
+			page.on('console', (msg) => {
+				if (msg.type() === 'error') {
+					console.error(`Console Error: ${msg.text()}`);
+				}
+			});
+			subscribedToAppErrors = true;
+		}
 		await page.goto(testAppUrl);
 		await page.waitForSelector('.rooms-container');
 		await page.waitForSelector(`#${testRoomPrefix}`);
@@ -98,7 +101,9 @@ test.describe('Web Component E2E Tests', () => {
 			expect(leftElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive LEFT event when using disconnect button', async ({ page }) => {
+		test('should successfully join to room and receive LEFT event when using disconnect button', async ({
+			page
+		}) => {
 			await page.click('#join-as-moderator');
 			await waitForElementInIframe(page, 'ov-session');
 			const button = await waitForElementInIframe(page, '#leave-btn');
@@ -108,7 +113,9 @@ test.describe('Web Component E2E Tests', () => {
 			expect(leftElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive MEETING_ENDED event when using end meeting command', async ({ page }) => {
+		test('should successfully join to room and receive MEETING_ENDED event when using end meeting command', async ({
+			page
+		}) => {
 			await page.click('#join-as-moderator');
 			await waitForElementInIframe(page, 'ov-session');
 			await page.click('#end-meeting-btn');
