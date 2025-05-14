@@ -50,7 +50,7 @@ test.describe('Web Component E2E Tests', () => {
 
 	test.afterEach(async ({}, testInfo) => {
 		if (testInfo.status !== testInfo.expectedStatus) {
-			console.log(`Test falló: ${testInfo.title}`);
+			console.error(`FAIL: ${testInfo.title}`);
 
 			// Take screenshot if the test fails
 			if (page && !page.isClosed()) {
