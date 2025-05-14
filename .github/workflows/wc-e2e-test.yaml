@@ -34,6 +34,8 @@ jobs:
       - name: Install Playwright browsers
         run: |
           cd frontend/webcomponent
+          npm install
+          # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
           PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
         env:
