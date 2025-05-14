@@ -31,16 +31,6 @@ jobs:
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Install Playwright browsers
-        run: |
-          cd frontend/webcomponent
-          npm install
-          # Install Playwright browsers
-          mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-
       - name: Setup OpenVidu Meet
         shell: bash
         run: |
@@ -62,6 +52,9 @@ jobs:
       - name: Run tests
         run: |
           cd frontend/webcomponent
+          # Install Playwright browsers
+          mkdir -p /tmp/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
           npm run test:e2e
         env:
           RUN_MODE: CI
