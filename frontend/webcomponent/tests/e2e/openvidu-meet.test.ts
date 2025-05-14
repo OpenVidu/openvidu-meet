@@ -52,15 +52,16 @@ test.describe('Web Component E2E Tests', () => {
 				try {
 					const screenshotBuffer = await page.screenshot({
 						fullPage: true,
-						type: 'png',
+						type: 'jpeg',
+						quality: 50
 					});
 
 					const screenshotBase64 = screenshotBuffer.toString('base64');
 
 					console.log('Screenshot en base64:');
-					console.log(`data:image/png;base64,${screenshotBase64}`);
+					console.log(`data:image/jpeg;base64,${screenshotBase64}`);
 				} catch (error) {
-					console.error('Error al capturar screenshot:', error);
+					console.error('Error taking screenshot:', error);
 				}
 			}
 		}
