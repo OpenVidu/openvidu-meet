@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	listenWebComponentEvents();
 	setUpWebComponentCommands();
 
-	showAllWebhooksCheckbox?.addEventListener('change', () =>
-		renderStoredWebhookEvents(roomId)
-	);
+	showAllWebhooksCheckbox?.addEventListener('change', () => {
+		if (roomId) renderStoredWebhookEvents(roomId);
+	});
 });
