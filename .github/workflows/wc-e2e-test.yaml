@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: OpenVidu/openvidu-local-deployment
-          ref: development
+          ref: main
           path: openvidu-local-deployment
       - name: Configure Local Deployment
         shell: bash
