@@ -17,7 +17,7 @@ const addEventToLog = (eventType: string, eventMessage: string): void => {
 		const li = document.createElement('li');
 		li.className = `event-${eventType}`;
 		li.textContent = `[ ${eventType} ] : ${eventMessage}`;
-		eventsList.appendChild(li);
+		eventsList.insertBefore(li, eventsList.firstChild);
 	}
 };
 const escapeHtml = (unsafe: string): string => {
