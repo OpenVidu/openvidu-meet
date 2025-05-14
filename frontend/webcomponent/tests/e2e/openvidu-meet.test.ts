@@ -1,6 +1,7 @@
 import { test, expect, BrowserContext, Browser, Page, chromium } from '@playwright/test';
 import { waitForElementInIframe } from '../helpers/function-helpers';
 import fs from 'fs';
+import defaultConfig from '../../playwright.config';
 
 test.describe('Web Component E2E Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
@@ -12,7 +13,9 @@ test.describe('Web Component E2E Tests', () => {
 
 	test.beforeAll(async () => {
 		// Create a test room before all tests
-		const tempBrowser = await chromium.launch();
+		const tempBrowser = await chromium.launch({
+			headless: defaultConfig.use?.headless || false
+		});
 		const tempContext = await tempBrowser.newContext();
 		const tempPage = await tempContext.newPage();
 		await tempPage.goto(testAppUrl);
@@ -24,7 +27,9 @@ test.describe('Web Component E2E Tests', () => {
 	});
 
 	test.beforeEach(async () => {
-		browser = await chromium.launch({ headless: false });
+		browser = await chromium.launch({
+			headless: defaultConfig.use?.headless || false
+		});
 		const storageState = fs.existsSync('test_localstorage_state.json')
 			? { storageState: 'test_localstorage_state.json' }
 			: {};
@@ -108,17 +113,17 @@ test.describe('Web Component E2E Tests', () => {
 	});
 
 	test.describe('Webhook Handling', () => {
-		test('should successfully join to room and receive meetingStarted webhook', async () => {
+		test('should successfully receive meetingStarted and meetingEnded webhooks', async () => {
 			await page.click('#join-as-moderator');
+
+			await page.waitForTimeout(1000); // Wait for 1 second to ensure the meeting has started
+			await page.screenshot({ path: 'screenshot.png' });
 			await waitForElementInIframe(page, 'ov-session');
 			await page.waitForSelector('.webhook-meetingStarted');
 			const meetingStartedElements = await page.locator('.webhook-meetingStarted').all();
 			expect(meetingStartedElements.length).toBe(1);
-		});
 
-		test('should successfully join to room and receive meetingEnded webhook', async () => {
-			await page.click('#join-as-moderator');
-			await waitForElementInIframe(page, 'ov-session');
+			// End the meeting
 			await page.click('#end-meeting-btn');
 			await page.waitForSelector('.webhook-meetingEnded');
 			const meetingEndedElements = await page.locator('.webhook-meetingEnded').all();
