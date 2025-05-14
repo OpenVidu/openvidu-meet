@@ -42,6 +42,12 @@
 							"clearScreen": true
 						},
 						"production": {
+							"outputPath": {
+								"base": "../backend/public",
+								"browser": ""
+							},
+							"deleteOutputPath": true,
+							"clearScreen": true,
 							"budgets": [
 								{
 									"type": "initial",

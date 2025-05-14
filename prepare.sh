@@ -14,14 +14,14 @@ npm install
 npm run build:prod
 cd ..
 
+# Build frontend
+cd frontend
+npm install
+npm run build:prod
+cd ..
+
 # Build webcomponent
 cd frontend/webcomponent
 npm install
 npm run build
 cd ../..
-
-# Build frontend
-cd frontend
-npm install
-# npm run lib:build
-cd ..
