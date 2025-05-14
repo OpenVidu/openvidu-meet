@@ -81,11 +81,11 @@ jobs:
         shell: bash
         run: |
           cd openvidu-local-deployment/community
-          docker compose ps --format '{{.Name}}' > containers.txt
+          docker compose ps --format '{{.Name}}' > /tmp/containers.txt
           mkdir -p /tmp/docker-logs
           while read container; do
             docker compose logs "$container" > "/tmp/docker-logs/${container}.log" || true
-          done < containers.txt
+          done < /tmp/containers.txt
       - name: Upload Docker Compose logs
         if: always()
         uses: actions/upload-artifact@v4
