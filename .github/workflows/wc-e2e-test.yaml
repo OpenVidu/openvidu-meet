@@ -36,7 +36,6 @@ jobs:
         run: |
           ./prepare.sh
           cd backend
-          npm install
           npm run start:prod > ../backend.log 2>&1 &
         env:
           MEET_WEBHOOK_ENABLED: true
@@ -46,8 +45,6 @@ jobs:
         shell: bash
         run: |
           cd testapp
-          npm install
-          npm run build
           npm run start > ../testapp.log 2>&1 &
       - name: Wait for testapp to Start
         run: wait-on --timeout 30000 http://localhost:5080
@@ -77,6 +74,23 @@ jobs:
           name: test-videos
           path: |
             frontend/webcomponent/test-results/*/*.webm
+          retention-days: 7
+      - name: Dump Docker Compose container logs
+        if: always()
+        shell: bash
+        run: |
+          cd openvidu-local-deployment/community
+          docker compose ps --format '{{.Name}}' > /tmp/containers.txt
+          mkdir -p /tmp/docker-logs
+          while read container; do
+            docker compose logs "$container" > "/tmp/docker-logs/${container}.log" || true
+          done < /tmp/containers.txt
+      - name: Upload Docker Compose logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openvidu-local-deployment-logs
+          path: /tmp/docker-logs/*.log
           retention-days: 7
       - name: Clean up
         if: always()
