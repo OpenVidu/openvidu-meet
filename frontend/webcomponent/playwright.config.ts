@@ -13,6 +13,15 @@ export default defineConfig({
 		viewport: { width: 1280, height: 720 },
 		ignoreHTTPSErrors: true,
 		permissions: ['camera', 'microphone'],
-		video: 'retain-on-failure'
+		video: 'retain-on-failure',
+		launchOptions: {
+			args: [
+				'--use-fake-ui-for-media-stream',
+				'--use-fake-device-for-media-stream',
+				'--allow-file-access-from-files', // Allows file access from local files
+				'--no-sandbox',
+				'--disable-dev-shm-usage'
+			]
+		}
 	}
 });
