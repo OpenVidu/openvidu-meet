@@ -8,14 +8,14 @@ npm install
 npm run sync-ce
 cd ..
 
-# Build backend
-cd backend
+# Build frontend
+cd frontend
 npm install
 npm run build:prod
 cd ..
 
-# Build frontend
-cd frontend
+# Build backend
+cd backend
 npm install
 npm run build:prod
 cd ..
