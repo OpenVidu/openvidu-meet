@@ -43,7 +43,27 @@ test.describe('Web Component E2E Tests', () => {
 		await page.waitForSelector('#join-as-publisher');
 	});
 
-	test.afterEach(async () => {
+	test.afterEach(async ({}, testInfo) => {
+		if (testInfo.status !== testInfo.expectedStatus) {
+			console.log(`Test falló: ${testInfo.title}`);
+
+			// Take screenshot if the test fails
+			if (page && !page.isClosed()) {
+				try {
+					const screenshotBuffer = await page.screenshot({
+						fullPage: true,
+						type: 'png',
+					});
+
+					const screenshotBase64 = screenshotBuffer.toString('base64');
+
+					console.log('Screenshot en base64:');
+					console.log(`data:image/png;base64,${screenshotBase64}`);
+				} catch (error) {
+					console.error('Error al capturar screenshot:', error);
+				}
+			}
+		}
 		await context.storageState({ path: 'test_localstorage_state.json' });
 		await browser.close();
 	});
