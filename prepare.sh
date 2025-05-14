@@ -25,3 +25,9 @@ cd frontend/webcomponent
 npm install
 npm run build
 cd ../..
+
+# Build testapp
+cd testapp
+npm install
+npm run build
+cd ..
