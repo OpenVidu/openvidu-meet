@@ -34,14 +34,6 @@ export class OpenViduMeet extends HTMLElement {
 	private loadTimeout: any;
 	private iframeLoaded = false;
 	private errorMessage: string | null = null;
-	/**
-	 * A map to store event handlers for different events.
-	 * This allows for dynamic event handling and can be used to add or remove event listeners.
-	 *
-	 * @private
-	 * @type {Map<string, Set<Function>>}
-	 */
-	private eventHandlers: Map<string, Set<Function>> = new Map();
 
 	constructor() {
 		super();
@@ -63,13 +55,7 @@ export class OpenViduMeet extends HTMLElement {
 	connectedCallback() {
 		// Send initialization message to the iframe
 		// after READY event from the iframe is received
-		this.once(WebComponentEvent.READY, () => {
-			const message: InboundCommandMessage = {
-				command: WebComponentCommand.INITIALIZE,
-				payload: { domain: window.location.origin }
-			};
-			this.commandsManager.sendMessage(message);
-		});
+		this.once(WebComponentEvent.READY, () => this.commandsManager.initialize());
 		this.eventsManager.listen();
 		this.render();
 		this.updateIframeSrc();
@@ -179,6 +165,9 @@ export class OpenViduMeet extends HTMLElement {
 		this.render();
 	}
 
+	// ---- WebComponent Commands ----
+	// These methods send commands to the iframe.
+
 	/**
 	 * Subscribe to an event
 	 * @param eventName Name of the event to listen for
@@ -186,31 +175,7 @@ export class OpenViduMeet extends HTMLElement {
 	 * @returns The component instance for chaining
 	 */
 	public on(eventName: string, callback: (detail: any) => void): this {
-		if (!(Object.values(WebComponentEvent) as string[]).includes(eventName)) {
-			console.warn(`Event "${eventName}" is not supported.`);
-			return this;
-		}
-
-		// Create event listener that will call the callback
-		const listener = ((event: CustomEvent) => {
-			callback(event.detail);
-		}) as EventListener;
-
-		// Store reference to original callback for off() method
-		if (!this.eventHandlers.has(eventName)) {
-			this.eventHandlers.set(eventName, new Set());
-		}
-
-		// Store both the callback and listener to match them later
-		const handlers = this.eventHandlers.get(eventName);
-		// @ts-ignore - To store both values together
-		callback._listener = listener;
-		handlers?.add(callback);
-
-		// Register with standard DOM API
-
-		this.addEventListener(eventName, listener);
-
+		this.commandsManager.on(this, eventName, callback);
 		return this;
 	}
 
@@ -221,21 +186,7 @@ export class OpenViduMeet extends HTMLElement {
 	 * @returns The component instance for chaining
 	 */
 	public once(eventName: string, callback: (detail: any) => void): this {
-		if (!(Object.values(WebComponentEvent) as string[]).includes(eventName)) {
-			console.warn(`Event "${eventName}" is not supported.`);
-			return this;
-		}
-
-		// Create a wrapper that will call the callback and then unsubscribe
-		const wrapperCallback = (detail: any) => {
-			// Unsubscribe first to prevent any possibility of duplicate calls
-			this.off(eventName, wrapperCallback);
-			// Call the original callback
-			callback(detail);
-		};
-
-		this.on(eventName, wrapperCallback);
-
+		this.commandsManager.once(this, eventName, callback);
 		return this;
 	}
 
@@ -246,44 +197,22 @@ export class OpenViduMeet extends HTMLElement {
 	 * @returns The component instance for chaining
 	 */
 	public off(eventName: string, callback?: (detail: any) => void): this {
-		if (!callback) {
-			// Remove all handlers for this event
-			const handlers = this.eventHandlers.get(eventName);
-			if (handlers) {
-				handlers.forEach((handler) => {
-					// @ts-ignore - Access stored listener
-					this.removeEventListener(eventName, handler._listener);
-				});
-				handlers.clear();
-			}
-		} else {
-			// Remove specific handler
-			const handlers = this.eventHandlers.get(eventName);
-			if (handlers && handlers.has(callback)) {
-				// @ts-ignore - Access stored listener
-				this.removeEventListener(eventName, callback._listener);
-				handlers.delete(callback);
-			}
-		}
-
+		this.commandsManager.off(this, eventName, callback);
 		return this;
 	}
 
-	// ---- WebComponent Commands ----
-	// These methods send commands to the OpenVidu Meet iframe.
-
+	/**
+	 * Ends the current meeting by delegating the action to the commands manager.
+	 * This method should be called when the user wants to terminate the ongoing session.
+	 */
 	public endMeeting() {
-		const message: InboundCommandMessage = { command: WebComponentCommand.END_MEETING };
-		this.commandsManager.sendMessage(message);
+		this.commandsManager.endMeeting();
 	}
 
+	/**
+	 * Leaves the current video conference room.
+	 */
 	public leaveRoom() {
-		const message: InboundCommandMessage = { command: WebComponentCommand.LEAVE_ROOM };
-		this.commandsManager.sendMessage(message);
+		this.commandsManager.leaveRoom();
 	}
-
-	// public toggleChat() {
-	// 	const message: ParentMessage = { action: WebComponentActionType.TOGGLE_CHAT };
-	// 	this.commandsManager.sendMessage(message);
-	// }
 }
