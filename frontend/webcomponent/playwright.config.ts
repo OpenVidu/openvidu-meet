@@ -1,4 +1,3 @@
-// playwright.config.ts
 import { defineConfig } from '@playwright/test';
 import { RUN_MODE } from './tests/config';
 
