@@ -34,9 +34,10 @@ jobs:
       - name: Install Playwright browsers
         run: |
           cd frontend/webcomponent
-          PLAYWRIGHT_BROWSERS_PATH=$HOME/ms-playwright npx playwright install --with-deps chromium
+          mkdir -p /tmp/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
         env:
-          PLAYWRIGHT_BROWSERS_PATH: $HOME/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
 
       - name: Setup OpenVidu Meet
         shell: bash
@@ -62,7 +63,7 @@ jobs:
           npm run test:e2e
         env:
           RUN_MODE: CI
-          PLAYWRIGHT_BROWSERS_PATH: $HOME/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
       - name: Clean up
         if: always()
         uses: ./.github/actions/cleanup
