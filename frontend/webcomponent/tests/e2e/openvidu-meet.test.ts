@@ -35,6 +35,11 @@ test.describe('Web Component E2E Tests', () => {
 			: {};
 		context = await browser.newContext(storageState);
 		page = await context.newPage();
+		page.on('console', (msg) => {
+			if (msg.type() === 'error') {
+				console.error(`Console Error: ${msg.text()}`);
+			}
+		});
 		await page.goto(testAppUrl);
 		await page.waitForSelector('.rooms-container');
 		await page.waitForSelector(`#${testRoomPrefix}`);
