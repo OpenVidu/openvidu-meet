@@ -2,12 +2,15 @@ import { describe, it, expect, jest } from '@jest/globals';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
 import { WebComponentCommand } from '../../src/models/command.model';
+import { CommandsManager } from '../../src/components/CommandsManager';
 
 describe('OpenViduMeet Web Component Commands', () => {
 	let component: OpenViduMeet;
+	let commandsManager: CommandsManager;
 
 	beforeEach(() => {
 		component = document.createElement('openvidu-meet') as OpenViduMeet;
+		commandsManager = component['commandsManager'] as CommandsManager;
 		document.body.appendChild(component);
 	});
 
@@ -20,21 +23,27 @@ describe('OpenViduMeet Web Component Commands', () => {
 	it('should update allowedOrigin when setAllowedOrigin is called', () => {
 		const testOrigin = 'https://test-origin.com';
 
-		// Set allowed origin
-		(component as any).commandsManager.setAllowedOrigin(testOrigin);
+
+		commandsManager.setAllowedOrigin(testOrigin);
+		expect(commandsManager['allowedOrigin']).toBe(testOrigin);
 
 		// Check if it was updated
 		expect((component as any).commandsManager.allowedOrigin).toBe(testOrigin);
 	});
 
-	it('should call commandsManager.sendMessage when leaveRoom is called', () => {
-		const spy = jest.spyOn(component['commandsManager'], 'sendMessage');
+	it('should call commandsManager.leaveRoom when leaveRoom is called', () => {
+		const meetSpy = jest.spyOn(component['commandsManager'], 'leaveRoom');
+
+		const spy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 		component.leaveRoom();
+
+		expect(meetSpy).toHaveBeenCalled();
+		expect(spy).toHaveBeenCalledTimes(1);
 		expect(spy).toHaveBeenCalledWith({ command: WebComponentCommand.LEAVE_ROOM });
 	});
 
 	it('should call commandsManager.sendMessage when endMeeting is called', () => {
-		const spy = jest.spyOn(component['commandsManager'], 'sendMessage');
+		const spy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 		component.endMeeting();
 		expect(spy).toHaveBeenCalledWith({ command: WebComponentCommand.END_MEETING });
 	});

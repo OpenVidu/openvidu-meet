@@ -3,12 +3,15 @@ import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
 import { WebComponentCommand } from '../../src/models/command.model';
 import { WEBCOMPONENT_ROOM_URL } from '../config';
+import { CommandsManager } from '../../src/components/CommandsManager';
 
 describe('OpenViduMeet Event Handling', () => {
 	let component: OpenViduMeet;
+	let commandsManager: CommandsManager;
 
 	beforeEach(() => {
 		component = document.createElement('openvidu-meet') as OpenViduMeet;
+		commandsManager = component['commandsManager'] as CommandsManager;
 		document.body.appendChild(component);
 	});
 
@@ -33,7 +36,7 @@ describe('OpenViduMeet Event Handling', () => {
 	});
 
 	it('should call sendMessage when READY event is received', () => {
-		const sendMessageSpy = jest.spyOn(component['commandsManager'], 'sendMessage');
+		const sendMessageSpy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 
 		// Mock a message event
 		const readyEvent = new MessageEvent('message', {
