@@ -38,6 +38,8 @@ jobs:
           cd backend
           npm install
           npm run start:prod > ../backend.log 2>&1 &
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Wait for OpenVidu Meet to Start
         run: wait-on --timeout 30000 http://localhost:6080/meet/health
       - name: Start testapp
