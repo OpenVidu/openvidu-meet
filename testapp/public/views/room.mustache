@@ -78,11 +78,11 @@
 			<!-- Main Content Section -->
 			<div id="main-content" class="d-flex flex-column">
 				<!-- Web Component Section -->
-				<div id="meeting-container" data-api-key="{{ apiKey }}">
+				<div id="meeting-container">
 					<openvidu-meet
 						room-url="{{ roomUrl }}"
 						participant-name="{{ participantName }}"
-						nleave-redirect-url="https://openvidu.io"
+						leave-redirect-url="https://openvidu.io"
 					></openvidu-meet>
 				</div>
 			</div>
