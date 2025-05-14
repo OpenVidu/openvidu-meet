@@ -327,7 +327,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:participants
+          npm run test:integration-participants
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
