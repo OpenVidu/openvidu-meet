@@ -73,7 +73,7 @@ jobs:
             backend.log
             testapp.log
           retention-days: 7
-      - name: Upload test videos
+      - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
         with:
