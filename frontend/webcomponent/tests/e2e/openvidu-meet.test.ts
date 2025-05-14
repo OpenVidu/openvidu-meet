@@ -23,9 +23,9 @@ test.describe('Web Component E2E Tests', () => {
 	test.beforeEach(async ({ page }) => {
 		if (!subscribedToAppErrors) {
 			page.on('console', (msg) => {
-				if (msg.type() === 'error') {
-					console.error(`Console Error: ${msg.text()}`);
-				}
+				const type = msg.type();
+				const tag = type === 'error' ? 'ERROR' : type === 'warning' ? 'WARNING' : 'LOG';
+				console.log('[' + tag + ']', msg.text());
 			});
 			subscribedToAppErrors = true;
 		}
