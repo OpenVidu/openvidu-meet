@@ -37,27 +37,7 @@ test.describe('Web Component E2E Tests', () => {
 		await page.waitForSelector('#join-as-publisher');
 	});
 
-	test.afterEach(async ({ page, context }, testInfo) => {
-		if (testInfo.status !== testInfo.expectedStatus) {
-			console.error(`FAIL: ${testInfo.title}`);
-
-			// Take screenshot if the test fails
-			if (page && !page.isClosed()) {
-				try {
-					const screenshotBuffer = await page.screenshot({
-						fullPage: true,
-						type: 'png'
-					});
-
-					const screenshotBase64 = screenshotBuffer.toString('base64');
-
-					console.log('Screenshot en base64:');
-					console.log(`data:image/png;base64,${screenshotBase64}`);
-				} catch (error) {
-					console.error('Error taking screenshot:', error);
-				}
-			}
-		}
+	test.afterEach(async ({ context }) => {
 		await context.storageState({ path: 'test_localstorage_state.json' });
 	});
 
