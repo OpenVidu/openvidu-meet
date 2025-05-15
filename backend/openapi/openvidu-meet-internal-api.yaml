@@ -18,6 +18,8 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1profile'
     /rooms/{roomId}:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
+    /rooms/{roomId}/recording-token:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1recording-token'
     /rooms/{roomId}/roles:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles'
     /rooms/{roomId}/roles/{secret}:

@@ -1,0 +1,6 @@
+description: >
+    The cookie containing the recording token.
+    This cookie is used to access the recordings in a room.
+schema:
+    type: string
+    example: 'OvMeetRecordingToken=token_123456; Path=/; HttpOnly; SameSite=Strict'

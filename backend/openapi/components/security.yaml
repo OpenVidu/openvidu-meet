@@ -22,3 +22,9 @@ participantTokenCookie:
     in: cookie
     description: >
         The JWT token to authenticate the participant when entering the room.
+recordingTokenCookie:
+    type: apiKey
+    name: OvMeetRecordingToken
+    in: cookie
+    description: >
+        The JWT token containing permissions to access the recordings in a room.

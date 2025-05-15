@@ -5,11 +5,15 @@
         description: >
             Retrieves a paginated list of all recordings available in the system.
             You can apply filters to narrow down the results based on specific criteria.
+
+            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
         tags:
             - OpenVidu Meet - Recordings
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
+            - recordingTokenCookie: []
         parameters:
             # - name: status
             #   in: query
@@ -90,6 +94,7 @@
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
+            - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
         responses:
@@ -116,6 +121,7 @@
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
+            - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
         responses:
@@ -147,6 +153,7 @@
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
+            - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
             - $ref: '../components/parameters/recording-range.yaml'

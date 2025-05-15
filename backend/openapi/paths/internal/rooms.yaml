@@ -25,6 +25,36 @@
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/recording-token:
+    post:
+        operationId: generateRecordingToken
+        summary: Generate recording token
+        description: >
+            Generates a token with recording permissions for a specified OpenVidu Meet room.
+            This token can be used to access the recordings in a room.
+        tags:
+            - Internal API - Rooms
+        security:
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../../components/requestBodies/internal/recording-token-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-generate-recording-token.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-room-metadata-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
 /rooms/{roomId}/roles:
     get:
         operationId: getRoomRolesAndPermissions

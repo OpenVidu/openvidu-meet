@@ -1,8 +1,0 @@
-description: Participant not found
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/error.yaml'
-        example:
-            error: 'Participant Error'
-            message: 'Participant "Alice" not found in room "room_123"'
