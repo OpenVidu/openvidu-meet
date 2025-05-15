@@ -395,6 +395,16 @@ export const disconnectFakeParticipants = async () => {
 	await sleep('1s');
 };
 
+export const deleteParticipant = async (roomId: string, participantName: string, moderatorCookie: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantName}`)
+		.set('Cookie', moderatorCookie)
+		.send();
+	return response;
+};
+
 export const endMeeting = async (roomId: string, moderatorCookie: string) => {
 	checkAppIsRunning();
 
