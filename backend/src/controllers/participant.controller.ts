@@ -73,8 +73,16 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 
 export const deleteParticipant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
 	const participantService = container.get(ParticipantService);
 	const { roomId, participantName } = req.params;
+
+	// Check if the room exists
+	try {
+		await roomService.getMeetRoom(roomId);
+	} catch (error) {
+		return handleError(res, error, `getting room '${roomId}'`);
+	}
 
 	try {
 		logger.verbose(`Deleting participant '${participantName}' from room '${roomId}'`);

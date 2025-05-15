@@ -158,7 +158,7 @@ export class LiveKitService {
 			return await this.roomClient.getParticipant(roomName, participantName);
 		} catch (error) {
 			this.logger.warn(`Participant ${participantName} not found in room ${roomName}: ${error}`);
-			throw internalError(`getting participant '${participantName}' in room '${roomName}'`);
+			throw errorParticipantNotFound(participantName, roomName);
 		}
 	}
 
