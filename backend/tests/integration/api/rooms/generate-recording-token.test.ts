@@ -6,6 +6,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
+	disconnectFakeParticipants,
 	generateRecordingToken,
 	startTestServer,
 	updateRecordingAccessPreferencesInRoom
@@ -21,6 +22,7 @@ describe('Room API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRecordings();
 		await deleteAllRooms();
 	});
@@ -87,7 +89,7 @@ describe('Room API Tests', () => {
 
 		it('should fail with a 404 error if there are no recordings in the room', async () => {
 			await deleteAllRecordings();
-            
+
 			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
 			expect(response.status).toBe(404);
 

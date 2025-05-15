@@ -1,7 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
-import { deleteAllRooms, refreshParticipantToken, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllRooms,
+	disconnectFakeParticipants,
+	refreshParticipantToken,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 const participantName = 'TEST_PARTICIPANT';
@@ -15,6 +20,7 @@ describe('Participant API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 
