@@ -18,19 +18,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
@@ -76,20 +65,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
@@ -133,19 +110,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
@@ -189,19 +155,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
@@ -245,19 +200,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
@@ -301,19 +245,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: development
-          path: openvidu-local-deployment
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Wait for OpenVidu Local Deployment to Start
         run: wait-on --timeout 60000 http://localhost:7880
       - name: Setup OpenVidu Meet
