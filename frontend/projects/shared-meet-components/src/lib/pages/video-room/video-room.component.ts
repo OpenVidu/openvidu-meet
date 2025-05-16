@@ -153,7 +153,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		this.wcManagerService.sendMessageToParent(message);
-		this.sessionStorageService.removeModeratorSecret(event.roomName);
+
+		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
+			this.sessionStorageService.removeModeratorSecret(event.roomName);
+		}
 
 		//if (this.contextService.isEmbeddedMode()) this.sendMessageToParent(event);
 		this.redirectTo(redirectURL, isExternalURL);
