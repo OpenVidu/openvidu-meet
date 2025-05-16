@@ -1,0 +1,15 @@
+name: Setup OpenVidu Meet Backend
+description: Prepara y arranca el backend de OpenVidu Meet y espera a que esté disponible
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare OpenVidu Meet
+      shell: bash
+      run: |
+        ./prepare.sh
+        cd backend
+        npm install
+        npm run start:prod &
+    - name: Wait for OpenVidu Meet to Start
+      shell: bash
+      run: wait-on --timeout 30000 http://localhost:6080/meet/health
