@@ -1,0 +1,9 @@
+description: Successfully updated security preferences
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Security preferences updated successfully'

@@ -1,0 +1,6 @@
+description: Security preferences 
+required: true
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/security-preferences.yaml'

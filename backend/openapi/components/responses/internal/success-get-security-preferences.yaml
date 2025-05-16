@@ -1,0 +1,5 @@
+description: Successfully retrieved security preferences
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/security-preferences.yaml'

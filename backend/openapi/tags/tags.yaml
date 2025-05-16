@@ -4,6 +4,8 @@
   description: Operations related to managing OpenVidu Meet recordings
 - name: Internal API - Authentication
   description: Authentication operations
+- name: Internal API - Global Preferences
+  description: Operations related to managing global preferences in OpenVidu Meet
 - name: Internal API - Rooms
   description: Operations related to managing OpenVidu Meet rooms
 - name: Internal API - Participant

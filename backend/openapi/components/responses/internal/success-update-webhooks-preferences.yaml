@@ -1,0 +1,9 @@
+description: Successfully updated webhooks preferences
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Webhooks preferences updated successfully'

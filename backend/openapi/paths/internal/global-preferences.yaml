@@ -1,0 +1,103 @@
+/preferences/webhooks:
+    get:
+        operationId: getWebhooksPreferences
+        summary: Get webhooks preferences
+        description: >
+            Retrieves the webhooks preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        security:
+            - accessTokenCookie: []
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-webhooks-preferences.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    put:
+        operationId: updateWebhooksPreferences
+        summary: Update webhooks preferences
+        description: >
+            Updates the webhooks preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/update-webhooks-preferences.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-update-webhooks-preferences.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+/preferences/security:
+    get:
+        operationId: getSecurityPreferences
+        summary: Get security preferences
+        description: >
+            Retrieves the security preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-security-preferences.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    put:
+        operationId: updateSecurityPreferences
+        summary: Update security preferences
+        description: >
+            Updates the security preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/update-security-preferences.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-update-security-preferences.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+/preferences/appearance:
+    get:
+        operationId: getAppearancePreferences
+        summary: Get appearance preferences
+        description: >
+            Retrieves the appearance preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        security:
+            - accessTokenCookie: []
+        responses:
+            '202':
+                $ref: '../../components/responses/pro-feature-error.yaml'
+    put:
+        operationId: updateAppearancePreferences
+        summary: Update appearance preferences
+        description: >
+            Updates the appearance preferences for the OpenVidu Meet application.
+        tags:
+            - Internal API - Global Preferences
+        security:
+            - accessTokenCookie: []
+        responses:
+            '202':
+                $ref: '../../components/responses/pro-feature-error.yaml'

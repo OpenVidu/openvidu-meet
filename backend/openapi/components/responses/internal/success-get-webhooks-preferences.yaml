@@ -1,0 +1,5 @@
+description: Successfully retrieved webhooks preferences
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/webhooks-preferences.yaml'

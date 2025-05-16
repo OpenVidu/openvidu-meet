@@ -1,0 +1,6 @@
+description: Webhooks preferences 
+required: true
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/webhooks-preferences.yaml'

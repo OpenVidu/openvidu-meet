@@ -16,6 +16,12 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1refresh'
     /auth/profile:
         $ref: './paths/internal/auth.yaml#/~1auth~1profile'
+    /preferences/webhooks:
+        $ref: './paths/internal/global-preferences.yaml#/~1preferences~1webhooks'
+    /preferences/security:
+        $ref: './paths/internal/global-preferences.yaml#/~1preferences~1security'
+    /preferences/appearance:
+        $ref: './paths/internal/global-preferences.yaml#/~1preferences~1appearance'
     /rooms/{roomId}:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
     /rooms/{roomId}/recording-token:
@@ -43,6 +49,10 @@ components:
     schemas:
         User:
             $ref: components/schemas/internal/user.yaml
+        WebhooksPreferences:
+            $ref: components/schemas/internal/webhooks-preferences.yaml
+        SecurityPreferences:
+            $ref: components/schemas/internal/security-preferences.yaml
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
         MeetRoomOptions:

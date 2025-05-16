@@ -1,0 +1,8 @@
+description: PRO Feature Error
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/error.yaml'
+        example:
+            error: Pro Feature Error
+            message: 'This operation is a PRO feature. Please, upgrade to OpenVidu PRO'

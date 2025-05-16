@@ -26,6 +26,15 @@ MeetRecordingPreferences:
             default: true
             example: true
             description: If true, the room will be allowed to record the video of the participants.
+        allowAccessTo:
+            type: string
+            enum:
+                - admin
+                - admin-moderator
+                - admin-moderator-publisher
+                - public
+            default: admin-moderator-publisher
+            example: admin-moderator-publisher
 MeetVirtualBackgroundPreferences:
     type: object
     properties:
