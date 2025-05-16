@@ -116,7 +116,7 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
 export const configureRecordingMediaAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const storageService = container.get(MeetStorageService);
 
-	let recordingAccess: MeetRecordingAccess;
+	let recordingAccess: MeetRecordingAccess | undefined;
 
 	try {
 		const roomId = extractRoomIdFromRequest(req);

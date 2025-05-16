@@ -12,7 +12,7 @@ export interface MeetRoomPreferences {
  */
 export interface MeetRecordingPreferences {
     enabled: boolean;
-    allowAccessTo: MeetRecordingAccess;
+    allowAccessTo?: MeetRecordingAccess;
 }
 
 export const enum MeetRecordingAccess {

@@ -47,10 +47,21 @@ const AuthenticationPreferencesDTOSchema: z.ZodType<AuthenticationPreferencesDTO
 	method: ValidAuthMethodDTOSchema
 });
 
-const RoomCreationPolicySchema: z.ZodType<RoomCreationPolicy> = z.object({
-	allowRoomCreation: z.boolean(),
-	requireAuthentication: z.boolean()
-});
+const RoomCreationPolicySchema: z.ZodType<RoomCreationPolicy> = z
+	.object({
+		allowRoomCreation: z.boolean(),
+		requireAuthentication: z.boolean().optional()
+	})
+	.refine(
+		(data) => {
+			// If allowRoomCreation is true, requireAuthentication must be provided
+			return !data.allowRoomCreation || data.requireAuthentication !== undefined;
+		},
+		{
+			message: 'requireAuthentication is required when allowRoomCreation is true',
+			path: ['requireAuthentication']
+		}
+	);
 
 const UpdateSecurityPreferencesDTOSchema: z.ZodType<UpdateSecurityPreferencesDTO> = z
 	.object({

@@ -20,7 +20,7 @@ import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from
 export const configureCreateRoomAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const globalPrefService = container.get(MeetStorageService);
 	let allowRoomCreation: boolean;
-	let requireAuthentication: boolean;
+	let requireAuthentication: boolean | undefined;
 
 	try {
 		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
@@ -104,7 +104,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 
 		const recordingAccess = room.preferences!.recordingPreferences.allowAccessTo;
 
-		if (recordingAccess === MeetRecordingAccess.ADMIN) {
+		if (!recordingAccess || recordingAccess === MeetRecordingAccess.ADMIN) {
 			// Deny request if the room is configured to allow access to recordings only for admins
 			throw errorInsufficientPermissions();
 		}

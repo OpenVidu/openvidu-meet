@@ -173,7 +173,8 @@ export class ContextService {
 
 	async isAuthRequiredToCreateRooms(): Promise<boolean> {
 		await this.getSecurityPreferences();
-		return this.context.securityPreferences!.roomCreationPolicy.requireAuthentication;
+		const requireAuthentication = this.context.securityPreferences!.roomCreationPolicy.requireAuthentication;
+		return requireAuthentication !== undefined && requireAuthentication;
 	}
 
 	async getAuthModeToEnterRoom(): Promise<AuthMode> {

@@ -15,7 +15,13 @@ export const updateSecurityPreferences = async (req: Request, res: Response) => 
 		const globalPreferences = await globalPrefService.getGlobalPreferences();
 
 		if (securityPreferences.roomCreationPolicy) {
-			globalPreferences.securityPreferences.roomCreationPolicy = securityPreferences.roomCreationPolicy;
+			globalPreferences.securityPreferences.roomCreationPolicy = {
+				allowRoomCreation: securityPreferences.roomCreationPolicy.allowRoomCreation,
+				requireAuthentication:
+					securityPreferences.roomCreationPolicy.requireAuthentication === undefined
+						? globalPreferences.securityPreferences.roomCreationPolicy.requireAuthentication
+						: securityPreferences.roomCreationPolicy.requireAuthentication
+			};
 		}
 
 		if (securityPreferences.authentication) {

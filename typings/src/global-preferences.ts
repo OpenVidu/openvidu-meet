@@ -24,7 +24,7 @@ export interface SecurityPreferences {
 
 export interface RoomCreationPolicy {
     allowRoomCreation: boolean;
-    requireAuthentication: boolean;
+    requireAuthentication?: boolean;
 }
 
 // DTOs

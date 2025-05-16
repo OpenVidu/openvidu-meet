@@ -64,10 +64,21 @@ const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
 	MeetRecordingAccess.PUBLIC
 ]);
 
-const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z.object({
-	enabled: z.boolean(),
-	allowAccessTo: RecordingAccessSchema
-});
+const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z
+	.object({
+		enabled: z.boolean(),
+		allowAccessTo: RecordingAccessSchema.optional()
+	})
+	.refine(
+		(data) => {
+			// If recording is enabled, allowAccessTo must be provided
+			return !data.enabled || data.allowAccessTo !== undefined;
+		},
+		{
+			message: 'allowAccessTo is required when recording is enabled',
+			path: ['allowAccessTo']
+		}
+	);
 
 const ChatPreferencesSchema: z.ZodType<MeetChatPreferences> = z.object({
 	enabled: z.boolean()
