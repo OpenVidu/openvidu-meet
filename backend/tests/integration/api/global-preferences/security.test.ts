@@ -60,8 +60,7 @@ describe('Security Preferences API Tests', () => {
 		it('should update security preferences with valid partial data (roomCreationPolicy)', async () => {
 			const validPreferences = {
 				roomCreationPolicy: {
-					allowRoomCreation: false,
-					requireAuthentication: true
+					allowRoomCreation: false
 				}
 			};
 			let response = await updateSecurityPreferences(validPreferences);
@@ -71,7 +70,9 @@ describe('Security Preferences API Tests', () => {
 
 			response = await getSecurityPreferences();
 			expect(response.status).toBe(200);
-			expect(response.body.roomCreationPolicy).toEqual(validPreferences.roomCreationPolicy);
+			expect(response.body.roomCreationPolicy.allowRoomCreation).toEqual(
+				validPreferences.roomCreationPolicy.allowRoomCreation
+			);
 			expect(response.body.authentication).toEqual(defaultPreferences.authentication);
 		});
 
@@ -127,20 +128,26 @@ describe('Security Preferences API Tests', () => {
 			);
 		});
 
-		it('should reject when allowRoomCreation or requireAuthentication is not provided', async () => {
-			let response = await updateSecurityPreferences({
-				roomCreationPolicy: {
-					allowRoomCreation: true
-				}
-			});
-			expectValidationError(response, 'roomCreationPolicy.requireAuthentication', 'Required');
-
-			response = await updateSecurityPreferences({
+		it('should reject when allowRoomCreation is not provided', async () => {
+			const response = await updateSecurityPreferences({
 				roomCreationPolicy: {
 					requireAuthentication: true
 				}
 			});
 			expectValidationError(response, 'roomCreationPolicy.allowRoomCreation', 'Required');
+		});
+
+		it('should reject when allowRoomCreation is true and requireAuthentication is not provided', async () => {
+			const response = await updateSecurityPreferences({
+				roomCreationPolicy: {
+					allowRoomCreation: true
+				}
+			});
+			expectValidationError(
+				response,
+				'roomCreationPolicy.requireAuthentication',
+				'requireAuthentication is required when allowRoomCreation is true'
+			);
 		});
 
 		it('should reject when authMode is not a valid enum value', async () => {
@@ -177,7 +184,7 @@ describe('Security Preferences API Tests', () => {
 			);
 		});
 
-		it('should reject when authMode or method.type is not provided', async () => {
+		it('should reject when authMode or method are not provided', async () => {
 			let response = await updateSecurityPreferences({
 				authentication: {
 					authMode: AuthMode.NONE

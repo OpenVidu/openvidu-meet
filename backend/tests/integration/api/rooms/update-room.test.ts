@@ -1,6 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
-import { createRoom, deleteAllRooms, getRoom, startTestServer, updateRoomPreferences } from '../../../helpers/request-helpers.js';
+import {
+	createRoom,
+	deleteAllRooms,
+	getRoom,
+	startTestServer,
+	updateRoomPreferences
+} from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
@@ -95,8 +101,7 @@ describe('Room API Tests', () => {
 			// Invalid preferences (missing required fields)
 			const invalidPreferences = {
 				recordingPreferences: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					enabled: false
 				},
 				// Missing chatPreferences
 				virtualBackgroundPreferences: { enabled: false }
@@ -144,13 +149,29 @@ describe('Room API Tests', () => {
 			expect(response.body.error).toContain('Unprocessable Entity');
 		});
 
+		it('should fail when recording is enabled but allowAccessTo is missing', async () => {
+			const createdRoom = await createRoom({
+				roomIdPrefix: 'missing-access'
+			});
+			const invalidPreferences = {
+				recordingPreferences: {
+					enabled: true // Missing allowAccessTo
+				},
+				chatPreferences: { enabled: false },
+				virtualBackgroundPreferences: { enabled: false }
+			};
+			const response = await updateRoomPreferences(createdRoom.roomId, invalidPreferences);
+			expect(response.status).toBe(422);
+			expect(response.body.error).toContain('Unprocessable Entity');
+			expect(JSON.stringify(response.body.details)).toContain('recordingPreferences.allowAccessTo');
+		});
+
 		it('should fail when room ID contains invalid characters', async () => {
 			const invalidRoomId = '!@#$%^&*()';
 
 			const preferences = {
 				recordingPreferences: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					enabled: false
 				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
