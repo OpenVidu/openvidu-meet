@@ -536,12 +536,13 @@ export class RecordingService {
 		return { recordingInfo, metadataFilePath: metadataPath };
 	}
 
-	protected generateCompositeOptionsFromRequest(layout = 'speaker'): RoomCompositeOptions {
+	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {
 		return {
-			layout: layout
+			layout: layout,
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false
+			// encodingOptions
 		};
 	}
 
