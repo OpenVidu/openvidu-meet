@@ -174,7 +174,7 @@ export class OpenViduMeet extends HTMLElement {
 	 * @param callback Function to be called when the event is triggered
 	 * @returns The component instance for chaining
 	 */
-	public on(eventName: string, callback: (detail: any) => void): this {
+	public on(eventName: WebComponentEvent, callback: (detail: any) => void): this {
 		this.commandsManager.on(this, eventName, callback);
 		return this;
 	}
@@ -185,7 +185,7 @@ export class OpenViduMeet extends HTMLElement {
 	 * @param callback Function to be called when the event is triggered
 	 * @returns The component instance for chaining
 	 */
-	public once(eventName: string, callback: (detail: any) => void): this {
+	public once(eventName: WebComponentEvent, callback: (detail: any) => void): this {
 		this.commandsManager.once(this, eventName, callback);
 		return this;
 	}
@@ -196,7 +196,7 @@ export class OpenViduMeet extends HTMLElement {
 	 * @param callback Optional callback to remove (if not provided, removes all handlers for this event)
 	 * @returns The component instance for chaining
 	 */
-	public off(eventName: string, callback?: (detail: any) => void): this {
+	public off(eventName: WebComponentEvent, callback?: (detail: any) => void): this {
 		this.commandsManager.off(this, eventName, callback);
 		return this;
 	}

@@ -48,7 +48,7 @@ export class CommandsManager {
 	 * @param callback Function to be called when the event is triggered
 	 * @returns The component instance for chaining
 	 */
-	public on(element: HTMLElement, eventName: string, callback: (detail: any) => void): this {
+	public on(element: HTMLElement, eventName: WebComponentEvent, callback: (detail: any) => void): this {
 		if (!(Object.values(WebComponentEvent) as string[]).includes(eventName)) {
 			console.warn(`Event "${eventName}" is not supported.`);
 			return this;
@@ -83,7 +83,7 @@ export class CommandsManager {
 	 * @param callback Function to be called when the event is triggered
 	 * @returns The component instance for chaining
 	 */
-	public once(element: HTMLElement, eventName: string, callback: (detail: any) => void): this {
+	public once(element: HTMLElement, eventName: WebComponentEvent, callback: (detail: any) => void): this {
 		if (!(Object.values(WebComponentEvent) as string[]).includes(eventName)) {
 			console.warn(`Event "${eventName}" is not supported.`);
 			return this;
@@ -108,7 +108,7 @@ export class CommandsManager {
 	 * @param callback Optional callback to remove (if not provided, removes all handlers for this event)
 	 * @returns The component instance for chaining
 	 */
-	public off(element: HTMLElement, eventName: string, callback?: (detail: any) => void): this {
+	public off(element: HTMLElement, eventName: WebComponentEvent, callback?: (detail: any) => void): this {
 		if (!callback) {
 			// Remove all handlers for this event
 			const handlers = this.eventHandlers.get(eventName);
