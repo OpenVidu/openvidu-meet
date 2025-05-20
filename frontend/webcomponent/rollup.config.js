@@ -39,7 +39,11 @@ export default {
     terser({
       ecma: 2020, // Use modern features when possible
       compress: {
-        drop_console: production, // Remove console.logs in production
+        drop_console: {
+          log: production, // Remove console.logs in production
+          warn: true,
+          error: true
+        },
         drop_debugger: production,
         pure_getters: true,
         unsafe: true,
