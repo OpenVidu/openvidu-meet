@@ -91,7 +91,7 @@ export class ParticipantService {
 				canPublishData: true,
 				canUpdateOwnMetadata: true,
 				hidden: false,
-				recorder: true,
+				recorder: false,
 				agent: false
 			},
 			openvidu: {
@@ -106,6 +106,7 @@ export class ParticipantService {
 	protected generatePublisherPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
+				roomCreate: false,
 				roomJoin: true,
 				roomList: true,
 				roomRecord: false,

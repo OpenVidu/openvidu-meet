@@ -474,7 +474,7 @@ const getPermissions = (roomId: string, role: ParticipantRole) => {
 					canPublishData: true,
 					canUpdateOwnMetadata: true,
 					hidden: false,
-					recorder: true,
+					recorder: false,
 					agent: false
 				},
 				openvidu: {
@@ -487,6 +487,7 @@ const getPermissions = (roomId: string, role: ParticipantRole) => {
 		case ParticipantRole.PUBLISHER:
 			return {
 				livekit: {
+					roomCreate: false,
 					roomJoin: true,
 					roomList: true,
 					roomRecord: false,
