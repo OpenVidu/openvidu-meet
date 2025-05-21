@@ -1,15 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
+	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomOptions,
-	MeetRoomRoleAndPermissions,
 	MeetRoomPreferences,
-	SecurityPreferencesDTO,
+	MeetRoomRoleAndPermissions,
 	ParticipantOptions,
+	SecurityPreferencesDTO,
 	User
 } from '@lib/typings/ce';
-import { RecordingInfo } from 'openvidu-components-angular';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable({
@@ -104,7 +104,11 @@ export class HttpService {
 		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/auth/profile`);
 	}
 
-	getRecordings(continuationToken?: string): Promise<{ recordings: RecordingInfo[]; continuationToken: string }> {
+	generateRecordingToken(roomId: string, secret: string): Promise<{ token: string }> {
+		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`, { secret });
+	}
+
+	getRecordings(continuationToken?: string): Promise<{ recordings: MeetRecordingInfo[]; continuationToken: string }> {
 		let path = `${this.API_PATH_PREFIX}/recordings`;
 
 		if (continuationToken) {
@@ -114,15 +118,15 @@ export class HttpService {
 		return this.getRequest(path);
 	}
 
-	startRecording(roomId: string): Promise<RecordingInfo> {
+	startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/recordings`, { roomId });
 	}
 
-	stopRecording(recordingId: string): Promise<RecordingInfo> {
+	stopRecording(recordingId: string): Promise<MeetRecordingInfo> {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/recordings/${recordingId}/stop`);
 	}
 
-	deleteRecording(recordingId: string): Promise<RecordingInfo> {
+	deleteRecording(recordingId: string): Promise<any> {
 		return this.deleteRequest(`${this.API_PATH_PREFIX}/recordings/${recordingId}`);
 	}
 
