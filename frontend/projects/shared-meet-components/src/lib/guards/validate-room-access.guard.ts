@@ -38,6 +38,12 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 	} catch (error: any) {
 		console.error('Error generating participant token:', error);
 		switch (error.status) {
+			case 400:
+				// Invalid secret
+				return redirectToErrorPage(router, 'invalid-secret');
+			case 404:
+				// Room not found
+				return redirectToErrorPage(router, 'invalid-room');
 			case 409:
 				// Participant already exists.
 				// Send a timestamp to force update the query params and show the error message in participant name input form
@@ -47,14 +53,12 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 				return new RedirectCommand(participantNameRoute, {
 					skipLocationChange: true
 				});
-			case 406:
-				return redirectToUnauthorized(router, 'unauthorized-participant');
 			default:
-				return redirectToUnauthorized(router, 'invalid-room');
+				return redirectToErrorPage(router, 'internal-error');
 		}
 	}
 };
 
-const redirectToUnauthorized = (router: Router, reason: string): UrlTree => {
-	return router.createUrlTree(['unauthorized'], { queryParams: { reason } });
+const redirectToErrorPage = (router: Router, reason: string): UrlTree => {
+	return router.createUrlTree(['error'], { queryParams: { reason } });
 };

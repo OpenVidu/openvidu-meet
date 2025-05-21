@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { UserRole } from '@lib/typings/ce';
-import { RoomCreatorDisabledComponent, UnauthorizedComponent } from '../components';
 import {
 	applicationModeGuard,
 	checkParticipantNameGuard,
@@ -20,11 +19,13 @@ import {
 	ConsoleComponent,
 	ConsoleLoginComponent,
 	DisconnectedComponent,
+	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
 	RecordingsComponent,
 	RoomCreatorComponent,
+	RoomCreatorDisabledComponent,
 	RoomFormComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
@@ -51,7 +52,7 @@ export const baseRoutes: Routes = [
 	},
 	{ path: 'room-creator-disabled', component: RoomCreatorDisabledComponent },
 	{ path: 'disconnected', component: DisconnectedComponent },
-	{ path: 'unauthorized', component: UnauthorizedComponent },
+	{ path: 'error', component: ErrorComponent },
 	{
 		path: 'console/login',
 		component: ConsoleLoginComponent,

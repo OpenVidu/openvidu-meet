@@ -1,7 +1,14 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, RedirectCommand, Router, RouterStateSnapshot } from '@angular/router';
-import { AuthService, ContextService, HttpService, SessionStorageService } from '../services';
+import {
+	ActivatedRouteSnapshot,
+	CanActivateFn,
+	RedirectCommand,
+	Router,
+	RouterStateSnapshot,
+	UrlTree
+} from '@angular/router';
 import { AuthMode, ParticipantRole } from '@lib/typings/ce';
+import { AuthService, ContextService, HttpService, SessionStorageService } from '../services';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
@@ -64,9 +71,18 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const roomRoleAndPermissions = await httpService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
 		participantRole = roomRoleAndPermissions.role;
 		contextService.setParticipantRole(participantRole);
-	} catch (error) {
+	} catch (error: any) {
 		console.error('Error getting participant role:', error);
-		return router.createUrlTree(['unauthorized'], { queryParams: { reason: 'unauthorized-participant' } });
+		switch (error.status) {
+			case 400:
+				// Invalid secret
+				return redirectToErrorPage(router, 'invalid-secret');
+			case 404:
+				// Room not found
+				return redirectToErrorPage(router, 'invalid-room');
+			default:
+				return redirectToErrorPage(router, 'internal-error');
+		}
 	}
 
 	const authMode = await contextService.getAuthModeToEnterRoom();
@@ -113,4 +129,8 @@ export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 
 	// Allow access to the requested page
 	return true;
+};
+
+const redirectToErrorPage = (router: Router, reason: string): UrlTree => {
+	return router.createUrlTree(['error'], { queryParams: { reason } });
 };

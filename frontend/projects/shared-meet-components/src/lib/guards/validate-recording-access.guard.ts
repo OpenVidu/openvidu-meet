@@ -31,26 +31,29 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 		contextService.setRecordingPermissionsFromToken(response.token);
 
 		if (!contextService.canRetrieveRecordings()) {
-			// If the user does not have permission to retrieve recordings, redirect to the unauthorized page
-			return redirectToUnauthorized(router, 'unauthorized-recording-access');
+			// If the user does not have permission to retrieve recordings, redirect to the error page
+			return redirectToErrorPage(router, 'unauthorized-recording-access');
 		}
 
 		return true;
 	} catch (error: any) {
 		console.error('Error generating recording token:', error);
 		switch (error.status) {
+			case 400:
+				// Invalid secret
+				return redirectToErrorPage(router, 'invalid-secret');
 			case 403:
 				// Recording access is configured for admins only
-				return redirectToUnauthorized(router, 'unauthorized-recording-access');
+				return redirectToErrorPage(router, 'recordings-admin-only-access');
 			case 404:
 				// There are no recordings in the room or the room does not exist
-				return redirectToUnauthorized(router, 'no-recordings');
+				return redirectToErrorPage(router, 'no-recordings');
 			default:
-				return redirectToUnauthorized(router, 'invalid-room');
+				return redirectToErrorPage(router, 'internal-error');
 		}
 	}
 };
 
-const redirectToUnauthorized = (router: Router, reason: string): UrlTree => {
-	return router.createUrlTree(['unauthorized'], { queryParams: { reason } });
+const redirectToErrorPage = (router: Router, reason: string): UrlTree => {
+	return router.createUrlTree(['error'], { queryParams: { reason } });
 };
