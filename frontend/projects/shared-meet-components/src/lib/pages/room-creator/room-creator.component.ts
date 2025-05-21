@@ -82,9 +82,9 @@ export class RoomCreatorComponent implements OnInit {
 
 			const accessRoomUrl = new URL(room.moderatorRoomUrl);
 			const secret = accessRoomUrl.searchParams.get('secret');
-			const roomId = accessRoomUrl.pathname;
+			const roomUrl = accessRoomUrl.pathname;
 
-			this.router.navigate([roomId], { queryParams: { secret } });
+			this.router.navigate([roomUrl], { queryParams: { secret } });
 		} catch (error) {
 			console.error('Error creating room ', error);
 		}

@@ -3,10 +3,10 @@ import { CanActivateFn, RedirectCommand } from '@angular/router';
 import { Router } from '@angular/router';
 import { ContextService } from '../services';
 
-export const checkParticipantNameGuard: CanActivateFn = (route, state) => {
+export const checkParticipantNameGuard: CanActivateFn = (_route, state) => {
 	const router = inject(Router);
 	const contextService = inject(ContextService);
-	const roomId = route.params['room-id'];
+	const roomId = contextService.getRoomId();
 	const hasParticipantName = !!contextService.getParticipantName();
 
 	// Check if participant name exists in the service

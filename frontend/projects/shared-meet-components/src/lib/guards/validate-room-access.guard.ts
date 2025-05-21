@@ -1,5 +1,12 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, CanActivateFn, UrlTree, RedirectCommand } from '@angular/router';
+import {
+	ActivatedRouteSnapshot,
+	Router,
+	RouterStateSnapshot,
+	CanActivateFn,
+	UrlTree,
+	RedirectCommand
+} from '@angular/router';
 import { ContextService, HttpService, SessionStorageService } from '../services';
 
 /**
@@ -26,7 +33,7 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 			participantName,
 			secret: storageSecret || secret
 		});
-		contextService.setToken(response.token);
+		contextService.setParticipantToken(response.token);
 		return true;
 	} catch (error: any) {
 		console.error('Error generating participant token:', error);

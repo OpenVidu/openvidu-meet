@@ -1,35 +1,35 @@
 import { Routes } from '@angular/router';
-import { UnauthorizedComponent, RoomCreatorDisabledComponent } from '../components';
+import { UserRole } from '@lib/typings/ce';
+import { RoomCreatorDisabledComponent, UnauthorizedComponent } from '../components';
 import {
+	applicationModeGuard,
+	checkParticipantNameGuard,
+	checkParticipantRoleAndAuthGuard,
+	checkRoomCreatorEnabledGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
-	validateRoomAccessGuard,
-	applicationModeGuard,
-	extractQueryParamsGuard,
-	checkParticipantNameGuard,
+	extractRecordingQueryParamsGuard,
+	extractRoomQueryParamsGuard,
+	removeModeratorSecretGuard,
 	replaceModeratorSecretGuard,
-	checkRoomCreatorEnabledGuard,
-	checkParticipantRoleAndAuthGuard,
-	runGuardsSerially
+	runGuardsSerially,
+	validateRecordingAccessGuard,
+	validateRoomAccessGuard
 } from '../guards';
 import {
-	AboutComponent,
-	AccessPermissionsComponent,
-	AppearanceComponent,
 	ConsoleComponent,
 	ConsoleLoginComponent,
 	DisconnectedComponent,
-	RoomCreatorComponent,
 	LoginComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
 	RecordingsComponent,
+	RoomCreatorComponent,
+	RoomFormComponent,
+	RoomRecordingsComponent,
 	RoomsComponent,
-	SecurityPreferencesComponent,
-	VideoRoomComponent,
-	RoomFormComponent
+	VideoRoomComponent
 } from '../pages';
-import { UserRole } from '@lib/typings/ce';
 
 export const baseRoutes: Routes = [
 	{
@@ -39,8 +39,8 @@ export const baseRoutes: Routes = [
 		data: {
 			checkSkipAuth: true,
 			expectedRoles: [UserRole.USER],
-			redirectToUnauthorized: 'login',
-			redirectToInvalidRole: 'console'
+			redirectToWhenUnauthorized: 'login',
+			redirectToWhenInvalidRole: 'console'
 		}
 	},
 	{
@@ -64,8 +64,8 @@ export const baseRoutes: Routes = [
 		canActivate: [checkUserAuthenticatedGuard],
 		data: {
 			expectedRoles: [UserRole.ADMIN],
-			redirectToUnauthorized: 'console/login',
-			redirectToInvalidRole: ''
+			redirectToWhenUnauthorized: 'console/login',
+			redirectToWhenInvalidRole: ''
 		},
 		children: [
 			{
@@ -115,7 +115,7 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				applicationModeGuard,
-				extractQueryParamsGuard,
+				extractRoomQueryParamsGuard,
 				checkParticipantRoleAndAuthGuard,
 				checkParticipantNameGuard,
 				validateRoomAccessGuard,
@@ -126,6 +126,19 @@ export const baseRoutes: Routes = [
 	{
 		path: 'room/:room-id/participant-name',
 		component: ParticipantNameFormComponent
+	},
+	{
+		path: 'room/:room-id/recordings',
+		component: RoomRecordingsComponent,
+		canActivate: [
+			runGuardsSerially(
+				applicationModeGuard,
+				extractRecordingQueryParamsGuard,
+				checkParticipantRoleAndAuthGuard,
+				validateRecordingAccessGuard,
+				removeModeratorSecretGuard
+			)
+		]
 	},
 
 	// Redirect all other routes to RoomCreatorComponent

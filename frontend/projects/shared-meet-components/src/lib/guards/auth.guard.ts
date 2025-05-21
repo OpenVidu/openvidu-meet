@@ -25,8 +25,8 @@ export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (!isAuthenticated) {
 		// Redirect to the login page specified in the route data when user is not authenticated
-		const { redirectToUnauthorized } = route.data;
-		return router.createUrlTree([redirectToUnauthorized]);
+		const { redirectToWhenUnauthorized } = route.data;
+		return router.createUrlTree([redirectToWhenUnauthorized]);
 	}
 
 	// Check if the user has the expected roles
@@ -35,8 +35,8 @@ export const checkUserAuthenticatedGuard: CanActivateFn = async (
 
 	if (!expectedRoles.includes(userRole)) {
 		// Redirect to the page specified in the route data when user has an invalid role
-		const { redirectToInvalidRole } = route.data;
-		return router.createUrlTree([redirectToInvalidRole]);
+		const { redirectToWhenInvalidRole } = route.data;
+		return router.createUrlTree([redirectToWhenInvalidRole]);
 	}
 
 	// Allow access to the requested page
@@ -63,6 +63,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 
 		const roomRoleAndPermissions = await httpService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
 		participantRole = roomRoleAndPermissions.role;
+		contextService.setParticipantRole(participantRole);
 	} catch (error) {
 		console.error('Error getting participant role:', error);
 		return router.createUrlTree(['unauthorized'], { queryParams: { reason: 'unauthorized-participant' } });

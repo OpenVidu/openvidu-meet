@@ -105,7 +105,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				this.ctxService.setParticipantName(participantName);
 			}
 
-			this.token = this.ctxService.getToken();
+			this.token = this.ctxService.getParticipantToken();
 		} catch (error: any) {
 			console.error(error);
 			this.serverError = error.error;
