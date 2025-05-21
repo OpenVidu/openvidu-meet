@@ -3,7 +3,7 @@ import { container } from '../config/index.js';
 import { LoggerService } from '../services/index.js';
 import { z } from 'zod';
 
-type StatusError = 400 | 401 | 402 | 403 | 404 | 406 | 409 | 415 | 416 | 422 | 500 | 503;
+type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 415 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
 	name: string;
 	statusCode: StatusError;
