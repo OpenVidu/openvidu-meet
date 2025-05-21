@@ -13,3 +13,4 @@ export * from './login/login.component';
 export * from './video-room/video-room.component';
 export * from './participant-name-form/participant-name-form.component';
 export * from './disconnected/disconnected.component';
+export * from './room-recordings/room-recordings.component';

@@ -1,0 +1,8 @@
+@if (!loading) {
+	<ov-admin-dashboard
+		[recordingsList]="[]"
+		(onLoadMoreRecordingsRequested)="onLoadMoreRecordingsRequested()"
+		(onRefreshRecordingsRequested)="onRefreshRecordingsClicked()"
+		(onRecordingDeleteRequested)="onDeleteRecordingClicked($event)"
+	></ov-admin-dashboard>
+}
