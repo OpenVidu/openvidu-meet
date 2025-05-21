@@ -12,10 +12,17 @@ import { AuthMode, HttpService, ParticipantRole } from 'projects/shared-meet-com
  */
 export class ContextService {
 	private context: ContextData = {
+		mode: ApplicationMode.STANDALONE,
+		edition: Edition.CE,
+		version: '',
+		parentDomain: '',
+		securityPreferences: undefined,
+		openviduLogoUrl: '',
+		backgroundImageUrl: '',
 		roomId: '',
-		participantName: '',
 		secret: '',
-		token: '',
+		participantName: '',
+		participantToken: '',
 		participantRole: ParticipantRole.PUBLISHER,
 		participantPermissions: {
 			canRecord: false,
@@ -23,14 +30,11 @@ export class ContextService {
 			canChangeVirtualBackground: false,
 			canPublishScreen: false
 		},
-		mode: ApplicationMode.STANDALONE,
-		edition: Edition.CE,
-		securityPreferences: undefined,
-		leaveRedirectUrl: '',
-		parentDomain: '',
-		version: '',
-		openviduLogoUrl: '',
-		backgroundImageUrl: ''
+		recordingPermissions: {
+			canRetrieveRecordings: true,
+			canDeleteRecordings: false
+		},
+		leaveRedirectUrl: ''
 	};
 
 	private log;
@@ -45,12 +49,37 @@ export class ContextService {
 		this.log = this.loggerService.get('OpenVidu Meet - ContextService');
 	}
 
+	setApplicationMode(mode: ApplicationMode): void {
+		this.log.d('Setting application mode', mode);
+		this.context.mode = mode;
+	}
+
+	isEmbeddedMode(): boolean {
+		return this.context.mode === ApplicationMode.EMBEDDED;
+	}
+
+	isStandaloneMode(): boolean {
+		return this.context.mode === ApplicationMode.STANDALONE;
+	}
+
+	getEdition(): Edition {
+		return this.context.edition;
+	}
+
 	setVersion(version: string): void {
 		this.context.version = version;
 	}
 
 	getVersion(): string {
 		return this.context.version;
+	}
+
+	setParentDomain(parentDomain: string): void {
+		this.context.parentDomain = parentDomain;
+	}
+
+	getParentDomain(): string {
+		return this.context.parentDomain;
 	}
 
 	setOpenViduLogoUrl(openviduLogoUrl: string): void {
@@ -69,103 +98,6 @@ export class ContextService {
 		return this.context.backgroundImageUrl;
 	}
 
-	/**
-	 * Sets the application mode.
-	 * @param mode - An ApplicationMode value representing the application mode.
-	 */
-	setApplicationMode(mode: ApplicationMode): void {
-		this.log.d('Setting application mode', mode);
-		this.context.mode = mode;
-	}
-
-	getParentDomain(): string {
-		return this.context.parentDomain;
-	}
-
-	setParentDomain(parentDomain: string): void {
-		this.context.parentDomain = parentDomain;
-	}
-
-	/**
-	 * Checks if the application is in embedded mode.
-	 * @returns A boolean indicating whether the application is in embedded mode.
-	 */
-	isEmbeddedMode(): boolean {
-		return this.context.mode === ApplicationMode.EMBEDDED;
-	}
-
-	isStandaloneMode(): boolean {
-		return this.context.mode === ApplicationMode.STANDALONE;
-	}
-
-	/**
-	 * Sets the token for the current session.
-	 * @param token - A string representing the token.
-	 */
-	setToken(token: string): void {
-		try {
-			const decodedToken = this.getValidDecodedToken(token);
-			this.context.token = token;
-			this.context.participantPermissions = decodedToken.metadata.permissions;
-			this.context.participantRole = decodedToken.metadata.role;
-		} catch (error: any) {
-			this.log.e('Error setting token in context', error);
-			throw new Error('Error setting token', error);
-		}
-	}
-
-	getToken(): string {
-		return this.context.token;
-	}
-
-	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
-		this.context.leaveRedirectUrl = leaveRedirectUrl;
-	}
-
-	getLeaveRedirectURL(): string {
-		return this.context.leaveRedirectUrl;
-	}
-
-	getRoomId(): string {
-		return this.context.roomId;
-	}
-
-	setRoomId(roomId: string): void {
-		this.context.roomId = roomId;
-	}
-
-	getParticipantName(): string {
-		return this.context.participantName;
-	}
-
-	getParticipantRole(): ParticipantRole {
-		return this.context.participantRole;
-	}
-
-	isModeratorParticipant(): boolean {
-		return this.context.participantRole === ParticipantRole.MODERATOR;
-	}
-
-	setParticipantName(participantName: string): void {
-		this.context.participantName = participantName;
-	}
-
-	getSecret(): string {
-		return this.context.secret;
-	}
-
-	setSecret(secret: string): void {
-		this.context.secret = secret;
-	}
-
-	canRecord(): boolean {
-		return this.context.participantPermissions.canRecord;
-	}
-
-	canChat(): boolean {
-		return this.context.participantPermissions.canChat;
-	}
-
 	async canUsersCreateRooms(): Promise<boolean> {
 		await this.getSecurityPreferences();
 		return this.context.securityPreferences!.roomCreationPolicy.allowRoomCreation;
@@ -180,6 +112,107 @@ export class ContextService {
 	async getAuthModeToEnterRoom(): Promise<AuthMode> {
 		await this.getSecurityPreferences();
 		return this.context.securityPreferences!.authentication.authMode;
+	}
+
+	setRoomId(roomId: string): void {
+		this.context.roomId = roomId;
+	}
+
+	getRoomId(): string {
+		return this.context.roomId;
+	}
+
+	setSecret(secret: string): void {
+		this.context.secret = secret;
+	}
+
+	getSecret(): string {
+		return this.context.secret;
+	}
+
+	setParticipantName(participantName: string): void {
+		this.context.participantName = participantName;
+	}
+
+	getParticipantName(): string {
+		return this.context.participantName;
+	}
+
+	/**
+	 * Sets the token for the current session.
+	 * @param token - A string representing the token.
+	 */
+	setParticipantToken(token: string): void {
+		try {
+			const decodedToken = this.getValidDecodedToken(token);
+			this.context.participantToken = token;
+			this.context.participantPermissions = decodedToken.metadata.permissions;
+			this.context.participantRole = decodedToken.metadata.role;
+		} catch (error: any) {
+			this.log.e('Error setting token in context', error);
+			throw new Error('Error setting token', error);
+		}
+	}
+
+	getParticipantToken(): string {
+		return this.context.participantToken;
+	}
+
+	setParticipantRole(participantRole: ParticipantRole): void {
+		this.context.participantRole = participantRole;
+	}
+
+	getParticipantRole(): ParticipantRole {
+		return this.context.participantRole;
+	}
+
+	isModeratorParticipant(): boolean {
+		return this.context.participantRole === ParticipantRole.MODERATOR;
+	}
+
+	canRecord(): boolean {
+		return this.context.participantPermissions.canRecord;
+	}
+
+	canChat(): boolean {
+		return this.context.participantPermissions.canChat;
+	}
+
+	setRecordingPermissionsFromToken(token: string): void {
+		try {
+			const decodedToken = this.getValidDecodedToken(token);
+			this.context.recordingPermissions = decodedToken.metadata.recordingPermissions;
+		} catch (error: any) {
+			this.log.e('Error setting recording token in context', error);
+			throw new Error('Error setting recording token', error);
+		}
+	}
+
+	canRetrieveRecordings(): boolean {
+		return this.context.recordingPermissions.canRetrieveRecordings;
+	}
+
+	canDeleteRecordings(): boolean {
+		return this.context.recordingPermissions.canDeleteRecordings;
+	}
+
+	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
+		this.context.leaveRedirectUrl = leaveRedirectUrl;
+	}
+
+	getLeaveRedirectURL(): string {
+		return this.context.leaveRedirectUrl;
+	}
+
+	private async getSecurityPreferences() {
+		if (!this.context.securityPreferences) {
+			try {
+				this.context.securityPreferences = await this.httpService.getSecurityPreferences();
+			} catch (error) {
+				this.log.e('Error getting security preferences', error);
+				throw new Error('Error getting security preferences');
+			}
+		}
 	}
 
 	private getValidDecodedToken(token: string) {
@@ -202,17 +235,6 @@ export class ContextService {
 		const tokenParts = token.split('.');
 		if (tokenParts.length !== 3) {
 			throw new Error('Invalid token. Token must be a valid JWT');
-		}
-	}
-
-	private async getSecurityPreferences() {
-		if (!this.context.securityPreferences) {
-			try {
-				this.context.securityPreferences = await this.httpService.getSecurityPreferences();
-			} catch (error) {
-				this.log.e('Error getting security preferences', error);
-				throw new Error('Error getting security preferences');
-			}
 		}
 	}
 }
