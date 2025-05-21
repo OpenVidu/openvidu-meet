@@ -54,7 +54,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		return from(httpService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
 			switchMap((data) => {
 				console.log('Participant token refreshed');
-				contextService.setToken(data.token);
+				contextService.setParticipantToken(data.token);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {
@@ -75,6 +75,29 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		);
 	};
 
+	const refreshRecordingToken = (firstError: HttpErrorResponse): Observable<HttpEvent<unknown>> => {
+		console.log('Refreshing recording token...');
+		const roomId = contextService.getRoomId();
+		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
+		const secret = storedSecret || contextService.getSecret();
+
+		return from(httpService.generateRecordingToken(roomId, secret)).pipe(
+			switchMap((data) => {
+				console.log('Recording token refreshed');
+				contextService.setRecordingPermissionsFromToken(data.token);
+				return next(req);
+			}),
+			catchError((error: HttpErrorResponse) => {
+				if (error.url?.includes('/recording-token')) {
+					console.error('Error refreshing recording token');
+					throw firstError;
+				}
+
+				throw error;
+			})
+		);
+	};
+
 	return next(req).pipe(
 		catchError((error: HttpErrorResponse) => {
 			if (error.status === 401) {
@@ -85,12 +108,29 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 					return refreshAccessToken(error);
 				}
 
-				// Expired access/participant token
-				if (pageUrl.startsWith('/room') && !requestUrl.includes('/profile')) {
+				// Error refreshing recording token
+				if (error.url?.includes('/recording-token')) {
+					console.log('Refreshing recording token failed. Refreshing access token first...');
+					// This means that first we need to refresh the access token and then the recording token
+					return refreshAccessToken(error);
+				}
+
+				// Expired recording token
+				if (pageUrl.startsWith('/room') && pageUrl.includes('/recordings') && requestUrl.includes('/recordings')) {
+					// If the error occurred in the room recordings page and the request is to the recordings endpoint,
+					// refresh the recording token
+					return refreshRecordingToken(error);
+				}
+
+				// Expired participant token
+				if (pageUrl.startsWith('/room') && !pageUrl.includes('/recordings') && !requestUrl.includes('/profile')) {
 					// If the error occurred in a room page and the request is not to the profile endpoint,
 					// refresh the participant token
 					return refreshParticipantToken(error);
-				} else if (!pageUrl.startsWith('/console/login') && !pageUrl.startsWith('/login')) {
+				}
+				
+				// Expired access token
+				if (!pageUrl.startsWith('/console/login') && !pageUrl.startsWith('/login')) {
 					// If the error occurred in a page that is not the login page, refresh the access token
 					return refreshAccessToken(error);
 				}
