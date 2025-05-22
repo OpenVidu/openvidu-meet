@@ -24,11 +24,11 @@ describe('OpenViduMeet Web Component Commands', () => {
 		const testOrigin = 'https://test-origin.com';
 
 
-		commandsManager.setAllowedOrigin(testOrigin);
-		expect(commandsManager['allowedOrigin']).toBe(testOrigin);
+		commandsManager.setTargetOrigin(testOrigin);
+		expect(commandsManager['targetIframeOrigin']).toBe(testOrigin);
 
 		// Check if it was updated
-		expect((component as any).commandsManager.allowedOrigin).toBe(testOrigin);
+		expect((component as any).commandsManager.targetIframeOrigin).toBe(testOrigin);
 	});
 
 	it('should call commandsManager.leaveRoom when leaveRoom is called', () => {
@@ -60,7 +60,7 @@ describe('OpenViduMeet Web Component Commands', () => {
 		});
 
 		// Set allowed origin
-		(component as any).commandsManager.setAllowedOrigin('https://test.com');
+		(component as any).commandsManager.setTargetOrigin('https://test.com');
 
 		// Send a message
 		(component as any).commandsManager.sendMessage({ command: 'TEST' });

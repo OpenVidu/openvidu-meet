@@ -59,7 +59,7 @@ describe('Web Component Attributes', () => {
 		(component as any).updateIframeSrc();
 
 		// Check if origin was extracted and set
-		expect((component as any).allowedOrigin).toBe('https://example.com');
-		expect((component as any).commandsManager.allowedOrigin).toBe('https://example.com');
+		expect((component as any).targetIframeOrigin).toBe('https://example.com');
+		expect((component as any).commandsManager.targetIframeOrigin).toBe('https://example.com');
 	});
 });
