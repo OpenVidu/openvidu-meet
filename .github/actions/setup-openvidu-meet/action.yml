@@ -6,6 +6,8 @@ runs:
     - name: Setup yarn # Needed for the redlock package
       shell: bash
       run: npm install -g yarn
+    - name: Checkout OpenVidu Meet
+      uses: actions/checkout@v4
     - name: Prepare OpenVidu Meet
       shell: bash
       run: |
