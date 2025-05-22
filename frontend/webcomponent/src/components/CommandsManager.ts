@@ -11,7 +11,15 @@ import { InboundCommandMessage } from '../models/message.type';
  */
 export class CommandsManager {
 	private iframe: HTMLIFrameElement;
-	private allowedOrigin: string;
+	/**
+	 * The origin of the iframe content that messages will be sent to.
+	 * Used as the 'targetOrigin' parameter in postMessage calls.
+	 * Initially set to '*' (insecure) until the actual iframe URL is loaded.
+	 *
+	 * SECURITY NOTE: The value '*' should be replaced with the actual origin
+	 * as soon as possible using setTargetOrigin().
+	 */
+	private targetIframeOrigin: string;
 	/**
 	 * A map to store event handlers for different events.
 	 * This allows for dynamic event handling and can be used to add or remove event listeners.
@@ -21,9 +29,15 @@ export class CommandsManager {
 	 */
 	private eventHandlers: Map<string, Set<Function>> = new Map();
 
-	constructor(iframe: HTMLIFrameElement, allowedOrigin: string) {
+	/**
+	 * Creates a new CommandsManager instance
+	 *
+	 * @param iframe - The iframe element used for communication
+	 * @param initialTargetOrigin - The initial target origin for postMessage
+	 */
+	constructor(iframe: HTMLIFrameElement, initialTargetOrigin: string) {
 		this.iframe = iframe;
-		this.allowedOrigin = allowedOrigin;
+		this.targetIframeOrigin = initialTargetOrigin;
 	}
 
 	/**
@@ -148,16 +162,24 @@ export class CommandsManager {
 	// }
 
 	/**
-	 * Sets the allowed origin for the current instance.
+	 * Updates the target origin used when sending messages to the iframe.
+	 * This should be called once the iframe URL is known to improve security.
 	 *
-	 * @param newOrigin - The new origin to be set as allowed.
+	 * @param newOrigin - The origin of the content loaded in the iframe
+	 *                    (e.g. 'https://meet.example.com')
 	 */
-	public setAllowedOrigin(newOrigin: string): void {
-		this.allowedOrigin = newOrigin;
+	public setTargetOrigin(newOrigin: string): void {
+		this.targetIframeOrigin = newOrigin;
 	}
 
-	private sendMessage(message: InboundCommandMessage, targetOrigin?: string): void {
-		targetOrigin = targetOrigin || this.allowedOrigin;
-		this.iframe.contentWindow?.postMessage(message, targetOrigin);
+	/**
+	 * Sends a message to the iframe using window.postMessage
+	 *
+	 * @param message - The message to send to the iframe
+	 * @param explicitTargetOrigin - Optional override for the target origin
+	 */
+	private sendMessage(message: InboundCommandMessage, explicitTargetOrigin?: string): void {
+		explicitTargetOrigin = explicitTargetOrigin || this.targetIframeOrigin;
+		this.iframe.contentWindow?.postMessage(message, explicitTargetOrigin);
 	}
 }

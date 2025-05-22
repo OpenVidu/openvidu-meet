@@ -1,5 +1,3 @@
-import { WebComponentCommand } from '../models/command.model';
-import { InboundCommandMessage } from '../models/message.type';
 import { CommandsManager } from './CommandsManager';
 import { EventsManager } from './EventsManager';
 import styles from '../assets/css/styles.css';
@@ -30,7 +28,7 @@ export class OpenViduMeet extends HTMLElement {
 	private commandsManager: CommandsManager;
 	private eventsManager: EventsManager;
 	//!FIXME: Insecure by default
-	private allowedOrigin: string = '*';
+	private targetIframeOrigin: string = '*';
 	private loadTimeout: any;
 	private iframeLoaded = false;
 	private errorMessage: string | null = null;
@@ -44,7 +42,7 @@ export class OpenViduMeet extends HTMLElement {
 			'camera; microphone; display-capture; fullscreen; autoplay; compute-pressure;'
 		);
 
-		this.commandsManager = new CommandsManager(this.iframe, this.allowedOrigin);
+		this.commandsManager = new CommandsManager(this.iframe, this.targetIframeOrigin);
 		this.eventsManager = new EventsManager(this);
 
 		// Listen for changes in attributes to update the iframe src
@@ -140,8 +138,8 @@ export class OpenViduMeet extends HTMLElement {
 		}
 
 		const url = new URL(baseUrl);
-		this.allowedOrigin = url.origin;
-		this.commandsManager.setAllowedOrigin(this.allowedOrigin);
+		this.targetIframeOrigin = url.origin;
+		this.commandsManager.setTargetOrigin(this.targetIframeOrigin);
 
 		// Update query params
 		Array.from(this.attributes).forEach((attr) => {
