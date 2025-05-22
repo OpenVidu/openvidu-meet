@@ -10,8 +10,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
@@ -48,14 +46,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
@@ -85,14 +79,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
@@ -122,14 +112,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
@@ -159,14 +145,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
@@ -196,14 +178,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
@@ -233,14 +211,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Setup yarn # Needed for the redlock package
-        run: npm install -g yarn
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Local Deployment
         uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet

@@ -12,8 +12,6 @@ jobs:
           node-version: '20'
       - name: Install wait-on
         run: npm install -g wait-on
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
       - name: Setup OpenVidu Meet
         uses: ./.github/actions/setup-openvidu-meet
       - name: Run tests
