@@ -2,7 +2,7 @@ name: WebComponent E2E Tests
 on: [push, pull_request]
 
 jobs:
-  unit-test:
+  webcomponent-e2e-test:
     name: WebComponent E2E Tests
     runs-on: ov-actions-runner
     steps:
@@ -15,22 +15,8 @@ jobs:
 
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Checkout OpenVidu Local Deployment
-        uses: actions/checkout@v4
-        with:
-          repository: OpenVidu/openvidu-local-deployment
-          ref: main
-          path: openvidu-local-deployment
-      - name: Configure Local Deployment
-        shell: bash
-        run: |
-          cd openvidu-local-deployment/community
-          ./configure_lan_private_ip_linux.sh
-          docker compose up -d
-      - name: Wait for OpenVidu Local Deployment to Start
-        run: wait-on --timeout 60000 http://localhost:7880
-      - name: Checkout OpenVidu Meet
-        uses: actions/checkout@v4
+      - name: Setup OpenVidu Local Deployment
+        uses: ./.github/actions/setup-local-deployment
       - name: Setup OpenVidu Meet
         shell: bash
         run: |

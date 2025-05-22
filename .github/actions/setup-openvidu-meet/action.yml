@@ -3,12 +3,14 @@ description: Prepara y arranca el backend de OpenVidu Meet y espera a que esté 
 runs:
   using: "composite"
   steps:
+    - name: Setup yarn # Needed for the redlock package
+      shell: bash
+      run: npm install -g yarn
     - name: Prepare OpenVidu Meet
       shell: bash
       run: |
         ./prepare.sh
         cd backend
-        npm install
         npm run start:prod &
     - name: Wait for OpenVidu Meet to Start
       shell: bash
