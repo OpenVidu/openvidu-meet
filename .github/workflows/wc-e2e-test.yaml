@@ -77,4 +77,4 @@ jobs:
           retention-days: 2
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main

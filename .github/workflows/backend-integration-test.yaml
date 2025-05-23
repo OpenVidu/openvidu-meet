@@ -15,9 +15,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -33,7 +33,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-recordings:
     name: Recordings API Tests
@@ -49,9 +49,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -67,7 +67,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-webhooks:
     name: Webhook Tests
@@ -82,9 +82,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -100,7 +100,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-security:
     name: Security API Tests
@@ -115,9 +115,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -133,7 +133,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-global-preferences:
     name: Global Preferences API Tests
@@ -148,9 +148,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -166,7 +166,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-participants:
     name: Participants API Tests
@@ -181,9 +181,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -199,7 +199,7 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
 
   test-meetings:
     name: Meetings API Tests
@@ -214,9 +214,9 @@ jobs:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -232,4 +232,4 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main

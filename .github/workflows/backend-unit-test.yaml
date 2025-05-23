@@ -13,7 +13,7 @@ jobs:
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Setup OpenVidu Meet
-        uses: ./.github/actions/setup-openvidu-meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
         run: |
           cd backend
@@ -29,4 +29,4 @@ jobs:
           require_tests: true
       - name: Clean up
         if: always()
-        uses: ./.github/actions/cleanup
+        uses: OpenVidu/actions/cleanup@main
