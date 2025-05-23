@@ -30,7 +30,14 @@ export class HttpService {
 		return this.deleteRequest(`${this.API_PATH_PREFIX}/rooms/${roomId}`);
 	}
 
-	listRooms(fields?: string): Promise<MeetRoom[]> {
+	listRooms(fields?: string): Promise<{
+		rooms: MeetRoom[];
+		pagination: {
+			isTruncated: boolean;
+			nextPageToken?: string;
+			maxItems: number;
+		};
+	}> {
 		let path = `${this.API_PATH_PREFIX}/rooms/`;
 		if (fields) {
 			path += `?fields=${encodeURIComponent(fields)}`;
@@ -108,11 +115,22 @@ export class HttpService {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`, { secret });
 	}
 
-	getRecordings(continuationToken?: string): Promise<{ recordings: MeetRecordingInfo[]; continuationToken: string }> {
+	getRecordingMediaUrl(recordingId: string): string {
+		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
+	}
+
+	getRecordings(nextPageToken?: string): Promise<{
+		recordings: MeetRecordingInfo[];
+		pagination: {
+			isTruncated: boolean;
+			nextPageToken?: string;
+			maxItems: number;
+		};
+	}> {
 		let path = `${this.API_PATH_PREFIX}/recordings`;
 
-		if (continuationToken) {
-			path += `?continuationToken=${continuationToken}`;
+		if (nextPageToken) {
+			path += `?nextPageToken=${nextPageToken}`;
 		}
 
 		return this.getRequest(path);

@@ -46,7 +46,7 @@ export class RoomsComponent implements OnInit {
 
 	async ngOnInit() {
 		try {
-			const rooms = await this.roomService.listRooms();
+			const { rooms } = await this.roomService.listRooms();
 			this.createdRooms = rooms;
 		} catch (error) {
 			console.error('Error fetching room preferences', error);
