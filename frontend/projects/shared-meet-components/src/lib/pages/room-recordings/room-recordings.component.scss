@@ -1,0 +1,178 @@
+.dashboard-container {
+	height: 100%;
+}
+
+.header {
+	height: 50px;
+	background-color: var(--ov-primary-action-color);
+	color: var(--ov-text-primary-color);
+	justify-content: space-between;
+}
+
+#header-title {
+	font-weight: bold;
+}
+
+#room-id {
+	font-weight: normal;
+	font-style: italic;
+}
+
+#refresh-btn {
+	color: var(--ov-text-primary-color);
+}
+
+.dashboard-body {
+	background-color: var(--ov-secondary-action-color);
+	height: 100%;
+}
+
+.recordings-container {
+	background-color: var(--ov-secondary-action-color);
+	height: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	grid-auto-rows: max-content;
+	gap: 15px;
+	justify-content: center;
+	align-items: center;
+	padding: 20px;
+	padding-bottom: 80px;
+	box-sizing: border-box;
+
+	.recording-card {
+		border-radius: 10px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: var(--ov-surface-color);
+	}
+}
+
+.video-div-container {
+	position: relative;
+	text-align: center;
+	width: 100%;
+	height: 42%;
+	overflow: hidden;
+	background-color: var(--ov-light-color);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	img {
+		border-radius: var(--ov-video-radius);
+		display: inline;
+		position: relative;
+		max-width: 100%;
+		max-height: 100%;
+	}
+}
+
+.video-btns {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	margin-right: -50%;
+	top: 50%;
+	left: 50%;
+	background-color: var(--ov-secondary-action-color);
+	border-radius: var(--ov-surface-radius);
+}
+
+.video-btns button #play {
+	color: var(--ov-text-primary-color);
+}
+.video-btns button #download {
+	color: var(--ov-accent-action-color);
+}
+.video-btns button #delete {
+	color: var(--ov-error-color);
+}
+
+.video-info-container > div {
+	width: 100%;
+	height: 100%;
+	display: table;
+	table-layout: fixed;
+	box-sizing: border-box;
+	margin-top: 20px;
+}
+
+.video-div-tag:first-child {
+	margin-top: 20px;
+}
+
+.video-div-tag {
+	display: table-row;
+}
+
+.video-card-tag {
+	font-size: 13px;
+	color: var(--ov-text-surface-color);
+	font-weight: bold;
+}
+
+.video-card-value {
+	float: right;
+	font-size: 13.5px;
+	padding: 0px 5px;
+	border-radius: 5px;
+
+	&.COMPLETE {
+		background-color: #8bffc9;
+	}
+
+	&.ACTIVE {
+		background-color: #ffcc00;
+	}
+
+	&.STARTING,
+	&.ENDING {
+		background-color: #f5d34c;
+	}
+
+	&.FAILED,
+	&.ABORTED,
+	&.LIMIT_REACHED {
+		background-color: #ff6666;
+	}
+}
+
+.status-value {
+	font-weight: bold;
+}
+
+.load-more-container {
+	position: absolute;
+	left: 50%;
+	bottom: 35px;
+	transform: translateX(-50%);
+
+	.load-more-btn {
+		background-color: var(--ov-surface-color);
+		color: var(--ov-text-surface-color);
+		border-radius: var(--ov-surface-radius);
+	}
+}
+
+.no-recordings-warn {
+	height: calc(100% - 52px);
+	width: 100%;
+	display: table;
+	text-align: center;
+	color: var(--ov-text-surface-color);
+}
+
+@media (max-width: 600px) {
+	.grid-container {
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	}
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+	.grid-container {
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	}
+}
