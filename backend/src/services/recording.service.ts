@@ -486,9 +486,15 @@ export class RecordingService {
 	 * and sends it to the OpenVidu Components in the given room. The payload
 	 * is adapted to match the expected format for OpenVidu Components.
 	 */
-	sendRecordingSignalToOpenViduComponents(roomId: string, recordingInfo: MeetRecordingInfo) {
+	async sendRecordingSignalToOpenViduComponents(roomId: string, recordingInfo: MeetRecordingInfo) {
+		this.logger.debug(`Sending recording signal to OpenVidu Components for room '${roomId}'`);
 		const { payload, options } = OpenViduComponentsAdapterHelper.generateRecordingSignal(recordingInfo);
-		return this.roomService.sendSignal(roomId, payload, options);
+
+		try {
+			await this.roomService.sendSignal(roomId, payload, options);
+		} catch (error) {
+			this.logger.debug(`Error sending recording signal to OpenVidu Components for room '${roomId}': ${error}`);
+		}
 	}
 
 	/**

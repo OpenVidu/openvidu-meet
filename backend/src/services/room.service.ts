@@ -326,22 +326,28 @@ export class RoomService {
 	}
 
 	async sendRoomStatusSignalToOpenViduComponents(roomId: string, participantSid: string) {
-		// Check if recording is started in the room
-		const activeEgressArray = await this.livekitService.getActiveEgress(roomId);
-		const isRecordingStarted = activeEgressArray.length > 0;
+		this.logger.debug(`Sending room status signal for room ${roomId} to OpenVidu Components.`);
 
-		// Skip if recording is not started
-		if (!isRecordingStarted) {
-			return;
+		try {
+			// Check if recording is started in the room
+			const activeEgressArray = await this.livekitService.getActiveEgress(roomId);
+			const isRecordingStarted = activeEgressArray.length > 0;
+
+			// Skip if recording is not started
+			if (!isRecordingStarted) {
+				return;
+			}
+
+			// Construct the payload and signal options
+			const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
+				isRecordingStarted,
+				participantSid
+			);
+
+			await this.sendSignal(roomId, payload, options);
+		} catch (error) {
+			this.logger.debug(`Error sending room status signal for room ${roomId}:`, error);
 		}
-
-		// Construct the payload and signal options
-		const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
-			isRecordingStarted,
-			participantSid
-		);
-
-		await this.sendSignal(roomId, payload, options);
 	}
 
 	/**
@@ -354,7 +360,7 @@ export class RoomService {
 	 */
 	async sendSignal(roomId: string, rawData: Record<string, unknown>, options: SendDataOptions): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
-		this.livekitService.sendData(roomId, rawData, options);
+		await this.livekitService.sendData(roomId, rawData, options);
 	}
 
 	/**
