@@ -13,7 +13,7 @@ jobs:
       - name: Install wait-on
         run: npm install -g wait-on
       - name: Setup OpenVidu Local Deployment
-        uses: ./.github/actions/setup-local-deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
       - name: Setup OpenVidu Meet
         shell: bash
         run: |
