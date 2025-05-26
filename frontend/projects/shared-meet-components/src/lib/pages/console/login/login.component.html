@@ -24,7 +24,11 @@
 			</form>
 
 			@if (loginErrorMessage) {
-				<mat-error class="login-error">{{ loginErrorMessage }}</mat-error>
+				<mat-error class="login-error">{{ loginErrorMessage }}
+					@if (invalidRole) {
+						<a [routerLink]="'/login'">go to the home page</a>
+					}
+				</mat-error>
 			}
 		</mat-card>
 		<div class="signup-section">

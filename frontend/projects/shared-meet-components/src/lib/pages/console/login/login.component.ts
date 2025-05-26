@@ -1,14 +1,14 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { FormGroup, Validators, FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { AuthService } from '../../../services';
-import { Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Router, RouterModule } from '@angular/router';
 import { UserRole } from 'shared-meet-components';
+import { AuthService } from '../../../services';
 
 @Component({
 	selector: 'ov-login',
@@ -20,7 +20,8 @@ import { UserRole } from 'shared-meet-components';
 		MatButtonModule,
 		FormsModule,
 		MatCardModule,
-		MatIconModule
+		MatIconModule,
+		RouterModule
 	],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.scss'
@@ -31,6 +32,7 @@ export class ConsoleLoginComponent {
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
+	invalidRole = false;
 
 	constructor(
 		private authService: AuthService,
@@ -49,8 +51,10 @@ export class ConsoleLoginComponent {
 			// Check if the user has the expected role
 			const role = await this.authService.getUserRole();
 			if (role !== UserRole.ADMIN) {
-				this.authService.logout();
-				this.loginErrorMessage = 'Invalid username or password';
+				await this.authService.logout();
+				this.invalidRole = true;
+				this.loginErrorMessage =
+					'You have been authenticated as a user with insufficient permissions. Please log in with an admin account or';
 				return;
 			}
 

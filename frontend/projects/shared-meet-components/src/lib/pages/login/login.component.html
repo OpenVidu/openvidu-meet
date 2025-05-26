@@ -38,7 +38,12 @@
 					/>
 				</div>
 				@if (loginErrorMessage) {
-					<div class="loginError" id="login-error">{{ loginErrorMessage }}</div>
+					<div class="loginError" id="login-error">
+						{{ loginErrorMessage }}
+						@if (invalidRole) {
+							<a [routerLink]="'/console/login'">go to the admin console page</a>
+						}
+					</div>
 				}
 				<div class="form-field">
 					<button mat-button id="join-btn" type="submit" [disabled]="loginForm.invalid">Login</button>

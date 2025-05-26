@@ -1,19 +1,19 @@
 import { NgClass } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ActivatedRoute, Router } from '@angular/router';
-import { ContextService, AuthService } from '../../services/index';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UserRole } from 'shared-meet-components';
+import { AuthService, ContextService } from '../../services/index';
 
 @Component({
 	selector: 'app-login',
 	standalone: true,
-	imports: [MatToolbar, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, NgClass, MatButton],
+	imports: [MatToolbar, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, NgClass, MatButton, RouterModule],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.scss'
 })
@@ -27,6 +27,7 @@ export class LoginComponent {
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
+	invalidRole = false;
 	redirectTo = ''; // By default, redirect to RoomCreatorComponent
 
 	constructor(
@@ -58,8 +59,10 @@ export class LoginComponent {
 			// Check if the user has the expected role
 			const role = await this.authService.getUserRole();
 			if (role !== UserRole.USER) {
-				this.authService.logout();
-				this.loginErrorMessage = 'Invalid username or password';
+				await this.authService.logout();
+				this.invalidRole = true;
+				this.loginErrorMessage =
+					'You have been authenticated as an admin, but admin users cannot join meetings. Please log in with a user account or';
 				return;
 			}
 

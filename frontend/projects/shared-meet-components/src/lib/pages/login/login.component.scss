@@ -44,6 +44,11 @@ $formGap: 0.375rem;
 	padding-right: 4px;
 }
 
+.loginError a {
+	color: $loginError;
+	text-decoration: underline;
+}
+
 .footer {
 	position: absolute;
 	bottom: 0;
