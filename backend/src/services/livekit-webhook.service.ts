@@ -181,6 +181,12 @@ export class LivekitWebhookService {
 
 			this.logger.info(`Processing room_finished event for room: ${roomName}`);
 
+			if (meetRoom.markedForDeletion) {
+				// If the room is marked for deletion, we need to delete it
+				this.logger.info(`Deleting room ${roomName} after meeting finished because it was marked for deletion`);
+				await this.roomService.bulkDeleteRooms([roomName], true);
+			}
+
 			const results = await Promise.allSettled([
 				this.recordingService.releaseRecordingLockIfNoEgress(roomName),
 				this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom)
@@ -191,12 +197,6 @@ export class LivekitWebhookService {
 					this.logger.error(`Error processing room_finished event: ${result.reason}`);
 				}
 			});
-
-			if (meetRoom.markedForDeletion) {
-				// If the room is marked for deletion, we need to delete it
-				this.logger.info(`Deleting room ${roomName} after meeting finished because it was marked for deletion`);
-				this.roomService.bulkDeleteRooms([roomName], true);
-			}
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);
 		}
