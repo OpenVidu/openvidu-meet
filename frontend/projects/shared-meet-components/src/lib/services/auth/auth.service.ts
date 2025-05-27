@@ -32,13 +32,16 @@ export class AuthService {
 		return from(this.httpService.refreshToken());
 	}
 
-	async logout(redirectTo?: string) {
+	async logout(redirectTo?: string, redirectToAfterLogin?: string) {
 		try {
 			await this.httpService.logout();
 			this.user = null;
 
 			if (redirectTo) {
-				this.router.navigate([redirectTo]);
+				const queryParams = redirectToAfterLogin
+					? { queryParams: { redirectTo: redirectToAfterLogin } }
+					: undefined;
+				this.router.navigate([redirectTo], queryParams);
 			}
 		} catch (error) {
 			console.error((error as HttpErrorResponse).error.message);
@@ -68,7 +71,7 @@ export class AuthService {
 			} catch (error) {
 				this.user = null;
 			}
-			
+
 			this.hasCheckAuth = true;
 		}
 	}

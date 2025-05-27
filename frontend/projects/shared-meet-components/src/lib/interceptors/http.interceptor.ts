@@ -33,7 +33,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 					if (!requestUrl.includes('/profile')) {
 						console.log('Logging out...');
 						const redirectTo = pageUrl.startsWith('/console') ? 'console/login' : 'login';
-						authService.logout(redirectTo);
+						authService.logout(redirectTo, pageUrl);
 					}
 
 					throw firstError;
