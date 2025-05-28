@@ -10,7 +10,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	generateRecordingToken,
+	generateRecordingTokenCookie,
 	getAllRecordings,
 	getAllRecordingsFromRoom,
 	startTestServer
@@ -61,7 +61,7 @@ describe('Recordings API Tests', () => {
 			const roomId = roomData.room.roomId;
 
 			// Generate a recording token for the room
-			const recordingCookie = await generateRecordingToken(roomId, roomData.publisherSecret);
+			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.publisherSecret);
 
 			// Create a new room and start a recording
 			roomData = await setupSingleRoomWithRecording(true);
@@ -102,11 +102,14 @@ describe('Recordings API Tests', () => {
 			const rooms = context.rooms;
 			const response = await getAllRecordings({ maxItems: 3 });
 			expectSuccessListRecordingResponse(response, 3, true, true, 3);
-			response.body.recordings.forEach((recording: MeetRecordingInfo, i: number) => {
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				const associatedRoom = rooms.find((r) => r.room.roomId === recording.roomId);
+				expect(associatedRoom).toBeDefined();
 				expectValidRecording(
 					recording,
-					rooms[i].recordingId!,
-					rooms[i].room.roomId,
+					associatedRoom!.recordingId!,
+					associatedRoom!.room.roomId,
 					MeetRecordingStatus.COMPLETE
 				);
 			});
@@ -116,10 +119,12 @@ describe('Recordings API Tests', () => {
 
 			expectSuccessListRecordingResponse(nextResponse, 3, false, false, 3);
 			nextResponse.body.recordings.forEach((recording: MeetRecordingInfo, i: number) => {
+				const associatedRoom = rooms.find((r) => r.room.roomId === recording.roomId);
+
 				expectValidRecording(
 					recording,
-					rooms[3 + i].recordingId!,
-					rooms[3 + i].room.roomId,
+					associatedRoom!.recordingId!,
+					associatedRoom!.room.roomId,
 					MeetRecordingStatus.COMPLETE
 				);
 			});
