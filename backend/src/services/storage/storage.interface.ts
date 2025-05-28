@@ -1,4 +1,4 @@
-import { GlobalPreferences, MeetRoom } from '@typings-ce';
+import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
 
 /**
  * An interface that defines the contract for storage providers in the OpenVidu Meet application.
@@ -11,7 +11,11 @@ import { GlobalPreferences, MeetRoom } from '@typings-ce';
  * of application settings and room information, which could be backed by
  * various storage solutions (database, file system, cloud storage, etc.).
  */
-export interface StorageProvider<GPrefs extends GlobalPreferences = GlobalPreferences, MRoom extends MeetRoom = MeetRoom> {
+export interface StorageProvider<
+	GPrefs extends GlobalPreferences = GlobalPreferences,
+	MRoom extends MeetRoom = MeetRoom,
+	MRec extends MeetRecordingInfo = MeetRecordingInfo
+> {
 	/**
 	 * Initializes the storage with default preferences if they are not already set.
 	 *
@@ -107,15 +111,34 @@ export interface StorageProvider<GPrefs extends GlobalPreferences = GlobalPrefer
 	 */
 	updateArchivedRoomMetadata(roomId: string): Promise<void>;
 
-	//TODO:
-	// deleteArchivedRoomMetadata(roomId: string): Promise<void>;
+	/**
+	 * Deletes the archived metadata for a specific room.
+	 *
+	 * @param roomId - The room ID to delete the archived metadata for.
+	 */
+	deleteArchivedRoomMetadata(roomId: string): Promise<void>;
 
-	//TODO:
-	// saveRecordingMetadata;
+	/**
+	 * Saves the recording metadata.
+	 *
+	 * @param recordingInfo - The recording information to save.
+	 * @returns A promise that resolves to the saved recording information.
+	 */
+	saveRecordingMetadata(recordingInfo: MRec): Promise<MRec>;
 
-	//TODO:
-	// getRecordingMetadata;
+	/**
+	 * Retrieves the recording metadata for a specific recording ID.
+	 *
+	 * @param recordingId - The unique identifier of the recording.
+	 * @returns A promise that resolves to the recording metadata, or null if not found.
+	 */
+	getRecordingMetadata(recordingId: string): Promise<MRec | null>;
 
-	//TODO:
-	// deleteRecordingMetadata;
+	/**
+	 * Deletes the recording metadata for a specific recording ID.
+	 *
+	 * @param recordingId - The unique identifier of the recording to delete.
+	 * @returns A promise that resolves when the deletion is complete.
+	 */
+	deleteRecordingMetadata(recordingId: string): Promise<void>;
 }

@@ -17,14 +17,17 @@ import { LoggerService, RedisService, S3Service, StorageProvider } from '../../i
  * The storage operations are performed in parallel to both systems when writing data,
  * with transaction-like rollback behavior if one operation fails.
  *
- * @template G - Type for global preferences data, defaults to GlobalPreferences
- * @template R - Type for room data, defaults to MeetRoom
+ * @template GPrefs - Type for global preferences data, defaults to GlobalPreferences
+ * @template MRoom - Type for room data, defaults to MeetRoom
  *
  * @implements {StorageProvider}
  */
 @injectable()
-export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom>
-	implements StorageProvider
+export class S3StorageProvider<
+	GPrefs extends GlobalPreferences = GlobalPreferences,
+	MRoom extends MeetRoom = MeetRoom,
+	MRec extends MeetRecordingInfo = MeetRecordingInfo
+> implements StorageProvider
 {
 	protected readonly S3_GLOBAL_PREFERENCES_KEY = `global-preferences.json`;
 	constructor(
@@ -39,7 +42,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 *
 	 * @param defaultPreferences - The default preferences to initialize with.
 	 */
-	async initialize(defaultPreferences: G): Promise<void> {
+	async initialize(defaultPreferences: GPrefs): Promise<void> {
 		try {
 			const existingPreferences = await this.getGlobalPreferences();
 
@@ -77,14 +80,14 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 *
 	 * @returns A promise that resolves to the global preferences or null if not found.
 	 */
-	async getGlobalPreferences(): Promise<G | null> {
+	async getGlobalPreferences(): Promise<GPrefs | null> {
 		try {
 			// Try to get preferences from Redis cache
-			let preferences: G | null = await this.getFromRedis<G>(RedisKeyName.GLOBAL_PREFERENCES);
+			let preferences: GPrefs | null = await this.getFromRedis<GPrefs>(RedisKeyName.GLOBAL_PREFERENCES);
 
 			if (!preferences) {
 				this.logger.debug('Global preferences not found in Redis. Fetching from S3...');
-				preferences = await this.getFromS3<G>(this.S3_GLOBAL_PREFERENCES_KEY);
+				preferences = await this.getFromS3<GPrefs>(this.S3_GLOBAL_PREFERENCES_KEY);
 
 				if (preferences) {
 					this.logger.verbose('Fetched global preferences from S3. Caching them in Redis.');
@@ -112,7 +115,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 * @returns The saved preferences.
 	 * @throws Rethrows any error if saving fails.
 	 */
-	async saveGlobalPreferences(preferences: G): Promise<G> {
+	async saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs> {
 		try {
 			const redisPayload = JSON.stringify(preferences);
 
@@ -136,7 +139,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 * @returns The saved room if both operations succeed.
 	 * @throws The error from the first failed operation.
 	 */
-	async saveMeetRoom(meetRoom: R): Promise<R> {
+	async saveMeetRoom(meetRoom: MRoom): Promise<MRoom> {
 		const { roomId } = meetRoom;
 		const s3Path = `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 		const redisPayload = JSON.stringify(meetRoom);
@@ -173,7 +176,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		maxItems: number,
 		nextPageToken?: string
 	): Promise<{
-		rooms: R[];
+		rooms: MRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
@@ -208,7 +211,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 			);
 
 			// Filter out null values
-			const validRooms = rooms.filter((room) => room !== null) as R[];
+			const validRooms = rooms.filter((room) => room !== null) as MRoom[];
 			return { rooms: validRooms, isTruncated: !!IsTruncated, nextPageToken: NextContinuationToken };
 		} catch (error) {
 			this.handleError(error, 'Error fetching Room preferences');
@@ -216,16 +219,16 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		}
 	}
 
-	async getMeetRoom(roomId: string): Promise<R | null> {
+	async getMeetRoom(roomId: string): Promise<MRoom | null> {
 		try {
 			// Try to get room preferences from Redis cache
-			const room: R | null = await this.getFromRedis<R>(roomId);
+			const room: MRoom | null = await this.getFromRedis<MRoom>(roomId);
 
 			if (!room) {
 				const s3RoomPath = `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 				this.logger.debug(`Room ${roomId} not found in Redis. Fetching from S3 at ${s3RoomPath}...`);
 
-				return await this.getFromS3<R>(s3RoomPath);
+				return await this.getFromS3<MRoom>(s3RoomPath);
 			}
 
 			this.logger.debug(`Room ${roomId} verified in Redis`);
@@ -251,10 +254,10 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		}
 	}
 
-	async getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null> {
+	async getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null> {
 		try {
 			const filePath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
-			const roomMetadata = await this.getFromS3<Partial<R>>(filePath);
+			const roomMetadata = await this.getFromS3<Partial<MRoom>>(filePath);
 
 			if (!roomMetadata) {
 				this.logger.warn(`Room metadata not found for room ${roomId} in recordings bucket`);
@@ -343,6 +346,28 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		} catch (error) {
 			this.logger.error(`Error updating room metadata for room ${roomId} in recordings bucket: ${error}`);
 		}
+	}
+
+	async deleteArchivedRoomMetadata(roomId: string): Promise<void> {
+		//TODO : Implement this method to delete archived room metadata
+		this.logger.warn('deleteArchivedRoomMetadata is not implemented yet');
+	}
+
+	async getRecordingMetadata(recordingId: string): Promise<MRec | null> {
+		//TODO : Implement this method to retrieve recording metadata for a room
+		this.logger.warn('getRecordingMetadata is not implemented yet');
+		return null;
+	}
+
+	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
+		//TODO : Implement this method to save recording metadata for a room
+		this.logger.warn('saveMeetRecordingInfo is not implemented yet');
+		return recordingInfo;
+	}
+
+	async deleteRecordingMetadata(recordingId: string): Promise<void> {
+		//TODO : Implement this method to delete recording metadata for a room
+		this.logger.warn('deleteRecordingMetadata is not implemented yet');
 	}
 
 	/**
