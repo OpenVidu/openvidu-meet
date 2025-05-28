@@ -132,7 +132,7 @@ export interface StorageProvider<
 	 * @param recordingId - The unique identifier of the recording.
 	 * @returns A promise that resolves to the recording metadata, or null if not found.
 	 */
-	getRecordingMetadata(recordingId: string): Promise<MRec | null>;
+	getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }>;
 
 	/**
 	 * Deletes the recording metadata for a specific recording ID.

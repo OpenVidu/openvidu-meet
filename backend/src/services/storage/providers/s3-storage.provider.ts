@@ -2,7 +2,7 @@ import { PutObjectCommandOutput } from '@aws-sdk/client-s3';
 import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../../../config/internal-config.js';
-import { OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
+import { errorRecordingNotFound, OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
 import { LoggerService, RedisService, S3Service, StorageProvider } from '../../index.js';
 import { RecordingHelper } from '../../../helpers/recording.helper.js';
 
@@ -354,10 +354,23 @@ export class S3StorageProvider<
 		this.logger.warn('deleteArchivedRoomMetadata is not implemented yet');
 	}
 
-	async getRecordingMetadata(recordingId: string): Promise<MRec | null> {
-		//TODO : Implement this method to retrieve recording metadata for a room
-		this.logger.warn('getRecordingMetadata is not implemented yet');
-		return null;
+	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
+		try {
+			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
+			this.logger.debug(`Retrieving metadata for recording ${recordingId} from ${metadataPath}`);
+			const recordingInfo = (await this.s3Service.getObjectAsJson(metadataPath)) as MRec;
+
+			if (!recordingInfo) {
+				throw errorRecordingNotFound(recordingId);
+			}
+
+			this.logger.verbose(`Retrieved metadata for recording ${recordingId} from ${metadataPath}`);
+
+			return { recordingInfo, metadataFilePath: metadataPath };
+		} catch (error) {
+			this.handleError(error, `Error fetching recording metadata for recording ${recordingId}`);
+			throw error;
+		}
 	}
 
 	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
@@ -371,10 +384,7 @@ export class S3StorageProvider<
 		}
 	}
 
-	async deleteRecordingMetadata(recordingId: string): Promise<void> {
-		//TODO : Implement this method to delete recording metadata for a room
-		this.logger.warn('deleteRecordingMetadata is not implemented yet');
-	}
+	async deleteRecordingMetadata(recordingId: string): Promise<void> {}
 
 	/**
 	 * Retrieves an object of type U from Redis by the given key.

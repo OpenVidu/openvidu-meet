@@ -301,7 +301,7 @@ export class RecordingService {
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
 	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
-		const { recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
+		const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
 
 		return UtilsHelper.filterObjectFields(recordingInfo, fields) as MeetRecordingInfo;
 	}
@@ -508,7 +508,7 @@ export class RecordingService {
 	protected async getDeletableRecordingFiles(
 		recordingId: string
 	): Promise<{ filesToDelete: Set<string>; recordingInfo: MeetRecordingInfo }> {
-		const { metadataFilePath, recordingInfo } = await this.getMeetRecordingInfoFromMetadata(recordingId);
+		const { metadataFilePath, recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
 		const filesToDelete: Set<string> = new Set();
 
 		// Validate the recording status
@@ -526,23 +526,23 @@ export class RecordingService {
 		return { filesToDelete, recordingInfo };
 	}
 
-	protected async getMeetRecordingInfoFromMetadata(
-		recordingId: string
-	): Promise<{ metadataFilePath: string; recordingInfo: MeetRecordingInfo }> {
-		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+	// protected async getMeetRecordingInfoFromMetadata(
+	// 	recordingId: string
+	// ): Promise<{ metadataFilePath: string; recordingInfo: MeetRecordingInfo }> {
+	// 	const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
-		const metadataPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
-		this.logger.debug(`Retrieving metadata for recording ${recordingId} from ${metadataPath}`);
-		const recordingInfo = (await this.s3Service.getObjectAsJson(metadataPath)) as MeetRecordingInfo;
+	// 	const metadataPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
+	// 	this.logger.debug(`Retrieving metadata for recording ${recordingId} from ${metadataPath}`);
+	// 	const recordingInfo = (await this.s3Service.getObjectAsJson(metadataPath)) as MeetRecordingInfo;
 
-		if (!recordingInfo) {
-			throw errorRecordingNotFound(recordingId);
-		}
+	// 	if (!recordingInfo) {
+	// 		throw errorRecordingNotFound(recordingId);
+	// 	}
 
-		this.logger.verbose(`Retrieved metadata for recording ${recordingId} from ${metadataPath}`);
+	// 	this.logger.verbose(`Retrieved metadata for recording ${recordingId} from ${metadataPath}`);
 
-		return { recordingInfo, metadataFilePath: metadataPath };
-	}
+	// 	return { recordingInfo, metadataFilePath: metadataPath };
+	// }
 
 	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {
 		return {

@@ -192,6 +192,13 @@ export class MeetStorageService<
 		return this.storageProvider.saveRecordingMetadata(recordingInfo) as Promise<MRec>;
 	}
 
+	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
+		return this.storageProvider.getRecordingMetadata(recordingId) as Promise<{
+			recordingInfo: MRec;
+			metadataFilePath: string;
+		}>;
+	}
+
 	/**
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
