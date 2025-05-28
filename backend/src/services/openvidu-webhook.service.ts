@@ -18,44 +18,96 @@ export class OpenViduWebhookService {
 		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
 	) {}
 
-	async sendMeetingStartedWebhook(room: MeetRoom) {
-		try {
-			await this.sendWebhookEvent(MeetWebhookEventType.MEETING_STARTED, room);
-		} catch (error) {
-			this.logger.error(`Error sending meeting started webhook: ${error}`);
-		}
+	/**
+	 * Sends a webhook notification when a meeting has started.
+	 *
+	 * This method triggers a background webhook event to notify external systems
+	 * that a meeting session has begun for the specified room.
+	 *
+	 * @param room - The meeting room object containing room details
+	 */
+	sendMeetingStartedWebhook(room: MeetRoom) {
+		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_STARTED, room, `Room ID: ${room.roomId}`);
 	}
 
-	async sendMeetingEndedWebhook(room: MeetRoom) {
-		try {
-			await this.sendWebhookEvent(MeetWebhookEventType.MEETING_ENDED, room);
-		} catch (error) {
-			this.logger.error(`Error sending meeting ended webhook: ${error}`);
-		}
+	/**
+	 * Sends a webhook notification when a meeting has ended.
+	 *
+	 * This method triggers a background webhook event to notify external systems
+	 * that a meeting session has concluded for the specified room.
+	 *
+	 * @param room - The MeetRoom object containing details of the ended meeting
+	 */
+	sendMeetingEndedWebhook(room: MeetRoom) {
+		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_ENDED, room, `Room ID: ${room.roomId}`);
 	}
 
-	async sendRecordingStartedWebhook(recordingInfo: MeetRecordingInfo) {
-		try {
-			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_STARTED, recordingInfo);
-		} catch (error) {
-			this.logger.error(`Error sending recording started webhook: ${error}`);
-		}
+	/**
+	 * Sends a webhook event notification when a recording has started.
+	 *
+	 * This method triggers a background webhook event to notify external systems
+	 * that a meeting recording has been initiated.
+	 *
+	 * @param recordingInfo - The recording information containing details about the started recording
+	 */
+	sendRecordingUpdatedWebhook(recordingInfo: MeetRecordingInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.RECORDING_UPDATED,
+			recordingInfo,
+			`Recording ID: ${recordingInfo.recordingId}`
+		);
 	}
 
-	async sendRecordingUpdatedWebhook(recordingInfo: MeetRecordingInfo) {
-		try {
-			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_UPDATED, recordingInfo);
-		} catch (error) {
-			this.logger.error(`Error sending recording updated webhook: ${error}`);
-		}
+	/**
+	 * Sends a webhook notification when a recording has started.
+	 *
+	 * This method triggers a background webhook event to notify external services
+	 * that a meeting recording has begun. The webhook includes the recording
+	 * information and uses the recording ID for identification purposes.
+	 *
+	 * @param recordingInfo - The recording information containing details about the started recording
+	 */
+	sendRecordingStartedWebhook(recordingInfo: MeetRecordingInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.RECORDING_STARTED,
+			recordingInfo,
+			`Recording ID: ${recordingInfo.recordingId}`
+		);
 	}
 
-	async sendRecordingEndedWebhook(recordingInfo: MeetRecordingInfo) {
-		try {
-			await this.sendWebhookEvent(MeetWebhookEventType.RECORDING_ENDED, recordingInfo);
-		} catch (error) {
-			this.logger.error(`Error sending recording ended webhook: ${error}`);
-		}
+	/**
+	 * Sends a webhook notification when a recording has ended.
+	 *
+	 * This method triggers a background webhook event to notify external systems
+	 * that a meeting recording has completed.
+	 *
+	 * @param recordingInfo - The recording information containing details about the ended recording
+	 */
+	sendRecordingEndedWebhook(recordingInfo: MeetRecordingInfo) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.RECORDING_ENDED,
+			recordingInfo,
+			`Recording ID: ${recordingInfo.recordingId}`
+		);
+	}
+
+	/**
+	 * Sends a webhook event asynchronously in the background without blocking the main execution flow.
+	 * If the webhook fails, logs a warning message with the error details and optional context information.
+	 *
+	 * @param event - The type of webhook event to send
+	 * @param payload - The data payload to include with the webhook event
+	 * @param context - Optional context string to include in error messages for debugging purposes
+	 */
+	protected sendWebhookEventInBackground(
+		event: MeetWebhookEventType,
+		payload: MeetWebhookPayload,
+		context?: string
+	): void {
+		this.sendWebhookEvent(event, payload).catch((error) => {
+			const contextInfo = context ? ` (${context})` : '';
+			this.logger.warn(`Background webhook ${event} failed${contextInfo}: ${error}`);
+		});
 	}
 
 	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {

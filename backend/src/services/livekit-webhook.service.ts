@@ -155,7 +155,7 @@ export class LivekitWebhookService {
 				return;
 			}
 
-			await this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
+			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
 		} catch (error) {
 			this.logger.error('Error sending meeting started webhook:', error);
 		}
@@ -181,22 +181,18 @@ export class LivekitWebhookService {
 
 			this.logger.info(`Processing room_finished event for room: ${roomName}`);
 
+			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
+
+			const tasks = [];
+
 			if (meetRoom.markedForDeletion) {
 				// If the room is marked for deletion, we need to delete it
 				this.logger.info(`Deleting room ${roomName} after meeting finished because it was marked for deletion`);
-				await this.roomService.bulkDeleteRooms([roomName], true);
+				tasks.push(this.roomService.bulkDeleteRooms([roomName], true));
 			}
 
-			const results = await Promise.allSettled([
-				this.recordingService.releaseRecordingLockIfNoEgress(roomName),
-				this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom)
-			]);
-
-			results.forEach((result) => {
-				if (result.status === 'rejected') {
-					this.logger.error(`Error processing room_finished event: ${result.reason}`);
-				}
-			});
+			tasks.push(this.recordingService.releaseRecordingLockIfNoEgress(roomName));
+			await Promise.all(tasks);
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);
 		}
@@ -236,13 +232,11 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
-					specificTasks.push(
-						this.storageService.archiveRoomMetadata(roomId),
-						this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo)
-					);
+					specificTasks.push(this.storageService.archiveRoomMetadata(roomId));
+					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':
-					specificTasks.push(this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo));
+					this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo);
 
 					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
 						// Send system event for active recording with the aim of cancelling the cleanup timer
@@ -256,10 +250,8 @@ export class LivekitWebhookService {
 
 					break;
 				case 'ended':
-					specificTasks.push(
-						this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo),
-						this.recordingService.releaseRecordingLockIfNoEgress(roomId)
-					);
+					specificTasks.push(this.recordingService.releaseRecordingLockIfNoEgress(roomId));
+					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
 					break;
 			}
 
