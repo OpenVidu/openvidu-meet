@@ -183,6 +183,17 @@ export class MeetStorageService<
 	}
 
 	/**
+	 * Deletes the archived metadata for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the room whose archived metadata should be deleted
+	 * @returns A promise that resolves when the archived room metadata has been successfully deleted
+	 * @throws May throw an error if the deletion operation fails or if the room ID is invalid
+	 */
+	async deleteArchivedRoomMetadata(roomId: string): Promise<void> {
+		return this.storageProvider.deleteArchivedRoomMetadata(roomId);
+	}
+
+	/**
 	 * Saves recording metadata to the storage provider.
 	 *
 	 * @param recordingInfo - The recording metadata object to be saved

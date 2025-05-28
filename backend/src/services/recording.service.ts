@@ -187,13 +187,11 @@ export class RecordingService {
 			await this.s3Service.deleteObjects(Array.from(filesToDelete));
 			this.logger.info(`Successfully deleted ${recordingId}`);
 
-			const roomMetadataFilePath = await this.shouldDeleteRoomMetadata(roomId);
+			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
 
-			if (roomMetadataFilePath) {
-				await this.s3Service.deleteObjects([
-					`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`
-				]);
-				this.logger.verbose(`Successfully deleted room metadata for room ${roomId}`);
+			if (shouldDeleteRoomMetadata) {
+				this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomId}}`);
+				await this.storageService.deleteArchivedRoomMetadata(roomId);
 			}
 
 			return recordingInfo;
@@ -249,19 +247,21 @@ export class RecordingService {
 		}
 
 		// Check if the room metadata file should be deleted
-		const roomMetadataToDelete = [];
+		const roomMetadataToDelete: string[] = [];
+		const deleteTasks: Promise<void>[] = [];
 
 		for (const roomId of roomsToCheck) {
-			const roomMetadataFilePath = await this.shouldDeleteRoomMetadata(roomId);
+			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
 
-			if (roomMetadataFilePath) {
-				roomMetadataToDelete.push(roomMetadataFilePath);
+			if (shouldDeleteRoomMetadata) {
+				deleteTasks.push(this.storageService.deleteArchivedRoomMetadata(roomId));
+				roomMetadataToDelete.push(roomId);
 			}
 		}
 
 		try {
-			this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomsToCheck}`);
-			await this.s3Service.deleteObjects(roomMetadataToDelete);
+			this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomMetadataToDelete.join(', ')}`);
+			await Promise.all(deleteTasks);
 			this.logger.verbose(`BulkDelete: Successfully deleted ${allFilesToDelete.size} room metadata files.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
@@ -276,19 +276,15 @@ export class RecordingService {
 	 * are any remaining recording metadata files for the room.
 	 *
 	 * @param roomId - The identifier of the room to check
-	 * @returns The full path to the room metadata file if it should be deleted, or null otherwise
+	 * @returns A promise that resolves to a boolean indicating whether the room metadata should be deleted.
 	 */
-	protected async shouldDeleteRoomMetadata(roomId: string): Promise<string | null> {
+	protected async shouldDeleteRoomMetadata(roomId: string): Promise<boolean | null> {
 		try {
 			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
 			const { Contents } = await this.s3Service.listObjectsPaginated(metadataPrefix);
 
 			// If no metadata files exist or the list is empty, the room metadata should be deleted
-			if (!Contents || Contents.length === 0) {
-				return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
-			}
-
-			return null;
+			return !Contents || Contents.length === 0;
 		} catch (error) {
 			this.logger.warn(`Error checking room metadata for deletion (room ${roomId}): ${error}`);
 			return null;

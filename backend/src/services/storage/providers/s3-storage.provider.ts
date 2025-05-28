@@ -350,8 +350,18 @@ export class S3StorageProvider<
 	}
 
 	async deleteArchivedRoomMetadata(roomId: string): Promise<void> {
-		//TODO : Implement this method to delete archived room metadata
-		this.logger.warn('deleteArchivedRoomMetadata is not implemented yet');
+		const archivedRoomMetadataPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.room_metadata/${roomId}/room_metadata.json`;
+
+		try {
+			await this.s3Service.deleteObjects([archivedRoomMetadataPath]);
+			this.logger.verbose(`Archived room metadata deleted for room ${roomId} in recordings bucket`);
+		} catch (error) {
+			this.logger.error(
+				`Error deleting archived room metadata for room ${roomId} in recordings bucket: ${error}`
+			);
+			this.handleError(error, `Error deleting archived room metadata for room ${roomId}`);
+			throw error;
+		}
 	}
 
 	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
