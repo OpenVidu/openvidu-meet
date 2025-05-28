@@ -4,28 +4,28 @@ import { GlobalPreferences, MeetRoom } from '@typings-ce';
  * An interface that defines the contract for storage providers in the OpenVidu Meet application.
  * Storage providers handle persistence of global application preferences and meeting room data.
  *
- * @template T - The type of global preferences, extending GlobalPreferences
- * @template R - The type of room data, extending MeetRoom
+ * @template GPrefs - The type of global preferences, extending GlobalPreferences
+ * @template MRoom - The type of room data, extending MeetRoom
  *
  * Implementations of this interface should handle the persistent storage
  * of application settings and room information, which could be backed by
  * various storage solutions (database, file system, cloud storage, etc.).
  */
-export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom> {
+export interface StorageProvider<GPrefs extends GlobalPreferences = GlobalPreferences, MRoom extends MeetRoom = MeetRoom> {
 	/**
 	 * Initializes the storage with default preferences if they are not already set.
 	 *
 	 * @param defaultPreferences - The default preferences to initialize with.
 	 * @returns A promise that resolves when the initialization is complete.
 	 */
-	initialize(defaultPreferences: T): Promise<void>;
+	initialize(defaultPreferences: GPrefs): Promise<void>;
 
 	/**
 	 * Retrieves the global preferences of Openvidu Meet.
 	 *
 	 * @returns A promise that resolves to the global preferences, or null if not set.
 	 */
-	getGlobalPreferences(): Promise<T | null>;
+	getGlobalPreferences(): Promise<GPrefs | null>;
 
 	/**
 	 * Saves the given preferences.
@@ -33,7 +33,7 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 * @param preferences - The preferences to save.
 	 * @returns A promise that resolves to the saved preferences.
 	 */
-	saveGlobalPreferences(preferences: T): Promise<T>;
+	saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs>;
 
 	/**
 	 *
@@ -50,7 +50,7 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 		maxItems?: number,
 		nextPageToken?: string
 	): Promise<{
-		rooms: R[];
+		rooms: MRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}>;
@@ -61,15 +61,15 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to the OpenVidu Room, or null if not found.
 	 **/
-	getMeetRoom(roomId: string): Promise<R | null>;
+	getMeetRoom(roomId: string): Promise<MRoom | null>;
 
 	/**
 	 * Saves the OpenVidu Meet Room.
 	 *
-	 * @param ovRoom - The OpenVidu Room to save.
+	 * @param meetRoom - The OpenVidu Room to save.
 	 * @returns A promise that resolves to the saved
 	 **/
-	saveMeetRoom(ovRoom: R): Promise<R>;
+	saveMeetRoom(meetRoom: MRoom): Promise<MRoom>;
 
 	/**
 	 * Deletes OpenVidu Meet Rooms.
@@ -86,7 +86,7 @@ export interface StorageProvider<T extends GlobalPreferences = GlobalPreferences
 	 *
 	 * @param roomId - The name of the room to retrieve.
 	 */
-	getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null>;
+	getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null>;
 
 	/**
 	 * Archives the metadata for a specific room.

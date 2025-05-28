@@ -1,5 +1,5 @@
 import { PutObjectCommandOutput } from '@aws-sdk/client-s3';
-import { GlobalPreferences, MeetRoom } from '@typings-ce';
+import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../../../config/internal-config.js';
 import { OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
@@ -132,23 +132,23 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 	 * Persists a room object to S3 and Redis concurrently.
 	 * If at least one operation fails, performs a rollback by deleting the successfully saved object.
 	 *
-	 * @param ovRoom - The room object to save.
+	 * @param meetRoom - The room object to save.
 	 * @returns The saved room if both operations succeed.
 	 * @throws The error from the first failed operation.
 	 */
-	async saveMeetRoom(ovRoom: R): Promise<R> {
-		const { roomId } = ovRoom;
+	async saveMeetRoom(meetRoom: R): Promise<R> {
+		const { roomId } = meetRoom;
 		const s3Path = `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
-		const redisPayload = JSON.stringify(ovRoom);
+		const redisPayload = JSON.stringify(meetRoom);
 		const redisKey = RedisKeyName.ROOM + roomId;
 
 		const [s3Result, redisResult] = await Promise.allSettled([
-			this.s3Service.saveObject(s3Path, ovRoom),
+			this.s3Service.saveObject(s3Path, meetRoom),
 			this.redisService.set(redisKey, redisPayload, false)
 		]);
 
 		if (s3Result.status === 'fulfilled' && redisResult.status === 'fulfilled') {
-			return ovRoom;
+			return meetRoom;
 		}
 
 		// Rollback any changes made by the successful operation
@@ -309,10 +309,9 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		}
 	}
 
-
 	/**
 	 * Updates the archived room metadata for a given room in the S3 recordings bucket if it exists.
-	 * 
+	 *
 	 * @param roomId - The unique identifier of the room whose metadata needs to be updated.
 	 */
 	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
@@ -446,7 +445,7 @@ export class S3StorageProvider<G extends GlobalPreferences = GlobalPreferences, 
 		}
 	}
 
-	protected handleError(error: any, message: string) {
+	protected handleError(error: unknown, message: string) {
 		if (error instanceof OpenViduMeetError) {
 			this.logger.error(`${message}: ${error.message}`);
 		} else {

@@ -12,11 +12,14 @@ import { LoggerService, MutexService, StorageFactory, StorageProvider } from '..
  * This service provides an abstraction layer over the underlying storage implementation,
  * handling initialization, retrieval, and persistence of global preferences and room data.
  *
- * @typeParam G - Type for global preferences, extends GlobalPreferences
- * @typeParam R - Type for room data, extends MeetRoom
+ * @template GPrefs - Type for global preferences, extends GlobalPreferences
+ * @template MRoom - Type for room data, extends MeetRoom
  */
 @injectable()
-export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences, R extends MeetRoom = MeetRoom> {
+export class MeetStorageService<
+	GPrefs extends GlobalPreferences = GlobalPreferences,
+	MRoom extends MeetRoom = MeetRoom
+> {
 	protected storageProvider: StorageProvider;
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
@@ -28,7 +31,7 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 
 	/**
 	 * Initializes default preferences if not already initialized.
-	 * @returns {Promise<G>} Default global preferences.
+	 * @returns {Promise<GPrefs>} Default global preferences.
 	 */
 	async initializeGlobalPreferences(): Promise<void> {
 		try {
@@ -53,12 +56,12 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 
 	/**
 	 * Retrieves the global preferences, initializing them if necessary.
-	 * @returns {Promise<GlobalPreferences>}
+	 * @returns {Promise<GPrefs>}
 	 */
-	async getGlobalPreferences(): Promise<G> {
+	async getGlobalPreferences(): Promise<GPrefs> {
 		let preferences = await this.storageProvider.getGlobalPreferences();
 
-		if (preferences) return preferences as G;
+		if (preferences) return preferences as GPrefs;
 
 		await this.initializeGlobalPreferences();
 		preferences = await this.storageProvider.getGlobalPreferences();
@@ -68,34 +71,50 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 			throw internalError('getting global preferences');
 		}
 
-		return preferences as G;
+		return preferences as GPrefs;
 	}
 
 	/**
-	 * Saves the global preferences.
-	 * @param {GlobalPreferences} preferences
-	 * @returns {Promise<GlobalPreferences>}
+	 * Saves the global preferences to the storage provider.
+	 * @param {GPrefs} preferences
+	 * @returns {Promise<GPrefs>}
 	 */
-	async saveGlobalPreferences(preferences: G): Promise<G> {
+	async saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs> {
 		this.logger.info('Saving global preferences');
-		return this.storageProvider.saveGlobalPreferences(preferences) as Promise<G>;
+		return this.storageProvider.saveGlobalPreferences(preferences) as Promise<GPrefs>;
 	}
 
-	async saveMeetRoom(meetRoom: R): Promise<R> {
+	/**
+	 * Saves the meet room to the storage provider.
+	 *
+	 * @param meetRoom - The meeting room object to be saved
+	 * @returns A promise that resolves to the saved meeting room object
+	 */
+	async saveMeetRoom(meetRoom: MRoom): Promise<MRoom> {
 		this.logger.info(`Saving OpenVidu room ${meetRoom.roomId}`);
-		return this.storageProvider.saveMeetRoom(meetRoom) as Promise<R>;
+		return this.storageProvider.saveMeetRoom(meetRoom) as Promise<MRoom>;
 	}
 
+	/**
+	 * Retrieves a paginated list of meeting rooms from the storage provider.
+	 *
+	 * @param maxItems - Optional maximum number of rooms to retrieve in a single request
+	 * @param nextPageToken - Optional token for pagination to get the next page of results
+	 * @returns A promise that resolves to an object containing:
+	 *   - rooms: Array of MRoom objects representing the meeting rooms
+	 *   - isTruncated: Boolean indicating if there are more results available
+	 *   - nextPageToken: Optional token for retrieving the next page of results
+	 */
 	async getMeetRooms(
 		maxItems?: number,
 		nextPageToken?: string
 	): Promise<{
-		rooms: R[];
+		rooms: MRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
 		return this.storageProvider.getMeetRooms(maxItems, nextPageToken) as Promise<{
-			rooms: R[];
+			rooms: MRoom[];
 			isTruncated: boolean;
 			nextPageToken?: string;
 		}>;
@@ -108,7 +127,7 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 	 * @returns A promise that resolves to the room's preferences.
 	 * @throws Error if the room preferences are not found.
 	 */
-	async getMeetRoom(roomId: string): Promise<R> {
+	async getMeetRoom(roomId: string): Promise<MRoom> {
 		const meetRoom = await this.storageProvider.getMeetRoom(roomId);
 
 		if (!meetRoom) {
@@ -116,30 +135,57 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 			throw errorRoomNotFound(roomId);
 		}
 
-		return meetRoom as R;
+		return meetRoom as MRoom;
 	}
 
+	/**
+	 * Deletes multiple meeting rooms from storage.
+	 *
+	 * @param roomIds - Array of room identifiers to be deleted
+	 * @returns A promise that resolves when all rooms have been successfully deleted
+	 * @throws May throw an error if the deletion operation fails for any of the rooms
+	 */
 	async deleteMeetRooms(roomIds: string[]): Promise<void> {
 		return this.storageProvider.deleteMeetRooms(roomIds);
 	}
 
-	async getArchivedRoomMetadata(roomId: string): Promise<Partial<R> | null> {
-		return this.storageProvider.getArchivedRoomMetadata(roomId) as Promise<Partial<R> | null>;
+	/**
+	 * Retrieves metadata for an archived room by its ID.
+	 *
+	 * @param roomId - The unique identifier of the room to retrieve metadata for
+	 * @returns A promise that resolves to partial room metadata if found, or null if not found
+	 */
+	async getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null> {
+		return this.storageProvider.getArchivedRoomMetadata(roomId) as Promise<Partial<MRoom> | null>;
 	}
 
+	/**
+	 * Archives the metadata for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the room whose metadata should be archived
+	 * @returns A Promise that resolves when the archival operation is complete
+	 * @throws May throw an error if the archival operation fails or if the room ID is invalid
+	 */
 	async archiveRoomMetadata(roomId: string): Promise<void> {
 		return this.storageProvider.archiveRoomMetadata(roomId);
 	}
 
+	/**
+	 * Updates the metadata of an archived room.
+	 *
+	 * @param roomId - The unique identifier of the room whose archived metadata should be updated
+	 * @returns A promise that resolves when the archived room metadata has been successfully updated
+	 * @throws May throw an error if the room ID is invalid or if the storage operation fails
+	 */
 	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
 		return this.storageProvider.updateArchivedRoomMetadata(roomId);
 	}
 
 	/**
 	 * Returns the default global preferences.
-	 * @returns {G}
+	 * @returns {GPrefs}
 	 */
-	protected async getDefaultPreferences(): Promise<G> {
+	protected async getDefaultPreferences(): Promise<GPrefs> {
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {
@@ -162,7 +208,7 @@ export class MeetStorageService<G extends GlobalPreferences = GlobalPreferences,
 					}
 				}
 			}
-		} as G;
+		} as GPrefs;
 	}
 
 	/**
