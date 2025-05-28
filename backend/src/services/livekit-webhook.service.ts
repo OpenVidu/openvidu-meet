@@ -217,13 +217,12 @@ export class LivekitWebhookService {
 		try {
 			const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
 			const { roomId, recordingId, status } = recordingInfo;
-			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
 
 			// Common tasks for all webhook types
 			const commonTasks = [
-				this.s3Service.saveObject(metadataPath, recordingInfo),
+				this.storageService.saveRecordingMetadata(recordingInfo),
 				this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
 			];
 

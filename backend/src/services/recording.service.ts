@@ -28,6 +28,7 @@ import {
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
+	MeetStorageService,
 	MutexService,
 	RedisLock,
 	RoomService,
@@ -45,6 +46,7 @@ export class RecordingService {
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(SystemEventService) protected systemEventService: SystemEventService,
+		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		// Register the recording garbage collector task
@@ -544,7 +546,7 @@ export class RecordingService {
 
 	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {
 		return {
-			layout: layout,
+			layout: layout
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false
@@ -645,10 +647,9 @@ export class RecordingService {
 	}
 
 	protected async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
-		const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);
 		const recordingInfo = await this.getRecording(recordingId);
 		recordingInfo.status = status;
-		await this.s3Service.saveObject(metadataPath, recordingInfo);
+		await this.storageService.saveRecordingMetadata(recordingInfo);
 	}
 
 	/**

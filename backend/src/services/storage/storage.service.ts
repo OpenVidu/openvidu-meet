@@ -1,4 +1,4 @@
-import { AuthMode, AuthType, GlobalPreferences, MeetRoom } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
@@ -18,7 +18,8 @@ import { LoggerService, MutexService, StorageFactory, StorageProvider } from '..
 @injectable()
 export class MeetStorageService<
 	GPrefs extends GlobalPreferences = GlobalPreferences,
-	MRoom extends MeetRoom = MeetRoom
+	MRoom extends MeetRoom = MeetRoom,
+	MRec extends MeetRecordingInfo = MeetRecordingInfo
 > {
 	protected storageProvider: StorageProvider;
 	constructor(
@@ -179,6 +180,16 @@ export class MeetStorageService<
 	 */
 	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
 		return this.storageProvider.updateArchivedRoomMetadata(roomId);
+	}
+
+	/**
+	 * Saves recording metadata to the storage provider.
+	 *
+	 * @param recordingInfo - The recording metadata object to be saved
+	 * @returns A promise that resolves to the saved recording metadata object
+	 */
+	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
+		return this.storageProvider.saveRecordingMetadata(recordingInfo) as Promise<MRec>;
 	}
 
 	/**

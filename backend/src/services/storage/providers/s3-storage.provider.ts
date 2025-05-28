@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../../../config/internal-config.js';
 import { OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
 import { LoggerService, RedisService, S3Service, StorageProvider } from '../../index.js';
+import { RecordingHelper } from '../../../helpers/recording.helper.js';
 
 /**
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage
@@ -360,9 +361,14 @@ export class S3StorageProvider<
 	}
 
 	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
-		//TODO : Implement this method to save recording metadata for a room
-		this.logger.warn('saveMeetRecordingInfo is not implemented yet');
-		return recordingInfo;
+		try {
+			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingInfo.recordingId);
+			await this.s3Service.saveObject(metadataPath, recordingInfo);
+			return recordingInfo;
+		} catch (error) {
+			this.handleError(error, `Error saving recording metadata for recording ${recordingInfo.recordingId}`);
+			throw error;
+		}
 	}
 
 	async deleteRecordingMetadata(recordingId: string): Promise<void> {
