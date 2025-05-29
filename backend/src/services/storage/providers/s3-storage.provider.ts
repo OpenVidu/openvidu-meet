@@ -38,6 +38,26 @@ export class S3StorageProvider<
 	) {}
 
 	/**
+	 * Retrieves metadata headers for an object stored in S3.
+	 *
+	 * @param filePath - The path/key of the file in the S3 bucket
+	 * @returns A promise that resolves to an object containing the content length and content type of the file
+	 * @throws Will throw an error if the S3 operation fails or the file doesn't exist
+	 */
+	async getObjectHeaders(filePath: string): Promise<{ contentLength?: number; contentType?: string }> {
+		try {
+			const data = await this.s3Service.getHeaderObject(filePath);
+			return {
+				contentLength: data.ContentLength,
+				contentType: data.ContentType
+			};
+		} catch (error) {
+			this.logger.error(`Error fetching object headers for ${filePath}: ${error}`);
+			throw error;
+		}
+	}
+
+	/**
 	 * Initializes global preferences. If no preferences exist, persists the provided defaults.
 	 * If preferences exist but belong to a different project, they are replaced.
 	 *

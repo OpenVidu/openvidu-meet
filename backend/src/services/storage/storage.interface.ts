@@ -25,6 +25,14 @@ export interface StorageProvider<
 	initialize(defaultPreferences: GPrefs): Promise<void>;
 
 	/**
+	 * Retrives the headers of an object stored in the storage provider.
+	 * This is useful to get the content length and content type of the object without downloading it.
+	 *
+	 * @param filePath - The path of the file to retrieve headers for.
+	 */
+	getObjectHeaders(filePath: string): Promise<{ contentLength?: number; contentType?: string }>;
+
+	/**
 	 * Retrieves the global preferences of Openvidu Meet.
 	 *
 	 * @returns A promise that resolves to the global preferences, or null if not set.
@@ -148,5 +156,4 @@ export interface StorageProvider<
 	 * @returns A promise that resolves when the recording binary files have been deleted.
 	 */
 	deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void>;
-
 }

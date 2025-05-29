@@ -395,8 +395,7 @@ export class RecordingService {
 
 		if (!recordingPath) throw new Error(`Error extracting path from recording ${recordingId}`);
 
-		const data = await this.s3Service.getHeaderObject(recordingPath);
-		const fileSize = data.ContentLength;
+		const { contentLength: fileSize } = await this.storageService.getObjectHeaders(recordingPath);
 
 		if (!fileSize) {
 			this.logger.error(`Error getting file size for recording ${recordingId}`);

@@ -30,6 +30,17 @@ export class MeetStorageService<
 		this.storageProvider = this.storageFactory.create();
 	}
 
+	async getObjectHeaders(filePath: string): Promise<{ contentLength?: number; contentType?: string }> {
+		try {
+			const headers = await this.storageProvider.getObjectHeaders(filePath);
+			this.logger.verbose(`Object headers retrieved: ${JSON.stringify(headers)}`);
+			return headers;
+		} catch (error) {
+			this.handleError(error, 'Error retrieving object headers');
+			throw internalError('Getting object headers');
+		}
+	}
+
 	/**
 	 * Initializes default preferences if not already initialized.
 	 * @returns {Promise<GPrefs>} Default global preferences.
@@ -231,7 +242,6 @@ export class MeetStorageService<
 	async deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void> {
 		return this.storageProvider.deleteRecordingBinaryFilesByPaths(recordingPaths);
 	}
-
 
 	/**
 	 * Returns the default global preferences.
