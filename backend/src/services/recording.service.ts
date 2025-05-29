@@ -550,24 +550,6 @@ export class RecordingService {
 		return { binaryFilesToDelete, metadataFilesToDelete, recordingInfo };
 	}
 
-	// protected async getMeetRecordingInfoFromMetadata(
-	// 	recordingId: string
-	// ): Promise<{ metadataFilePath: string; recordingInfo: MeetRecordingInfo }> {
-	// 	const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
-	// 	const metadataPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
-	// 	this.logger.debug(`Retrieving metadata for recording ${recordingId} from ${metadataPath}`);
-	// 	const recordingInfo = (await this.s3Service.getObjectAsJson(metadataPath)) as MeetRecordingInfo;
-
-	// 	if (!recordingInfo) {
-	// 		throw errorRecordingNotFound(recordingId);
-	// 	}
-
-	// 	this.logger.verbose(`Retrieved metadata for recording ${recordingId} from ${metadataPath}`);
-
-	// 	return { recordingInfo, metadataFilePath: metadataPath };
-	// }
-
 	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {
 		return {
 			layout: layout
