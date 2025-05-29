@@ -47,7 +47,7 @@ export const {
 	MEET_PREFERENCES_STORAGE_MODE = 's3',
 
 	// S3 configuration
-	MEET_S3_BUCKET = 'openvidu',
+	MEET_S3_BUCKET = 'openvidu-appdata',
 	MEET_S3_SUBBUCKET = 'openvidu-meet',
 	MEET_S3_SERVICE_ENDPOINT = 'http://localhost:9000',
 	MEET_S3_ACCESS_KEY = 'minioadmin',
