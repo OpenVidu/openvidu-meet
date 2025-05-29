@@ -432,7 +432,7 @@ export class RecordingService {
 				return this.getFullStreamResponse(recordingPath, fileSize);
 			}
 
-			const fileStream = await this.s3Service.getObjectAsStream(recordingPath, MEET_S3_BUCKET, {
+			const fileStream = await this.storageService.getRecordingMedia(recordingPath, {
 				start,
 				end
 			});
@@ -446,7 +446,7 @@ export class RecordingService {
 		recordingPath: string,
 		fileSize: number
 	): Promise<{ fileSize: number; fileStream: Readable }> {
-		const fileStream = await this.s3Service.getObjectAsStream(recordingPath, MEET_S3_BUCKET);
+		const fileStream = await this.storageService.getRecordingMedia(recordingPath);
 		return { fileSize, fileStream };
 	}
 

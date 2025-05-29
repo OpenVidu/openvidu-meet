@@ -5,6 +5,7 @@ import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOO
 import { MeetLock, PasswordHelper } from '../../helpers/index.js';
 import { errorRoomNotFound, internalError, OpenViduMeetError } from '../../models/error.model.js';
 import { LoggerService, MutexService, StorageFactory, StorageProvider } from '../index.js';
+import { Readable } from 'stream';
 
 /**
  * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
@@ -219,6 +220,25 @@ export class MeetStorageService<
 			recordingInfo: MRec;
 			metadataFilePath: string;
 		}>;
+	}
+
+	/**
+	 * Retrieves recording media as a readable stream from the storage provider.
+	 *
+	 * @param recordingPath - The path to the recording file in storage
+	 * @param range - Optional byte range for partial content retrieval
+	 * @param range.start - Starting byte position
+	 * @param range.end - Ending byte position
+	 * @returns A Promise that resolves to a Readable stream of the recording media
+	 */
+	async getRecordingMedia(
+		recordingPath: string,
+		range?: {
+			end: number;
+			start: number;
+		}
+	): Promise<Readable> {
+		return this.storageProvider.getRecordingMedia(recordingPath, range) as Promise<Readable>;
 	}
 
 	/**

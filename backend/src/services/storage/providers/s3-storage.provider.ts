@@ -5,6 +5,7 @@ import INTERNAL_CONFIG from '../../../config/internal-config.js';
 import { errorRecordingNotFound, OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
 import { LoggerService, RedisService, S3Service, StorageProvider } from '../../index.js';
 import { RecordingHelper } from '../../../helpers/recording.helper.js';
+import { Readable } from 'stream';
 
 /**
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage
@@ -380,6 +381,22 @@ export class S3StorageProvider<
 				`Error deleting archived room metadata for room ${roomId} in recordings bucket: ${error}`
 			);
 			this.handleError(error, `Error deleting archived room metadata for room ${roomId}`);
+			throw error;
+		}
+	}
+
+	async getRecordingMedia(
+		recordingPath: string,
+		range?: {
+			end: number;
+			start: number;
+		}
+	): Promise<Readable> {
+		try {
+			this.logger.debug(`Retrieving recording media from S3 at path: ${recordingPath}`);
+			return await this.s3Service.getObjectAsStream(recordingPath, range);
+		} catch (error) {
+			this.handleError(error, `Error fetching recording media for path ${recordingPath}`);
 			throw error;
 		}
 	}

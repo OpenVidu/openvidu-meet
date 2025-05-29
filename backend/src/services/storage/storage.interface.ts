@@ -1,4 +1,5 @@
 import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
+import { Readable } from 'stream';
 
 /**
  * An interface that defines the contract for storage providers in the OpenVidu Meet application.
@@ -149,6 +150,19 @@ export interface StorageProvider<
 	 */
 	deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void>;
 
+	/**
+	 * Retrieves the media content of a recording file.
+	 *
+	 * @param recordingPath - The path of the recording file to retrieve.
+	 * @param range - An optional range object specifying the start and end byte positions to retrieve.
+	 */
+	getRecordingMedia(
+		recordingPath: string,
+		range?: {
+			end: number;
+			start: number;
+		}
+	): Promise<Readable>;
 	/**
 	 * Deletes multiple recording binary files by their paths.
 	 *

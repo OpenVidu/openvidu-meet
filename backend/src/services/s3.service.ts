@@ -187,8 +187,8 @@ export class S3Service {
 
 	async getObjectAsStream(
 		name: string,
-		bucket: string = MEET_S3_BUCKET,
-		range?: { start: number; end: number }
+		range?: { start: number; end: number },
+		bucket: string = MEET_S3_BUCKET
 	): Promise<Readable> {
 		try {
 			const obj = await this.getObject(name, bucket, range);
