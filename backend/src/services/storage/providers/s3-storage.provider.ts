@@ -437,6 +437,24 @@ export class S3StorageProvider<
 		}
 	}
 
+	/**
+	 * Retrieves recording metadata from S3 storage by the specified path.
+	 *
+	 * @param recordingPath - The S3 path where the recording metadata is stored
+	 * @returns A promise that resolves to the recording metadata object
+	 * @throws Will throw an error if the S3 object retrieval fails or if the path is invalid
+	 */
+	async getRecordingMetadataByPath(recordingPath: string): Promise<MRec> {
+		try {
+			return await this.s3Service.getObjectAsJson(recordingPath) as MRec;
+		} catch (error) {
+			this.handleError(error, `Error fetching recording metadata for path ${recordingPath}`);
+			throw error;
+
+		}
+	}
+
+
 	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
 		try {
 			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingInfo.recordingId);

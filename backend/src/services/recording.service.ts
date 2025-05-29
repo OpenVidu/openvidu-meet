@@ -363,11 +363,13 @@ export class RecordingService {
 			// Retrieve the metadata for each recording
 			Contents.forEach((item) => {
 				if (item?.Key && item.Key.endsWith('.json') && !item.Key.endsWith('secrets.json')) {
-					promises.push(this.s3Service.getObjectAsJson(item.Key) as Promise<MeetRecordingInfo>);
+					promises.push(
+						this.storageService.getRecordingMetadataByPath(item.Key) as Promise<MeetRecordingInfo>
+					);
 				}
 			});
 
-			let recordings: MeetRecordingInfo[] = await Promise.all(promises);
+			let recordings = await Promise.all(promises);
 
 			recordings = recordings.map((rec) => UtilsHelper.filterObjectFields(rec, fields)) as MeetRecordingInfo[];
 

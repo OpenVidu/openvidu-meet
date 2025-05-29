@@ -215,11 +215,28 @@ export class MeetStorageService<
 		return this.storageProvider.saveRecordingMetadata(recordingInfo) as Promise<MRec>;
 	}
 
+	/**
+	 * Retrieves the metadata for a specific recording.
+	 *
+	 * @param recordingId - The unique identifier of the recording
+	 * @returns A promise that resolves to an object containing the recording information and metadata file path
+	 * @throws May throw an error if the recording is not found or if there's an issue accessing the storage provider
+	 */
 	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
 		return this.storageProvider.getRecordingMetadata(recordingId) as Promise<{
 			recordingInfo: MRec;
 			metadataFilePath: string;
 		}>;
+	}
+
+	/**
+	 * Retrieves metadata for recordings by their file path.
+	 *
+	 * @param recordingPath - The path of the recording file to retrieve metadata for
+	 * @returns A promise that resolves to
+	 */
+	async getRecordingMetadataByPath(recordingPath: string): Promise<MRec | undefined> {
+		return this.storageProvider.getRecordingMetadataByPath(recordingPath) as Promise<MRec>;
 	}
 
 	/**
