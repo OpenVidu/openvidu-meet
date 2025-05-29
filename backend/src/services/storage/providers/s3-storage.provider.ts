@@ -364,6 +364,23 @@ export class S3StorageProvider<
 		}
 	}
 
+	/**
+	 * Deletes multiple recording binary files from S3 storage using their file paths.
+	 *
+	 * @param recordingPaths - Array of file paths/keys identifying the recording files to delete from S3
+	 * @returns A Promise that resolves when all files have been successfully deleted
+	 * @throws Will throw an error if the S3 delete operation fails
+	 */
+	async deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void> {
+		try {
+			await this.s3Service.deleteObjects(recordingPaths);
+			this.logger.verbose(`Deleted recording binary files: ${recordingPaths.join(', ')}`);
+		} catch (error) {
+			this.handleError(error, `Error deleting recording binary files: ${recordingPaths.join(', ')}`);
+			throw error;
+		}
+	}
+
 	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
 		try {
 			const metadataPath = RecordingHelper.buildMetadataFilePath(recordingId);

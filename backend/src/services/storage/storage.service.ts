@@ -222,6 +222,18 @@ export class MeetStorageService<
 	}
 
 	/**
+	 * Deletes recording binary files from storage using the provided file paths.
+	 *
+	 * @param recordingPaths - Array of file paths pointing to the recording binary files to be deleted
+	 * @returns A Promise that resolves when all specified recording files have been successfully deleted
+	 * @throws May throw an error if any of the file deletion operations fail
+	 */
+	async deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void> {
+		return this.storageProvider.deleteRecordingBinaryFilesByPaths(recordingPaths);
+	}
+
+
+	/**
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
 	 */

@@ -141,4 +141,12 @@ export interface StorageProvider<
 	 */
 	deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void>;
 
+	/**
+	 * Deletes multiple recording binary files by their paths.
+	 *
+	 * @param recordingPaths - An array of recording file paths to delete.
+	 * @returns A promise that resolves when the recording binary files have been deleted.
+	 */
+	deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void>;
+
 }

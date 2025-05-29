@@ -188,7 +188,9 @@ export class RecordingService {
 
 			if (binaryFilesToDelete.size > 0) {
 				// Delete video files from S3
-				deleteRecordingTasks.push(this.s3Service.deleteObjects(Array.from(binaryFilesToDelete)));
+				deleteRecordingTasks.push(
+					this.storageService.deleteRecordingBinaryFilesByPaths(Array.from(binaryFilesToDelete))
+				);
 			}
 
 			if (metadataFilesToDelete.size > 0) {
@@ -260,7 +262,7 @@ export class RecordingService {
 		// Delete recordings and its metadata from S3
 		try {
 			await Promise.all([
-				this.s3Service.deleteObjects(Array.from(allBinaryFilesToDelete)),
+				this.storageService.deleteRecordingBinaryFilesByPaths(Array.from(allBinaryFilesToDelete)),
 				this.storageService.deleteRecordingMetadataByPaths(Array.from(allMetadataFilesToDelete))
 			]);
 			this.logger.info(`BulkDelete: Successfully deleted ${allBinaryFilesToDelete.size} recordings.`);
