@@ -181,10 +181,25 @@ export class RecordingService {
 	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
 		try {
 			// Get the recording metada and recording info from the S3 bucket
-			const { filesToDelete, recordingInfo } = await this.getDeletableRecordingFiles(recordingId);
+			const { binaryFilesToDelete, metadataFilesToDelete, recordingInfo } =
+				await this.getDeletableRecordingFiles(recordingId);
 			const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+			const deleteRecordingTasks: Promise<unknown>[] = [];
 
-			await this.s3Service.deleteObjects(Array.from(filesToDelete));
+			if (binaryFilesToDelete.size > 0) {
+				// Delete video files from S3
+				deleteRecordingTasks.push(this.s3Service.deleteObjects(Array.from(binaryFilesToDelete)));
+			}
+
+			if (metadataFilesToDelete.size > 0) {
+				// Delete metadata files from storage provider
+				deleteRecordingTasks.push(
+					this.storageService.deleteRecordingMetadataByPaths(Array.from(metadataFilesToDelete))
+				);
+			}
+
+			await Promise.all(deleteRecordingTasks);
+
 			this.logger.info(`Successfully deleted ${recordingId}`);
 
 			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
@@ -211,7 +226,8 @@ export class RecordingService {
 	async bulkDeleteRecordingsAndAssociatedFiles(
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
-		const allFilesToDelete: Set<string> = new Set<string>();
+		let allMetadataFilesToDelete: Set<string> = new Set<string>();
+		let allBinaryFilesToDelete: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 		const roomsToCheck: Set<string> = new Set();
@@ -219,8 +235,12 @@ export class RecordingService {
 		// Check if the recording is in progress
 		for (const recordingId of recordingIds) {
 			try {
-				const { filesToDelete } = await this.getDeletableRecordingFiles(recordingId);
-				filesToDelete.forEach((file) => allFilesToDelete.add(file));
+				const { binaryFilesToDelete, metadataFilesToDelete } =
+					await this.getDeletableRecordingFiles(recordingId);
+				// Add files to the set of files to delete
+				allBinaryFilesToDelete = new Set([...allBinaryFilesToDelete, ...binaryFilesToDelete]);
+				allMetadataFilesToDelete = new Set([...allMetadataFilesToDelete, ...metadataFilesToDelete]);
+
 				deletedRecordings.add(recordingId);
 
 				// Track the roomId for checking if the room metadata file should be deleted
@@ -232,15 +252,18 @@ export class RecordingService {
 			}
 		}
 
-		if (allFilesToDelete.size === 0) {
+		if (allBinaryFilesToDelete.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
 			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
 		}
 
 		// Delete recordings and its metadata from S3
 		try {
-			await this.s3Service.deleteObjects(Array.from(allFilesToDelete));
-			this.logger.info(`BulkDelete: Successfully deleted ${allFilesToDelete.size} objects from S3.`);
+			await Promise.all([
+				this.s3Service.deleteObjects(Array.from(allBinaryFilesToDelete)),
+				this.storageService.deleteRecordingMetadataByPaths(Array.from(allMetadataFilesToDelete))
+			]);
+			this.logger.info(`BulkDelete: Successfully deleted ${allBinaryFilesToDelete.size} recordings.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 			throw error;
@@ -262,7 +285,7 @@ export class RecordingService {
 		try {
 			this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomMetadataToDelete.join(', ')}`);
 			await Promise.all(deleteTasks);
-			this.logger.verbose(`BulkDelete: Successfully deleted ${allFilesToDelete.size} room metadata files.`);
+			this.logger.verbose(`BulkDelete: Successfully deleted ${roomMetadataToDelete.length} room metadata files.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 			throw error;
@@ -501,11 +524,14 @@ export class RecordingService {
 	 *
 	 * @param recordingId - The unique identifier of the recording egress.
 	 */
-	protected async getDeletableRecordingFiles(
-		recordingId: string
-	): Promise<{ filesToDelete: Set<string>; recordingInfo: MeetRecordingInfo }> {
+	protected async getDeletableRecordingFiles(recordingId: string): Promise<{
+		binaryFilesToDelete: Set<string>;
+		metadataFilesToDelete: Set<string>;
+		recordingInfo: MeetRecordingInfo;
+	}> {
 		const { metadataFilePath, recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
-		const filesToDelete: Set<string> = new Set();
+		const binaryFilesToDelete: Set<string> = new Set();
+		const metadataFilesToDelete: Set<string> = new Set();
 
 		// Validate the recording status
 		if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
@@ -517,9 +543,10 @@ export class RecordingService {
 		}
 
 		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${filename}`;
-		filesToDelete.add(recordingPath).add(metadataFilePath);
+		binaryFilesToDelete.add(recordingPath);
+		metadataFilesToDelete.add(metadataFilePath);
 
-		return { filesToDelete, recordingInfo };
+		return { binaryFilesToDelete, metadataFilesToDelete, recordingInfo };
 	}
 
 	// protected async getMeetRecordingInfoFromMetadata(

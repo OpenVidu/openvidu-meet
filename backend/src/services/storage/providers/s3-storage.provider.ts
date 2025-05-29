@@ -394,7 +394,22 @@ export class S3StorageProvider<
 		}
 	}
 
-	async deleteRecordingMetadata(recordingId: string): Promise<void> {}
+	/**
+	 * Deletes multiple recording metadata files from S3 storage based on their file paths.
+	 *
+	 * @param metadataPaths - Array of file paths pointing to the metadata files to be deleted
+	 * @returns A promise that resolves when all metadata files have been successfully deleted
+	 * @throws May throw an error if any of the deletion operations fail
+	 */
+	async deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void> {
+		try {
+			await this.s3Service.deleteObjects(metadataPaths);
+			this.logger.verbose(`Deleted multiple recording metadata files: ${metadataPaths.join(', ')}`);
+		} catch (error) {
+			this.handleError(error, `Error deleting multiple recording metadata files: ${metadataPaths.join(', ')}`);
+			throw error;
+		}
+	}
 
 	/**
 	 * Retrieves an object of type U from Redis by the given key.

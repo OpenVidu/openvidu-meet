@@ -211,6 +211,17 @@ export class MeetStorageService<
 	}
 
 	/**
+	 * Deletes multiple recording metadata files by their paths.
+	 *
+	 * @param metadataPaths - Array of file paths to the recording metadata files to be deleted
+	 * @returns A Promise that resolves when all metadata files have been successfully deleted
+	 * @throws May throw an error if any of the deletion operations fail
+	 */
+	async deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void> {
+		return this.storageProvider.deleteRecordingMetadataByPaths(metadataPaths);
+	}
+
+	/**
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
 	 */

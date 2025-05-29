@@ -135,10 +135,10 @@ export interface StorageProvider<
 	getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }>;
 
 	/**
-	 * Deletes the recording metadata for a specific recording ID.
+	 * Deletes multiple recording metadata files by their paths.
 	 *
-	 * @param recordingId - The unique identifier of the recording to delete.
-	 * @returns A promise that resolves when the deletion is complete.
+	 * @param metadataPaths - An array of metadata file paths to delete.
 	 */
-	deleteRecordingMetadata(recordingId: string): Promise<void>;
+	deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void>;
+
 }
