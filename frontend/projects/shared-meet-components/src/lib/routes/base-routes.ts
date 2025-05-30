@@ -1,10 +1,8 @@
 import { Routes } from '@angular/router';
-import { UserRole } from '@lib/typings/ce';
 import {
 	applicationModeGuard,
 	checkParticipantNameGuard,
 	checkParticipantRoleAndAuthGuard,
-	checkRoomCreatorEnabledGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
@@ -17,15 +15,12 @@ import {
 } from '../guards';
 import {
 	ConsoleComponent,
-	ConsoleLoginComponent,
 	DisconnectedComponent,
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
 	ParticipantNameFormComponent,
 	RecordingsComponent,
-	RoomCreatorComponent,
-	RoomCreatorDisabledComponent,
 	RoomFormComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
@@ -34,40 +29,14 @@ import {
 
 export const baseRoutes: Routes = [
 	{
-		path: '',
-		component: RoomCreatorComponent,
-		canActivate: [runGuardsSerially(checkRoomCreatorEnabledGuard, checkUserAuthenticatedGuard)],
-		data: {
-			checkSkipAuth: true,
-			expectedRoles: [UserRole.USER],
-			redirectToWhenUnauthorized: 'login',
-			redirectToWhenInvalidRole: 'console'
-		}
-	},
-	{
 		path: 'login',
 		component: LoginComponent,
-		canActivate: [checkUserNotAuthenticatedGuard],
-		data: { redirectTo: '' }
-	},
-	{ path: 'room-creator-disabled', component: RoomCreatorDisabledComponent },
-	{ path: 'disconnected', component: DisconnectedComponent },
-	{ path: 'error', component: ErrorComponent },
-	{
-		path: 'console/login',
-		component: ConsoleLoginComponent,
-		canActivate: [checkUserNotAuthenticatedGuard],
-		data: { redirectTo: 'console' }
+		canActivate: [checkUserNotAuthenticatedGuard]
 	},
 	{
 		path: 'console',
 		component: ConsoleComponent,
 		canActivate: [checkUserAuthenticatedGuard],
-		data: {
-			expectedRoles: [UserRole.ADMIN],
-			redirectToWhenUnauthorized: 'console/login',
-			redirectToWhenInvalidRole: ''
-		},
 		children: [
 			{
 				path: '',
@@ -141,7 +110,9 @@ export const baseRoutes: Routes = [
 			)
 		]
 	},
+	{ path: 'disconnected', component: DisconnectedComponent },
+	{ path: 'error', component: ErrorComponent },
 
-	// Redirect all other routes to RoomCreatorComponent
-	{ path: '**', redirectTo: '' }
+	// Redirect all other routes to the console
+	{ path: '**', redirectTo: 'console' }
 ];
