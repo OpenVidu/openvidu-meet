@@ -1,6 +1,5 @@
 import { User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
-import { MEET_ADMIN_SECRET, MEET_ADMIN_USER } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
 import { LoggerService, MeetStorageService, UserService } from './index.js';
 
@@ -13,28 +12,12 @@ export class AuthService {
 	) {}
 
 	async authenticate(username: string, password: string): Promise<User | null> {
-		const isAdmin = this.authenticateAdmin(username, password);
-		const isUser = await this.authenticateUser(username, password);
+		const user = await this.userService.getUser(username);
 
-		if (isAdmin || isUser) {
-			return this.userService.getUser(username);
+		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
+			return null;
 		}
 
-		return null;
-	}
-
-	private authenticateAdmin(username: string, password: string): boolean {
-		return username === MEET_ADMIN_USER && password === MEET_ADMIN_SECRET;
-	}
-
-	private async authenticateUser(username: string, password: string): Promise<boolean> {
-		const userCredentials = await this.userService.getStoredUserCredentials();
-
-		if (!userCredentials) {
-			return false;
-		}
-
-		const isPasswordValid = await PasswordHelper.verifyPassword(password, userCredentials.passwordHash);
-		return username === userCredentials.username && isPasswordValid;
+		return user;
 	}
 }

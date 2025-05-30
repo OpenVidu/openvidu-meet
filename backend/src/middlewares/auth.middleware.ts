@@ -82,7 +82,7 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 			throw errorWithControl(errorInvalidTokenSubject(), true);
 		}
 
-		if (user.role !== role) {
+		if (!user.roles.includes(role)) {
 			throw errorWithControl(errorInsufficientPermissions(), false);
 		}
 
@@ -134,10 +134,8 @@ export const apiKeyValidator = async (req: Request) => {
 		throw errorWithControl(errorInvalidApiKey(), true);
 	}
 
-	const apiUser = {
-		username: INTERNAL_CONFIG.API_USER,
-		role: UserRole.APP
-	};
+	const userService = container.get(UserService);
+	const apiUser = userService.getApiUser();
 
 	req.session = req.session || {};
 	req.session.user = apiUser;
@@ -152,7 +150,8 @@ export const allowAnonymous = async (req: Request) => {
 };
 
 // Return the authenticated user if available, otherwise return an anonymous user
-const getAuthenticatedUserOrAnonymous = async (req: Request) => {
+const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<User> => {
+	const userService = container.get(UserService);
 	let user: User | null = null;
 
 	// Check if there is a user already authenticated
@@ -163,7 +162,6 @@ const getAuthenticatedUserOrAnonymous = async (req: Request) => {
 			const tokenService = container.get(TokenService);
 			const payload = await tokenService.verifyToken(token);
 			const username = payload.sub;
-			const userService = container.get(UserService);
 			user = username ? await userService.getUser(username) : null;
 		} catch (error) {
 			const logger = container.get(LoggerService);
@@ -172,10 +170,7 @@ const getAuthenticatedUserOrAnonymous = async (req: Request) => {
 	}
 
 	if (!user) {
-		user = {
-			username: INTERNAL_CONFIG.ANONYMOUS_USER,
-			role: UserRole.USER
-		};
+		user = userService.getAnonymousUser();
 	}
 
 	return user;

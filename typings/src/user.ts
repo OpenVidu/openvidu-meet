@@ -1,6 +1,7 @@
 export interface User {
     username: string;
-    role: UserRole;
+    passwordHash: string;
+    roles: UserRole[];
 }
 
 export const enum UserRole {
@@ -8,3 +9,5 @@ export const enum UserRole {
     USER = 'user',
     APP = 'app'
 }
+
+export type UserDTO = Omit<User, 'passwordHash'>;

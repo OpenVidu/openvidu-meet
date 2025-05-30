@@ -23,8 +23,6 @@ export const {
 
 	// Authentication configuration
 	MEET_API_KEY = 'meet-api-key',
-	MEET_USER = 'user',
-	MEET_SECRET = 'user',
 	MEET_ADMIN_USER = 'admin',
 	MEET_ADMIN_SECRET = 'admin',
 

@@ -112,5 +112,7 @@ export const getProfile = (req: Request, res: Response) => {
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	return res.status(200).json(user);
+	const userService = container.get(UserService);
+	const userDTO = userService.convertToDTO(user);
+	return res.status(200).json(userDTO);
 };

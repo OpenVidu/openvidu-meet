@@ -21,7 +21,7 @@ export class TokenService {
 			identity: user.username,
 			ttl: MEET_ACCESS_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
-				role: user.role
+				roles: user.roles
 			})
 		};
 		return await this.generateJwtToken(tokenOptions);
@@ -32,7 +32,7 @@ export class TokenService {
 			identity: user.username,
 			ttl: MEET_REFRESH_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
-				role: user.role
+				roles: user.roles
 			})
 		};
 		return await this.generateJwtToken(tokenOptions);
