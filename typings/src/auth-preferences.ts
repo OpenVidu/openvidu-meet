@@ -1,6 +1,6 @@
 export interface AuthenticationPreferences {
-    authMode: AuthMode;
-    method: ValidAuthMethod;
+    authMethod: ValidAuthMethod;
+    authModeToAccessRoom: AuthMode;
 }
 
 /**
@@ -33,7 +33,6 @@ export const enum AuthType {
  */
 export interface SingleUserAuth extends AuthMethod {
     type: AuthType.SINGLE_USER;
-    credentials: SingleUserCredentials;
 }
 
 /**
@@ -58,14 +57,6 @@ export interface SingleUserAuth extends AuthMethod {
 export type ValidAuthMethod = SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth */;
 
 /**
- * Configuration for a single user login method.
- */
-export interface SingleUserCredentials {
-    username: string;
-    passwordHash: string;
-}
-
-/**
  * Configuration for OAuth authentication.
  */
 // export interface OAuthProviderConfig {
@@ -82,13 +73,3 @@ export interface SingleUserCredentials {
 //     GOOGLE = 'google',
 //     GITHUB = 'github'
 // }
-
-// DTOs
-export interface AuthenticationPreferencesDTO {
-    authMode: AuthMode;
-    method: ValidAuthMethodDTO;
-}
-
-export type ValidAuthMethodDTO = SingleUserAuthDTO;
-
-export type SingleUserAuthDTO = Omit<SingleUserAuth, 'credentials'>;

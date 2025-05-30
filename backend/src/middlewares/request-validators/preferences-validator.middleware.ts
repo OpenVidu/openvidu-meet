@@ -1,11 +1,10 @@
 import {
-	AuthenticationPreferencesDTO,
+	AuthenticationPreferences,
 	AuthMode,
 	AuthType,
-	RoomCreationPolicy,
-	SingleUserAuthDTO,
-	UpdateSecurityPreferencesDTO,
-	ValidAuthMethodDTO,
+	SecurityPreferences,
+	SingleUserAuth,
+	ValidAuthMethod,
 	WebhookPreferences
 } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
@@ -36,41 +35,20 @@ const AuthModeSchema: z.ZodType<AuthMode> = z.enum([AuthMode.NONE, AuthMode.MODE
 
 const AuthTypeSchema: z.ZodType<AuthType> = z.enum([AuthType.SINGLE_USER]);
 
-const SingleUserAuthDTOSchema: z.ZodType<SingleUserAuthDTO> = z.object({
+const SingleUserAuthSchema: z.ZodType<SingleUserAuth> = z.object({
 	type: AuthTypeSchema
 });
 
-const ValidAuthMethodDTOSchema: z.ZodType<ValidAuthMethodDTO> = SingleUserAuthDTOSchema;
+const ValidAuthMethodSchema: z.ZodType<ValidAuthMethod> = SingleUserAuthSchema;
 
-const AuthenticationPreferencesDTOSchema: z.ZodType<AuthenticationPreferencesDTO> = z.object({
-	authMode: AuthModeSchema,
-	method: ValidAuthMethodDTOSchema
+const AuthenticationPreferencesSchema: z.ZodType<AuthenticationPreferences> = z.object({
+	authMethod: ValidAuthMethodSchema,
+	authModeToAccessRoom: AuthModeSchema
 });
 
-const RoomCreationPolicySchema: z.ZodType<RoomCreationPolicy> = z
-	.object({
-		allowRoomCreation: z.boolean(),
-		requireAuthentication: z.boolean().optional()
-	})
-	.refine(
-		(data) => {
-			// If allowRoomCreation is true, requireAuthentication must be provided
-			return !data.allowRoomCreation || data.requireAuthentication !== undefined;
-		},
-		{
-			message: 'requireAuthentication is required when allowRoomCreation is true',
-			path: ['requireAuthentication']
-		}
-	);
-
-const UpdateSecurityPreferencesDTOSchema: z.ZodType<UpdateSecurityPreferencesDTO> = z
-	.object({
-		authentication: AuthenticationPreferencesDTOSchema.optional(),
-		roomCreationPolicy: RoomCreationPolicySchema.optional()
-	})
-	.refine((data) => Object.keys(data).length > 0, {
-		message: 'At least one field must be provided for the update'
-	});
+const SecurityPreferencesSchema: z.ZodType<SecurityPreferences> = z.object({
+	authentication: AuthenticationPreferencesSchema
+});
 
 export const validateWebhookPreferences = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = WebhookPreferencesSchema.safeParse(req.body);
@@ -84,7 +62,7 @@ export const validateWebhookPreferences = (req: Request, res: Response, next: Ne
 };
 
 export const validateSecurityPreferences = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = UpdateSecurityPreferencesDTOSchema.safeParse(req.body);
+	const { success, error, data } = SecurityPreferencesSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

@@ -25,22 +25,22 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 		return handleError(res, error, 'getting room role by secret');
 	}
 
-	let authMode: AuthMode;
+	let authModeToAccessRoom: AuthMode;
 
 	try {
 		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
-		authMode = securityPreferences.authentication.authMode;
+		authModeToAccessRoom = securityPreferences.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication preferences');
 	}
 
 	const authValidators = [];
 
-	if (authMode === AuthMode.NONE) {
+	if (authModeToAccessRoom === AuthMode.NONE) {
 		authValidators.push(allowAnonymous);
 	} else {
-		const isModeratorsOnlyMode = authMode === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
-		const isAllUsersMode = authMode === AuthMode.ALL_USERS;
+		const isModeratorsOnlyMode = authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
+		const isAllUsersMode = authModeToAccessRoom === AuthMode.ALL_USERS;
 
 		if (isModeratorsOnlyMode || isAllUsersMode) {
 			authValidators.push(tokenAndRoleValidator(UserRole.USER));

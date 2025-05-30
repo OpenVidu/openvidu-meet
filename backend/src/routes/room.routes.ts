@@ -3,8 +3,8 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as roomCtrl from '../controllers/room.controller.js';
 import {
+	allowAnonymous,
 	apiKeyValidator,
-	configureCreateRoomAuth,
 	configureRecordingTokenAuth,
 	configureRoomAuthorization,
 	participantTokenValidator,
@@ -24,7 +24,12 @@ roomRouter.use(bodyParser.urlencoded({ extended: true }));
 roomRouter.use(bodyParser.json());
 
 // Room Routes
-roomRouter.post('/', configureCreateRoomAuth, withValidRoomOptions, roomCtrl.createRoom);
+roomRouter.post(
+	'/',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomOptions,
+	roomCtrl.createRoom
+);
 roomRouter.get(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
@@ -56,7 +61,6 @@ export const internalRoomRouter = Router();
 internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRoomRouter.use(bodyParser.json());
 
-// Room preferences
 internalRoomRouter.put(
 	'/:roomId',
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
@@ -64,7 +68,6 @@ internalRoomRouter.put(
 	withValidRoomPreferences,
 	roomCtrl.updateRoomPreferences
 );
-
 internalRoomRouter.post(
 	'/:roomId/recording-token',
 	configureRecordingTokenAuth,
@@ -72,7 +75,15 @@ internalRoomRouter.post(
 	withValidRoomSecret,
 	roomCtrl.generateRecordingToken
 );
-
-// Roles and permissions
-internalRoomRouter.get('/:roomId/roles', withValidRoomId, roomCtrl.getRoomRolesAndPermissions);
-internalRoomRouter.get('/:roomId/roles/:secret', withValidRoomId, roomCtrl.getRoomRoleAndPermissions);
+internalRoomRouter.get(
+	'/:roomId/roles',
+	withAuth(allowAnonymous),
+	withValidRoomId,
+	roomCtrl.getRoomRolesAndPermissions
+);
+internalRoomRouter.get(
+	'/:roomId/roles/:secret',
+	withAuth(allowAnonymous),
+	withValidRoomId,
+	roomCtrl.getRoomRoleAndPermissions
+);

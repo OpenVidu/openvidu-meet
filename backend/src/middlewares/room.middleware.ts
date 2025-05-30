@@ -8,39 +8,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { MeetStorageService, RoomService } from '../services/index.js';
-import { allowAnonymous, apiKeyValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
-
-/**
- * Middleware that configures authentication for creating a room based on global settings.
- *
- * - Admin role and API key authentication methods are always allowed.
- * - If room creation is allowed and requires authentication, the user must have a valid token.
- * - If room creation is allowed and does not require authentication, anonymous users are allowed.
- */
-export const configureCreateRoomAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const globalPrefService = container.get(MeetStorageService);
-	let allowRoomCreation: boolean;
-	let requireAuthentication: boolean | undefined;
-
-	try {
-		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
-		({ allowRoomCreation, requireAuthentication } = securityPreferences.roomCreationPolicy);
-	} catch (error) {
-		return handleError(res, error, 'checking room creation policy');
-	}
-
-	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)];
-
-	if (allowRoomCreation) {
-		if (requireAuthentication) {
-			authValidators.push(tokenAndRoleValidator(UserRole.USER));
-		} else {
-			authValidators.push(allowAnonymous);
-		}
-	}
-
-	return withAuth(...authValidators)(req, res, next);
-};
+import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
  * Middleware that configures authorization for accessing a specific room.
@@ -79,7 +47,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 };
 
 /**
- * Middleware to configure authentication based on participant role and authentication mode
+ * Middleware to configure authentication based on participant role and authentication mode to access a room
  * for generating a token for retrieving/deleting recordings.
  *
  * - If the authentication mode is MODERATORS_ONLY and the participant role is MODERATOR, configure user authentication.
@@ -114,22 +82,22 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 		return handleError(res, error, 'getting room role by secret');
 	}
 
-	let authMode: AuthMode;
+	let authModeToAccessRoom: AuthMode;
 
 	try {
 		const { securityPreferences } = await storageService.getGlobalPreferences();
-		authMode = securityPreferences.authentication.authMode;
+		authModeToAccessRoom = securityPreferences.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication preferences');
 	}
 
 	const authValidators = [];
 
-	if (authMode === AuthMode.NONE) {
+	if (authModeToAccessRoom === AuthMode.NONE) {
 		authValidators.push(allowAnonymous);
 	} else {
-		const isModeratorsOnlyMode = authMode === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
-		const isAllUsersMode = authMode === AuthMode.ALL_USERS;
+		const isModeratorsOnlyMode = authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
+		const isAllUsersMode = authModeToAccessRoom === AuthMode.ALL_USERS;
 
 		if (isModeratorsOnlyMode || isAllUsersMode) {
 			authValidators.push(tokenAndRoleValidator(UserRole.USER));
