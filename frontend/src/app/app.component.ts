@@ -16,6 +16,5 @@ export class AppComponent implements OnInit {
 	ngOnInit() {
 		this.contextService.setVersion(packageInfo.version);
 		this.contextService.setOpenViduLogoUrl('assets/images/openvidu_logo.png');
-		this.contextService.setBackgroundImageUrl('/assets/images/bg.webp');
 	}
 }

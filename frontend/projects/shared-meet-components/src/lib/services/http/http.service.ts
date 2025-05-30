@@ -7,7 +7,7 @@ import {
 	MeetRoomPreferences,
 	MeetRoomRoleAndPermissions,
 	ParticipantOptions,
-	SecurityPreferencesDTO,
+	SecurityPreferences,
 	User
 } from '@lib/typings/ce';
 import { lastValueFrom } from 'rxjs';
@@ -66,12 +66,7 @@ export class HttpService {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token/refresh`, participantOptions);
 	}
 
-	/**
-	 * Retrieves security preferences.
-	 *
-	 * @returns {Promise<GlobalPreferences>} A promise that resolves to the global preferences.
-	 */
-	getSecurityPreferences(): Promise<SecurityPreferencesDTO> {
+	getSecurityPreferences(): Promise<SecurityPreferences> {
 		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/preferences/security`);
 	}
 

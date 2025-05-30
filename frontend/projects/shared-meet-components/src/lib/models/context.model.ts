@@ -2,7 +2,7 @@ import {
 	OpenViduMeetPermissions,
 	ParticipantRole,
 	RecordingPermissions,
-	SecurityPreferencesDTO
+	SecurityPreferences
 } from 'projects/shared-meet-components/src/public-api';
 
 export interface ContextData {
@@ -10,9 +10,8 @@ export interface ContextData {
 	edition: Edition;
 	version: string;
 	parentDomain: string;
-	securityPreferences?: SecurityPreferencesDTO;
+	securityPreferences?: SecurityPreferences;
 	openviduLogoUrl: string;
-	backgroundImageUrl: string;
 	roomId: string;
 	secret: string;
 	participantName: string;

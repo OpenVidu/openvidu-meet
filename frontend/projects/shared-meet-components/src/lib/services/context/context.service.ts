@@ -18,7 +18,6 @@ export class ContextService {
 		parentDomain: '',
 		securityPreferences: undefined,
 		openviduLogoUrl: '',
-		backgroundImageUrl: '',
 		roomId: '',
 		secret: '',
 		participantName: '',
@@ -90,28 +89,9 @@ export class ContextService {
 		return this.context.openviduLogoUrl;
 	}
 
-	setBackgroundImageUrl(backgroundImageUrl: string): void {
-		this.context.backgroundImageUrl = backgroundImageUrl;
-	}
-
-	getBackgroundImageUrl(): string {
-		return this.context.backgroundImageUrl;
-	}
-
-	async canUsersCreateRooms(): Promise<boolean> {
+	async getAuthModeToAccessRoom(): Promise<AuthMode> {
 		await this.getSecurityPreferences();
-		return this.context.securityPreferences!.roomCreationPolicy.allowRoomCreation;
-	}
-
-	async isAuthRequiredToCreateRooms(): Promise<boolean> {
-		await this.getSecurityPreferences();
-		const requireAuthentication = this.context.securityPreferences!.roomCreationPolicy.requireAuthentication;
-		return requireAuthentication !== undefined && requireAuthentication;
-	}
-
-	async getAuthModeToEnterRoom(): Promise<AuthMode> {
-		await this.getSecurityPreferences();
-		return this.context.securityPreferences!.authentication.authMode;
+		return this.context.securityPreferences!.authentication.authModeToAccessRoom;
 	}
 
 	setRoomId(roomId: string): void {
