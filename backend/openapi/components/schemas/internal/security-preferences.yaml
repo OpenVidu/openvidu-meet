@@ -3,23 +3,11 @@ properties:
     authentication:
         $ref: '#/AuthenticationPreferences'
         description: Preferences for authentication.
-    roomCreationPolicy:
-        $ref: '#/RoomCreationPolicy'
-        description: Preferences for room creation policy.
 
 AuthenticationPreferences:
     type: object
     properties:
-        authMode:
-            type: string
-            enum:
-                - none
-                - moderators_only
-                - all_users
-            default: none
-            example: none
-            description: The authentication mode to enter a room.
-        method:
+        authMethod:
             type: object
             properties:
                 type:
@@ -29,17 +17,12 @@ AuthenticationPreferences:
                     default: single-user
                     example: single-user
                     description: The authentication method to use.
-
-RoomCreationPolicy:
-    type: object
-    properties:
-        allowRoomCreation:
-            type: boolean
-            default: true
-            example: true
-            description: If true, users will be allowed to create rooms.
-        requireAuthentication:
-            type: boolean
-            default: true
-            example: true
-            description: If true, users will be required to authenticate before creating rooms.
+        authModeToAccessRoom:
+            type: string
+            enum:
+                - none
+                - moderators_only
+                - all_users
+            default: none
+            example: none
+            description: The authentication mode to access a room.

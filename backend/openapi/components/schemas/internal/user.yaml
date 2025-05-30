@@ -4,7 +4,9 @@ properties:
         type: string
         example: 'admin'
         description: The username of the authenticated user.
-    role:
-        type: string
-        example: 'admin'
-        description: The role assigned to the authenticated user.
+    roles:
+        type: array
+        items:
+            type: string
+        example: ['admin', 'user']
+        description: A list of roles assigned to the authenticated user.
