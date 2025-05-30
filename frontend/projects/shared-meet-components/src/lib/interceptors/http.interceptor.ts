@@ -25,15 +25,14 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 				console.log('Access token refreshed');
 				return next(req);
 			}),
-			catchError((error: HttpErrorResponse) => {
+			catchError(async (error: HttpErrorResponse) => {
 				if (error.url?.includes('/auth/refresh')) {
 					console.error('Error refreshing access token');
 
 					// If the original request was not to the profile endpoint, logout and redirect to the login page
 					if (!requestUrl.includes('/profile')) {
 						console.log('Logging out...');
-						const redirectTo = pageUrl.startsWith('/console') ? 'console/login' : 'login';
-						authService.logout(redirectTo, pageUrl);
+						await authService.logout(pageUrl);
 					}
 
 					throw firstError;

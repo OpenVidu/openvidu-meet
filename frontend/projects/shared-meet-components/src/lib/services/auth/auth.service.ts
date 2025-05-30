@@ -32,17 +32,17 @@ export class AuthService {
 		return from(this.httpService.refreshToken());
 	}
 
-	async logout(redirectTo?: string, redirectToAfterLogin?: string) {
+	async logout(redirectToAfterLogin?: string) {
 		try {
 			await this.httpService.logout();
 			this.user = null;
 
-			if (redirectTo) {
-				const queryParams = redirectToAfterLogin
-					? { queryParams: { redirectTo: redirectToAfterLogin } }
-					: undefined;
-				this.router.navigate([redirectTo], queryParams);
-			}
+			// Redirect to login page with a query parameter if provided
+			// to redirect to the original page after login
+			const queryParams = redirectToAfterLogin
+				? { queryParams: { redirectTo: redirectToAfterLogin } }
+				: undefined;
+			this.router.navigate(['login'], queryParams);
 		} catch (error) {
 			console.error((error as HttpErrorResponse).error.message);
 		}
@@ -58,9 +58,9 @@ export class AuthService {
 		return this.user?.username;
 	}
 
-	async getUserRole(): Promise<UserRole | undefined> {
+	async getUserRoles(): Promise<UserRole[] | undefined> {
 		await this.getAuthenticatedUser();
-		return this.user?.role;
+		return this.user?.roles;
 	}
 
 	private async getAuthenticatedUser(force = false) {
