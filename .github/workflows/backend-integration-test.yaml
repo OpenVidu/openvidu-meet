@@ -260,7 +260,7 @@ jobs:
       - start-aws-runner
       - test-recordings
     runs-on: ov-actions-runner
-    if: ${{ always() && inputs.use-aws }}
+    if: ${{ always() && needs.start-aws-runner.outputs.label != '' }}
     steps:
       - name: Stop AWS EC2 Runner
         id: stop-ec2-runner
