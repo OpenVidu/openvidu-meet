@@ -2,12 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { AuthMode, UserRole } from '../../../../src/typings/ce/index.js';
+import { AuthMode } from '../../../../src/typings/ce/index.js';
 import {
 	changeSecurityPreferences,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	loginUserAsRole,
+	loginUser,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -18,11 +18,11 @@ describe('Participant API Security Tests', () => {
 	const PARTICIPANT_NAME = 'TEST_PARTICIPANT';
 
 	let app: Express;
-	let userCookie: string;
+	let adminCookie: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-		userCookie = await loginUserAsRole(UserRole.USER);
+		adminCookie = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -38,7 +38,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -49,7 +49,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -60,7 +60,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -71,9 +71,9 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
+			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
 				secret: roomData.moderatorSecret
@@ -82,7 +82,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -93,9 +93,9 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
+			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
 				secret: roomData.publisherSecret
@@ -104,7 +104,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -115,9 +115,9 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', userCookie).send({
+			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
 				participantName: PARTICIPANT_NAME,
 				secret: roomData.moderatorSecret
@@ -126,7 +126,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
@@ -145,7 +145,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,
@@ -156,7 +156,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,
@@ -167,7 +167,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,
@@ -178,11 +178,11 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -192,7 +192,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,
@@ -203,11 +203,11 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -217,7 +217,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,
@@ -228,11 +228,11 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -242,7 +242,7 @@ describe('Participant API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
 				roomId: roomData.room.roomId,

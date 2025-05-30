@@ -2,9 +2,8 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { UserRole } from '../../../../src/typings/ce/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { loginUserAsRole, startTestServer } from '../../../helpers/request-helpers.js';
+import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
@@ -20,8 +19,8 @@ describe('Authentication API Tests', () => {
 			const response = await request(app)
 				.post(`${AUTH_PATH}/login`)
 				.send({
-					username: 'user',
-					password: 'user'
+					username: 'admin',
+					password: 'admin'
 				})
 				.expect(200);
 
@@ -45,7 +44,7 @@ describe('Authentication API Tests', () => {
 			const response = await request(app)
 				.post(`${AUTH_PATH}/login`)
 				.send({
-					username: 'user',
+					username: 'admin',
 					password: 'invalidpassword'
 				})
 				.expect(404);
@@ -127,8 +126,8 @@ describe('Authentication API Tests', () => {
 			const loginResponse = await request(app)
 				.post(`${AUTH_PATH}/login`)
 				.send({
-					username: 'user',
-					password: 'user'
+					username: 'admin',
+					password: 'admin'
 				})
 				.expect(200);
 
@@ -172,22 +171,10 @@ describe('Authentication API Tests', () => {
 	});
 
 	describe('Profile Tests', () => {
-		let userCookie: string;
 		let adminCookie: string;
 
 		beforeAll(async () => {
-			// Get cookies for admin and user
-			userCookie = await loginUserAsRole(UserRole.USER);
-			adminCookie = await loginUserAsRole(UserRole.ADMIN);
-		});
-
-		it('should return 200 and user profile', async () => {
-			const response = await request(app).get(`${AUTH_PATH}/profile`).set('Cookie', userCookie).expect(200);
-
-			expect(response.body).toHaveProperty('username');
-			expect(response.body.username).toBe('user');
-			expect(response.body).toHaveProperty('role');
-			expect(response.body.role).toContain('user');
+			adminCookie = await loginUser();
 		});
 
 		it('should return 200 and admin profile', async () => {
@@ -195,8 +182,8 @@ describe('Authentication API Tests', () => {
 
 			expect(response.body).toHaveProperty('username');
 			expect(response.body.username).toBe('admin');
-			expect(response.body).toHaveProperty('role');
-			expect(response.body.role).toContain('admin');
+			expect(response.body).toHaveProperty('roles');
+			expect(response.body.roles).toEqual(expect.arrayContaining(['admin', 'user']));
 		});
 
 		it('should return 401 when no access token is provided', async () => {

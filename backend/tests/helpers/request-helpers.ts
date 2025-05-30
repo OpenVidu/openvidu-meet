@@ -11,9 +11,7 @@ import {
 	LIVEKIT_API_SECRET,
 	MEET_ADMIN_SECRET,
 	MEET_ADMIN_USER,
-	MEET_API_KEY,
-	MEET_SECRET,
-	MEET_USER
+	MEET_API_KEY
 } from '../../src/environment.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { RecordingService, RoomService } from '../../src/services/index.js';
@@ -23,15 +21,10 @@ import {
 	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomOptions,
-	UserRole,
 	WebhookPreferences
 } from '../../src/typings/ce/index.js';
 
 const CREDENTIALS = {
-	user: {
-		username: MEET_USER,
-		password: MEET_SECRET
-	},
 	admin: {
 		username: MEET_ADMIN_USER,
 		password: MEET_ADMIN_SECRET
@@ -58,7 +51,7 @@ export const startTestServer = (): Express => {
 export const getAppearancePreferences = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
 		.set('Cookie', adminCookie)
@@ -69,7 +62,7 @@ export const getAppearancePreferences = async () => {
 export const updateAppearancePreferences = async (preferences: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
 		.set('Cookie', adminCookie)
@@ -80,7 +73,7 @@ export const updateAppearancePreferences = async (preferences: any) => {
 export const getWebbhookPreferences = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
 		.set('Cookie', adminCookie)
@@ -91,7 +84,7 @@ export const getWebbhookPreferences = async () => {
 export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
 		.set('Cookie', adminCookie)
@@ -103,7 +96,7 @@ export const updateWebbhookPreferences = async (preferences: WebhookPreferences)
 export const getSecurityPreferences = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
 		.set('Cookie', adminCookie)
@@ -114,7 +107,7 @@ export const getSecurityPreferences = async () => {
 export const updateSecurityPreferences = async (preferences: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
 		.set('Cookie', adminCookie)
@@ -122,36 +115,27 @@ export const updateSecurityPreferences = async (preferences: any) => {
 	return response;
 };
 
-export const changeSecurityPreferences = async ({
-	usersCanCreateRooms = true,
-	authRequired = true,
-	authMode = AuthMode.NONE
-}) => {
+export const changeSecurityPreferences = async (authMode: AuthMode) => {
 	const response = await updateSecurityPreferences({
-		roomCreationPolicy: {
-			allowRoomCreation: usersCanCreateRooms,
-			requireAuthentication: authRequired
-		},
 		authentication: {
-			authMode: authMode,
-			method: {
+			authMethod: {
 				type: AuthType.SINGLE_USER
-			}
+			},
+			authModeToAccessRoom: authMode
 		}
 	});
 	expect(response.status).toBe(200);
 };
 
 /**
- * Logs in a user as a specific role (admin or user) and returns the access token cookie
+ * Logs in a user and returns the access token cookie
  */
-export const loginUserAsRole = async (role: UserRole): Promise<string> => {
+export const loginUser = async (): Promise<string> => {
 	checkAppIsRunning();
 
-	const credentials = role === UserRole.ADMIN ? CREDENTIALS.admin : CREDENTIALS.user;
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
-		.send(credentials)
+		.send(CREDENTIALS.admin)
 		.expect(200);
 
 	const cookies = response.headers['set-cookie'] as unknown as string[];
@@ -201,7 +185,7 @@ export const getRoom = async (roomId: string, fields?: string) => {
 export const updateRoomPreferences = async (roomId: string, preferences: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUserAsRole(UserRole.ADMIN);
+	const adminCookie = await loginUser();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
 		.set('Cookie', adminCookie)
@@ -311,9 +295,7 @@ export const generateParticipantToken = async (participantOptions: any) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences({
-		authMode: AuthMode.NONE
-	});
+	await changeSecurityPreferences(AuthMode.NONE);
 
 	// Generate the participant token
 	const response = await request(app)
@@ -350,9 +332,7 @@ export const refreshParticipantToken = async (participantOptions: any) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences({
-		authMode: AuthMode.NONE
-	});
+	await changeSecurityPreferences(AuthMode.NONE);
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token/refresh`)
@@ -420,9 +400,7 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences({
-		authMode: AuthMode.NONE
-	});
+	await changeSecurityPreferences(AuthMode.NONE);
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/recording-token`)

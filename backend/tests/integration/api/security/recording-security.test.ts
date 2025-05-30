@@ -3,14 +3,14 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
 import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	generateRecordingTokenCookie,
-	loginUserAsRole,
+	loginUser,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording,
@@ -23,16 +23,11 @@ const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/r
 
 describe('Recording API Security Tests', () => {
 	let app: Express;
-
-	let userCookie: string;
 	let adminCookie: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-
-		// Get cookies for admin and user
-		userCookie = await loginUserAsRole(UserRole.USER);
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
+		adminCookie = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -61,14 +56,6 @@ describe('Recording API Security Tests', () => {
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set('Cookie', adminCookie);
-			expect(response.status).toBe(401);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
-				.send({ roomId: roomData.room.roomId })
-				.set('Cookie', userCookie);
 			expect(response.status).toBe(401);
 		});
 
@@ -129,13 +116,6 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set('Cookie', userCookie);
-			expect(response.status).toBe(401);
-		});
-
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
@@ -175,11 +155,6 @@ describe('Recording API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).get(RECORDINGS_PATH).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(RECORDINGS_PATH).set('Cookie', userCookie);
-			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when recording access is public and participant is publisher', async () => {
@@ -265,11 +240,6 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', userCookie);
-			expect(response.status).toBe(401);
-		});
-
 		it('should succeed when recording access is public and participant is publisher', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
 			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
@@ -351,11 +321,6 @@ describe('Recording API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).delete(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(204);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).delete(`${RECORDINGS_PATH}/${recordingId}`).set('Cookie', userCookie);
-			expect(response.status).toBe(401);
 		});
 
 		it('should fail when recording access is public and participant is publisher', async () => {
@@ -455,14 +420,6 @@ describe('Recording API Security Tests', () => {
 				.set('Cookie', adminCookie);
 			expect(response.status).toBe(204);
 		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.delete(RECORDINGS_PATH)
-				.query({ recordingIds: [recordingId] })
-				.set('Cookie', userCookie);
-			expect(response.status).toBe(403);
-		});
 	});
 
 	describe('Get Recording Media Tests', () => {
@@ -486,13 +443,6 @@ describe('Recording API Security Tests', () => {
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-				.set('Cookie', userCookie);
-			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when recording access is public and participant is publisher', async () => {

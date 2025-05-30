@@ -3,23 +3,18 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { UserRole } from '../../../../src/typings/ce/index.js';
-import { loginUserAsRole, startTestServer } from '../../../helpers/request-helpers.js';
+import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
 
 const PREFERENCES_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`;
 
 describe('Global Preferences API Security Tests', () => {
 	let app: Express;
-
-	let userCookie: string;
 	let adminCookie: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-
-		// Get cookies for admin and user
-		userCookie = await loginUserAsRole(UserRole.USER);
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
+		adminCookie = await loginUser();
 	});
 
 	describe('Update Webhook Preferences Tests', () => {
@@ -44,14 +39,6 @@ describe('Global Preferences API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/webhooks`)
-				.set('Cookie', userCookie)
-				.send(webhookPreferences);
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${PREFERENCES_PATH}/webhooks`).send(webhookPreferences);
 			expect(response.status).toBe(401);
@@ -71,11 +58,6 @@ describe('Global Preferences API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/webhooks`).set('Cookie', userCookie);
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(`${PREFERENCES_PATH}/webhooks`);
 			expect(response.status).toBe(401);
@@ -84,9 +66,11 @@ describe('Global Preferences API Security Tests', () => {
 
 	describe('Update Security Preferences Tests', () => {
 		const securityPreferences = {
-			roomCreationPolicy: {
-				allowRoomCreation: true,
-				requireAuthentication: true
+			authentication: {
+				authMethod: {
+					type: AuthType.SINGLE_USER
+				},
+				authModeToAccessRoom: AuthMode.ALL_USERS
 			}
 		};
 
@@ -104,14 +88,6 @@ describe('Global Preferences API Security Tests', () => {
 				.set('Cookie', adminCookie)
 				.send(securityPreferences);
 			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/security`)
-				.set('Cookie', userCookie)
-				.send(securityPreferences);
-			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -144,14 +120,6 @@ describe('Global Preferences API Security Tests', () => {
 			expect(response.status).toBe(402); // Assuming 402 is the expected status code for this case
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/appearance`)
-				.set('Cookie', userCookie)
-				.send({});
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${PREFERENCES_PATH}/appearance`).send({});
 			expect(response.status).toBe(401);
@@ -169,11 +137,6 @@ describe('Global Preferences API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).get(`${PREFERENCES_PATH}/appearance`).set('Cookie', adminCookie);
 			expect(response.status).toBe(402); // Assuming 402 is the expected status code for this case
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/appearance`).set('Cookie', userCookie);
-			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {

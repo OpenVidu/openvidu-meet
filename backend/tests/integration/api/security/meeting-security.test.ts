@@ -3,11 +3,10 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { UserRole } from '../../../../src/typings/ce/index.js';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	loginUserAsRole,
+	loginUser,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -16,18 +15,12 @@ const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
 
 describe('Meeting API Security Tests', () => {
 	let app: Express;
-
-	let userCookie: string;
 	let adminCookie: string;
-
 	let roomData: RoomData;
 
 	beforeAll(async () => {
 		app = startTestServer();
-
-		// Get cookies for admin and user
-		userCookie = await loginUserAsRole(UserRole.USER);
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
+		adminCookie = await loginUser();
 	});
 
 	beforeEach(async () => {
@@ -51,13 +44,6 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
 				.set('Cookie', adminCookie);
-			expect(response.status).toBe(401);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', userCookie);
 			expect(response.status).toBe(401);
 		});
 
@@ -99,13 +85,6 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
 				.set('Cookie', adminCookie);
-			expect(response.status).toBe(401);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', userCookie);
 			expect(response.status).toBe(401);
 		});
 

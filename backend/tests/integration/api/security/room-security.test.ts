@@ -3,12 +3,12 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { AuthMode, MeetRecordingAccess, UserRole } from '../../../../src/typings/ce/index.js';
+import { AuthMode, MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
 import {
 	changeSecurityPreferences,
 	createRoom,
 	deleteAllRooms,
-	loginUserAsRole,
+	loginUser,
 	startTestServer,
 	updateRecordingAccessPreferencesInRoom
 } from '../../../helpers/request-helpers.js';
@@ -19,15 +19,11 @@ const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`
 
 describe('Room API Security Tests', () => {
 	let app: Express;
-	let userCookie: string;
 	let adminCookie: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-
-		// Get cookies for admin and user
-		userCookie = await loginUserAsRole(UserRole.USER);
-		adminCookie = await loginUserAsRole(UserRole.ADMIN);
+		adminCookie = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -35,11 +31,7 @@ describe('Room API Security Tests', () => {
 	});
 
 	describe('Create Room Tests', () => {
-		it('should succeed when users cannot create rooms, and request includes API key', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: false
-			});
-
+		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.post(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
@@ -47,59 +39,12 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(201);
 		});
 
-		it('should succeed when users cannot create rooms, and user is authenticated as admin', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: false
-			});
-
+		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send({});
 			expect(response.status).toBe(201);
 		});
 
-		it('should fail when users cannot create rooms, and user is authenticated as user', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: false
-			});
-
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send({});
-			expect(response.status).toBe(403);
-		});
-
-		it('should fail when users cannot create rooms, and user is not authenticated', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: false
-			});
-
-			const response = await request(app).post(ROOMS_PATH).send({});
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when users can create rooms and auth is not required, and user is not authenticated', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: true,
-				authRequired: false
-			});
-
-			const response = await request(app).post(ROOMS_PATH).send({});
-			expect(response.status).toBe(201);
-		});
-
-		it('should succeed when users can create rooms and auth is required, and user is authenticated', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: true,
-				authRequired: true
-			});
-
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', userCookie).send({});
-			expect(response.status).toBe(201);
-		});
-
-		it('should fail when users can create rooms and auth is required, and user is not authenticated', async () => {
-			await changeSecurityPreferences({
-				usersCanCreateRooms: true,
-				authRequired: true
-			});
-
+		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).post(ROOMS_PATH).send({});
 			expect(response.status).toBe(401);
 		});
@@ -114,11 +59,6 @@ describe('Room API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).get(ROOMS_PATH).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(ROOMS_PATH).set('Cookie', userCookie);
-			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -151,11 +91,6 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).delete(ROOMS_PATH).query({ roomIds: roomId }).set('Cookie', userCookie);
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(ROOMS_PATH).query({ roomIds: roomId });
 			expect(response.status).toBe(401);
@@ -179,11 +114,6 @@ describe('Room API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}`).set('Cookie', userCookie);
-			expect(response.status).toBe(401);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -235,11 +165,6 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`).set('Cookie', userCookie);
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`);
 			expect(response.status).toBe(401);
@@ -279,14 +204,6 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as user', async () => {
-			const response = await request(app)
-				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
-				.set('Cookie', userCookie)
-				.send(roomPreferences);
-			expect(response.status).toBe(403);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${INTERNAL_ROOMS_PATH}/${roomId}`).send(roomPreferences);
 			expect(response.status).toBe(401);
@@ -308,7 +225,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -317,7 +234,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.NONE });
+			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -326,7 +243,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -335,17 +252,17 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({ secret: roomData.moderatorSecret });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.MODERATORS_ONLY });
+			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -354,17 +271,17 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({ secret: roomData.publisherSecret });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -373,17 +290,17 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
-				.set('Cookie', userCookie)
+				.set('Cookie', adminCookie)
 				.send({ secret: roomData.moderatorSecret });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences({ authMode: AuthMode.ALL_USERS });
+			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
