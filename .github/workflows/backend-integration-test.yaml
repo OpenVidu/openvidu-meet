@@ -10,8 +10,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -44,8 +42,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -77,8 +73,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -110,8 +104,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -143,8 +135,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -176,8 +166,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
@@ -209,8 +197,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment

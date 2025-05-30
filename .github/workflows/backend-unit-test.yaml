@@ -10,8 +10,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install wait-on
-        run: npm install -g wait-on
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
       - name: Run tests
