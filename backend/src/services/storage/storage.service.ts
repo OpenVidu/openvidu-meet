@@ -1,11 +1,17 @@
-import { AuthMode, AuthType, GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
+import { AuthMode, AuthType, GlobalPreferences, MeetRecordingInfo, MeetRoom, User, UserRole } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
-import { MEET_NAME_ID, MEET_SECRET, MEET_USER, MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../environment.js';
+import { Readable } from 'stream';
+import {
+	MEET_ADMIN_SECRET,
+	MEET_ADMIN_USER,
+	MEET_NAME_ID,
+	MEET_WEBHOOK_ENABLED,
+	MEET_WEBHOOK_URL
+} from '../../environment.js';
 import { MeetLock, PasswordHelper } from '../../helpers/index.js';
 import { errorRoomNotFound, internalError, OpenViduMeetError } from '../../models/error.model.js';
 import { LoggerService, MutexService, StorageFactory, StorageProvider } from '../index.js';
-import { Readable } from 'stream';
 
 /**
  * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
@@ -20,9 +26,11 @@ import { Readable } from 'stream';
 export class MeetStorageService<
 	GPrefs extends GlobalPreferences = GlobalPreferences,
 	MRoom extends MeetRoom = MeetRoom,
-	MRec extends MeetRecordingInfo = MeetRecordingInfo
+	MRec extends MeetRecordingInfo = MeetRecordingInfo,
+	MUser extends User = User
 > {
 	protected storageProvider: StorageProvider;
+
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(StorageFactory) protected storageFactory: StorageFactory,
@@ -68,10 +76,10 @@ export class MeetStorageService<
 	}
 
 	/**
-	 * Initializes default preferences if not already initialized.
+	 * Initializes default preferences if not already initialized and saves the admin user.
 	 * @returns {Promise<GPrefs>} Default global preferences.
 	 */
-	async initializeGlobalPreferences(): Promise<void> {
+	async initialize(): Promise<void> {
 		try {
 			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
 			const lock = await this.mutexService.acquire(MeetLock.getGlobalPreferencesLock(), ms('30s'));
@@ -83,10 +91,17 @@ export class MeetStorageService<
 				return;
 			}
 
-			const preferences = await this.getDefaultPreferences();
-
 			this.logger.verbose('Initializing global preferences with default values');
+			const preferences = await this.getDefaultPreferences();
 			await this.storageProvider.initialize(preferences);
+			
+			// Save the default admin user
+			const admin = {
+				username: MEET_ADMIN_USER,
+				passwordHash: await PasswordHelper.hashPassword(MEET_ADMIN_SECRET),
+				roles: [UserRole.ADMIN, UserRole.USER]
+			} as MUser;
+			await this.saveUser(admin);
 		} catch (error) {
 			this.handleError(error, 'Error initializing default preferences');
 		}
@@ -101,7 +116,7 @@ export class MeetStorageService<
 
 		if (preferences) return preferences as GPrefs;
 
-		await this.initializeGlobalPreferences();
+		await this.initialize();
 		preferences = await this.storageProvider.getGlobalPreferences();
 
 		if (!preferences) {
@@ -125,8 +140,8 @@ export class MeetStorageService<
 	/**
 	 * Saves the meet room to the storage provider.
 	 *
-	 * @param meetRoom - The meeting room object to be saved
-	 * @returns A promise that resolves to the saved meeting room object
+	 * @param meetRoom - The room object to be saved
+	 * @returns A promise that resolves to the saved room object
 	 */
 	async saveMeetRoom(meetRoom: MRoom): Promise<MRoom> {
 		this.logger.info(`Saving OpenVidu room ${meetRoom.roomId}`);
@@ -134,12 +149,12 @@ export class MeetStorageService<
 	}
 
 	/**
-	 * Retrieves a paginated list of meeting rooms from the storage provider.
+	 * Retrieves a paginated list of rooms from the storage provider.
 	 *
 	 * @param maxItems - Optional maximum number of rooms to retrieve in a single request
 	 * @param nextPageToken - Optional token for pagination to get the next page of results
 	 * @returns A promise that resolves to an object containing:
-	 *   - rooms: Array of MRoom objects representing the meeting rooms
+	 *   - rooms: Array of MRoom objects representing the rooms
 	 *   - isTruncated: Boolean indicating if there are more results available
 	 *   - nextPageToken: Optional token for retrieving the next page of results
 	 */
@@ -159,7 +174,7 @@ export class MeetStorageService<
 	}
 
 	/**
-	 * Retrieves the preferences associated with a specific room.
+	 * Retrieves the room by its unique identifier.
 	 *
 	 * @param roomId - The unique identifier for the room.
 	 * @returns A promise that resolves to the room's preferences.
@@ -177,7 +192,7 @@ export class MeetStorageService<
 	}
 
 	/**
-	 * Deletes multiple meeting rooms from storage.
+	 * Deletes multiple rooms from storage.
 	 *
 	 * @param roomIds - Array of room identifiers to be deleted
 	 * @returns A promise that resolves when all rooms have been successfully deleted
@@ -306,6 +321,27 @@ export class MeetStorageService<
 	}
 
 	/**
+	 * Retrieves user data for a specific username.
+	 *
+	 * @param username - The username of the user to retrieve
+	 * @returns A promise that resolves to the user data, or null if not found
+	 */
+	async getUser(username: string): Promise<MUser | null> {
+		return this.storageProvider.getUser(username) as Promise<MUser | null>;
+	}
+
+	/**
+	 * Saves user data to the storage provider.
+	 *
+	 * @param user - The user data to be saved
+	 * @returns A promise that resolves to the saved user data
+	 */
+	async saveUser(user: MUser): Promise<MUser> {
+		this.logger.info(`Saving user data for ${user.username}`);
+		return this.storageProvider.saveUser(user) as Promise<MUser>;
+	}
+
+	/**
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
 	 */
@@ -317,19 +353,11 @@ export class MeetStorageService<
 				url: MEET_WEBHOOK_URL
 			},
 			securityPreferences: {
-				roomCreationPolicy: {
-					allowRoomCreation: true,
-					requireAuthentication: true
-				},
 				authentication: {
-					authMode: AuthMode.NONE,
-					method: {
-						type: AuthType.SINGLE_USER,
-						credentials: {
-							username: MEET_USER,
-							passwordHash: await PasswordHelper.hashPassword(MEET_SECRET)
-						}
-					}
+					authMethod: {
+						type: AuthType.SINGLE_USER
+					},
+					authModeToAccessRoom: AuthMode.NONE
 				}
 			}
 		} as GPrefs;

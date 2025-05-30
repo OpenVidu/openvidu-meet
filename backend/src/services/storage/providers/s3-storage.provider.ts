@@ -1,5 +1,5 @@
 import { PutObjectCommandOutput } from '@aws-sdk/client-s3';
-import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
+import { GlobalPreferences, MeetRecordingInfo, MeetRoom, User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../../../config/internal-config.js';
 import { errorRecordingNotFound, OpenViduMeetError, RedisKeyName } from '../../../models/index.js';
@@ -11,8 +11,8 @@ import { Readable } from 'stream';
  * Implementation of the StorageProvider interface using AWS S3 for persistent storage
  * with Redis caching for improved performance.
  *
- * This class provides operations for storing and retrieving application preferences and room data
- * with a two-tiered storage approach:
+ * This class provides operations for storing and retrieving application preferences,
+ * rooms, recordings metadata and users with a two-tiered storage approach:
  * - Redis is used as a primary cache for fast access
  * - S3 serves as the persistent storage layer and fallback when data is not in Redis
  *
@@ -21,6 +21,8 @@ import { Readable } from 'stream';
  *
  * @template GPrefs - Type for global preferences data, defaults to GlobalPreferences
  * @template MRoom - Type for room data, defaults to MeetRoom
+ * @template MRec - Type for recording metadata, defaults to MeetRecordingInfo
+ * @template MUser - Type for user data, defaults to User
  *
  * @implements {StorageProvider}
  */
@@ -28,10 +30,12 @@ import { Readable } from 'stream';
 export class S3StorageProvider<
 	GPrefs extends GlobalPreferences = GlobalPreferences,
 	MRoom extends MeetRoom = MeetRoom,
-	MRec extends MeetRecordingInfo = MeetRecordingInfo
+	MRec extends MeetRecordingInfo = MeetRecordingInfo,
+	MUser extends User = User
 > implements StorageProvider
 {
 	protected readonly S3_GLOBAL_PREFERENCES_KEY = `global-preferences.json`;
+
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(S3Service) protected s3Service: S3Service,
@@ -479,14 +483,12 @@ export class S3StorageProvider<
 	 */
 	async getRecordingMetadataByPath(recordingPath: string): Promise<MRec> {
 		try {
-			return await this.s3Service.getObjectAsJson(recordingPath) as MRec;
+			return (await this.s3Service.getObjectAsJson(recordingPath)) as MRec;
 		} catch (error) {
 			this.handleError(error, `Error fetching recording metadata for path ${recordingPath}`);
 			throw error;
-
 		}
 	}
-
 
 	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
 		try {
@@ -514,6 +516,77 @@ export class S3StorageProvider<
 			this.handleError(error, `Error deleting multiple recording metadata files: ${metadataPaths.join(', ')}`);
 			throw error;
 		}
+	}
+
+	async getUser(username: string): Promise<MUser | null> {
+		try {
+			const userKey = RedisKeyName.USER + username;
+			const user: MUser | null = await this.getFromRedis<MUser>(userKey);
+
+			if (!user) {
+				this.logger.debug(`User ${username} not found in Redis. Fetching from S3...`);
+				const s3Path = `${INTERNAL_CONFIG.S3_USERS_PREFIX}/${username}.json`;
+				return await this.getFromS3<MUser>(s3Path);
+			}
+
+			this.logger.debug(`User ${username} retrieved from Redis`);
+			return user;
+		} catch (error) {
+			this.handleError(error, `Error fetching user ${username}`);
+			return null;
+		}
+	}
+
+	/**
+	 * Saves a user object to both S3 storage and Redis cache atomically.
+	 *
+	 * This method attempts to persist the user data in S3 (as a JSON file) and in Redis (as a serialized string).
+	 * If both operations succeed, the user is considered saved and the method returns the user object.
+	 * If either operation fails, the method attempts to roll back any successful operation to maintain consistency.
+	 * In case of failure, the error is logged and rethrown after rollback attempts.
+	 *
+	 * @param user - The user object to be saved.
+	 * @returns A promise that resolves to the saved user object if both operations succeed.
+	 * @throws An error if either the S3 or Redis operation fails, after attempting rollback.
+	 */
+	async saveUser(user: MUser): Promise<MUser> {
+		const userKey = RedisKeyName.USER + user.username;
+		const redisPayload = JSON.stringify(user);
+		const s3Path = `${INTERNAL_CONFIG.S3_USERS_PREFIX}/${user.username}.json`;
+
+		const [s3Result, redisResult] = await Promise.allSettled([
+			this.s3Service.saveObject(s3Path, user),
+			this.redisService.set(userKey, redisPayload, false)
+		]);
+
+		if (s3Result.status === 'fulfilled' && redisResult.status === 'fulfilled') {
+			this.logger.info(`User ${user.username} saved successfully`);
+			return user;
+		}
+
+		// Rollback any changes made by the successful operation
+		if (s3Result.status === 'fulfilled') {
+			try {
+				await this.s3Service.deleteObjects([s3Path]);
+			} catch (rollbackError) {
+				this.logger.error(`Error rolling back S3 save for user ${user.username}: ${rollbackError}`);
+			}
+		}
+
+		if (redisResult.status === 'fulfilled') {
+			try {
+				await this.redisService.delete(userKey);
+			} catch (rollbackError) {
+				this.logger.error(`Error rolling back Redis set for user ${user.username}: ${rollbackError}`);
+			}
+		}
+
+		// Return the error that occurred first
+		const failedOperation: PromiseRejectedResult =
+			s3Result.status === 'rejected' ? s3Result : (redisResult as PromiseRejectedResult);
+		const error = failedOperation.reason;
+		this.handleError(error, `Error saving user ${user.username}`);
+		throw error;
 	}
 
 	/**

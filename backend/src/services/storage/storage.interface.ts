@@ -1,21 +1,24 @@
-import { GlobalPreferences, MeetRecordingInfo, MeetRoom } from '@typings-ce';
+import { GlobalPreferences, MeetRecordingInfo, MeetRoom, User } from '@typings-ce';
 import { Readable } from 'stream';
 
 /**
  * An interface that defines the contract for storage providers in the OpenVidu Meet application.
- * Storage providers handle persistence of global application preferences and meeting room data.
+ * Storage providers handle persistence of global application preferences, rooms, recordings metadata and users.
  *
  * @template GPrefs - The type of global preferences, extending GlobalPreferences
  * @template MRoom - The type of room data, extending MeetRoom
+ * @template MRec - The type of recording metadata, extending MeetRecordingInfo
+ * @template MUser - The type of user data, extending User
  *
  * Implementations of this interface should handle the persistent storage
- * of application settings and room information, which could be backed by
- * various storage solutions (database, file system, cloud storage, etc.).
+ * of application settings, room information, recording metadata, and user data,
+ * which could be backed by various storage solutions (database, file system, cloud storage, etc.).
  */
 export interface StorageProvider<
 	GPrefs extends GlobalPreferences = GlobalPreferences,
 	MRoom extends MeetRoom = MeetRoom,
-	MRec extends MeetRecordingInfo = MeetRecordingInfo
+	MRec extends MeetRecordingInfo = MeetRecordingInfo,
+	MUser extends User = User
 > {
 	/**
 	 * Initializes the storage with default preferences if they are not already set.
@@ -77,9 +80,9 @@ export interface StorageProvider<
 	 *
 	 * @param maxItems - The maximum number of items to retrieve. If not provided, all items will be retrieved.
 	 * @param nextPageToken - The token for the next page of results. If not provided, the first page will be retrieved.
-	 * @returns A promise that resolves to an object containing ç
-	 * 	- the retrieved rooms,
-	 *  - a boolean indicating if there are more items to retrieve
+	 * @returns A promise that resolves to an object containing:
+	 * 	- the retrieved rooms.
+	 *  - a boolean indicating if there are more items to retrieve.
 	 * 	- an optional next page token.
 	 */
 	getMeetRooms(
@@ -94,7 +97,7 @@ export interface StorageProvider<
 	/**
 	 * Retrieves the {@link MeetRoom}.
 	 *
-	 * @param roomId - The name of the room to retrieve.
+	 * @param roomId - The identifier of the room to retrieve.
 	 * @returns A promise that resolves to the OpenVidu Room, or null if not found.
 	 **/
 	getMeetRoom(roomId: string): Promise<MRoom | null>;
@@ -103,14 +106,14 @@ export interface StorageProvider<
 	 * Saves the OpenVidu Meet Room.
 	 *
 	 * @param meetRoom - The OpenVidu Room to save.
-	 * @returns A promise that resolves to the saved
+	 * @returns A promise that resolves to the saved OpenVidu Room.
 	 **/
 	saveMeetRoom(meetRoom: MRoom): Promise<MRoom>;
 
 	/**
 	 * Deletes OpenVidu Meet Rooms.
 	 *
-	 * @param roomIds - The room names to delete.
+	 * @param roomIds - The room IDs to delete.
 	 * @returns A promise that resolves when the room have been deleted.
 	 **/
 	deleteMeetRooms(roomIds: string[]): Promise<void>;
@@ -194,6 +197,7 @@ export interface StorageProvider<
 			start: number;
 		}
 	): Promise<Readable>;
+
 	/**
 	 * Deletes multiple recording binary files by their paths.
 	 *
@@ -201,4 +205,20 @@ export interface StorageProvider<
 	 * @returns A promise that resolves when the recording binary files have been deleted.
 	 */
 	deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void>;
+
+	/**
+	 * Retrieves the user data for a specific username.
+	 *
+	 * @param username - The username of the user to retrieve.
+	 * @returns A promise that resolves to the user data, or null if not found.
+	 */
+	getUser(username: string): Promise<MUser | null>;
+
+	/**
+	 * Saves the user data.
+	 *
+	 * @param user - The user data to save.
+	 * @returns A promise that resolves to the saved user data.
+	 */
+	saveUser(user: MUser): Promise<MUser>;
 }

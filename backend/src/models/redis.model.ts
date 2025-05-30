@@ -4,7 +4,8 @@ export const enum RedisKeyPrefix {
 
 export const enum RedisKeyName {
 	GLOBAL_PREFERENCES = `${RedisKeyPrefix.BASE}global_preferences`,
-	ROOM = `${RedisKeyPrefix.BASE}room:`
+	ROOM = `${RedisKeyPrefix.BASE}room:`,
+	USER = `${RedisKeyPrefix.BASE}user:`,
 }
 
 export const enum RedisLockPrefix {

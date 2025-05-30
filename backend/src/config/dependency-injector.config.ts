@@ -58,5 +58,5 @@ export const registerDependencies = () => {
 export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
-	await container.get(MeetStorageService).initializeGlobalPreferences();
+	await container.get(MeetStorageService).initialize();
 };
