@@ -15,6 +15,7 @@ jobs:
   start-aws-runner:
     name: Prepare AWS runner
     runs-on: ov-actions-runner
+    if: ${{ inputs.use-aws != 'false' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -22,7 +23,6 @@ jobs:
       - name: Start AWS EC2 Runner
         id: start-ec2-runner
         uses: OpenVidu/actions/start-aws-runner@main
-        if: ${{ inputs.use-aws }}
         with:
           aws-instance-type: ${{ inputs.aws-instance-type || 'c5.xlarge' }}
           aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
