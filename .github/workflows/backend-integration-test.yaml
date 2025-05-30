@@ -3,8 +3,37 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      use-aws:
+        description: "Run recording tests in AWS EC2 runner"
+        default: "true"
+      aws-instance-type:
+        description: "AWS EC2 instance type"
+        default: "c5.xlarge"
 
 jobs:
+  start-aws-runner:
+    name: Prepare AWS runner
+    runs-on: ov-actions-runner
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Start AWS EC2 Runner
+        id: start-ec2-runner
+        uses: OpenVidu/actions/start-aws-runner@main
+        if: ${{ inputs.use-aws }}
+        with:
+          aws-instance-type: ${{ inputs.aws-instance-type || 'c5.xlarge' }}
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+          github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
+          ec2-image-id: ${{ vars.AWS_GITHUB_ACTIONS_AMI }}
+          subnet-id: ${{ vars.AWS_SUBNET_ID }}
+          security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
+          workflow-name: ${{ github.workflow }}
+          repository-name: ${{ github.repository }}
   test-rooms:
     name: Rooms API Tests
     runs-on: ov-actions-runner
@@ -38,9 +67,11 @@ jobs:
 
   test-recordings:
     name: Recordings API Tests
-    runs-on: ov-actions-runner
-    if: false
+    needs: start-aws-runner
+    runs-on: ${{ needs.start-aws-runner.outputs.label || 'ov-actions-runner' }}
+    timeout-minutes: 30
     steps:
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -222,3 +253,22 @@ jobs:
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main
+
+  stop-runner:
+    name: Stop EC2 runner
+    needs:
+      - start-aws-runner
+      - test-recordings
+    runs-on: ov-actions-runner
+    if: ${{ always() && inputs.use-aws }}
+    steps:
+      - name: Stop AWS EC2 Runner
+        id: stop-ec2-runner
+        uses: OpenVidu/actions/stop-aws-runner@main
+        with:
+          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+          github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
+          label: ${{ needs.start-aws-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-aws-runner.outputs.ec2-instance-id }}
