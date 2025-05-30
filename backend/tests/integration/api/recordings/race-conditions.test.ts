@@ -48,6 +48,39 @@ describe('Recording API Race Conditions Tests', () => {
 		jest.clearAllMocks();
 	});
 
+	it('should handle recording rejection when start recording fails', async () => {
+		context = await setupMultiRoomTestContext(1, true);
+		const roomData = context.getRoomByIndex(0)!;
+		const startRoomCompositeSpy = jest
+			.spyOn(recordingService['livekitService'], 'startRoomComposite')
+			.mockImplementation(async () => {
+				throw new Error('Failed to start room composite');
+			});
+		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
+		const handleRecordingLockTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingLockTimeout');
+		const releaseLockSpy = jest.spyOn(recordingService as any, 'releaseRecordingLockIfNoEgress');
+
+		try {
+			// Attempt to start recording
+			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+			expect(eventServiceOffSpy).toHaveBeenCalledWith(SystemEventType.RECORDING_ACTIVE, expect.any(Function));
+			expect(handleRecordingLockTimeoutSpy).not.toHaveBeenCalledWith(
+				'', // empty recordingId since it never started
+				roomData.room.roomId
+			);
+			expect(releaseLockSpy).toHaveBeenCalled();
+			expect(startRoomCompositeSpy).toHaveBeenCalled();
+			console.log('Recording start response:', result.body);
+			expect(result.status).toBe(500); // Service Unavailable due to failure
+		} finally {
+			// Cleanup
+			startRoomCompositeSpy.mockRestore();
+			handleRecordingLockTimeoutSpy.mockRestore();
+			releaseLockSpy.mockRestore();
+			eventServiceOffSpy.mockRestore();
+		}
+	});
+
 	it('should properly release recording lock when timeout occurs before startRoomComposite completes', async () => {
 		setInternalConfig({
 			RECORDING_STARTED_TIMEOUT: '1s' // Set a short timeout for testing
