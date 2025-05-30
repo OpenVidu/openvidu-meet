@@ -46,7 +46,6 @@ describe('Recording API Tests', () => {
 
 		it('should delete room metadata when deleting the last recording', async () => {
 			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
-			// Create two recordings in the same room
 
 			// Check that the room metadata exists after starting the first recording
 			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);

@@ -34,6 +34,10 @@ describe('Recordings API Tests', () => {
 	describe('List Recordings Tests', () => {
 		afterEach(async () => {
 			await deleteAllRecordings();
+			const response = await getAllRecordings();
+			expect(response.status).toBe(200);
+			expectSuccessListRecordingResponse(response, 0, false, false);
+
 		});
 
 		afterAll(async () => {
@@ -118,7 +122,7 @@ describe('Recordings API Tests', () => {
 			const nextResponse = await getAllRecordings({ maxItems: 3, nextPageToken });
 
 			expectSuccessListRecordingResponse(nextResponse, 3, false, false, 3);
-			nextResponse.body.recordings.forEach((recording: MeetRecordingInfo, i: number) => {
+			nextResponse.body.recordings.forEach((recording: MeetRecordingInfo) => {
 				const associatedRoom = rooms.find((r) => r.room.roomId === recording.roomId);
 
 				expectValidRecording(

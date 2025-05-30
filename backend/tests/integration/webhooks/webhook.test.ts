@@ -8,7 +8,8 @@ import {
 	deleteAllRecordings,
 	sleep,
 	endMeeting,
-	updateWebbhookPreferences
+	updateWebbhookPreferences,
+	deleteAllRooms
 } from '../../helpers/request-helpers.js';
 import { MeetWebhookEvent, MeetWebhookEventType } from '../../../src/typings/ce/webhook.model.js';
 
@@ -51,6 +52,7 @@ describe('Webhook Integration Tests', () => {
 		const defaultPreferences = await storageService['getDefaultPreferences']();
 		await updateWebbhookPreferences(defaultPreferences.webhooksPreferences);
 		await deleteAllRecordings();
+		await deleteAllRooms();
 	});
 
 	it('should not send webhooks when disabled', async () => {
