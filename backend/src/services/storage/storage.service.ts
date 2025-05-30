@@ -43,6 +43,31 @@ export class MeetStorageService<
 	}
 
 	/**
+	 * Lists objects in the storage with optional pagination support.
+	 *
+	 * @param prefix - The prefix to filter objects by (acts as a folder path)
+	 * @param maxItems - Maximum number of items to return (optional)
+	 * @param nextPageToken - Token for pagination to get the next page (optional)
+	 * @returns Promise resolving to paginated list of objects with metadata
+	 */
+	listObjects(
+		prefix: string,
+		maxItems?: number,
+		nextPageToken?: string
+	): Promise<{
+		Contents?: Array<{
+			Key?: string;
+			LastModified?: Date;
+			Size?: number;
+			ETag?: string;
+		}>;
+		IsTruncated?: boolean;
+		NextContinuationToken?: string;
+	}> {
+		return this.storageProvider.listObjects(prefix, maxItems, nextPageToken);
+	}
+
+	/**
 	 * Initializes default preferences if not already initialized.
 	 * @returns {Promise<GPrefs>} Default global preferences.
 	 */

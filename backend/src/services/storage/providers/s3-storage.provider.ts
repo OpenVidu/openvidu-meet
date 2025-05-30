@@ -59,6 +59,39 @@ export class S3StorageProvider<
 	}
 
 	/**
+	 * Lists objects in the storage with optional pagination support.
+	 *
+	 * @param prefix - The prefix to filter objects by (acts as a folder path)
+	 * @param maxItems - Maximum number of items to return (optional)
+	 * @param nextPageToken - Token for pagination to get the next page (optional)
+	 * @returns Promise resolving to paginated list of objects with metadata
+	 */
+	async listObjects(
+		prefix: string,
+		maxItems?: number,
+		nextPageToken?: string
+	): Promise<{
+		Contents?: Array<{
+			Key?: string;
+			LastModified?: Date;
+			Size?: number;
+			ETag?: string;
+		}>;
+		IsTruncated?: boolean;
+		NextContinuationToken?: string;
+	}> {
+		try {
+			this.logger.debug(
+				`Listing objects with prefix: ${prefix}, maxItems: ${maxItems}, nextPageToken: ${nextPageToken}`
+			);
+			return await this.s3Service.listObjectsPaginated(prefix, maxItems, nextPageToken);
+		} catch (error) {
+			this.handleError(error, `Error listing objects with prefix ${prefix}`);
+			throw error;
+		}
+	}
+
+	/**
 	 * Initializes global preferences. If no preferences exist, persists the provided defaults.
 	 * If preferences exist but belong to a different project, they are replaced.
 	 *

@@ -128,7 +128,6 @@ export class S3Service {
 		additionalPrefix = '',
 		maxKeys = 50,
 		continuationToken?: string,
-		searchPattern = '',
 		bucket: string = MEET_S3_BUCKET
 	): Promise<ListObjectsV2CommandOutput> {
 		// The complete prefix is constructed by combining the subbucket and the additionalPrefix.
@@ -145,16 +144,7 @@ export class S3Service {
 		});
 
 		try {
-			const response: ListObjectsV2CommandOutput = await this.s3.send(command);
-
-			// If searchPattern is provided, filter the results.
-
-			if (searchPattern) {
-				const regex = new RegExp(searchPattern);
-				response.Contents = (response.Contents || []).filter((item) => item.Key && regex.test(item.Key));
-			}
-
-			return response;
+			return await this.s3.send(command);
 		} catch (error: any) {
 			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix "${basePrefix}": ${error}`);
 			throw internalError('listing objects from S3');

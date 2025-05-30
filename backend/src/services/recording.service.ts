@@ -32,7 +32,6 @@ import {
 	MutexService,
 	RedisLock,
 	RoomService,
-	S3Service,
 	SystemEventService,
 	TaskSchedulerService
 } from './index.js';
@@ -40,7 +39,6 @@ import {
 @injectable()
 export class RecordingService {
 	constructor(
-		@inject(S3Service) protected s3Service: S3Service,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(MutexService) protected mutexService: MutexService,
@@ -306,7 +304,7 @@ export class RecordingService {
 	protected async shouldDeleteRoomMetadata(roomId: string): Promise<boolean | null> {
 		try {
 			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
-			const { Contents } = await this.s3Service.listObjectsPaginated(metadataPrefix);
+			const { Contents } = await this.storageService.listObjects(metadataPrefix, 1);
 
 			// If no metadata files exist or the list is empty, the room metadata should be deleted
 			return !Contents || Contents.length === 0;
@@ -346,10 +344,11 @@ export class RecordingService {
 		try {
 			// Construct the room prefix if a room ID is provided
 			const roomPrefix = roomId ? `/${roomId}` : '';
+			const recordingPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`;
 
 			// Retrieve the recordings from the S3 bucket
-			const { Contents, IsTruncated, NextContinuationToken } = await this.s3Service.listObjectsPaginated(
-				`${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`,
+			const { Contents, IsTruncated, NextContinuationToken } = await this.storageService.listObjects(
+				recordingPrefix,
 				maxItems,
 				nextPageToken
 			);
