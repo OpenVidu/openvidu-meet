@@ -1,47 +1,45 @@
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatToolbar } from '@angular/material/toolbar';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { UserRole } from 'shared-meet-components';
-import { AuthService, ContextService } from '../../services/index';
+import { AuthService } from '../../services/index';
 
 @Component({
-	selector: 'app-login',
+	selector: 'ov-login',
 	standalone: true,
-	imports: [MatToolbar, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, NgClass, MatButton, RouterModule],
+	imports: [
+		MatFormFieldModule,
+		ReactiveFormsModule,
+		MatInputModule,
+		MatButtonModule,
+		FormsModule,
+		MatCardModule,
+		MatIconModule,
+		RouterModule
+	],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.scss'
 })
-export class LoginComponent {
-	version = '';
-	openviduLogoUrl = '';
-	backgroundImageUrl = '';
-
+export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({
 		username: new FormControl('', [Validators.required, Validators.minLength(4)]),
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
-	invalidRole = false;
-	redirectTo = ''; // By default, redirect to RoomCreatorComponent
+	redirectTo = 'console'; // By default, redirect to the console page
 
 	constructor(
 		private router: Router,
 		private route: ActivatedRoute,
-		private authService: AuthService,
-		private contextService: ContextService
+		private authService: AuthService
 	) {}
 
-	async ngOnInit() {
-		this.version = this.contextService.getVersion();
-		this.openviduLogoUrl = this.contextService.getOpenViduLogoUrl();
-		this.backgroundImageUrl = this.contextService.getBackgroundImageUrl();
-
+	ngOnInit() {
 		this.route.queryParams.subscribe((params) => {
 			if (params['redirectTo']) {
 				this.redirectTo = params['redirectTo'];
@@ -55,16 +53,6 @@ export class LoginComponent {
 
 		try {
 			await this.authService.login(username!, password!);
-
-			// Check if the user has the expected role
-			const role = await this.authService.getUserRole();
-			if (role !== UserRole.USER) {
-				await this.authService.logout();
-				this.invalidRole = true;
-				this.loginErrorMessage =
-					'You have been authenticated as an admin, but admin users cannot join meetings. Please log in with a user account or';
-				return;
-			}
 
 			let urlTree = this.router.parseUrl(this.redirectTo);
 			this.router.navigateByUrl(urlTree);

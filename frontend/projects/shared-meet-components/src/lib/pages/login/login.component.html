@@ -1,77 +1,36 @@
-<div class="section1" [style]="{ '--background-image-url': 'url(' + backgroundImageUrl + ')' }">
-	<mat-toolbar id="header"> </mat-toolbar>
-	<div class="openvidu-slogan-container">
-		<a href="https://openvidu.io/" target="_blank">
-			<img id="form-img" [src]="openviduLogoUrl" />
-		</a>
-		<h4 id="slogan-text">Videoconference rooms in one click</h4>
-	</div>
+<div class="login-container">
+	<div class="card-container">
+		<mat-card class="login-card">
+			<h1>Log in</h1>
+			<p>Continue to OpenVidu Meet</p>
+			<form [formGroup]="loginForm" (ngSubmit)="login()">
+				<mat-form-field class="form-input" appearance="fill">
+					<mat-label>Username</mat-label>
+					<input matInput formControlName="username" required />
+					<mat-icon matPrefix>person</mat-icon>
+				</mat-form-field>
 
-	<div class="form-container">
-		<div class="grid">
-			<form [formGroup]="loginForm" novalidate (ngSubmit)="login()" id="form-login" class="form login">
-				<div class="form-field" id="login-username">
-					<label for="login-username" [ngClass]="{ error: loginErrorMessage }">
-						<mat-icon matTooltip="Username">person</mat-icon>
-						<span class="hidden">Username</span>
-					</label>
-					<input
-						formControlName="username"
-						autocomplete="off"
-						type="text"
-						name="username"
-						class="form-input"
-						placeholder="Username"
-					/>
-				</div>
-				<div class="form-field" id="login-password">
-					<label for="login-password" [ngClass]="{ error: loginErrorMessage }">
-						<mat-icon matTooltip="Password">lock</mat-icon>
-						<span class="hidden">Password</span>
-					</label>
-					<input
-						formControlName="password"
-						type="password"
-						name="password"
-						class="form-input"
-						placeholder="Password"
-					/>
-				</div>
-				@if (loginErrorMessage) {
-					<div class="loginError" id="login-error">
-						{{ loginErrorMessage }}
-						@if (invalidRole) {
-							<a [routerLink]="'/console/login'">go to the admin console page</a>
-						}
-					</div>
-				}
-				<div class="form-field">
-					<button mat-button id="join-btn" type="submit" [disabled]="loginForm.invalid">Login</button>
+				<mat-form-field class="form-input" appearance="fill">
+					<mat-label>Password</mat-label>
+					<input matInput type="password" formControlName="password" required />
+					<mat-icon matPrefix>lock</mat-icon>
+				</mat-form-field>
+
+				<div class="login-button">
+					<button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid">
+						Login
+					</button>
 				</div>
 			</form>
+
+			@if (loginErrorMessage) {
+				<mat-error class="login-error">{{ loginErrorMessage }}</mat-error>
+			}
+		</mat-card>
+		<div class="signup-section">
+			<div>
+				<img src="https://openvidu.io/assets/images/openvidu_white_bg_transp.png" alt="Sign Up" />
+			</div>
 		</div>
 	</div>
-
-	<mat-toolbar class="footer">
-		<span>
-			Photo by
-			<a
-				rel="noopener noreferrer"
-				target="_blank"
-				href="https://unsplash.com/@danielleone?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
-			>
-				Daniel Leone
-			</a>
-			on
-			<a
-				href="https://unsplash.com/s/photos/mountain?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
-				target="_blank"
-			>
-				Unsplash
-			</a>
-		</span>
-		<div id="meet-version">
-			<span>{{ version }}</span>
-		</div>
-	</mat-toolbar>
 </div>
