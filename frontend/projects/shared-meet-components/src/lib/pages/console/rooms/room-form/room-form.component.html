@@ -1,1 +1,37 @@
-<p>room-form works!</p>
+<div class="form-container">
+	<div class="grid">
+		<form [formGroup]="roomForm" novalidate (ngSubmit)="goToVideoRoom()" id="form-room" class="form room-prefix">
+			<div class="form-field">
+				<label for="room-id-input" [ngClass]="{ error: roomForm.get('roomIdPrefix')?.invalid }">
+					<mat-icon matTooltip="Room name prefix">video_camera_front</mat-icon>
+					<span class="hidden">Room ID prefix</span></label
+				>
+				<input
+					formControlName="roomIdPrefix"
+					autocomplete="off"
+					id="room-id-input"
+					type="text"
+					name="roomIdPrefix"
+					class="form-input"
+					placeholder="Room name prefix"
+				/>
+				@if (roomForm.get('roomIdPrefix')?.value) {
+					<button matSuffix mat-icon-button aria-label="Clear" id="clear-room-id-btn" (click)="clearRoomId()">
+						<mat-icon>close</mat-icon>
+					</button>
+				}
+				<button
+					matTooltip="Generate room ID prefix"
+					mat-icon-button
+					id="room-id-generator-btn"
+					(click)="generateRoomId($event)"
+				>
+					<mat-icon>cached</mat-icon>
+				</button>
+			</div>
+			<div class="form-field">
+				<button mat-button id="join-btn" type="submit" [disabled]="roomForm.invalid">JOIN</button>
+			</div>
+		</form>
+	</div>
+</div>
