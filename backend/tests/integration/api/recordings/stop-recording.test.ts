@@ -18,6 +18,8 @@ describe('Recording API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+
 	});
 
 	afterAll(async () => {

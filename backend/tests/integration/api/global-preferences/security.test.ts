@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getSecurityPreferences,
@@ -6,6 +6,8 @@ import {
 	updateSecurityPreferences
 } from '../../../helpers/request-helpers.js';
 import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { MeetStorageService } from '../../../../src/services/index.js';
 
 const defaultPreferences = {
 	authentication: {
@@ -16,17 +18,18 @@ const defaultPreferences = {
 	}
 };
 
-const restoreDefaultSecurityPreferences = async () => {
-	await updateSecurityPreferences(defaultPreferences);
+const restoreDefaultGlobalPreferences = async () => {
+	const defaultPref = await container.get(MeetStorageService)['buildDefaultPreferences']();
+	await container.get(MeetStorageService).saveGlobalPreferences(defaultPref);
 };
 
 describe('Security Preferences API Tests', () => {
-	beforeAll(() => {
+	beforeAll(async () => {
 		startTestServer();
 	});
 
-	afterEach(async () => {
-		await restoreDefaultSecurityPreferences();
+	beforeEach(async () => {
+		await restoreDefaultGlobalPreferences();
 	});
 
 	describe('Update security preferences', () => {

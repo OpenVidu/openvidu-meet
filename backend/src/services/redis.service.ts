@@ -222,9 +222,11 @@ export class RedisService extends EventEmitter {
 	}
 
 	/**
-	 * Deletes a key from Redis.
-	 * @param key - The key to delete.
-	 * @returns A promise that resolves to the number of keys deleted.
+	 * Deletes one or more keys from Redis.
+	 *
+	 * @param keys - A single key string or an array of key strings to delete from Redis
+	 * @returns A Promise that resolves to the number of keys that were successfully deleted
+	 * @throws {Error} Throws an internal error if the deletion operation fails
 	 */
 	delete(keys: string | string[]): Promise<number> {
 		try {
@@ -238,8 +240,19 @@ export class RedisService extends EventEmitter {
 		}
 	}
 
-	quit() {
+	cleanup() {
+		this.logger.verbose('Cleaning up Redis connections');
 		this.redisPublisher.quit();
+		this.redisSubscriber.quit();
+		this.removeAllListeners();
+
+		if (this.eventHandler) {
+			this.off('systemEvent', this.eventHandler);
+			this.eventHandler = undefined;
+		}
+
+		this.isConnected = false;
+		this.logger.verbose('Redis connections cleaned up');
 	}
 
 	async checkHealth() {

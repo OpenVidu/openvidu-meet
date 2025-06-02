@@ -18,7 +18,8 @@ describe('Recording API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+
 		// Create a room and join a participant
 		context = await setupMultiRecordingsTestContext(1, 1, 1);
 		({ room, moderatorCookie, recordingId = '' } = context.getRoomByIndex(0)!);

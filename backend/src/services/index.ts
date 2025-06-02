@@ -4,7 +4,7 @@ export * from './system-event.service.js';
 export * from './mutex.service.js';
 export * from './task-scheduler.service.js';
 
-export * from './s3.service.js';
+export * from './storage/providers/s3/s3.service.js';
 export * from './storage/index.js';
 
 export * from './token.service.js';

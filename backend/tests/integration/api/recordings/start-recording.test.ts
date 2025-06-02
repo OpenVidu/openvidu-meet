@@ -24,15 +24,15 @@ describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
 	let room: MeetRoom, moderatorCookie: string;
 
-	beforeAll(() => {
+	beforeAll(async () => {
 		startTestServer();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	afterAll(async () => {
 		await stopAllRecordings(moderatorCookie);
 		await disconnectFakeParticipants();
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Start Recording Tests', () => {

@@ -12,7 +12,6 @@ import {
 	OpenViduWebhookService,
 	RecordingService,
 	RoomService,
-	S3Service,
 	SystemEventService
 } from './index.js';
 
@@ -20,7 +19,6 @@ import {
 export class LivekitWebhookService {
 	protected webhookReceiver: WebhookReceiver;
 	constructor(
-		@inject(S3Service) protected s3Service: S3Service,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,

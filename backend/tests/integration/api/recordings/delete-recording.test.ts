@@ -15,8 +15,13 @@ import {
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
-	beforeAll(() => {
+	beforeAll(async () => {
 		startTestServer();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+	});
+
+	afterAll(async () => {
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Delete Recording Tests', () => {

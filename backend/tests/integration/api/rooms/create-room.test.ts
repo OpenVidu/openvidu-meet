@@ -25,14 +25,14 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Room Creation Tests', () => {
-		it('✅ Should create a room without autoDeletionDate (default behavior)', async () => {
+		it('Should create a room without autoDeletionDate (default behavior)', async () => {
 			const room = await createRoom({
 				roomIdPrefix: '   Test Room   '
 			});
 			expectValidRoom(room, 'TestRoom');
 		});
 
-		it('✅ Should create a room with a valid autoDeletionDate', async () => {
+		it('Should create a room with a valid autoDeletionDate', async () => {
 			const room = await createRoom({
 				autoDeletionDate: validAutoDeletionDate,
 				roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
@@ -41,7 +41,7 @@ describe('Room API Tests', () => {
 			expectValidRoom(room, 'MyRoom123', validAutoDeletionDate);
 		});
 
-		it('✅ Should create a room when sending full valid payload', async () => {
+		it('Should create a room when sending full valid payload', async () => {
 			const payload = {
 				roomIdPrefix: ' =Example Room&/ ',
 				autoDeletionDate: validAutoDeletionDate,

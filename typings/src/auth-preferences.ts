@@ -1,38 +1,38 @@
 export interface AuthenticationPreferences {
-    authMethod: ValidAuthMethod;
-    authModeToAccessRoom: AuthMode;
+	authMethod: ValidAuthMethod;
+	authModeToAccessRoom: AuthMode;
 }
 
 /**
  * Authentication modes available to enter a room.
  */
 export const enum AuthMode {
-    NONE = 'none', // No authentication required
-    MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
-    ALL_USERS = 'all_users' // All users need authentication
+	NONE = 'none', // No authentication required
+	MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
+	ALL_USERS = 'all_users', // All users need authentication
 }
 
 /**
  * Authentication method base interface.
  */
 export interface AuthMethod {
-    type: AuthType;
+	type: AuthType;
 }
 
 /**
  * Enum for authentication types.
  */
 export const enum AuthType {
-    SINGLE_USER = 'single-user'
-    // MULTI_USER = 'multi-user',
-    // OAUTH_ONLY = 'oauth-only'
+	SINGLE_USER = 'single-user',
+	// MULTI_USER = 'multi-user',
+	// OAUTH_ONLY = 'oauth-only'
 }
 
 /**
  * Authentication method: Single user with fixed credentials.
  */
 export interface SingleUserAuth extends AuthMethod {
-    type: AuthType.SINGLE_USER;
+	type: AuthType.SINGLE_USER;
 }
 
 /**
@@ -54,7 +54,8 @@ export interface SingleUserAuth extends AuthMethod {
 /**
  * Union type for allowed authentication methods.
  */
-export type ValidAuthMethod = SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth */;
+export type ValidAuthMethod =
+	SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth */;
 
 /**
  * Configuration for OAuth authentication.

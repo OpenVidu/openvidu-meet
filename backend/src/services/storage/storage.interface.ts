@@ -1,53 +1,67 @@
-import { GlobalPreferences, MeetRecordingInfo, MeetRoom, User } from '@typings-ce';
 import { Readable } from 'stream';
 
 /**
- * An interface that defines the contract for storage providers in the OpenVidu Meet application.
- * Storage providers handle persistence of global application preferences, rooms, recordings metadata and users.
+ * Basic storage interface that defines primitive storage operations.
+ * This interface follows the Single Responsibility Principle by focusing
+ * only on basic CRUD operations for object storage.
  *
- * @template GPrefs - The type of global preferences, extending GlobalPreferences
- * @template MRoom - The type of room data, extending MeetRoom
- * @template MRec - The type of recording metadata, extending MeetRecordingInfo
- * @template MUser - The type of user data, extending User
- *
- * Implementations of this interface should handle the persistent storage
- * of application settings, room information, recording metadata, and user data,
- * which could be backed by various storage solutions (database, file system, cloud storage, etc.).
+ * This allows easy integration of different storage backends (S3, PostgreSQL,
+ * FileSystem, etc.) without mixing domain-specific business logic.
  */
-export interface StorageProvider<
-	GPrefs extends GlobalPreferences = GlobalPreferences,
-	MRoom extends MeetRoom = MeetRoom,
-	MRec extends MeetRecordingInfo = MeetRecordingInfo,
-	MUser extends User = User
-> {
+export interface StorageProvider {
 	/**
-	 * Initializes the storage with default preferences if they are not already set.
+	 * Retrieves an object from storage as a JSON object.
 	 *
-	 * @param defaultPreferences - The default preferences to initialize with.
-	 * @returns A promise that resolves when the initialization is complete.
+	 * @param key - The storage key/path of the object
+	 * @returns A promise that resolves to the parsed JSON object, or null if not found
 	 */
-	initialize(defaultPreferences: GPrefs): Promise<void>;
+	getObject<T = Record<string, unknown>>(key: string): Promise<T | null>;
 
 	/**
-	 * Retrives the headers of an object stored in the storage provider.
-	 * This is useful to get the content length and content type of the object without downloading it.
+	 * Stores an object in storage as JSON.
 	 *
-	 * @param filePath - The path of the file to retrieve headers for.
+	 * @param key - The storage key/path where the object should be stored
+	 * @param data - The object to store (will be serialized to JSON)
+	 * @returns A promise that resolves when the object is successfully stored
 	 */
-	getObjectHeaders(filePath: string): Promise<{ contentLength?: number; contentType?: string }>;
+	putObject<T = Record<string, unknown>>(key: string, data: T): Promise<void>;
 
 	/**
-	 * Lists objects in the storage with optional pagination support.
+	 * Deletes a single object from storage.
 	 *
-	 * @param prefix - The prefix to filter objects by (acts as a folder path)
+	 * @param key - The storage key/path of the object to delete
+	 * @returns A promise that resolves when the object is successfully deleted
+	 */
+	deleteObject(key: string): Promise<void>;
+
+	/**
+	 * Deletes multiple objects from storage.
+	 *
+	 * @param keys - Array of storage keys/paths of the objects to delete
+	 * @returns A promise that resolves when all objects are successfully deleted
+	 */
+	deleteObjects(keys: string[]): Promise<void>;
+
+	/**
+	 * Checks if an object exists in storage.
+	 *
+	 * @param key - The storage key/path to check
+	 * @returns A promise that resolves to true if the object exists, false otherwise
+	 */
+	exists(key: string): Promise<boolean>;
+
+	/**
+	 * Lists objects in storage with a given prefix (acts like a folder).
+	 *
+	 * @param prefix - The prefix to filter objects by
 	 * @param maxItems - Maximum number of items to return (optional)
-	 * @param nextPageToken - Token for pagination to get the next page (optional)
-	 * @returns Promise resolving to paginated list of objects with metadata
+	 * @param continuationToken - Token for pagination (optional)
+	 * @returns A promise that resolves to a paginated list of objects
 	 */
 	listObjects(
 		prefix: string,
 		maxItems?: number,
-		nextPageToken?: string
+		continuationToken?: string
 	): Promise<{
 		Contents?: Array<{
 			Key?: string;
@@ -60,165 +74,80 @@ export interface StorageProvider<
 	}>;
 
 	/**
-	 * Retrieves the global preferences of Openvidu Meet.
+	 * Retrieves metadata headers for an object without downloading the content.
 	 *
-	 * @returns A promise that resolves to the global preferences, or null if not set.
+	 * @param key - The storage key/path of the object
+	 * @returns A promise that resolves to object metadata
 	 */
-	getGlobalPreferences(): Promise<GPrefs | null>;
-
-	/**
-	 * Saves the given preferences.
-	 *
-	 * @param preferences - The preferences to save.
-	 * @returns A promise that resolves to the saved preferences.
-	 */
-	saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs>;
-
-	/**
-	 *
-	 * Retrieves the OpenVidu Meet Rooms.
-	 *
-	 * @param maxItems - The maximum number of items to retrieve. If not provided, all items will be retrieved.
-	 * @param nextPageToken - The token for the next page of results. If not provided, the first page will be retrieved.
-	 * @returns A promise that resolves to an object containing:
-	 * 	- the retrieved rooms.
-	 *  - a boolean indicating if there are more items to retrieve.
-	 * 	- an optional next page token.
-	 */
-	getMeetRooms(
-		maxItems?: number,
-		nextPageToken?: string
-	): Promise<{
-		rooms: MRoom[];
-		isTruncated: boolean;
-		nextPageToken?: string;
+	getObjectHeaders(key: string): Promise<{
+		contentLength?: number;
+		contentType?: string;
 	}>;
 
 	/**
-	 * Retrieves the {@link MeetRoom}.
+	 * Retrieves an object as a readable stream.
+	 * Useful for large files or when you need streaming access.
 	 *
-	 * @param roomId - The identifier of the room to retrieve.
-	 * @returns A promise that resolves to the OpenVidu Room, or null if not found.
-	 **/
-	getMeetRoom(roomId: string): Promise<MRoom | null>;
-
-	/**
-	 * Saves the OpenVidu Meet Room.
-	 *
-	 * @param meetRoom - The OpenVidu Room to save.
-	 * @returns A promise that resolves to the saved OpenVidu Room.
-	 **/
-	saveMeetRoom(meetRoom: MRoom): Promise<MRoom>;
-
-	/**
-	 * Deletes OpenVidu Meet Rooms.
-	 *
-	 * @param roomIds - The room IDs to delete.
-	 * @returns A promise that resolves when the room have been deleted.
-	 **/
-	deleteMeetRooms(roomIds: string[]): Promise<void>;
-
-	/**
-	 * Gets the archived metadata for a specific room.
-	 *
-	 * The archived metadata is necessary for checking the permissions of the recording viewer when the room is deleted.
-	 *
-	 * @param roomId - The name of the room to retrieve.
+	 * @param key - The storage key/path of the object
+	 * @param range - Optional byte range for partial content retrieval
+	 * @returns A promise that resolves to a readable stream of the object content
 	 */
-	getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null>;
+	getObjectAsStream(key: string, range?: { start: number; end: number }): Promise<Readable>;
+}
+
+/**
+ * Interface for building storage keys used throughout the application.
+ * Provides methods to generate standardized keys for different types of data storage operations.
+ */
+export interface StorageKeyBuilder {
+	/**
+	 * Builds the key for global preferences storage.
+	 */
+	buildGlobalPreferencesKey(): string;
+	/**
+	 * Builds the key for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the meeting room
+	 */
+	buildMeetRoomKey(roomId: string): string;
 
 	/**
-	 * Archives the metadata for a specific room.
-	 *
-	 * This is necessary for persisting the metadata of a room although it is deleted.
-	 * The metadata will be used to check the permissions of the recording viewer.
-	 *
-	 * @param roomId: The room ID to archive.
+	 * Builds the key for all meeting rooms.
 	 */
-	archiveRoomMetadata(roomId: string): Promise<void>;
+	buildAllMeetRoomsKey(): string;
 
 	/**
-	 * Updates the archived metadata for a specific room.
+	 * Builds the key for archived room metadata.
 	 *
-	 * This is necessary for keeping the metadata of a room up to date.
-	 *
-	 * @param roomId: The room ID to update.
+	 * @param roomId - The unique identifier of the meeting room
 	 */
-	updateArchivedRoomMetadata(roomId: string): Promise<void>;
+	buildArchivedMeetRoomKey(roomId: string): string;
 
 	/**
-	 * Deletes the archived metadata for a specific room.
+	 * Builds the key for a specific recording.
 	 *
-	 * @param roomId - The room ID to delete the archived metadata for.
+	 * @param recordingId - The unique identifier of the recording
 	 */
-	deleteArchivedRoomMetadata(roomId: string): Promise<void>;
+	buildBinaryRecordingKey(recordingId: string): string;
 
 	/**
-	 * Saves the recording metadata.
+	 * Builds the key for a specific recording metadata.
 	 *
-	 * @param recordingInfo - The recording information to save.
-	 * @returns A promise that resolves to the saved recording information.
+	 * @param recordingId - The unique identifier of the recording
 	 */
-	saveRecordingMetadata(recordingInfo: MRec): Promise<MRec>;
+	buildMeetRecordingKey(recordingId: string): string;
 
 	/**
-	 * Retrieves the recording metadata for a specific recording ID.
+	 * Builds the key for all recordings in a room or globally.
 	 *
-	 * @param recordingId - The unique identifier of the recording.
-	 * @returns A promise that resolves to the recording metadata, or null if not found.
+	 * @param roomId - Optional room identifier to filter recordings by room
 	 */
-	getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }>;
+	buildAllMeetRecordingsKey(roomId?: string): string;
 
 	/**
-	 * Retrieves the recording metadata for multiple recording IDs.
+	 * Builds the key for a specific user
 	 *
-	 * @param recordingPath - The path of the recording file to retrieve metadata for.
-	 * @returns A promise that resolves to the recording metadata, or null if not found.
+	 * @param userId - The unique identifier of the user
 	 */
-	getRecordingMetadataByPath(recordingPath: string): Promise<MRec | undefined>;
-
-	/**
-	 * Deletes multiple recording metadata files by their paths.
-	 *
-	 * @param metadataPaths - An array of metadata file paths to delete.
-	 */
-	deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void>;
-
-	/**
-	 * Retrieves the media content of a recording file.
-	 *
-	 * @param recordingPath - The path of the recording file to retrieve.
-	 * @param range - An optional range object specifying the start and end byte positions to retrieve.
-	 */
-	getRecordingMedia(
-		recordingPath: string,
-		range?: {
-			end: number;
-			start: number;
-		}
-	): Promise<Readable>;
-
-	/**
-	 * Deletes multiple recording binary files by their paths.
-	 *
-	 * @param recordingPaths - An array of recording file paths to delete.
-	 * @returns A promise that resolves when the recording binary files have been deleted.
-	 */
-	deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void>;
-
-	/**
-	 * Retrieves the user data for a specific username.
-	 *
-	 * @param username - The username of the user to retrieve.
-	 * @returns A promise that resolves to the user data, or null if not found.
-	 */
-	getUser(username: string): Promise<MUser | null>;
-
-	/**
-	 * Saves the user data.
-	 *
-	 * @param user - The user data to save.
-	 * @returns A promise that resolves to the saved user data.
-	 */
-	saveUser(user: MUser): Promise<MUser>;
+	buildUserKey(userId: string): string;
 }
