@@ -13,7 +13,12 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
-import { errorInvalidRoomSecret, errorRoomMetadataNotFound, internalError } from '../models/error.model.js';
+import {
+	errorInvalidRoomSecret,
+	errorRoomMetadataNotFound,
+	errorRoomNotFound,
+	internalError
+} from '../models/error.model.js';
 import {
 	IScheduledTask,
 	LiveKitService,
@@ -126,7 +131,7 @@ export class RoomService {
 
 		await this.storageService.saveMeetRoom(room);
 		// Update the archived room metadata if it exists
-		await this.storageService.updateArchivedRoomMetadata(roomId);
+		await this.storageService.archiveRoomMetadata(roomId);
 		return room;
 	}
 
@@ -160,8 +165,10 @@ export class RoomService {
 	}> {
 		const response = await this.storageService.getMeetRooms(maxItems, nextPageToken);
 
-		const filteredRooms = response.rooms.map((room) => UtilsHelper.filterObjectFields(room, fields));
-		response.rooms = filteredRooms as MeetRoom[];
+		if (fields) {
+			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));
+			response.rooms = filteredRooms as MeetRoom[];
+		}
 
 		return response;
 	}
@@ -174,6 +181,11 @@ export class RoomService {
 	 */
 	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
 		const meetRoom = await this.storageService.getMeetRoom(roomId);
+
+		if (!meetRoom) {
+			this.logger.error(`Meet room with ID ${roomId} not found.`);
+			throw errorRoomNotFound(roomId);
+		}
 
 		return UtilsHelper.filterObjectFields(meetRoom, fields) as MeetRoom;
 	}
@@ -251,6 +263,12 @@ export class RoomService {
 	 */
 	protected async markRoomAsDeleted(roomId: string): Promise<void> {
 		const room = await this.storageService.getMeetRoom(roomId);
+
+		if (!room) {
+			this.logger.error(`Room with ID ${roomId} not found for deletion.`);
+			throw errorRoomNotFound(roomId);
+		}
+
 		room.markedForDeletion = true;
 		await this.storageService.saveMeetRoom(room);
 	}

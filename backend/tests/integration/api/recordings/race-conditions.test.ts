@@ -33,6 +33,8 @@ describe('Recording API Race Conditions Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+
 		recordingService = container.get(RecordingService);
 	});
 

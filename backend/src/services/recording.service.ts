@@ -13,11 +13,9 @@ import {
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
-	errorRecordingRangeNotSatisfiable,
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
 	errorRoomNotFound,
-	internalError,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
@@ -206,29 +204,16 @@ export class RecordingService {
 	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
 		try {
 			// Get the recording metada and recording info from the S3 bucket
-			const { binaryFilesToDelete, metadataFilesToDelete, recordingInfo } =
-				await this.getDeletableRecordingFiles(recordingId);
-			const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-			const deleteRecordingTasks: Promise<unknown>[] = [];
+			const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
 
-			if (binaryFilesToDelete.size > 0) {
-				// Delete video files from S3
-				deleteRecordingTasks.push(
-					this.storageService.deleteRecordingBinaryFilesByPaths(Array.from(binaryFilesToDelete))
-				);
-			}
+			// Validate the recording status
+			if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
 
-			if (metadataFilesToDelete.size > 0) {
-				// Delete metadata files from storage provider
-				deleteRecordingTasks.push(
-					this.storageService.deleteRecordingMetadataByPaths(Array.from(metadataFilesToDelete))
-				);
-			}
+			await this.storageService.deleteRecording(recordingId);
 
-			await Promise.all(deleteRecordingTasks);
+			this.logger.info(`Successfully deleted recording ${recordingId}`);
 
-			this.logger.info(`Successfully deleted ${recordingId}`);
-
+			const { roomId } = recordingInfo;
 			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
 
 			if (shouldDeleteRoomMetadata) {
@@ -253,8 +238,7 @@ export class RecordingService {
 	async bulkDeleteRecordingsAndAssociatedFiles(
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
-		let allMetadataFilesToDelete: Set<string> = new Set<string>();
-		let allBinaryFilesToDelete: Set<string> = new Set<string>();
+		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 		const roomsToCheck: Set<string> = new Set();
@@ -262,35 +246,32 @@ export class RecordingService {
 		// Check if the recording is in progress
 		for (const recordingId of recordingIds) {
 			try {
-				const { binaryFilesToDelete, metadataFilesToDelete } =
-					await this.getDeletableRecordingFiles(recordingId);
-				// Add files to the set of files to delete
-				allBinaryFilesToDelete = new Set([...allBinaryFilesToDelete, ...binaryFilesToDelete]);
-				allMetadataFilesToDelete = new Set([...allMetadataFilesToDelete, ...metadataFilesToDelete]);
+				const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
 
+				if (!RecordingHelper.canBeDeleted(recordingInfo)) {
+					throw errorRecordingNotStopped(recordingId);
+				}
+
+				validRecordingIds.add(recordingId);
 				deletedRecordings.add(recordingId);
 
-				// Track the roomId for checking if the room metadata file should be deleted
-				const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-				roomsToCheck.add(roomId);
+				// Track room for metadata cleanup
+				roomsToCheck.add(recordingInfo.roomId);
 			} catch (error) {
 				this.logger.error(`BulkDelete: Error processing recording ${recordingId}: ${error}`);
 				notDeletedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
 			}
 		}
 
-		if (allBinaryFilesToDelete.size === 0) {
+		if (validRecordingIds.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
 			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
 		}
 
 		// Delete recordings and its metadata from S3
 		try {
-			await Promise.all([
-				this.storageService.deleteRecordingBinaryFilesByPaths(Array.from(allBinaryFilesToDelete)),
-				this.storageService.deleteRecordingMetadataByPaths(Array.from(allMetadataFilesToDelete))
-			]);
-			this.logger.info(`BulkDelete: Successfully deleted ${allBinaryFilesToDelete.size} recordings.`);
+			await this.storageService.deleteRecordings(Array.from(validRecordingIds));
+			this.logger.info(`BulkDelete: Successfully deleted ${validRecordingIds.size} recordings.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 			throw error;
@@ -298,27 +279,35 @@ export class RecordingService {
 
 		// Check if the room metadata file should be deleted
 		const roomMetadataToDelete: string[] = [];
-		const deleteTasks: Promise<void>[] = [];
 
 		for (const roomId of roomsToCheck) {
 			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
 
 			if (shouldDeleteRoomMetadata) {
-				deleteTasks.push(this.storageService.deleteArchivedRoomMetadata(roomId));
 				roomMetadataToDelete.push(roomId);
 			}
 		}
 
+		if (roomMetadataToDelete.length === 0) {
+			this.logger.verbose(`BulkDelete: No room metadata files to delete.`);
+			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+		}
+
+		// Perform bulk deletion of room metadata files
 		try {
-			this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomMetadataToDelete.join(', ')}`);
-			await Promise.all(deleteTasks);
+			await Promise.all(
+				roomMetadataToDelete.map((roomId) => this.storageService.deleteArchivedRoomMetadata(roomId))
+			);
 			this.logger.verbose(`BulkDelete: Successfully deleted ${roomMetadataToDelete.length} room metadata files.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 			throw error;
 		}
 
-		return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+		return {
+			deleted: Array.from(deletedRecordings),
+			notDeleted: Array.from(notDeletedRecordings)
+		};
 	}
 
 	/**
@@ -330,11 +319,10 @@ export class RecordingService {
 	 */
 	protected async shouldDeleteRoomMetadata(roomId: string): Promise<boolean | null> {
 		try {
-			const metadataPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}`;
-			const { Contents } = await this.storageService.listObjects(metadataPrefix, 1);
+			const { recordings } = await this.storageService.getAllRecordings(roomId, 1);
 
-			// If no metadata files exist or the list is empty, the room metadata should be deleted
-			return !Contents || Contents.length === 0;
+			// If no recordings exist or the list is empty, the room metadata should be deleted
+			return !recordings || recordings.length === 0;
 		} catch (error) {
 			this.logger.warn(`Error checking room metadata for deletion (room ${roomId}): ${error}`);
 			return null;
@@ -363,45 +351,32 @@ export class RecordingService {
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings({ maxItems, nextPageToken, roomId, fields }: MeetRecordingFilters): Promise<{
+	async getAllRecordings(filters: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
 		try {
-			// Construct the room prefix if a room ID is provided
-			const roomPrefix = roomId ? `/${roomId}` : '';
-			const recordingPrefix = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata${roomPrefix}`;
+			const { maxItems, nextPageToken, roomId, fields } = filters;
 
-			// Retrieve the recordings from the S3 bucket
-			const { Contents, IsTruncated, NextContinuationToken } = await this.storageService.listObjects(
-				recordingPrefix,
-				maxItems,
-				nextPageToken
-			);
+			const response = await this.storageService.getAllRecordings(roomId, maxItems, nextPageToken);
 
-			if (!Contents) {
-				this.logger.verbose('No recordings found. Returning an empty array.');
-				return { recordings: [], isTruncated: false };
+			// Apply field filtering if specified
+			if (fields) {
+				response.recordings = response.recordings.map((rec) =>
+					UtilsHelper.filterObjectFields(rec, fields)
+				) as MeetRecordingInfo[];
 			}
 
-			const promises: Promise<MeetRecordingInfo>[] = [];
-			// Retrieve the metadata for each recording
-			Contents.forEach((item) => {
-				if (item?.Key && item.Key.endsWith('.json') && !item.Key.endsWith('secrets.json')) {
-					promises.push(
-						this.storageService.getRecordingMetadataByPath(item.Key) as Promise<MeetRecordingInfo>
-					);
-				}
-			});
-
-			let recordings = await Promise.all(promises);
-
-			recordings = recordings.map((rec) => UtilsHelper.filterObjectFields(rec, fields)) as MeetRecordingInfo[];
+			const { recordings, isTruncated, nextContinuationToken } = response;
 
 			this.logger.info(`Retrieved ${recordings.length} recordings.`);
 			// Return the paginated list of recordings
-			return { recordings, isTruncated: !!IsTruncated, nextPageToken: NextContinuationToken };
+			return {
+				recordings,
+				isTruncated: Boolean(isTruncated),
+				nextPageToken: nextContinuationToken
+			};
 		} catch (error) {
 			this.logger.error(`Error getting recordings: ${error}`);
 			throw error;
@@ -410,64 +385,33 @@ export class RecordingService {
 
 	async getRecordingAsStream(
 		recordingId: string,
-		range?: string
+		rangeHeader?: string
 	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
-		const DEFAULT_RECORDING_FILE_PORTION_SIZE = 5 * 1024 * 1024; // 5MB
+		const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+
+		// Ensure the recording is streamable
 		const recordingInfo: MeetRecordingInfo = await this.getRecording(recordingId);
 
 		if (recordingInfo.status !== MeetRecordingStatus.COMPLETE) {
 			throw errorRecordingNotStopped(recordingId);
 		}
 
-		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${RecordingHelper.extractFilename(recordingInfo)}`;
+		let validatedRange = undefined;
 
-		if (!recordingPath) throw new Error(`Error extracting path from recording ${recordingId}`);
+		// Parse the range header if provided
+		if (rangeHeader) {
+			const match = rangeHeader.match(/^bytes=(\d+)-(\d*)$/)!;
+			const endStr = match[2];
 
-		const { contentLength: fileSize } = await this.storageService.getObjectHeaders(recordingPath);
-
-		if (!fileSize) {
-			this.logger.error(`Error getting file size for recording ${recordingId}`);
-			throw internalError(`getting file size for recording '${recordingId}'`);
-		}
-
-		if (range) {
-			// Parse the range header
-			const matches = range.match(/^bytes=(\d+)-(\d*)$/)!;
-
-			const start = parseInt(matches[1], 10);
-			let end = matches[2] ? parseInt(matches[2], 10) : start + DEFAULT_RECORDING_FILE_PORTION_SIZE;
-
-			// Validate the range values
-			if (isNaN(start) || isNaN(end) || start < 0) {
-				this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${end}`);
-				this.logger.warn(`Returning full stream for recording ${recordingId}`);
-				return this.getFullStreamResponse(recordingPath, fileSize);
-			}
-
-			if (start >= fileSize) {
-				this.logger.error(
-					`Invalid range values for recording ${recordingId}: start=${start}, end=${end}, fileSize=${fileSize}`
-				);
-				throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
-			}
-
-			// Adjust the end value to ensure it doesn't exceed the file size
-			end = Math.min(end, fileSize - 1);
-
-			// If the start is greater than the end, return the full stream
-			if (start > end) {
-				this.logger.warn(`Invalid range values after adjustment: start=${start}, end=${end}`);
-				return this.getFullStreamResponse(recordingPath, fileSize);
-			}
-
-			const fileStream = await this.storageService.getRecordingMedia(recordingPath, {
-				start,
-				end
-			});
-			return { fileSize, fileStream, start, end };
+			const start = parseInt(match[1], 10);
+			const end = endStr ? parseInt(endStr, 10) : start + DEFAULT_CHUNK_SIZE - 1;
+			validatedRange = { start, end };
+			this.logger.debug(`Streaming partial content for recording '${recordingId}' from ${start} to ${end}.`);
 		} else {
-			return this.getFullStreamResponse(recordingPath, fileSize);
+			this.logger.debug(`Streaming full content for recording '${recordingId}'.`);
 		}
+
+		return this.storageService.getRecordingMedia(recordingId, validatedRange);
 	}
 
 	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
@@ -484,14 +428,6 @@ export class RecordingService {
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
-	}
-
-	protected async getFullStreamResponse(
-		recordingPath: string,
-		fileSize: number
-	): Promise<{ fileSize: number; fileStream: Readable }> {
-		const fileStream = await this.storageService.getRecordingMedia(recordingPath);
-		return { fileSize, fileStream };
 	}
 
 	/**
@@ -561,37 +497,6 @@ export class RecordingService {
 		} catch (error) {
 			this.logger.debug(`Error sending recording signal to OpenVidu Components for room '${roomId}': ${error}`);
 		}
-	}
-
-	/**
-	 * Retrieves the data required to delete a recording, including the file paths
-	 * to be deleted and the recording's metadata information.
-	 *
-	 * @param recordingId - The unique identifier of the recording egress.
-	 */
-	protected async getDeletableRecordingFiles(recordingId: string): Promise<{
-		binaryFilesToDelete: Set<string>;
-		metadataFilesToDelete: Set<string>;
-		recordingInfo: MeetRecordingInfo;
-	}> {
-		const { metadataFilePath, recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
-		const binaryFilesToDelete: Set<string> = new Set();
-		const metadataFilesToDelete: Set<string> = new Set();
-
-		// Validate the recording status
-		if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
-
-		const filename = RecordingHelper.extractFilename(recordingInfo);
-
-		if (!filename) {
-			throw internalError(`extracting path from recording '${recordingId}'`);
-		}
-
-		const recordingPath = `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${filename}`;
-		binaryFilesToDelete.add(recordingPath);
-		metadataFilesToDelete.add(metadataFilePath);
-
-		return { binaryFilesToDelete, metadataFilesToDelete, recordingInfo };
 	}
 
 	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {

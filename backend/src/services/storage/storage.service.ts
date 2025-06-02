@@ -10,17 +10,31 @@ import {
 	MEET_WEBHOOK_URL
 } from '../../environment.js';
 import { MeetLock, PasswordHelper } from '../../helpers/index.js';
-import { errorRoomNotFound, internalError, OpenViduMeetError } from '../../models/error.model.js';
-import { LoggerService, MutexService, StorageFactory, StorageProvider } from '../index.js';
+import {
+	errorRecordingNotFound,
+	errorRecordingRangeNotSatisfiable,
+	errorRoomNotFound,
+	internalError,
+	OpenViduMeetError,
+	RedisKeyName
+} from '../../models/index.js';
+import { LoggerService, MutexService, RedisService } from '../index.js';
+import { StorageFactory } from './storage.factory.js';
+import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
 
 /**
- * A service for managing storage operations related to OpenVidu Meet rooms and preferences.
+ * Domain-specific storage service for OpenVidu Meet.
  *
- * This service provides an abstraction layer over the underlying storage implementation,
- * handling initialization, retrieval, and persistence of global preferences and room data.
+ * This service handles all domain-specific logic for rooms, recordings, and preferences,
+ * while delegating basic storage operations to the StorageProvider.
+ *
+ * This architecture follows the Single Responsibility Principle:
+ * - StorageProvider: Handles only basic CRUD operations
+ * - MeetStorageService: Handles domain-specific business logic
  *
  * @template GPrefs - Type for global preferences, extends GlobalPreferences
  * @template MRoom - Type for room data, extends MeetRoom
+ * @template MRec - Type for recording data, extends MeetRecordingInfo
  */
 @injectable()
 export class MeetStorageService<
@@ -30,56 +44,28 @@ export class MeetStorageService<
 	MUser extends User = User
 > {
 	protected storageProvider: StorageProvider;
+	protected keyBuilder: StorageKeyBuilder;
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(StorageFactory) protected storageFactory: StorageFactory,
-		@inject(MutexService) protected mutexService: MutexService
+		@inject(MutexService) protected mutexService: MutexService,
+		@inject(RedisService) protected redisService: RedisService
 	) {
-		this.storageProvider = this.storageFactory.create();
+		const { provider, keyBuilder } = this.storageFactory.create();
+		this.storageProvider = provider;
+		this.keyBuilder = keyBuilder;
 	}
 
-	async getObjectHeaders(filePath: string): Promise<{ contentLength?: number; contentType?: string }> {
-		try {
-			const headers = await this.storageProvider.getObjectHeaders(filePath);
-			this.logger.verbose(`Object headers retrieved: ${JSON.stringify(headers)}`);
-			return headers;
-		} catch (error) {
-			this.handleError(error, 'Error retrieving object headers');
-			throw internalError('Getting object headers');
-		}
-	}
+	// ==========================================
+	// GLOBAL PREFERENCES DOMAIN LOGIC
+	// ==========================================
 
 	/**
-	 * Lists objects in the storage with optional pagination support.
-	 *
-	 * @param prefix - The prefix to filter objects by (acts as a folder path)
-	 * @param maxItems - Maximum number of items to return (optional)
-	 * @param nextPageToken - Token for pagination to get the next page (optional)
-	 * @returns Promise resolving to paginated list of objects with metadata
-	 */
-	listObjects(
-		prefix: string,
-		maxItems?: number,
-		nextPageToken?: string
-	): Promise<{
-		Contents?: Array<{
-			Key?: string;
-			LastModified?: Date;
-			Size?: number;
-			ETag?: string;
-		}>;
-		IsTruncated?: boolean;
-		NextContinuationToken?: string;
-	}> {
-		return this.storageProvider.listObjects(prefix, maxItems, nextPageToken);
-	}
-
-	/**
-	 * Initializes default preferences if not already initialized and saves the admin user.
+	 * Initializes default preferences if not already initialized.
 	 * @returns {Promise<GPrefs>} Default global preferences.
 	 */
-	async initialize(): Promise<void> {
+	async initializeGlobalPreferences(): Promise<void> {
 		try {
 			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
 			const lock = await this.mutexService.acquire(MeetLock.getGlobalPreferencesLock(), ms('30s'));
@@ -92,9 +78,27 @@ export class MeetStorageService<
 			}
 
 			this.logger.verbose('Initializing global preferences with default values');
-			const preferences = await this.getDefaultPreferences();
-			await this.storageProvider.initialize(preferences);
-			
+			const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
+			const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+
+			const preferences = this.buildDefaultPreferences();
+			this.logger.verbose('Initializing global preferences with default values');
+			const existing = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
+
+			if (!existing) {
+				await this.saveCacheAndStorage(redisKey, storageKey, preferences);
+				this.logger.info('Global preferences initialized with default values');
+			} else {
+				// Check if it's from a different project
+				const existingProjectId = (existing as GlobalPreferences)?.projectId;
+				const newProjectId = (preferences as GlobalPreferences)?.projectId;
+
+				if (existingProjectId !== newProjectId) {
+					this.logger.info('Different project detected, overwriting global preferences');
+					await this.saveCacheAndStorage(redisKey, storageKey, preferences);
+				}
+			}
+
 			// Save the default admin user
 			const admin = {
 				username: MEET_ADMIN_USER,
@@ -104,59 +108,59 @@ export class MeetStorageService<
 			await this.saveUser(admin);
 		} catch (error) {
 			this.handleError(error, 'Error initializing default preferences');
+			throw internalError('Failed to initialize global preferences');
 		}
 	}
 
-	/**
-	 * Retrieves the global preferences, initializing them if necessary.
-	 * @returns {Promise<GPrefs>}
-	 */
 	async getGlobalPreferences(): Promise<GPrefs> {
-		let preferences = await this.storageProvider.getGlobalPreferences();
+		const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
+		const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
 
-		if (preferences) return preferences as GPrefs;
+		const preferences = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
 
-		await this.initialize();
-		preferences = await this.storageProvider.getGlobalPreferences();
+		if (preferences) return preferences;
 
-		if (!preferences) {
-			this.logger.error('Global preferences not found after initialization');
-			throw internalError('getting global preferences');
-		}
+		// Build and save default preferences if not found in cache or storage
+		await this.initializeGlobalPreferences();
 
-		return preferences as GPrefs;
+		return this.buildDefaultPreferences();
 	}
 
 	/**
-	 * Saves the global preferences to the storage provider.
-	 * @param {GPrefs} preferences
-	 * @returns {Promise<GPrefs>}
+	 * Saves global preferences to the storage provider.
+	 * @param {GPrefs} preferences - The global preferences to save.
+	 * @returns {Promise<GPrefs>} The saved global preferences.
 	 */
 	async saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs> {
 		this.logger.info('Saving global preferences');
-		return this.storageProvider.saveGlobalPreferences(preferences) as Promise<GPrefs>;
+		const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
+		const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+		return await this.saveCacheAndStorage<GPrefs>(redisKey, storageKey, preferences);
 	}
 
-	/**
-	 * Saves the meet room to the storage provider.
-	 *
-	 * @param meetRoom - The room object to be saved
-	 * @returns A promise that resolves to the saved room object
-	 */
+	// ==========================================
+	// ROOM DOMAIN LOGIC
+	// ==========================================
+
 	async saveMeetRoom(meetRoom: MRoom): Promise<MRoom> {
-		this.logger.info(`Saving OpenVidu room ${meetRoom.roomId}`);
-		return this.storageProvider.saveMeetRoom(meetRoom) as Promise<MRoom>;
+		const { roomId } = meetRoom;
+		this.logger.info(`Saving OpenVidu room ${roomId}`);
+		const redisKey = RedisKeyName.ROOM + roomId;
+		const storageKey = this.keyBuilder.buildMeetRoomKey(roomId);
+
+		return await this.saveCacheAndStorage<MRoom>(redisKey, storageKey, meetRoom);
 	}
 
 	/**
-	 * Retrieves a paginated list of rooms from the storage provider.
+	 * Retrieves a paginated list of meeting rooms from storage.
 	 *
-	 * @param maxItems - Optional maximum number of rooms to retrieve in a single request
-	 * @param nextPageToken - Optional token for pagination to get the next page of results
-	 * @returns A promise that resolves to an object containing:
-	 *   - rooms: Array of MRoom objects representing the rooms
+	 * @param maxItems - Optional maximum number of rooms to retrieve per page
+	 * @param nextPageToken - Optional token for pagination to get the next set of results
+	 * @returns Promise that resolves to an object containing:
+	 *   - rooms: Array of MRoom objects retrieved from storage
 	 *   - isTruncated: Boolean indicating if there are more results available
 	 *   - nextPageToken: Optional token for retrieving the next page of results
+	 * @throws Error if the storage operation fails or encounters an unexpected error
 	 */
 	async getMeetRooms(
 		maxItems?: number,
@@ -166,159 +170,313 @@ export class MeetStorageService<
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		return this.storageProvider.getMeetRooms(maxItems, nextPageToken) as Promise<{
-			rooms: MRoom[];
-			isTruncated: boolean;
-			nextPageToken?: string;
-		}>;
+		try {
+			const allRoomsKey = this.keyBuilder.buildAllMeetRoomsKey();
+			const { Contents, IsTruncated, NextContinuationToken } = await this.storageProvider.listObjects(
+				allRoomsKey,
+				maxItems,
+				nextPageToken
+			);
+
+			const rooms: MRoom[] = [];
+
+			if (Contents && Contents.length > 0) {
+				const roomPromises = Contents.map(async (item) => {
+					if (item.Key && item.Key.endsWith('.json')) {
+						try {
+							const room = await this.storageProvider.getObject<MRoom>(item.Key);
+							return room;
+						} catch (error) {
+							this.logger.warn(`Failed to load room from ${item.Key}: ${error}`);
+							return null;
+						}
+					}
+
+					return null;
+				});
+
+				const roomResults = await Promise.all(roomPromises);
+				rooms.push(...roomResults.filter((room): room is Awaited<MRoom> => room !== null));
+			}
+
+			return {
+				rooms,
+				isTruncated: IsTruncated || false,
+				nextPageToken: NextContinuationToken
+			};
+		} catch (error) {
+			this.handleError(error, 'Error retrieving rooms');
+			throw error;
+		}
+	}
+
+	async getMeetRoom(roomId: string): Promise<MRoom | null> {
+		const redisKey = RedisKeyName.ROOM + roomId;
+		const storageKey = this.keyBuilder.buildMeetRoomKey(roomId);
+
+		return await this.getFromCacheAndStorage<MRoom>(redisKey, storageKey);
+	}
+
+	async deleteMeetRooms(roomIds: string[]): Promise<void> {
+		const roomKeys = roomIds.map((roomId) => this.keyBuilder.buildMeetRoomKey(roomId));
+		const redisKeys = roomIds.map((roomId) => RedisKeyName.ROOM + roomId);
+
+		await this.deleteFromCacheAndStorageBatch(redisKeys, roomKeys);
+	}
+
+	// ==========================================
+	// ARCHIVED ROOM METADATA DOMAIN LOGIC
+	// ==========================================
+
+	async getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null> {
+		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
+		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
+
+		return await this.getFromCacheAndStorage<Partial<MRoom>>(redisKey, storageKey);
 	}
 
 	/**
-	 * Retrieves the room by its unique identifier.
+	 * Archives room metadata by storing essential room information in both cache and persistent storage.
 	 *
-	 * @param roomId - The unique identifier for the room.
-	 * @returns A promise that resolves to the room's preferences.
-	 * @throws Error if the room preferences are not found.
+	 * This method retrieves the room data, extracts key metadata (moderator/publisher URLs and
+	 * recording preferences), and saves it to an archived location for future reference.
+	 *
+	 * If an archived metadata for the room already exists, it will be overwritten.
+	 *
+	 * @param roomId - The unique identifier of the room to archive
+	 * @throws {Error} When the room with the specified ID is not found
+	 * @returns A promise that resolves when the archiving operation completes successfully
 	 */
-	async getMeetRoom(roomId: string): Promise<MRoom> {
-		const meetRoom = await this.storageProvider.getMeetRoom(roomId);
+	async archiveRoomMetadata(roomId: string): Promise<void> {
+		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
+		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
 
-		if (!meetRoom) {
-			this.logger.error(`Room not found for room ${roomId}`);
+		const room = await this.getMeetRoom(roomId);
+
+		if (!room) {
+			this.logger.warn(`Room ${roomId} not found, cannot archive metadata`);
 			throw errorRoomNotFound(roomId);
 		}
 
-		return meetRoom as MRoom;
+		const archivedRoom: Partial<MRoom> = {
+			moderatorRoomUrl: room.moderatorRoomUrl,
+			publisherRoomUrl: room.publisherRoomUrl,
+			preferences: {
+				recordingPreferences: room.preferences?.recordingPreferences
+			}
+		} as Partial<MRoom>;
+
+		await this.saveCacheAndStorage<Partial<MRoom>>(redisKey, storageKey, archivedRoom);
 	}
 
-	/**
-	 * Deletes multiple rooms from storage.
-	 *
-	 * @param roomIds - Array of room identifiers to be deleted
-	 * @returns A promise that resolves when all rooms have been successfully deleted
-	 * @throws May throw an error if the deletion operation fails for any of the rooms
-	 */
-	async deleteMeetRooms(roomIds: string[]): Promise<void> {
-		return this.storageProvider.deleteMeetRooms(roomIds);
-	}
-
-	/**
-	 * Retrieves metadata for an archived room by its ID.
-	 *
-	 * @param roomId - The unique identifier of the room to retrieve metadata for
-	 * @returns A promise that resolves to partial room metadata if found, or null if not found
-	 */
-	async getArchivedRoomMetadata(roomId: string): Promise<Partial<MRoom> | null> {
-		return this.storageProvider.getArchivedRoomMetadata(roomId) as Promise<Partial<MRoom> | null>;
-	}
-
-	/**
-	 * Archives the metadata for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the room whose metadata should be archived
-	 * @returns A Promise that resolves when the archival operation is complete
-	 * @throws May throw an error if the archival operation fails or if the room ID is invalid
-	 */
-	async archiveRoomMetadata(roomId: string): Promise<void> {
-		return this.storageProvider.archiveRoomMetadata(roomId);
-	}
-
-	/**
-	 * Updates the metadata of an archived room.
-	 *
-	 * @param roomId - The unique identifier of the room whose archived metadata should be updated
-	 * @returns A promise that resolves when the archived room metadata has been successfully updated
-	 * @throws May throw an error if the room ID is invalid or if the storage operation fails
-	 */
-	async updateArchivedRoomMetadata(roomId: string): Promise<void> {
-		return this.storageProvider.updateArchivedRoomMetadata(roomId);
-	}
-
-	/**
-	 * Deletes the archived metadata for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the room whose archived metadata should be deleted
-	 * @returns A promise that resolves when the archived room metadata has been successfully deleted
-	 * @throws May throw an error if the deletion operation fails or if the room ID is invalid
-	 */
 	async deleteArchivedRoomMetadata(roomId: string): Promise<void> {
-		return this.storageProvider.deleteArchivedRoomMetadata(roomId);
+		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
+		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
+
+		await this.deleteFromCacheAndStorage(redisKey, storageKey);
+		this.logger.verbose(`Archived room metadata deleted for room ${roomId} in recordings bucket`);
 	}
 
-	/**
-	 * Saves recording metadata to the storage provider.
-	 *
-	 * @param recordingInfo - The recording metadata object to be saved
-	 * @returns A promise that resolves to the saved recording metadata object
-	 */
+	// ==========================================
+	// RECORDING DOMAIN LOGIC
+	// ==========================================
+
 	async saveRecordingMetadata(recordingInfo: MRec): Promise<MRec> {
-		return this.storageProvider.saveRecordingMetadata(recordingInfo) as Promise<MRec>;
+		const redisKey = RedisKeyName.RECORDING + recordingInfo.recordingId;
+		const storageKey = this.keyBuilder.buildMeetRecordingKey(recordingInfo.recordingId);
+		return await this.saveCacheAndStorage<MRec>(redisKey, storageKey, recordingInfo);
 	}
 
 	/**
-	 * Retrieves the metadata for a specific recording.
+	 * Retrieves all recordings from storage, optionally filtered by room ID.
 	 *
-	 * @param recordingId - The unique identifier of the recording
-	 * @returns A promise that resolves to an object containing the recording information and metadata file path
-	 * @throws May throw an error if the recording is not found or if there's an issue accessing the storage provider
+	 * @param roomId - Optional room identifier to filter recordings. If not provided, retrieves all recordings.
+	 * @param maxItems - Optional maximum number of items to return per page for pagination.
+	 * @param nextPageToken - Optional token for pagination to retrieve the next page of results.
+	 *
+	 * @returns A promise that resolves to an object containing:
+	 *   - `recordings`: Array of recording metadata objects (MRec)
+	 *   - `isTruncated`: Optional boolean indicating if there are more results available
+	 *   - `nextContinuationToken`: Optional token to retrieve the next page of results
+	 *
+	 * @throws Will throw an error if storage retrieval fails or if there's an issue processing the recordings
+	 *
+	 * @remarks
+	 * This method handles pagination and filters out any recordings that fail to load.
+	 * Failed recordings are logged as warnings but don't cause the entire operation to fail.
+	 * The method logs debug information about the retrieval process and summary statistics.
 	 */
-	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
-		return this.storageProvider.getRecordingMetadata(recordingId) as Promise<{
-			recordingInfo: MRec;
-			metadataFilePath: string;
-		}>;
-	}
+	async getAllRecordings(
+		roomId?: string,
+		maxItems?: number,
+		nextPageToken?: string
+	): Promise<{ recordings: MRec[]; isTruncated?: boolean; nextContinuationToken?: string }> {
+		try {
+			const searchKey = this.keyBuilder.buildAllMeetRecordingsKey(roomId);
+			const scope = roomId ? ` for room ${roomId}` : '';
 
-	/**
-	 * Retrieves metadata for recordings by their file path.
-	 *
-	 * @param recordingPath - The path of the recording file to retrieve metadata for
-	 * @returns A promise that resolves to
-	 */
-	async getRecordingMetadataByPath(recordingPath: string): Promise<MRec | undefined> {
-		return this.storageProvider.getRecordingMetadataByPath(recordingPath) as Promise<MRec>;
-	}
+			this.logger.debug(`Retrieving recordings${scope} with key: ${searchKey}`);
+			const { Contents, IsTruncated, NextContinuationToken } = await this.storageProvider.listObjects(
+				searchKey,
+				maxItems,
+				nextPageToken
+			);
 
-	/**
-	 * Retrieves recording media as a readable stream from the storage provider.
-	 *
-	 * @param recordingPath - The path to the recording file in storage
-	 * @param range - Optional byte range for partial content retrieval
-	 * @param range.start - Starting byte position
-	 * @param range.end - Ending byte position
-	 * @returns A Promise that resolves to a Readable stream of the recording media
-	 */
-	async getRecordingMedia(
-		recordingPath: string,
-		range?: {
-			end: number;
-			start: number;
+			if (!Contents || Contents.length === 0) {
+				this.logger.verbose(`No recordings found${scope}`);
+				return { recordings: [], isTruncated: false };
+			}
+
+			const metadataFiles = Contents; //Contents.filter((item) => item.Key && item.Key.endsWith('.json'));
+
+			const recordingPromises = metadataFiles.map(async (item) => {
+				try {
+					const recording = await this.storageProvider.getObject<MRec>(item.Key!);
+					return recording;
+				} catch (error) {
+					this.logger.warn(`Failed to load recording metadata from ${item.Key}: ${error}`);
+					return null; // Return null for failed loads, filter out later
+				}
+			});
+
+			// Wait for all recordings to load and filter out failures
+			const recordingResults = await Promise.all(recordingPromises);
+			const validRecordings = recordingResults.filter(
+				(recording): recording is Awaited<MRec> => recording !== null && recording !== undefined
+			);
+
+			// Log results summary
+			const failedCount = recordingResults.length - validRecordings.length;
+
+			if (failedCount > 0) {
+				this.logger.warn(`Failed to load ${failedCount} out of ${recordingResults.length} recordings${scope}`);
+			}
+
+			this.logger.verbose(`Successfully retrieved ${validRecordings.length} recordings${scope}`);
+
+			return {
+				recordings: validRecordings,
+				isTruncated: Boolean(IsTruncated),
+				nextContinuationToken: NextContinuationToken
+			};
+		} catch (error) {
+			this.handleError(error, 'Error retrieving all recordings');
+			throw error;
 		}
-	): Promise<Readable> {
-		return this.storageProvider.getRecordingMedia(recordingPath, range) as Promise<Readable>;
+	}
+
+	async getRecordingMetadata(recordingId: string): Promise<{ recordingInfo: MRec; metadataFilePath: string }> {
+		try {
+			const redisKey = RedisKeyName.RECORDING + recordingId;
+			const storageKey = this.keyBuilder.buildMeetRecordingKey(recordingId);
+
+			const recordingInfo = await this.getFromCacheAndStorage<MRec>(redisKey, storageKey);
+
+			if (!recordingInfo) {
+				throw errorRecordingNotFound(recordingId);
+			}
+
+			this.logger.debug(`Retrieved recording for ${recordingId}`);
+			return { recordingInfo, metadataFilePath: storageKey };
+		} catch (error) {
+			this.logger.error(`Error fetching recording metadata for recording ${recordingId}: ${error}`);
+			throw error;
+		}
 	}
 
 	/**
-	 * Deletes multiple recording metadata files by their paths.
+	 * Deletes a recording and its metadata by recordingId.
+	 * This method handles the path building internally, making it agnostic to storage backend.
 	 *
-	 * @param metadataPaths - Array of file paths to the recording metadata files to be deleted
-	 * @returns A Promise that resolves when all metadata files have been successfully deleted
-	 * @throws May throw an error if any of the deletion operations fail
+	 * @param recordingId - The unique identifier of the recording to delete
+	 * @returns Promise that resolves when both binary files and metadata are deleted
 	 */
-	async deleteRecordingMetadataByPaths(metadataPaths: string[]): Promise<void> {
-		return this.storageProvider.deleteRecordingMetadataByPaths(metadataPaths);
+	async deleteRecording(recordingId: string): Promise<void> {
+		try {
+			const redisMetadataKey = RedisKeyName.RECORDING + recordingId;
+			const storageMetadataKey = this.keyBuilder.buildMeetRecordingKey(recordingId);
+			const binaryRecordingKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
+
+			this.logger.info(`Deleting recording ${recordingId} with metadata key ${storageMetadataKey}`);
+
+			// Delete both metadata and binary files
+			await Promise.all([
+				this.deleteFromCacheAndStorage(redisMetadataKey, storageMetadataKey),
+				this.storageProvider.deleteObject(binaryRecordingKey)
+			]);
+
+			this.logger.verbose(`Successfully deleted recording ${recordingId}`);
+		} catch (error) {
+			this.handleError(error, `Error deleting recording ${recordingId}`);
+			throw error;
+		}
 	}
 
 	/**
-	 * Deletes recording binary files from storage using the provided file paths.
+	 * Deletes multiple recordings by recordingIds.
 	 *
-	 * @param recordingPaths - Array of file paths pointing to the recording binary files to be deleted
-	 * @returns A Promise that resolves when all specified recording files have been successfully deleted
-	 * @throws May throw an error if any of the file deletion operations fail
+	 * @param recordingIds - Array of recording identifiers to delete
+	 * @returns Promise that resolves when all recordings are deleted
 	 */
-	async deleteRecordingBinaryFilesByPaths(recordingPaths: string[]): Promise<void> {
-		return this.storageProvider.deleteRecordingBinaryFilesByPaths(recordingPaths);
+	async deleteRecordings(recordingIds: string[]): Promise<void> {
+		if (recordingIds.length === 0) {
+			this.logger.debug('No recordings to delete');
+			return;
+		}
+
+		try {
+			// Build all paths from recordingIds
+			const metadataKeys: string[] = [];
+			const redisKeys: string[] = [];
+			const binaryKeys: string[] = [];
+
+			for (const recordingId of recordingIds) {
+				redisKeys.push(RedisKeyName.RECORDING + recordingId);
+				metadataKeys.push(this.keyBuilder.buildMeetRecordingKey(recordingId));
+				binaryKeys.push(this.keyBuilder.buildBinaryRecordingKey(recordingId));
+			}
+
+			this.logger.debug(`Bulk deleting ${recordingIds.length} recordings`);
+
+			// Delete all files in parallel using batch operations
+			await Promise.all([
+				this.deleteFromCacheAndStorageBatch(redisKeys, metadataKeys),
+				this.storageProvider.deleteObjects(binaryKeys)
+			]);
+			this.logger.verbose(`Successfully bulk deleted ${recordingIds.length} recordings`);
+		} catch (error) {
+			this.handleError(error, `Error deleting recordings: ${recordingIds.join(', ')}`);
+			throw error;
+		}
 	}
+
+	async getRecordingMedia(
+		recordingId: string,
+		range?: { end: number; start: number }
+	): Promise<{ fileSize: number | undefined; fileStream: Readable; start?: number; end?: number }> {
+		try {
+			const binaryRecordingKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
+			this.logger.debug(`Retrieving recording media for recording ${recordingId} from ${binaryRecordingKey}`);
+
+			const fileSize = await this.getRecordingFileSize(binaryRecordingKey, recordingId);
+			const validatedRange = this.validateAndAdjustRange(range, fileSize, recordingId);
+			const fileStream = await this.storageProvider.getObjectAsStream(binaryRecordingKey, validatedRange);
+
+			return {
+				fileSize,
+				fileStream,
+				start: validatedRange?.start,
+				end: validatedRange?.end
+			};
+		} catch (error) {
+			this.logger.error(`Error fetching recording media for recording ${recordingId}: ${error}`);
+			throw error;
+		}
+	}
+
+	// ==========================================
+	// USER DOMAIN LOGIC
+	// ==========================================
 
 	/**
 	 * Retrieves user data for a specific username.
@@ -327,7 +485,10 @@ export class MeetStorageService<
 	 * @returns A promise that resolves to the user data, or null if not found
 	 */
 	async getUser(username: string): Promise<MUser | null> {
-		return this.storageProvider.getUser(username) as Promise<MUser | null>;
+		const redisKey = RedisKeyName.USER + username;
+		const storageKey = this.keyBuilder.buildUserKey(username);
+
+		return await this.getFromCacheAndStorage<MUser>(redisKey, storageKey);
 	}
 
 	/**
@@ -337,15 +498,246 @@ export class MeetStorageService<
 	 * @returns A promise that resolves to the saved user data
 	 */
 	async saveUser(user: MUser): Promise<MUser> {
-		this.logger.info(`Saving user data for ${user.username}`);
-		return this.storageProvider.saveUser(user) as Promise<MUser>;
+		const { username } = user;
+		const userRedisKey = RedisKeyName.USER + username;
+		const storageUserKey = this.keyBuilder.buildUserKey(username);
+
+		return await this.saveCacheAndStorage(userRedisKey, storageUserKey, user);
+	}
+
+	// ==========================================
+	// PRIVATE HELPER METHODS
+	// ==========================================
+
+	// ==========================================
+	// HYBRID CACHE METHODS (Redis + Storage)
+	// ==========================================
+
+	/**
+	 * Saves data to both Redis cache and persistent storage with fallback handling.
+	 *
+	 * @param redisKey - The Redis key to store the data
+	 * @param storageKey - The storage key/path for persistent storage
+	 * @param data - The data to store
+	 * @param redisTtl - Optional TTL for Redis cache (default: 1 hour)
+	 * @returns Promise that resolves when data is saved to at least one location
+	 */
+	protected async saveCacheAndStorage<T>(redisKey: string, storageKey: string, data: T): Promise<T> {
+		const operations = [
+			// Save to Redis (fast cache)
+			this.redisService.set(redisKey, JSON.stringify(data)).catch((error) => {
+				this.logger.warn(`Redis save failed for key ${redisKey}: ${error}`);
+				return Promise.reject({ type: 'redis', error });
+			}),
+
+			// Save to persistent storage
+			this.storageProvider.putObject(storageKey, data).catch((error) => {
+				this.logger.warn(`Storage save failed for key ${storageKey}: ${error}`);
+				return Promise.reject({ type: 'storage', error });
+			})
+		];
+
+		try {
+			// Try to save to both locations
+			const results = await Promise.allSettled(operations);
+
+			const redisResult = results[0];
+			const storageResult = results[1];
+
+			// Check if at least one succeeded
+			const redisSuccess = redisResult.status === 'fulfilled';
+			const storageSuccess = storageResult.status === 'fulfilled';
+
+			if (!redisSuccess && !storageSuccess) {
+				// Both failed - this is critical
+				const redisError = (redisResult as PromiseRejectedResult).reason;
+				const storageError = (storageResult as PromiseRejectedResult).reason;
+
+				this.logger.error(`Save failed for both Redis and Storage:`, {
+					redisKey,
+					storageKey,
+					redisError: redisError.error,
+					storageError: storageError.error
+				});
+
+				throw new Error(`Failed to save data: Redis (${redisError.error}) and Storage (${storageError.error})`);
+			}
+
+			// Log partial failures
+			if (!redisSuccess) {
+				const redisError = (redisResult as PromiseRejectedResult).reason;
+				this.logger.warn(`Redis save failed but storage succeeded for key ${redisKey}:`, redisError.error);
+			}
+
+			if (!storageSuccess) {
+				const storageError = (storageResult as PromiseRejectedResult).reason;
+				this.logger.warn(`Storage save failed but Redis succeeded for key ${storageKey}:`, storageError.error);
+			}
+
+			// Success if at least one location worked
+			this.logger.debug(`Save completed: Redis=${redisSuccess}, Storage=${storageSuccess}`);
+			return data;
+		} catch (error) {
+			this.handleError(error, `Error saving keys: ${redisKey}, ${storageKey}`);
+			throw error;
+		}
+	}
+
+	/**
+	 * Retrieves data from Redis cache first, falls back to storage if not found.
+	 * Updates Redis cache if data is retrieved from storage.
+	 *
+	 * @param redisKey - The Redis key to check first
+	 * @param storageKey - The storage key/path as fallback
+	 * @returns Promise that resolves with the data or null if not found
+	 */
+	protected async getFromCacheAndStorage<T>(redisKey: string, storageKey: string): Promise<T | null> {
+		try {
+			// 1. Try Redis first (fast cache)
+			this.logger.debug(`Attempting to get data from Redis cache: ${redisKey}`);
+
+			const cachedData = await this.redisService.get(redisKey);
+
+			if (cachedData) {
+				this.logger.debug(`Cache HIT for key: ${redisKey}`);
+
+				try {
+					return JSON.parse(cachedData) as T;
+				} catch (parseError) {
+					this.logger.warn(`Failed to parse cached data for key ${redisKey}: ${parseError}`);
+					// Continue to storage fallback
+				}
+			} else {
+				this.logger.debug(`Cache MISS for key: ${redisKey}`);
+			}
+
+			// 2. Fallback to persistent storage
+			this.logger.debug(`Attempting to get data from storage: ${storageKey}`);
+
+			const storageData = await this.storageProvider.getObject<T>(storageKey);
+
+			if (!storageData) {
+				this.logger.debug(`Data not found in storage for key: ${storageKey}`);
+				return null;
+			}
+
+			// 3. Found in storage - update Redis cache for next time
+			this.logger.debug(`Storage HIT for key: ${storageKey}, updating cache`);
+
+			try {
+				await this.redisService.set(redisKey, JSON.stringify(storageData));
+				this.logger.debug(`Successfully updated cache for key: ${redisKey}`);
+			} catch (cacheUpdateError) {
+				// Cache update failure shouldn't affect the main operation
+				this.logger.warn(`Failed to update cache for key ${redisKey}: ${cacheUpdateError}`);
+			}
+
+			return storageData;
+		} catch (error) {
+			this.handleError(error, `Error in hybrid cache get for keys: ${redisKey}, ${storageKey}`);
+
+			throw error; // Re-throw unexpected errors
+		}
+	}
+
+	/**
+	 * Deletes data from both Redis cache and persistent storage.
+	 *
+	 * @param redisKey - The Redis key to delete
+	 * @param storageKey - The storage key to delete
+	 * @returns Promise that resolves when deletion is attempted on both locations
+	 */
+	protected async deleteFromCacheAndStorage(redisKey: string, storageKey: string): Promise<void> {
+		return await this.deleteFromCacheAndStorageBatch([redisKey], [storageKey]);
+	}
+
+	/**
+	 * Deletes data from both Redis cache and persistent storage in batch.
+	 * More efficient than multiple individual delete operations.
+	 *
+	 * @param deletions - Array of objects containing redisKey and storageKey pairs
+	 * @returns Promise that resolves when batch deletion is attempted on both locations
+	 */
+	protected async deleteFromCacheAndStorageBatch(redisKeys: string[], storageKeys: string[]): Promise<void> {
+		if (redisKeys.length === 0 && storageKeys.length === 0) {
+			this.logger.debug('No keys to delete in batch');
+			return;
+		}
+
+		this.logger.debug(`Batch deleting ${redisKeys.length} Redis keys and ${storageKeys.length} storage keys`);
+
+		const operations = [
+			// Batch delete from Redis (only if there are keys to delete)
+			redisKeys.length > 0
+				? this.redisService.delete(redisKeys).catch((error) => {
+						this.logger.warn(`Redis batch delete failed: ${error}`);
+						return Promise.reject({ type: 'redis', error, affectedKeys: redisKeys });
+					})
+				: Promise.resolve(0),
+
+			// Batch delete from storage (only if there are keys to delete)
+			storageKeys.length > 0
+				? this.storageProvider.deleteObjects(storageKeys).catch((error) => {
+						this.logger.warn(`Storage batch delete failed: ${error}`);
+						return Promise.reject({ type: 'storage', error, affectedKeys: storageKeys });
+					})
+				: Promise.resolve()
+		];
+
+		try {
+			const results = await Promise.allSettled(operations);
+
+			const redisResult = results[0];
+			const storageResult = results[1];
+
+			const redisSuccess = redisResult.status === 'fulfilled';
+			const storageSuccess = storageResult.status === 'fulfilled';
+
+			if (redisKeys.length > 0) {
+				if (redisSuccess) {
+					const deletedCount = (redisResult as PromiseFulfilledResult<number>).value;
+					this.logger.debug(`Redis batch delete succeeded: ${deletedCount} keys deleted`);
+				} else {
+					const redisError = (redisResult as PromiseRejectedResult).reason;
+					this.logger.warn(`Redis batch delete failed:`, redisError.error);
+				}
+			}
+
+			if (storageKeys.length > 0) {
+				if (storageSuccess) {
+					this.logger.debug(`Storage batch delete succeeded: ${storageKeys.length} keys deleted`);
+				} else {
+					const storageError = (storageResult as PromiseRejectedResult).reason;
+					this.logger.warn(`Storage batch delete failed:`, storageError.error);
+				}
+			}
+
+			this.logger.debug(`Batch delete completed: Redis=${redisSuccess}, Storage=${storageSuccess}`);
+		} catch (error) {
+			this.handleError(error, `Error in batch delete operation`);
+			throw error;
+		}
+	}
+
+	/**
+	 * Invalidates Redis cache for a specific key.
+	 * Useful when you know data has changed and want to force next read from storage.
+	 */
+	protected async invalidateCache(redisKey: string): Promise<void> {
+		try {
+			await this.redisService.delete(redisKey);
+			this.logger.debug(`Cache invalidated for key: ${redisKey}`);
+		} catch (error) {
+			this.logger.warn(`Failed to invalidate cache for key ${redisKey}: ${error}`);
+			// Don't throw - cache invalidation failure shouldn't break main flow
+		}
 	}
 
 	/**
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
 	 */
-	protected async getDefaultPreferences(): Promise<GPrefs> {
+	protected buildDefaultPreferences(): GPrefs {
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {
@@ -363,16 +755,63 @@ export class MeetStorageService<
 		} as GPrefs;
 	}
 
-	/**
-	 * Handles errors and logs them.
-	 * @param {any} error
-	 * @param {string} message
-	 */
-	protected handleError(error: OpenViduMeetError | unknown, message: string) {
+	protected async getRecordingFileSize(key: string, recordingId: string): Promise<number> {
+		const { contentLength: fileSize } = await this.storageProvider.getObjectHeaders(key);
+
+		if (!fileSize) {
+			this.logger.warn(`Recording media not found for recording ${recordingId}`);
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		return fileSize;
+	}
+
+	protected validateAndAdjustRange(
+		range: { end: number; start: number } | undefined,
+		fileSize: number,
+		recordingId: string
+	): { start: number; end: number } | undefined {
+		if (!range) return undefined;
+
+		const { start, end: originalEnd } = range;
+
+		// Validate input values
+		if (isNaN(start) || isNaN(originalEnd) || start < 0) {
+			this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${originalEnd}`);
+			this.logger.warn(`Returning full stream for recording ${recordingId}`);
+			return undefined;
+		}
+
+		// Check if start is beyond file size
+		if (start >= fileSize) {
+			this.logger.error(
+				`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`
+			);
+			throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
+		}
+
+		// Adjust end to not exceed file bounds
+		const adjustedEnd = Math.min(originalEnd, fileSize - 1);
+
+		// Validate final range
+		if (start > adjustedEnd) {
+			this.logger.warn(
+				`Invalid range after adjustment: start=${start}, end=${adjustedEnd} for recording ${recordingId}`
+			);
+			return undefined;
+		}
+
+		this.logger.debug(
+			`Valid range for recording ${recordingId}: start=${start}, end=${adjustedEnd}, fileSize=${fileSize}`
+		);
+		return { start, end: adjustedEnd };
+	}
+
+	protected handleError(error: unknown, context: string): void {
 		if (error instanceof OpenViduMeetError) {
-			this.logger.error(`${message}: ${error.message}`);
+			this.logger.error(`${context}: ${error.message}`);
 		} else {
-			this.logger.error(`${message}: Unexpected error`);
+			this.logger.error(`${context}: ${error}`);
 		}
 	}
 }

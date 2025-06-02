@@ -186,12 +186,6 @@ export class RecordingHelper {
 		return size !== 0 ? size : undefined;
 	}
 
-	static buildMetadataFilePath(recordingId: string): string {
-		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
-		return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.metadata/${roomId}/${egressId}/${uid}.json`;
-	}
-
 	private static toSeconds(nanoseconds: number): number {
 		const nanosecondsToSeconds = 1 / 1_000_000_000;
 		return nanoseconds * nanosecondsToSeconds;

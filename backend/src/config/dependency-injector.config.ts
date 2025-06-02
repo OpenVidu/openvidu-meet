@@ -14,13 +14,24 @@ import {
 	S3Service,
 	S3StorageProvider,
 	StorageFactory,
+	StorageKeyBuilder,
+	StorageProvider,
 	SystemEventService,
 	TaskSchedulerService,
 	TokenService,
 	UserService
 } from '../services/index.js';
+import { MEET_PREFERENCES_STORAGE_MODE } from '../environment.js';
+import { S3KeyBuilder } from '../services/storage/providers/s3/s3-storage-key.builder.js';
 
 export const container: Container = new Container();
+
+export const STORAGE_TYPES = {
+	StorageProvider: Symbol.for('StorageProvider'),
+	KeyBuilder: Symbol.for('KeyBuilder'),
+	S3StorageProvider: Symbol.for('S3StorageProvider'),
+	S3KeyBuilder: Symbol.for('S3KeyBuilder')
+};
 
 /**
  * Registers all necessary dependencies in the container.
@@ -38,6 +49,7 @@ export const registerDependencies = () => {
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 
+	configureStorage(MEET_PREFERENCES_STORAGE_MODE);
 	container.bind(S3Service).toSelf().inSingletonScope();
 	container.bind(S3StorageProvider).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
@@ -55,8 +67,20 @@ export const registerDependencies = () => {
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
 };
 
+const configureStorage = (storageMode: string) => {
+	container.get(LoggerService).info(`Creating ${storageMode} storage provider`);
+
+	switch (storageMode) {
+		default:
+		case 's3':
+			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
+			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			break;
+	}
+};
+
 export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
-	await container.get(MeetStorageService).initialize();
+	await container.get(MeetStorageService).initializeGlobalPreferences();
 };

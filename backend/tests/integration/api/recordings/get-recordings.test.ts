@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { MeetRecordingInfo, MeetRecordingStatus, MeetRoom } from '../../../../src/typings/ce/index.js';
 import {
 	expectSuccessListRecordingResponse,
@@ -28,16 +28,14 @@ describe('Recordings API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
-		await deleteAllRecordings();
 	});
 
 	describe('List Recordings Tests', () => {
-		afterEach(async () => {
-			await deleteAllRecordings();
+		beforeEach(async () => {
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 			const response = await getAllRecordings();
 			expect(response.status).toBe(200);
 			expectSuccessListRecordingResponse(response, 0, false, false);
-
 		});
 
 		afterAll(async () => {

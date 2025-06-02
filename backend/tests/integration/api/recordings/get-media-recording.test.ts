@@ -17,6 +17,8 @@ describe('Recording API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
 
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+
 		const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '3s');
 		const roomData = testContext.getRoomByIndex(0)!;
 

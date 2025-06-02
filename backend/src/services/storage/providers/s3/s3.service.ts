@@ -22,10 +22,10 @@ import {
 	MEET_S3_SERVICE_ENDPOINT,
 	MEET_S3_SUBBUCKET,
 	MEET_S3_WITH_PATH_STYLE_ACCESS
-} from '../environment.js';
-import { errorS3NotAvailable, internalError } from '../models/error.model.js';
-import { LoggerService } from './index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+} from '../../../../environment.js';
+import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
+import { LoggerService } from '../../../index.js';
+import INTERNAL_CONFIG from '../../../../config/internal-config.js';
 
 @injectable()
 export class S3Service {
@@ -64,7 +64,11 @@ export class S3Service {
 	 * Saves an object to a S3 bucket.
 	 * Uses an internal retry mechanism in case of errors.
 	 */
-	async saveObject(name: string, body: any, bucket: string = MEET_S3_BUCKET): Promise<PutObjectCommandOutput> {
+	async saveObject(
+		name: string,
+		body: Record<string, unknown>,
+		bucket: string = MEET_S3_BUCKET
+	): Promise<PutObjectCommandOutput> {
 		const fullKey = this.getFullKey(name);
 
 		try {
@@ -76,10 +80,10 @@ export class S3Service {
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
 			this.logger.verbose(`S3: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
-		} catch (error: any) {
+		} catch (error: unknown) {
 			this.logger.error(`S3: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
 				throw errorS3NotAvailable(error);
 			}
 
