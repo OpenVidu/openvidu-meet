@@ -70,7 +70,7 @@ export const setupMultiRoomTestContext = async (numRooms: number, withParticipan
 	const rooms: RoomData[] = [];
 
 	for (let i = 0; i < numRooms; i++) {
-		const roomData = await setupSingleRoom('TEST_ROOM', withParticipants);
+		const roomData = await setupSingleRoom(withParticipants, 'TEST_ROOM');
 		rooms.push(roomData);
 	}
 
@@ -98,7 +98,7 @@ export const setupSingleRoomWithRecording = async (
 	stopRecordingCond = false,
 	stopDelay?: StringValue
 ): Promise<RoomData> => {
-	const roomData = await setupSingleRoom('TEST_ROOM', true);
+	const roomData = await setupSingleRoom(true, 'TEST_ROOM');
 	const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
 	expectValidStartRecordingResponse(response, roomData.room.roomId);
 	roomData.recordingId = response.body.recordingId;
