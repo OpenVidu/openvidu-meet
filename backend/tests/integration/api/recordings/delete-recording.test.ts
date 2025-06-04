@@ -49,6 +49,22 @@ describe('Recording API Tests', () => {
 			expect(getResponse.status).toBe(404);
 		});
 
+		it('should secrets be deleted when recording is deleted', async () => {
+			const storageService = container.get(MeetStorageService);
+
+			let recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+			expect(recSecrets).toBeDefined();
+			expect(recSecrets?.publicAccessSecret).toBeDefined();
+			expect(recSecrets?.privateAccessSecret).toBeDefined();
+
+			// Check that the room metadata still exists after deleteing the first recording
+			const deleteResponse = await deleteRecording(recordingId!);
+			expect(deleteResponse.status).toBe(204);
+
+			recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+			expect(recSecrets).toBe(null);
+		});
+
 		it('should delete room metadata when deleting the last recording', async () => {
 			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
 

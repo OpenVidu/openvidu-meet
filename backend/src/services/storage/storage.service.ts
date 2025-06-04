@@ -9,7 +9,7 @@ import {
 	MEET_WEBHOOK_ENABLED,
 	MEET_WEBHOOK_URL
 } from '../../environment.js';
-import { MeetLock, PasswordHelper } from '../../helpers/index.js';
+import { MeetLock, PasswordHelper, RecordingHelper } from '../../helpers/index.js';
 import {
 	errorRecordingNotFound,
 	errorRecordingRangeNotSatisfiable,
@@ -393,15 +393,25 @@ export class MeetStorageService<
 	 */
 	async deleteRecording(recordingId: string): Promise<void> {
 		try {
+			// Keys for recording metadata
 			const redisMetadataKey = RedisKeyName.RECORDING + recordingId;
 			const storageMetadataKey = this.keyBuilder.buildMeetRecordingKey(recordingId);
+
+			// Key for access recording secrets
+			const storageSecretsKey = this.keyBuilder.buildAccessRecordingSecretsKey(recordingId);
+			const redisSecretsKey = RedisKeyName.RECORDING_SECRETS + recordingId;
+
+			// Binary recording key
 			const binaryRecordingKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
 
 			this.logger.info(`Deleting recording ${recordingId} with metadata key ${storageMetadataKey}`);
 
-			// Delete both metadata and binary files
+			// Delete secrets, metadata and binary recording files
 			await Promise.all([
-				this.deleteFromCacheAndStorage(redisMetadataKey, storageMetadataKey),
+				this.deleteFromCacheAndStorageBatch(
+					[redisMetadataKey, redisSecretsKey],
+					[storageMetadataKey, storageSecretsKey]
+				),
 				this.storageProvider.deleteObject(binaryRecordingKey)
 			]);
 
@@ -426,13 +436,17 @@ export class MeetStorageService<
 
 		try {
 			// Build all paths from recordingIds
-			const metadataKeys: string[] = [];
 			const redisKeys: string[] = [];
+			const storageKeys: string[] = [];
 			const binaryKeys: string[] = [];
 
 			for (const recordingId of recordingIds) {
 				redisKeys.push(RedisKeyName.RECORDING + recordingId);
-				metadataKeys.push(this.keyBuilder.buildMeetRecordingKey(recordingId));
+				redisKeys.push(RedisKeyName.RECORDING_SECRETS + recordingId);
+
+				storageKeys.push(this.keyBuilder.buildMeetRecordingKey(recordingId));
+				storageKeys.push(this.keyBuilder.buildAccessRecordingSecretsKey(recordingId));
+
 				binaryKeys.push(this.keyBuilder.buildBinaryRecordingKey(recordingId));
 			}
 
@@ -440,7 +454,7 @@ export class MeetStorageService<
 
 			// Delete all files in parallel using batch operations
 			await Promise.all([
-				this.deleteFromCacheAndStorageBatch(redisKeys, metadataKeys),
+				this.deleteFromCacheAndStorageBatch(redisKeys, storageKeys),
 				this.storageProvider.deleteObjects(binaryKeys)
 			]);
 			this.logger.verbose(`Successfully bulk deleted ${recordingIds.length} recordings`);
@@ -477,6 +491,54 @@ export class MeetStorageService<
 	// ==========================================
 	// USER DOMAIN LOGIC
 	// ==========================================
+
+	/**
+	 * Saves access recording secrets (public and private) for a specific recording.
+	 *
+	 * @param recordingId - The unique identifier of the recording
+	 * @param secrets - Object containing the public and private access secrets
+	 * @param secrets.publicAccessSecret - The public access secret for the recording
+	 * @param secrets.privateAccessSecret - The private access secret for the recording
+	 * @returns A promise that resolves when the secrets are successfully saved
+	 * @throws Will throw an error if the storage operation fails
+	 */
+	async saveAccessRecordingSecrets(recordingId: string): Promise<void> {
+		try {
+			const redisKey = RedisKeyName.RECORDING_SECRETS + recordingId;
+			const storageKey = this.keyBuilder.buildAccessRecordingSecretsKey(recordingId);
+			const secrets = RecordingHelper.buildAccessSecrets();
+			this.logger.debug(`Saving access secrets for recording ${recordingId} at ${storageKey}`);
+			await this.saveCacheAndStorage(redisKey, storageKey, secrets);
+		} catch (error) {
+			this.handleError(error, `Error saving access secrets for recording ${recordingId}`);
+			throw error;
+		}
+	}
+
+	async getAccessRecordingSecrets(
+		recordingId: string
+	): Promise<{ publicAccessSecret: string; privateAccessSecret: string } | null> {
+		try {
+			const redisKey = RedisKeyName.RECORDING_SECRETS + recordingId;
+			const secretsKey = this.keyBuilder.buildAccessRecordingSecretsKey(recordingId);
+			this.logger.debug(`Retrieving access secrets for recording ${recordingId} from ${secretsKey}`);
+
+			const secrets = await this.getFromCacheAndStorage<{
+				publicAccessSecret: string;
+				privateAccessSecret: string;
+			}>(redisKey, secretsKey);
+
+			if (!secrets) {
+				this.logger.warn(`No access secrets found for recording ${recordingId}`);
+				return null;
+			}
+
+			return secrets;
+		} catch (error) {
+			this.handleError(error, `Error fetching access secrets for recording ${recordingId}`);
+			throw error;
+		}
+	}
 
 	/**
 	 * Retrieves user data for a specific username.
@@ -732,6 +794,10 @@ export class MeetStorageService<
 			// Don't throw - cache invalidation failure shouldn't break main flow
 		}
 	}
+
+	// ==========================================
+	// PRIVATE HELPER METHODS
+	// ==========================================
 
 	/**
 	 * Returns the default global preferences.

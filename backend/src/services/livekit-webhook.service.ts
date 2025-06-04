@@ -229,7 +229,10 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
-					specificTasks.push(this.storageService.archiveRoomMetadata(roomId));
+					specificTasks.push(
+						this.storageService.archiveRoomMetadata(roomId),
+						this.storageService.saveAccessRecordingSecrets(recordingId)
+					);
 					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':

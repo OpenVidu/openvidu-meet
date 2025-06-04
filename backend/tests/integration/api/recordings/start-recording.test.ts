@@ -19,6 +19,8 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { MeetStorageService } from '../../../../src/services/index.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
@@ -57,6 +59,31 @@ describe('Recording API Tests', () => {
 			expectValidRecordingLocationHeader(response);
 			const stopResponse = await stopRecording(recordingId, moderatorCookie);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId);
+		});
+
+		it('should secrets and archived room files be created when recording starts', async () => {
+			const response = await startRecording(room.roomId, moderatorCookie);
+			const recordingId = response.body.recordingId;
+			expectValidStartRecordingResponse(response, room.roomId);
+
+			expectValidRecordingLocationHeader(response);
+
+			const storageService = container.get(MeetStorageService);
+
+			const recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+			expect(recSecrets).toBeDefined();
+			expect(recSecrets?.publicAccessSecret).toBeDefined();
+			expect(recSecrets?.privateAccessSecret).toBeDefined();
+
+			const archivedRoom = await storageService.getArchivedRoomMetadata(room.roomId);
+			expect(archivedRoom).toBeDefined();
+			expect(archivedRoom?.moderatorRoomUrl).toBeDefined();
+			expect(archivedRoom?.publisherRoomUrl).toBeDefined();
+			expect(archivedRoom?.preferences).toBeDefined();
+
+			// Check if secrets file is created
+			const secretsResponse = await stopRecording(recordingId, moderatorCookie);
+			expectValidStopRecordingResponse(secretsResponse, recordingId, room.roomId);
 		});
 
 		it('should successfully start recording, stop it, and start again (sequential operations)', async () => {

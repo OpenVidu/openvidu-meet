@@ -150,4 +150,7 @@ export interface StorageKeyBuilder {
 	 * @param userId - The unique identifier of the user
 	 */
 	buildUserKey(userId: string): string;
+
+	buildAccessRecordingSecretsKey(recordingId:string): string;
+
 }

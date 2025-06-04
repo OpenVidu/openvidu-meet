@@ -23,7 +23,7 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Bulk Delete Recording Tests', () => {
-		it('"should return 200 when mixed valid and non-existent IDs are provided', async () => {
+		it('should return 200 when mixed valid and non-existent IDs are provided', async () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 3);
 			const recordingIds = testContext.rooms.map((room) => room.recordingId);
 			const nonExistentIds = ['nonExistent--EG_000--1234', 'nonExistent--EG_111--5678'];
@@ -102,6 +102,21 @@ describe('Recording API Tests', () => {
 			expect(deleteResponse.status).toBe(204);
 		});
 
+		it('should delete all recordings and their secrets', async () => {
+			const response = await setupMultiRecordingsTestContext(3, 3, 3);
+			const recordingIds = response.rooms.map((room) => room.recordingId);
+			const deleteResponse = await bulkDeleteRecordings(recordingIds);
+
+			expect(deleteResponse.status).toBe(204);
+
+			const storageService = container.get(MeetStorageService);
+
+			for (const recordingId of recordingIds) {
+				const recSecrets = await storageService.getAccessRecordingSecrets(recordingId!);
+				expect(recSecrets).toBeNull();
+			}
+		});
+
 		it('should handle single recording deletion correctly', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const recordingId = testContext.rooms[0].recordingId;
@@ -139,7 +154,6 @@ describe('Recording API Tests', () => {
 			expect(roomMetadata!.publisherRoomUrl).toContain(room.roomId);
 
 			const response = await startRecording(room.roomId, moderatorCookie);
-			console.log('Start recording response:', response.body);
 			expectValidStartRecordingResponse(response, room.roomId);
 			const secondRecordingId = response.body.recordingId;
 
