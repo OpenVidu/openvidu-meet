@@ -9,7 +9,7 @@ on:
         default: "true"
       aws-instance-type:
         description: "AWS EC2 instance type"
-        default: "c5.xlarge"
+        default: "c5.2xlarge"
 
 jobs:
   start-aws-runner:
@@ -24,7 +24,7 @@ jobs:
         id: start-ec2-runner
         uses: OpenVidu/actions/start-aws-runner@main
         with:
-          aws-instance-type: ${{ inputs.aws-instance-type || 'c5.xlarge' }}
+          aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
           aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
