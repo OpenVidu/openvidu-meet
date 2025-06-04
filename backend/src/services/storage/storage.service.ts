@@ -81,7 +81,7 @@ export class MeetStorageService<
 			const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
 			const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
 
-			const preferences = this.buildDefaultPreferences();
+			const preferences = this.getDefaultPreferences();
 			this.logger.verbose('Initializing global preferences with default values');
 			const existing = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
 
@@ -123,7 +123,7 @@ export class MeetStorageService<
 		// Build and save default preferences if not found in cache or storage
 		await this.initializeGlobalPreferences();
 
-		return this.buildDefaultPreferences();
+		return this.getDefaultPreferences();
 	}
 
 	/**
@@ -737,7 +737,7 @@ export class MeetStorageService<
 	 * Returns the default global preferences.
 	 * @returns {GPrefs}
 	 */
-	protected buildDefaultPreferences(): GPrefs {
+	protected getDefaultPreferences(): GPrefs {
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {

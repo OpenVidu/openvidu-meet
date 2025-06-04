@@ -19,7 +19,7 @@ const defaultPreferences = {
 };
 
 const restoreDefaultGlobalPreferences = async () => {
-	const defaultPref = await container.get(MeetStorageService)['buildDefaultPreferences']();
+	const defaultPref = await container.get(MeetStorageService)['getDefaultPreferences']();
 	await container.get(MeetStorageService).saveGlobalPreferences(defaultPref);
 };
 
