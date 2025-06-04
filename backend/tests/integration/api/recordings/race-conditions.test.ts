@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { container } from '../../../../src/config/index.js';
 import { RecordingService } from '../../../../src/services';
 import {
@@ -36,6 +36,11 @@ describe('Recording API Race Conditions Tests', () => {
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 
 		recordingService = container.get(RecordingService);
+	});
+
+	beforeEach(async () => {
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		eventController.reset();
 	});
 
 	afterEach(async () => {
@@ -135,11 +140,13 @@ describe('Recording API Race Conditions Tests', () => {
 
 	it('should maintain system stability when timeout occurs during recording start', async () => {
 		setInternalConfig({
-			RECORDING_STARTED_TIMEOUT: '5s'
+			RECORDING_STARTED_TIMEOUT: '3s'
 		});
 		context = await setupMultiRoomTestContext(2, true);
 		const room1 = context.getRoomByIndex(0)!;
 		const room2 = context.getRoomByIndex(1)!;
+
+		expect(room1.room.roomId).not.toBe(room2.room.roomId);
 
 		// Mock startRoomComposite for room1 to timeout
 		const originalStartRoomComposite = recordingService['livekitService'].startRoomComposite;
@@ -161,24 +168,29 @@ describe('Recording API Race Conditions Tests', () => {
 
 		try {
 			// Start recording in room1 (should timeout)
-			const result1 = await startRecording(room1.room.roomId, room1.moderatorCookie);
-			expect(result1.status).toBe(503);
+			const rec1 = await startRecording(room1.room.roomId, room1.moderatorCookie);
+			expect(rec1.status).toBe(503);
 
-			// ✅ EXPECTED BEHAVIOR: System should remain stable
-			// Recording in different room should work normally
-			const result2 = await startRecording(room2.room.roomId, room2.moderatorCookie);
-			expect(result2.status).toBe(201);
-			expectValidStartRecordingResponse(result2, room2.room.roomId);
-
-			// ✅ EXPECTED BEHAVIOR: After timeout cleanup, room1 should be available again
-			const result3 = await startRecording(room1.room.roomId, room1.moderatorCookie);
-			expect(result3.status).toBe(201);
-			expectValidStartRecordingResponse(result3, room1.room.roomId);
-		} finally {
-			startRoomCompositeSpy.mockRestore();
 			setInternalConfig({
 				RECORDING_STARTED_TIMEOUT: '20s' // Reset to default value
 			});
+			// ✅ EXPECTED BEHAVIOR: System should remain stable
+			// Recording in different room should work normally
+			const rec2 = await startRecording(room2.room.roomId, room2.moderatorCookie);
+			expect(rec2.status).toBe(201);
+			expectValidStartRecordingResponse(rec2, room2.room.roomId);
+
+			let response = await stopRecording(rec2.body.recordingId!, room2.moderatorCookie);
+			expectValidStopRecordingResponse(response, rec2.body.recordingId!, room2.room.roomId);
+
+			// ✅ EXPECTED BEHAVIOR: After timeout cleanup, room1 should be available again
+			const rec3 = await startRecording(room1.room.roomId, room1.moderatorCookie);
+			expect(rec3.status).toBe(201);
+			expectValidStartRecordingResponse(rec3, room1.room.roomId);
+			response = await stopRecording(rec3.body.recordingId!, room1.moderatorCookie);
+			expectValidStopRecordingResponse(response, rec3.body.recordingId!, room1.room.roomId);
+		} finally {
+			startRoomCompositeSpy.mockRestore();
 		}
 	});
 
@@ -218,10 +230,22 @@ describe('Recording API Race Conditions Tests', () => {
 				rooms.map((room) => startRecording(room.room.roomId, room.moderatorCookie))
 			);
 
-			retryResults.forEach((result, index) => {
-				expect(result.status).toBe(201);
-				expectValidStartRecordingResponse(result, rooms[index].room.roomId);
-			});
+			for (const startResult of retryResults) {
+				expect(startResult.status).toBe(201);
+				expectValidStartRecordingResponse(
+					startResult,
+					rooms.find((r) => r.room.roomId === startResult.body.roomId)!.room.roomId
+				);
+				const stopResult = await stopRecording(
+					startResult.body.recordingId!,
+					rooms.find((r) => r.room.roomId === startResult.body.roomId)!.moderatorCookie
+				);
+				expectValidStopRecordingResponse(
+					stopResult,
+					startResult.body.recordingId!,
+					rooms.find((r) => r.room.roomId === startResult.body.roomId)!.room.roomId
+				);
+			}
 		} finally {
 			startRoomCompositeSpy.mockRestore();
 			setInternalConfig({
@@ -324,8 +348,25 @@ describe('Recording API Race Conditions Tests', () => {
 
 		if (firstRecordingResponse.status === 201) {
 			expectValidStartRecordingResponse(firstRecordingResponse, roomData.room.roomId);
+			// stop the first recording
+			const stopResponse = await stopRecording(firstRecordingResponse.body.recordingId, roomData.moderatorCookie);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				firstRecordingResponse.body.recordingId,
+				roomData.room.roomId
+			);
 		} else {
 			expectValidStartRecordingResponse(secondRecordingResponse, roomData.room.roomId);
+			// stop the second recording
+			const stopResponse = await stopRecording(
+				secondRecordingResponse.body.recordingId,
+				roomData.moderatorCookie
+			);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				secondRecordingResponse.body.recordingId,
+				roomData.room.roomId
+			);
 		}
 	});
 
