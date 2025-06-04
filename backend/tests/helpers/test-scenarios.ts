@@ -36,9 +36,9 @@ export interface TestContext {
  * @param withParticipant Whether to join a fake participant in the room.
  * @returns               Room data including secrets and cookies.
  */
-export const setupSingleRoom = async (withParticipant = false): Promise<RoomData> => {
+export const setupSingleRoom = async (roomPrefix: string, withParticipant = false): Promise<RoomData> => {
 	const room = await createRoom({
-		roomIdPrefix: 'TEST_ROOM'
+		roomIdPrefix: roomPrefix
 	});
 
 	// Extract the room secrets and generate participant tokens, saved as cookies
@@ -70,7 +70,7 @@ export const setupMultiRoomTestContext = async (numRooms: number, withParticipan
 	const rooms: RoomData[] = [];
 
 	for (let i = 0; i < numRooms; i++) {
-		const roomData = await setupSingleRoom(withParticipants);
+		const roomData = await setupSingleRoom('TEST_ROOM', withParticipants);
 		rooms.push(roomData);
 	}
 
@@ -98,7 +98,7 @@ export const setupSingleRoomWithRecording = async (
 	stopRecordingCond = false,
 	stopDelay?: StringValue
 ): Promise<RoomData> => {
-	const roomData = await setupSingleRoom(true);
+	const roomData = await setupSingleRoom('TEST_ROOM', true);
 	const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
 	expectValidStartRecordingResponse(response, roomData.room.roomId);
 	roomData.recordingId = response.body.recordingId;

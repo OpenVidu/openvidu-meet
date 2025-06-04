@@ -79,6 +79,7 @@ describe('Recording API Race Conditions Tests', () => {
 			expect(startRoomCompositeSpy).toHaveBeenCalled();
 			console.log('Recording start response:', result.body);
 			expect(result.status).toBe(500); // Service Unavailable due to failure
+			expect(result.body.error).toContain('Internal Server Error');
 		} finally {
 			// Cleanup
 			startRoomCompositeSpy.mockRestore();
@@ -95,13 +96,21 @@ describe('Recording API Race Conditions Tests', () => {
 		context = await setupMultiRoomTestContext(1, true);
 		const roomData = context.getRoomByIndex(0)!;
 
+		// Track active mock promises to ensure we can handle timeouts correctly
+		const activeMockPromises: Promise<any>[] = [];
+
 		// Mock the startRoomComposite method to simulate a delay
 		// const originalStartRoomComposite = recordingService['livekitService'].startRoomComposite;
 		const startRoomCompositeSpy = jest
 			.spyOn(recordingService['livekitService'], 'startRoomComposite')
 			.mockImplementation(async (...args) => {
-				await sleep('6s'); // Longer than 3s timeout
-				throw new Error('Request failed with status 503: Service Unavailable');
+				const mockPromise = (async () => {
+					await sleep('4s'); // Longer than 1s timeout
+					throw new Error('Request failed with status 503: Service Unavailable');
+				})();
+
+				activeMockPromises.push(mockPromise);
+				return mockPromise;
 			});
 
 		// Mock the handleRecordingLockTimeout method to prevent actual timeout handling
@@ -121,13 +130,14 @@ describe('Recording API Race Conditions Tests', () => {
 				roomData.room.roomId
 			);
 			expect(releaseLockSpy).toHaveBeenCalled();
-			expect(startRoomCompositeSpy).toHaveBeenCalled();
+			expect(startRoomCompositeSpy).toHaveBeenCalledTimes(1);
 
 			console.log('Recording start response:', result.body);
 			expect(result.body.message).toContain('timed out while starting');
 			expect(result.status).toBe(503); // Service Unavailable due to timeout
+			await Promise.allSettled(activeMockPromises);
 		} finally {
-			// Cleanup
+			// Cleanup after mock finishes
 			startRoomCompositeSpy.mockRestore();
 			handleTimeoutSpy.mockRestore();
 			releaseLockSpy.mockRestore();
@@ -159,7 +169,7 @@ describe('Recording API Race Conditions Tests', () => {
 				if (callCount === 1) {
 					// First call (room1) - timeout
 					await sleep('5s');
-					return originalStartRoomComposite.apply(recordingService['livekitService'], args);
+					throw new Error('Request failed with status 503: Service Unavailable');
 				} else {
 					// Subsequent calls - work normally
 					return originalStartRoomComposite.apply(recordingService['livekitService'], args);
