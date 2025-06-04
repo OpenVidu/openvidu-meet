@@ -36,7 +36,7 @@ export interface TestContext {
  * @param withParticipant Whether to join a fake participant in the room.
  * @returns               Room data including secrets and cookies.
  */
-export const setupSingleRoom = async (roomPrefix: string, withParticipant = false): Promise<RoomData> => {
+export const setupSingleRoom = async (withParticipant = false, roomPrefix = 'TEST_ROOM'): Promise<RoomData> => {
 	const room = await createRoom({
 		roomIdPrefix: roomPrefix
 	});
