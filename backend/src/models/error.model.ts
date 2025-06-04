@@ -47,7 +47,7 @@ export const errorUnsupportedMediaType = (supportedTypes: string[]): OpenViduMee
 };
 
 export const internalError = (operationDescription: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Interal Server Error', `Unexpected error while ${operationDescription}`, 500);
+	return new OpenViduMeetError('Internal Server Error', `Unexpected error while ${operationDescription}`, 500);
 };
 
 export const errorLivekitNotAvailable = (): OpenViduMeetError => {
