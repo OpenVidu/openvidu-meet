@@ -20,25 +20,8 @@ jobs:
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
           MEET_WEBHOOK_ENABLED: true
-      - name: Start testapp
-        shell: bash
-        run: |
-          cd testapp
-          npm run start > ../testapp.log 2>&1 &
-      - name: Wait for testapp to Start
-        shell: bash
-        run: |
-          echo "Waiting for testapp to start on http://localhost:5080..."
-          for i in {1..30}; do
-            if curl -s http://localhost:5080 >/dev/null 2>&1; then
-              echo "Testapp is ready!"
-              exit 0
-            fi
-            echo "Attempt $i/30: Testapp not ready yet, waiting 1 second..."
-            sleep 1
-          done
-          echo "Timeout: Testapp failed to start within 30 seconds"
-          exit 1
+      - name: Start OpenVidu Meet Testapp
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -77,25 +60,8 @@ jobs:
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
           MEET_WEBHOOK_ENABLED: true
-      - name: Start testapp
-        shell: bash
-        run: |
-          cd testapp
-          npm run start > ../testapp.log 2>&1 &
-      - name: Wait for testapp to Start
-        shell: bash
-        run: |
-          echo "Waiting for testapp to start on http://localhost:5080..."
-          for i in {1..30}; do
-            if curl -s http://localhost:5080 >/dev/null 2>&1; then
-              echo "Testapp is ready!"
-              exit 0
-            fi
-            echo "Attempt $i/30: Testapp not ready yet, waiting 1 second..."
-            sleep 1
-          done
-          echo "Timeout: Testapp failed to start within 30 seconds"
-          exit 1
+      - name: Start OpenVidu Meet Testapp
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
         run: |
           docker ps -a
@@ -107,13 +73,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Upload OpenVidu Testapp logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: meet-logs
-          path: testapp.log
-          retention-days: 2
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
