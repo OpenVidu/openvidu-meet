@@ -18,10 +18,10 @@ import {
 	roomRouter
 } from './routes/index.js';
 import {
-	indexHtmlPath,
+	frontendDirectoryPath,
+	frontendHtmlPath,
 	internalApiHtmlFilePath,
 	publicApiHtmlFilePath,
-	publicFilesPath,
 	webcomponentBundlePath
 } from './utils/path-utils.js';
 
@@ -39,7 +39,7 @@ const createApp = () => {
 	}
 
 	// Serve static files
-	app.use(express.static(publicFilesPath));
+	app.use(express.static(frontendDirectoryPath));
 	app.use(express.json());
 	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
@@ -69,7 +69,7 @@ const createApp = () => {
 	// Serve OpenVidu Meet webcomponent bundle file
 	app.get('/meet/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
 	// Serve OpenVidu Meet index.html file for all non-API routes
-	app.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => res.sendFile(indexHtmlPath));
+	app.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => res.sendFile(frontendHtmlPath));
 	// Catch all other routes and return 404
 	app.use((_req: Request, res: Response) =>
 		res.status(404).json({ error: 'Path Not Found', message: 'API path not implemented' })

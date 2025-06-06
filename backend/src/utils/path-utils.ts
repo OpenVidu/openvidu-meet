@@ -73,17 +73,21 @@ const currentDir = getCurrentDir();
 const projectRoot = getProjectRoot(isDev, currentDir);
 
 // Export the paths for public files and webcomponent bundle
-export const publicFilesPath = path.join(projectRoot, 'public');
-export const webcomponentBundlePath = path.join(publicFilesPath, 'webcomponent/openvidu-meet.bundle.min.js');
-export const indexHtmlPath = path.join(publicFilesPath, 'index.html');
-export const publicApiHtmlFilePath = path.join(publicFilesPath, 'openapi', 'public.html');
-export const internalApiHtmlFilePath = path.join(publicFilesPath, 'openapi', 'internal.html');
+export const publicDirectoryPath = path.join(projectRoot, 'public');
+export const frontendDirectoryPath = path.join(publicDirectoryPath, 'frontend');
+const webcomponentDirectoryPath = path.join(publicDirectoryPath, 'webcomponent');
+const openApiDirectoryPath = path.join(publicDirectoryPath, 'openapi');
+
+export const webcomponentBundlePath = path.join(webcomponentDirectoryPath, 'openvidu-meet.bundle.min.js');
+export const frontendHtmlPath = path.join(frontendDirectoryPath, 'index.html');
+export const publicApiHtmlFilePath = path.join(openApiDirectoryPath, 'public.html');
+export const internalApiHtmlFilePath = path.join(openApiDirectoryPath, 'internal.html');
 
 // Verify the existence of the paths
 console.log('[PATH-UTILS] Project root resolved to:', projectRoot);
-verifyPathExists(publicFilesPath, 'Public files directory');
+verifyPathExists(publicDirectoryPath, 'Public files directory');
 verifyPathExists(webcomponentBundlePath, 'Webcomponent bundle');
-verifyPathExists(indexHtmlPath, 'Index HTML file');
+verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
 verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
 console.log('---------------------------------------------------------');

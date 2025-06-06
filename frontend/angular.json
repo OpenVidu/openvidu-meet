@@ -43,7 +43,7 @@
 						},
 						"production": {
 							"outputPath": {
-								"base": "../backend/public",
+								"base": "../backend/public/frontend",
 								"browser": ""
 							},
 							"deleteOutputPath": true,
