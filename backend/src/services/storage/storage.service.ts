@@ -35,6 +35,7 @@ import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
  * @template GPrefs - Type for global preferences, extends GlobalPreferences
  * @template MRoom - Type for room data, extends MeetRoom
  * @template MRec - Type for recording data, extends MeetRecordingInfo
+ * @template MUser - Type for user data, extends User
  */
 @injectable()
 export class MeetStorageService<
@@ -488,10 +489,6 @@ export class MeetStorageService<
 		}
 	}
 
-	// ==========================================
-	// USER DOMAIN LOGIC
-	// ==========================================
-
 	/**
 	 * Saves access recording secrets (public and private) for a specific recording.
 	 *
@@ -539,6 +536,10 @@ export class MeetStorageService<
 			throw error;
 		}
 	}
+
+	// ==========================================
+	// USER DOMAIN LOGIC
+	// ==========================================
 
 	/**
 	 * Retrieves user data for a specific username.
