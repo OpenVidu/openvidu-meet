@@ -24,6 +24,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { LoggerService } from './index.js';
+import { chunkArray } from '../utils/array.utils.js';
 
 @injectable()
 export class LiveKitService {
@@ -142,6 +143,27 @@ export class LiveKitService {
 		} catch (error) {
 			this.logger.error(`Error deleting LiveKit room: ${error}`);
 			throw internalError(`deleting LiveKit room '${roomName}'`);
+		}
+	}
+
+	/**
+	 * Deletes multiple LiveKit rooms in batches to avoid overwhelming the server.
+	 *
+	 * @param roomNames - Array of room names to delete
+	 * @param batchSize - Number of rooms to delete per batch (default: 10)
+	 * @returns Promise that resolves when all batches have been processed
+	 */
+	async batchDeleteRooms(roomNames: string[], batchSize = 10): Promise<void> {
+		const batches = chunkArray(roomNames, batchSize);
+
+		for (const batch of batches) {
+			try {
+				await Promise.allSettled(batch.map((roomId) => this.deleteRoom(roomId)));
+				this.logger.debug(`Deleted LiveKit batch: ${batch.join(', ')}`);
+			} catch (error) {
+				this.logger.warn(`Error deleting LiveKit batch ${batch.join(', ')}: ${error}`);
+				// Continue with next batch even if this one fails
+			}
 		}
 	}
 
