@@ -1,0 +1,291 @@
+.overview-container {
+	padding: 0px;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.overview-header {
+	text-align: center;
+	margin-bottom: 32px;
+
+	h1 {
+		margin: 0 0 8px 0;
+		font-size: 2.5rem;
+		font-weight: 300;
+		color: #1f1f1f;
+	}
+
+	.subtitle {
+		margin: 0;
+		color: #666;
+		font-size: 1.1rem;
+	}
+}
+
+// Welcome State Styles
+.welcome-state {
+	.welcome-card {
+		max-width: 1000px;
+		margin: 0 auto;
+
+		mat-card-header {
+			display: flex;
+			align-items: center;
+			margin-bottom: 16px;
+
+			mat-card-title {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 1.5rem;
+
+				mat-icon {
+					font-size: 2rem;
+					width: 2rem;
+					height: 2rem;
+				}
+			}
+		}
+	}
+
+	.getting-started-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 24px;
+		margin-top: 24px;
+	}
+
+	.feature-card {
+		text-align: center;
+		transition: transform 0.2s ease-in-out;
+
+		&:hover {
+			transform: translateY(-4px);
+		}
+
+		mat-card-content {
+			padding: 24px;
+
+			mat-icon {
+				font-size: 3rem;
+				width: 3rem;
+				height: 3rem;
+				margin-bottom: 16px;
+			}
+
+			h3 {
+				margin: 0 0 12px 0;
+				font-size: 1.2rem;
+				font-weight: 500;
+			}
+
+			p {
+				margin: 0 0 24px 0;
+				color: #666;
+				line-height: 1.5;
+			}
+
+			button {
+				width: 100%;
+
+				mat-icon {
+					font-size: 1.2rem;
+					width: 1.2rem;
+					height: 1.2rem;
+					margin-right: 8px;
+				}
+			}
+		}
+	}
+}
+
+// Dashboard State Styles
+.dashboard-state {
+	.quick-actions {
+		display: flex;
+		gap: 16px;
+		margin-bottom: 32px;
+		justify-content: center;
+
+		button {
+			mat-icon {
+				margin-right: 8px;
+			}
+		}
+	}
+
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 24px;
+	}
+
+	.stat-card {
+		transition:
+			transform 0.2s ease-in-out,
+			box-shadow 0.2s ease-in-out;
+
+		&:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+		}
+
+		mat-card-content {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			padding: 24px;
+		}
+
+		.stat-icon {
+			mat-icon {
+				font-size: 3rem;
+				width: 3rem;
+				height: 3rem;
+				color: #1976d2;
+			}
+		}
+
+		.stat-content {
+			flex: 1;
+
+			.stat-number {
+				font-size: 2.5rem;
+				font-weight: 300;
+				line-height: 1;
+				color: #1f1f1f;
+			}
+
+			.stat-label {
+				font-size: 1rem;
+				font-weight: 500;
+				color: #666;
+				margin: 4px 0;
+			}
+
+			.stat-detail {
+				font-size: 0.875rem;
+				color: #999;
+			}
+		}
+
+		mat-card-actions {
+			padding: 8px 24px 16px;
+
+			button {
+				mat-icon {
+					margin-left: 4px;
+				}
+			}
+		}
+	}
+
+	.rooms-card .stat-icon mat-icon {
+		color: #1976d2;
+	}
+
+	.recordings-card .stat-icon mat-icon {
+		color: #7b1fa2;
+	}
+
+	.action-card {
+		mat-card-content {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			padding: 20px 24px;
+		}
+
+		.action-icon {
+			mat-icon {
+				font-size: 2.5rem;
+				width: 2.5rem;
+				height: 2.5rem;
+			}
+		}
+
+		.action-content {
+			flex: 1;
+
+			h3 {
+				margin: 0 0 4px 0;
+				font-size: 1.1rem;
+				font-weight: 500;
+			}
+
+			p {
+				margin: 0;
+				color: #666;
+				font-size: 0.875rem;
+			}
+		}
+
+		mat-card-actions {
+			padding: 8px 24px 16px;
+		}
+	}
+
+	.create-card {
+		.action-icon mat-icon {
+			color: #4caf50;
+		}
+	}
+
+	.manage-card {
+		.action-icon mat-icon {
+			color: #ff9800;
+		}
+	}
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+	.overview-container {
+		padding: 16px;
+	}
+
+	.overview-header h1 {
+		font-size: 2rem;
+	}
+
+	.welcome-state .getting-started-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.dashboard-state {
+		.quick-actions {
+			flex-direction: column;
+			align-items: stretch;
+
+			button {
+				width: 100%;
+			}
+		}
+
+		.stats-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+}
+
+@media (max-width: 480px) {
+	.overview-header h1 {
+		font-size: 1.75rem;
+	}
+
+	.stat-card {
+		mat-card-content {
+			flex-direction: column;
+			text-align: center;
+			gap: 12px;
+		}
+	}
+
+	.action-card {
+		mat-card-content {
+			flex-direction: column;
+			text-align: center;
+			gap: 12px;
+		}
+	}
+}

@@ -1,10 +1,124 @@
-<p>Non implemented!</p>
-<h1>Welcome To OpenVidu Meet</h1>
+<div class="overview-container">
+	<ng-container *ngIf="stats$ | async as stats">
+		<!-- Header -->
+		<div class="overview-header">
+			<h1>Welcome to OpenVidu Meet</h1>
+			<p class="subtitle">Your video conference management dashboard</p>
+		</div>
 
+		<!-- First Time User State -->
+		<div *ngIf="!stats.hasData" class="welcome-state">
+			<div class="welcome-card">
+				<mat-card-header>
+					<mat-card-title>
+						<mat-icon>rocket_launch</mat-icon>
+						Get Started with OpenVidu Meet
+					</mat-card-title>
+				</mat-card-header>
+				<mat-card-content>
+					<p>This is where you'll manage your video conferences and recordings.</p>
 
-<ul>
-	<li>Resumen</li>
-	<li>Numero room activas</li>
-	<li>Numero de recordings creados</li>
-	<li>Create a room with no code</li>
-</ul>
+					<div class="getting-started-grid">
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon color="primary">video_chat</mat-icon>
+								<h3>Create your first room</h3>
+								<p>
+									Rooms define your app's communication space. Start by creating a video conference
+									room that participants can join.
+								</p>
+								<button mat-raised-button color="primary" (click)="createRoom()">
+									<mat-icon>add</mat-icon>
+									Create Room
+								</button>
+							</mat-card-content>
+						</mat-card>
+
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon color="accent">settings</mat-icon>
+								<h3>Configure OpenVidu Meet</h3>
+								<p>
+									Customize OpenVidu Meet to fit your needs. Configure security settings, access
+									controls, branding, and other essential features.
+								</p>
+								<button mat-stroked-button (click)="viewRecordings()">
+									<mat-icon>play_arrow</mat-icon>
+									View Recordings
+								</button>
+							</mat-card-content>
+						</mat-card>
+
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon color="warn">code</mat-icon>
+								<h3>Create rooms with REST API</h3>
+								<p>
+									Integrate OpenVidu Meet into your applications using our comprehensive REST API for
+									programmatic room creation and management.
+								</p>
+								<button mat-stroked-button (click)="viewRooms()">
+									<mat-icon>meeting_room</mat-icon>
+									Manage Rooms
+								</button>
+							</mat-card-content>
+						</mat-card>
+					</div>
+				</mat-card-content>
+			</div>
+		</div>
+
+		<!-- Dashboard State -->
+		<div *ngIf="stats.hasData" class="dashboard-state">
+			<!-- Quick Actions -->
+			<div class="quick-actions">
+				<button mat-stroked-button (click)="refreshData()">
+					<mat-icon>refresh</mat-icon>
+					Refresh
+				</button>
+			</div>
+
+			<!-- Stats Grid -->
+			<div class="stats-grid">
+				<mat-card class="stat-card rooms-card">
+					<mat-card-content>
+						<div class="stat-icon">
+							<mat-icon>video_chat</mat-icon>
+						</div>
+						<div class="stat-content">
+							<div class="stat-number">{{ stats.totalRooms }}</div>
+							<div class="stat-label">Total Rooms</div>
+							<div class="stat-detail">{{ stats.activeRooms }} active</div>
+						</div>
+					</mat-card-content>
+					<mat-card-actions>
+						<button mat-button (click)="viewRooms()">
+							<mat-icon>arrow_forward</mat-icon>
+							View all
+						</button>
+						<button mat-raised-button color="primary" (click)="createRoom()">Create Now</button>
+					</mat-card-actions>
+				</mat-card>
+
+				<mat-card class="stat-card recordings-card">
+					<mat-card-content>
+						<div class="stat-icon">
+							<mat-icon>video_library</mat-icon>
+						</div>
+						<div class="stat-content">
+							<div class="stat-number">{{ stats.totalRecordings }}</div>
+							<div class="stat-label">Total Recordings</div>
+							<div class="stat-detail">Available for playback</div>
+						</div>
+					</mat-card-content>
+					<mat-card-actions>
+						<button mat-button (click)="viewRecordings()">
+							<mat-icon>arrow_forward</mat-icon>
+							View all
+						</button>
+					</mat-card-actions>
+				</mat-card>
+			</div>
+		</div>
+	</ng-container>
+</div>
