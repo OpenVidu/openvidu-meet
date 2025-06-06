@@ -35,7 +35,7 @@
 							"sourceMap": true,
 							"extractLicenses": false,
 							"outputPath": {
-								"base": "../backend/public",
+								"base": "../backend/public/frontend",
 								"browser": ""
 							},
 							"deleteOutputPath": false,
