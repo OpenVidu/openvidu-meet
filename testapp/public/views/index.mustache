@@ -21,11 +21,18 @@
 				</div>
 
 				<div class="rooms-list">
+					<div class="mb-3 text-center">
+						<form action="/delete-all-rooms" method="post">
+							<button type="submit" class="btn btn-danger btn-sm" id="delete-all-rooms">
+								Delete All Rooms
+							</button>
+						</form>
+					</div>
 					{{#rooms.length}}
 					<ul class="list-group">
 						{{#rooms}}
 						<li
-							id="{{roomIdPrefix}}"
+							id="{{ roomIdPrefix }}"
 							class="list-group-item d-flex justify-content-between align-items-center"
 						>
 							<span>{{ roomId }}</span>
@@ -50,13 +57,13 @@
 												name="participantRole"
 												value="moderator"
 											/>
-											<input
-												type="hidden"
-												name="roomId"
-												value="{{ roomId }}"
-											/>
+											<input type="hidden" name="roomId" value="{{ roomId }}" />
 
-											<button type="submit" id="join-as-moderator" class="dropdown-item">
+											<button
+												type="submit"
+												id="join-as-moderator"
+												class="dropdown-item"
+											>
 												Moderator
 											</button>
 										</form>
@@ -73,13 +80,13 @@
 												name="participantRole"
 												value="publisher"
 											/>
-											<input
-												type="hidden"
-												name="roomId"
-												value="{{ roomId }}"
-											/>
+											<input type="hidden" name="roomId" value="{{ roomId }}" />
 
-											<button type="submit" id="join-as-publisher" class="dropdown-item">
+											<button
+												type="submit"
+												id="join-as-publisher"
+												class="dropdown-item"
+											>
 												Publisher
 											</button>
 										</form>
@@ -97,13 +104,13 @@
 												name="participantRole"
 												value="publisher"
 											/>
-											<input
-												type="hidden"
-												name="roomId"
-												value="{{ roomId }}"
-											/>
+											<input type="hidden" name="roomId" value="{{ roomId }}" />
 
-											<button type="submit" id="join-as-publisher" class="dropdown-item">
+											<button
+												type="submit"
+												id="join-as-publisher"
+												class="dropdown-item"
+											>
 												View Recordings
 											</button>
 										</form>

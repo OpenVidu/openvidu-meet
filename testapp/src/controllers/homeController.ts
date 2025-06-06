@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import { getAllRooms, createRoom, deleteRoom } from '../services/roomService';
+import {
+	getAllRooms,
+	createRoom,
+	deleteRoom,
+	deleteAllRooms,
+} from '../services/roomService';
 
 export const getHome = async (req: Request, res: Response) => {
 	try {
@@ -33,7 +38,7 @@ export const postCreateRoom = async (req: Request, res: Response) => {
 	}
 };
 
-export const postDeleteRoom = async (req: Request, res: Response) => {
+export const deleteRoomCtrl = async (req: Request, res: Response) => {
 	try {
 		const { roomId } = req.body;
 		await deleteRoom(roomId);
@@ -41,6 +46,24 @@ export const postDeleteRoom = async (req: Request, res: Response) => {
 	} catch (error) {
 		console.error('Error deleting room:', error);
 		res.status(500).send('Internal Server Error');
+		return;
+	}
+};
+
+export const deleteAllRoomsCtrl = async (_req: Request, res: Response) => {
+	try {
+		const allRooms = await getAllRooms();
+		if (allRooms.rooms.length === 0) {
+			console.log('No rooms to delete');
+			res.render('index', { rooms: [] });
+			return;
+		}
+		const roomIds = allRooms.rooms.map((room) => room.roomId);
+		await deleteAllRooms(roomIds);
+		res.render('index', { rooms: [] });
+	} catch (error) {
+		console.error('Error deleting all rooms:', error);
+		res.status(500).send('Internal Server Error ' + JSON.stringify(error));
 		return;
 	}
 };

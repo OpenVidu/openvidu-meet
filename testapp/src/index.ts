@@ -5,7 +5,8 @@ import path from 'path';
 import {
 	getHome,
 	postCreateRoom,
-	postDeleteRoom,
+	deleteRoomCtrl,
+	deleteAllRoomsCtrl,
 } from './controllers/homeController';
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
@@ -31,7 +32,8 @@ app.use(express.json());
 app.get('/', getHome);
 app.get('/room', joinRoom);
 app.post('/room', postCreateRoom);
-app.post('/room/delete', postDeleteRoom);
+app.post('/room/delete', deleteRoomCtrl);
+app.post('/delete-all-rooms', deleteAllRoomsCtrl);
 app.post('/join-room', joinRoom);
 app.post('/webhook', (req, res) => {
 	handleWebhook(req, res, io);

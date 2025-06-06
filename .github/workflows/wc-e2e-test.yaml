@@ -5,6 +5,64 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  e2e-test-core:
+    name: E2E Tests Core
+    runs-on: ov-actions-runner
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+      - name: Start testapp
+        shell: bash
+        run: |
+          cd testapp
+          npm run start > ../testapp.log 2>&1 &
+      - name: Wait for testapp to Start
+        shell: bash
+        run: |
+          echo "Waiting for testapp to start on http://localhost:5080..."
+          for i in {1..30}; do
+            if curl -s http://localhost:5080 >/dev/null 2>&1; then
+              echo "Testapp is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30: Testapp not ready yet, waiting 1 second..."
+            sleep 1
+          done
+          echo "Timeout: Testapp failed to start within 30 seconds"
+          exit 1
+      - name: Run tests
+        run: |
+          cd frontend/webcomponent
+          # Install Playwright browsers
+          mkdir -p /tmp/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npm run test:e2e-core
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Upload failed test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: |
+            frontend/webcomponent/test-results/*/*.webm
+          retention-days: 2
+      - name: Clean up
+        if: always()
+        uses: OpenVidu/actions/cleanup@main
+
+
+
   webcomponent-e2e-test:
     name: WebComponent E2E Tests
     runs-on: ov-actions-runner
