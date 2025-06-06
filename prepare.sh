@@ -94,7 +94,7 @@ if [ "$BUILD_FRONTEND" = true ]; then
   echo -e "${GREEN}Building frontend...${NC}"
   cd frontend
   npm install
-  npm run build:prod
+  npm run build
   cd ..
 fi
 
