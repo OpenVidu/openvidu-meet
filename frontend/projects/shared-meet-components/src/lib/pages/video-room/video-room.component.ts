@@ -212,6 +212,12 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		return { publisherSecret, moderatorSecret };
 	}
 
+	goToRecordings() {
+		this.router.navigate([`room/${this.roomId}/recordings`], {
+			queryParams: { secret: this.roomSecret }
+		});
+	}
+
 	onParticipantConnected(event: ParticipantModel) {
 		const message: OutboundEventMessage = {
 			event: WebComponentEvent.JOIN,
