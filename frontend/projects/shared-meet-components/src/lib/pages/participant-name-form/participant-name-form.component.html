@@ -4,7 +4,7 @@
 		<form [formGroup]="participantForm" (ngSubmit)="onSubmit()">
 			<mat-form-field appearance="outline" class="full-width">
 				<mat-label>Name</mat-label>
-				<input matInput placeholder="Enter your name" formControlName="name" required />
+				<input id="participant-name-input" matInput placeholder="Enter your name" formControlName="name" required />
 				@if (name?.hasError('minlength')) {
 					<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
 				}
@@ -16,7 +16,7 @@
 				}
 			</mat-form-field>
 
-			<button mat-raised-button color="primary" class="full-width" [disabled]="participantForm.invalid">
+			<button mat-raised-button color="primary" id="participant-name-submit" class="full-width" [disabled]="participantForm.invalid">
 				Continue
 			</button>
 		</form>
