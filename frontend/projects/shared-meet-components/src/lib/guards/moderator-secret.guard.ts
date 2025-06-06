@@ -6,54 +6,6 @@ import { ContextService, HttpService, SessionStorageService } from '../services'
 import { filter, take } from 'rxjs';
 
 /**
- * Guard that replaces the moderator secret in the URL with the publisher secret.
- *
- * This guard checks if the current participant is a moderator. If so, it retrieves the moderator and publisher secrets
- * for the current room and updates the session storage with the moderator secret. It then replaces the secret in the URL
- * with the publisher secret.
- *
- * @param route - The activated route snapshot.
- * @param state - The router state snapshot.
- * @returns A promise that resolves to `true` if the operation is successful, otherwise `false`.
- *
- * @throws Will log an error and return `false` if an error occurs during the process.
- */
-export const replaceModeratorSecretGuard: CanActivateFn = (route, _state) => {
-	const httpService = inject(HttpService);
-	const contextService = inject(ContextService);
-	const router = inject(Router);
-	const location: Location = inject(Location);
-	const sessionStorageService = inject(SessionStorageService);
-
-	try {
-		router.events
-			.pipe(
-				filter((event) => event instanceof NavigationEnd),
-				take(1)
-			)
-			.subscribe(async () => {
-				if (contextService.isModeratorParticipant()) {
-					const roomId = contextService.getRoomId();
-					const { moderatorSecret, publisherSecret } = await getUrlSecret(httpService, roomId);
-
-					sessionStorageService.setModeratorSecret(roomId, moderatorSecret);
-					// Replace secret in URL by the publisher secret
-					const queryParams = { ...route.queryParams, secret: publisherSecret };
-					const urlTree = router.createUrlTree([], { queryParams, queryParamsHandling: 'merge' });
-					const newUrl = router.serializeUrl(urlTree);
-
-					location.replaceState(newUrl);
-				}
-			});
-
-		return true;
-	} catch (error) {
-		console.error('error', error);
-		return false;
-	}
-};
-
-/**
  * Guard that intercepts navigation to remove the 'secret' query parameter from the URL
  * when a moderator participant is detected. The secret is stored in session storage
  * for the current room, and the URL is updated without the 'secret' parameter to

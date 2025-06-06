@@ -1,53 +1,74 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { MatIcon } from '@angular/material/icon';
+import { Location } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MeetRecordingAccess, MeetRoomPreferences, OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent,
 	ApiDirectiveModule,
-	ParticipantLeftEvent,
-	ParticipantModel,
 	OpenViduComponentsUiModule,
-	ParticipantLeftReason
+	ParticipantLeftEvent,
+	ParticipantLeftReason,
+	ParticipantModel,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
-
-import {
-	MeetChatPreferences,
-	MeetRecordingAccess,
-	MeetRecordingPreferences,
-	MeetVirtualBackgroundPreferences
-} from '@lib/typings/ce';
-
-import {
-	HttpService,
-	WebComponentManagerService,
-	ContextService,
-	RoomService,
-	SessionStorageService
-} from '../../services';
-import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
 import { WebComponentEvent } from 'webcomponent/src/models/event.model';
+import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
+import {
+	AuthService,
+	ContextService,
+	HttpService,
+	RoomService,
+	SessionStorageService,
+	WebComponentManagerService
+} from '../../services';
 
 @Component({
 	selector: 'app-video-room',
 	templateUrl: './video-room.component.html',
 	styleUrls: ['./video-room.component.scss'],
 	standalone: true,
-	imports: [OpenViduComponentsUiModule, ApiDirectiveModule, MatIcon]
+	imports: [
+		OpenViduComponentsUiModule,
+		ApiDirectiveModule,
+		MatFormFieldModule,
+		MatInputModule,
+		FormsModule,
+		ReactiveFormsModule,
+		MatCardModule,
+		MatButtonModule
+	]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
+	participantForm = new FormGroup({
+		name: new FormControl('', [Validators.required, Validators.minLength(4)])
+	});
+	showRoom = false;
+
 	roomId = '';
+	roomSecret = '';
 	participantName = '';
-	token = '';
-	serverError = '';
-	loading = true;
-	chatPreferences: MeetChatPreferences = { enabled: true };
-	recordingPreferences: MeetRecordingPreferences = {
-		enabled: true,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+	participantToken = '';
+	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
+	participantPermissions: OpenViduMeetPermissions = {
+		canRecord: false,
+		canChat: false,
+		canChangeVirtualBackground: false,
+		canPublishScreen: false
 	};
-	virtualBackgroundPreferences: MeetVirtualBackgroundPreferences = { enabled: true };
+
+	roomPreferences: MeetRoomPreferences = {
+		recordingPreferences: {
+			enabled: true,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+		},
+		chatPreferences: { enabled: true },
+		virtualBackgroundPreferences: { enabled: true }
+	};
 	featureFlags = {
 		videoEnabled: true,
 		audioEnabled: true,
@@ -63,56 +84,132 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	constructor(
 		protected httpService: HttpService,
 		protected router: Router,
+		protected route: ActivatedRoute,
+		protected location: Location,
+		protected authService: AuthService,
 		protected ctxService: ContextService,
 		protected roomService: RoomService,
 		protected wcManagerService: WebComponentManagerService,
-		protected sessionStorageService: SessionStorageService,
-		protected cdr: ChangeDetectorRef
+		protected sessionStorageService: SessionStorageService
 	) {}
 
 	async ngOnInit() {
-		try {
-			this.roomId = this.ctxService.getRoomId();
-			this.participantName = this.ctxService.getParticipantName();
+		this.roomId = this.ctxService.getRoomId();
+		const secret = this.ctxService.getSecret();
+		const storageSecret = this.sessionStorageService.getModeratorSecret(this.roomId);
+		this.roomSecret = storageSecret || secret;
 
-			if (this.ctxService.isEmbeddedMode()) {
-				this.featureFlags.showPrejoin = false;
-			}
+		// Apply participant name from context if set, otherwise use authenticated username
+		const contextParticipantName = this.ctxService.getParticipantName();
+		const username = await this.authService.getUsername();
+		const participantName = contextParticipantName || username;
 
-			// TODO: Apply room preferences from saved room using context service
-			// await this.loadRoomPreferences();
-
-			// TODO: Extract permissions from token and apply them to the component
-			this.applyParticipantPermissions();
-		} catch (error: any) {
-			console.error('Error fetching room preferences', error);
-			this.serverError = error.error.message || error.message || error.error;
+		if (participantName) {
+			this.participantForm.get('name')?.setValue(participantName);
 		}
-		this.loading = false;
 	}
 
 	ngOnDestroy(): void {
-		// Clean up the context service
-		// this.contextService.clearContext();
 		this.wcManagerService.stopCommandsListener();
 	}
 
-	async onTokenRequested(participantName: string) {
-		try {
-			if (this.ctxService.isStandaloneMode()) {
-				// As token is not provided, we need to set the participant name from
-				// ov-videoconference event
-				this.ctxService.setParticipantName(participantName);
-			}
-
-			this.token = this.ctxService.getParticipantToken();
-		} catch (error: any) {
-			console.error(error);
-			this.serverError = error.error;
+	async accessRoom() {
+		if (!this.participantForm.valid) {
+			return;
 		}
 
-		this.loading = false;
-		this.cdr.detectChanges();
+		this.participantName = this.participantForm.value.name!;
+
+		try {
+			await this.generateParticipantToken();
+			await this.replaceUrlQueryParams();
+			// await this.loadRoomPreferences();
+			this.applyParticipantPermissions();
+			this.showRoom = true;
+		} catch (error) {
+			console.error('Error accessing room:', error);
+		}
+	}
+
+	async onTokenRequested() {
+		// Participant token must be set only when requested
+		this.participantToken = this.ctxService.getParticipantToken();
+	}
+
+	private async generateParticipantToken() {
+		try {
+			const response = await this.httpService.generateParticipantToken({
+				roomId: this.roomId,
+				participantName: this.participantName,
+				secret: this.roomSecret
+			});
+			this.setParticipantToken(response.token);
+		} catch (error: any) {
+			console.error('Error generating participant token:', error);
+			switch (error.status) {
+				case 400:
+					// Invalid secret
+					this.redirectToErrorPage('invalid-secret');
+					break;
+				case 404:
+					// Room not found
+					this.redirectToErrorPage('invalid-room');
+					break;
+				case 409:
+					// Participant already exists.
+					// Show the error message in participant name input form
+					this.participantForm.get('name')?.setErrors({ participantExists: true });
+					throw new Error('Participant already exists in the room');
+				default:
+					this.redirectToErrorPage('internal-error');
+			}
+		}
+	}
+
+	private setParticipantToken(token: string): void {
+		try {
+			this.ctxService.setParticipantToken(token);
+			this.participantRole = this.ctxService.getParticipantRole();
+			this.participantPermissions = this.ctxService.getParticipantPermissions();
+		} catch (error: any) {
+			console.error('Error setting token in context', error);
+		}
+	}
+
+	private async replaceUrlQueryParams() {
+		let secretQueryParam = this.roomSecret;
+
+		// If participant is moderator, store the moderator secret in session storage
+		// and replace the secret in the URL with the publisher secret
+		if (this.participantRole === ParticipantRole.MODERATOR) {
+			try {
+				const { moderatorSecret, publisherSecret } = await this.getRoomSecrets();
+				this.sessionStorageService.setModeratorSecret(this.roomId, moderatorSecret);
+				secretQueryParam = publisherSecret;
+			} catch (error) {
+				console.error('error', error);
+			}
+		}
+
+		// Replace secret and participant name in the URL query parameters
+		const queryParams = {
+			...this.route.snapshot.queryParams,
+			secret: secretQueryParam,
+			'participant-name': this.participantName
+		};
+		const urlTree = this.router.createUrlTree([], { queryParams, queryParamsHandling: 'merge' });
+		const newUrl = this.router.serializeUrl(urlTree);
+		this.location.replaceState(newUrl);
+	}
+
+	private async getRoomSecrets(): Promise<{ moderatorSecret: string; publisherSecret: string }> {
+		const { moderatorRoomUrl, publisherRoomUrl } = await this.httpService.getRoom(this.roomId);
+
+		const publisherUrl = new URL(publisherRoomUrl);
+		const publisherSecret = publisherUrl.searchParams.get('secret') || '';
+		const moderatorUrl = new URL(moderatorRoomUrl);
+		const moderatorSecret = moderatorUrl.searchParams.get('secret') || '';
+		return { publisherSecret, moderatorSecret };
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
@@ -158,11 +255,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			this.sessionStorageService.removeModeratorSecret(event.roomName);
 		}
 
-		//if (this.contextService.isEmbeddedMode()) this.sendMessageToParent(event);
 		this.redirectTo(redirectURL, isExternalURL);
-
-		// Stop listening to commands from the parent
-		this.wcManagerService.stopCommandsListener();
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
@@ -186,18 +279,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	async onRecordingDeleteRequested(event: RecordingDeleteRequestedEvent) {
-		try {
-			const { recordingId } = event;
-
-			if (!recordingId) throw new Error('Recording ID not found when deleting recording');
-
-			await this.httpService.deleteRecording(recordingId);
-		} catch (error) {
-			console.error(error);
-		}
-	}
-
 	/**
 	 * Loads the room preferences from the global preferences service and assigns them to the component.
 	 *
@@ -208,26 +289,26 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	 * @returns {Promise<void>} A promise that resolves when the room preferences have been loaded and applied.
 	 */
 	private async loadRoomPreferences() {
-		const preferences = await this.roomService.getRoomPreferences();
-		// Assign the preferences to the component
-		Object.assign(this, preferences);
+		try {
+			this.roomPreferences = await this.roomService.getRoomPreferences();
+		} catch (error) {
+			console.error('Error loading room preferences:', error);
+		}
 
-		this.featureFlags.showChat = this.chatPreferences.enabled;
-		this.featureFlags.showRecording = this.recordingPreferences.enabled;
-		this.featureFlags.showBackgrounds = this.virtualBackgroundPreferences.enabled;
+		this.featureFlags.showChat = this.roomPreferences.chatPreferences.enabled;
+		this.featureFlags.showRecording = this.roomPreferences.recordingPreferences.enabled;
+		this.featureFlags.showBackgrounds = this.roomPreferences.virtualBackgroundPreferences.enabled;
 	}
 
 	/**
-	 * Configures the feature flags based on the token permissions.
-	 *
-	 * This method checks the token permissions and sets the feature flags accordingly.
+	 * Configures the feature flags based on participant permissions.
 	 */
 	private applyParticipantPermissions() {
 		if (this.featureFlags.showChat) {
-			this.featureFlags.showChat = this.ctxService.canChat();
+			this.featureFlags.showChat = this.participantPermissions.canChat;
 		}
 		if (this.featureFlags.showRecording) {
-			this.featureFlags.showRecording = this.ctxService.canRecord();
+			this.featureFlags.showRecording = this.participantPermissions.canRecord;
 		}
 	}
 
@@ -239,5 +320,9 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			console.log('Redirecting to internal route:', url);
 			this.router.navigate([url], { replaceUrl: true });
 		}
+	}
+
+	private redirectToErrorPage(reason: string) {
+		this.router.navigate(['error'], { queryParams: { reason } });
 	}
 }

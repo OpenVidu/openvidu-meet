@@ -1,12 +1,5 @@
 import { inject } from '@angular/core';
-import {
-	ActivatedRouteSnapshot,
-	CanActivateFn,
-	RedirectCommand,
-	Router,
-	RouterStateSnapshot,
-	UrlTree
-} from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthMode, ParticipantRole } from '@lib/typings/ce';
 import { AuthService, ContextService, HttpService, SessionStorageService } from '../services';
 
@@ -79,11 +72,8 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const isAuthenticated = await authService.isUserAuthenticated();
 		if (!isAuthenticated) {
 			// Redirect to the login page with query param to redirect back to the room
-			const loginRoute = router.createUrlTree(['login'], {
+			return router.createUrlTree(['login'], {
 				queryParams: { redirectTo: state.url }
-			});
-			return new RedirectCommand(loginRoute, {
-				skipLocationChange: true
 			});
 		}
 	}

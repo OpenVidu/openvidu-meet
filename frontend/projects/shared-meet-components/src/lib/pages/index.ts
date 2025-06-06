@@ -10,6 +10,5 @@ export * from './console/security-preferences/security-preferences.component';
 export * from './disconnected/disconnected.component';
 export * from './error/error.component';
 export * from './login/login.component';
-export * from './participant-name-form/participant-name-form.component';
 export * from './room-recordings/room-recordings.component';
 export * from './video-room/video-room.component';

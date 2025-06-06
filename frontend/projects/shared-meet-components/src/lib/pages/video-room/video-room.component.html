@@ -1,7 +1,45 @@
-@if (!serverError && !loading) {
+@if (!showRoom) {
+	<div class="form-container">
+		<mat-card class="form-card">
+			<h2 class="form-title">What is your name?</h2>
+			<form [formGroup]="participantForm" (ngSubmit)="accessRoom()">
+				<mat-form-field appearance="outline" class="full-width">
+					<mat-label>Name</mat-label>
+					<input
+						id="participant-name-input"
+						matInput
+						placeholder="Enter your name"
+						formControlName="name"
+						required
+					/>
+					@if (participantForm.get('name')?.hasError('minlength')) {
+						<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
+					}
+					@if (participantForm.get('name')?.hasError('required')) {
+						<mat-error> The name is <strong>required</strong> </mat-error>
+					}
+					@if (participantForm.get('name')?.hasError('participantExists')) {
+						<mat-error>
+							The name is already taken. <strong> Please choose another name </strong>
+						</mat-error>
+					}
+				</mat-form-field>
+
+				<button
+					mat-raised-button
+					color="primary"
+					id="participant-name-submit"
+					class="full-width"
+					[disabled]="participantForm.invalid"
+				>
+					Continue
+				</button>
+			</form>
+		</mat-card>
+	</div>
+} @else {
 	<ov-videoconference
-		[token]="token"
-		[tokenError]="serverError"
+		[token]="participantToken"
 		[participantName]="participantName"
 		[prejoin]="featureFlags.showPrejoin"
 		[prejoinDisplayParticipantName]="false"
@@ -17,21 +55,11 @@
 		[toolbarActivitiesPanelButton]="true"
 		[activitiesPanelRecordingActivity]="true"
 		[activitiesPanelBroadcastingActivity]="false"
-		(onTokenRequested)="onTokenRequested($event)"
+		(onTokenRequested)="onTokenRequested()"
 		(onParticipantConnected)="onParticipantConnected($event)"
 		(onParticipantLeft)="onParticipantLeft($event)"
 		(onRecordingStartRequested)="onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
-		(onRecordingDeleteRequested)="onRecordingDeleteRequested($event)"
 	>
 	</ov-videoconference>
-}
-
-@if (!loading && serverError) {
-	<div class="error">
-		<mat-icon>error</mat-icon>
-		<span>
-			{{ serverError }}
-		</span>
-	</div>
 }

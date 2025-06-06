@@ -150,12 +150,8 @@ export class ContextService {
 		return this.context.participantRole === ParticipantRole.MODERATOR;
 	}
 
-	canRecord(): boolean {
-		return this.context.participantPermissions.canRecord;
-	}
-
-	canChat(): boolean {
-		return this.context.participantPermissions.canChat;
+	getParticipantPermissions() {
+		return this.context.participantPermissions;
 	}
 
 	setRecordingPermissionsFromToken(token: string): void {

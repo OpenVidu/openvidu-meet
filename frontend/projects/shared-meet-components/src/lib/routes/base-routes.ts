@@ -1,17 +1,14 @@
 import { Routes } from '@angular/router';
 import {
 	applicationModeGuard,
-	checkParticipantNameGuard,
 	checkParticipantRoleAndAuthGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
 	extractRoomQueryParamsGuard,
 	removeModeratorSecretGuard,
-	replaceModeratorSecretGuard,
 	runGuardsSerially,
-	validateRecordingAccessGuard,
-	validateRoomAccessGuard
+	validateRecordingAccessGuard
 } from '../guards';
 import {
 	ConsoleComponent,
@@ -19,7 +16,6 @@ import {
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
-	ParticipantNameFormComponent,
 	RecordingsComponent,
 	RoomFormComponent,
 	RoomRecordingsComponent,
@@ -83,19 +79,8 @@ export const baseRoutes: Routes = [
 		path: 'room/:room-id',
 		component: VideoRoomComponent,
 		canActivate: [
-			runGuardsSerially(
-				applicationModeGuard,
-				extractRoomQueryParamsGuard,
-				checkParticipantRoleAndAuthGuard,
-				checkParticipantNameGuard,
-				validateRoomAccessGuard,
-				replaceModeratorSecretGuard
-			)
+			runGuardsSerially(applicationModeGuard, extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard)
 		]
-	},
-	{
-		path: 'room/:room-id/participant-name',
-		component: ParticipantNameFormComponent
 	},
 	{
 		path: 'room/:room-id/recordings',
