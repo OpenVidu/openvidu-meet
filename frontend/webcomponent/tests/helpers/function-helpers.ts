@@ -94,10 +94,22 @@ export const prepareForJoiningRoom = async (page: Page, url: string, roomPrefix:
 	await page.waitForSelector('#join-as-publisher');
 };
 
-export const joinRoomAs = async (role: 'moderator' | 'publisher', page: Page) => {
+export const joinRoomAs = async (role: 'moderator' | 'publisher', pName: string, page: Page) => {
 	await page.click('#join-as-' + role);
 	const component = page.locator('openvidu-meet');
 	await expect(component).toBeVisible();
+
+	// Wait for participant name input and fill it
+	await waitForElementInIframe(page, '#participant-name-input', { state: 'visible' });
+	await interactWithElementInIframe(page, '#participant-name-input', {
+		action: 'fill',
+		value: pName
+	});
+	await interactWithElementInIframe(page, '#participant-name-submit', { action: 'click' });
+
+	// wait for prejoin page to load and join the room
+	await waitForElementInIframe(page, 'ov-pre-join', { state: 'visible' });
+	await interactWithElementInIframe(page, '#join-button', { action: 'click' });
 };
 
 export const leaveRoom = async (page: Page) => {

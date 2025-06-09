@@ -19,6 +19,7 @@ let subscribedToAppErrors = false;
 test.describe('Room Functionality Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'testing-room';
+	let participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 
 	// ==========================================
 	// SETUP & TEARDOWN
@@ -47,6 +48,7 @@ test.describe('Room Functionality Tests', () => {
 			subscribedToAppErrors = true;
 		}
 		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 	});
 
 	test.afterEach(async ({ context }) => {
@@ -71,7 +73,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Basic Room Features', () => {
 		test('should show the toolbar and media buttons', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', `P-${Math.random().toString(36).substring(2, 9)}`, page);
 			await waitForElementInIframe(page, '#toolbar');
 
 			// Check media buttons are present
@@ -83,7 +85,7 @@ test.describe('Room Functionality Tests', () => {
 
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
 			// First participant joins
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Check local video element
@@ -95,15 +97,7 @@ test.describe('Room Functionality Tests', () => {
 			const moderatorPage = await context.newPage();
 			await prepareForJoiningRoom(moderatorPage, testAppUrl, testRoomPrefix);
 
-			await joinRoomAs('moderator', moderatorPage);
-			await waitForElementInIframe(moderatorPage, 'ov-participant-name-form');
-
-			// Set moderator name
-			await interactWithElementInIframe(moderatorPage, '#participant-name-input', {
-				action: 'fill',
-				value: 'Moderator'
-			});
-			await interactWithElementInIframe(moderatorPage, '#participant-name-submit', { action: 'click' });
+			await joinRoomAs('moderator', 'moderator', moderatorPage);
 
 			// Verify session established and remote video appears
 			await waitForElementInIframe(moderatorPage, 'ov-session');
@@ -122,7 +116,8 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Screen Sharing', () => {
 		test('should be able to share and stop screen sharing', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
+
 			await waitForElementInIframe(page, '#toolbar');
 
 			// Initial state: only camera video
@@ -158,7 +153,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('UI Panels and Components', () => {
 		test('should show and interact with chat panel', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Open chat panel
@@ -181,7 +176,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show activities panel', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Open activities panel
@@ -196,7 +191,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show participants panel', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Open participants panel
@@ -211,7 +206,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show settings panel', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Open more options menu
@@ -235,7 +230,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Advanced Features', () => {
 		test('should apply virtual background and detect visual changes', async ({ page }) => {
-			await joinRoomAs('publisher', page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, 'ov-session');
 
 			// Wait for video element to be ready
