@@ -5,6 +5,7 @@ export * from './participant.middleware.js';
 export * from './recording.middleware.js';
 
 export * from './request-validators/auth-validator.middleware.js';
+export * from './request-validators/user-validator.middleware.js';
 export * from './request-validators/room-validator.middleware.js';
 export * from './request-validators/participant-validator.middleware.js';
 export * from './request-validators/recording-validator.middleware.js';

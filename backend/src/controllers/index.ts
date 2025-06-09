@@ -1,4 +1,5 @@
 export * from './auth.controller.js';
+export * from './user.controller.js';
 export * from './room.controller.js';
 export * from './meeting.controller.js';
 export * from './participant.controller.js';

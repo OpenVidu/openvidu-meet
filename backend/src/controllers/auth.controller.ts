@@ -8,7 +8,6 @@ import {
 	errorInvalidRefreshToken,
 	errorInvalidTokenSubject,
 	errorRefreshTokenNotPresent,
-	errorUnauthorized,
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
@@ -102,17 +101,4 @@ export const refreshToken = async (req: Request, res: Response) => {
 	} catch (error) {
 		handleError(res, error, 'refreshing token');
 	}
-};
-
-export const getProfile = (req: Request, res: Response) => {
-	const user = req.session?.user;
-
-	if (!user) {
-		const error = errorUnauthorized();
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	const userService = container.get(UserService);
-	const userDTO = userService.convertToDTO(user);
-	return res.status(200).json(userDTO);
 };

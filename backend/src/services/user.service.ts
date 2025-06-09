@@ -1,6 +1,8 @@
 import { User, UserDTO, UserRole } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { PasswordHelper } from '../helpers/password.helper.js';
+import { internalError } from '../models/error.model.js';
 import { MeetStorageService } from './index.js';
 
 @injectable()
@@ -25,6 +27,17 @@ export class UserService {
 			passwordHash: '',
 			roles: [UserRole.APP]
 		};
+	}
+
+	async changePassword(username: string, newPassword: string) {
+		const user = await this.storageService.getUser(username);
+
+		if (!user) {
+			throw internalError(`getting user ${username} for password change`);
+		}
+
+		user.passwordHash = await PasswordHelper.hashPassword(newPassword);
+		await this.storageService.saveUser(user);
 	}
 
 	// Convert user to UserDTO to remove sensitive information
