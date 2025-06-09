@@ -3,6 +3,7 @@ import { MeetRoomPreferences } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../http/http.service';
 import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
+import { FeatureConfigurationService } from '../feature-configuration/feature-configuration.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,7 +13,8 @@ export class RoomService {
 	protected roomPreferences: MeetRoomPreferences | undefined;
 	constructor(
 		protected loggerService: LoggerService,
-		protected httpService: HttpService
+		protected httpService: HttpService,
+		protected featureConfService: FeatureConfigurationService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
@@ -39,14 +41,23 @@ export class RoomService {
 		return this.httpService.getRoom(roomId);
 	}
 
-	async getRoomPreferences(): Promise<MeetRoomPreferences> {
-		if (!this.roomPreferences) {
-			this.log.d('Room preferences not found, fetching from server');
-			// Fetch the room preferences from the server
-			this.roomPreferences = await this.httpService.getRoomPreferences();
+	async loadPreferences(roomId: string, forceUpdate: boolean = false): Promise<MeetRoomPreferences> {
+		if (this.roomPreferences && !forceUpdate) {
+			this.log.d('Returning cached room preferences');
+			return this.roomPreferences;
 		}
 
-		return this.roomPreferences;
+		this.log.d('Fetching room preferences from server');
+		try {
+			const room = await this.getRoom(roomId);
+			this.roomPreferences = room.preferences! as MeetRoomPreferences;
+			this.featureConfService.setRoomPreferences(this.roomPreferences);
+			console.log('Room preferences loaded:', this.roomPreferences);
+			return this.roomPreferences;
+		} catch (error) {
+			this.log.e('Error loading room preferences', error);
+			throw new Error('Failed to load room preferences');
+		}
 	}
 
 	/**
