@@ -103,7 +103,7 @@ export class HttpService {
 	}
 
 	getProfile(): Promise<User> {
-		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/auth/profile`);
+		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/users/profile`);
 	}
 
 	generateRecordingToken(roomId: string, secret: string): Promise<{ token: string }> {
