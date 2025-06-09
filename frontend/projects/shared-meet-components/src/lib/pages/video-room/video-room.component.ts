@@ -1,11 +1,11 @@
-import { Location } from '@angular/common';
+// import { Location } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingAccess, MeetRoomPreferences, OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
 import {
 	ApiDirectiveModule,
@@ -27,6 +27,8 @@ import {
 	WebComponentManagerService
 } from '../../services';
 import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
+import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
+import { NavigationService } from '@lib/services/navigation/navigation.service';
 
 @Component({
 	selector: 'app-video-room',
@@ -84,10 +86,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	constructor(
 		protected httpService: HttpService,
+		protected navigationService: NavigationService,
 		protected participantTokenService: ParticipantTokenService,
-		protected router: Router,
+		protected recManagerService: RecordingManagerService,
 		protected route: ActivatedRoute,
-		protected location: Location,
 		protected authService: AuthService,
 		protected ctxService: ContextService,
 		protected roomService: RoomService,
@@ -122,7 +124,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			await this.generateParticipantToken();
 			await this.replaceUrlQueryParams();
 			await this.loadRoomPreferences();
-			this.updateFeatureConfiguration();
 			this.showRoom = true;
 		} catch (error) {
 			console.error('Error accessing room:', error);
@@ -169,7 +170,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				this.participantName,
 				this.roomSecret
 			);
-			this.participantToken = token;
+			// The components library needs the token to be set in the 'onTokenRequested' method
+			// this.participantToken = token;
 			this.participantRole = role;
 			this.participantPermissions = permissions;
 		} catch (error: any) {
@@ -177,11 +179,11 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			switch (error.status) {
 				case 400:
 					// Invalid secret
-					this.redirectToErrorPage('invalid-secret');
+					await this.navigationService.redirectToErrorPage('invalid-secret');
 					break;
 				case 404:
 					// Room not found
-					this.redirectToErrorPage('invalid-room');
+					await this.navigationService.redirectToErrorPage('invalid-room');
 					break;
 				case 409:
 					// Participant already exists.
@@ -189,7 +191,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 					this.participantForm.get('name')?.setErrors({ participantExists: true });
 					throw new Error('Participant already exists in the room');
 				default:
-					this.redirectToErrorPage('internal-error');
+					await this.navigationService.redirectToErrorPage('internal-error');
 			}
 		}
 	}
@@ -210,14 +212,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		// Replace secret and participant name in the URL query parameters
-		const queryParams = {
-			...this.route.snapshot.queryParams,
+		this.navigationService.updateUrlQueryParams(this.route, {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
-		};
-		const urlTree = this.router.createUrlTree([], { queryParams, queryParamsHandling: 'merge' });
-		const newUrl = this.router.serializeUrl(urlTree);
-		this.location.replaceState(newUrl);
+		});
 	}
 
 	private async getRoomSecrets(): Promise<{ moderatorSecret: string; publisherSecret: string }> {
@@ -230,10 +228,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		return { publisherSecret, moderatorSecret };
 	}
 
-	goToRecordings() {
-		this.router.navigate([`room/${this.roomId}/recordings`], {
-			queryParams: { secret: this.roomSecret }
-		});
+	async goToRecordings() {
+		await this.navigationService.goToRecordings(this.roomId, this.roomSecret);
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
@@ -247,7 +243,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		this.wcManagerService.sendMessageToParent(message);
 	}
 
-	onParticipantLeft(event: ParticipantLeftEvent) {
+	async onParticipantLeft(event: ParticipantLeftEvent) {
 		console.warn('Participant left the room. Redirecting to:');
 		const redirectURL = this.ctxService.getLeaveRedirectURL() || '/disconnected';
 		const isExternalURL = /^https?:\/\//.test(redirectURL);
@@ -279,13 +275,12 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			this.sessionStorageService.removeModeratorSecret(event.roomName);
 		}
 
-		this.redirectTo(redirectURL, isExternalURL);
+		await this.navigationService.redirectTo(redirectURL, isExternalURL);
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
 		try {
-			const { roomName: roomId } = event;
-			await this.httpService.startRecording(roomId);
+			await this.recManagerService.startRecording(event.roomName);
 		} catch (error) {
 			console.error(error);
 		}
@@ -293,11 +288,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async onRecordingStopRequested(event: RecordingStopRequestedEvent) {
 		try {
-			const { recordingId } = event;
-
-			if (!recordingId) throw new Error('Recording ID not found when stopping recording');
-
-			await this.httpService.stopRecording(recordingId);
+			await this.recManagerService.stopRecording(event.recordingId);
 		} catch (error) {
 			console.error(error);
 		}
@@ -334,19 +325,5 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		if (this.featureFlags.showRecording) {
 			this.featureFlags.showRecording = this.participantPermissions.canRecord;
 		}
-	}
-
-	private redirectTo(url: string, isExternal: boolean) {
-		if (isExternal) {
-			console.log('Redirecting to external URL:', url);
-			window.location.href = url;
-		} else {
-			console.log('Redirecting to internal route:', url);
-			this.router.navigate([url], { replaceUrl: true });
-		}
-	}
-
-	private redirectToErrorPage(reason: string) {
-		this.router.navigate(['error'], { queryParams: { reason } });
 	}
 }
