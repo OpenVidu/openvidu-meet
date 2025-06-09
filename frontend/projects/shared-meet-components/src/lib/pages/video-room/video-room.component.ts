@@ -21,7 +21,6 @@ import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
 import {
 	AuthService,
 	ContextService,
-	HttpService,
 	RoomService,
 	SessionStorageService,
 	WebComponentManagerService
@@ -85,7 +84,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	};
 
 	constructor(
-		protected httpService: HttpService,
 		protected navigationService: NavigationService,
 		protected participantTokenService: ParticipantTokenService,
 		protected recManagerService: RecordingManagerService,
@@ -203,7 +201,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		// and replace the secret in the URL with the publisher secret
 		if (this.participantRole === ParticipantRole.MODERATOR) {
 			try {
-				const { moderatorSecret, publisherSecret } = await this.getRoomSecrets();
+				const { moderatorSecret, publisherSecret } = await this.roomService.getSecrets(this.roomId);
 				this.sessionStorageService.setModeratorSecret(this.roomId, moderatorSecret);
 				secretQueryParam = publisherSecret;
 			} catch (error) {
@@ -216,16 +214,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
 		});
-	}
-
-	private async getRoomSecrets(): Promise<{ moderatorSecret: string; publisherSecret: string }> {
-		const { moderatorRoomUrl, publisherRoomUrl } = await this.httpService.getRoom(this.roomId);
-
-		const publisherUrl = new URL(publisherRoomUrl);
-		const publisherSecret = publisherUrl.searchParams.get('secret') || '';
-		const moderatorUrl = new URL(moderatorRoomUrl);
-		const moderatorSecret = moderatorUrl.searchParams.get('secret') || '';
-		return { publisherSecret, moderatorSecret };
 	}
 
 	async goToRecordings() {
