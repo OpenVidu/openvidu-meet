@@ -7,7 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingAccess, MeetRoomPreferences, OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
+import { OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
 import {
 	ApiDirectiveModule,
 	OpenViduComponentsUiModule,
@@ -70,25 +70,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		canPublishScreen: false
 	};
 
-	roomPreferences: MeetRoomPreferences = {
-		recordingPreferences: {
-			enabled: true,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
-		},
-		chatPreferences: { enabled: true },
-		virtualBackgroundPreferences: { enabled: true }
-	};
-	featureFlags = {
-		videoEnabled: true,
-		audioEnabled: true,
-		showMicrophone: true,
-		showCamera: true,
-		showScreenShare: true,
-		showPrejoin: true,
-		showChat: true,
-		showRecording: true,
-		showBackgrounds: true
-	};
 	features$!: Observable<ApplicationFeatures>;
 
 	constructor(
@@ -103,9 +84,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService
 	) {
-		this.featureConfService.features$.subscribe((features) => {
-			console.log('!!!!!!Feature flags updated:', features);
-		});
 		this.features$ = this.featureConfService.features$;
 	}
 
@@ -293,18 +271,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			await this.recManagerService.stopRecording(event.recordingId);
 		} catch (error) {
 			console.error(error);
-		}
-	}
-
-	/**
-	 * Configures the feature flags based on participant permissions.
-	 */
-	private applyParticipantPermissions() {
-		if (this.featureFlags.showChat) {
-			this.featureFlags.showChat = this.participantPermissions.canChat;
-		}
-		if (this.featureFlags.showRecording) {
-			this.featureFlags.showRecording = this.participantPermissions.canRecord;
 		}
 	}
 }
