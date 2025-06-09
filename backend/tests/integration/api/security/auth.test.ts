@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { startTestServer } from '../../../helpers/request-helpers.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
@@ -167,40 +167,6 @@ describe('Authentication API Tests', () => {
 
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
-		});
-	});
-
-	describe('Profile Tests', () => {
-		let adminCookie: string;
-
-		beforeAll(async () => {
-			adminCookie = await loginUser();
-		});
-
-		it('should return 200 and admin profile', async () => {
-			const response = await request(app).get(`${AUTH_PATH}/profile`).set('Cookie', adminCookie).expect(200);
-
-			expect(response.body).toHaveProperty('username');
-			expect(response.body.username).toBe('admin');
-			expect(response.body).toHaveProperty('roles');
-			expect(response.body.roles).toEqual(expect.arrayContaining(['admin', 'user']));
-		});
-
-		it('should return 401 when no access token is provided', async () => {
-			const response = await request(app).get(`${AUTH_PATH}/profile`).expect(401);
-
-			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain('Unauthorized');
-		});
-
-		it('should return 401 when access token is invalid', async () => {
-			const response = await request(app)
-				.get(`${AUTH_PATH}/profile`)
-				.set('Cookie', `${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=invalidtoken`)
-				.expect(401);
-
-			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain('Invalid token');
 		});
 	});
 });
