@@ -134,6 +134,10 @@ export const errorRoomHasNoParticipants = (roomId: string): OpenViduMeetError =>
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' has no participants`, 409);
 };
 
+export const errorInvalidRecordingSecret = (recordingId: string, secret: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Secret '${secret}' is not recognized for recording '${recordingId}'`, 400);
+};
+
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
 	return (
 		error instanceof OpenViduMeetError &&

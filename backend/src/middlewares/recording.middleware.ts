@@ -4,7 +4,9 @@ import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorInsufficientPermissions,
+	errorInvalidRecordingSecret,
 	errorRecordingDisabled,
+	errorRecordingNotFound,
 	errorRoomMetadataNotFound,
 	handleError,
 	rejectRequestFromMeetError
@@ -64,9 +66,15 @@ export const withCanRetrieveRecordingsPermission = async (req: Request, res: Res
 	const roomId = extractRoomIdFromRequest(req);
 	const payload = req.session?.tokenClaims;
 
-	// If there is no token, it is invoked using the API key, the user is admin or
-	// the user is anonymous and recording access is public.
-	// In this case, the user is allowed to access the resource
+	/**
+	 * If there is no token, the user is allowed to access the resource because one of the following reasons:
+	 * 
+	 * - The request is invoked using the API key.
+	 * - The user is admin.
+	 * - The user is anonymous and recording access is public.
+	 * - The user is anonymous and is using the public access secret.
+	 * - The user is using the private access secret and is authenticated.
+	 */
 	if (!payload) {
 		return next();
 	}
@@ -110,12 +118,48 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
 /**
  * Middleware to configure authentication for retrieving recording media based on recording access.
  *
- * - Admin and recording token are always allowed
- * - If recording access is public, anonymous users are allowed
+ * - API key, admin and recording token are always allowed.
+ * - If a valid secret is provided in the query, access is granted according to the secret type.
+ * - If recording access is public, anonymous users are allowed.
  */
 export const configureRecordingMediaAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const storageService = container.get(MeetStorageService);
 
+	const secret = req.query.secret as string;
+
+	// If a secret is provided, validate it against the stored secrets
+	// and apply the appropriate authentication logic.
+	if (secret) {
+		try {
+			const recordingId = req.params.recordingId as string;
+			const recordingSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+
+			if (!recordingSecrets) {
+				const error = errorRecordingNotFound(recordingId);
+				return rejectRequestFromMeetError(res, error);
+			}
+
+			const authValidators = [];
+
+			switch (secret) {
+				case recordingSecrets.publicAccessSecret:
+					authValidators.push(allowAnonymous);
+					break;
+				case recordingSecrets.privateAccessSecret:
+					authValidators.push(tokenAndRoleValidator(UserRole.USER));
+					break;
+				default:
+					// Invalid secret provided
+					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId, secret));
+			}
+
+			return withAuth(...authValidators)(req, res, next);
+		} catch (error) {
+			return handleError(res, error, 'retrieving recording secrets');
+		}
+	}
+
+	// If no secret is provided, determine access based on room's recording preferences
 	let recordingAccess: MeetRecordingAccess | undefined;
 
 	try {
@@ -132,8 +176,10 @@ export const configureRecordingMediaAuth = async (req: Request, res: Response, n
 		return handleError(res, error, 'checking recording permissions');
 	}
 
+	// Always allow API key, admin, and recording token
 	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator];
 
+	// If access is public, allow anonymous users as well
 	if (recordingAccess === MeetRecordingAccess.PUBLIC) {
 		authValidators.push(allowAnonymous);
 	}

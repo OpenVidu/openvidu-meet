@@ -2,8 +2,13 @@ import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { handleError, internalError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { LoggerService, RecordingService } from '../services/index.js';
+import {
+	errorRecordingNotFound,
+	handleError,
+	internalError,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
+import { LoggerService, MeetStorageService, RecordingService } from '../services/index.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -211,5 +216,30 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		}
 
 		handleError(res, error, `streaming recording '${recordingId}'`);
+	}
+};
+
+export const getRecordingUrl = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const recordingId = req.params.recordingId;
+	const privateAccess = req.query.privateAccess === 'true';
+
+	logger.info(`Getting URL for recording '${recordingId}'`);
+
+	try {
+		const storageService = container.get(MeetStorageService);
+		const recordingSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+
+		if (!recordingSecrets) {
+			const error = errorRecordingNotFound(recordingId);
+			return rejectRequestFromMeetError(res, error);
+		}
+
+		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
+		const recordingUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media?secret=${secret}`;
+
+		return res.status(200).json({ url: recordingUrl });
+	} catch (error) {
+		handleError(res, error, `getting URL for recording '${recordingId}'`);
 	}
 };

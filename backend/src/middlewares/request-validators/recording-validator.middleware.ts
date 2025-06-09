@@ -82,6 +82,9 @@ const GetRecordingMediaSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
+	query: z.object({
+		secret: z.string().optional()
+	}),
 	headers: z
 		.object({
 			range: z
@@ -109,6 +112,23 @@ const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId').optional(),
 	nextPageToken: z.string().optional(),
 	fields: z.string().optional()
+});
+
+const GetRecordingUrlSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		privateAccess: z
+			.preprocess((val) => {
+				if (typeof val === 'string') {
+					return val.toLowerCase() === 'true';
+				}
+
+				return val;
+			}, z.boolean())
+			.default(false)
+	})
 });
 
 export const withValidStartRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
@@ -158,9 +178,10 @@ export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response,
 	next();
 };
 
-export const withValidGetMediaRequest = (req: Request, res: Response, next: NextFunction) => {
+export const withValidGetRecordingMediaRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = GetRecordingMediaSchema.safeParse({
 		params: req.params,
+		query: req.query,
 		headers: req.headers
 	});
 
@@ -169,6 +190,22 @@ export const withValidGetMediaRequest = (req: Request, res: Response, next: Next
 	}
 
 	req.params.recordingId = data.params.recordingId;
+	req.query.secret = data.query.secret;
 	req.headers.range = data.headers.range;
+	next();
+};
+
+export const withValidGetRecordingUrlRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingUrlSchema.safeParse({
+		params: req.params,
+		query: req.query
+	});
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.params.recordingId = data.params.recordingId;
+	req.query.privateAccess = data.query.privateAccess ? 'true' : 'false';
 	next();
 };

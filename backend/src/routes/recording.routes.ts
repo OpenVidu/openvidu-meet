@@ -13,7 +13,8 @@ import {
 	withCanRecordPermission,
 	withCanRetrieveRecordingsPermission,
 	withRecordingEnabled,
-	withValidGetMediaRequest,
+	withValidGetRecordingMediaRequest,
+	withValidGetRecordingUrlRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingFiltersRequest,
 	withValidRecordingId,
@@ -54,10 +55,17 @@ recordingRouter.delete(
 );
 recordingRouter.get(
 	'/:recordingId/media',
-	withValidGetMediaRequest,
+	withValidGetRecordingMediaRequest,
 	configureRecordingMediaAuth,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingMedia
+);
+recordingRouter.get(
+	'/:recordingId/url',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withValidGetRecordingUrlRequest,
+	withCanRetrieveRecordingsPermission,
+	recordingCtrl.getRecordingUrl
 );
 
 // Internal Recording Routes
