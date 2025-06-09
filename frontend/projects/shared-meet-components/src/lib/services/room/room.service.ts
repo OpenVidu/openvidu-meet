@@ -61,7 +61,7 @@ export class RoomService {
 	 * @returns publisherSecret - The secret parameter extracted from the publisher room URL
 	 */
 	async getSecrets(roomId: string): Promise<{ moderatorSecret: string; publisherSecret: string }> {
-		const { moderatorRoomUrl, publisherRoomUrl } = await this.httpService.getRoom(roomId);
+		const { moderatorRoomUrl, publisherRoomUrl } = await this.getRoom(roomId);
 
 		const publisherUrl = new URL(publisherRoomUrl);
 		const publisherSecret = publisherUrl.searchParams.get('secret') || '';
