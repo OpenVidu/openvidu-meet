@@ -21,10 +21,10 @@ describe('Users API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message', 'Password changed successfully');
 		});
-	});
 
-	it('should fail when new password is not 4 characters long', async () => {
-		const response = await changePassword('123', adminCookie);
-		expectValidationError(response, 'newPassword', 'New password must be at least 4 characters long');
+		it('should fail when new password is not 4 characters long', async () => {
+			const response = await changePassword('123', adminCookie);
+			expectValidationError(response, 'newPassword', 'New password must be at least 4 characters long');
+		});
 	});
 });
