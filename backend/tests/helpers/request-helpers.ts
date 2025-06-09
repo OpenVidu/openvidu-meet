@@ -145,6 +145,24 @@ export const loginUser = async (): Promise<string> => {
 	return accessTokenCookie;
 };
 
+export const getProfile = async (cookie: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`)
+		.set('Cookie', cookie)
+		.send();
+};
+
+export const changePassword = async (newPassword: string, cookie: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`)
+		.set('Cookie', cookie)
+		.send({ newPassword });
+};
+
 export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
 	checkAppIsRunning();
 
