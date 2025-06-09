@@ -119,15 +119,19 @@ export class ContextService {
 	}
 
 	/**
-	 * Sets the token for the current session.
-	 * @param token - A string representing the token.
+	 * Sets the participant token in the context and updates feature configuration.
+	 * @param token - The JWT token to set.
+	 * @throws Error if the token is invalid or expired.
 	 */
-	setParticipantToken(token: string): void {
+	setParticipantTokenAndUpdateContext(token: string): void {
 		try {
 			const decodedToken = this.getValidDecodedToken(token);
 			this.context.participantToken = token;
 			this.context.participantPermissions = decodedToken.metadata.permissions;
 			this.context.participantRole = decodedToken.metadata.role;
+
+			// Update feature configuration based on the new token
+			this.updateFeatureConfiguration();
 		} catch (error: any) {
 			this.log.e('Error setting token in context', error);
 			throw new Error('Error setting token', error);

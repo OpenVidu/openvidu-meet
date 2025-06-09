@@ -53,7 +53,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		return from(httpService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
 			switchMap((data) => {
 				console.log('Participant token refreshed');
-				contextService.setParticipantToken(data.token);
+				contextService.setParticipantTokenAndUpdateContext(data.token);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {
@@ -127,7 +127,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 					// refresh the participant token
 					return refreshParticipantToken(error);
 				}
-				
+
 				// Expired access token
 				if (!pageUrl.startsWith('/console/login') && !pageUrl.startsWith('/login')) {
 					// If the error occurred in a page that is not the login page, refresh the access token

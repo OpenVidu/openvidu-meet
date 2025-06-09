@@ -26,6 +26,7 @@ import {
 	SessionStorageService,
 	WebComponentManagerService
 } from '../../services';
+import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
 
 @Component({
 	selector: 'app-video-room',
@@ -83,6 +84,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	constructor(
 		protected httpService: HttpService,
+		protected participantTokenService: ParticipantTokenService,
 		protected router: Router,
 		protected route: ActivatedRoute,
 		protected location: Location,
@@ -99,32 +101,28 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		const storageSecret = this.sessionStorageService.getModeratorSecret(this.roomId);
 		this.roomSecret = storageSecret || secret;
 
-		// Apply participant name from context if set, otherwise use authenticated username
-		const contextParticipantName = this.ctxService.getParticipantName();
-		const username = await this.authService.getUsername();
-		const participantName = contextParticipantName || username;
-
-		if (participantName) {
-			this.participantForm.get('name')?.setValue(participantName);
-		}
+		await this.initializeParticipantName();
 	}
 
 	ngOnDestroy(): void {
 		this.wcManagerService.stopCommandsListener();
 	}
 
-	async accessRoom() {
-		if (!this.participantForm.valid) {
+	async submitAccessRoom() {
+		const { valid, value } = this.participantForm;
+		if (!valid || !value.name?.trim()) {
+			// If the form is invalid, do not proceed
+			console.warn('Participant form is invalid. Cannot access room.');
 			return;
 		}
 
-		this.participantName = this.participantForm.value.name!;
+		this.participantName = value.name.trim();
 
 		try {
 			await this.generateParticipantToken();
 			await this.replaceUrlQueryParams();
-			// await this.loadRoomPreferences();
-			this.applyParticipantPermissions();
+			await this.loadRoomPreferences();
+			this.updateFeatureConfiguration();
 			this.showRoom = true;
 		} catch (error) {
 			console.error('Error accessing room:', error);
@@ -136,14 +134,44 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		this.participantToken = this.ctxService.getParticipantToken();
 	}
 
+	/**
+	 * Initializes the participant name in the form control.
+	 *
+	 * Retrieves the participant name from the context service first, and if not available,
+	 * falls back to the authenticated username. Sets the retrieved name value in the
+	 * participant form's 'name' control if a valid name is found.
+	 *
+	 * @private
+	 * @async
+	 * @returns {Promise<void>} A promise that resolves when the participant name has been initialized
+	 */
+	private async initializeParticipantName() {
+		// Apply participant name from context if set, otherwise use authenticated username
+		const contextParticipantName = this.ctxService.getParticipantName();
+		const username = await this.authService.getUsername();
+		const participantName = contextParticipantName || username;
+
+		if (participantName) {
+			this.participantForm.get('name')?.setValue(participantName);
+		}
+	}
+
+	/**
+	 * Generates a participant token for joining a video room.
+	 *
+	 * @throws {Error} When participant already exists in the room (status 409)
+	 * @returns {Promise<void>} Promise that resolves when token is generated and set, or rejects on participant conflict
+	 */
 	private async generateParticipantToken() {
 		try {
-			const response = await this.httpService.generateParticipantToken({
-				roomId: this.roomId,
-				participantName: this.participantName,
-				secret: this.roomSecret
-			});
-			this.setParticipantToken(response.token);
+			const { token, role, permissions } = await this.participantTokenService.generateToken(
+				this.roomId,
+				this.participantName,
+				this.roomSecret
+			);
+			this.participantToken = token;
+			this.participantRole = role;
+			this.participantPermissions = permissions;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);
 			switch (error.status) {
@@ -163,16 +191,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				default:
 					this.redirectToErrorPage('internal-error');
 			}
-		}
-	}
-
-	private setParticipantToken(token: string): void {
-		try {
-			this.ctxService.setParticipantToken(token);
-			this.participantRole = this.ctxService.getParticipantRole();
-			this.participantPermissions = this.ctxService.getParticipantPermissions();
-		} catch (error: any) {
-			console.error('Error setting token in context', error);
 		}
 	}
 
