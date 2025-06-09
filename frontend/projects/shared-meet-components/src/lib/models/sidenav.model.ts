@@ -1,6 +1,6 @@
 export interface ConsoleNavLink {
-	label: string;     // Nombre del enlace
-	icon?: string;     // Icono opcional
-	route?: string;    // Ruta para la navegación (opcional)
-	clickHandler?: () => void; // Función para manejar clics (opcional)
+	label: string;     // Link name
+	icon?: string;     // Optional icon
+	route?: string;    // Route for navigation (optional)
+	clickHandler?: () => void; // Function to handle clicks (optional)
   }

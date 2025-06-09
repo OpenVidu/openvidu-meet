@@ -6,3 +6,4 @@ export * from './room/room.service';
 export * from './notification/notification.service';
 export * from './webcomponent-manager/webcomponent-manager.service';
 export * from './session-storage/session-storage.service';
+export * from './participant-token/participant-token.service';

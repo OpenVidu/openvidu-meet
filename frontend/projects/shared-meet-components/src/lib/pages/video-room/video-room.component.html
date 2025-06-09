@@ -5,7 +5,7 @@
 				<h2 class="form-title">
 					Access room <strong>{{ roomId }}</strong>
 				</h2>
-				<form [formGroup]="participantForm" (ngSubmit)="accessRoom()">
+				<form [formGroup]="participantForm" (ngSubmit)="submitAccessRoom()">
 					<mat-form-field appearance="outline" class="full-width">
 						<mat-label>Name</mat-label>
 						<input
