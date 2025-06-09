@@ -23,7 +23,11 @@
 				<div class="rooms-list">
 					<div class="mb-3 text-center">
 						<form action="/delete-all-rooms" method="post">
-							<button type="submit" class="btn btn-danger btn-sm" id="delete-all-rooms">
+							<button
+								type="submit"
+								class="btn btn-danger btn-sm"
+								id="delete-all-rooms"
+							>
 								Delete All Rooms
 							</button>
 						</form>
@@ -129,37 +133,192 @@
 
 			<!-- Create Room Section -->
 			<div class="create-room">
-				<h2 class="text-center text-primary">Create a new Room</h2>
-				<p class="text-muted text-center">Generate a room from scratch</p>
+				<h2 class="text-center text-primary mb-3">Create a new Room</h2>
+				<p class="text-muted text-center mb-4">Generate a room from scratch</p>
 
-				<form action="/room" method="post">
-					<div class="mb-3">
-						<label for="room-id-prefix" class="form-label">Room Prefix *</label>
-						<input
-							type="text"
-							name="roomIdPrefix"
-							id="room-id-prefix"
-							class="form-control"
-							placeholder="e.g. Team meeting"
-							required
-						/>
+				<form action="/room" method="post" class="d-flex flex-column h-100">
+					<!-- Basic Information -->
+					<div class="form-section">
+						<div class="mb-3">
+							<label for="room-id-prefix" class="form-label"
+								>Room Prefix *</label
+							>
+							<input
+								type="text"
+								name="roomIdPrefix"
+								id="room-id-prefix"
+								class="form-control"
+								placeholder="e.g. Team meeting"
+								required
+							/>
+						</div>
+
+						<div class="mb-3">
+							<label for="expiration-date" class="form-label"
+								>Expiration Date</label
+							>
+							<input
+								type="date"
+								name="autoDeletionDate"
+								id="expiration-date"
+								class="form-control"
+							/>
+						</div>
 					</div>
 
-					<div class="mb-3">
-						<label for="expiration-date" class="form-label"
-							>Expiration Date</label
+					<!-- Preferences Accordion -->
+					<div class="preferences-accordion">
+						<div class="accordion" id="preferencesAccordion">
+							<!-- Chat Preferences -->
+							<div class="accordion-item">
+								<h2 class="accordion-header">
+									<button
+										class="accordion-button"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#chatCollapse"
+										aria-expanded="true"
+										aria-controls="chatCollapse"
+										data-testid="chat-preferences-toggle"
+									>
+										Chat Settings
+									</button>
+								</h2>
+								<div
+									id="chatCollapse"
+									class="accordion-collapse collapse show"
+									data-bs-parent="#preferencesAccordion"
+								>
+									<div class="accordion-body">
+										<div class="form-check">
+											<input
+												type="checkbox"
+												name="preferences.chatPreferences.enabled"
+												id="chat-enabled"
+												class="form-check-input"
+												checked
+												data-testid="chat-enabled-checkbox"
+											/>
+											<label for="chat-enabled" class="form-check-label">
+												Enable Chat
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Recording Preferences -->
+							<div class="accordion-item">
+								<h2 class="accordion-header">
+									<button
+										class="accordion-button collapsed"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#recordingCollapse"
+										aria-expanded="false"
+										aria-controls="recordingCollapse"
+										data-testid="recording-preferences-toggle"
+									>
+										Recording Settings
+									</button>
+								</h2>
+								<div
+									id="recordingCollapse"
+									class="accordion-collapse collapse"
+									data-bs-parent="#preferencesAccordion"
+								>
+									<div class="accordion-body">
+										<div class="form-check mb-2">
+											<input
+												type="checkbox"
+												name="preferences.recordingPreferences.enabled"
+												id="recording-enabled"
+												class="form-check-input"
+												checked
+												data-testid="recording-enabled-checkbox"
+											/>
+											<label for="recording-enabled" class="form-check-label">
+												Enable Recording
+											</label>
+										</div>
+
+										<div id="recording-access-section">
+											<label for="recording-access" class="form-label"
+												>Recording Access Level</label
+											>
+											<select
+												name="preferences.recordingPreferences.allowAccessTo"
+												id="recording-access"
+												class="form-select"
+												data-testid="recording-access-select"
+											>
+												<option value="admin">Admin Only</option>
+												<option value="admin-moderator">
+													Admin & Moderator
+												</option>
+												<option value="admin-moderator-publisher" selected>
+													Admin, Moderator & Publisher
+												</option>
+												<option value="public">Public Access</option>
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Virtual Background Preferences -->
+							<div class="accordion-item">
+								<h2 class="accordion-header">
+									<button
+										class="accordion-button collapsed"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#backgroundCollapse"
+										aria-expanded="false"
+										aria-controls="backgroundCollapse"
+										data-testid="background-preferences-toggle"
+									>
+										Virtual Background Settings
+									</button>
+								</h2>
+								<div
+									id="backgroundCollapse"
+									class="accordion-collapse collapse"
+									data-bs-parent="#preferencesAccordion"
+								>
+									<div class="accordion-body">
+										<div class="form-check">
+											<input
+												type="checkbox"
+												name="preferences.virtualBackgroundPreferences.enabled"
+												id="virtual-background-enabled"
+												class="form-check-input"
+												checked
+												data-testid="virtual-background-enabled-checkbox"
+											/>
+											<label
+												for="virtual-background-enabled"
+												class="form-check-label"
+											>
+												Enable Virtual Backgrounds
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Create Button - Always visible -->
+					<div class="mt-auto pt-3">
+						<button
+							type="submit"
+							class="create-room-btn btn btn-primary w-100"
+							data-testid="create-room-button"
 						>
-						<input
-							type="date"
-							name="autoDeletionDate"
-							id="expiration-date"
-							class="form-control"
-						/>
+							Create Room
+						</button>
 					</div>
-
-					<button type="submit" class="create-room-btn btn btn-primary w-100">
-						Create Room
-					</button>
 				</form>
 			</div>
 		</div>

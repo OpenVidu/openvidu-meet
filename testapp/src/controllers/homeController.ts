@@ -29,7 +29,9 @@ export const getHome = async (req: Request, res: Response) => {
 export const postCreateRoom = async (req: Request, res: Response) => {
 	try {
 		const { roomIdPrefix, autoDeletionDate } = req.body;
-		await createRoom({ roomIdPrefix, autoDeletionDate });
+		const preferences = processFormPreferences(req.body);
+
+		await createRoom({ roomIdPrefix, autoDeletionDate, preferences });
 		res.redirect('/');
 	} catch (error) {
 		console.error('Error creating room:', error);
@@ -67,3 +69,27 @@ export const deleteAllRoomsCtrl = async (_req: Request, res: Response) => {
 		return;
 	}
 };
+
+
+/**
+ * Converts flat form data to nested MeetRoomPreferences object
+ */
+const processFormPreferences = (body: any): any => {
+    const preferences = {
+        chatPreferences: {
+            enabled: body['preferences.chatPreferences.enabled'] === 'on'
+        },
+        recordingPreferences: {
+            enabled: body['preferences.recordingPreferences.enabled'] === 'on',
+            // Only include allowAccessTo if recording is enabled
+            ...(body['preferences.recordingPreferences.enabled'] === 'on' && {
+                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin-moderator-publisher'
+            })
+        },
+        virtualBackgroundPreferences: {
+            enabled: body['preferences.virtualBackgroundPreferences.enabled'] === 'on'
+        }
+    };
+
+    return preferences;
+}
