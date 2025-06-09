@@ -10,6 +10,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	generateRecordingTokenCookie,
+	getRecordingUrl,
 	loginUser,
 	startTestServer,
 	stopAllRecordings,
@@ -514,6 +515,137 @@ describe('Recording API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when using public access secret and user is not authenticated', async () => {
+			const recordingUrlResponse = await getRecordingUrl(recordingId);
+			expect(recordingUrlResponse.status).toBe(200);
+			const recordingUrl = recordingUrlResponse.body.url;
+			expect(recordingUrl).toBeDefined();
+
+			const response = await request(app).get(recordingUrl);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when using private access secret and user is not authenticated', async () => {
+			const recordingUrlResponse = await getRecordingUrl(recordingId, true);
+			expect(recordingUrlResponse.status).toBe(200);
+			const recordingUrl = recordingUrlResponse.body.url;
+			expect(recordingUrl).toBeDefined();
+
+			const response = await request(app).get(recordingUrl);
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when using private access secret and user is authenticated', async () => {
+			const recordingUrlResponse = await getRecordingUrl(recordingId, true);
+			expect(recordingUrlResponse.status).toBe(200);
+			const recordingUrl = recordingUrlResponse.body.url;
+			expect(recordingUrl).toBeDefined();
+
+			const response = await request(app).get(recordingUrl).set('Cookie', adminCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when using invalid access secret', async () => {
+			const invalidRecordingUrl = `${RECORDINGS_PATH}/${recordingId}/media?secret=invalidSecret`;
+			const response = await request(app).get(invalidRecordingUrl);
+			expect(response.status).toBe(400);
+		});
+	});
+
+	describe('Get Recording URL Tests', () => {
+		let roomData: RoomData;
+		let recordingId: string;
+
+		beforeAll(async () => {
+			roomData = await setupSingleRoomWithRecording(true);
+			recordingId = roomData.recordingId!;
+		});
+
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/url`).set('Cookie', adminCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when recording access is public and participant is publisher', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when recording access is public and participant is moderator', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.moderatorSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when recording access is public and user is not authenticated', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/url`);
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			await updateRecordingAccessPreferencesInRoom(
+				roomData.room.roomId,
+				MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			await updateRecordingAccessPreferencesInRoom(
+				roomData.room.roomId,
+				MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.moderatorSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+				.set('Cookie', recordingCookie);
+			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when recording access is admin-moderator and participant is moderator', async () => {
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
+			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.moderatorSecret);
+
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
 				.set('Cookie', recordingCookie);
 			expect(response.status).toBe(200);
 		});
