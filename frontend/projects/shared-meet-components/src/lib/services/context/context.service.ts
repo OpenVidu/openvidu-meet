@@ -131,7 +131,7 @@ export class ContextService {
 			this.context.participantRole = decodedToken.metadata.role;
 
 			// Update feature configuration based on the new token
-			this.updateFeatureConfiguration();
+			// this.updateFeatureConfiguration();
 		} catch (error: any) {
 			this.log.e('Error setting token in context', error);
 			throw new Error('Error setting token', error);
