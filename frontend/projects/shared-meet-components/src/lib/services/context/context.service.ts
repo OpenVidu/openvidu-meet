@@ -2,7 +2,13 @@ import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { ApplicationMode, ContextData, Edition } from '../../models/context.model';
 import { LoggerService } from 'openvidu-components-angular';
-import { AuthMode, HttpService, ParticipantRole } from 'projects/shared-meet-components/src/public-api';
+import {
+	AuthMode,
+	HttpService,
+	OpenViduMeetPermissions,
+	ParticipantRole
+} from 'projects/shared-meet-components/src/public-api';
+import { FeatureConfigurationService } from '../feature-configuration/feature-configuration.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -36,14 +42,15 @@ export class ContextService {
 		leaveRedirectUrl: ''
 	};
 
-	private log;
+	protected log;
 
 	/**
 	 * Initializes a new instance of the ContextService class.
 	 */
 	constructor(
-		private loggerService: LoggerService,
-		private httpService: HttpService
+		protected loggerService: LoggerService,
+		protected featureConfService: FeatureConfigurationService,
+		protected httpService: HttpService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ContextService');
 	}
@@ -126,16 +133,17 @@ export class ContextService {
 	setParticipantTokenAndUpdateContext(token: string): void {
 		try {
 			const decodedToken = this.getValidDecodedToken(token);
-			this.context.participantToken = token;
-			this.context.participantPermissions = decodedToken.metadata.permissions;
-			this.context.participantRole = decodedToken.metadata.role;
-
-			// Update feature configuration based on the new token
-			// this.updateFeatureConfiguration();
+			this.setParticipantToken(token);
+			this.setParticipantPermissions(decodedToken.metadata.permissions);
+			this.setParticipantRole(decodedToken.metadata.role);
 		} catch (error: any) {
 			this.log.e('Error setting token in context', error);
 			throw new Error('Error setting token', error);
 		}
+	}
+
+	setParticipantToken(token: string): void {
+		this.context.participantToken = token;
 	}
 
 	getParticipantToken(): string {
@@ -144,6 +152,7 @@ export class ContextService {
 
 	setParticipantRole(participantRole: ParticipantRole): void {
 		this.context.participantRole = participantRole;
+		this.featureConfService.setParticipantRole(participantRole);
 	}
 
 	getParticipantRole(): ParticipantRole {
@@ -154,6 +163,11 @@ export class ContextService {
 		return this.context.participantRole === ParticipantRole.MODERATOR;
 	}
 
+	setParticipantPermissions(permissions: OpenViduMeetPermissions): void {
+		this.context.participantPermissions = permissions;
+		this.featureConfService.setParticipantPermissions(permissions);
+	}
+
 	getParticipantPermissions() {
 		return this.context.participantPermissions;
 	}
@@ -162,6 +176,7 @@ export class ContextService {
 		try {
 			const decodedToken = this.getValidDecodedToken(token);
 			this.context.recordingPermissions = decodedToken.metadata.recordingPermissions;
+			this.featureConfService.setRecordingPermissions(decodedToken.metadata.recordingPermissions);
 		} catch (error: any) {
 			this.log.e('Error setting recording token in context', error);
 			throw new Error('Error setting recording token', error);

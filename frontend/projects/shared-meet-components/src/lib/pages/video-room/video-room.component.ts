@@ -1,4 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -27,6 +29,11 @@ import {
 import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
 import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
 import { NavigationService } from '@lib/services/navigation/navigation.service';
+import {
+	ApplicationFeatures,
+	FeatureConfigurationService
+} from '@lib/services/feature-configuration/feature-configuration.service';
+import { Observable } from 'rxjs';
 
 @Component({
 	selector: 'app-video-room',
@@ -41,7 +48,8 @@ import { NavigationService } from '@lib/services/navigation/navigation.service';
 		FormsModule,
 		ReactiveFormsModule,
 		MatCardModule,
-		MatButtonModule
+		MatButtonModule,
+		AsyncPipe
 	]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
@@ -81,18 +89,25 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		showRecording: true,
 		showBackgrounds: true
 	};
+	features$!: Observable<ApplicationFeatures>;
 
 	constructor(
+		protected route: ActivatedRoute,
 		protected navigationService: NavigationService,
 		protected participantTokenService: ParticipantTokenService,
 		protected recManagerService: RecordingManagerService,
-		protected route: ActivatedRoute,
 		protected authService: AuthService,
 		protected ctxService: ContextService,
 		protected roomService: RoomService,
 		protected wcManagerService: WebComponentManagerService,
-		protected sessionStorageService: SessionStorageService
-	) {}
+		protected sessionStorageService: SessionStorageService,
+		protected featureConfService: FeatureConfigurationService
+	) {
+		this.featureConfService.features$.subscribe((features) => {
+			console.log('!!!!!!Feature flags updated:', features);
+		});
+		this.features$ = this.featureConfService.features$;
+	}
 
 	async ngOnInit() {
 		this.roomId = this.ctxService.getRoomId();
@@ -120,7 +135,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		try {
 			await this.generateParticipantToken();
 			await this.replaceUrlQueryParams();
-			await this.loadRoomPreferences();
+			await this.roomService.loadPreferences(this.roomId);
 			this.showRoom = true;
 		} catch (error) {
 			console.error('Error accessing room:', error);
@@ -279,27 +294,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		} catch (error) {
 			console.error(error);
 		}
-	}
-
-	/**
-	 * Loads the room preferences from the global preferences service and assigns them to the component.
-	 *
-	 * This method fetches the room preferences asynchronously and updates the component's properties
-	 * based on the fetched preferences. It also updates the UI flags to show or hide certain features
-	 * like chat, recording, and activity panel based on the preferences.
-	 *
-	 * @returns {Promise<void>} A promise that resolves when the room preferences have been loaded and applied.
-	 */
-	private async loadRoomPreferences() {
-		try {
-			this.roomPreferences = await this.roomService.getRoomPreferences();
-		} catch (error) {
-			console.error('Error loading room preferences:', error);
-		}
-
-		this.featureFlags.showChat = this.roomPreferences.chatPreferences.enabled;
-		this.featureFlags.showRecording = this.roomPreferences.recordingPreferences.enabled;
-		this.featureFlags.showBackgrounds = this.roomPreferences.virtualBackgroundPreferences.enabled;
 	}
 
 	/**
