@@ -210,6 +210,65 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
+	describe('Get Room Preferences Tests', () => {
+		let roomData: RoomData;
+
+		beforeAll(async () => {
+			roomData = await setupSingleRoom();
+		});
+
+		it('should fail when request includes API key', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fai when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', adminCookie);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`);
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when participant is moderator', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', roomData.moderatorCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when participant is moderator of a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', newRoomData.moderatorCookie);
+			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when participant is publisher', async () => {
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', roomData.publisherCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when participant is publisher of a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await request(app)
+				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', newRoomData.publisherCookie);
+			expect(response.status).toBe(403);
+		});
+	});
+
 	describe('Generate Recording Token Tests', () => {
 		let roomData: RoomData;
 
