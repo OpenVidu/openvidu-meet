@@ -239,7 +239,7 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 		}
 
 		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		const recordingUrl = `${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media?secret=${secret}`;
+		const recordingUrl = `${req.protocol}://${req.get('host')}/recording/${recordingId}?secret=${secret}`;
 
 		return res.status(200).json({ url: recordingUrl });
 	} catch (error) {
