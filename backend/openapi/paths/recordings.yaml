@@ -156,6 +156,7 @@
             - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
+            - $ref: '../components/parameters/recording-secret.yaml'
             - $ref: '../components/parameters/recording-range.yaml'
         responses:
             '200':
@@ -189,7 +190,7 @@
                             type: string
                             format: binary
             '400':
-                $ref: '../components/responses/invalid-recording-secret.yaml'
+                $ref: '../components/responses/error-invalid-recording-secret.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
