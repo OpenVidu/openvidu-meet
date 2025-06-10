@@ -33,6 +33,8 @@
             Retrieves the preferences of an OpenVidu Meet room with the specified room ID.
         tags:
             - Internal API - Rooms
+        security:
+            - participantTokenCookie: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
         responses:
