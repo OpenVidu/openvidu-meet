@@ -182,15 +182,12 @@ const expectObjectFields = (obj: any, present: string[] = [], absent: string[] =
 	});
 };
 
+// Validate recording location header in the response
 export const expectValidRecordingLocationHeader = (response: any) => {
-	// const locationRegex = new RegExp(
-	// 	`^http://127\\.0\\.0\\.1:\\d+/+${RECORDINGS_PATH.replace(/\//g, '\\/')}/${recordingId}$`
-	// );
-	// expect(response.headers.location).toMatch(locationRegex);
-	expect(response.headers.location).toBeDefined();
-	expect(response.headers.location).toContain('127.0.0.1');
-	expect(response.headers.location).toContain(RECORDINGS_PATH);
-	expect(response.headers.location).toContain(response.body.recordingId);
+	const locationHeader = response.headers.location;
+	expect(locationHeader).toBeDefined();
+	const locationHeaderUrl = new URL(locationHeader);
+	expect(locationHeaderUrl.pathname).toBe(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`);
 };
 
 /**
@@ -326,7 +323,12 @@ export const expectSuccessRecordingMediaResponse = (
 export const expectValidStartRecordingResponse = (response: any, roomId: string) => {
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('recordingId');
+
+	expectValidRecordingLocationHeader(response);
+
 	const recordingId = response.body.recordingId;
+	expect(recordingId).toBeDefined();
+
 	expect(recordingId).toContain(roomId);
 	expect(response.body).toHaveProperty('roomId', roomId);
 	expect(response.body).toHaveProperty('startDate');
@@ -346,6 +348,8 @@ export const expectValidStopRecordingResponse = (response: any, recordingId: str
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('duration', expect.any(Number));
+
+	expectValidRecordingLocationHeader(response);
 };
 
 export const expectValidGetRecordingResponse = (

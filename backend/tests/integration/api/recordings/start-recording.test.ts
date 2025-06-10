@@ -4,7 +4,6 @@ import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { MeetRoom } from '../../../../src/typings/ce/index.js';
 import {
 	expectValidationError,
-	expectValidRecordingLocationHeader,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
@@ -56,7 +55,6 @@ describe('Recording API Tests', () => {
 			const recordingId = response.body.recordingId;
 			expectValidStartRecordingResponse(response, room.roomId);
 
-			expectValidRecordingLocationHeader(response);
 			const stopResponse = await stopRecording(recordingId, moderatorCookie);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId);
 		});
@@ -65,8 +63,6 @@ describe('Recording API Tests', () => {
 			const response = await startRecording(room.roomId, moderatorCookie);
 			const recordingId = response.body.recordingId;
 			expectValidStartRecordingResponse(response, room.roomId);
-
-			expectValidRecordingLocationHeader(response);
 
 			const storageService = container.get(MeetStorageService);
 
