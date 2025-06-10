@@ -14,8 +14,10 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1logout'
     /auth/refresh:
         $ref: './paths/internal/auth.yaml#/~1auth~1refresh'
-    /auth/profile:
-        $ref: './paths/internal/auth.yaml#/~1auth~1profile'
+    /users/profile:
+        $ref: './paths/internal/users.yaml#/~1users~1profile'
+    /users/change-password:
+        $ref: './paths/internal/users.yaml#/~1users~1change-password'
     /preferences/webhooks:
         $ref: './paths/internal/global-preferences.yaml#/~1preferences~1webhooks'
     /preferences/security:

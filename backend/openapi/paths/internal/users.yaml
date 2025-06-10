@@ -1,0 +1,36 @@
+/users/profile:
+    get:
+        operationId: getUserProfile
+        summary: Get user profile
+        description: >
+            Retrieves the profile information of the authenticated user.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenCookie: []
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-profile.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+/users/change-password:
+    post:
+        operationId: changeUserPassword
+        summary: Change user password
+        description: >
+            Allows the authenticated user to change their password.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/change-password-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-change-password.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

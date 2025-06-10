@@ -63,18 +63,3 @@
                 $ref: '../../components/responses/internal/error-invalid-refresh-token.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
-/auth/profile:
-    get:
-        operationId: getUserProfile
-        summary: Get user profile
-        description: >
-            Retrieves the profile information of the authenticated user.
-        tags:
-            - Internal API - Authentication
-        security:
-            - accessTokenCookie: []
-        responses:
-            '200':
-                $ref: '../../components/responses/internal/success-get-profile.yaml'
-            '401':
-                $ref: '../../components/responses/unauthorized-error.yaml'
