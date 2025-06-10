@@ -5,6 +5,7 @@ import * as roomCtrl from '../controllers/room.controller.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
+	checkParticipantFromSameRoom,
 	configureRecordingTokenAuth,
 	configureRoomAuthorization,
 	participantTokenValidator,
@@ -68,6 +69,13 @@ internalRoomRouter.put(
 	withValidRoomPreferences,
 	roomCtrl.updateRoomPreferences
 );
+internalRoomRouter.get(
+	'/:roomId/preferences',
+	withAuth(participantTokenValidator),
+	withValidRoomId,
+	checkParticipantFromSameRoom,
+	roomCtrl.getRoomPreferences
+);
 internalRoomRouter.post(
 	'/:roomId/recording-token',
 	configureRecordingTokenAuth,
@@ -86,11 +94,4 @@ internalRoomRouter.get(
 	withAuth(allowAnonymous),
 	withValidRoomId,
 	roomCtrl.getRoomRoleAndPermissions
-);
-
-internalRoomRouter.get(
-	'/:roomId/preferences',
-	withAuth(participantTokenValidator),
-	withValidRoomId,
-	roomCtrl.getRoomPreferences
 );

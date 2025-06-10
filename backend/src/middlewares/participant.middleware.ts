@@ -39,7 +39,8 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 	if (authModeToAccessRoom === AuthMode.NONE) {
 		authValidators.push(allowAnonymous);
 	} else {
-		const isModeratorsOnlyMode = authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
+		const isModeratorsOnlyMode =
+			authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
 		const isAllUsersMode = authModeToAccessRoom === AuthMode.ALL_USERS;
 
 		if (isModeratorsOnlyMode || isAllUsersMode) {
@@ -66,6 +67,25 @@ export const withModeratorPermissions = async (req: Request, res: Response, next
 	const role = metadata.role as ParticipantRole;
 
 	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	return next();
+};
+
+export const checkParticipantFromSameRoom = async (req: Request, res: Response, next: NextFunction) => {
+	const { roomId } = req.params;
+	const payload = req.session?.tokenClaims;
+
+	if (!payload) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	const sameRoom = payload.video?.room === roomId;
+
+	if (!sameRoom) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
