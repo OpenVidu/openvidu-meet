@@ -6,7 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { ContextService, HttpService } from '@lib/services';
-import { ActionService, MeetRecordingInfo, OpenViduComponentsUiModule } from 'shared-meet-components';
+import {
+	ActionService,
+	MeetRecordingFilters,
+	MeetRecordingInfo,
+	OpenViduComponentsUiModule
+} from 'shared-meet-components';
 
 @Component({
 	selector: 'app-room-recordings',
@@ -99,7 +104,11 @@ export class RoomRecordingsComponent implements OnInit {
 
 	private async loadRecordings() {
 		try {
-			const response = await this.httpService.getRecordings(this.nextPageToken);
+			const recordingFilters: MeetRecordingFilters = {
+				roomId: this.roomId,
+				nextPageToken: this.nextPageToken
+			};
+			const response = await this.httpService.getRecordings(recordingFilters);
 			this.recordings.push(...response.recordings);
 			this.recordings = this.sortRecordingsByDate(this.recordings);
 			this.nextPageToken = response.pagination.nextPageToken;

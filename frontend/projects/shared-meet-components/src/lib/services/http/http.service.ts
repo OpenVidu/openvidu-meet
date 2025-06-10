@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
+	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomOptions,
@@ -114,7 +115,7 @@ export class HttpService {
 		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
 	}
 
-	getRecordings(nextPageToken?: string): Promise<{
+	getRecordings(filters?: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		pagination: {
 			isTruncated: boolean;
@@ -124,8 +125,22 @@ export class HttpService {
 	}> {
 		let path = `${this.API_PATH_PREFIX}/recordings`;
 
-		if (nextPageToken) {
-			path += `?nextPageToken=${nextPageToken}`;
+		if (filters) {
+			const params = new URLSearchParams();
+			if (filters.maxItems) {
+				params.append('maxItems', filters.maxItems.toString());
+			}
+			if (filters.nextPageToken) {
+				params.append('nextPageToken', filters.nextPageToken);
+			}
+			if (filters.roomId) {
+				params.append('roomId', filters.roomId);
+			}
+			if (filters.fields) {
+				params.append('fields', filters.fields);
+			}
+
+			path += `?${params.toString()}`;
 		}
 
 		return this.getRequest(path);
