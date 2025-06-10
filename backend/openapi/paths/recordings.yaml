@@ -188,6 +188,8 @@
                         schema:
                             type: string
                             format: binary
+            '400':
+                $ref: '../components/responses/invalid-recording-secret.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -205,6 +207,35 @@
                         example:
                             code: 416
                             message: 'Requested range not satisfiable'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/recordings/{recordingId}/url:
+    get:
+        operationId: getRecordingUrl
+        summary: Get recording URL
+        description: >
+            Retrieves the URL of a recording with the specified recording ID.
+            This URL can be used to access the recording media directly.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+            - recordingTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/recording-id.yaml'
+            - $ref: '../components/parameters/private-access.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-recording-url.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-recording-not-found.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':

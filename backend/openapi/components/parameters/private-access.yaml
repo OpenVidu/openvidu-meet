@@ -1,0 +1,8 @@
+name: privateAcess
+in: query
+description: >
+    Indicates whether the retrieved recording URL should be configured for private access, i.e., the URL will be accessible only to authenticated users.
+required: false
+schema:
+    type: string
+    example: 'true'
