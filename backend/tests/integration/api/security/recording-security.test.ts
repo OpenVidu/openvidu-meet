@@ -525,11 +525,11 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			// Parse the URL to extract the path
+			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(recordingUrl);
-			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			const secret = parsedUrl.searchParams.get('secret');
 
-			const response = await request(app).get(recordingPath);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`);
 			expect(response.status).toBe(200);
 		});
 
@@ -539,11 +539,11 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			// Parse the URL to extract the path
+			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(recordingUrl);
-			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			const secret = parsedUrl.searchParams.get('secret');
 
-			const response = await request(app).get(recordingPath);
+			const response = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`);
 			expect(response.status).toBe(401);
 		});
 
@@ -553,11 +553,13 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			// Parse the URL to extract the path
+			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(recordingUrl);
-			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			const secret = parsedUrl.searchParams.get('secret');
 
-			const response = await request(app).get(recordingPath).set('Cookie', adminCookie);
+			const response = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`)
+				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 

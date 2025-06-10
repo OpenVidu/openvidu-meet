@@ -448,7 +448,7 @@ export const expectValidGetRecordingUrlResponse = (response: any, recordingId: s
 	
 	const parsedUrl = new URL(recordingUrl);
 	expect(parsedUrl.pathname).toBe(
-		`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`
+		`/recording/${recordingId}`
 	);
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };

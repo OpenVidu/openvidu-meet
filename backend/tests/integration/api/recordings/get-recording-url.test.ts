@@ -11,6 +11,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 
 describe('Recording API Tests', () => {
 	let app: Express;
@@ -30,30 +31,36 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Get Recording URL Tests', () => {
+		const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
+
 		it('should get public recording URL', async () => {
 			const response = await getRecordingUrl(recordingId);
 			expectValidGetRecordingUrlResponse(response, recordingId);
 
-			// Parse the URL to extract the path
+			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(response.body.url);
-			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			const secret = parsedUrl.searchParams.get('secret');
 
 			// Verify that the URL is publicly accessible
-			const publicResponse = await request(app).get(recordingPath);
-			expect(publicResponse.status).toBe(200);
+			const recordingResponse = await request(app).get(
+				`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`
+			);
+			expect(recordingResponse.status).toBe(200);
 		});
 
 		it('should get private recording URL', async () => {
 			const response = await getRecordingUrl(recordingId, true);
 			expectValidGetRecordingUrlResponse(response, recordingId);
 
-			// Parse the URL to extract the path
+			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(response.body.url);
-			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			const secret = parsedUrl.searchParams.get('secret');
 
 			// Verify that the URL is not publicly accessible
-			const publicResponse = await request(app).get(recordingPath);
-			expect(publicResponse.status).toBe(401);
+			const recordingResponse = await request(app).get(
+				`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`
+			);
+			expect(recordingResponse.status).toBe(401);
 		});
 
 		it('should fail with a 404 error when the recording does not exist', async () => {
