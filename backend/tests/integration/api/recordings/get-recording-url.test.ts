@@ -35,8 +35,12 @@ describe('Recording API Tests', () => {
 			const recordingUrl = response.body.url;
 			expect(recordingUrl).toBeDefined();
 
+			// Parse the URL to extract the path
+			const parsedUrl = new URL(recordingUrl);
+			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+			
 			// Verify that the URL is publicly accessible
-			const publicResponse = await request(app).get(recordingUrl);
+			const publicResponse = await request(app).get(recordingPath);
 			expect(publicResponse.status).toBe(200);
 		});
 
@@ -46,8 +50,12 @@ describe('Recording API Tests', () => {
 			const recordingUrl = response.body.url;
 			expect(recordingUrl).toBeDefined();
 
+			// Parse the URL to extract the path
+			const parsedUrl = new URL(recordingUrl);
+			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+
             // Verify that the URL is not publicly accessible
-            const publicResponse = await request(app).get(recordingUrl);
+            const publicResponse = await request(app).get(recordingPath);
             expect(publicResponse.status).toBe(401);
 		});
 
