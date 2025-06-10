@@ -87,3 +87,10 @@ internalRoomRouter.get(
 	withValidRoomId,
 	roomCtrl.getRoomRoleAndPermissions
 );
+
+internalRoomRouter.get(
+	'/:roomId/preferences',
+	withAuth(participantTokenValidator),
+	withValidRoomId,
+	roomCtrl.getRoomPreferences
+);

@@ -24,6 +24,8 @@ paths:
         $ref: './paths/internal/global-preferences.yaml#/~1preferences~1appearance'
     /rooms/{roomId}:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}'
+    /rooms/{roomId}/preferences:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1preferences'
     /rooms/{roomId}/recording-token:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1recording-token'
     /rooms/{roomId}/roles:

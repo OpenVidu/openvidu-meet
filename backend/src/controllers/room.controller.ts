@@ -209,3 +209,18 @@ export const getRoomRoleAndPermissions = async (req: Request, res: Response) => 
 		handleError(res, error, `getting room role and permissions for room '${roomId}' and secret '${secret}'`);
 	}
 };
+
+export const getRoomPreferences = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { roomId } = req.params;
+
+	logger.verbose(`Getting room preferences for room '${roomId}'`);
+
+	try {
+		const { preferences } = await roomService.getMeetRoom(roomId);
+		return res.status(200).json(preferences);
+	} catch (error) {
+		handleError(res, error, `getting room preferences for room '${roomId}'`);
+	}
+};

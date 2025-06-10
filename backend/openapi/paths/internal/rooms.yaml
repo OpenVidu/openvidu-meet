@@ -25,6 +25,29 @@
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/preferences:
+    get:
+        operationId: getRoomPreferences
+        summary: Get room preferences
+        description: >
+            Retrieves the preferences of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - Internal API - Rooms
+        parameters:
+            - $ref: '../../components/parameters/room-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-room-preferences.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
 /rooms/{roomId}/recording-token:
     post:
         operationId: generateRecordingToken

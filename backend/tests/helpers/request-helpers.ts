@@ -200,6 +200,15 @@ export const getRoom = async (roomId: string, fields?: string) => {
 		.query({ fields });
 };
 
+export const getRoomPreferences = async (roomId: string, cookie: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
+		.set('Cookie', cookie)
+		.send();
+};
+
 export const updateRoomPreferences = async (roomId: string, preferences: any) => {
 	checkAppIsRunning();
 

@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
-import { MeetRoom } from '../../src/typings/ce';
+import { MeetRoom, MeetRoomPreferences } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
@@ -36,9 +36,10 @@ export interface TestContext {
  * @param withParticipant Whether to join a fake participant in the room.
  * @returns               Room data including secrets and cookies.
  */
-export const setupSingleRoom = async (withParticipant = false, roomPrefix = 'TEST_ROOM'): Promise<RoomData> => {
+export const setupSingleRoom = async (withParticipant = false, roomPrefix = 'TEST_ROOM', preferences?: MeetRoomPreferences): Promise<RoomData> => {
 	const room = await createRoom({
-		roomIdPrefix: roomPrefix
+		roomIdPrefix: roomPrefix,
+		preferences
 	});
 
 	// Extract the room secrets and generate participant tokens, saved as cookies

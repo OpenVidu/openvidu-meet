@@ -93,6 +93,12 @@ export const expectSuccessRoomResponse = (
 	expectValidRoom(response.body, idPrefix, autoDeletionDate, preferences);
 };
 
+export const expectSuccessRoomPreferencesResponse = (response: any, preferences: MeetRoomPreferences) => {
+	expect(response.status).toBe(200);
+	expect(response.body).toBeDefined();
+	expect(response.body).toEqual(preferences);
+};
+
 export const expectValidRoom = (
 	room: MeetRoom,
 	idPrefix: string,
@@ -187,7 +193,9 @@ export const expectValidRecordingLocationHeader = (response: any) => {
 	const locationHeader = response.headers.location;
 	expect(locationHeader).toBeDefined();
 	const locationHeaderUrl = new URL(locationHeader);
-	expect(locationHeaderUrl.pathname).toBe(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`);
+	expect(locationHeaderUrl.pathname).toBe(
+		`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`
+	);
 };
 
 /**
