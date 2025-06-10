@@ -441,6 +441,18 @@ export const expectSuccessListRecordingResponse = (
 	expect(response.body.pagination.maxItems).toBe(maxItems);
 };
 
+export const expectValidGetRecordingUrlResponse = (response: any, recordingId: string) => {
+	expect(response.status).toBe(200);
+	const recordingUrl = response.body.url;
+	expect(recordingUrl).toBeDefined();
+	
+	const parsedUrl = new URL(recordingUrl);
+	expect(parsedUrl.pathname).toBe(
+		`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`
+	);
+	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
+};
+
 export const expectValidRoomRolesAndPermissionsResponse = (response: any, roomId: string) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toEqual(

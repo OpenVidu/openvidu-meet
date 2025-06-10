@@ -525,7 +525,11 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			const response = await request(app).get(recordingUrl);
+			// Parse the URL to extract the path
+			const parsedUrl = new URL(recordingUrl);
+			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+
+			const response = await request(app).get(recordingPath);
 			expect(response.status).toBe(200);
 		});
 
@@ -535,7 +539,11 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			const response = await request(app).get(recordingUrl);
+			// Parse the URL to extract the path
+			const parsedUrl = new URL(recordingUrl);
+			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+
+			const response = await request(app).get(recordingPath);
 			expect(response.status).toBe(401);
 		});
 
@@ -545,7 +553,11 @@ describe('Recording API Security Tests', () => {
 			const recordingUrl = recordingUrlResponse.body.url;
 			expect(recordingUrl).toBeDefined();
 
-			const response = await request(app).get(recordingUrl).set('Cookie', adminCookie);
+			// Parse the URL to extract the path
+			const parsedUrl = new URL(recordingUrl);
+			const recordingPath = parsedUrl.pathname + parsedUrl.search;
+
+			const response = await request(app).get(recordingPath).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 

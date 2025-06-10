@@ -10,6 +10,7 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
 
 describe('Recording API Tests', () => {
 	let app: Express;
@@ -31,14 +32,12 @@ describe('Recording API Tests', () => {
 	describe('Get Recording URL Tests', () => {
 		it('should get public recording URL', async () => {
 			const response = await getRecordingUrl(recordingId);
-			expect(response.status).toBe(200);
-			const recordingUrl = response.body.url;
-			expect(recordingUrl).toBeDefined();
+			expectValidGetRecordingUrlResponse(response, recordingId);
 
 			// Parse the URL to extract the path
-			const parsedUrl = new URL(recordingUrl);
+			const parsedUrl = new URL(response.body.url);
 			const recordingPath = parsedUrl.pathname + parsedUrl.search;
-			
+
 			// Verify that the URL is publicly accessible
 			const publicResponse = await request(app).get(recordingPath);
 			expect(publicResponse.status).toBe(200);
@@ -46,17 +45,15 @@ describe('Recording API Tests', () => {
 
 		it('should get private recording URL', async () => {
 			const response = await getRecordingUrl(recordingId, true);
-			expect(response.status).toBe(200);
-			const recordingUrl = response.body.url;
-			expect(recordingUrl).toBeDefined();
+			expectValidGetRecordingUrlResponse(response, recordingId);
 
 			// Parse the URL to extract the path
-			const parsedUrl = new URL(recordingUrl);
+			const parsedUrl = new URL(response.body.url);
 			const recordingPath = parsedUrl.pathname + parsedUrl.search;
 
-            // Verify that the URL is not publicly accessible
-            const publicResponse = await request(app).get(recordingPath);
-            expect(publicResponse.status).toBe(401);
+			// Verify that the URL is not publicly accessible
+			const publicResponse = await request(app).get(recordingPath);
+			expect(publicResponse.status).toBe(401);
 		});
 
 		it('should fail with a 404 error when the recording does not exist', async () => {
