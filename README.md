@@ -53,14 +53,13 @@ cd openvidu-meet
 > [!NOTE]
 > For development purposes, the backend application uses the `backend/.env.development` file to load environment variables. You can customize the values in this file to suit your local development environment.
 
-
 ```bash
 cd backend && \
 npm run start:dev
 ```
 
 > [!NOTE]
->  **The types under `typings` are shared between the frontend and backend projects.**
+> **The types under `typings` are shared between the frontend and backend projects.**
 > If you need to update the comon types, remember doing it in the `typings` project.
 >
 > Every time you make changes to the types, the backend process will automatically invoke the syncing task to update the types in the frontend and backend projects. So, you don't need to worry about updating the types manually.
@@ -78,10 +77,20 @@ This command will build the frontend application and move the files to the backe
 
 After running these commands, you can access the frontend application at [http://localhost:6080](http://localhost:6080).
 
-
 ## Testing
 
 This repository offers a testing application that allows you to test the OpenVidu Meet.
+
+### Pre-requisites
+
+To run the testing application, you need to have the following pre-requisites installed:
+
+- [Node.js](https://nodejs.org/en/download/) (version 22 or higher)
+- LiveKit CLI installed and configured.
+
+```bash
+curl -sSL https://get.livekit.io/cli | bash
+```
 
 To run the testing application, follow these steps under the root directory:
 
@@ -99,7 +108,6 @@ npm run start
 ```
 
 After running these commands, you can access the testing application at [http://localhost:5080](http://localhost:5080).
-
 
 ## Build (with docker)
 
