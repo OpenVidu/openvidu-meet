@@ -20,7 +20,7 @@ export const startRecording = async (req: Request, res: Response) => {
 		const recordingInfo = await recordingService.startRecording(roomId);
 		res.setHeader(
 			'Location',
-			`${req.protocol}://${req.get('host')}/${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
+			`${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
 		);
 
 		return res.status(201).json(recordingInfo);
@@ -112,7 +112,10 @@ export const stopRecording = async (req: Request, res: Response) => {
 		const recordingService = container.get(RecordingService);
 
 		const recordingInfo = await recordingService.stopRecording(recordingId);
-		res.setHeader('Location', `${req.protocol}://${req.get('host')}${req.originalUrl}`);
+		res.setHeader(
+			'Location',
+			`${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}`
+		);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `stopping recording '${recordingId}'`);
@@ -236,7 +239,7 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 		}
 
 		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		const recordingUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media?secret=${secret}`;
+		const recordingUrl = `${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media?secret=${secret}`;
 
 		return res.status(200).json({ url: recordingUrl });
 	} catch (error) {
