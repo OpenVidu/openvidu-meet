@@ -76,7 +76,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-videos
-
+          path: |
+            frontend/webcomponent/test-results/*/*.webm
+          retention-days: 2
 
   webcomponent-e2e-test:
     name: WebComponent E2E Tests
