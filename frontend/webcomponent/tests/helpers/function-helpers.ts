@@ -125,6 +125,58 @@ export const createTestRoom = async (
 	return room.roomId;
 };
 
+// Helper function to update room preferences via REST API
+export const updateRoomPreferences = async (roomId: string, preferences: any) => {
+	const adminCookie = await loginAsAdmin();
+	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/rooms/${roomId}`, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+			Cookie: adminCookie
+		},
+		body: JSON.stringify(preferences)
+	});
+
+	if (!response.ok) {
+		throw new Error(`Failed to update room preferences: ${response.status} ${await response.text()}`);
+	}
+
+	return response.json();
+};
+
+// Helper function to login and get admin cookie
+const loginAsAdmin = async () => {
+	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/auth/login`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			username: 'admin',
+			password: 'admin'
+		})
+	});
+
+	if (!response.ok || response.status !== 200) {
+		console.error('Login failed:', await response.text());
+		throw new Error(`Failed to login: ${response.status}`);
+	}
+
+	const cookies = response.headers.get('set-cookie') || '';
+	if (!cookies) {
+		throw new Error('No cookies received from login');
+	}
+
+	// Extract the access token cookie
+	const accessTokenCookie = cookies.split(';').find((cookie) => cookie.trim().startsWith('OvMeetAccessToken='));
+
+	if (!accessTokenCookie) {
+		throw new Error('Access token cookie not found');
+	}
+
+	return accessTokenCookie.trim();
+};
+
 // Helper function to delete a room
 export const deleteTestRoom = async (roomIdToDelete: string) => {
 	await fetch(`http://localhost:6080/meet/api/v1/rooms/${roomIdToDelete}`, {

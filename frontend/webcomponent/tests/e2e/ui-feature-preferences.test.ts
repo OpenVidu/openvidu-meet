@@ -10,8 +10,7 @@ import {
 	leaveRoom,
 	openMoreOptionsMenu,
 	prepareForJoiningRoom,
-	saveScreenshot,
-	startStopRecording,
+	updateRoomPreferences,
 	waitForElementInIframe,
 	waitForVirtualBackgroundToApply
 } from '../helpers/function-helpers';
@@ -22,61 +21,8 @@ let subscribedToAppErrors = false;
 test.describe('UI Feature Preferences Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'ui-feature-testing-room';
-	const meetApiUrl = 'http://localhost:6080/meet/internal-api/v1';
 	let participantName: string;
 	let roomId: string;
-
-	// Helper function to login and get admin cookie
-	const loginAsAdmin = async () => {
-		const response = await fetch(`${meetApiUrl}/auth/login`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				username: 'admin',
-				password: 'admin'
-			})
-		});
-
-		if (!response.ok || response.status !== 200) {
-			console.error('Login failed:', await response.text());
-			throw new Error(`Failed to login: ${response.status}`);
-		}
-
-		const cookies = response.headers.get('set-cookie') || '';
-		if (!cookies) {
-			throw new Error('No cookies received from login');
-		}
-
-		// Extract the access token cookie
-		const accessTokenCookie = cookies.split(';').find((cookie) => cookie.trim().startsWith('OvMeetAccessToken='));
-
-		if (!accessTokenCookie) {
-			throw new Error('Access token cookie not found');
-		}
-
-		return accessTokenCookie.trim();
-	};
-
-	// Helper function to update room preferences via REST API
-	const updateRoomPreferences = async (preferences: any) => {
-		const adminCookie = await loginAsAdmin();
-		const response = await fetch(`${meetApiUrl}/rooms/${roomId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				Cookie: adminCookie
-			},
-			body: JSON.stringify(preferences)
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to update room preferences: ${response.status} ${await response.text()}`);
-		}
-
-		return response.json();
-	};
 
 	// ==========================================
 	// SETUP & TEARDOWN
@@ -112,17 +58,17 @@ test.describe('UI Feature Preferences Tests', () => {
 		await tempContext.close();
 	});
 
-	test.afterEach(async ({ page }) => {
-		try {
-			await leaveRoom(page);
-		} catch (error) {}
-	});
-
 	// ==========================================
 	// CHAT FEATURE TESTS
 	// ==========================================
 
 	test.describe('Chat Feature', () => {
+		test.afterEach(async ({ page }) => {
+			try {
+				await leaveRoom(page);
+			} catch (error) {}
+		});
+
 		test('should show chat button when chat is enabled', async ({ page }) => {
 			roomId = await createTestRoom(testRoomPrefix, {
 				chatPreferences: { enabled: true },
@@ -169,7 +115,13 @@ test.describe('UI Feature Preferences Tests', () => {
 	// ==========================================
 
 	test.describe('Recording Feature', () => {
-		test('should show recording button when recording is enabled for moderator', async ({ page }) => {
+		test.afterEach(async ({ page }) => {
+			try {
+				await leaveRoom(page);
+			} catch (error) {}
+		});
+
+		test('should show recording button for moderators', async ({ page }) => {
 			roomId = await createTestRoom(testRoomPrefix, {
 				chatPreferences: { enabled: true },
 				recordingPreferences: {
@@ -199,7 +151,27 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForElementInIframe(page, 'ov-recording-activity', { state: 'visible' });
 		});
 
-		test('should hide recording button when recording is disabled', async ({ page }) => {
+		test('should not show recording button for publisher', async ({ page }) => {
+			// Ensure recording is enabled but only for moderators
+			roomId = await createTestRoom(testRoomPrefix, {
+				chatPreferences: { enabled: true },
+				recordingPreferences: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
+				},
+				virtualBackgroundPreferences: { enabled: true }
+			});
+
+			await page.reload();
+			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await joinRoomAs('publisher', participantName, page);
+
+			// Check that recording button is not visible for publisher
+			const recordingButton = page.frameLocator('openvidu-meet >>> iframe').locator('#recording-btn');
+			await expect(recordingButton).toBeHidden();
+		});
+
+		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
 			// Disable recording via API
 			roomId = await createTestRoom(testRoomPrefix, {
 				chatPreferences: { enabled: true },
@@ -223,26 +195,6 @@ test.describe('UI Feature Preferences Tests', () => {
 				state: 'hidden'
 			});
 		});
-
-		test('should not show recording button for publisher when recording is enabled', async ({ page }) => {
-			// Ensure recording is enabled but only for moderators
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
-				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
-
-			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-			await joinRoomAs('publisher', participantName, page);
-
-			// Check that recording button is not visible for publisher
-			const recordingButton = page.frameLocator('openvidu-meet >>> iframe').locator('#recording-btn');
-			await expect(recordingButton).toBeHidden();
-		});
 	});
 
 	// ==========================================
@@ -250,6 +202,11 @@ test.describe('UI Feature Preferences Tests', () => {
 	// ==========================================
 
 	test.describe('Virtual Background Feature', () => {
+		test.afterEach(async ({ page }) => {
+			try {
+				await leaveRoom(page);
+			} catch (error) {}
+		});
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
 			roomId = await createTestRoom(testRoomPrefix, {
@@ -320,7 +277,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
-			const { preferences: updatedPreferences } = await updateRoomPreferences({
+			const { preferences: updatedPreferences } = await updateRoomPreferences(roomId, {
 				chatPreferences: { enabled: true },
 				recordingPreferences: {
 					enabled: true,
