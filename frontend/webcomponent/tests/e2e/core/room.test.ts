@@ -174,7 +174,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show activities panel', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('moderator', participantName, page);
 
 			// Open activities panel
 			await waitForElementInIframe(page, '#activities-panel-btn');
