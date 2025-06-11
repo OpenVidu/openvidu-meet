@@ -23,6 +23,85 @@ npm install
 npm run build:prod
 ```
 
+## Storage Structure
+
+The OpenVidu Meet backend uses an S3 bucket to store all application data, including rooms, recordings, user information, and system preferences. The bucket follows a hierarchical structure organized as follows:
+
+### Bucket Structure
+
+```plaintext
+openvidu-appdata/
+├── openvidu-meet/
+│   ├── global-preferences.json
+│   ├── users/
+│   │   └── admin.json
+│   ├── rooms/
+│   │   └── room-123/
+│   │       └── room-123.json
+│   └── recordings/
+│       ├── .metadata/
+│       │   └── room-123/
+│       │       └── {egressId}/
+│       │           └── {uid}.json
+│       ├── .secrets/
+│       │   └── room-123/
+│       │       └── {egressId}/
+│       │           └── {uid}.json
+│       ├── .room_metadata/
+│       │   └── room-123/
+│       │       └── room_metadata.json
+│       └── room-123/
+│           └── room-123--{uid}.mp4
+```
+
+### Directory Descriptions
+
+#### **Global Preferences** (`global-preferences.json`)
+Contains system-wide settings and configurations for the OpenVidu Meet application, such as default recording settings, UI preferences, and feature toggles.
+
+#### **Users** (`users/`)
+Stores user account information in individual JSON files. Each file is named using the username (e.g., `admin.json`) and contains user-specific data including authentication details, permissions, and preferences.
+
+#### **Rooms** (`rooms/`)
+Contains room configuration and metadata. Each room is stored in its own directory named after the room ID, containing:
+- `room-123.json`: Room configuration, settings, and metadata
+
+#### **Recordings** (`recordings/`)
+The recordings directory is organized into several subdirectories to manage different aspects of recorded content:
+
+- **Recording Files** (`room-123/`): Contains the actual video files with naming convention `room-123--{uid}.mp4`
+
+- **Metadata** (`.metadata/room-123/{egressId}/{uid}.json`): Stores recording metadata including:
+  - Recording duration and timestamps
+  - Participant information
+  - Quality settings and technical specifications
+  - File size and format details
+
+- **Secrets** (`.secrets/room-123/{egressId}/{uid}.json`): Contains sensitive recording-related data such as:
+  - Encryption keys
+  - Access tokens
+  - Security credentials
+
+- **Room Metadata** (`.room_metadata/room-123/room_metadata.json`): Stores room-level information for recordings including:
+  - Room name and description
+  - Recording session details
+  - Participant list and roles
+
+### Recording Identifier Format
+
+Recordings use a composite identifier format: `recordingId: room-123--{egressId}--{uid}`
+
+Where:
+- `room-123`: The room identifier
+- `{egressId}`: LiveKit egress process identifier
+- `{uid}`: Unique recording session identifier
+
+This naming convention ensures uniqueness and provides traceability between the recording file, its metadata, and the originating room session.
+
+
+
+
+
 ## Recordings
 
 The recording feature is based on the following key concepts:
@@ -87,35 +166,3 @@ graph TD;
 
 ```
 
-### Storage structure for recordings
-
-Recordings are stored in the `openvidu-meet/recordings` s3 directory, inside of openvidu bucket.
-
-Each recording is stored in a directory named after the room where it was recorded. Inside this directory, there is a `.metadata` directory that contains the metadata of the recording, and a directory for each egressId that contains the recording files.
-
-```plaintext
-openvidu/
-├── openvidu-meet/
-│   ├── rooms/
-│   │   └── room-123/
-│   │       └── room-123.json
-│   └── recordings/
-│       ├── .metadata/
-│       │   └── room-123/
-│       │       └── {egressId}/
-│       │           └── {uid}.json
-│       ├── .secrets/
-│       │   └── room-123/
-│       │       └── {egressId}/
-│       │           └── {uid}.json
-|       ├── .room_metadata/
-│       │       └── room-123/
-│       │           └── room_metadata.json
-│       └── room-123/
-│           └── room-123--{uid}.mp4
-```
-
-**Recording Identifier Format:**
-
-The recording identifier is a unique string that combines the room ID, egress ID, and user ID. It follows the format:
-`recordingId: room-123--{egressId}--{uid}`
