@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
 import ms from 'ms';
-import Redlock from 'redlock';
+import { Redlock } from "@sesamecare-oss/redlock";
 import {
 	checkModuleEnabled,
 	REDIS_DB,

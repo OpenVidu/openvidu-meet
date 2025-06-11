@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
-import Redlock, { Lock } from 'redlock';
+import { Redlock, Lock } from '@sesamecare-oss/redlock';
 import { MeetLock } from '../helpers/index.js';
 import { LoggerService, RedisService } from './index.js';
 
