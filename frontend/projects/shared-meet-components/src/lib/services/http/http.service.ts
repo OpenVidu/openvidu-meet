@@ -72,13 +72,12 @@ export class HttpService {
 	}
 
 	/**
-	 * TODO: Delete this method
 	 * Retrieves the room preferences.
 	 *
 	 * @returns {Promise<MeetRoomPreferences>} A promise that resolves to the room preferences.
 	 */
-	getRoomPreferences(): Promise<MeetRoomPreferences> {
-		return this.getRequest(`${this.API_PATH_PREFIX}/preferences/room`);
+	getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
+		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/preferences`);
 	}
 
 	/**

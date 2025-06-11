@@ -41,6 +41,22 @@ export class RoomService {
 		return this.httpService.getRoom(roomId);
 	}
 
+	async getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
+		this.log.d('Fetching room preferences for roomId:', roomId);
+		try {
+			const preferences = await this.httpService.getRoomPreferences(roomId);
+
+			if (!preferences) {
+				this.log.w('Room preferences not found for roomId:', roomId);
+				throw new Error(`Preferences not found for roomId: ${roomId}`);
+			}
+			return preferences;
+		} catch (error) {
+			this.log.e('Error fetching room preferences', error);
+			throw new Error(`Failed to fetch room preferences for roomId: ${roomId}`);
+		}
+	}
+
 	async loadPreferences(roomId: string, forceUpdate: boolean = false): Promise<MeetRoomPreferences> {
 		if (this.roomPreferences && !forceUpdate) {
 			this.log.d('Returning cached room preferences');
@@ -49,8 +65,7 @@ export class RoomService {
 
 		this.log.d('Fetching room preferences from server');
 		try {
-			const room = await this.getRoom(roomId);
-			this.roomPreferences = room.preferences! as MeetRoomPreferences;
+			this.roomPreferences = await this.getRoomPreferences(roomId);
 			this.featureConfService.setRoomPreferences(this.roomPreferences);
 			console.log('Room preferences loaded:', this.roomPreferences);
 			return this.roomPreferences;
