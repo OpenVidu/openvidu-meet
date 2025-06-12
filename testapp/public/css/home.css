@@ -27,6 +27,10 @@ html {
 	transform: translate(-50%, -50%);
 }
 
+.action-buttons-container {
+	display: inline-flex;
+	gap: 2px;
+}
 .rooms-container {
 	flex: 2;
 	background: white;

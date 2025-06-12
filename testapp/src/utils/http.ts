@@ -31,7 +31,14 @@ async function request<T>(
 		const text = await response.text();
 		throw new Error(`HTTP ${response.status}: ${text}`);
 	}
-	return response.json() as Promise<T>;
+
+	// Handle empty responses (e.g., for DELETE requests)
+	const text = await response.text();
+	if (!text) {
+		return {} as T;
+	}
+
+	return JSON.parse(text) as T;
 }
 
 export function get<T>(
