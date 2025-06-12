@@ -3,11 +3,14 @@ import {
 	applyVirtualBackground,
 	closeMoreOptionsMenu,
 	createTestRoom,
+	deleteAllRecordings,
+	deleteAllRooms,
 	deleteTestRoom,
 	interactWithElementInIframe,
 	isVirtualBackgroundApplied,
 	joinRoomAs,
 	leaveRoom,
+	loginAsAdmin,
 	openMoreOptionsMenu,
 	prepareForJoiningRoom,
 	updateRoomPreferences,
@@ -23,6 +26,7 @@ test.describe('UI Feature Preferences Tests', () => {
 	const testRoomPrefix = 'ui-feature-testing-room';
 	let participantName: string;
 	let roomId: string;
+	let adminCookie: string;
 
 	// ==========================================
 	// SETUP & TEARDOWN
@@ -30,7 +34,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 	test.beforeAll(async () => {
 		// Login as admin to get authentication cookie
-		// adminCookie = await loginAsAdmin();
+		adminCookie = await loginAsAdmin();
 		// Create test room
 	});
 
@@ -48,14 +52,13 @@ test.describe('UI Feature Preferences Tests', () => {
 	});
 
 	test.afterAll(async ({ browser }) => {
-		// Cleanup: delete the test room
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await tempPage.goto(testAppUrl);
-		await tempPage.waitForSelector('#delete-all-rooms');
-		await tempPage.click('#delete-all-rooms');
-		await tempPage.close();
+		await deleteAllRooms(tempPage);
+		await deleteAllRecordings(tempPage);
+
 		await tempContext.close();
+		await tempPage.close();
 	});
 
 	// ==========================================
@@ -277,14 +280,18 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
-			const { preferences: updatedPreferences } = await updateRoomPreferences(roomId, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			const { preferences: updatedPreferences } = await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: false }
 				},
-				virtualBackgroundPreferences: { enabled: false }
-			});
+				adminCookie
+			);
 
 			expect(updatedPreferences.virtualBackgroundPreferences.enabled).toBe(false);
 			await leaveRoom(page);

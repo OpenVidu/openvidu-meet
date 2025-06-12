@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import {
 	closeMoreOptionsMenu,
 	createTestRoom,
+	deleteAllRecordings,
+	deleteAllRooms,
 	deleteTestRoom,
 	interactWithElementInIframe,
 	joinRoomAs,
@@ -60,6 +62,16 @@ test.describe('Recording Access Tests', () => {
 			await startStopRecording(page, 'stop');
 			recordingCreated = true;
 		}
+	});
+
+	test.afterAll(async ({ browser }) => {
+		const tempContext = await browser.newContext();
+		const tempPage = await tempContext.newPage();
+		await deleteAllRooms(tempPage);
+		await deleteAllRecordings(tempPage);
+
+		await tempContext.close();
+		await tempPage.close();
 	});
 
 	test('should moderator not be able to access recording when access level is set to admin', async ({ page }) => {

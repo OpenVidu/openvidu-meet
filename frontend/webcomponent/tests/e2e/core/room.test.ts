@@ -4,6 +4,8 @@ import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import {
 	applyVirtualBackground,
+	deleteAllRecordings,
+	deleteAllRooms,
 	interactWithElementInIframe,
 	joinRoomAs,
 	leaveRoom,
@@ -58,14 +60,13 @@ test.describe('Room Functionality Tests', () => {
 	});
 
 	test.afterAll(async ({ browser }) => {
-		// Cleanup: delete the test room
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await tempPage.goto(testAppUrl);
-		await tempPage.waitForSelector('#delete-all-rooms');
-		await tempPage.click('#delete-all-rooms');
-		await tempPage.close();
+		await deleteAllRooms(tempPage);
+		await deleteAllRecordings(tempPage);
+
 		await tempContext.close();
+		await tempPage.close();
 	});
 
 	// ==========================================

@@ -186,6 +186,18 @@ export const deleteTestRoom = async (roomIdToDelete: string) => {
 	});
 };
 
+export const deleteAllRecordings = async (page: Page) => {
+	await page.goto('http://localhost:5080/');
+	await page.waitForSelector('#delete-all-recordings-btn', { state: 'visible' });
+	await page.click('#delete-all-recordings-btn');
+};
+
+export const deleteAllRooms = async (page: Page) => {
+	await page.goto('http://localhost:5080/');
+	await page.waitForSelector('#delete-all-rooms-btn', { state: 'visible' });
+	await page.click('#delete-all-rooms-btn');
+};
+
 export const startStopRecording = async (page: Page, action: 'start' | 'stop') => {
 	const buttonSelector = action === 'start' ? '#recording-btn' : '#stop-recording-btn';
 	if (action === 'start') {
