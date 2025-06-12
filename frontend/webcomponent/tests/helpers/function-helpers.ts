@@ -126,8 +126,7 @@ export const createTestRoom = async (
 };
 
 // Helper function to update room preferences via REST API
-export const updateRoomPreferences = async (roomId: string, preferences: any) => {
-	const adminCookie = await loginAsAdmin();
+export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
 	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/rooms/${roomId}`, {
 		method: 'PUT',
 		headers: {
@@ -145,7 +144,7 @@ export const updateRoomPreferences = async (roomId: string, preferences: any) =>
 };
 
 // Helper function to login and get admin cookie
-const loginAsAdmin = async () => {
+export const loginAsAdmin = async (): Promise<string> => {
 	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/auth/login`, {
 		method: 'POST',
 		headers: {
@@ -228,6 +227,14 @@ export const joinRoomAs = async (role: 'moderator' | 'publisher', pName: string,
 	await waitForElementInIframe(page, 'ov-pre-join', { state: 'visible' });
 	await interactWithElementInIframe(page, '#join-button', { action: 'click' });
 	await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
+};
+
+export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Page) => {
+	await page.click('#join-as-' + role);
+	const component = page.locator('openvidu-meet');
+	await expect(component).toBeVisible();
+
+	await interactWithElementInIframe(page, '#view-recordings-btn', { action: 'click' });
 };
 
 export const leaveRoom = async (page: Page) => {

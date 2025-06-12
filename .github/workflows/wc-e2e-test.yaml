@@ -80,8 +80,8 @@ jobs:
             frontend/webcomponent/test-results/*/*.webm
           retention-days: 2
 
-  webcomponent-e2e-test:
-    name: WebComponent E2E Tests
+  e2e-recording-access-test:
+    name: E2E Recording Access Tests
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
@@ -103,7 +103,7 @@ jobs:
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
           PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
-          npm run test:e2e
+          npm run test:e2e-recording-access
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
