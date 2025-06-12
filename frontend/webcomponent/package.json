@@ -8,6 +8,9 @@
 		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test",
 		"test:e2e-core": "playwright test tests/e2e/core/",
+		"test:e2e-core-room": "playwright test tests/e2e/core/room.test.ts",
+		"test:e2e-core-events": "playwright test tests/e2e/core/events.test.ts",
+		"test:e2e-core-webhooks": "playwright test tests/e2e/core/webhooks.test.ts",
 		"test:e2e-ui-features": "playwright test tests/e2e/ui-feature-preferences.test.ts",
 		"test:e2e-recording-access": "playwright test tests/e2e/recording-access.test.ts",
 		"lint": "eslint 'src/**/*.ts'"

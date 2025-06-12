@@ -6,8 +6,8 @@ on:
 
 jobs:
 
-  e2e-test-core:
-    name: E2E Tests Core
+  e2e-room-functionality-test:
+    name: E2E Room Functionality Tests
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
@@ -28,7 +28,83 @@ jobs:
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
           PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
-          npm run test:e2e-core
+          npm run test:e2e-core-room
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Upload failed test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: |
+            frontend/webcomponent/test-results/*/*.webm
+          retention-days: 2
+      - name: Clean up
+        if: always()
+        uses: OpenVidu/actions/cleanup@main
+
+  e2e-events-functionality-test:
+    name: E2E Events Functionality Tests
+    runs-on: ov-actions-runner
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13'
+      - name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+      - name: Start OpenVidu Meet Testapp
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+      - name: Run tests
+        run: |
+          cd frontend/webcomponent
+          # Install Playwright browsers
+          mkdir -p /tmp/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npm run test:e2e-core-events
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Upload failed test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: |
+            frontend/webcomponent/test-results/*/*.webm
+          retention-days: 2
+      - name: Clean up
+        if: always()
+        uses: OpenVidu/actions/cleanup@main
+
+  e2e-webhooks-functionality-test:
+    name: E2E Webhooks Functionality Tests
+    runs-on: ov-actions-runner
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13'
+      - name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@main
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+      - name: Start OpenVidu Meet Testapp
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+      - name: Run tests
+        run: |
+          cd frontend/webcomponent
+          # Install Playwright browsers
+          mkdir -p /tmp/ms-playwright
+          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npm run test:e2e-core-webhooks
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
@@ -79,6 +155,9 @@ jobs:
           path: |
             frontend/webcomponent/test-results/*/*.webm
           retention-days: 2
+      - name: Clean up
+        if: always()
+        uses: OpenVidu/actions/cleanup@main
 
   e2e-recording-access-test:
     name: E2E Recording Access Tests

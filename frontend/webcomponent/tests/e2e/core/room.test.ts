@@ -19,6 +19,7 @@ import {
 
 let subscribedToAppErrors = false;
 
+// Test suite for room functionality in OpenVidu Meet
 test.describe('Room Functionality Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'testing-room';
@@ -67,6 +68,24 @@ test.describe('Room Functionality Tests', () => {
 
 		await tempContext.close();
 		await tempPage.close();
+	});
+
+	// ==========================================
+	// COMPONENT RENDERING TESTS
+	// ==========================================
+	test.describe('Component Rendering', () => {
+		test('should load the web component with proper iframe', async ({ page }) => {
+			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+
+			const component = page.locator('openvidu-meet');
+			await expect(component).toBeVisible();
+
+			const hasIframe = await page.evaluate(() => {
+				const component = document.querySelector('openvidu-meet');
+				return !!component?.shadowRoot?.querySelector('iframe');
+			});
+			expect(hasIframe).toBeTruthy();
+		});
 	});
 
 	// ==========================================
