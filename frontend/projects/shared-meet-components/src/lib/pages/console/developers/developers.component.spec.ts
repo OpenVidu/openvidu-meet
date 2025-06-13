@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AccessPermissionsComponent } from './access-permissions.component';
+import { DevelopersSettingsComponent } from './developers.component';
 
 describe('AccessPermissionsComponent', () => {
-  let component: AccessPermissionsComponent;
-  let fixture: ComponentFixture<AccessPermissionsComponent>;
+  let component: DevelopersSettingsComponent;
+  let fixture: ComponentFixture<DevelopersSettingsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AccessPermissionsComponent]
+      imports: [DevelopersSettingsComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AccessPermissionsComponent);
+    fixture = TestBed.createComponent(DevelopersSettingsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

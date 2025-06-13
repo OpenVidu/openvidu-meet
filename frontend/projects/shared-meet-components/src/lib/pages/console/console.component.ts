@@ -13,12 +13,12 @@ import { AuthService } from '../../services';
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[] = [
 		{ label: 'Overview', route: 'overview', icon: 'dashboard' },
-		{ label: 'Rooms', route: 'rooms', icon: 'video_chat' },
-		{ label: 'Recordings', route: 'recordings', icon: 'video_library' },
-		{ label: 'Developers', route: 'access-permissions', icon: 'code' },
-		{ label: 'Settings', route: 'appearance', icon: 'settings' },
+		{ label: 'Rooms', route: 'rooms', icon: 'video_chat', iconClass: 'ov-room-icon' },
+		{ label: 'Recordings', route: 'recordings', icon: 'video_library', iconClass: 'ov-recording-icon' },
+		{ label: 'Developers', route: 'developers', icon: 'code', iconClass: 'ov-developer-icon' },
+		{ label: 'Settings', route: 'settings', icon: 'settings', iconClass: 'ov-settings-icon' },
 
-		{ label: 'About', route: 'about', icon: 'info' }
+		// { label: 'About', route: 'about', icon: 'info' }
 	];
 
 	constructor(private authService: AuthService) {}

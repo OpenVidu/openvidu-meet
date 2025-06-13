@@ -1,0 +1,510 @@
+// Design Tokens - Centralized design variable system for OpenVidu Meet
+// This file defines all variables that ensure visual consistency
+// Ready for light and dark theme support
+
+:root {
+	// === PRIMARY COLORS ===
+	// These colors come from Angular Material theme but we centralize them for direct use
+	--ov-meet-color-primary: #1976d2;
+	--ov-meet-color-primary-light: #42a5f5;
+	--ov-meet-color-primary-dark: #1565c0;
+	--ov-meet-color-accent: #7b1fa2;
+	--ov-meet-color-accent-light: #9c27b0;
+	--ov-meet-color-accent-dark: #6a1b9a;
+	--ov-meet-color-warn: #f44336;
+	--ov-meet-color-success: #4caf50;
+	--ov-meet-color-info: #045496;
+	--ov-meet-color-warning: #ff9800;
+	--ov-meet-color-error: #f44336;
+
+	// === CONCEPTUAL ICON COLORS ===
+	// These colors are consistently applied to icons representing specific concepts
+	// to maintain visual consistency across the entire application
+	--ov-meet-icon-rooms: var(--ov-meet-color-primary); // video_chat, meeting_room
+	--ov-meet-icon-recordings: var(--ov-meet-color-accent); // video_library, play_circle
+	--ov-meet-icon-settings: var(--ov-meet-text-secondary); // settings, tune
+	--ov-meet-icon-developer: var(--ov-meet-color-warning); // code, api
+	--ov-meet-icon-actions: var(--ov-meet-text-secondary); // add, edit, delete, refresh
+	--ov-meet-icon-about: var(--ov-meet-color-info); // info, security, help
+
+	// === SURFACE COLORS - LIGHT THEME ===
+	--ov-meet-surface-color: #fdfdfd;
+	--ov-meet-surface-variant: #f5f5f5;
+	--ov-meet-surface-hover: #f0f0f0;
+	--ov-meet-background-color: #fafafa;
+	--ov-meet-background-secondary: #f5f5f5;
+	--ov-meet-surface-elevated: #ffffff;
+	--ov-meet-surface-container: #f3f3f3;
+
+	// === TEXT COLORS - LIGHT THEME ===
+	--ov-meet-text-primary: #212121;
+	--ov-meet-text-secondary: #757575;
+	--ov-meet-text-hint: #9e9e9e;
+	--ov-meet-text-disabled: #bdbdbd;
+	--ov-meet-text-on-primary: #ffffff;
+	--ov-meet-text-on-accent: #ffffff;
+	--ov-meet-text-on-surface: #212121;
+	--ov-meet-text-on-background: #212121;
+
+	// === SPACING AND DIMENSIONS ===
+	--ov-meet-spacing-xs: 4px;
+	--ov-meet-spacing-sm: 8px;
+	--ov-meet-spacing-md: 16px;
+	--ov-meet-spacing-lg: 24px;
+	--ov-meet-spacing-xl: 32px;
+	--ov-meet-spacing-xxl: 48px;
+
+	// === BORDER RADIUS ===
+	--ov-meet-radius-xs: 2px;
+	--ov-meet-radius-sm: 4px;
+	--ov-meet-radius-md: 8px;
+	--ov-meet-radius-lg: 12px;
+	--ov-meet-radius-xl: 16px;
+	--ov-meet-radius-circle: 50%;
+
+	// === SHADOWS - LIGHT THEME ===
+	--ov-meet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+	--ov-meet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+	--ov-meet-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.16), 0 8px 16px rgba(0, 0, 0, 0.23);
+	--ov-meet-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+
+	// === BORDERS - LIGHT THEME ===
+	--ov-meet-border-color: #e0e0e0;
+	--ov-meet-border-color-light: #f0f0f0;
+	--ov-meet-border-color-strong: #bdbdbd;
+
+	// === TYPOGRAPHY ===
+	--ov-meet-font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+	--ov-meet-font-size-xs: 0.75rem; // 12px
+	--ov-meet-font-size-sm: 0.875rem; // 14px
+	--ov-meet-font-size-md: 1rem; // 16px
+	--ov-meet-font-size-lg: 1.125rem; // 18px
+	--ov-meet-font-size-xl: 1.25rem; // 20px
+	--ov-meet-font-size-xxl: 1.5rem; // 24px
+	--ov-meet-font-size-hero: 2.5rem; // 40px
+
+	--ov-meet-font-weight-light: 300;
+	--ov-meet-font-weight-regular: 400;
+	--ov-meet-font-weight-medium: 500;
+	--ov-meet-font-weight-semibold: 600;
+	--ov-meet-font-weight-bold: 700;
+
+	--ov-meet-line-height-tight: 1.2;
+	--ov-meet-line-height-normal: 1.5;
+	--ov-meet-line-height-relaxed: 1.7;
+
+	// === TRANSITIONS ===
+	--ov-meet-transition-fast: 0.15s ease-in-out;
+	--ov-meet-transition-normal: 0.2s ease-in-out;
+	--ov-meet-transition-slow: 0.3s ease-in-out;
+
+	// === SPECIFIC COMPONENTS ===
+
+	// Cards
+	--ov-meet-card-padding: var(--ov-meet-spacing-lg);
+	--ov-meet-card-border-radius: var(--ov-meet-radius-md);
+	--ov-meet-card-shadow: var(--ov-meet-shadow-sm);
+	--ov-meet-card-shadow-hover: var(--ov-meet-shadow-hover);
+	--ov-meet-card-background: var(--ov-meet-surface-color);
+
+	// Buttons
+	--ov-meet-button-border-radius: var(--ov-meet-radius-sm);
+	--ov-meet-button-padding-horizontal: var(--ov-meet-spacing-md);
+	--ov-meet-button-padding-vertical: var(--ov-meet-spacing-sm);
+	--ov-meet-button-transition: var(--ov-meet-transition-fast);
+	--ov-meet-button-font-weight: var(--ov-meet-font-weight-medium);
+
+	// Forms
+	--ov-meet-input-border-radius: var(--ov-meet-radius-sm);
+	--ov-meet-input-padding: var(--ov-meet-spacing-md);
+	--ov-meet-input-border-color: var(--ov-meet-border-color);
+	--ov-meet-input-border-color-focus: var(--ov-meet-color-primary);
+
+	// Layout
+	--ov-meet-container-max-width: 1200px;
+	--ov-meet-container-padding: var(--ov-meet-spacing-lg);
+	--ov-meet-grid-gap: var(--ov-meet-spacing-lg);
+
+	// Icons
+	--ov-meet-icon-size-sm: 18px;
+	--ov-meet-icon-size-md: 24px;
+	--ov-meet-icon-size-lg: 32px;
+	--ov-meet-icon-size-xl: 48px;
+
+	// Interaction states
+	--ov-meet-hover-opacity: 0.08;
+	--ov-meet-focus-opacity: 0.12;
+	--ov-meet-selected-opacity: 0.16;
+	--ov-meet-disabled-opacity: 0.38;
+
+	// === BREAKPOINTS ===
+	--ov-meet-breakpoint-mobile: 480px;
+	--ov-meet-breakpoint-tablet: 768px;
+	--ov-meet-breakpoint-desktop: 1024px;
+	--ov-meet-breakpoint-wide: 1200px;
+}
+
+// === DARK THEME ===
+// Activated when the [data-theme="dark"] attribute is present on html
+[data-theme='dark'] {
+	// === SURFACE COLORS - DARK THEME ===
+	--ov-meet-surface-color: #1e1e1e;
+	--ov-meet-surface-variant: #2d2d2d;
+	--ov-meet-surface-hover: #383838;
+	--ov-meet-background-color: #121212;
+	--ov-meet-background-secondary: #1e1e1e;
+	--ov-meet-surface-elevated: #2d2d2d;
+	--ov-meet-surface-container: #242424;
+
+	// === TEXT COLORS - DARK THEME ===
+	--ov-meet-text-primary: #ffffff;
+	--ov-meet-text-secondary: #b3b3b3;
+	--ov-meet-text-hint: #757575;
+	--ov-meet-text-disabled: #5f5f5f;
+	--ov-meet-text-on-surface: #ffffff;
+	--ov-meet-text-on-background: #ffffff;
+
+	// === SHADOWS - DARK THEME ===
+	// Shadows in dark theme are more subtle and can use lighter colors
+	--ov-meet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.5);
+	--ov-meet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.4), 0 3px 6px rgba(0, 0, 0, 0.6);
+	--ov-meet-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.6);
+	--ov-meet-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.4);
+
+	// === BORDERS - DARK THEME ===
+	--ov-meet-border-color: #3f3f3f;
+	--ov-meet-border-color-light: #2d2d2d;
+	--ov-meet-border-color-strong: #5f5f5f;
+}
+
+// === MIXINS AND UTILITIES ===
+
+// Mixin for smooth theme transitions
+@mixin ov-theme-transition {
+	transition:
+		background-color var(--ov-meet-transition-normal),
+		color var(--ov-meet-transition-normal),
+		border-color var(--ov-meet-transition-normal),
+		box-shadow var(--ov-meet-transition-normal);
+}
+
+// Mixin for responsive containers
+@mixin ov-container {
+	max-width: var(--ov-meet-container-max-width);
+	margin: 0 auto;
+	padding: var(--ov-meet-container-padding);
+}
+
+// Mixin for consistent cards
+@mixin ov-card {
+	@include ov-theme-transition;
+	background: var(--ov-meet-card-background);
+	border-radius: var(--ov-meet-card-border-radius);
+	box-shadow: var(--ov-meet-card-shadow);
+	padding: var(--ov-meet-card-padding);
+	transition:
+		box-shadow var(--ov-meet-transition-normal),
+		background-color var(--ov-meet-transition-normal),
+		color var(--ov-meet-transition-normal);
+
+	&:hover {
+		box-shadow: var(--ov-meet-card-shadow-hover);
+	}
+}
+
+// Mixin for consistent buttons
+@mixin ov-button-base {
+	@include ov-theme-transition;
+	border-radius: var(--ov-meet-button-border-radius);
+	font-weight: var(--ov-meet-button-font-weight);
+	transition:
+		var(--ov-meet-button-transition),
+		background-color var(--ov-meet-transition-normal),
+		color var(--ov-meet-transition-normal);
+	padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
+}
+
+// Mixin for consistent hover states
+@mixin ov-hover-lift($distance: -2px) {
+	transition:
+		transform var(--ov-meet-transition-normal),
+		box-shadow var(--ov-meet-transition-normal);
+
+	&:hover {
+		transform: translateY($distance);
+		box-shadow: var(--ov-meet-shadow-hover);
+	}
+}
+
+// Mixin for icons with consistent sizes
+@mixin ov-icon($size: md) {
+	margin: inherit;
+	@if $size == xs {
+		font-size: var(--ov-meet-icon-size-sm);
+		width: var(--ov-meet-icon-size-sm);
+		height: var(--ov-meet-icon-size-sm);
+	} @else if $size == sm {
+		font-size: var(--ov-meet-icon-size-sm);
+		width: var(--ov-meet-icon-size-sm);
+		height: var(--ov-meet-icon-size-sm);
+	} @else if $size == md {
+		font-size: var(--ov-meet-icon-size-md);
+		width: var(--ov-meet-icon-size-md);
+		height: var(--ov-meet-icon-size-md);
+	} @else if $size == lg {
+		font-size: var(--ov-meet-icon-size-lg);
+		width: var(--ov-meet-icon-size-lg);
+		height: var(--ov-meet-icon-size-lg);
+	} @else if $size == xl {
+		font-size: var(--ov-meet-icon-size-xl);
+		width: var(--ov-meet-icon-size-xl);
+		height: var(--ov-meet-icon-size-xl);
+	}
+}
+
+// Mixin for truncated text
+@mixin ov-text-truncate {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+// Mixin for flex centering
+@mixin ov-flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+// Mixin for responsive grid
+@mixin ov-grid-responsive($min-column-width: 300px) {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax($min-column-width, 1fr));
+	gap: var(--ov-meet-grid-gap);
+}
+
+// Mixin for statistics and metrics
+@mixin ov-stat-card {
+	@include ov-card;
+	@include ov-hover-lift(-2px);
+
+	.stat-content {
+		.stat-number {
+			font-size: var(--ov-meet-font-size-hero);
+			font-weight: var(--ov-meet-font-weight-light);
+			line-height: var(--ov-meet-line-height-tight);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.stat-label {
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-secondary);
+		}
+
+		.stat-detail {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-hint);
+		}
+	}
+}
+
+// Mixin for page headers
+@mixin ov-get-started-header {
+	@include ov-page-header;
+
+	text-align: center;
+	margin-bottom: var(--ov-meet-spacing-lg);
+	h1 {
+		font-weight: var(--ov-meet-font-weight-light);
+	}
+}
+
+@mixin ov-page-header {
+	text-align: left;
+	margin-bottom: var(--ov-meet-spacing-md);
+
+	h1 {
+		margin: 0 0 var(--ov-meet-spacing-sm) 0;
+		font-size: var(--ov-meet-font-size-hero);
+		font-weight: var(--ov-meet-font-weight-regular);
+		color: var(--ov-meet-text-primary);
+		line-height: var(--ov-meet-line-height-tight);
+	}
+
+	.subtitle {
+		margin: 0;
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-lg);
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
+// === UTILITY CLASSES ===
+
+.ov-container {
+	@include ov-container;
+}
+
+.ov-text-center {
+	text-align: center;
+}
+
+.ov-text-truncate {
+	@include ov-text-truncate;
+}
+
+.ov-flex-center {
+	@include ov-flex-center;
+}
+
+// Spacing classes
+.ov-mt-xs {
+	margin-top: var(--ov-meet-spacing-xs);
+}
+.ov-mt-sm {
+	margin-top: var(--ov-meet-spacing-sm);
+}
+.ov-mt-md {
+	margin-top: var(--ov-meet-spacing-md);
+}
+.ov-mt-lg {
+	margin-top: var(--ov-meet-spacing-lg);
+}
+.ov-mt-xl {
+	margin-top: var(--ov-meet-spacing-xl);
+}
+
+.ov-mb-xs {
+	margin-bottom: var(--ov-meet-spacing-xs);
+}
+.ov-mb-sm {
+	margin-bottom: var(--ov-meet-spacing-sm);
+}
+.ov-mb-md {
+	margin-bottom: var(--ov-meet-spacing-md);
+}
+.ov-mb-lg {
+	margin-bottom: var(--ov-meet-spacing-lg);
+}
+.ov-mb-xl {
+	margin-bottom: var(--ov-meet-spacing-xl);
+}
+
+.ov-p-xs {
+	padding: var(--ov-meet-spacing-xs);
+}
+.ov-p-sm {
+	padding: var(--ov-meet-spacing-sm);
+}
+.ov-p-md {
+	padding: var(--ov-meet-spacing-md);
+}
+.ov-p-lg {
+	padding: var(--ov-meet-spacing-lg);
+}
+.ov-p-xl {
+	padding: var(--ov-meet-spacing-xl);
+}
+
+// === THEME CLASSES ===
+.ov-theme-transition {
+	@include ov-theme-transition;
+}
+
+// === CONCEPTUAL ICON CLASSES ===
+// Apply these classes directly to mat-icon elements for consistent conceptual colors
+.ov-room-icon {
+	color: var(--ov-meet-icon-rooms) !important;
+	@include ov-theme-transition;
+}
+
+.ov-recording-icon {
+	color: var(--ov-meet-icon-recordings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-settings-icon {
+	color: var(--ov-meet-icon-settings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-developer-icon {
+	color: var(--ov-meet-icon-developer) !important;
+	@include ov-theme-transition;
+}
+
+.ov-about-icon {
+	color: var(--ov-meet-icon-about) !important;
+	@include ov-theme-transition;
+}
+
+.ov-action-icon {
+	color: var(--ov-meet-icon-actions) !important;
+	@include ov-theme-transition;
+}
+
+.ov-surface {
+	background-color: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-on-surface);
+	@include ov-theme-transition;
+}
+
+.ov-background {
+	background-color: var(--ov-meet-background-color);
+	color: var(--ov-meet-text-on-background);
+	@include ov-theme-transition;
+}
+
+.ov-text-primary {
+	color: var(--ov-meet-text-primary);
+}
+.ov-text-secondary {
+	color: var(--ov-meet-text-secondary);
+}
+.ov-text-hint {
+	color: var(--ov-meet-text-hint);
+}
+
+// === RESPONSIVE MIXINS ===
+// Sass variables for breakpoints (needed for media queries since CSS variables can't be used)
+$ov-meet-breakpoint-mobile: 480px;
+$ov-meet-breakpoint-tablet: 768px;
+$ov-meet-breakpoint-desktop: 1024px;
+$ov-meet-breakpoint-wide: 1200px;
+
+@mixin ov-mobile-down {
+	@media (max-width: #{$ov-meet-breakpoint-mobile}) {
+		@content;
+	}
+}
+
+@mixin ov-tablet-down {
+	@media (max-width: #{$ov-meet-breakpoint-tablet}) {
+		@content;
+	}
+}
+
+@mixin ov-desktop-down {
+	@media (max-width: #{$ov-meet-breakpoint-desktop}) {
+		@content;
+	}
+}
+
+@mixin ov-mobile-up {
+	@media (min-width: #{$ov-meet-breakpoint-mobile + 1px}) {
+		@content;
+	}
+}
+
+@mixin ov-tablet-up {
+	@media (min-width: #{$ov-meet-breakpoint-tablet + 1px}) {
+		@content;
+	}
+}
+
+@mixin ov-desktop-up {
+	@media (min-width: #{$ov-meet-breakpoint-desktop + 1px}) {
+		@content;
+	}
+}

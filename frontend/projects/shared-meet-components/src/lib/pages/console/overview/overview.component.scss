@@ -1,98 +1,82 @@
+@import '../../../../../../../src/assets/styles/design-tokens';
+
 .overview-container {
-	padding: 0px;
-	max-width: 1200px;
-	margin: 0 auto;
+	@include ov-container;
+	padding: 0;
 }
 
 .overview-header {
-	text-align: center;
-	margin-bottom: 32px;
-
-	h1 {
-		margin: 0 0 8px 0;
-		font-size: 2.5rem;
-		font-weight: 300;
-		color: #1f1f1f;
-	}
-
-	.subtitle {
-		margin: 0;
-		color: #666;
-		font-size: 1.1rem;
-	}
+	@include ov-page-header;
+}
+.get-started-header {
+	@include ov-get-started-header;
 }
 
 // Welcome State Styles
 .welcome-state {
 	.welcome-card {
-		max-width: 1000px;
+		max-width: var(--ov-meet-container-max-width);
 		margin: 0 auto;
 
 		mat-card-header {
 			display: flex;
 			align-items: center;
-			margin-bottom: 16px;
+			margin-bottom: var(--ov-meet-spacing-md);
 
 			mat-card-title {
 				display: flex;
 				align-items: center;
-				gap: 8px;
-				font-size: 1.5rem;
+				gap: var(--ov-meet-spacing-sm);
+				font-size: var(--ov-meet-font-size-xxl);
+				font-weight: var(--ov-meet-font-weight-medium);
 
 				mat-icon {
-					font-size: 2rem;
-					width: 2rem;
-					height: 2rem;
+					font-size: var(--ov-meet-icon-size-lg);
+					width: var(--ov-meet-icon-size-lg);
+					height: var(--ov-meet-icon-size-lg);
 				}
 			}
 		}
 	}
 
 	.getting-started-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 24px;
-		margin-top: 24px;
+		@include ov-grid-responsive(280px);
+		margin-top: var(--ov-meet-spacing-lg);
 	}
 
 	.feature-card {
+		@include ov-card;
+		@include ov-hover-lift(-5px);
 		text-align: center;
-		transition: transform 0.2s ease-in-out;
-
-		&:hover {
-			transform: translateY(-4px);
-		}
 
 		mat-card-content {
-			padding: 24px;
+			padding: var(--ov-meet-spacing-lg);
 
 			mat-icon {
-				font-size: 3rem;
-				width: 3rem;
-				height: 3rem;
-				margin-bottom: 16px;
+				@include ov-icon(xl);
+				margin-bottom: var(--ov-meet-spacing-md);
 			}
 
 			h3 {
-				margin: 0 0 12px 0;
-				font-size: 1.2rem;
-				font-weight: 500;
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
 			}
 
 			p {
-				margin: 0 0 24px 0;
-				color: #666;
-				line-height: 1.5;
+				margin: 0 0 var(--ov-meet-spacing-lg) 0;
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
 			}
 
 			button {
+				@include ov-button-base;
 				width: 100%;
 
 				mat-icon {
-					font-size: 1.2rem;
-					width: 1.2rem;
-					height: 1.2rem;
-					margin-right: 8px;
+					@include ov-icon(md);
+					margin-right: var(--ov-meet-spacing-sm);
 				}
 			}
 		}
@@ -102,105 +86,72 @@
 // Dashboard State Styles
 .dashboard-state {
 	.quick-actions {
-		display: flex;
-		gap: 16px;
-		margin-bottom: 32px;
-		justify-content: center;
+		@include ov-flex-center;
+		gap: var(--ov-meet-spacing-md);
+		margin-bottom: var(--ov-meet-spacing-xxl);
 
 		button {
+			@include ov-button-base;
+
 			mat-icon {
-				margin-right: 8px;
+				margin-right: var(--ov-meet-spacing-sm);
 			}
 		}
 	}
 
 	.stats-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 24px;
+		@include ov-grid-responsive(300px);
 	}
 
 	.stat-card {
-		transition:
-			transform 0.2s ease-in-out,
-			box-shadow 0.2s ease-in-out;
-
-		&:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-		}
+		@include ov-stat-card;
 
 		mat-card-content {
 			display: flex;
 			align-items: center;
-			gap: 16px;
-			padding: 24px;
+			gap: var(--ov-meet-spacing-md);
+			padding: var(--ov-meet-spacing-lg);
 		}
 
 		.stat-icon {
 			mat-icon {
-				font-size: 3rem;
-				width: 3rem;
-				height: 3rem;
-				color: #1976d2;
+				@include ov-icon(xl);
 			}
 		}
 
 		.stat-content {
 			flex: 1;
-
-			.stat-number {
-				font-size: 2.5rem;
-				font-weight: 300;
-				line-height: 1;
-				color: #1f1f1f;
-			}
-
-			.stat-label {
-				font-size: 1rem;
-				font-weight: 500;
-				color: #666;
-				margin: 4px 0;
-			}
-
-			.stat-detail {
-				font-size: 0.875rem;
-				color: #999;
-			}
 		}
 
 		mat-card-actions {
-			padding: 8px 24px 16px;
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
 
 			button {
+				@include ov-button-base;
+
 				mat-icon {
-					margin-left: 4px;
+					margin-left: var(--ov-meet-spacing-xs);
 				}
 			}
 		}
 	}
 
-	.rooms-card .stat-icon mat-icon {
-		color: #1976d2;
-	}
-
-	.recordings-card .stat-icon mat-icon {
-		color: #7b1fa2;
-	}
+	// Stat cards have their icon colors applied via CSS classes in HTML
+	// .rooms-card uses .ov-room-icon
+	// .recordings-card uses .ov-recording-icon
 
 	.action-card {
+		@include ov-card;
 		mat-card-content {
 			display: flex;
 			align-items: center;
-			gap: 16px;
-			padding: 20px 24px;
+			gap: var(--ov-meet-spacing-md);
+			padding: var(--ov-meet-spacing-lg);
 		}
 
 		.action-icon {
 			mat-icon {
-				font-size: 2.5rem;
-				width: 2.5rem;
-				height: 2.5rem;
+				@include ov-icon(lg);
 			}
 		}
 
@@ -208,44 +159,42 @@
 			flex: 1;
 
 			h3 {
-				margin: 0 0 4px 0;
-				font-size: 1.1rem;
-				font-weight: 500;
+				margin: 0 0 var(--ov-meet-spacing-xs) 0;
+				font-size: var(--ov-meet-font-size-lg);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
 			}
 
 			p {
 				margin: 0;
-				color: #666;
-				font-size: 0.875rem;
+				color: var(--ov-meet-text-secondary);
+				font-size: var(--ov-meet-font-size-sm);
+				line-height: var(--ov-meet-line-height-normal);
 			}
 		}
 
 		mat-card-actions {
-			padding: 8px 24px 16px;
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
+
+			button {
+				@include ov-button-base;
+			}
 		}
 	}
 
-	.create-card {
-		.action-icon mat-icon {
-			color: #4caf50;
-		}
-	}
-
-	.manage-card {
-		.action-icon mat-icon {
-			color: #ff9800;
-		}
-	}
+	// Action cards have their icon colors applied via CSS classes in HTML
+	// .create-card uses .ov-action-icon
+	// .manage-card uses .ov-settings-icon
 }
 
-// Responsive Design
-@media (max-width: 768px) {
+// Responsive Design using design tokens breakpoints
+@include ov-tablet-down {
 	.overview-container {
-		padding: 16px;
+		padding: var(--ov-meet-spacing-md);
 	}
 
 	.overview-header h1 {
-		font-size: 2rem;
+		font-size: var(--ov-meet-font-size-xxl);
 	}
 
 	.welcome-state .getting-started-grid {
@@ -268,16 +217,16 @@
 	}
 }
 
-@media (max-width: 480px) {
+@include ov-mobile-down {
 	.overview-header h1 {
-		font-size: 1.75rem;
+		font-size: var(--ov-meet-font-size-xl);
 	}
 
 	.stat-card {
 		mat-card-content {
 			flex-direction: column;
 			text-align: center;
-			gap: 12px;
+			gap: var(--ov-meet-spacing-sm);
 		}
 	}
 
@@ -285,7 +234,7 @@
 		mat-card-content {
 			flex-direction: column;
 			text-align: center;
-			gap: 12px;
+			gap: var(--ov-meet-spacing-sm);
 		}
 	}
 }

@@ -101,4 +101,18 @@ export class NavigationService {
 		const newUrl = this.router.serializeUrl(urlTree);
 		this.location.replaceState(newUrl);
 	}
+
+	/**
+	 * Navigates to a specific route
+	 */
+	async navigateTo(route: string, queryParams?: Record<string, any>, replaceUrl: boolean = false): Promise<void> {
+		try {
+			await this.router.navigate([route], {
+				queryParams,
+				replaceUrl
+			});
+		} catch (error) {
+			console.error('Error navigating to route:', error);
+		}
+	}
 }

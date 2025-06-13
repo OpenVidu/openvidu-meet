@@ -11,6 +11,7 @@ import { RoomService } from '../../../services/room/room.service';
 import { HttpService } from '../../../services/http/http.service';
 import { MeetRoom } from '../../../typings/ce/room';
 import { MeetRecordingInfo } from '../../../typings/ce/recording.model';
+import { NavigationService, ThemeService } from '@lib/services';
 
 interface OverviewStats {
 	totalRooms: number;
@@ -30,6 +31,8 @@ export class OverviewComponent implements OnInit {
 	private roomService = inject(RoomService);
 	private httpService = inject(HttpService);
 	private router = inject(Router);
+	private navigationService = inject(NavigationService);
+	private themeService = inject(ThemeService);
 
 	stats$: Observable<OverviewStats> = of({
 		totalRooms: 0,
@@ -70,16 +73,12 @@ export class OverviewComponent implements OnInit {
 		);
 	}
 
-	createRoom() {
-		this.router.navigate(['/console/rooms/create']);
-	}
-
-	viewRooms() {
-		this.router.navigate(['/console/rooms']);
-	}
-
-	viewRecordings() {
-		this.router.navigate(['/console/recordings']);
+	async navigateTo(section: 'rooms' | 'recordings' | 'settings' | 'developers') {
+		try {
+			await this.navigationService.navigateTo(`console/${section}`);
+		} catch (error) {
+			console.error(`Error navigating to ${section}:`, error);
+		}
 	}
 
 	refreshData() {

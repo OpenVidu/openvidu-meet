@@ -13,10 +13,12 @@ import {
 } from '../guards';
 import {
 	ConsoleComponent,
+	DevelopersSettingsComponent,
 	DisconnectedComponent,
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
+	PreferencesComponent,
 	RecordingsComponent,
 	RoomFormComponent,
 	RoomRecordingsComponent,
@@ -57,19 +59,14 @@ export const baseRoutes: Routes = [
 				path: 'recordings',
 				component: RecordingsComponent
 			},
-			// {
-			// 	path: 'access-permissions',
-			// 	component: AccessPermissionsComponent
-			// },
-			// {
-			// 	path: 'appearance',
-			// 	component: AppearanceComponent
-			// },
-
-			// {
-			// 	path: 'security-preferences',
-			// 	component: SecurityPreferencesComponent
-			// },
+			{
+				path: 'developers',
+				component: DevelopersSettingsComponent
+			},
+			{
+				path: 'settings',
+				component: PreferencesComponent
+			},
 			// {
 			// 	path: 'about',
 			// 	component: AboutComponent

@@ -33,7 +33,7 @@
 						(click)="link.clickHandler ? link.clickHandler() : null"
 					>
 						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
-							<mat-icon>{{ link.icon }}</mat-icon>
+							<mat-icon [ngClass]="link.iconClass">{{ link.icon }}</mat-icon>
 							@if (!isSideMenuCollapsed) {
 								{{ link.label }}
 							}

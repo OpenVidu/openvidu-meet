@@ -209,7 +209,13 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	}
 
 	async goToRecordings() {
-		await this.navigationService.redirectToRecordingsPage(this.roomId, this.roomSecret);
+		try {
+			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, {
+				queryParams: { secret: this.roomSecret }
+			});
+		} catch (error) {
+			console.error('Error navigating to recordings:', error);
+		}
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
