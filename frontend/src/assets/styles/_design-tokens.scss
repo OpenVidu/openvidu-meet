@@ -325,18 +325,29 @@
 	margin-bottom: var(--ov-meet-spacing-md);
 
 	h1 {
-		margin: 0 0 var(--ov-meet-spacing-sm) 0;
+		margin: 0;
 		font-size: var(--ov-meet-font-size-hero);
 		font-weight: var(--ov-meet-font-weight-regular);
 		color: var(--ov-meet-text-primary);
 		line-height: var(--ov-meet-line-height-tight);
 	}
 
+	.title {
+		display: flex;
+		margin: 0 0 var(--ov-meet-spacing-xs) 0;
+	}
 	.subtitle {
-		margin: 0;
+		margin: 0 0 0 var(--ov-meet-spacing-sm);
 		color: var(--ov-meet-text-secondary);
 		font-size: var(--ov-meet-font-size-lg);
 		line-height: var(--ov-meet-line-height-normal);
+	}
+	mat-icon {
+		margin: 0 var(--ov-meet-spacing-xs) 0 0;
+		align-self: center;
+		font-size: var(--ov-meet-icon-size-lg);
+		width: var(--ov-meet-icon-size-lg);
+		height: var(--ov-meet-icon-size-lg);
 	}
 }
 

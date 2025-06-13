@@ -2,7 +2,10 @@
 	<ng-container *ngIf="stats$ | async as stats">
 		@if (stats.hasData) {
 			<div class="overview-header">
-				<h1>Overview</h1>
+				<div class="title">
+					<mat-icon>dashboard</mat-icon>
+					<h1>Overview</h1>
+				</div>
 				<p class="subtitle">Monitor your system status and recent activity</p>
 			</div>
 			<!-- Dashboard State -->
