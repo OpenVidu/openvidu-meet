@@ -32,9 +32,13 @@ MeetRecordingPreferences:
                 - admin
                 - admin-moderator
                 - admin-moderator-publisher
-                - public
             default: admin-moderator-publisher
             example: admin-moderator-publisher
+            description: |
+                Defines who can access the recording. Options are:
+                - `admin`: Only administrators can access the recording.
+                - `admin-moderator`: Administrators and moderators can access the recording.
+                - `admin-moderator-publisher`: Administrators, moderators and publishers can access the recording.
 MeetVirtualBackgroundPreferences:
     type: object
     properties:
