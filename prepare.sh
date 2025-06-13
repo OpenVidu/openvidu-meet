@@ -84,7 +84,7 @@ fi
 if [ "$BUILD_TYPINGS" = true ]; then
   echo -e "${GREEN}Building types library...${NC}"
   cd typings
-  npm install
+  # npm install
   npm run sync-ce
   cd ..
 fi
