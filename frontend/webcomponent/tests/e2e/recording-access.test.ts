@@ -198,45 +198,4 @@ test.describe('Recording Access Tests', () => {
 		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
-
-	test('should allow moderators to access recording when access level is set to public', async ({ page }) => {
-		await updateRoomPreferences(
-			roomId,
-			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.PUBLIC
-				},
-				virtualBackgroundPreferences: { enabled: true }
-			},
-			adminCookie
-		);
-
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-		await viewRecordingsAs('moderator', page);
-		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
-		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
-	});
-	test('should allow publisher to access recording when access level is set to public', async ({ page }) => {
-		await updateRoomPreferences(
-			roomId,
-			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.PUBLIC
-				},
-				virtualBackgroundPreferences: { enabled: true }
-			},
-			adminCookie
-		);
-
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-		await viewRecordingsAs('publisher', page);
-		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
-		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
-	});
 });

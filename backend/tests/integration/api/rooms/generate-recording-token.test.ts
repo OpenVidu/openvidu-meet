@@ -45,13 +45,6 @@ describe('Room API Tests', () => {
 			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
 		});
 
-		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is public', async () => {
-			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
-
-			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
-			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
-		});
-
 		it('should generate a recording token without any permissions when using the publisher secret and recording access is admin-moderator', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 
@@ -69,15 +62,8 @@ describe('Room API Tests', () => {
 			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER, true, false);
 		});
 
-		it('should generate a recording token with canRetrieve permission but not canDelete when using the publisher secret and recording access is public', async () => {
-			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
-
-			const response = await generateRecordingToken(roomData.room.roomId, roomData.publisherSecret);
-			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER, true, false);
-		});
-
 		it('should succeed even if the room is deleted', async () => {
-			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.PUBLIC);
+			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER);
 			await deleteRoom(roomData.room.roomId);
 
 			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
