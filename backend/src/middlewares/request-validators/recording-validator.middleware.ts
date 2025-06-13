@@ -56,7 +56,12 @@ const StartRecordingRequestSchema = z.object({
 });
 
 const GetRecordingSchema = z.object({
-	recordingId: nonEmptySanitizedRecordingId('recordingId')
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		secret: z.string().optional()
+	})
 });
 
 const BulkDeleteRecordingsSchema = z.object({
@@ -143,13 +148,28 @@ export const withValidStartRecordingRequest = (req: Request, res: Response, next
 };
 
 export const withValidRecordingId = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingSchema.safeParse({ recordingId: req.params.recordingId });
+	const { success, error, data } = nonEmptySanitizedRecordingId('recordingId').safeParse(req.params.recordingId);
+
+	if (!success) {
+		error.errors[0].path = ['recordingId'];
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.params.recordingId = data;
+	next();
+};
+
+export const withValidGetRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingSchema.safeParse({
+		params: req.params,
+		query: req.query
+	});
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.params.recordingId = data.recordingId;
+	req.params.recordingId = data.params.recordingId;
 	next();
 };
 

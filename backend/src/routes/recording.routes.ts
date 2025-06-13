@@ -4,7 +4,7 @@ import { Router } from 'express';
 import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
 	apiKeyValidator,
-	configureRecordingMediaAuth,
+	configureRecordingAuth,
 	participantTokenValidator,
 	recordingTokenValidator,
 	tokenAndRoleValidator,
@@ -14,6 +14,7 @@ import {
 	withCanRetrieveRecordingsPermission,
 	withRecordingEnabled,
 	withValidGetRecordingMediaRequest,
+	withValidGetRecordingRequest,
 	withValidGetRecordingUrlRequest,
 	withValidRecordingBulkDeleteRequest,
 	withValidRecordingFiltersRequest,
@@ -41,8 +42,8 @@ recordingRouter.delete(
 );
 recordingRouter.get(
 	'/:recordingId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
-	withValidRecordingId,
+	withValidGetRecordingRequest,
+	configureRecordingAuth,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecording
 );
@@ -56,7 +57,7 @@ recordingRouter.delete(
 recordingRouter.get(
 	'/:recordingId/media',
 	withValidGetRecordingMediaRequest,
-	configureRecordingMediaAuth,
+	configureRecordingAuth,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingMedia
 );

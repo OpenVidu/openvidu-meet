@@ -46,8 +46,8 @@ roomRouter.delete(
 roomRouter.get(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
-	configureRoomAuthorization,
 	withValidRoomId,
+	configureRoomAuthorization,
 	roomCtrl.getRoom
 );
 roomRouter.delete(
