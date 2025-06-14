@@ -1,0 +1,36 @@
+.dialog-content {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	min-width: 100%;
+
+	mat-radio-group {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+
+		mat-radio-button {
+			color: var(--ov-text-primary-color);
+		}
+	}
+}
+
+.generate-btn-container {
+	display: flex;
+	justify-content: flex-start;
+}
+
+.recording-url-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.url-field {
+	width: 100%;
+
+	input {
+		font-size: 14px;
+		color: var(--ov-text-primary-color);
+	}
+}

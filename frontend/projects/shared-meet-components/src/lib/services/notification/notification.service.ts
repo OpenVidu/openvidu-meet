@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SpinnerComponent } from '../../components/spinner/spinner.component';
-import { DialogComponent } from '../../components/dialog/dialog.component';
+import { DialogComponent } from '../../components/dialogs/basic-dialog/dialog.component';
 import { DialogOptions } from '../../models';
 
 @Injectable({
