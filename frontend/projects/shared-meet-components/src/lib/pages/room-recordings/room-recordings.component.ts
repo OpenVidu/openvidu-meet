@@ -2,9 +2,11 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
+import { ShareRecordingDialogComponent } from '@lib/components';
 import { ContextService, HttpService } from '@lib/services';
 import {
 	ActionService,
@@ -40,7 +42,8 @@ export class RoomRecordingsComponent implements OnInit {
 		protected contextService: ContextService,
 		protected httpService: HttpService,
 		protected actionService: ActionService,
-		protected route: ActivatedRoute
+		protected route: ActivatedRoute,
+		protected dialog: MatDialog
 	) {}
 
 	async ngOnInit() {
@@ -100,6 +103,13 @@ export class RoomRecordingsComponent implements OnInit {
 		} catch (error) {
 			console.log(error);
 		}
+	}
+
+	openShareDialog(recording: MeetRecordingInfo) {
+		this.dialog.open(ShareRecordingDialogComponent, {
+			width: '400px',
+			data: { recordingId: recording.recordingId }
+		});
 	}
 
 	private async loadRecordings() {

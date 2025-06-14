@@ -149,8 +149,16 @@ export class HttpService {
 		return this.getRequest<MeetRecordingInfo>(path);
 	}
 
-	getRecordingMediaUrl(recordingId: string): string {
-		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
+	getRecordingMediaUrl(recordingId: string, secret?: string): string {
+		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
+		if (secret) {
+			path += `?secret=${secret}`;
+		}
+		return path;
+	}
+
+	generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<{ url: string }> {
+		return this.getRequest(`${this.API_PATH_PREFIX}/recordings/${recordingId}/url?privateAccess=${privateAccess}`);
 	}
 
 	startRecording(roomId: string): Promise<MeetRecordingInfo> {
