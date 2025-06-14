@@ -1,9 +1,7 @@
 import { inject } from '@angular/core';
-import { Location } from '@angular/common';
-import { CanActivateFn, NavigationEnd } from '@angular/router';
-import { Router } from '@angular/router';
-import { ContextService, HttpService, SessionStorageService } from '../services';
+import { CanActivateFn, NavigationEnd, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
+import { ContextService, NavigationService, SessionStorageService } from '../services';
 
 /**
  * Guard that intercepts navigation to remove the 'secret' query parameter from the URL
@@ -12,10 +10,9 @@ import { filter, take } from 'rxjs';
  * enhance security.
  */
 export const removeModeratorSecretGuard: CanActivateFn = (route, _state) => {
-	const httpService = inject(HttpService);
 	const contextService = inject(ContextService);
+	const navigationService = inject(NavigationService);
 	const router = inject(Router);
-	const location: Location = inject(Location);
 	const sessionStorageService = inject(SessionStorageService);
 
 	router.events
@@ -28,36 +25,12 @@ export const removeModeratorSecretGuard: CanActivateFn = (route, _state) => {
 				const roomId = contextService.getRoomId();
 				const storedSecret = sessionStorageService.getModeratorSecret(roomId);
 				const moderatorSecret = storedSecret || contextService.getSecret();
+
+				// Store the moderator secret in session storage for the current room and remove it from the URL
 				sessionStorageService.setModeratorSecret(roomId, moderatorSecret);
-
-				// Remove secret from URL
-				const queryParams = { ...route.queryParams };
-				delete queryParams['secret'];
-				const urlTree = router.createUrlTree([], { queryParams });
-				const newUrl = router.serializeUrl(urlTree);
-
-				location.replaceState(newUrl);
+				navigationService.removeModeratorSecretFromUrl(route.queryParams);
 			}
 		});
 
 	return true;
-};
-
-const getUrlSecret = async (
-	httpService: HttpService,
-	roomId: string
-): Promise<{ moderatorSecret: string; publisherSecret: string }> => {
-	const { moderatorRoomUrl, publisherRoomUrl } = await httpService.getRoom(roomId);
-
-	const extractSecret = (urlString: string, type: string): string => {
-		const url = new URL(urlString);
-		const secret = url.searchParams.get('secret');
-		if (!secret) throw new Error(`${type} secret not found`);
-		return secret;
-	};
-
-	const publisherSecret = extractSecret(publisherRoomUrl, 'Publisher');
-	const moderatorSecret = extractSecret(moderatorRoomUrl, 'Moderator');
-
-	return { publisherSecret, moderatorSecret };
 };

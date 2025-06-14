@@ -1,14 +1,20 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
-import { ContextService } from '../services';
+import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
+import { ContextService, NavigationService } from '../services';
+import { ErrorReason } from '@lib/models/navigation.model';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 	const contextService = inject(ContextService);
 	const { roomId, participantName, secret, leaveRedirectUrl, viewRecordings } = extractParams(route);
 
 	if (isValidUrl(leaveRedirectUrl)) {
 		contextService.setLeaveRedirectUrl(leaveRedirectUrl);
+	}
+
+	if (!secret) {
+		// If no secret is provided, redirect to the error page
+		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
 	contextService.setRoomId(roomId);
@@ -17,17 +23,21 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	if (viewRecordings === 'true') {
 		// Redirect to the room recordings page
-		return router.createUrlTree([`room/${roomId}/recordings`], {
-			queryParams: { secret }
-		});
+		return navigationService.createRedirectionToRecordingsPage(roomId, secret);
 	}
 
 	return true;
 };
 
 export const extractRecordingQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+	const navigationService = inject(NavigationService);
 	const contextService = inject(ContextService);
 	const { roomId, secret } = extractParams(route);
+
+	if (!secret) {
+		// If no secret is provided, redirect to the error page
+		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
+	}
 
 	contextService.setRoomId(roomId);
 	contextService.setSecret(secret);

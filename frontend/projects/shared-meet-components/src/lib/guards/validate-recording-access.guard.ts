@@ -1,13 +1,7 @@
 import { inject } from '@angular/core';
-import {
-	ActivatedRouteSnapshot,
-	Router,
-	RouterStateSnapshot,
-	CanActivateFn,
-	UrlTree,
-	RedirectCommand
-} from '@angular/router';
-import { ContextService, HttpService, SessionStorageService } from '../services';
+import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
+import { ErrorReason } from '@lib/models/navigation.model';
+import { ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
 
 /**
  * Guard to validate the access to recordings.
@@ -18,7 +12,7 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 ) => {
 	const httpService = inject(HttpService);
 	const contextService = inject(ContextService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const roomId = contextService.getRoomId();
@@ -32,7 +26,7 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 
 		if (!contextService.canRetrieveRecordings()) {
 			// If the user does not have permission to retrieve recordings, redirect to the error page
-			return redirectToErrorPage(router, 'unauthorized-recording-access');
+			return navigationService.createRedirectionToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
 		}
 
 		return true;
@@ -41,19 +35,15 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return redirectToErrorPage(router, 'invalid-secret');
+				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
 			case 403:
 				// Recording access is configured for admins only
-				return redirectToErrorPage(router, 'recordings-admin-only-access');
+				return navigationService.createRedirectionToErrorPage(ErrorReason.RECORDINGS_ADMIN_ONLY_ACCESS);
 			case 404:
 				// There are no recordings in the room or the room does not exist
-				return redirectToErrorPage(router, 'no-recordings');
+				return navigationService.createRedirectionToErrorPage(ErrorReason.NO_RECORDINGS);
 			default:
-				return redirectToErrorPage(router, 'internal-error');
+				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
-};
-
-const redirectToErrorPage = (router: Router, reason: string): UrlTree => {
-	return router.createUrlTree(['error'], { queryParams: { reason } });
 };
