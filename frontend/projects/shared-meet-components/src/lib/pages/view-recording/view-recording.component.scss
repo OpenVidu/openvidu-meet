@@ -1,0 +1,50 @@
+.recording-container {
+	max-width: 900px;
+	margin: 20px auto;
+	padding: 0;
+}
+
+.video-container {
+	position: relative;
+	width: 100%;
+	padding-top: 56.25%; /* 16:9 aspect ratio */
+}
+
+.video-player {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.title {
+	font-size: 1.8rem;
+	font-weight: 600;
+	margin: 16px 0 8px;
+}
+
+.info-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+@media (min-width: 600px) {
+	.info-actions {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+}
+
+.date {
+	color: #666;
+	font-size: 0.95rem;
+}
+
+.actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
