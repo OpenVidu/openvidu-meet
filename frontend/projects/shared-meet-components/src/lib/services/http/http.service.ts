@@ -110,10 +110,6 @@ export class HttpService {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`, { secret });
 	}
 
-	getRecordingMediaUrl(recordingId: string): string {
-		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
-	}
-
 	getRecordings(filters?: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		pagination: {
@@ -143,6 +139,18 @@ export class HttpService {
 		}
 
 		return this.getRequest(path);
+	}
+
+	getRecording(recordingId: string, secret?: string): Promise<MeetRecordingInfo> {
+		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}`;
+		if (secret) {
+			path += `?secret=${secret}`;
+		}
+		return this.getRequest<MeetRecordingInfo>(path);
+	}
+
+	getRecordingMediaUrl(recordingId: string): string {
+		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
 	}
 
 	startRecording(roomId: string): Promise<MeetRecordingInfo> {

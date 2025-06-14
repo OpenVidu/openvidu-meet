@@ -98,3 +98,42 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	// Allow access to the room
 	return true;
 };
+
+export const checkRecordingAuthGuard: CanActivateFn = async (
+	route: ActivatedRouteSnapshot,
+	state: RouterStateSnapshot
+) => {
+	const httpService = inject(HttpService);
+	const navigationService = inject(NavigationService);
+
+	const recordingId = route.params['recording-id'];
+	const secret = route.queryParams['secret'];
+
+	if (!secret) {
+		// If no secret is provided, redirect to the error page
+		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
+	}
+
+	try {
+		// Attempt to access the recording to check if the secret is valid
+		await httpService.getRecording(recordingId, secret);
+		return true;
+	} catch (error: any) {
+		console.error('Error checking recording access:', error);
+		switch (error.status) {
+			case 400:
+				// Invalid secret
+				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
+			case 401:
+				// Unauthorized access
+				// Redirect to the login page with query param to redirect back to the recording
+				return navigationService.createRedirectionToLoginPage(state.url);
+			case 404:
+				// Recording not found
+				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING);
+			default:
+				// Internal error
+				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+		}
+	}
+};
