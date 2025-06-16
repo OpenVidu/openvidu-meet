@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { Router } from '@angular/router';
 import { Observable, from, combineLatest, map, catchError, of } from 'rxjs';
 
 import { RoomService } from '../../../services/room/room.service';
@@ -30,7 +29,6 @@ interface OverviewStats {
 export class OverviewComponent implements OnInit {
 	private roomService = inject(RoomService);
 	private httpService = inject(HttpService);
-	private router = inject(Router);
 	private navigationService = inject(NavigationService);
 	private themeService = inject(ThemeService);
 
