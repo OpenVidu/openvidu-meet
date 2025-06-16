@@ -1,2 +1,187 @@
-<h2>Developers</h2>
-<p>Non implemented!</p>
+<div class="developers-container ov-mb-xxl">
+	<div class="developers-header">
+		<div class="title">
+			<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
+			<h1>Developers</h1>
+		</div>
+		<p class="subtitle">Everyting you need to integrate OpenVidu Meet with your applications.</p>
+	</div>
+
+	<div class="developers-content">
+		<!-- API KEY Section -->
+		<mat-card class="section-card api-key-section">
+			<mat-card-header>
+				<div mat-card-avatar>
+					<mat-icon class="section-icon">vpn_key</mat-icon>
+				</div>
+				<mat-card-title>API KEY</mat-card-title>
+				<mat-card-subtitle>Generate and manage your API key for REST API access</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content>
+				@if (apiKeyData().isActive && apiKeyData().key) {
+					<div class="api-key-display">
+						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
+							<mat-label>API Key</mat-label>
+							<input
+								matInput
+								readonly
+								[type]="showApiKey() ? 'text' : 'password'"
+								[value]="apiKeyData().key"
+							/>
+							<button
+								mat-icon-button
+								matSuffix
+								(click)="toggleApiKeyVisibility()"
+								matTooltip="Toggle visibility"
+								class="toggle-visibility-button"
+							>
+								<mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
+							</button>
+						</mat-form-field>
+
+						<div class="api-key-actions">
+							<button mat-button (click)="copyApiKey()" class="copy-button">
+								<mat-icon>content_copy</mat-icon>
+								Copy
+							</button>
+						</div>
+					</div>
+
+					<!-- <div class="api-key-info">
+						<p class="info-text">
+							<mat-icon class="info-icon">info</mat-icon>
+							Generated on: {{ apiKeyData().lastGenerated | date: 'medium' }}
+						</p>
+						<p class="warning-text">
+							<mat-icon class="warning-icon">warning</mat-icon>
+							Keep your API key secure. Do not share it publicly or expose it in client-side code.
+						</p>
+					</div> -->
+				} @else {
+					<div class="no-api-key">
+						<h3>No API Key Generated</h3>
+						<p>Generate an API key to access OpenVidu Meet REST API endpoints.</p>
+						<button mat-raised-button class (click)="generateApiKey()">
+							<mat-icon>vpn_key</mat-icon>
+							Generate API Key
+						</button>
+					</div>
+				}
+			</mat-card-content>
+
+			@if (apiKeyData().isActive && apiKeyData().key) {
+				<mat-card-actions>
+					<button mat-raised-button color="primary" (click)="regenerateApiKey()">
+						<mat-icon>refresh</mat-icon>
+						Regenerate Key
+					</button>
+					<button mat-stroked-button id="revoke-key-btn" (click)="revokeApiKey()">
+						<mat-icon>delete</mat-icon>
+						Revoke Key
+					</button>
+				</mat-card-actions>
+			}
+			<!-- @else {
+					<button mat-raised-button color="primary" (click)="generateApiKey()">
+						<mat-icon>add</mat-icon>
+						Generate API Key
+					</button>
+				} -->
+		</mat-card>
+
+		<!-- WEBHOOKS Section -->
+		<mat-card class="section-card webhooks-section">
+			<mat-card-header>
+				<div mat-card-avatar>
+					<mat-icon class="section-icon">webhook</mat-icon>
+				</div>
+				<mat-card-title>WEBHOOKS</mat-card-title>
+				<mat-card-subtitle>Configure webhook notifications for real-time event updates</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content class="ov-mt-sm">
+				<form [formGroup]="webhookForm" class="webhook-form">
+					<!-- Enable/Disable Toggle -->
+					<h4 class="webhook-section-title">Webhook Notifications</h4>
+					<div class="webhook-toggle ov-mt-xs">
+						<span>Enable webhook notifications</span>
+						<mat-slide-toggle formControlName="isEnabled"></mat-slide-toggle>
+					</div>
+
+					<!-- Webhook URL -->
+					<h4 class="webhook-section-title">Webhook URL</h4>
+					<p class="webhook-description ov-mt-xs">
+						Enter the URL where you want to receive webhook notifications.
+					</p>
+					<mat-form-field appearance="outline" class="full-width">
+						<mat-label>Webhook URL</mat-label>
+						<input matInput formControlName="url" placeholder="https://your-server.com/webhook" />
+						<mat-icon matSuffix>link</mat-icon>
+						@if (webhookForm.get('url')?.hasError('required')) {
+							<mat-error>Webhook URL is required</mat-error>
+						}
+						@if (webhookForm.get('url')?.hasError('pattern')) {
+							<mat-error>Please enter a valid HTTP(S) URL</mat-error>
+						}
+					</mat-form-field>
+
+
+					<!-- Event Configuration -->
+					<!-- <div class="events-section">
+						<h4>Event Types</h4>
+						<p class="events-description">Choose which events should trigger webhook notifications</p>
+
+						<div class="events-grid">
+							<div class="event-group">
+								<h5>Room Events</h5>
+								<mat-slide-toggle formControlName="roomCreated" color="primary">
+									<span class="event-label"> Room Created </span>
+								</mat-slide-toggle>
+								<mat-slide-toggle formControlName="roomDeleted" color="primary">
+									<span class="event-label"> Room Deleted </span>
+								</mat-slide-toggle>
+							</div>
+
+							<div class="event-group">
+								<h5>Participant Events</h5>
+								<mat-slide-toggle formControlName="participantJoined" color="primary">
+									<span class="event-label"> Participant Joined </span>
+								</mat-slide-toggle>
+								<mat-slide-toggle formControlName="participantLeft" color="primary">
+									<span class="event-label"> Participant Left </span>
+								</mat-slide-toggle>
+							</div>
+
+							<div class="event-group">
+								<h5>Recording Events</h5>
+								<mat-slide-toggle formControlName="recordingStarted" color="primary">
+									<span class="event-label"> Recording Started </span>
+								</mat-slide-toggle>
+								<mat-slide-toggle formControlName="recordingFinished" color="primary">
+									<span class="event-label"> Recording Finished </span>
+								</mat-slide-toggle>
+							</div>
+						</div>
+					</div> -->
+				</form>
+			</mat-card-content>
+
+			<mat-card-actions>
+				<button
+					mat-raised-button
+					color="primary"
+					(click)="saveWebhookConfig()"
+					[disabled]="webhookForm.invalid"
+				>
+					<mat-icon>save</mat-icon>
+					Save Configuration
+				</button>
+				<button mat-stroked-button (click)="testWebhook()" [disabled]="!webhookForm.get('url')?.value">
+					<mat-icon>send</mat-icon>
+					Test Webhook
+				</button>
+			</mat-card-actions>
+		</mat-card>
+	</div>
+</div>

@@ -1,0 +1,32 @@
+
+::ng-deep mat-slide-toggle {
+	.mdc-switch__track {
+		border-radius: var(--ov-meet-radius-md);
+	}
+
+	// Selected state (ON)
+	--mdc-switch-selected-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-pressed-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-hover-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-focus-handle-color: var(--ov-meet-surface-color);
+
+	--mdc-switch-selected-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-pressed-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-hover-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-focus-track-color: var(--ov-meet-color-success);
+
+	--mdc-switch-selected-pressed-state-layer-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-hover-state-layer-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-focus-state-layer-color: var(--ov-meet-surface-color);
+
+	// Unselected state (OFF)
+	// --mdc-switch-unselected-handle-color: var(--ov-meet-surface-color);
+	// --mdc-switch-unselected-pressed-handle-color: var(--ov-meet-surface-color);
+	// --mdc-switch-unselected-hover-handle-color: var(--ov-meet-surface-color);
+	// --mdc-switch-unselected-focus-handle-color: var(--ov-meet-surface-color);
+
+	// --mdc-switch-unselected-track-color: var(--ov-meet-text-disabled);
+	// --mdc-switch-unselected-pressed-track-color: var(--ov-meet-text-disabled);
+	// --mdc-switch-unselected-hover-track-color: var(--ov-meet-text-disabled);
+	// --mdc-switch-unselected-focus-track-color: var(--ov-meet-text-disabled);
+}
