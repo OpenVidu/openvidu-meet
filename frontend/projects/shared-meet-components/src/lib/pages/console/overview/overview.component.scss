@@ -1,19 +1,16 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
 .overview-container {
-	@include ov-container;
-	padding: 0;
-}
-
-.overview-header {
-	@include ov-page-header;
-}
-.get-started-header {
-	@include ov-get-started-header;
+	.overview-header {
+		@include ov-page-header;
+	}
+	.get-started-header {
+		@include ov-get-started-header;
+	}
 }
 
 // Welcome State Styles
-.welcome-state {
+.welcome-content {
 	.welcome-card {
 		max-width: var(--ov-meet-container-max-width);
 		margin: 0 auto;
@@ -84,7 +81,7 @@
 }
 
 // Dashboard State Styles
-.dashboard-state {
+.dashboard-content {
 	.quick-actions {
 		@include ov-flex-center;
 		gap: var(--ov-meet-spacing-md);
@@ -193,11 +190,11 @@
 		font-size: var(--ov-meet-font-size-xxl);
 	}
 
-	.welcome-state .getting-started-grid {
+	.welcome-content .getting-started-grid {
 		grid-template-columns: 1fr;
 	}
 
-	.dashboard-state {
+	.dashboard-content {
 		.quick-actions {
 			flex-direction: column;
 			align-items: stretch;

@@ -1,15 +1,16 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
 #dashboard-container,
 mat-sidenav-container {
 	height: 100%;
 }
 
 .page-content {
-	height: calc(100% - (64px + 40px));
-	padding: 20px;
+	@include ov-container;
 }
 .toolbar-title {
-	font-size: 1.5rem;
-	font-weight: bold;
+	font-size: var(--ov-meet-font-size-xxl);
+	font-weight: var(--ov-meet-font-weight-regular);
 	margin-left: 16px;
 }
 

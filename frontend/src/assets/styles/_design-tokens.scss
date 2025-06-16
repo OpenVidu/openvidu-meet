@@ -122,7 +122,7 @@
 
 	// Layout
 	--ov-meet-container-max-width: 1200px;
-	--ov-meet-container-padding: var(--ov-meet-spacing-lg);
+	--ov-meet-container-padding: var(--ov-meet-spacing-xl);
 	--ov-meet-grid-gap: var(--ov-meet-spacing-lg);
 
 	// Icons
@@ -238,7 +238,7 @@
 
 // Mixin for icons with consistent sizes
 @mixin ov-icon($size: md) {
-	margin: inherit;
+	margin: initial;
 	@if $size == xs {
 		font-size: var(--ov-meet-icon-size-sm);
 		width: var(--ov-meet-icon-size-sm);
@@ -402,19 +402,27 @@
 	margin-bottom: var(--ov-meet-spacing-xl);
 }
 
-.ov-p-xs {
+.ov-mb-xxl {
+	margin-bottom: var(--ov-meet-spacing-xxl);
+}
+
+
+.ov-padding-none {
+	padding: 0;
+}
+.ov-padding-xs {
 	padding: var(--ov-meet-spacing-xs);
 }
-.ov-p-sm {
+.ov-padding-sm {
 	padding: var(--ov-meet-spacing-sm);
 }
-.ov-p-md {
+.ov-padding-md {
 	padding: var(--ov-meet-spacing-md);
 }
-.ov-p-lg {
+.ov-padding-lg {
 	padding: var(--ov-meet-spacing-lg);
 }
-.ov-p-xl {
+.ov-padding-xl {
 	padding: var(--ov-meet-spacing-xl);
 }
 
