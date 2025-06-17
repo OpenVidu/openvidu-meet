@@ -58,6 +58,10 @@ export const errorS3NotAvailable = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${error}`, 503);
 };
 
+export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
+	return new OpenViduMeetError('Azure Error', `Azure is not available ${error}`, 503);
+};
+
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {

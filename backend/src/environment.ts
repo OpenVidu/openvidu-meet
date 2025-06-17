@@ -53,6 +53,12 @@ export const {
 	MEET_AWS_REGION = 'us-east-1',
 	MEET_S3_WITH_PATH_STYLE_ACCESS = 'true',
 
+	//Azure Blob storage configuration
+	MEET_AZURE_CONTAINER_NAME = 'openvidu-appdata',
+	MEET_AZURE_SUBCONATAINER_NAME = 'openvidu-meet',
+	MEET_AZURE_ACCOUNT_NAME = '',
+	MEET_AZURE_ACCOUNT_KEY = '',
+
 	// Redis configuration
 	MEET_REDIS_HOST: REDIS_HOST = 'localhost',
 	MEET_REDIS_PORT: REDIS_PORT = 6379,
@@ -114,15 +120,25 @@ export const logEnvVars = () => {
 	console.log('LIVEKIT API SECRET: ', credential('****' + LIVEKIT_API_SECRET.slice(-3)));
 	console.log('LIVEKIT API KEY: ', credential('****' + LIVEKIT_API_KEY.slice(-3)));
 	console.log('---------------------------------------------------------');
-	console.log('S3 Configuration');
-	console.log('---------------------------------------------------------');
-	console.log('MEET S3 BUCKET:', text(MEET_S3_BUCKET));
-	console.log('MEET S3 SERVICE ENDPOINT:', text(MEET_S3_SERVICE_ENDPOINT));
-	console.log('MEET S3 ACCESS KEY:', credential('****' + MEET_S3_ACCESS_KEY.slice(-3)));
-	console.log('MEET S3 SECRET KEY:', credential('****' + MEET_S3_SECRET_KEY.slice(-3)));
-	console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
-	console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
-	console.log('---------------------------------------------------------');
+
+	if (MEET_PREFERENCES_STORAGE_MODE === 'azure') {
+		console.log('Azure Blob Storage Configuration');
+		console.log('---------------------------------------------------------');
+		console.log('MEET AZURE ACCOUNT NAME:', text(MEET_AZURE_ACCOUNT_NAME));
+		console.log('MEET AZURE ACCOUNT KEY:', credential('****' + MEET_AZURE_ACCOUNT_KEY.slice(-3)));
+		console.log('MEET AZURE CONTAINER NAME:', text(MEET_AZURE_CONTAINER_NAME));
+		console.log('---------------------------------------------------------');
+	} else if (MEET_PREFERENCES_STORAGE_MODE === 's3') {
+		console.log('S3 Configuration');
+		console.log('---------------------------------------------------------');
+		console.log('MEET S3 BUCKET:', text(MEET_S3_BUCKET));
+		console.log('MEET S3 SERVICE ENDPOINT:', text(MEET_S3_SERVICE_ENDPOINT));
+		console.log('MEET S3 ACCESS KEY:', credential('****' + MEET_S3_ACCESS_KEY.slice(-3)));
+		console.log('MEET S3 SECRET KEY:', credential('****' + MEET_S3_SECRET_KEY.slice(-3)));
+		console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
+		console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
+		console.log('---------------------------------------------------------');
+	}
 	console.log('Redis Configuration');
 	console.log('---------------------------------------------------------');
 	console.log('REDIS HOST:', text(REDIS_HOST));
