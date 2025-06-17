@@ -61,7 +61,7 @@ jobs:
                 del(.storage.s3) |
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
                   "container_name": "openvidu-appdata"
                 }
               ' egress.yaml
@@ -80,6 +80,9 @@ jobs:
           cd backend
           npm run test:integration-rooms
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
