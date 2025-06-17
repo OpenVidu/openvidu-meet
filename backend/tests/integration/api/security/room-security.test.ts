@@ -7,6 +7,7 @@ import { AuthMode, MeetRecordingAccess } from '../../../../src/typings/ce/index.
 import {
 	changeSecurityPreferences,
 	createRoom,
+	deleteAllRecordings,
 	deleteAllRooms,
 	loginUser,
 	startTestServer,
@@ -28,6 +29,7 @@ describe('Room API Security Tests', () => {
 
 	afterAll(async () => {
 		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Create Room Tests', () => {
