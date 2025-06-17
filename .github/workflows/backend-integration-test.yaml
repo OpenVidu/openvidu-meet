@@ -51,7 +51,7 @@ jobs:
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
-          pre-startup-commands: |
+          pre_startup_commands: |
             if [ "${{ matrix.storage-provider }}" == "azure" ]; then
               echo "Using Azure storage provider"
 
