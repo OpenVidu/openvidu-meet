@@ -53,7 +53,7 @@ jobs:
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
-            if [[ "${{ matrix.storage-provider }}" == "azure" ]]; then
+            echo "if [[ "${{ matrix.storage-provider }}" == "azure" ]]; then
               echo "Using Azure storage provider"
               # Modificar egress.yaml preservando indentación exacta
               yq e -i '
@@ -63,9 +63,7 @@ jobs:
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
                 }
               ' egress.yaml
-            fi >> pre_startup_commands.sh
-            chmod +x pre_startup_commands.sh
-            ./pre_startup_commands.sh
+            fi" > pre_startup_commands.sh && chmod +x pre_startup_commands.sh &&./pre_startup_commands.sh
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
