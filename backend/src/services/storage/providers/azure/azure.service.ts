@@ -178,13 +178,13 @@ export class AzureBlobService {
 		}
 	}
 
-	async getObjectAsStream(blobName: string, range?: { start: number; end?: number }): Promise<Readable> {
+	async getObjectAsStream(blobName: string, range?: { start: number; end: number }): Promise<Readable> {
 		try {
 			const fullKey = this.getFullKey(blobName);
 			const blobClient = this.containerClient.getBlobClient(fullKey);
 
 			const offset = range ? range.start : 0;
-			const count = range && range.end ? range.end - range.start + 1 : undefined;
+			const count = range ? (range.start === 0 && range.end === 0 ? 1 : range.end - range.start + 1) : undefined;
 
 			const downloadResp = await blobClient.download(offset, count);
 
