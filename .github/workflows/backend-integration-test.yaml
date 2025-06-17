@@ -162,6 +162,10 @@ jobs:
   test-webhooks:
     name: Webhook Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -171,13 +175,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh        
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-webhooks
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -193,6 +223,10 @@ jobs:
   test-security:
     name: Security API Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -202,13 +236,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh    
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-security
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -224,6 +284,10 @@ jobs:
   test-global-preferences:
     name: Global Preferences API Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -233,13 +297,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh    
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-global-preferences
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -255,6 +345,10 @@ jobs:
   test-participants:
     name: Participants API Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -264,13 +358,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh    
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-participants
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -286,6 +406,10 @@ jobs:
   test-meetings:
     name: Meetings API Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -295,13 +419,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh    
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-meetings
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -317,6 +467,10 @@ jobs:
   test-users:
     name: Users API Tests
     runs-on: ov-actions-runner
+    strategy:
+      fail-fast: false
+      matrix:
+        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -326,13 +480,39 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+              echo "Using Azure storage provider"
+              yq e -i '
+                del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                  "container_name": "openvidu-appdata"
+                }
+              ' egress.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh    
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
           npm run test:integration-users
         env:
+          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
+          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
