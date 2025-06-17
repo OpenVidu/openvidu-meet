@@ -53,19 +53,23 @@ jobs:
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
-            echo "#!/bin/bash
-            if [[ "${{ matrix.storage-provider }}" == "azure" ]]; then
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
               echo "Using Azure storage provider"
               # Modificar egress.yaml preservando indentación exacta
               yq e -i '
-               del(.storage.s3) |
+                del(.storage.s3) |
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
                 }
               ' egress.yaml
             fi
-            EOF" > pre_startup_commands.sh && chmod +x pre_startup_commands.sh &&./pre_startup_commands.sh
+            BASH
+
+            chmod +x pre_startup_commands.sh
+            ./pre_startup_commands.sh
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
