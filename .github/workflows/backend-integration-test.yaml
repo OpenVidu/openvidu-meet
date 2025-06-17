@@ -57,13 +57,13 @@ jobs:
               echo "Using Azure storage provider"
 
               # Modificar egress.yaml preservando indentación exacta
-              yq eval '
+              yq e -i '
                del(.storage.s3) |
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
                 }
-              ' -i "egress.yaml"
+              ' egress.yaml
             fi
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
