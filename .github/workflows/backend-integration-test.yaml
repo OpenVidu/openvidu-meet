@@ -75,6 +75,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-rooms"
       - name: Run tests
         run: |
           cd backend
@@ -83,6 +84,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-rooms"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -139,6 +141,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-recordings"
       - name: Run tests
         run: |
           cd backend
@@ -147,6 +150,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-recordings"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -200,6 +204,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-webhooks"
       - name: Run tests
         run: |
           cd backend
@@ -208,6 +213,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-webhooks"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -261,6 +267,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-security"
       - name: Run tests
         run: |
           cd backend
@@ -269,6 +276,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-security"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -322,6 +330,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-global-preferences"
       - name: Run tests
         run: |
           cd backend
@@ -330,6 +339,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-global-preferences"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -383,6 +393,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-participants"
       - name: Run tests
         run: |
           cd backend
@@ -391,6 +402,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-participants"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -444,6 +456,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-meetings"
       - name: Run tests
         run: |
           cd backend
@@ -452,6 +465,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-meetings"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -505,6 +519,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-users"
       - name: Run tests
         run: |
           cd backend
@@ -513,6 +528,7 @@ jobs:
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+          MEET_AZURE_CONTAINER_NAME: "openvidu-appdata-users"
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
