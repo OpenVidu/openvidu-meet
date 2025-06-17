@@ -62,7 +62,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-rooms"
                 }
               ' egress.yaml
             fi
@@ -128,7 +128,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-recordings"
                 }
               ' egress.yaml
             fi
@@ -191,7 +191,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-webhooks"
                 }
               ' egress.yaml
             fi
@@ -254,7 +254,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-security"
                 }
               ' egress.yaml
             fi
@@ -317,7 +317,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-global-preferences"
                 }
               ' egress.yaml
             fi
@@ -380,7 +380,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-participants"
                 }
               ' egress.yaml
             fi
@@ -443,7 +443,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-meetings"
                 }
               ' egress.yaml
             fi
@@ -506,7 +506,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata"
+                  "container_name": "openvidu-appdata-users"
                 }
               ' egress.yaml
             fi
