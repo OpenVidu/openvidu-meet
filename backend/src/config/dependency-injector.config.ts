@@ -13,6 +13,8 @@ import {
 	RoomService,
 	S3Service,
 	S3StorageProvider,
+	AzureBlobService,
+	AzureStorageProvider,
 	StorageFactory,
 	StorageKeyBuilder,
 	StorageProvider,
@@ -50,8 +52,6 @@ export const registerDependencies = () => {
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 
 	configureStorage(MEET_PREFERENCES_STORAGE_MODE);
-	container.bind(S3Service).toSelf().inSingletonScope();
-	container.bind(S3StorageProvider).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 	container.bind(MeetStorageService).toSelf().inSingletonScope();
 
@@ -75,7 +75,14 @@ const configureStorage = (storageMode: string) => {
 		case 's3':
 			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
 			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			container.bind(S3Service).toSelf().inSingletonScope();
+			container.bind(S3StorageProvider).toSelf().inSingletonScope();
 			break;
+		case 'azure':
+			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(AzureStorageProvider).inSingletonScope();
+			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			container.bind(AzureBlobService).toSelf().inSingletonScope();
+			container.bind(AzureStorageProvider).toSelf().inSingletonScope();
 	}
 };
 
