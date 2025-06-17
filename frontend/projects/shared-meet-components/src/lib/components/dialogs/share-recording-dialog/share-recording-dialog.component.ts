@@ -1,3 +1,4 @@
+import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, Inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +12,9 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpService } from 'shared-meet-components';
 
 @Component({
@@ -27,29 +30,56 @@ import { HttpService } from 'shared-meet-components';
 		MatDialogTitle,
 		MatDialogContent,
 		MatDialogActions,
-		MatDialogClose
+		MatDialogClose,
+		MatTooltipModule,
+		MatProgressSpinnerModule
 	],
 	templateUrl: './share-recording-dialog.component.html',
 	styleUrl: './share-recording-dialog.component.scss'
 })
 export class ShareRecordingDialogComponent {
-	accessType: 'private' | 'public' = 'private';
-	recordingUrl: string | undefined;
+	accessType: 'private' | 'public' = 'public';
+	recordingUrl?: string;
+
+	loading = false;
+	erroMessage?: string;
+	copied = false;
 
 	constructor(
-		@Inject(MAT_DIALOG_DATA) public data: { recordingId: string },
-		private httpService: HttpService
-	) {}
+		@Inject(MAT_DIALOG_DATA) public data: { recordingId: string; recordingUrl?: string },
+		private httpService: HttpService,
+		private clipboard: Clipboard
+	) {
+		this.recordingUrl = data.recordingUrl;
+	}
 
 	async getRecordingUrl() {
-		const privateAccess = this.accessType === 'private';
-		const { url } = await this.httpService.generateRecordingUrl(this.data.recordingId, privateAccess);
-		this.recordingUrl = url;
+		this.loading = true;
+		this.erroMessage = undefined;
+
+		try {
+			const privateAccess = this.accessType === 'private';
+			const { url } = await this.httpService.generateRecordingUrl(this.data.recordingId, privateAccess);
+			this.recordingUrl = url;
+		} catch (error) {
+			this.erroMessage = 'Failed to generate recording URL. Please try again later.';
+			console.error('Error generating recording URL:', error);
+		} finally {
+			this.loading = false;
+		}
 	}
 
 	copyToClipboard() {
-		if (this.recordingUrl) {
-			navigator.clipboard.writeText(this.recordingUrl);
+		if (!this.recordingUrl) {
+			return;
 		}
+
+		this.clipboard.copy(this.recordingUrl!);
+		this.copied = true;
+
+		// Reset copied state after 2 seconds
+		setTimeout(() => {
+			this.copied = false;
+		}, 2000);
 	}
 }

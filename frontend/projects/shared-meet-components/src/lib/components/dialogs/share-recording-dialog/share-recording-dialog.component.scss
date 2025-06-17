@@ -3,6 +3,7 @@
 	flex-direction: column;
 	gap: 20px;
 	min-width: 100%;
+	overflow: hidden;
 
 	mat-radio-group {
 		display: flex;
@@ -10,20 +11,26 @@
 		gap: 10px;
 
 		mat-radio-button {
-			color: var(--ov-text-primary-color);
+			color: var(--ov-text-surface-color);
 		}
 	}
 }
 
-.generate-btn-container {
+.error-text {
 	display: flex;
-	justify-content: flex-start;
+	align-items: center;
+	gap: 6px;
+	color: var(--ov-error-color);
+	font-weight: 500;
+}
+
+.generate-btn-container {
+	align-self: flex-start;
 }
 
 .recording-url-container {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
+	width: 100%;
+	margin-top: 8px;
 }
 
 .url-field {
@@ -31,6 +38,6 @@
 
 	input {
 		font-size: 14px;
-		color: var(--ov-text-primary-color);
+		color: var(--ov-text-surface-color);
 	}
 }
