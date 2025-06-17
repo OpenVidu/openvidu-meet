@@ -62,6 +62,7 @@ jobs:
                 .storage.azure = {
                   "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
                   "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
+                  "container_name": "openvidu-appdata"
                 }
               ' egress.yaml
             fi
