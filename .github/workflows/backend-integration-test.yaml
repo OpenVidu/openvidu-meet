@@ -53,11 +53,8 @@ jobs:
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
-            echo "Current storage provider: ${{ matrix.storage-provider }}"
-
             if [[ "${{ matrix.storage-provider }}" == "azure" ]]; then
               echo "Using Azure storage provider"
-
               # Modificar egress.yaml preservando indentación exacta
               yq e -i '
                del(.storage.s3) |
