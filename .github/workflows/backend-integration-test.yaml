@@ -51,26 +51,19 @@ jobs:
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
+          ref-openvidu-local-deployment: development
           pre_startup_commands: |
             if [ "${{ matrix.storage-provider }}" == "azure" ]; then
               echo "Using Azure storage provider"
 
-              # Update egress.yaml to use Azure storage
-              sed -i '
-              /^[[:space:]]*s3:[[:space:]]*$/,/^[[:space:]]*#azure:[[:space:]]*$/ {
-                  /^[[:space:]]*#/!s/^[[:space:]]*/    #/
-              }
-              /^[[:space:]]*#azure:[[:space:]]*$/,/^[[:space:]]*$/ {
-                  s/^[[:space:]]*#[[:space:]]*/    /
-              }
-              ' egress.yaml
-
-              # Configure Azure storage settings
-              sed -i "
-              s/account_name: your_account_name/account_name: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}/g
-              s/account_key: your_account_key/account_key: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}/g
-              " egress.yaml
-
+              # Modificar egress.yaml preservando indentación exacta
+              yq eval '
+               del(.storage.s3) |
+                .storage.azure = {
+                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}"
+                }
+              ' -i "egress.yaml"
             fi
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
