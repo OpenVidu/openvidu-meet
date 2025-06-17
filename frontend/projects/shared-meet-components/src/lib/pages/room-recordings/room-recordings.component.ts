@@ -108,7 +108,9 @@ export class RoomRecordingsComponent implements OnInit {
 	openShareDialog(recording: MeetRecordingInfo) {
 		this.dialog.open(ShareRecordingDialogComponent, {
 			width: '400px',
-			data: { recordingId: recording.recordingId }
+			data: {
+				recordingId: recording.recordingId
+			}
 		});
 	}
 
