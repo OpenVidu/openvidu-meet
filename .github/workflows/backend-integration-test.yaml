@@ -65,7 +65,8 @@ jobs:
                 }
               ' egress.yaml
             fi
-            BASH && chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
