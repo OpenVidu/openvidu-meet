@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config';
 import { MeetStorageService } from '../../../../src/services';
 import { expectValidationError, expectValidStartRecordingResponse } from '../../../helpers/assertion-helpers';
@@ -6,6 +6,7 @@ import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
+	getAllRecordings,
 	startRecording,
 	startTestServer,
 	stopRecording
@@ -15,11 +16,17 @@ import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	afterAll(async () => {
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+	});
+
+	afterEach(async () => {
+		// Ensure a clean state after each test
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		const recordings = await getAllRecordings();
+		expect(recordings.body.recordings).toHaveLength(0);
 	});
 
 	describe('Bulk Delete Recording Tests', () => {

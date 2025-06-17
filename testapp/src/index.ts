@@ -7,6 +7,7 @@ import {
 	postCreateRoom,
 	deleteRoomCtrl,
 	deleteAllRoomsCtrl,
+	deleteAllRecordingsCtrl,
 } from './controllers/homeController';
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
@@ -34,6 +35,7 @@ app.get('/room', joinRoom);
 app.post('/room', postCreateRoom);
 app.post('/room/delete', deleteRoomCtrl);
 app.post('/delete-all-rooms', deleteAllRoomsCtrl);
+app.post('/delete-all-recordings', deleteAllRecordingsCtrl);
 app.post('/join-room', joinRoom);
 app.post('/webhook', (req, res) => {
 	handleWebhook(req, res, io);

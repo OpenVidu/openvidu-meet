@@ -1,0 +1,25 @@
+@if (recording && recordingUrl) {
+	<mat-card class="recording-container">
+		<div class="video-container">
+			<video controls class="video-player">
+				<source [src]="recordingUrl" type="video/mp4" />
+				Your browser does not support the video tag.
+			</video>
+		</div>
+
+		<mat-card-content>
+			<h2 class="title">{{ recording.roomId }}</h2>
+			<div class="info-actions">
+				<span class="date">{{ recording.startDate | date: 'M/d/yy, H:mm' }}</span>
+				<div class="actions">
+					<button mat-icon-button color="primary" (click)="downloadRecording()" aria-label="Download">
+						<mat-icon>download</mat-icon>
+					</button>
+					<button mat-icon-button color="accent" (click)="openShareDialog()" aria-label="Share">
+						<mat-icon>share</mat-icon>
+					</button>
+				</div>
+			</div>
+		</mat-card-content>
+	</mat-card>
+}

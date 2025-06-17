@@ -131,7 +131,7 @@ export class OpenViduMeet extends HTMLElement {
 	}
 
 	private updateIframeSrc() {
-		const baseUrl = this.getAttribute('room-url') || '';
+		const baseUrl = this.getAttribute('room-url') || this.getAttribute('recording-url');
 		if (!baseUrl) {
 			console.error('The "room-url" attribute is required.');
 			return;

@@ -43,7 +43,9 @@
 			<mat-card class="recordings-card">
 				<div class="recordings-content">
 					<h3>View recordings</h3>
-					<button mat-stroked-button color="accent" (click)="goToRecordings()">Go to recordings</button>
+					<button id="view-recordings-btn" mat-stroked-button color="accent" (click)="goToRecordings()">
+						Go to recordings
+					</button>
 				</div>
 			</mat-card>
 		</div>
@@ -63,8 +65,8 @@
 		[toolbarRecordingButton]="(features$ | async)?.showRecording ?? true"
 		[toolbarBroadcastingButton]="false"
 		[toolbarBackgroundEffectsButton]="(features$ | async)?.showBackgrounds ?? true"
-		[toolbarActivitiesPanelButton]="true"
-		[activitiesPanelRecordingActivity]="true"
+		[toolbarActivitiesPanelButton]="(features$ | async)?.showRecording ?? true"
+		[activitiesPanelRecordingActivity]="(features$ | async)?.showRecording ?? true"
 		[activitiesPanelBroadcastingActivity]="false"
 		(onTokenRequested)="onTokenRequested()"
 		(onParticipantConnected)="onParticipantConnected($event)"

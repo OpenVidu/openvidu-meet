@@ -1,12 +1,19 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
+import { ErrorReason } from '@lib/models/navigation.model';
+import {
+	ApplicationFeatures,
+	FeatureConfigurationService
+} from '@lib/services/feature-configuration/feature-configuration.service';
+import { NavigationService } from '@lib/services/navigation/navigation.service';
+import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
+import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
 import { OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
 import {
 	ApiDirectiveModule,
@@ -17,6 +24,7 @@ import {
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
+import { Observable } from 'rxjs';
 import { WebComponentEvent } from 'webcomponent/src/models/event.model';
 import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
 import {
@@ -26,14 +34,6 @@ import {
 	SessionStorageService,
 	WebComponentManagerService
 } from '../../services';
-import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
-import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
-import { NavigationService } from '@lib/services/navigation/navigation.service';
-import {
-	ApplicationFeatures,
-	FeatureConfigurationService
-} from '@lib/services/feature-configuration/feature-configuration.service';
-import { Observable } from 'rxjs';
 
 @Component({
 	selector: 'app-video-room',
@@ -155,7 +155,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	 */
 	private async generateParticipantToken() {
 		try {
-			const { token, role, permissions } = await this.participantTokenService.generateToken(
+			const { role, permissions } = await this.participantTokenService.generateToken(
 				this.roomId,
 				this.participantName,
 				this.roomSecret
@@ -169,11 +169,11 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			switch (error.status) {
 				case 400:
 					// Invalid secret
-					await this.navigationService.redirectToErrorPage('invalid-secret');
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
 					break;
 				case 404:
 					// Room not found
-					await this.navigationService.redirectToErrorPage('invalid-room');
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
 					break;
 				case 409:
 					// Participant already exists.
@@ -181,7 +181,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 					this.participantForm.get('name')?.setErrors({ participantExists: true });
 					throw new Error('Participant already exists in the room');
 				default:
-					await this.navigationService.redirectToErrorPage('internal-error');
+					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 			}
 		}
 	}
@@ -202,14 +202,14 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		// Replace secret and participant name in the URL query parameters
-		this.navigationService.updateUrlQueryParams(this.route, {
+		this.navigationService.updateUrlQueryParams(this.route.snapshot.queryParams, {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
 		});
 	}
 
 	async goToRecordings() {
-		await this.navigationService.goToRecordings(this.roomId, this.roomSecret);
+		await this.navigationService.redirectToRecordingsPage(this.roomId, this.roomSecret);
 	}
 
 	onParticipantConnected(event: ParticipantModel) {

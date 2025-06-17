@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
+	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomOptions,
@@ -71,13 +72,12 @@ export class HttpService {
 	}
 
 	/**
-	 * TODO: Delete this method
 	 * Retrieves the room preferences.
 	 *
 	 * @returns {Promise<MeetRoomPreferences>} A promise that resolves to the room preferences.
 	 */
-	getRoomPreferences(): Promise<MeetRoomPreferences> {
-		return this.getRequest(`${this.API_PATH_PREFIX}/preferences/room`);
+	getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
+		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/preferences`);
 	}
 
 	/**
@@ -110,11 +110,7 @@ export class HttpService {
 		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`, { secret });
 	}
 
-	getRecordingMediaUrl(recordingId: string): string {
-		return `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
-	}
-
-	getRecordings(nextPageToken?: string): Promise<{
+	getRecordings(filters?: MeetRecordingFilters): Promise<{
 		recordings: MeetRecordingInfo[];
 		pagination: {
 			isTruncated: boolean;
@@ -124,11 +120,45 @@ export class HttpService {
 	}> {
 		let path = `${this.API_PATH_PREFIX}/recordings`;
 
-		if (nextPageToken) {
-			path += `?nextPageToken=${nextPageToken}`;
+		if (filters) {
+			const params = new URLSearchParams();
+			if (filters.maxItems) {
+				params.append('maxItems', filters.maxItems.toString());
+			}
+			if (filters.nextPageToken) {
+				params.append('nextPageToken', filters.nextPageToken);
+			}
+			if (filters.roomId) {
+				params.append('roomId', filters.roomId);
+			}
+			if (filters.fields) {
+				params.append('fields', filters.fields);
+			}
+
+			path += `?${params.toString()}`;
 		}
 
 		return this.getRequest(path);
+	}
+
+	getRecording(recordingId: string, secret?: string): Promise<MeetRecordingInfo> {
+		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}`;
+		if (secret) {
+			path += `?secret=${secret}`;
+		}
+		return this.getRequest<MeetRecordingInfo>(path);
+	}
+
+	getRecordingMediaUrl(recordingId: string, secret?: string): string {
+		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
+		if (secret) {
+			path += `?secret=${secret}`;
+		}
+		return path;
+	}
+
+	generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<{ url: string }> {
+		return this.getRequest(`${this.API_PATH_PREFIX}/recordings/${recordingId}/url?privateAccess=${privateAccess}`);
 	}
 
 	startRecording(roomId: string): Promise<MeetRecordingInfo> {

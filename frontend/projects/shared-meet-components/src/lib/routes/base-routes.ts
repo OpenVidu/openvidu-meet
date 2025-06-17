@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import {
 	applicationModeGuard,
 	checkParticipantRoleAndAuthGuard,
+	checkRecordingAuthGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
@@ -20,7 +21,8 @@ import {
 	RoomFormComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
-	VideoRoomComponent
+	VideoRoomComponent,
+	ViewRecordingComponent
 } from '../pages';
 
 export const baseRoutes: Routes = [
@@ -94,6 +96,11 @@ export const baseRoutes: Routes = [
 				removeModeratorSecretGuard
 			)
 		]
+	},
+	{
+		path: 'recording/:recording-id',
+		component: ViewRecordingComponent,
+		canActivate: [runGuardsSerially(applicationModeGuard, checkRecordingAuthGuard)]
 	},
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'error', component: ErrorComponent },

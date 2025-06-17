@@ -187,7 +187,7 @@ describe('Recording API Tests', () => {
 			expect(response.status).toBe(404);
 		});
 
-		it('should return 400 when recordingId format is invalid', async () => {
+		it('should return 422 when recordingId format is invalid', async () => {
 			const invalidId = 'invalid-recording-id';
 			const response = await getRecordingMedia(invalidId);
 

@@ -1,41 +1,33 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:22.14.0-alpine3.21 AS builder
+FROM node:22.16.0-alpine3.21 AS builder
 
 WORKDIR /app
 
-RUN mkdir -p types frontend backend && chown -R node:node /app
+RUN mkdir -p typings frontend backend && chown -R node:node /app
 
 USER node
 
 COPY --chown=node:node frontend/package*.json ./frontend/
 COPY --chown=node:node backend/package*.json ./backend/
-COPY --chown=node:node types/package*.json ./types/
+COPY --chown=node:node typings/package*.json ./typings/
 COPY --chown=node:node . .
-
-WORKDIR /app/frontend
 
 ARG BASE_HREF=/
 
-RUN npm install
-# Sync types from the types package
-RUN npm run types:sync
-# Build the fronted for production
-RUN npm run build:prod ${BASE_HREF}
+# Prepare project
+RUN chmod +x prepare.sh && \
+	sh ./prepare.sh --typings --frontend --webcomponent --backend
 
-WORKDIR /app/backend
-
-RUN npm install
-# Sync types from the types package
-RUN npm run types:sync
-# Build the backend for production
-RUN npm run build:prod
+# Clean up
+RUN rm -rf frontend/node_modules backend/node_modules && \
+	rm -rf typings
 
 # ====================================================
 # Stage 2: production
 # ====================================================
-FROM node:22.14.0-alpine3.21 AS production
+FROM node:22.16.0-alpine3.21 AS production
 
 WORKDIR /opt/openvidu-meet
 

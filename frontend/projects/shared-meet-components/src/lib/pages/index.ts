@@ -12,3 +12,4 @@ export * from './error/error.component';
 export * from './login/login.component';
 export * from './room-recordings/room-recordings.component';
 export * from './video-room/video-room.component';
+export * from './view-recording/view-recording.component';

@@ -21,17 +21,31 @@
 				</div>
 
 				<div class="rooms-list">
-					<div class="mb-3 text-center">
-						<form action="/delete-all-rooms" method="post">
-							<button
-								type="submit"
-								class="btn btn-danger btn-sm"
-								id="delete-all-rooms"
-							>
-								Delete All Rooms
-							</button>
-						</form>
+					<div class="action-buttons-container mb-3 text-center">
+						<div class="mb-3 text-center">
+							<form action="/delete-all-rooms" method="post">
+								<button
+									type="submit"
+									class="btn btn-danger btn-sm"
+									id="delete-all-rooms-btn"
+								>
+									Delete All Rooms
+								</button>
+							</form>
+						</div>
+						<div class="mb-3 text-center">
+							<form action="/delete-all-recordings" method="post">
+								<button
+									type="submit"
+									class="btn btn-danger btn-sm"
+									id="delete-all-recordings-btn"
+								>
+									Delete All Recordings
+								</button>
+							</form>
+						</div>
 					</div>
+
 					{{#rooms.length}}
 					<ul class="list-group">
 						{{#rooms}}

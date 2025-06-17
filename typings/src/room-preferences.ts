@@ -19,7 +19,6 @@ export const enum MeetRecordingAccess {
 	ADMIN = 'admin', // Only admins can access the recording
 	ADMIN_MODERATOR = 'admin-moderator', // Admins and moderators can access
 	ADMIN_MODERATOR_PUBLISHER = 'admin-moderator-publisher', // Admins, moderators and publishers can access
-	PUBLIC = 'public', // Everyone can access
 }
 
 export interface MeetChatPreferences {

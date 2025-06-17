@@ -305,12 +305,10 @@ export class RoomService {
 
 		/* A participant can retrieve recordings if
 			- they can delete recordings
-			- the recording access is public
 			- they are a publisher and the recording access includes publishers
 		*/
 		const canRetrieveRecordings =
 			canDeleteRecordings ||
-			recordingAccess === MeetRecordingAccess.PUBLIC ||
 			(role === ParticipantRole.PUBLISHER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER);
 
 		return {
@@ -450,7 +448,7 @@ export class RoomService {
 			);
 
 			// Prepare rooms for batch update
-			const roomsToUpdate: {roomId: string; room: MeetRoom}[] = [];
+			const roomsToUpdate: { roomId: string; room: MeetRoom }[] = [];
 			const successfulRoomIds: string[] = [];
 
 			roomResults.forEach((result, index) => {
@@ -459,7 +457,7 @@ export class RoomService {
 				if (result.status === 'fulfilled' && result.value) {
 					const room = result.value;
 					room.markedForDeletion = true;
-					roomsToUpdate.push({roomId, room});
+					roomsToUpdate.push({ roomId, room });
 					successfulRoomIds.push(roomId);
 				} else {
 					this.logger.warn(
@@ -470,7 +468,7 @@ export class RoomService {
 
 			// Batch save all updated rooms
 			if (roomsToUpdate.length > 0) {
-				await Promise.allSettled(roomsToUpdate.map(({room}) => this.storageService.saveMeetRoom(room)));
+				await Promise.allSettled(roomsToUpdate.map(({ room }) => this.storageService.saveMeetRoom(room)));
 			}
 
 			this.logger.info(`Successfully marked ${successfulRoomIds.length} rooms for deletion`);

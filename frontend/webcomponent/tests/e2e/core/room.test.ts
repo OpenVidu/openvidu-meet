@@ -4,9 +4,12 @@ import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import {
 	applyVirtualBackground,
+	deleteAllRecordings,
+	deleteAllRooms,
 	interactWithElementInIframe,
 	joinRoomAs,
 	leaveRoom,
+	openMoreOptionsMenu,
 	prepareForJoiningRoom,
 	saveScreenshot,
 	startScreenSharing,
@@ -16,6 +19,7 @@ import {
 
 let subscribedToAppErrors = false;
 
+// Test suite for room functionality in OpenVidu Meet
 test.describe('Room Functionality Tests', () => {
 	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'testing-room';
@@ -57,14 +61,31 @@ test.describe('Room Functionality Tests', () => {
 	});
 
 	test.afterAll(async ({ browser }) => {
-		// Cleanup: delete the test room
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await tempPage.goto(testAppUrl);
-		await tempPage.waitForSelector('#delete-all-rooms');
-		await tempPage.click('#delete-all-rooms');
-		await tempPage.close();
+		await deleteAllRooms(tempPage);
+		await deleteAllRecordings(tempPage);
+
 		await tempContext.close();
+		await tempPage.close();
+	});
+
+	// ==========================================
+	// COMPONENT RENDERING TESTS
+	// ==========================================
+	test.describe('Component Rendering', () => {
+		test('should load the web component with proper iframe', async ({ page }) => {
+			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+
+			const component = page.locator('openvidu-meet');
+			await expect(component).toBeVisible();
+
+			const hasIframe = await page.evaluate(() => {
+				const component = document.querySelector('openvidu-meet');
+				return !!component?.shadowRoot?.querySelector('iframe');
+			});
+			expect(hasIframe).toBeTruthy();
+		});
 	});
 
 	// ==========================================
@@ -86,7 +107,6 @@ test.describe('Room Functionality Tests', () => {
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
 			// First participant joins
 			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
 
 			// Check local video element
 			const localVideo = await waitForElementInIframe(page, '.OV_stream.local');
@@ -100,7 +120,6 @@ test.describe('Room Functionality Tests', () => {
 			await joinRoomAs('moderator', 'moderator', moderatorPage);
 
 			// Verify session established and remote video appears
-			await waitForElementInIframe(moderatorPage, 'ov-session');
 			await waitForElementInIframe(moderatorPage, '.OV_stream.remote');
 
 			// Cleanup
@@ -154,7 +173,6 @@ test.describe('Room Functionality Tests', () => {
 	test.describe('UI Panels and Components', () => {
 		test('should show and interact with chat panel', async ({ page }) => {
 			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
 
 			// Open chat panel
 			await waitForElementInIframe(page, '#chat-panel-btn');
@@ -176,8 +194,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show activities panel', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
+			await joinRoomAs('moderator', participantName, page);
 
 			// Open activities panel
 			await waitForElementInIframe(page, '#activities-panel-btn');
@@ -192,7 +209,6 @@ test.describe('Room Functionality Tests', () => {
 
 		test('should show participants panel', async ({ page }) => {
 			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
 
 			// Open participants panel
 			await waitForElementInIframe(page, '#participants-panel-btn');
@@ -207,11 +223,8 @@ test.describe('Room Functionality Tests', () => {
 
 		test('should show settings panel', async ({ page }) => {
 			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
 
-			// Open more options menu
-			await interactWithElementInIframe(page, '#more-options-btn', { action: 'click' });
-			await page.waitForTimeout(500); // Wait for menu animation
+			await openMoreOptionsMenu(page);
 
 			// Open settings panel
 			await interactWithElementInIframe(page, '#toolbar-settings-btn', { action: 'click' });
@@ -231,7 +244,6 @@ test.describe('Room Functionality Tests', () => {
 	test.describe('Advanced Features', () => {
 		test('should apply virtual background and detect visual changes', async ({ page }) => {
 			await joinRoomAs('publisher', participantName, page);
-			await waitForElementInIframe(page, 'ov-session');
 
 			// Wait for video element to be ready
 			await waitForElementInIframe(page, '.OV_video-element');

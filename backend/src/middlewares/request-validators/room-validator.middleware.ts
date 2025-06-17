@@ -60,8 +60,7 @@ const validForceQueryParam = () =>
 const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
 	MeetRecordingAccess.ADMIN,
 	MeetRecordingAccess.ADMIN_MODERATOR,
-	MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER,
-	MeetRecordingAccess.PUBLIC
+	MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
 ]);
 
 const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z

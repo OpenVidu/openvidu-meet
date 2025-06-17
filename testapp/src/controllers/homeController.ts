@@ -5,6 +5,10 @@ import {
 	deleteRoom,
 	deleteAllRooms,
 } from '../services/roomService';
+import {
+	deleteAllRecordings,
+	getAllRecordings,
+} from '../services/recordingService';
 
 export const getHome = async (req: Request, res: Response) => {
 	try {
@@ -61,6 +65,7 @@ export const deleteAllRoomsCtrl = async (_req: Request, res: Response) => {
 			return;
 		}
 		const roomIds = allRooms.rooms.map((room) => room.roomId);
+		console.log(`Deleting ${roomIds.length} rooms`, roomIds);
 		await deleteAllRooms(roomIds);
 		res.render('index', { rooms: [] });
 	} catch (error) {
@@ -70,26 +75,50 @@ export const deleteAllRoomsCtrl = async (_req: Request, res: Response) => {
 	}
 };
 
+export const deleteAllRecordingsCtrl = async (_req: Request, res: Response) => {
+	try {
+		const [{ recordings }, { rooms }] = await Promise.all([
+			getAllRecordings(),
+			getAllRooms(),
+		]);
+		if (recordings.length === 0) {
+			console.log('No recordings to delete');
+			res.render('index', { rooms });
+			return;
+		}
+		const recordingIds = recordings.map((recording) => recording.recordingId);
+		await deleteAllRecordings(recordingIds);
+		console.log(`Deleted ${recordingIds.length} recordings`);
+		res.render('index', { rooms });
+	} catch (error) {
+		console.error('Error deleting all recordings:', error);
+		res.status(500).send('Internal Server Error ' + JSON.stringify(error));
+		return;
+	}
+};
 
 /**
  * Converts flat form data to nested MeetRoomPreferences object
  */
 const processFormPreferences = (body: any): any => {
-    const preferences = {
-        chatPreferences: {
-            enabled: body['preferences.chatPreferences.enabled'] === 'on'
-        },
-        recordingPreferences: {
-            enabled: body['preferences.recordingPreferences.enabled'] === 'on',
-            // Only include allowAccessTo if recording is enabled
-            ...(body['preferences.recordingPreferences.enabled'] === 'on' && {
-                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin-moderator-publisher'
-            })
-        },
-        virtualBackgroundPreferences: {
-            enabled: body['preferences.virtualBackgroundPreferences.enabled'] === 'on'
-        }
-    };
+	const preferences = {
+		chatPreferences: {
+			enabled: body['preferences.chatPreferences.enabled'] === 'on',
+		},
+		recordingPreferences: {
+			enabled: body['preferences.recordingPreferences.enabled'] === 'on',
+			// Only include allowAccessTo if recording is enabled
+			...(body['preferences.recordingPreferences.enabled'] === 'on' && {
+				allowAccessTo:
+					body['preferences.recordingPreferences.allowAccessTo'] ||
+					'admin-moderator-publisher',
+			}),
+		},
+		virtualBackgroundPreferences: {
+			enabled:
+				body['preferences.virtualBackgroundPreferences.enabled'] === 'on',
+		},
+	};
 
-    return preferences;
-}
+	return preferences;
+};

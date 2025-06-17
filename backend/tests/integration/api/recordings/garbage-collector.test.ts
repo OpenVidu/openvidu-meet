@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { EgressInfo, EgressStatus, Room } from 'livekit-server-sdk';
 import ms from 'ms';
-import { Lock } from 'redlock';
+import { Lock } from '@sesamecare-oss/redlock';
 import { container } from '../../../../src/config/index.js';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MeetLock } from '../../../../src/helpers/index.js';

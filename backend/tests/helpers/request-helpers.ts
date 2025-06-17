@@ -374,6 +374,7 @@ export const refreshParticipantToken = async (participantOptions: any) => {
  * @param participantName The name for the fake participant
  */
 export const joinFakeParticipant = async (roomId: string, participantName: string) => {
+	await ensureLivekitCliInstalled();
 	const process = spawn('lk', [
 		'room',
 		'join',
@@ -390,6 +391,54 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 	// Store the process to be able to terminate it later
 	fakeParticipantsProcesses.set(`${roomId}-${participantName}`, process);
 	await sleep('1s');
+};
+
+/**
+ * Verifies that the LiveKit CLI tool 'lk' is installed and accessible
+ * @throws Error if 'lk' command is not found
+ */
+const ensureLivekitCliInstalled = async (): Promise<void> => {
+	return new Promise((resolve, reject) => {
+		const checkProcess = spawn('lk', ['--version'], {
+			stdio: 'pipe'
+		});
+
+		let hasResolved = false;
+
+		const resolveOnce = (success: boolean, message?: string) => {
+			if (hasResolved) return;
+
+			hasResolved = true;
+
+			if (success) {
+				resolve();
+			} else {
+				reject(new Error(message || 'LiveKit CLI check failed'));
+			}
+		};
+
+		checkProcess.on('error', (error) => {
+			if (error.message.includes('ENOENT')) {
+				resolveOnce(false, '❌ LiveKit CLI tool "lk" is not installed or not in PATH.');
+			} else {
+				resolveOnce(false, `Failed to check LiveKit CLI: ${error.message}`);
+			}
+		});
+
+		checkProcess.on('exit', (code) => {
+			if (code === 0) {
+				resolveOnce(true);
+			} else {
+				resolveOnce(false, `LiveKit CLI exited with code ${code}`);
+			}
+		});
+
+		// Timeout after 5 seconds
+		setTimeout(() => {
+			checkProcess.kill();
+			resolveOnce(false, 'LiveKit CLI check timed out');
+		}, 5000);
+	});
 };
 
 export const disconnectFakeParticipants = async () => {

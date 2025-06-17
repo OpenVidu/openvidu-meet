@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
 import ms from 'ms';
-import Redlock from 'redlock';
+import { Redlock } from "@sesamecare-oss/redlock";
 import {
 	checkModuleEnabled,
 	REDIS_DB,
@@ -288,7 +288,8 @@ export class RedisService extends EventEmitter {
 				username: REDIS_USERNAME,
 				password: REDIS_PASSWORD,
 				name: REDIS_SENTINEL_MASTER_NAME,
-				db: Number(REDIS_DB)
+				db: Number(REDIS_DB),
+				maxRetriesPerRequest: null, // Infinite retries
 			};
 		} else {
 			this.logger.verbose('Using Redis standalone');
@@ -297,7 +298,8 @@ export class RedisService extends EventEmitter {
 				host: REDIS_HOST,
 				username: REDIS_USERNAME,
 				password: REDIS_PASSWORD,
-				db: Number(REDIS_DB)
+				db: Number(REDIS_DB),
+				maxRetriesPerRequest: null, // Infinite retries
 			};
 		}
 	}
