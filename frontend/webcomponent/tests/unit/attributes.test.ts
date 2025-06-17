@@ -35,7 +35,7 @@ describe('Web Component Attributes', () => {
 
 		expect(iframe).toBeDefined();
 		expect(iframe?.src).toBeFalsy();
-		expect(consoleErrorSpy).toHaveBeenCalledWith('The "room-url" attribute is required.');
+		expect(consoleErrorSpy).toHaveBeenCalledWith('The "room-url" or "recording-url" attribute is required.');
 
 		consoleErrorSpy.mockRestore();
 	});
