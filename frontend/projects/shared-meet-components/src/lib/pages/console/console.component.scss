@@ -30,3 +30,8 @@
 	// --mdc-switch-unselected-hover-track-color: var(--ov-meet-text-disabled);
 	// --mdc-switch-unselected-focus-track-color: var(--ov-meet-text-disabled);
 }
+
+
+::ng-deep .mat-mdc-nav-list .mat-mdc-list-item {
+	border-radius: 0 !important;
+}
