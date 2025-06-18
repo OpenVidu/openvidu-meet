@@ -45,6 +45,6 @@ export interface WebComponentCommandPayloads {
  * @category Type Helpers
  * @private
  */
-export type WenComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
+export type WebComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
 	? WebComponentCommandPayloads[T]
 	: never;
