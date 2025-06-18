@@ -1,0 +1,14 @@
+description: Successfully created a new API key
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                apiKey:
+                    type: string
+                    description: The API key that was created.
+                    example: 'ovmeet-1234567890abcdef1234567890abcdef'
+                creationDate:
+                    type: number
+                    description: The date when the API key was created.
+                    example: 1620000000000
