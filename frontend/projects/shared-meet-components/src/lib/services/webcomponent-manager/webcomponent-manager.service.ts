@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
-import { OutboundEventMessage, InboundCommandMessage, WebComponentEvent, WebComponentCommand } from '../../typings/ce';
+import { WebComponentOutboundEventMessage, WebComponentInboundCommandMessage, WebComponentEvent, WebComponentCommand } from '../../typings/ce';
 import { ContextService, HttpService } from '../../services';
 
 /**
@@ -51,7 +51,7 @@ export class WebComponentManagerService {
 		this.log.d('Stopped commands listener');
 	}
 
-	sendMessageToParent(event: OutboundEventMessage) {
+	sendMessageToParent(event: WebComponentOutboundEventMessage) {
 		if (!this.contextService.isEmbeddedMode()) return;
 		this.log.d('Sending message to parent :', event);
 		const origin = this.contextService.getParentDomain();
@@ -59,7 +59,7 @@ export class WebComponentManagerService {
 	}
 
 	protected async handleMessage(event: MessageEvent): Promise<void> {
-		const message: InboundCommandMessage = event.data;
+		const message: WebComponentInboundCommandMessage = event.data;
 		const parentDomain = this.contextService.getParentDomain();
 		const { command, payload } = message;
 

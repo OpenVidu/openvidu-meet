@@ -29,7 +29,7 @@ import {
 	SessionStorageService,
 	WebComponentManagerService
 } from '../../services';
-import { OpenViduMeetPermissions, ParticipantRole, WebComponentEvent, OutboundEventMessage } from '../../typings/ce';
+import { OpenViduMeetPermissions, ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '../../typings/ce';
 
 @Component({
 	selector: 'app-video-room',
@@ -215,7 +215,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
-		const message: OutboundEventMessage = {
+		const message: WebComponentOutboundEventMessage = {
 			event: WebComponentEvent.JOIN,
 			payload: {
 				roomId: event.getProperties().room?.name || '',
@@ -231,7 +231,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		const isExternalURL = /^https?:\/\//.test(redirectURL);
 		const isRoomDeleted = event.reason === ParticipantLeftReason.ROOM_DELETED;
 
-		let message: OutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
+		let message: WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
 
 		if (isRoomDeleted) {
 			message = {
@@ -239,7 +239,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				payload: {
 					roomId: event.roomName
 				}
-			} as OutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
+			} as WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
 		} else {
 			message = {
 				event: WebComponentEvent.LEFT,
@@ -248,7 +248,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 					participantName: event.participantName,
 					reason: event.reason
 				}
-			} as OutboundEventMessage<WebComponentEvent.LEFT>;
+			} as WebComponentOutboundEventMessage<WebComponentEvent.LEFT>;
 		}
 
 		this.wcManagerService.sendMessageToParent(message);
