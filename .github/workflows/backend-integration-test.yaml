@@ -37,10 +37,6 @@ jobs:
   test-rooms:
     name: Rooms API Tests
     runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -50,35 +46,8 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          pre_startup_commands: |
-            if [ "${{ matrix.storage-provider }}" == "azure" ]; then
-              echo "Using Azure storage provider"
-
-              # Update egress.yaml to use Azure storage
-              sed -i '
-              /^[[:space:]]*s3:[[:space:]]*$/,/^[[:space:]]*#azure:[[:space:]]*$/ {
-                  /^[[:space:]]*#/!s/^[[:space:]]*/    #/
-              }
-              /^[[:space:]]*#azure:[[:space:]]*$/,/^[[:space:]]*$/ {
-                  s/^[[:space:]]*#[[:space:]]*/    /
-              }
-              ' egress.yaml
-
-              # Configure Azure storage settings
-              sed -i "
-              s/account_name: your_account_name/account_name: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}/g
-              s/account_key: your_account_key/account_key: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}/g
-              " egress.yaml
-
-            fi
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
       - name: Run tests
         run: |
           cd backend
