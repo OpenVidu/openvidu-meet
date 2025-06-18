@@ -1,5 +1,5 @@
-import { WenComponentCommandPayloadFor, WebComponentCommand } from './command.model';
-import { WebComponentEventPayloadFor, WebComponentEvent } from './event.model';
+import { WenComponentCommandPayloadFor, WebComponentCommand } from './command.model.js';
+import { WebComponentEventPayloadFor, WebComponentEvent } from './event.model.js';
 
 /**
  * Represents all possible messages exchanged between the host application and WebComponent.
