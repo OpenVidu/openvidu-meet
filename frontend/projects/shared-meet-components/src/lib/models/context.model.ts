@@ -1,9 +1,4 @@
-import {
-	OpenViduMeetPermissions,
-	ParticipantRole,
-	RecordingPermissions,
-	SecurityPreferences
-} from 'projects/shared-meet-components/src/public-api';
+import { OpenViduMeetPermissions, ParticipantRole, RecordingPermissions, SecurityPreferences } from '../typings/ce';
 
 export interface ContextData {
 	mode: ApplicationMode;

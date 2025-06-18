@@ -1,16 +1,7 @@
 import { Injectable } from '@angular/core';
-
-import {
-	ContextService,
-	HttpService,
-	PanelService,
-	PanelType,
-	OpenViduService,
-	LoggerService
-} from 'projects/shared-meet-components/src/public-api';
-import { WebComponentCommand } from 'webcomponent/src/models/command.model';
-import { WebComponentEvent } from 'webcomponent/src/models/event.model';
-import { OutboundEventMessage, InboundCommandMessage } from 'webcomponent/src/models/message.type';
+import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
+import { OutboundEventMessage, InboundCommandMessage, WebComponentEvent, WebComponentCommand } from '../../typings/ce';
+import { ContextService, HttpService } from '../../services';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.

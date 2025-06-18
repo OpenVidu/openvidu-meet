@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { TokenGenerationResult } from '@lib/models/auth.model';
-import { HttpService, ContextService, SessionStorageService } from 'shared-meet-components';
+import { TokenGenerationResult } from '../../models/auth.model';
+import { HttpService, ContextService, SessionStorageService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'

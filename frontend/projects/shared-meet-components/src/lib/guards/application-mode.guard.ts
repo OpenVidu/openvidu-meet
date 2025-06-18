@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { WebComponentManagerService, ContextService } from '../services';
-import { ApplicationMode } from 'projects/shared-meet-components/src/public-api';
+import { ApplicationMode } from '../models';
 
 export const applicationModeGuard: CanActivateFn = (
 	_route: ActivatedRouteSnapshot,

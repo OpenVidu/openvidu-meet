@@ -6,15 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
-import {
-	ApplicationFeatures,
-	FeatureConfigurationService
-} from '@lib/services/feature-configuration/feature-configuration.service';
-import { NavigationService } from '@lib/services/navigation/navigation.service';
-import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
-import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
-import { OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
+import { Observable } from 'rxjs';
 import {
 	ApiDirectiveModule,
 	OpenViduComponentsUiModule,
@@ -24,16 +16,20 @@ import {
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
-import { Observable } from 'rxjs';
-import { WebComponentEvent } from 'webcomponent/src/models/event.model';
-import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
+import { ErrorReason } from '../../models';
 import {
+	ApplicationFeatures,
+	FeatureConfigurationService,
+	NavigationService,
+	ParticipantTokenService,
+	RecordingManagerService,
 	AuthService,
 	ContextService,
 	RoomService,
 	SessionStorageService,
 	WebComponentManagerService
 } from '../../services';
+import { OpenViduMeetPermissions, ParticipantRole, WebComponentEvent, OutboundEventMessage } from '../../typings/ce';
 
 @Component({
 	selector: 'app-video-room',

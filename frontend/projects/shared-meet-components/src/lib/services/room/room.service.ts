@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
-import { MeetRoomPreferences } from '@lib/typings/ce';
+import { MeetRoomPreferences, MeetRoom, MeetRoomOptions } from '../../typings/ce';
+import { HttpService, FeatureConfigurationService } from '../../services';
 import { LoggerService } from 'openvidu-components-angular';
-import { HttpService } from '../http/http.service';
-import { MeetRoom, MeetRoomOptions } from 'projects/shared-meet-components/src/lib/typings/ce/room';
-import { FeatureConfigurationService } from '../feature-configuration/feature-configuration.service';
 
 @Injectable({
 	providedIn: 'root'

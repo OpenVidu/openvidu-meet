@@ -6,8 +6,8 @@ import { MatListModule } from '@angular/material/list';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
-import { ConsoleNavLink } from '../../models/sidenav.model';
-import { ContextService } from 'shared-meet-components';
+import { ConsoleNavLink } from '../../models';
+import { ContextService } from '../../services';
 
 @Component({
 	selector: 'ov-console-nav',

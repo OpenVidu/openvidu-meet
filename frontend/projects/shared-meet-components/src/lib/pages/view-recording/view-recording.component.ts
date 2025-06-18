@@ -6,9 +6,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ShareRecordingDialogComponent } from '@lib/components';
-import { HttpService } from '@lib/services';
-import { ActionService, MeetRecordingInfo, MeetRecordingStatus } from 'shared-meet-components';
+import { ActionService } from 'openvidu-components-angular';
+import {MeetRecordingInfo, MeetRecordingStatus} from '../../typings/ce';
+import { ShareRecordingDialogComponent } from '../../components';
+import { HttpService } from '../../services';
 
 @Component({
 	selector: 'app-view-recording',

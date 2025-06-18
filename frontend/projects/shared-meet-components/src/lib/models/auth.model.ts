@@ -1,4 +1,4 @@
-import { OpenViduMeetPermissions, ParticipantRole } from 'shared-meet-components';
+import { OpenViduMeetPermissions, ParticipantRole } from '../typings/ce';
 
 export interface TokenGenerationResult {
 	token: string; // The generated participant token

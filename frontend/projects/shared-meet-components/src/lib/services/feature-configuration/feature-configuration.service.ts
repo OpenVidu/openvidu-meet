@@ -7,8 +7,8 @@ import {
 	OpenViduMeetPermissions,
 	ParticipantRole,
 	RecordingPermissions
-} from '@lib/typings/ce';
-import { GlobalPreferencesService } from '../global-preferences/global-preferences.service';
+} from '../../typings/ce';
+import { GlobalPreferencesService } from '../../services';
 
 /**
  * Interface that defines all available features in the application

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
+import { ErrorReason } from '../../models';
 
 @Component({
 	selector: 'ov-error',

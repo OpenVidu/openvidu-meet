@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ContextService } from 'shared-meet-components';
+import { ContextService } from '@lib/services';
 import packageInfo from '../../package.json';
 
 @Component({

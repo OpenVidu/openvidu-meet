@@ -1,14 +1,9 @@
 import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
-import { ApplicationMode, ContextData, Edition } from '../../models/context.model';
 import { LoggerService } from 'openvidu-components-angular';
-import {
-	AuthMode,
-	HttpService,
-	OpenViduMeetPermissions,
-	ParticipantRole
-} from 'projects/shared-meet-components/src/public-api';
-import { FeatureConfigurationService } from '../feature-configuration/feature-configuration.service';
+import { ApplicationMode, ContextData, Edition } from '../../models';
+import { AuthMode, OpenViduMeetPermissions, ParticipantRole } from '../../typings/ce';
+import { FeatureConfigurationService, HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'

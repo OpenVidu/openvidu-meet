@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
+import { ErrorReason } from '../models';
 import { ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
 
 /**

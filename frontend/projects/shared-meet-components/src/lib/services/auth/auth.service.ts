@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpService } from '../http/http.service';
 import { Router } from '@angular/router';
 import { from, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { UserRole, User } from '@lib/typings/ce';
+import { UserRole, User } from '../../typings/ce';
+import { HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'

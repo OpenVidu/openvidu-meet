@@ -10,7 +10,7 @@ import {
 	ParticipantOptions,
 	SecurityPreferences,
 	User
-} from '@lib/typings/ce';
+} from '../../typings/ce';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable({

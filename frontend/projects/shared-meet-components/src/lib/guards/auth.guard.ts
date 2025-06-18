@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
-import { AuthMode, ParticipantRole } from '@lib/typings/ce';
+import { ErrorReason } from '../models';
+import { AuthMode, ParticipantRole } from '../typings/ce';
 import { AuthService, ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
-import { ConsoleNavLink } from '../../models/sidenav.model';
+import { ConsoleNavComponent } from '../../components';
+import { ConsoleNavLink } from '../../models';
 import { AuthService } from '../../services';
 
 @Component({

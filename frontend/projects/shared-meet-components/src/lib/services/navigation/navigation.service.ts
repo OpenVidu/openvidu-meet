@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Location } from '@angular/common';
-import { ActivatedRoute, Params, Router, UrlTree } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
+import { Params, Router, UrlTree } from '@angular/router';
+import { ErrorReason } from '../../models';
 
 @Injectable({
 	providedIn: 'root'

@@ -3,8 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SpinnerComponent } from '../../components/spinner/spinner.component';
-import { DialogComponent } from '../../components/dialogs/basic-dialog/dialog.component';
+import { DialogComponent, SpinnerComponent } from '../../components';
 import { DialogOptions } from '../../models';
 
 @Injectable({

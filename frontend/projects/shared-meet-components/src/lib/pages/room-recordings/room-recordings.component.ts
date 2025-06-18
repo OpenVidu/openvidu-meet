@@ -6,14 +6,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
-import { ShareRecordingDialogComponent } from '@lib/components';
-import { ContextService, HttpService } from '@lib/services';
-import {
-	ActionService,
-	MeetRecordingFilters,
-	MeetRecordingInfo,
-	OpenViduComponentsUiModule
-} from 'shared-meet-components';
+import { ActionService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
+import { ShareRecordingDialogComponent } from '../../components';
+import { ContextService, HttpService } from '../../services';
+import { MeetRecordingFilters, MeetRecordingInfo } from '../../typings/ce';
 
 @Component({
 	selector: 'app-room-recordings',
