@@ -131,7 +131,7 @@ export class RoomService {
 
 		await this.storageService.saveMeetRoom(room);
 		// Update the archived room metadata if it exists
-		await this.storageService.archiveRoomMetadata(roomId);
+		await this.storageService.archiveRoomMetadata(roomId, true);
 		return room;
 	}
 

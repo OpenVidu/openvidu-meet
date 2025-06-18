@@ -242,13 +242,15 @@ export class MeetStorageService<
 	 * This method retrieves the room data, extracts key metadata (moderator/publisher URLs and
 	 * recording preferences), and saves it to an archived location for future reference.
 	 *
-	 * If an archived metadata for the room already exists, it will be overwritten.
+	 * If `updateOnlyIfExists` is true, it will only save the archived metadata if it already exists,
+	 * updating the existing entry.
 	 *
 	 * @param roomId - The unique identifier of the room to archive
+	 * @param updateOnlyIfExists - If true, only update if archived metadata already exists
 	 * @throws {Error} When the room with the specified ID is not found
 	 * @returns A promise that resolves when the archiving operation completes successfully
 	 */
-	async archiveRoomMetadata(roomId: string): Promise<void> {
+	async archiveRoomMetadata(roomId: string, updateOnlyIfExists = false): Promise<void> {
 		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
 		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
 
@@ -257,6 +259,15 @@ export class MeetStorageService<
 		if (!room) {
 			this.logger.warn(`Room ${roomId} not found, cannot archive metadata`);
 			throw errorRoomNotFound(roomId);
+		}
+
+		if (updateOnlyIfExists) {
+			const existing = await this.getFromCacheAndStorage<Partial<MRoom>>(redisKey, storageKey);
+
+			if (!existing) {
+				this.logger.verbose(`Archived metadata for room ${roomId} does not exist, skipping update`);
+				return;
+			}
 		}
 
 		const archivedRoom: Partial<MRoom> = {
