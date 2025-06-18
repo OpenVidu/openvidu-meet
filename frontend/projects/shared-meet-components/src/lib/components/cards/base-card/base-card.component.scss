@@ -80,8 +80,8 @@
 }
 
 .disabled {
-	opacity: 0.5; // Visualmente se ve deshabilitado
-	pointer-events: none; // Desactiva todos los eventos de interacción
-	user-select: none; // Evita que el usuario seleccione el texto o elementos dentro de la tarjeta
-	filter: grayscale(80%); // Hace que los colores parezcan apagados (opcional)
+	opacity: 0.5; // Visually appears disabled
+	pointer-events: none; // Disables all interaction events
+	user-select: none; // Prevents user from selecting text or elements within the card
+	filter: grayscale(80%); // Makes colors appear muted (optional)
 }

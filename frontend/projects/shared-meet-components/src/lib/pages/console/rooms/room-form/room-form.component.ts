@@ -5,8 +5,8 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
-import { HttpService } from '@lib/services';
-import { MeetRoom, MeetRoomOptions } from '@lib/typings/ce';
+import { HttpService } from '../../../../services';
+import { MeetRoom, MeetRoomOptions } from '../../../../typings/ce';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
 
 @Component({
