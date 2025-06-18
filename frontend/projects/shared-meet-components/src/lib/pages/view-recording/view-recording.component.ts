@@ -39,7 +39,7 @@ export class ViewRecordingComponent implements OnInit {
 			this.recording = await this.httpService.getRecording(recordingId!, secret!);
 
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.httpService.getRecordingMediaUrl(this.recording!.recordingId);
+				this.recordingUrl = this.httpService.getRecordingMediaUrl(recordingId!, secret!);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);

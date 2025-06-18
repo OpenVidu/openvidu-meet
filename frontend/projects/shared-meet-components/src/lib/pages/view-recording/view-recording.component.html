@@ -6,13 +6,11 @@
 					<video
 						autoplay
 						controls
-						muted
+						playsinline
 						class="video-player"
 						[src]="recordingUrl"
 						(error)="videoError = true"
-					>
-						Your browser does not support the video tag.
-					</video>
+					></video>
 				</div>
 			} @else {
 				<div class="video-error">
