@@ -19,7 +19,7 @@
 			</mat-card-header>
 
 			<mat-card-content>
-				@if (apiKeyData().isActive && apiKeyData().key) {
+				@if (apiKeyData().key) {
 					<div class="api-key-display">
 						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
 							<mat-label>API Key</mat-label>
@@ -70,7 +70,7 @@
 				}
 			</mat-card-content>
 
-			@if (apiKeyData().isActive && apiKeyData().key) {
+			@if (apiKeyData().key) {
 				<mat-card-actions>
 					<button mat-raised-button color="primary" (click)="regenerateApiKey()">
 						<mat-icon>refresh</mat-icon>
@@ -82,12 +82,6 @@
 					</button>
 				</mat-card-actions>
 			}
-			<!-- @else {
-					<button mat-raised-button color="primary" (click)="generateApiKey()">
-						<mat-icon>add</mat-icon>
-						Generate API Key
-					</button>
-				} -->
 		</mat-card>
 
 		<!-- WEBHOOKS Section -->

@@ -37,7 +37,7 @@ export class NotificationService {
 	}
 
 	showSnackbar(message: string, duration: number = 3000): void {
-		this.snackBar.open(message, 'Cerrar', {
+		this.snackBar.open(message, 'Close', {
 			duration,
 			verticalPosition: 'top',
 			horizontalPosition: 'right',

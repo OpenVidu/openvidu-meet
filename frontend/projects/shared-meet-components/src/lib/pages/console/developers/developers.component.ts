@@ -4,17 +4,18 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { NotificationService } from 'shared-meet-components';
 
 interface ApiKeyData {
 	key: string;
-	lastGenerated: Date | null;
-	isActive: boolean;
+	creationDate: string | null;
+	// isActive: boolean;
 }
 
 interface WebhookConfig {
@@ -51,13 +52,14 @@ interface WebhookConfig {
 })
 export class DevelopersSettingsComponent implements OnInit {
 	private fb = inject(FormBuilder);
-	private snackBar = inject(MatSnackBar);
+
+	private notificationService = inject(NotificationService);
 
 	// API Key section
 	apiKeyData = signal<ApiKeyData>({
 		key: '',
-		lastGenerated: null,
-		isActive: false
+		creationDate: null
+		// isActive: false
 	});
 
 	showApiKey = signal(false);
@@ -68,13 +70,13 @@ export class DevelopersSettingsComponent implements OnInit {
 	constructor() {
 		this.webhookForm = this.fb.group({
 			url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
-			isEnabled: [false],
-			roomCreated: [true],
-			roomDeleted: [true],
-			participantJoined: [false],
-			participantLeft: [false],
-			recordingStarted: [true],
-			recordingFinished: [true]
+			isEnabled: [false]
+			// roomCreated: [true],
+			// roomDeleted: [true],
+			// participantJoined: [false],
+			// participantLeft: [false],
+			// recordingStarted: [true],
+			// recordingFinished: [true]
 		});
 
 		// Disable url field initially and enable/disable based on isEnabled toggle
@@ -99,24 +101,16 @@ export class DevelopersSettingsComponent implements OnInit {
 		const newKey = this.generateRandomKey();
 		this.apiKeyData.set({
 			key: newKey,
-			lastGenerated: new Date(),
-			isActive: true
+			creationDate: new Date().toISOString()
+			// isActive: true
 		});
 		this.saveApiKeyData();
-		this.snackBar.open('API Key generated successfully', 'Close', {
-			duration: 3000,
-			horizontalPosition: 'right',
-			verticalPosition: 'top'
-		});
+		this.notificationService.showSnackbar('API Key generated successfully');
 	}
 
 	regenerateApiKey() {
 		this.generateApiKey();
-		this.snackBar.open('API Key regenerated successfully', 'Close', {
-			duration: 3000,
-			horizontalPosition: 'right',
-			verticalPosition: 'top'
-		});
+		this.notificationService.showSnackbar('API Key regenerated successfully');
 	}
 
 	toggleApiKeyVisibility() {
@@ -127,11 +121,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		const apiKey = this.apiKeyData().key;
 		if (apiKey) {
 			navigator.clipboard.writeText(apiKey).then(() => {
-				this.snackBar.open('API Key copied to clipboard', 'Close', {
-					duration: 2000,
-					horizontalPosition: 'right',
-					verticalPosition: 'top'
-				});
+				this.notificationService.showSnackbar('API Key copied to clipboard');
 			});
 		}
 	}
@@ -139,15 +129,11 @@ export class DevelopersSettingsComponent implements OnInit {
 	revokeApiKey() {
 		this.apiKeyData.set({
 			key: '',
-			lastGenerated: null,
-			isActive: false
+			creationDate: null
+			// isActive: false
 		});
 		this.saveApiKeyData();
-		this.snackBar.open('API Key revoked successfully', 'Close', {
-			duration: 3000,
-			horizontalPosition: 'right',
-			verticalPosition: 'top'
-		});
+		this.notificationService.showSnackbar('API Key revoked successfully');
 	}
 
 	// Webhook methods
@@ -168,11 +154,7 @@ export class DevelopersSettingsComponent implements OnInit {
 			};
 
 			localStorage.setItem('ov-meet-webhook-config', JSON.stringify(webhookConfig));
-			this.snackBar.open('Webhook configuration saved', 'Close', {
-				duration: 3000,
-				horizontalPosition: 'right',
-				verticalPosition: 'top'
-			});
+			this.notificationService.showSnackbar('Webhook configuration saved');
 		}
 	}
 
@@ -180,15 +162,12 @@ export class DevelopersSettingsComponent implements OnInit {
 		const url = this.webhookForm.get('url')?.value;
 		if (url) {
 			// Mock test - in real implementation this would send a test webhook
-			this.snackBar.open('Test webhook sent successfully', 'Close', {
-				duration: 3000,
-				horizontalPosition: 'right',
-				verticalPosition: 'top'
-			});
+			this.notificationService.showSnackbar('Test webhook sent successfully');
 		}
 	}
 
 	// Private methods
+	// TODO: Use endpoint to generate a secure API key
 	private generateRandomKey(): string {
 		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		let result = 'ovmeet_';
@@ -198,6 +177,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		return result;
 	}
 
+	// TODO: Use endpoint to load API key data securely
 	private loadApiKeyData() {
 		const saved = localStorage.getItem('ov-meet-api-key');
 		if (saved) {
@@ -209,6 +189,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		}
 	}
 
+	// TODO: Use endpoint to save API key data securely
 	private saveApiKeyData() {
 		localStorage.setItem('ov-meet-api-key', JSON.stringify(this.apiKeyData()));
 	}
