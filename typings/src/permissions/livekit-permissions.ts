@@ -1,4 +1,4 @@
-export const enum TrackSource {
+const enum TrackSource {
 	/**
 	 * @generated from enum value: UNKNOWN = 0;
 	 */

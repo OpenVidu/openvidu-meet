@@ -1,22 +1,22 @@
 # @types/openvidu-meet
 
-This library contains common TypeScript declaration files (types) used by the OpenVidu Meet application. It is a shared library that provides type definitions used by both the frontend and backend of the application.
+This library contains common types used by the OpenVidu Meet application. It is a shared library that is used by both the frontend and backend of the application.
 
 ## Build
 
-Since this library contains only TypeScript declaration files (.d.ts), no compilation is needed. To validate the type definitions, run:
+To build the library, run the following command:
 
 ```bash
 npm install
-npm run validate
+npm run build
 ```
 
-## Development
+## Serve
 
-For development purposes, the declaration files can be edited directly. To validate changes:
+For developing purposes, you can serve the library for actively watching changes. To do so, run the following command:
 
 ```bash
-npm run validate
+npm run serve
 ```
 
 ## Sync with OpenVidu Meet

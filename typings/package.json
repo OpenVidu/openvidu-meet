@@ -1,21 +1,19 @@
 {
 	"name": "@types/openvidu-meet",
 	"version": "1.0.0",
-	"main": "src/index.d.ts",
-	"types": "src/index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"type": "module",
 	"files": [
-		"./src/**/*.d.ts",
-		"./package.json",
-		"./README.md"
+		"./dist/**",
+		"./package.json"
 	],
 	"scripts": {
-		"build": "echo 'No compilation needed for declaration files'",
-		"serve": "echo 'No watch mode needed for declaration files'",
+		"build": "tsc",
+		"serve": "tsc -w",
 		"sync-ce": "./sync-types.sh ce",
 		"sync-pro": "./sync-types.sh pro",
-		"sync": "./sync-types.sh",
-		"validate": "npx tsc --noEmit"
+		"sync": "./sync-types.sh"
 	},
 	"devDependencies": {
 		"typescript": "^5.6.3"

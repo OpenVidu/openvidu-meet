@@ -1,4 +1,4 @@
-import { WebComponentCommandPayloadFor, WebComponentCommand } from './command.model';
+import { WenComponentCommandPayloadFor, WebComponentCommand } from './command.model';
 import { WebComponentEventPayloadFor, WebComponentEvent } from './event.model';
 
 /**
@@ -16,7 +16,7 @@ export interface WebComponentInboundCommandMessage<T extends WebComponentCommand
 	/** The command to execute in the WebComponent */
 	command: T;
 	/** Optional payload with additional data for the command */
-	payload?: WebComponentCommandPayloadFor<T>;
+	payload?: WenComponentCommandPayloadFor<T>;
 }
 
 /**
@@ -39,10 +39,12 @@ export interface WebComponentOutboundEventMessage<T extends WebComponentEvent = 
  * @category Utilities
  * @private
  */
-export declare function createWebComponentCommandMessage<T extends WebComponentCommand>(
+export function createWebComponentCommandMessage<T extends WebComponentCommand>(
 	command: T,
-	payload?: WebComponentCommandPayloadFor<T>
-): WebComponentInboundCommandMessage<T>;
+	payload?: WenComponentCommandPayloadFor<T>
+): WebComponentInboundCommandMessage<T> {
+	return { command, payload };
+}
 
 /**
  * Helper function to create a properly typed event message.
@@ -52,7 +54,9 @@ export declare function createWebComponentCommandMessage<T extends WebComponentC
  * @category Utilities
  * @private
  */
-export declare function createWebComponentEventMessage<T extends WebComponentEvent>(
+export function createWebComponentEventMessage<T extends WebComponentEvent>(
 	event: T,
 	payload?: WebComponentEventPayloadFor<T>
-): WebComponentOutboundEventMessage<T>;
+): WebComponentOutboundEventMessage<T> {
+	return { event, payload };
+}

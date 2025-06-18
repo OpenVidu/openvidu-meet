@@ -55,7 +55,7 @@ show_help() {
     cat << EOF
 Usage: $0 [OPTIONS] [TARGET]
 
-Synchronize TypeScript declaration files from the source directory to target directories.
+Synchronize TypeScript types from the source directory to target directories.
 
 TARGETS:
     ce          Sync to Community Edition targets (frontend, backend, webcomponent)
@@ -103,14 +103,14 @@ validate_source() {
         exit 1
     fi
 
-    local d_ts_files
-    d_ts_files=$(find "$SOURCE_DIR" -type f -name "*.d.ts" 2>/dev/null | wc -l)
-    if [ "$d_ts_files" -eq 0 ]; then
-        log_warning "No TypeScript declaration files found in source directory '$SOURCE_DIR'"
+    local ts_files
+    ts_files=$(find "$SOURCE_DIR" -type f -name "*.ts" 2>/dev/null | wc -l)
+    if [ "$ts_files" -eq 0 ]; then
+        log_warning "No TypeScript files found in source directory '$SOURCE_DIR'"
         return 1
     fi
 
-    log_info "Found $d_ts_files TypeScript declaration files in source directory"
+    log_info "Found $ts_files TypeScript files in source directory"
     return 0
 }
 
@@ -118,12 +118,8 @@ validate_source() {
 add_headers_to_source() {
     log_info "Adding headers to source files..."
     local count=0
-    local temp_file_list
-    temp_file_list=$(mktemp)
 
-    find "$SOURCE_DIR" -type f -name "*.d.ts" > "$temp_file_list"
-
-    while IFS= read -r file; do
+    find "$SOURCE_DIR" -type f -name "*.ts" | while IFS= read -r file; do
         if ! grep -qF "$HEADER_KEY" "$file"; then
             if [ "$DRY_RUN" = "true" ]; then
                 echo "  Would add header to: $file"
@@ -133,16 +129,13 @@ add_headers_to_source() {
                     count=$((count + 1))
                 else
                     log_error "Failed to add header to: $file"
-                    rm -f "$temp_file_list"
                     return 1
                 fi
             fi
         else
             [ "$VERBOSE" = "true" ] && echo "  Header already exists in: $file"
         fi
-    done < "$temp_file_list"
-
-    rm -f "$temp_file_list"
+    done
 
     if [ "$DRY_RUN" = "false" ]; then
         log_success "Headers added to $count files"
@@ -183,12 +176,7 @@ copy_files_with_headers() {
     fi
 
     local file_count=0
-    local temp_file_list
-    temp_file_list=$(mktemp)
-
-    find "$source_path" -type f -name "*.d.ts" > "$temp_file_list"
-
-    while IFS= read -r file; do
+    find "$source_path" -type f -name "*.ts" | while IFS= read -r file; do
         local relative_path
         if [ "$target_name" = "webcomponent" ]; then
             # For webcomponent, remove the webcomponent prefix from path
@@ -205,7 +193,6 @@ copy_files_with_headers() {
         else
             mkdir -p "$dest_dir" || {
                 log_error "Failed to create directory: $dest_dir"
-                rm -f "$temp_file_list"
                 return 1
             }
 
@@ -214,13 +201,10 @@ copy_files_with_headers() {
                 file_count=$((file_count + 1))
             else
                 log_error "Failed to copy: $file -> $dest_file"
-                rm -f "$temp_file_list"
                 return 1
             fi
         fi
-    done < "$temp_file_list"
-
-    rm -f "$temp_file_list"
+    done
 
     if [ "$DRY_RUN" = "false" ]; then
         log_success "Synced $file_count files to $target_name"
@@ -251,7 +235,7 @@ resolve_targets() {
 sync_types() {
     local targets="$1"
 
-    log_info "Starting type declaration synchronization..."
+    log_info "Starting type synchronization..."
     [ "$DRY_RUN" = "true" ] && log_warning "DRY RUN MODE - No files will be modified"
 
     # Validate source directory
@@ -283,7 +267,7 @@ sync_types() {
     if [ "$DRY_RUN" = "true" ]; then
         log_info "Dry run completed. $total_count targets would be processed."
     else
-        log_success "Type declaration synchronization completed: $success_count/$total_count targets successful"
+        log_success "Type synchronization completed: $success_count/$total_count targets successful"
     fi
 }
 
