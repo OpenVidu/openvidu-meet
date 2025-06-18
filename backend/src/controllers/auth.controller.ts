@@ -103,7 +103,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 	}
 };
 
-export const createApiKey = async (req: Request, res: Response) => {
+export const createApiKey = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Create API key request received');
 
@@ -111,23 +111,9 @@ export const createApiKey = async (req: Request, res: Response) => {
 
 	try {
 		const apiKey = await authService.createApiKey();
-		return res.status(201).json({ apiKey });
+		return res.status(201).json(apiKey);
 	} catch (error) {
 		handleError(res, error, 'creating API key');
-	}
-};
-
-export const deleteApiKeys = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	logger.verbose('Delete API keys request received');
-
-	const authService = container.get(AuthService);
-
-	try {
-		await authService.deleteApiKeys();
-		return res.status(202).send();
-	} catch (error) {
-		handleError(res, error, 'deleting API keys');
 	}
 };
 
@@ -139,8 +125,22 @@ export const getApiKeys = async (_req: Request, res: Response) => {
 
 	try {
 		const apiKeys = await authService.getApiKeys();
-		return res.status(200).json({ apiKeys });
+		return res.status(200).json(apiKeys);
 	} catch (error) {
 		handleError(res, error, 'getting API keys');
+	}
+};
+
+export const deleteApiKeys = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	logger.verbose('Delete API keys request received');
+
+	const authService = container.get(AuthService);
+
+	try {
+		await authService.deleteApiKeys();
+		return res.status(204).send();
+	} catch (error) {
+		handleError(res, error, 'deleting API keys');
 	}
 };

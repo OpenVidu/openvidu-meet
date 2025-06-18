@@ -568,18 +568,18 @@ export class MeetStorageService<
 		return await this.saveCacheAndStorage(userRedisKey, storageUserKey, user);
 	}
 
-	async saveApiKey(apiKeyData: { key: string; creationDate: string }): Promise<void> {
+	async saveApiKey(apiKeyData: { key: string; creationDate: number }): Promise<void> {
 		const redisKey = RedisKeyName.API_KEYS;
 		const storageKey = this.keyBuilder.buildApiKeysKey();
 		this.logger.debug(`Saving API key to Redis and storage: ${redisKey}`);
-		await this.saveCacheAndStorage(redisKey, storageKey, apiKeyData);
+		await this.saveCacheAndStorage(redisKey, storageKey, [apiKeyData]);
 	}
 
-	async getApiKeys(): Promise<{ key: string; creationDate: string }[]> {
+	async getApiKeys(): Promise<{ key: string; creationDate: number }[]> {
 		const redisKey = RedisKeyName.API_KEYS;
 		const storageKey = this.keyBuilder.buildApiKeysKey();
 		this.logger.debug(`Retrieving API key from Redis and storage: ${redisKey}`);
-		const apiKeys = await this.getFromCacheAndStorage<{ key: string; creationDate: string }[]>(
+		const apiKeys = await this.getFromCacheAndStorage<{ key: string; creationDate: number }[]>(
 			redisKey,
 			storageKey
 		);
