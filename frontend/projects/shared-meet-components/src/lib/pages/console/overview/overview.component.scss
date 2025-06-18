@@ -102,6 +102,7 @@
 
 	.stat-card {
 		@include ov-stat-card;
+		padding: 0;
 
 		mat-card-content {
 			display: flex;
@@ -122,6 +123,7 @@
 
 		mat-card-actions {
 			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
+			gap: var(--ov-meet-spacing-xs);
 
 			button {
 				@include ov-button-base;
