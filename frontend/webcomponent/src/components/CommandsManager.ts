@@ -1,6 +1,6 @@
-import { WebComponentCommand } from '../models/command.model';
-import { WebComponentEvent } from '../models/event.model';
-import { InboundCommandMessage } from '../models/message.type';
+import { WebComponentCommand } from '../typings/ce/command.model';
+import { WebComponentEvent } from '../typings/ce/event.model';
+import { WebComponentInboundCommandMessage } from '../typings/ce/message.type';
 
 /**
  * Manages communication between a parent application and an embedded iframe
@@ -49,7 +49,7 @@ export class CommandsManager {
 	 * @private
 	 */
 	public initialize() {
-		const message: InboundCommandMessage = {
+		const message: WebComponentInboundCommandMessage = {
 			command: WebComponentCommand.INITIALIZE,
 			payload: { domain: window.location.origin }
 		};
@@ -147,12 +147,12 @@ export class CommandsManager {
 	}
 
 	public endMeeting() {
-		const message: InboundCommandMessage = { command: WebComponentCommand.END_MEETING };
+		const message: WebComponentInboundCommandMessage = { command: WebComponentCommand.END_MEETING };
 		this.sendMessage(message);
 	}
 
 	public leaveRoom() {
-		const message: InboundCommandMessage = { command: WebComponentCommand.LEAVE_ROOM };
+		const message: WebComponentInboundCommandMessage = { command: WebComponentCommand.LEAVE_ROOM };
 		this.sendMessage(message);
 	}
 
@@ -178,7 +178,7 @@ export class CommandsManager {
 	 * @param message - The message to send to the iframe
 	 * @param explicitTargetOrigin - Optional override for the target origin
 	 */
-	private sendMessage(message: InboundCommandMessage, explicitTargetOrigin?: string): void {
+	private sendMessage(message: WebComponentInboundCommandMessage, explicitTargetOrigin?: string): void {
 		explicitTargetOrigin = explicitTargetOrigin || this.targetIframeOrigin;
 		this.iframe.contentWindow?.postMessage(message, explicitTargetOrigin);
 	}
