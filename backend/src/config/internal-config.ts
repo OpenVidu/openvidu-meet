@@ -25,6 +25,7 @@ const INTERNAL_CONFIG = {
 	S3_ROOMS_PREFIX: 'rooms',
 	S3_RECORDINGS_PREFIX: 'recordings',
 	S3_USERS_PREFIX: 'users',
+	S3_API_KEYS_PREFIX: 'api_keys',
 
 	// Garbage collection and recording lock intervals
 	ROOM_GC_INTERVAL: '1h' as StringValue, // e.g. garbage collector interval for rooms

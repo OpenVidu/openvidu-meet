@@ -63,3 +63,56 @@
                 $ref: '../../components/responses/internal/error-invalid-refresh-token.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+
+/auth/api-keys:
+    post:
+        operationId: createApiKey
+        summary: Create an API key
+        description: >
+            Creates a new API key. Only one API key can be created in the system.
+            If an API key already exists, it will be replaced with the new one.
+            The API key is returned in the response.
+        tags:
+            - Internal API - Authentication
+        security:
+            - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/create-api-key.yaml'
+        responses:
+            '201':
+                $ref: '../../components/responses/internal/success-create-api-key.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-request.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    get:
+        operationId: getApiKeys
+        summary: Get the API keys
+        description: >
+            Retrieves the existing API keys.
+        tags:
+            - Internal API - Authentication
+        security:
+            - accessTokenCookie: []
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-api-key.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: deleteApiKeys
+        summary: Delete the API keys
+        description: >
+            Deletes the existing API keys.
+        tags:
+            - Internal API - Authentication
+        security:
+            - accessTokenCookie: []
+        responses:
+            '204':
+                description: Successfully deleted the API key
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+
+

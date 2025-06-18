@@ -568,6 +568,39 @@ export class MeetStorageService<
 		return await this.saveCacheAndStorage(userRedisKey, storageUserKey, user);
 	}
 
+	async saveApiKey(apiKeyData: { key: string; creationDate: string }): Promise<void> {
+		const redisKey = RedisKeyName.API_KEYS;
+		const storageKey = this.keyBuilder.buildApiKeysKey();
+		this.logger.debug(`Saving API key to Redis and storage: ${redisKey}`);
+		await this.saveCacheAndStorage(redisKey, storageKey, apiKeyData);
+	}
+
+	async getApiKeys(): Promise<{ key: string; creationDate: string }[]> {
+		const redisKey = RedisKeyName.API_KEYS;
+		const storageKey = this.keyBuilder.buildApiKeysKey();
+		this.logger.debug(`Retrieving API key from Redis and storage: ${redisKey}`);
+		const apiKeys = await this.getFromCacheAndStorage<{ key: string; creationDate: string }[]>(
+			redisKey,
+			storageKey
+		);
+
+		if (!apiKeys || apiKeys.length === 0) {
+			this.logger.warn('API key not found in cache or storage');
+			return [];
+		}
+
+		this.logger.debug(`Retrieved API key from storage: ${storageKey}`);
+		return apiKeys;
+	}
+
+	async deleteApiKeys(): Promise<void> {
+		const redisKey = RedisKeyName.API_KEYS;
+		const storageKey = this.keyBuilder.buildApiKeysKey();
+		this.logger.debug(`Deleting API key from Redis and storage: ${redisKey}`);
+		await this.deleteFromCacheAndStorage(redisKey, storageKey);
+		this.logger.verbose(`API key deleted successfully from storage: ${storageKey}`);
+	}
+
 	// ==========================================
 	// PRIVATE HELPER METHODS
 	// ==========================================
@@ -795,10 +828,6 @@ export class MeetStorageService<
 			// Don't throw - cache invalidation failure shouldn't break main flow
 		}
 	}
-
-	// ==========================================
-	// PRIVATE HELPER METHODS
-	// ==========================================
 
 	/**
 	 * Returns the default global preferences.

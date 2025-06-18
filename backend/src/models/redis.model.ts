@@ -8,7 +8,8 @@ export const enum RedisKeyName {
 	RECORDING = `${RedisKeyPrefix.BASE}recording:`,
 	RECORDING_SECRETS = `${RedisKeyPrefix.BASE}recording_secrets:`,
 	ARCHIVED_ROOM = `${RedisKeyPrefix.BASE}archived_room:`,
-	USER = `${RedisKeyPrefix.BASE}user:`
+	USER = `${RedisKeyPrefix.BASE}user:`,
+	API_KEYS = `${RedisKeyPrefix.BASE}api_keys:`,
 }
 
 export const enum RedisLockPrefix {
