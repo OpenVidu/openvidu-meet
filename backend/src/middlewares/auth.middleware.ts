@@ -137,7 +137,13 @@ export const apiKeyValidator = async (req: Request) => {
 			throw errorInvalidApiKey();
 		}
 	} catch (error) {
-		throw errorWithControl(error as OpenViduMeetError, true);
+		if (error instanceof OpenViduMeetError) {
+			throw errorWithControl(error, true);
+		} else {
+			const logger = container.get(LoggerService);
+			logger.error('Error validating API key:', error);
+			throw errorWithControl(internalError('validating API key'), true);
+		}
 	}
 
 	const userService = container.get(UserService);
