@@ -6,7 +6,7 @@ let envPath: string | undefined;
 if (process.env.MEET_CONFIG_DIR) {
 	envPath = process.env.MEET_CONFIG_DIR;
 } else if (process.env.NODE_ENV === 'development') {
-	envPath = '.env.development';
+	envPath = '.env.dev';
 } else if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'ci') {
 	envPath = '.env.test';
 } else {
