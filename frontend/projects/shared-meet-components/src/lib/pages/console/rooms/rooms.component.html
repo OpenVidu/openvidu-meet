@@ -1,8 +1,22 @@
-@if(isLoading) {
-	<!-- Loading Spinner -->
-	<div class="loading-overlay">
-		<mat-spinner diameter="40"></mat-spinner>
-	</div>
+@if (isLoading) {
+	@if (showLoadingSpinner) {
+		<!-- Enhanced Loading State with delay -->
+		<div class="loading-container">
+			<div class="loading-content">
+				<div class="loading-header">
+					<div class="loading-title">
+						<mat-icon class="ov-room-icon loading-icon"> video_chat </mat-icon>
+						<h1>Loading Rooms</h1>
+					</div>
+					<p class="loading-subtitle">Please wait while we fetch your rooms...</p>
+				</div>
+
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
+			</div>
+		</div>
+	}
 } @else if (isInRoomForm()) {
 	<!-- Edit and create Room view  -->
 	<div>
@@ -139,6 +153,7 @@
 												'status-active': !room.markedForDeletion,
 												'status-deletion': room.markedForDeletion
 											}"
+											matTooltip="{{ room.markedForDeletion ? 'Room deletion pending - will be removed when all participants leave' : '' }}"
 										>
 											<mat-icon class="status-icon">
 												{{ room.markedForDeletion ? 'delete_outline' : 'check_circle' }}
@@ -148,7 +163,7 @@
 										@if (room.markedForDeletion) {
 											<div class="deletion-warning">
 												<mat-icon class="warning-icon">warning</mat-icon>
-												<span>This room is marked for deletion and will be removed soon.</span>
+												<span>This room will be deleted when last participant leaves.</span>
 											</div>
 										}
 										<!-- Auto-deletion Date -->

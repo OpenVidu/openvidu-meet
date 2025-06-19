@@ -1,9 +1,9 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { DatePipe, NgClass, NgIf } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatListItem, MatListModule } from '@angular/material/list';
+import { MatListModule } from '@angular/material/list';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -41,8 +41,7 @@ import { MeetRoom } from '../../../typings/ce';
 		MatProgressSpinnerModule,
 		MatFormFieldModule,
 		MatInputModule,
-		NgClass,
-		NgIf
+		NgClass
 	],
 	templateUrl: './rooms.component.html',
 	styleUrl: './rooms.component.scss'
@@ -55,6 +54,7 @@ export class RoomsComponent implements OnInit {
 	dataSource = new MatTableDataSource<MeetRoom>([]);
 	displayedColumns: string[] = ['roomName', 'creationDate', 'status', 'actions'];
 	isLoading = false;
+	showLoadingSpinner = false;
 	searchTerm = '';
 	recordingEnabled = false;
 	chatEnabled = false;
@@ -75,6 +75,9 @@ export class RoomsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.isLoading = true;
+		const delaySpinner = setTimeout(() => {
+			this.showLoadingSpinner = true;
+		}, 200);
 		try {
 			const { rooms } = await this.roomService.listRooms();
 			this.createdRooms = rooms;
@@ -84,6 +87,9 @@ export class RoomsComponent implements OnInit {
 			console.error('Error fetching room preferences', error);
 		} finally {
 			this.isLoading = false;
+			clearTimeout(delaySpinner);
+			this.showLoadingSpinner = false;
+
 		}
 	}
 

@@ -1,5 +1,76 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
+// Loading Container Styles
+.loading-container {
+	// @include ov-container;
+	min-height: 60vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: fadeIn 0.5s ease-out;
+
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-md);
+		min-height: 50vh;
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-lg);
+		min-height: 40vh;
+	}
+}
+
+.loading-content {
+	text-align: center;
+	max-width: 600px;
+	width: 100%;
+
+	.loading-header {
+		margin-bottom: var(--ov-meet-spacing-xxl);
+
+		.loading-title {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: var(--ov-meet-spacing-md);
+			margin-bottom: var(--ov-meet-spacing-md);
+
+			.loading-icon {
+				@include ov-icon(xl);
+				color: var(--ov-meet-icon-rooms);
+				animation: pulse 2s ease-in-out infinite;
+			}
+
+			h1 {
+				margin: 0;
+				color: var(--ov-meet-text-primary);
+			}
+		}
+
+		.loading-subtitle {
+			font-size: var(--ov-meet-font-size-md);
+			color: var(--ov-meet-text-secondary);
+			margin: 0;
+			animation: fadeIn 1s ease-out 0.5s both;
+		}
+	}
+
+	.loading-spinner-container {
+		margin-bottom: var(--ov-meet-spacing-xxl);
+
+		mat-spinner {
+			margin: 0 auto;
+
+			::ng-deep {
+				.mdc-circular-progress__determinate-circle,
+				.mdc-circular-progress__indeterminate-circle-graphic {
+					stroke: var(--ov-meet-color-primary);
+				}
+			}
+		}
+	}
+}
+
 .rooms-container {
 	@include ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
@@ -17,7 +88,6 @@
 .rooms-content {
 	display: flex;
 	flex-direction: column;
-	// gap: var(--ov-meet-spacing-lg);
 }
 
 // Action Bar Styling
@@ -120,6 +190,7 @@
 		justify-content: center;
 		z-index: 10;
 		backdrop-filter: blur(2px);
+		animation: fadeIn 0.3s ease-out;
 	}
 
 	.no-results-message {
@@ -330,6 +401,7 @@
 			background-color: rgba(76, 175, 80, 0.1);
 			color: var(--ov-meet-color-success);
 			border: 1px solid rgba(76, 175, 80, 0.3);
+			border-radius: var(--ov-meet-radius-sm);
 
 			.status-icon {
 				color: var(--ov-meet-color-success);

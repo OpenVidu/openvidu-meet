@@ -75,6 +75,7 @@
 
 	// === TYPOGRAPHY ===
 	--ov-meet-font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+	--ov-meet-font-size-xxs: 0.65rem; // 10px
 	--ov-meet-font-size-xs: 0.75rem; // 12px
 	--ov-meet-font-size-sm: 0.875rem; // 14px
 	--ov-meet-font-size-md: 1rem; // 16px
@@ -353,9 +354,9 @@
 
 // === UTILITY CLASSES ===
 
-.ov-container {
-	@include ov-container;
-}
+// .ov-container {
+// 	// @include ov-container;
+// }
 
 .ov-text-center {
 	text-align: center;
@@ -525,4 +526,65 @@ $ov-meet-breakpoint-wide: 1200px;
 	@media (min-width: #{$ov-meet-breakpoint-desktop + 1px}) {
 		@content;
 	}
+}
+
+// Animation keyframes
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(-30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200px 0;
+	}
+	100% {
+		background-position: calc(200px + 100%) 0;
+	}
+}
+
+// Transition classes
+.fade-in {
+	animation: fadeIn 0.6s ease-out forwards;
+}
+
+.fade-in-delayed {
+	opacity: 0;
+	animation: fadeIn 0.8s ease-out 0.2s forwards;
+}
+
+.fade-in-delayed-more {
+	opacity: 0;
+	animation: fadeIn 1s ease-out 0.4s forwards;
+}
+
+.slide-in {
+	animation: slideIn 0.6s ease-out forwards;
 }
