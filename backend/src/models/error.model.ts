@@ -59,7 +59,7 @@ export const errorS3NotAvailable = (error: any): OpenViduMeetError => {
 };
 
 export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
-	return new OpenViduMeetError('Azure Error', `Azure is not available ${error}`, 503);
+	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
 // Auth errors

@@ -1,19 +1,17 @@
 import {
-	BlobServiceClient,
-	ContainerClient,
-	BlockBlobClient,
-	ContainerListBlobsOptions,
 	BlobItem,
+	BlobServiceClient,
+	BlockBlobClient,
 	BlockBlobUploadResponse,
-	BlobLeaseClient
+	ContainerClient
 } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
 import {
-	MEET_AZURE_SUBCONATAINER_NAME,
-	MEET_AZURE_ACCOUNT_NAME,
 	MEET_AZURE_ACCOUNT_KEY,
+	MEET_AZURE_ACCOUNT_NAME,
 	MEET_AZURE_CONTAINER_NAME,
+	MEET_AZURE_SUBCONATAINER_NAME
 } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
@@ -36,103 +34,134 @@ export class AzureBlobService {
 	}
 
 	/**
-	 * Checks if a file exists in the recordings container.
+	 * Checks if a file exists in the ABS container.
 	 *
 	 * @param blobName - The name of the blob to be checked.
 	 * @returns A boolean indicating whether the file exists or not.
 	 */
 	async exists(blobName: string): Promise<boolean> {
+		const fullKey = this.getFullKey(blobName);
+
 		try {
-			const blobClient = this.containerClient.getBlobClient(blobName);
-			return await blobClient.exists();
-		} catch (err: any) {
-			this.logger.error(`Error checking blob existence: ${err}`);
+			const blobClient = this.containerClient.getBlobClient(fullKey);
+			const exists = await blobClient.exists();
+			this.logger.verbose(`ABS exists: file '${fullKey}' ${!exists ? 'not' : ''} found`);
+			return exists;
+		} catch (error) {
+			this.logger.warn(`ABS exists: file ${fullKey} not found`);
 			return false;
 		}
 	}
 
-	/** Upload JSON as blob */
-	async saveObject(blobName: string, body: any): Promise<BlockBlobUploadResponse> {
+	/**
+	 * Saves an object to the ABS container.
+	 *
+	 * @param blobName - The name of the blob to be saved.
+	 * @param body - The object to be saved as a blob.
+	 * @returns A promise that resolves to the result of the upload operation.
+	 */
+	async saveObject(blobName: string, body: Record<string, unknown>): Promise<BlockBlobUploadResponse> {
+		const fullKey = this.getFullKey(blobName);
+
 		try {
-			const fullKey = this.getFullKey(blobName);
 			const blockBlob: BlockBlobClient = this.containerClient.getBlockBlobClient(fullKey);
 			const data = JSON.stringify(body);
-			return await blockBlob.upload(data, Buffer.byteLength(data));
-		} catch (err: any) {
-			this.logger.error(`Error uploading blob: ${err}`);
+			const result = await blockBlob.upload(data, Buffer.byteLength(data));
+			this.logger.verbose(`ABS saveObject: successfully saved object '${fullKey}'`);
+			return result;
+		} catch (error: any) {
+			this.logger.error(`ABS saveObject: error saving object '${fullKey}': ${error}`);
 
-			if (err.code === 'ECONNREFUSED') {
-				throw errorAzureNotAvailable(err);
+			if (error.code === 'ECONNREFUSED') {
+				throw errorAzureNotAvailable(error);
 			}
 
-			throw internalError(err);
+			throw internalError('saving object to ABS');
 		}
 	}
 
 	/**
-	 * Deletes a blob object from the recordings container.
+	 * Deletes multiple objects from the ABS container.
+	 *
+	 * @param keys - An array of blob names to be deleted.
+	 * @returns A promise that resolves when all blobs are deleted.
+	 */
+	async deleteObjects(keys: string[]): Promise<void> {
+		try {
+			this.logger.verbose(`Azure deleteObjects: attempting to delete ${keys.length} blobs`);
+			const deletePromises = keys.map((key) => this.deleteObject(this.getFullKey(key)));
+			await Promise.all(deletePromises);
+			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
+			this.logger.info(`Successfully deleted ${keys.length} objects`);
+		} catch (error) {
+			this.logger.error(`Azure deleteObjects: error deleting objects: ${error}`);
+			throw internalError('deleting objects from ABS');
+		}
+	}
+
+	/**
+	 * Deletes a blob object from the ABS container.
 	 *
 	 * @param blobName - The name of the object to delete.
-	 * @returns A promise that resolves to the result of the delete operation.
-	 * @throws Throws an error if there was an error deleting the object or if the blob doesnt exists.
 	 */
-	async deleteObject(blobName: string): Promise<void> {
+	protected async deleteObject(blobName: string): Promise<void> {
 		try {
 			const blobClient = this.containerClient.getBlobClient(blobName);
 			const exists = await blobClient.exists();
 
 			if (!exists) {
-				throw new Error(`Blob '${blobName}' no existe`);
+				throw new Error(`Blob '${blobName}' does not exist`);
 			}
 
 			await blobClient.delete();
-		} catch (err: any) {
-			this.logger.error(`Error deleting blob: ${err}`);
-			throw internalError(err);
+		} catch (error) {
+			this.logger.error(`Azure deleteObject: error deleting blob '${blobName}': ${error}`);
+			throw error;
 		}
 	}
 
-	async deleteObjects(keys: string[]): Promise<void> {
-		try {
-			const deletePromises = keys.map((key) =>
-				this.deleteObject(this.getFullKey(key))
-			);
-			await Promise.all(deletePromises);
-			this.logger.info(`Azure: deleted blobs ${keys.join(', ')}`);
-		} catch (err) {
-			this.logger.error(`Azure deleteObjects: error deleting ${keys}: ${err}`);
-			throw internalError('deleting objects from Azure Blob');
-		}
-	}
-
+	/**
+	 * Lists objects in the ABS container with a specific prefix.
+	 *
+	 * @param additionalPrefix - Additional prefix relative to the subcontainer.
+	 * @param maxResults - Maximum number of objects to return. Defaults to 50.
+	 * @param continuationToken - Token to retrieve the next page of results.
+	 * @returns An object containing the list of blobs, continuation token and truncation status.
+	 */
 	async listObjectsPaginated(
 		additionalPrefix = '',
-		maxResults: number = 50,
+		maxResults = 50,
 		continuationToken?: string
 	): Promise<{
 		items: BlobItem[];
 		continuationToken?: string;
 		isTruncated?: boolean;
 	}> {
-		try {
-			const basePrefix = this.getFullKey(additionalPrefix);
-			this.logger.verbose(`Azure listObjectsPaginated: listing objects with prefix "${basePrefix}"`);
+		const basePrefix = this.getFullKey(additionalPrefix);
+		this.logger.verbose(`ABS listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
 
-			maxResults = Number(maxResults);
-			const iterator = this.containerClient
-				.listBlobsFlat({ prefix: basePrefix })
-				.byPage({ maxPageSize: maxResults, continuationToken: continuationToken && continuationToken !== 'undefined' ? continuationToken : undefined });
+		try {
+			const iterator = this.containerClient.listBlobsFlat({ prefix: basePrefix }).byPage({
+				maxPageSize: maxResults,
+				continuationToken:
+					continuationToken && continuationToken !== 'undefined' ? continuationToken : undefined
+			});
 
 			const response = await iterator.next();
 			const segment = response.value;
 
-			let NextContinuationToken = segment.continuationToken === '' ? undefined : segment.continuationToken === continuationToken ? undefined : segment.continuationToken;
+			let NextContinuationToken =
+				segment.continuationToken === ''
+					? undefined
+					: segment.continuationToken === continuationToken
+						? undefined
+						: segment.continuationToken;
 			let isTruncated = NextContinuationToken !== undefined;
 
+			// We need to check if the next page has items, if not we set isTruncated to false
 			const iterator2 = this.containerClient
 				.listBlobsFlat({ prefix: basePrefix })
 				.byPage({ maxPageSize: maxResults, continuationToken: NextContinuationToken });
-
 
 			const response2 = await iterator2.next();
 			const segment2 = response2.value;
@@ -145,36 +174,38 @@ export class AzureBlobService {
 			return {
 				items: segment.segment.blobItems,
 				continuationToken: NextContinuationToken,
-				isTruncated: isTruncated,
+				isTruncated: isTruncated
 			};
-		} catch (err) {
-			this.logger.error(`Azure listObjectsPaginated: error: ${err}`);
-			throw internalError('listing objects from Azure Blob');
+		} catch (error) {
+			this.logger.error(`ABS listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);
+			throw internalError('listing objects from ABS');
 		}
 	}
 
-	async getObjectAsJson(blobName: string): Promise<any | undefined> {
+	async getObjectAsJson(blobName: string): Promise<object | undefined> {
 		try {
 			const fullKey = this.getFullKey(blobName);
 			const blobClient = this.containerClient.getBlobClient(fullKey);
 			const exists = await blobClient.exists();
 
 			if (!exists) {
-				this.logger.warn(`Blob '${this.getFullKey(blobName)}' no existe`);
+				this.logger.warn(`ABS getObjectAsJson: object '${fullKey}' does not exist`);
 				return undefined;
 			}
 
 			const downloadResp = await blobClient.download();
 			const downloaded = await this.streamToString(downloadResp.readableStreamBody!);
-			return JSON.parse(downloaded);
-		} catch (err: any) {
-			this.logger.error(`Error getting blob JSON: ${err}`);
+			const parsed = JSON.parse(downloaded);
+			this.logger.verbose(`ABS getObjectAsJson: successfully retrieved and parsed object '${fullKey}'`);
+			return parsed;
+		} catch (error: any) {
+			this.logger.error(`ABS getObjectAsJson: error retrieving object '${blobName}': ${error}`);
 
-			if (err.code === 'ECONNREFUSED') {
-				throw errorAzureNotAvailable(err);
+			if (error.code === 'ECONNREFUSED') {
+				throw errorAzureNotAvailable(error);
 			}
 
-			throw internalError(err);
+			throw internalError('getting object as JSON from ABS');
 		}
 	}
 
@@ -189,18 +220,19 @@ export class AzureBlobService {
 			const downloadResp = await blobClient.download(offset, count);
 
 			if (!downloadResp.readableStreamBody) {
-				throw new Error('El blob no contiene datos');
+				throw new Error('No readable stream body found in the download response');
 			}
 
+			this.logger.info(`ABS getObjectAsStream: successfully retrieved object '${fullKey}' as stream`);
 			return downloadResp.readableStreamBody as Readable;
-		} catch (err: any) {
-			this.logger.error(`Error streaming blob: ${err}`);
+		} catch (error: any) {
+			this.logger.error(`ABS getObjectAsStream: error retrieving stream for object '${blobName}': ${error}`);
 
-			if (err.code === 'ECONNREFUSED') {
-				throw errorAzureNotAvailable(err);
+			if (error.code === 'ECONNREFUSED') {
+				throw errorAzureNotAvailable(error);
 			}
 
-			throw internalError(err);
+			throw internalError('getting object as stream from ABS');
 		}
 	}
 
@@ -210,10 +242,17 @@ export class AzureBlobService {
 	 * @param blobName - The name of the blob.
 	 * @returns The properties of the blob.
 	 */
-	async getHeaderObject(blobName: string): Promise<Record<string, any>> {
+	async getObjectHeaders(blobName: string): Promise<{
+		ContentType?: string;
+		ContentLength?: number;
+		LastModified?: Date;
+		Etag?: string;
+		Metadata?: Record<string, string>;
+	}> {
 		try {
 			const fullKey = this.getFullKey(blobName);
 			const blobClient = this.containerClient.getBlobClient(fullKey);
+			this.logger.verbose(`ABS getObjectHeaders: requesting headers for object '${fullKey}'`);
 			const properties = await blobClient.getProperties();
 			// Return only headers/metadata relevant info
 			return {
@@ -223,9 +262,9 @@ export class AzureBlobService {
 				Etag: properties.etag,
 				Metadata: properties.metadata
 			};
-		} catch (error: any) {
-			this.logger.error(`Error getting header object from Azure Blob in ${this.getFullKey(blobName)}: ${error}`);
-			throw internalError(error);
+		} catch (error) {
+			this.logger.error(`ABS getObjectHeaders: error retrieving headers for object '${blobName}': ${error}`);
+			throw internalError('getting object headers from ABS');
 		}
 	}
 

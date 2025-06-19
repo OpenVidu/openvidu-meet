@@ -1,89 +1,89 @@
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import { LoggerService, AzureBlobService } from '../../../index.js';
+import { AzureBlobService, LoggerService } from '../../../index.js';
 import { StorageProvider } from '../../storage.interface.js';
 
 /**
- * Basic Azure storage provider that implements only primitive storage operations.
+ * Basic Azure Blob Storage provider that implements only primitive storage operations.
  */
 @injectable()
 export class AzureStorageProvider implements StorageProvider {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(AzureBlobService) protected azureBlobService: AzureBlobService
-	) { }
+	) {}
 
 	/**
-	 * Retrieves an object from Azure as a JSON object.
+	 * Retrieves an object from ABS as a JSON object.
 	 */
 	async getObject<T = Record<string, unknown>>(key: string): Promise<T | null> {
 		try {
-			this.logger.debug(`Getting object from Azure: ${key}`);
+			this.logger.debug(`Getting object from ABS: ${key}`);
 			const result = await this.azureBlobService.getObjectAsJson(key);
 			return result as T;
 		} catch (error) {
-			this.logger.debug(`Object not found in Azure: ${key}`);
+			this.logger.debug(`Object not found in ABS: ${key}`);
 			return null;
 		}
 	}
 
 	/**
-	 * Stores an object in Azure as JSON.
+	 * Stores an object in ABS as JSON.
 	 */
 	async putObject<T = Record<string, unknown>>(key: string, data: T): Promise<void> {
 		try {
-			this.logger.debug(`Storing object in Azure: ${key}`);
+			this.logger.debug(`Storing object in ABS: ${key}`);
 			await this.azureBlobService.saveObject(key, data as Record<string, unknown>);
-			this.logger.verbose(`Successfully stored object in Azure: ${key}`);
+			this.logger.verbose(`Successfully stored object in ABS: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error storing object in Azure ${key}: ${error}`);
+			this.logger.error(`Error storing object in ABS ${key}: ${error}`);
 			throw error;
 		}
 	}
 
 	/**
-	 * Deletes a single object from Azure.
+	 * Deletes a single object from ABS.
 	 */
 	async deleteObject(key: string): Promise<void> {
 		try {
-			this.logger.debug(`Deleting object from Azure: ${key}`);
+			this.logger.debug(`Deleting object from ABS: ${key}`);
 			await this.azureBlobService.deleteObjects([key]);
-			this.logger.verbose(`Successfully deleted object from Azure: ${key}`);
+			this.logger.verbose(`Successfully deleted object from ABS: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error deleting object from Azure ${key}: ${error}`);
+			this.logger.error(`Error deleting object from ABS ${key}: ${error}`);
 			throw error;
 		}
 	}
 
 	/**
-	 * Deletes multiple objects from Azure.
+	 * Deletes multiple objects from ABS.
 	 */
 	async deleteObjects(keys: string[]): Promise<void> {
 		try {
-			this.logger.debug(`Deleting ${keys.length} objects from Azure`);
+			this.logger.debug(`Deleting ${keys.length} objects from ABS`);
 			await this.azureBlobService.deleteObjects(keys);
-			this.logger.verbose(`Successfully deleted ${keys.length} objects from Azure`);
+			this.logger.verbose(`Successfully deleted ${keys.length} objects from ABS`);
 		} catch (error) {
-			this.logger.error(`Error deleting objects from Azure: ${error}`);
+			this.logger.error(`Error deleting objects from ABS: ${error}`);
 			throw error;
 		}
 	}
 
 	/**
-	 * Checks if an object exists in Azure.
+	 * Checks if an object exists in ABS.
 	 */
 	async exists(key: string): Promise<boolean> {
 		try {
-			this.logger.debug(`Checking if object exists in Azure: ${key}`);
+			this.logger.debug(`Checking if object exists in ABS: ${key}`);
 			return await this.azureBlobService.exists(key);
 		} catch (error) {
-			this.logger.debug(`Error checking object existence in Azure ${key}: ${error}`);
+			this.logger.debug(`Error checking object existence in ABS ${key}: ${error}`);
 			return false;
 		}
 	}
 
 	/**
-	 * Lists objects in Azure with a given prefix.
+	 * Lists objects in ABS with a given prefix.
 	 */
 	async listObjects(
 		prefix: string,
@@ -100,51 +100,51 @@ export class AzureStorageProvider implements StorageProvider {
 		NextContinuationToken?: string;
 	}> {
 		try {
-			this.logger.debug(`Listing objects in Azure with prefix: ${prefix}`);
-			const blobs = await this.azureBlobService.listObjectsPaginated(prefix, maxItems, continuationToken);
-			const contents = blobs.items.map((blob) => ({
+			this.logger.debug(`Listing objects in ABS with prefix: ${prefix}`);
+			const response = await this.azureBlobService.listObjectsPaginated(prefix, maxItems, continuationToken);
+			const contents = response.items.map((blob) => ({
 				Key: blob.name,
 				LastModified: blob.properties.lastModified,
 				Size: blob.properties.contentLength,
 				ETag: blob.properties.etag
-			})) as Object[];
+			})) as object[];
 			return {
 				Contents: contents,
-				IsTruncated: blobs.isTruncated,
-				NextContinuationToken: blobs.continuationToken
+				IsTruncated: response.isTruncated,
+				NextContinuationToken: response.continuationToken
 			};
 		} catch (error) {
-			this.logger.error(`Error listing objects in Azure with prefix ${prefix}: ${error}`);
+			this.logger.error(`Error listing objects in ABS with prefix ${prefix}: ${error}`);
 			throw error;
 		}
 	}
 
 	/**
-	 * Retrieves metadata headers for an object in Azure.
+	 * Retrieves metadata headers for an object in ABS.
 	 */
 	async getObjectHeaders(key: string): Promise<{ contentLength?: number; contentType?: string }> {
 		try {
-			this.logger.debug(`Getting object headers from Azure: ${key}`);
-			const data = await this.azureBlobService.getHeaderObject(key);
+			this.logger.debug(`Getting object headers from ABS: ${key}`);
+			const data = await this.azureBlobService.getObjectHeaders(key);
 			return {
 				contentLength: data.ContentLength,
 				contentType: data.ContentType
 			};
 		} catch (error) {
-			this.logger.error(`Error fetching object headers from Azure ${key}: ${error}`);
+			this.logger.error(`Error fetching object headers from ABS ${key}: ${error}`);
 			throw error;
 		}
 	}
 
 	/**
-	 * Retrieves an object from Azure as a readable stream.
+	 * Retrieves an object from ABS as a readable stream.
 	 */
 	async getObjectAsStream(key: string, range?: { start: number; end: number }): Promise<Readable> {
 		try {
-			this.logger.debug(`Getting object stream from Azure: ${key}`);
+			this.logger.debug(`Getting object stream from ABS: ${key}`);
 			return await this.azureBlobService.getObjectAsStream(key, range);
 		} catch (error) {
-			this.logger.error(`Error fetching object stream from Azure ${key}: ${error}`);
+			this.logger.error(`Error fetching object stream from ABS ${key}: ${error}`);
 			throw error;
 		}
 	}
