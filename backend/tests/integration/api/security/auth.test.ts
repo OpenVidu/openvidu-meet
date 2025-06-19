@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { startTestServer } from '../../../helpers/request-helpers.js';
+import { generateApiKey, getApiKeys, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
@@ -167,6 +167,82 @@ describe('Authentication API Tests', () => {
 
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
+		});
+	});
+
+	describe('API Keys Management', () => {
+		let adminCookie: string;
+
+		beforeAll(async () => {
+			adminCookie = await loginUser();
+		});
+
+		const getRoomsWithApiKey = async (apiKey: string) => {
+			return request(app)
+				.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, apiKey);
+		};
+
+		it('should create a new API key', async () => {
+			const response = await request(app).post(`${AUTH_PATH}/api-keys`).set('Cookie', adminCookie).expect(201);
+
+			expect(response.body).toHaveProperty('key');
+			expect(response.body).toHaveProperty('creationDate');
+			expect(response.body.key).toMatch(/^ovmeet-/);
+
+			// Verify the API key works by making a request to the get rooms endpoint
+			// using the newly created API key
+			const apiResponse = await getRoomsWithApiKey(response.body.key);
+			expect(apiResponse.status).toBe(200);
+		});
+
+		it('should get the list of API keys', async () => {
+			await generateApiKey();
+			const response = await getApiKeys();
+
+			expect(Array.isArray(response.body)).toBe(true);
+			if (response.body.length > 0) {
+				expect(response.body[0]).toHaveProperty('key');
+				expect(response.body[0]).toHaveProperty('creationDate');
+			}
+		});
+
+		it('should only exist one API key at a time', async () => {
+			const apiKey1 = await generateApiKey();
+			const apiKey2 = await generateApiKey();
+			const response = await getApiKeys();
+
+			expect(response.body.length).toBe(1);
+			expect(response.body[0].key).toBe(apiKey2); // The second key should replace the first
+
+			// Verify the first API key no longer works
+			let apiResponse = await getRoomsWithApiKey(apiKey1);
+			expect(apiResponse.status).toBe(401);
+
+			// Verify the second API key works
+			apiResponse = await getRoomsWithApiKey(apiKey2);
+			expect(apiResponse.status).toBe(200);
+		});
+
+		it('should delete all API keys', async () => {
+			const apiKey = await generateApiKey();
+			await request(app).delete(`${AUTH_PATH}/api-keys`).set('Cookie', adminCookie).expect(204);
+
+			// Confirm deletion
+			const getResponse = await getApiKeys();
+			expect(getResponse.status).toBe(200);
+			expect(Array.isArray(getResponse.body)).toBe(true);
+			expect(getResponse.body.length).toBe(0);
+
+			// Verify the deleted API key no longer works
+			const apiResponse = await getRoomsWithApiKey(apiKey);
+			expect(apiResponse.status).toBe(401);
+		});
+
+		it('should reject API key endpoints for unauthenticated users', async () => {
+			await request(app).post(`${AUTH_PATH}/api-keys`).expect(401);
+			await request(app).get(`${AUTH_PATH}/api-keys`).expect(401);
+			await request(app).delete(`${AUTH_PATH}/api-keys`).expect(401);
 		});
 	});
 });
