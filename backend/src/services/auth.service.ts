@@ -1,6 +1,8 @@
 import { User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
+import { MEET_API_KEY } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
+import { errorApiKeyNotConfigured } from '../models/error.model.js';
 import { MeetStorageService, UserService } from './index.js';
 
 @injectable()
@@ -10,7 +12,7 @@ export class AuthService {
 		@inject(MeetStorageService) protected storageService: MeetStorageService
 	) {}
 
-	async authenticate(username: string, password: string): Promise<User | null> {
+	async authenticateUser(username: string, password: string): Promise<User | null> {
 		const user = await this.userService.getUser(username);
 
 		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
@@ -34,5 +36,16 @@ export class AuthService {
 	async deleteApiKeys() {
 		await this.storageService.deleteApiKeys();
 		return { message: 'API keys deleted successfully' };
+	}
+
+	async validateApiKey(apiKey: string): Promise<boolean> {
+		const storedApiKeys = await this.getApiKeys();
+
+		if (storedApiKeys.length === 0 && !MEET_API_KEY) {
+			throw errorApiKeyNotConfigured();
+		}
+
+		// Check if the provided API key matches any stored API key or the MEET_API_KEY
+		return storedApiKeys.some((key) => key.key === apiKey) || apiKey === MEET_API_KEY;
 	}
 }

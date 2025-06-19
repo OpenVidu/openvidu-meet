@@ -7,7 +7,7 @@ if (process.env.MEET_CONFIG_DIR) {
 	envPath = process.env.MEET_CONFIG_DIR;
 } else if (process.env.NODE_ENV === 'development') {
 	envPath = '.env.development';
-} else if (process.env.NODE_ENV === 'test') {
+} else if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'ci') {
 	envPath = '.env.test';
 } else {
 	envPath = undefined;
@@ -22,7 +22,7 @@ export const {
 	MEET_NAME_ID = 'openviduMeet',
 
 	// Authentication configuration
-	MEET_API_KEY = 'meet-api-key',
+	MEET_API_KEY = '',
 	MEET_ADMIN_USER = 'admin',
 	MEET_ADMIN_SECRET = 'admin',
 

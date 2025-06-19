@@ -20,7 +20,7 @@ export const login = async (req: Request, res: Response) => {
 	const { username, password } = req.body as { username: string; password: string };
 
 	const authService = container.get(AuthService);
-	const user = await authService.authenticate(username, password);
+	const user = await authService.authenticateUser(username, password);
 
 	if (!user) {
 		logger.warn('Login failed');
