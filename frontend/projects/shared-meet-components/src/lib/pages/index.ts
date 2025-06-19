@@ -1,7 +1,6 @@
 export * from './console/console.component';
 export * from './console/about/about.component';
 export * from './console/developers/developers.component';
-export * from './console/appearance/appearance.component';
 export * from './console/overview/overview.component';
 export * from './console/recordings/recordings.component';
 export * from './console/rooms/rooms.component';

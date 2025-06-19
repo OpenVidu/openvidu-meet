@@ -17,15 +17,12 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RoomService, NotificationService, NavigationService } from '../../../services';
-import { DynamicGridComponent, ToggleCardComponent } from '../../../components';
 import { MeetRoom } from '../../../typings/ce';
 
 @Component({
 	selector: 'ov-room-preferences',
 	standalone: true,
 	imports: [
-		DynamicGridComponent,
-		ToggleCardComponent,
 		MatListModule,
 		MatCardModule,
 		DatePipe,
@@ -144,9 +141,13 @@ export class RoomsComponent implements OnInit {
 		window.open(room.publisherRoomUrl, '_blank');
 	}
 
-	deleteRoom({ roomId }: MeetRoom) {
+	async deleteRoom({ roomId }: MeetRoom) {
 		try {
-			this.roomService.deleteRoom(roomId);
+			const response = await this.roomService.deleteRoom(roomId);
+			if (response.status === 202) {
+				this.notificationService.showSnackbar('Room marked for deletion');
+				return;
+			}
 			this.createdRooms = this.createdRooms.filter((r) => r.roomId !== roomId);
 			this.dataSource.data = this.createdRooms;
 			this.notificationService.showSnackbar('Room deleted');

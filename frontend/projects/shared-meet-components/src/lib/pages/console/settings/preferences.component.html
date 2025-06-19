@@ -1,2 +1,91 @@
-<h2>Settings</h2>
-<p>Non implemented!</p>
+<div class="settings-container ov-mb-xxl">
+	<div class="settings-header">
+		<div class="title">
+			<mat-icon class="material-symbols-outlined ov-settings-icon">settings</mat-icon>
+			<h1>Settings</h1>
+		</div>
+		<p class="subtitle">Customize how your app works globally. Manage access, branding, and security settings.</p>
+	</div>
+
+	@if (isLoading()) {
+		<div class="loading-container">
+			<div class="loading-spinner">
+				<mat-icon class="rotating">refresh</mat-icon>
+			</div>
+			<p>Loading settings...</p>
+		</div>
+	} @else {
+		<div class="settings-content">
+			<!-- Branding Section -->
+			<mat-card class="section-card branding-section">
+				<mat-card-header>
+					<div mat-card-avatar>
+						<mat-icon class="section-icon">palette</mat-icon>
+					</div>
+					<mat-card-title>Branding</mat-card-title>
+				</mat-card-header>
+
+				<mat-card-content>
+					<ov-logo-selector></ov-logo-selector>
+				</mat-card-content>
+			</mat-card>
+
+			<!-- Access & Permissions Section -->
+			<mat-card class="section-card access-section">
+				<mat-card-header>
+					<div mat-card-avatar>
+						<mat-icon class="section-icon">security</mat-icon>
+					</div>
+					<mat-card-title>Access & Permissions</mat-card-title>
+				</mat-card-header>
+
+				<mat-card-content>
+					<form [formGroup]="accessForm" (ngSubmit)="onSaveAccess()">
+						<!-- Authentication for joining room -->
+						<div class="form-section">
+							<div class="form-field-header">
+								<h3>Authentication for joining room</h3>
+							</div>
+							<p class="field-description">Choose which users must authenticate for joining room.</p>
+
+							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="auth-select-field">
+								<mat-label>Select...</mat-label>
+								<mat-select formControlName="authenticationForJoining">
+									@for (option of authenticationOptions; track option.value) {
+										<mat-option [value]="option.value">{{ option.label }}</mat-option>
+									}
+								</mat-select>
+								@if (getFieldError(accessForm, 'authenticationForJoining')) {
+									<mat-error>{{ getFieldError(accessForm, 'authenticationForJoining') }}</mat-error>
+								}
+							</mat-form-field>
+						</div>
+
+						<mat-divider class="section-divider"></mat-divider>
+
+						<!-- Admin Password -->
+						<div class="form-section">
+							<div class="form-field-header">
+								<h3>Admin Password</h3>
+							</div>
+
+							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="password-field">
+								<mat-label>Password</mat-label>
+								<input
+									matInput
+									type="password"
+									formControlName="adminPassword"
+									placeholder="••••••••"
+								/>
+								<mat-hint>Minimum of 8 characters</mat-hint>
+								@if (getFieldError(accessForm, 'adminPassword')) {
+									<mat-error>{{ getFieldError(accessForm, 'adminPassword') }}</mat-error>
+								}
+							</mat-form-field>
+						</div>
+					</form>
+				</mat-card-content>
+			</mat-card>
+		</div>
+	}
+</div>

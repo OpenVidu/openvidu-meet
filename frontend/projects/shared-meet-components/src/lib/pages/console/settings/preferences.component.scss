@@ -1,0 +1,233 @@
+@import '../../../../../../../src/assets/styles/design-tokens';
+
+.settings-container {
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-md);
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-lg);
+	}
+
+	.settings-header {
+		@include ov-page-header;
+	}
+
+	button {
+		@include ov-button-base;
+
+		mat-icon {
+			@include ov-icon(md);
+			margin-right: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+.settings-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+.section-card {
+	@include ov-card;
+	transition: none;
+
+	&:hover {
+		box-shadow: var(--ov-meet-card-shadow);
+	}
+
+	.mat-mdc-card-header {
+		padding: 0;
+		align-items: center;
+		margin-bottom: var(--ov-meet-spacing-md);
+		border-bottom: 1px solid var(--ov-meet-border-color-light);
+
+		.mat-mdc-card-avatar {
+			align-content: center;
+			margin: 0;
+		}
+
+		.mat-mdc-card-title {
+			font-size: var(--ov-meet-font-size-lg);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+
+			@include ov-tablet-down {
+				font-size: var(--ov-meet-font-size-md);
+			}
+		}
+
+		.section-icon {
+			@include ov-icon(lg);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+}
+
+// Specific section styling
+.branding-section {
+	.section-icon {
+		color: var(--ov-meet-color-primary) !important;
+	}
+}
+
+.access-section {
+	.section-icon {
+		color: var(--ov-meet-color-accent) !important;
+	}
+}
+
+// Form styling
+.form-section {
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	.form-field-header {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		h3 {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.pro-badge {
+			background: var(--ov-meet-color-warning);
+			color: white;
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			border-radius: var(--ov-meet-radius-sm);
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			text-transform: uppercase;
+		}
+	}
+
+	.field-description {
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-sm);
+		margin: 0 0 var(--ov-meet-spacing-md) 0;
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
+
+
+// Form fields
+.mat-mdc-form-field {
+	width: 100%;
+
+	&.auth-select-field,
+	&.password-field {
+		max-width: 400px;
+	}
+}
+
+// Section divider
+.section-divider {
+	margin: var(--ov-meet-spacing-xl) 0;
+	border-color: var(--ov-meet-border-color-light);
+}
+
+// Form actions
+.form-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: var(--ov-meet-spacing-xl);
+	padding-top: var(--ov-meet-spacing-lg);
+	border-top: 1px solid var(--ov-meet-border-color-light);
+
+	@include ov-mobile-down {
+		justify-content: stretch;
+
+		button {
+			width: 100%;
+		}
+	}
+}
+
+// Loading state
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--ov-meet-spacing-xxl) 0;
+	color: var(--ov-meet-text-secondary);
+
+	.loading-spinner {
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		mat-icon {
+			@include ov-icon(xl);
+			color: var(--ov-meet-color-primary);
+		}
+	}
+
+	p {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+	}
+}
+
+// Rotating animation for loading states
+@keyframes rotate {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.rotating {
+	animation: rotate 1s linear infinite;
+}
+
+// Responsive adjustments
+@include ov-tablet-down {
+	.settings-content {
+		gap: var(--ov-meet-spacing-md);
+	}
+
+	.section-card {
+		.mat-mdc-card-content {
+			padding: var(--ov-meet-spacing-md) 0 0 0;
+		}
+	}
+
+	.form-section {
+		margin-bottom: var(--ov-meet-spacing-lg);
+	}
+}
+
+@include ov-mobile-down {
+	.settings-container {
+		.settings-header {
+			text-align: center;
+
+			.title {
+				justify-content: center;
+			}
+		}
+	}
+
+	.form-section {
+		.form-field-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--ov-meet-spacing-xs);
+
+			.pro-badge {
+				align-self: flex-start;
+			}
+		}
+	}
+}

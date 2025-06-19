@@ -1,0 +1,104 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+// Form styling
+.form-section {
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	.form-field-header {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		h3 {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.pro-badge {
+			background: var(--ov-meet-color-warning);
+			color: white;
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			border-radius: var(--ov-meet-radius-sm);
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			text-transform: uppercase;
+		}
+	}
+
+	.field-description {
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-sm);
+		margin: 0 0 var(--ov-meet-spacing-md) 0;
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
+// Logo upload section
+.logo-upload-section {
+	display: flex;
+	gap: var(--ov-meet-spacing-lg);
+	align-items: flex-start;
+
+	@include ov-tablet-down {
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+	}
+
+	.logo-preview {
+		flex-shrink: 0;
+
+		.logo-placeholder {
+			width: 120px;
+			height: 80px;
+			background: var(--ov-meet-surface-variant);
+			border: 2px dashed var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-radius-md);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			.logo-image {
+				max-width: 60px;
+			}
+
+			mat-icon {
+				@include ov-icon(xl);
+				color: var(--ov-meet-text-hint);
+			}
+		}
+	}
+
+	.pro-upgrade-message {
+		flex: 1;
+		text-align: center;
+		padding: var(--ov-meet-spacing-xl);
+		background: var(--ov-meet-surface-variant);
+		border-radius: var(--ov-meet-radius-md);
+		border: 1px solid var(--ov-meet-border-color);
+
+		p {
+			margin: 0 0 var(--ov-meet-spacing-md) 0;
+			color: var(--ov-meet-text-secondary);
+			font-size: var(--ov-meet-font-size-sm);
+		}
+
+		button {
+			@include ov-button-base;
+			mat-icon {
+				@include ov-icon(sm);
+			}
+		}
+	}
+
+	.logo-url-field {
+		flex: 1;
+		width: 100%;
+	}
+}
