@@ -10,7 +10,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NotificationService } from 'shared-meet-components';
+import { NotificationService } from '../../../services';
 
 interface ApiKeyData {
 	key: string;

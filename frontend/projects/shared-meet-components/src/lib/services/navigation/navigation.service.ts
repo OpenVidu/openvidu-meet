@@ -115,4 +115,14 @@ export class NavigationService {
 			console.error('Error navigating to route:', error);
 		}
 	}
+
+	/**
+	 * Checks if the current URL contains a specific route
+	 * @param route - The route to check against the current URL
+	 * @returns True if the current URL contains the route, false otherwise
+	 */
+	containsRoute(route: string): boolean {
+		const currentUrl = this.router.url.split('?')[0]; // Remove query params for comparison
+		return currentUrl.includes(route);
+	}
 }

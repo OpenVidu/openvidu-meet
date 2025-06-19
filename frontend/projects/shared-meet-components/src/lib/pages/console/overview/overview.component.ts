@@ -5,12 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { Observable, from, combineLatest, map, catchError, of } from 'rxjs';
-
-import { RoomService } from '../../../services/room/room.service';
-import { HttpService } from '../../../services/http/http.service';
-import { MeetRoom } from '../../../typings/ce/room';
-import { MeetRecordingInfo } from '../../../typings/ce/recording.model';
-import { NavigationService, ThemeService } from '@lib/services';
+import { NavigationService, ThemeService, HttpService, RoomService } from '../../../services';
+import { MeetRecordingInfo, MeetRoom } from '../../../typings/ce';
 
 interface OverviewStats {
 	totalRooms: number;
