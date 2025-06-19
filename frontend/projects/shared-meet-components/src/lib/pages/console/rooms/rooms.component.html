@@ -1,114 +1,283 @@
-<!-- <div>
-	<h2>Rooms</h2>
-	@for (room of createdRooms; track room.name) {
-		<div>
-			<mat-card>
-				<mat-card-header>
-					<mat-card-title>{{ room.name }}</mat-card-title>
-				</mat-card-header>
-				<mat-card-content>
-					<p><strong>📅 Creada:</strong> {{ room.creationTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-					<p><strong>⌛ Expires:</strong> {{ room.creationTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-					<p>
-						<strong>👥 Max Participants:</strong>
-						@if (room.maxParticipants === 0) {
-							<span>Unlimited</span>
-						} @else {
-							<span>{{ room.maxParticipants }}</span>
-						}
-					</p>
-
-					<button mat-flat-button (click)="openRoom(room.name)">JOIN</button>
-				</mat-card-content>
-			</mat-card>
-		</div>
-	}
-
-	@if (createdRooms.length === 0) {
-		<p>No rooms created yet</p>
-	}
-</div> -->
-<h1>Rooms</h1>
-
-<!-- <ov-dynamic-grid [maxColumns]="2" [withHeader]="true" [gutter]="'10px'" [layoutMode]="'grid'"> -->
-<!-- Custom Header-->
-<!-- <div header></div> -->
-
-@if (!isInRoomForm()) {
-	<mat-list class="grid-item" [attr.data-span]="2">
-		<div mat-subheader class="item-subheader">
-			<h3>Rooms</h3>
-			<div class="subheader-button">
-				<button mat-flat-button color="primary" (click)="createRoom()">
-					<mat-icon class="icon-left">add</mat-icon>
-					Create Room
-				</button>
+@if(isLoading) {
+	<!-- Loading Spinner -->
+	<div class="loading-overlay">
+		<mat-spinner diameter="40"></mat-spinner>
+	</div>
+} @else if (isInRoomForm()) {
+	<!-- Edit and create Room view  -->
+	<div>
+		<router-outlet></router-outlet>
+	</div>
+} @else {
+	<div class="rooms-container ov-mb-xxl">
+		<div class="rooms-header">
+			<div class="title">
+				<mat-icon class="ov-room-icon"> video_chat </mat-icon>
+				<h1>Rooms</h1>
 			</div>
+			<p class="subtitle">Manage your rooms, create new ones, and configure settings for your meetings.</p>
 		</div>
-		@for (item of createdRooms; track item) {
-			<mat-list-item (click)="onRoomClicked(item)" class="list-item">
-				<div matListItemIcon class="list-icon-container">
-					<mat-icon class="list-icon">video_camera_front</mat-icon>
-				</div>
-				<div matListItemTitle class="item-title">{{ item.roomId }}</div>
-				<div matListItemLine class="item-details">
-					<div>
-						<mat-icon class="icon">auto_delete</mat-icon>
-						<p>Expires: {{ item.autoDeletionDate | date: 'dd/MM/yyyy' }}</p>
+
+		<div class="rooms-content">
+			<!-- Search and Filter Bar -->
+			@if (createdRooms.length > 0) {
+				<!-- Actions Bar -->
+				<div class="rooms-actions">
+					<div class="actions-left">
+						<div class="search-bar">
+							<mat-form-field appearance="outline" class="search-field">
+								<mat-label>Search rooms</mat-label>
+								<input
+									matInput
+									[value]="searchTerm"
+									(input)="applyFilter($event)"
+									placeholder="Search by prefix or status..."
+									autocomplete="off"
+								/>
+								<mat-icon matPrefix>search</mat-icon>
+								@if (searchTerm) {
+									<button matSuffix mat-icon-button (click)="clearFilter()" matTooltip="Clear search">
+										<mat-icon>clear</mat-icon>
+									</button>
+								}
+							</mat-form-field>
+						</div>
+					</div>
+
+					<div class="actions-right">
+						<button
+							mat-icon-button
+							matTooltip="Refresh rooms"
+							(click)="refreshRooms()"
+							[disabled]="isLoading"
+							class="refresh-btn"
+						>
+							<mat-icon>refresh</mat-icon>
+						</button>
+
+						<div class="rooms-stats">
+							<button mat-raised-button color="primary" (click)="createRoom()" class="create-room-btn">
+								<mat-icon>add</mat-icon>
+								Create New Room
+							</button>
+						</div>
 					</div>
 				</div>
 
-				<div matListItemSecondaryAction class="button-container" (click)="$event.stopPropagation()">
-					<!-- <button mat-icon-button color="primary">
-						<mat-icon>edit</mat-icon>
-					</button> -->
-					<button mat-icon-button color="warn" class="delete-button" (click)="deleteRoom(item)">
-						<mat-icon>delete</mat-icon>
-					</button>
+				<!-- Rooms Table -->
+				<div class="rooms-table-container">
+					<!-- Loading Spinner -->
+					@if (isLoading) {
+						<div class="loading-overlay">
+							<mat-spinner diameter="40"></mat-spinner>
+						</div>
+					}
+
+					<!-- No Results Message -->
+					@if (!isLoading && dataSource.filteredData.length === 0 && searchTerm) {
+						<div class="no-results-message">
+							<mat-icon class="no-results-icon">search_off</mat-icon>
+							<h4>No rooms found</h4>
+							<p>No rooms match your search criteria "{{ searchTerm }}"</p>
+							<button mat-stroked-button (click)="clearFilter()">
+								<mat-icon>clear</mat-icon>
+								Clear search
+							</button>
+						</div>
+					}
+
+					<!-- Desktop Table View -->
+					<div
+						class="table-wrapper desktop-view"
+						[style.display]="dataSource.filteredData.length === 0 && searchTerm ? 'none' : 'block'"
+					>
+						<table mat-table [dataSource]="dataSource" matSort class="rooms-table">
+							<!-- ...existing code... -->
+							<ng-container matColumnDef="roomName">
+								<th mat-header-cell *matHeaderCellDef mat-sort-header class="room-name-header">
+									<div class="header-content">
+										<span>Room ID</span>
+									</div>
+								</th>
+								<td mat-cell *matCellDef="let room" class="room-name-cell">
+									<div class="room-name-content">
+										<span class="room-id">{{ room.roomId }}</span>
+
+										<!-- Display room prefix if available -->
+										<!-- <span class="room-prefix">{{ room.roomIdPrefix }}</span> -->
+									</div>
+								</td>
+							</ng-container>
+
+							<!-- Creation Date Column -->
+							<ng-container matColumnDef="creationDate">
+								<th mat-header-cell *matHeaderCellDef mat-sort-header class="creation-date-header">
+									<div class="header-content">
+										<span>Created</span>
+									</div>
+								</th>
+								<td mat-cell *matCellDef="let room" class="creation-date-cell">
+									<div class="date-content">
+										<span class="date-primary">{{ room.creationDate | date: 'MMM dd, yyyy' }}</span>
+										<span class="date-secondary">{{ room.creationDate | date: 'HH:mm' }}</span>
+									</div>
+								</td>
+							</ng-container>
+
+							<!-- Status Column -->
+							<ng-container matColumnDef="status">
+								<th mat-header-cell *matHeaderCellDef mat-sort-header class="status-header">
+									<div class="header-content">
+										<span>Status</span>
+									</div>
+								</th>
+								<td mat-cell *matCellDef="let room" class="status-cell">
+									<div class="status-content">
+										<div
+											class="status-badge"
+											[ngClass]="{
+												'status-active': !room.markedForDeletion,
+												'status-deletion': room.markedForDeletion
+											}"
+										>
+											<mat-icon class="status-icon">
+												{{ room.markedForDeletion ? 'delete_outline' : 'check_circle' }}
+											</mat-icon>
+											<span>{{ room.markedForDeletion ? 'Marked for deletion' : 'Active' }}</span>
+										</div>
+										@if (room.markedForDeletion) {
+											<div class="deletion-warning">
+												<mat-icon class="warning-icon">warning</mat-icon>
+												<span>This room is marked for deletion and will be removed soon.</span>
+											</div>
+										}
+										<!-- Auto-deletion Date -->
+										@if (room.autoDeletionDate) {
+											<div
+												class="auto-deletion"
+												matTooltip="This room will be automatically deleted on {{
+													room.autoDeletionDate | date: 'MMM dd, yyyy'
+												}}"
+											>
+												<mat-icon class="deletion-icon">auto_delete</mat-icon>
+												<span>
+													{{ room.autoDeletionDate | date: 'MMM dd, HH:mm' }}
+												</span>
+											</div>
+										}
+									</div>
+								</td>
+							</ng-container>
+
+							<!-- Actions Column -->
+							<ng-container matColumnDef="actions">
+								<th mat-header-cell *matHeaderCellDef class="actions-header">
+									<span>Actions</span>
+								</th>
+								<td mat-cell *matCellDef="let room" class="actions-cell">
+									<div class="actions-content">
+										<!-- Open room -->
+										<button
+											mat-icon-button
+											matTooltip="Open room"
+											(click)="openRoom(room); $event.stopPropagation()"
+											class="action-btn primary-action"
+										>
+											<mat-icon>open_in_new</mat-icon>
+										</button>
+										<!-- Room preferences -->
+										<button
+											mat-icon-button
+											matTooltip="View room preferences"
+											(click)="viewPreferences(room); $event.stopPropagation()"
+											class="action-btn room-preferences-btn"
+										>
+											<mat-icon>settings</mat-icon>
+										</button>
+
+										<!-- More Actions Menu -->
+										<button
+											mat-icon-button
+											[matMenuTriggerFor]="actionsMenu"
+											matTooltip="More actions"
+											(click)="$event.stopPropagation()"
+											class="action-btn"
+										>
+											<mat-icon>more_vert</mat-icon>
+										</button>
+
+										<mat-menu #actionsMenu="matMenu" class="actions-menu">
+											<button mat-menu-item (click)="viewRecordings(room)">
+												<mat-icon class="ov-recording-icon">video_library</mat-icon>
+												<span>View Recordings</span>
+											</button>
+											<!-- <button mat-menu-item (click)="viewPreferences(room)">
+												<mat-icon class="ov-settings-icon">settings</mat-icon>
+												<span>Room Preferences</span>
+											</button> -->
+											<button mat-menu-item (click)="copyModeratorLink(room)">
+												<mat-icon>content_copy</mat-icon>
+												<span>Copy Moderator Link</span>
+											</button>
+											<button mat-menu-item (click)="copyPublisherLink(room)">
+												<mat-icon>content_copy</mat-icon>
+												<span>Copy Publisher Link</span>
+											</button>
+											<mat-divider></mat-divider>
+											<button mat-menu-item (click)="deleteRoom(room)" class="delete-action">
+												<mat-icon>delete</mat-icon>
+												<span>Delete Room</span>
+											</button>
+										</mat-menu>
+									</div>
+								</td>
+							</ng-container>
+
+							<!-- Table Header and Rows -->
+							<tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-header"></tr>
+							<tr
+								mat-row
+								*matRowDef="let row; columns: displayedColumns"
+								class="room-row"
+								(click)="onRoomClicked(row)"
+								[class.marked-for-deletion]="row.markedForDeletion"
+								[class.clickable-row]="true"
+							></tr>
+						</table>
+					</div>
+					<!-- Paginator -->
+					<mat-paginator
+						[pageSizeOptions]="[5, 10, 20, 50]"
+						[pageSize]="10"
+						showFirstLastButtons
+						class="table-paginator"
+						[style.display]="dataSource.filteredData.length === 0 && searchTerm ? 'none' : 'flex'"
+					>
+					</mat-paginator>
 				</div>
-			</mat-list-item>
-		}
-		@if (createdRooms.length === 0) {
-			<p class="empty-rooms-message">No rooms created yet</p>
-		}
-	</mat-list>
+			} @else {
+				<!-- Empty State -->
+				<ng-container>
+					<div class="no-rooms-state">
+						<div class="empty-content">
+							<h3>No rooms created yet</h3>
+							<p>Create your first room to start hosting meetings and manage your video conferences.</p>
+
+							<div class="getting-started-actions">
+								<button
+									mat-raised-button
+									color="primary"
+									(click)="createRoom()"
+									class="create-first-room-btn"
+								>
+									<mat-icon>add</mat-icon>
+									Create Your First Room
+								</button>
+							</div>
+						</div>
+					</div>
+				</ng-container>
+			}
+		</div>
+	</div>
 }
-
-<!-- Recording Toggle -->
-<!-- <ov-toggle-card
-		[title]="'Recording'"
-		[description]="'Allow record your rooms for later use'"
-		[icon]="'radio_button_checked'"
-		[iconBackgroundColor]="'#e23e3e'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="recordingEnabled"
-		(onToggleValueChanged)="onRecordingToggle($event)"
-	>
-	</ov-toggle-card> -->
-
-<!-- Chat Toggle -->
-<!-- <ov-toggle-card
-		[title]="'Chat'"
-		[description]="'Allow participants to communicate via chat'"
-		[icon]="'message'"
-		[iconBackgroundColor]="'#598eff'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="chatEnabled"
-		(onToggleValueChanged)="onChatToggle($event)"
-	>
-	</ov-toggle-card> -->
-
-<!-- <ov-toggle-card
-		[title]="'Backgrounds'"
-		[description]="'Allow participants to change their backgrounds'"
-		[icon]="'blur_on'"
-		[iconBackgroundColor]="'#444444'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="backgroundsEnabled"
-		(onToggleValueChanged)="onVirtualBackgroundToggle($event)"
-	>
-	</ov-toggle-card> -->
-<!-- </ov-dynamic-grid> -->
-<div>
-	<router-outlet></router-outlet>
-</div>
