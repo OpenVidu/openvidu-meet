@@ -71,7 +71,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -137,7 +136,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -200,7 +198,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -263,7 +260,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -326,7 +322,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -389,7 +384,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -452,7 +446,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
@@ -515,7 +508,6 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
           MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
           MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
           MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
