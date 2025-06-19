@@ -9,7 +9,8 @@ import {
 	sleep,
 	endMeeting,
 	updateWebbhookPreferences,
-	deleteAllRooms
+	deleteAllRooms,
+	deleteRoom
 } from '../../helpers/request-helpers.js';
 import { MeetWebhookEvent, MeetWebhookEventType } from '../../../src/typings/ce/webhook.model.js';
 
@@ -87,13 +88,33 @@ describe('Webhook Integration Tests', () => {
 		expect(meetingStartedWebhook?.headers['x-timestamp']).toBeDefined();
 	});
 
-	it('should send meeting_ended webhook when room is closed', async () => {
+	it('should send meeting_ended webhook when meeting is closed', async () => {
 		const context = await setupSingleRoom(true);
 		const roomData = context.room;
 		const moderatorCookie = context.moderatorCookie;
 
 		// Close the room
 		await endMeeting(roomData.roomId, moderatorCookie);
+
+		// Wait for the room to be closed
+		await sleep('1s');
+
+		// Verify 'meetingEnded' webhook is sent
+		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
+		const meetingEndedWebhook = receivedWebhooks.find((w) => w.body.event === MeetWebhookEventType.MEETING_ENDED);
+		expect(meetingEndedWebhook).toBeDefined();
+		expect(meetingEndedWebhook?.body.data.roomId).toBe(roomData.roomId);
+		expect(meetingEndedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
+		expect(meetingEndedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+		expect(meetingEndedWebhook?.headers['x-signature']).toBeDefined();
+		expect(meetingEndedWebhook?.headers['x-timestamp']).toBeDefined();
+	});
+
+	it('should send meeting_ended when room is forcefully deleted', async () => {
+		const context = await setupSingleRoom(true);
+		const roomData = context.room;
+		// Forcefully delete the room
+		await deleteRoom(roomData.roomId, { force: true });
 
 		// Wait for the room to be closed
 		await sleep('1s');
