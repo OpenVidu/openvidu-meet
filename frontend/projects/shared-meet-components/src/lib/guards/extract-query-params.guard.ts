@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { ContextService, NavigationService } from '../services';
+import { ContextService, NavigationService, SessionStorageService } from '../services';
 import { ErrorReason } from '../models';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
