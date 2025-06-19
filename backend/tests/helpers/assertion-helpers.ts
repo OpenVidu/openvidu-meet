@@ -9,8 +9,6 @@ import {
 	ParticipantRole
 } from '../../src/typings/ce';
 
-const RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
-
 export const expectErrorResponse = (
 	response: any,
 	status = 422,
@@ -445,11 +443,9 @@ export const expectValidGetRecordingUrlResponse = (response: any, recordingId: s
 	expect(response.status).toBe(200);
 	const recordingUrl = response.body.url;
 	expect(recordingUrl).toBeDefined();
-	
+
 	const parsedUrl = new URL(recordingUrl);
-	expect(parsedUrl.pathname).toBe(
-		`/recording/${recordingId}`
-	);
+	expect(parsedUrl.pathname).toBe(`/recording/${recordingId}`);
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };
 
