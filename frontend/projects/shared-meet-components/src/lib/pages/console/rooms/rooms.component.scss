@@ -96,10 +96,6 @@
 	justify-content: space-between;
 	align-items: center;
 	gap: var(--ov-meet-spacing-md);
-	// margin-bottom: var(--ov-meet-spacing-lg);
-	// padding: var(--ov-meet-spacing-md);
-	// background: var(--ov-meet-surface-variant);
-	// border-radius: var(--ov-meet-radius-md);
 
 	@include ov-mobile-down {
 		flex-direction: column;
@@ -141,23 +137,6 @@
 
 		mat-icon {
 			@include ov-icon(md);
-		}
-	}
-
-	.rooms-stats {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-md);
-
-		.stat-item {
-			display: flex;
-			align-items: center;
-			gap: var(--ov-meet-spacing-xs);
-			font-size: var(--ov-meet-font-size-sm);
-			color: var(--ov-meet-text-secondary);
-			background: var(--ov-meet-surface-color);
-			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-			border-radius: var(--ov-meet-radius-sm);
 		}
 	}
 }
@@ -293,6 +272,10 @@
 				min-width: 140px;
 			}
 
+			&.auto-deletion-header {
+				min-width: 160px;
+			}
+
 			&.actions-header {
 				text-align: center;
 				min-width: 150px;
@@ -320,7 +303,6 @@
 		}
 
 		&.marked-for-deletion {
-			opacity: 0.7;
 			background-color: rgba(244, 67, 54, 0.05);
 
 			&:hover {
@@ -388,7 +370,7 @@
 		align-items: center;
 		gap: var(--ov-meet-spacing-xs);
 		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-		border-radius: var(--ov-meet-radius-md);
+		border-radius: var(--ov-meet-radius-sm);
 		font-size: var(--ov-meet-font-size-xs);
 		font-weight: var(--ov-meet-font-weight-medium);
 		width: fit-content;
@@ -401,7 +383,6 @@
 			background-color: rgba(76, 175, 80, 0.1);
 			color: var(--ov-meet-color-success);
 			border: 1px solid rgba(76, 175, 80, 0.3);
-			border-radius: var(--ov-meet-radius-sm);
 
 			.status-icon {
 				color: var(--ov-meet-color-success);
@@ -419,16 +400,88 @@
 		}
 	}
 
-	.auto-deletion {
+	.deletion-warning {
 		display: flex;
 		align-items: center;
 		gap: var(--ov-meet-spacing-xs);
 		font-size: var(--ov-meet-font-size-xs);
-		color: var(--ov-meet-color-hint);
+		color: var(--ov-meet-color-error);
+		margin-top: var(--ov-meet-spacing-xs);
 
-		.deletion-icon {
+		.warning-icon {
 			@include ov-icon(xs);
-			color: var(--ov-meet-color-warn);
+			color: var(--ov-meet-color-error);
+		}
+	}
+}
+
+// Auto Deletion Column
+.auto-deletion-cell {
+	.auto-deletion-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	.auto-deletion-info {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+
+		.deletion-date {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-xs);
+
+			.date-primary {
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				font-size: var(--ov-meet-font-size-sm);
+			}
+
+			.date-secondary {
+				font-size: var(--ov-meet-font-size-xs);
+				color: var(--ov-meet-text-secondary);
+			}
+		}
+
+		.deletion-badge {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			border-radius: var(--ov-meet-radius-sm);
+
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-medium);
+			width: fit-content;
+			background-color: rgba(255, 152, 0, 0.1);
+			color: var(--ov-meet-color-warning);
+			border: 1px solid rgba(255, 152, 0, 0.3);
+
+			.deletion-icon {
+				@include ov-icon(sm);
+				color: var(--ov-meet-color-warning);
+			}
+		}
+	}
+
+	.no-auto-deletion {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		border-radius: var(--ov-meet-radius-md);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		width: fit-content;
+		background-color: rgba(158, 158, 158, 0.1);
+		color: var(--ov-meet-text-hint);
+		border: 1px solid rgba(158, 158, 158, 0.3);
+
+		.no-deletion-icon {
+			@include ov-icon(sm);
+			color: var(--ov-meet-text-hint);
 		}
 	}
 }
@@ -471,7 +524,7 @@
 		font-size: var(--ov-meet-font-size-sm);
 	}
 }
-
+// Delete Action
 .delete-action {
 	color: var(--ov-meet-color-error);
 

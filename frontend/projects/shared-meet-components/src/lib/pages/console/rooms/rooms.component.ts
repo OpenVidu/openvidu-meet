@@ -13,7 +13,7 @@ import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RoomService, NotificationService, NavigationService } from '../../../services';
@@ -49,23 +49,18 @@ import { MeetRoom } from '../../../typings/ce';
 export class RoomsComponent implements OnInit {
 	@ViewChild(MatSort) sort!: MatSort;
 	@ViewChild(MatPaginator) paginator!: MatPaginator;
-
 	createdRooms: MeetRoom[] = [];
 	dataSource = new MatTableDataSource<MeetRoom>([]);
-	displayedColumns: string[] = ['roomName', 'creationDate', 'status', 'actions'];
+	displayedColumns: string[] = ['roomName', 'creationDate', 'status', 'autoDeletion', 'actions'];
 	isLoading = false;
 	showLoadingSpinner = false;
 	searchTerm = '';
-	recordingEnabled = false;
-	chatEnabled = false;
-	backgroundsEnabled = false;
 	protected log: ILogger;
 
 	constructor(
 		protected loggerService: LoggerService,
 		private roomService: RoomService,
 		private notificationService: NotificationService,
-		protected router: Router,
 		protected navigationService: NavigationService,
 		protected route: ActivatedRoute,
 		private clipboard: Clipboard
@@ -74,23 +69,7 @@ export class RoomsComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.isLoading = true;
-		const delaySpinner = setTimeout(() => {
-			this.showLoadingSpinner = true;
-		}, 200);
-		try {
-			const { rooms } = await this.roomService.listRooms();
-			this.createdRooms = rooms;
-			this.dataSource.data = this.createdRooms;
-			this.setupTableFeatures();
-		} catch (error) {
-			console.error('Error fetching room preferences', error);
-		} finally {
-			this.isLoading = false;
-			clearTimeout(delaySpinner);
-			this.showLoadingSpinner = false;
-
-		}
+		await this.refreshRooms();
 	}
 
 	private setupTableFeatures() {
@@ -105,6 +84,8 @@ export class RoomsComponent implements OnInit {
 					return new Date(item.creationDate);
 				case 'status':
 					return item.markedForDeletion ? 1 : 0; // Active rooms first
+				case 'autoDeletion':
+					return item.autoDeletionDate ? new Date(item.autoDeletionDate) : new Date('9999-12-31'); // Rooms without auto-deletion go last
 				case 'roomName':
 					return item.roomId;
 				default:
@@ -119,7 +100,7 @@ export class RoomsComponent implements OnInit {
 				data.roomId.toLowerCase().includes(searchStr) ||
 				data.roomIdPrefix?.toLowerCase().includes(searchStr) ||
 				false ||
-				(data.markedForDeletion ? 'marked for deletion' : 'active').includes(searchStr)
+				(data.markedForDeletion ? 'inactive' : 'active').includes(searchStr)
 			);
 		};
 	}
@@ -144,24 +125,19 @@ export class RoomsComponent implements OnInit {
 
 	isInRoomForm(): boolean {
 		return (
-			this.router.url.includes('/new') ||
-			this.router.url.includes('/edit') ||
-			this.router.url.includes('/preferences')
+			this.navigationService.containsRoute('/console/rooms/') &&
+			(this.navigationService.containsRoute('/edit') || this.navigationService.containsRoute('/new'))
 		);
 	}
 
 	async createRoom() {
-		//TODO: Go to room details page
-		await this.router.navigate(['new'], { relativeTo: this.route });
-		// try {
-		// 	const room = await this.roomService.createRoom();
-		// 	this.notificationService.showSnackbar('Room created');
-		// 	this.log.d('Room created:', room);
-		// 	this.createdRooms.push(room);
-		// } catch (error) {
-		// 	this.notificationService.showAlert('Error creating room');
-		// 	this.log.e('Error creating room:', error);
-		// }
+		try {
+			this.navigationService.navigateTo('/console/rooms/new');
+		} catch (error) {
+			this.notificationService.showAlert('Error creating room');
+			this.log.e('Error creating room:', error);
+			return;
+		}
 	}
 
 	openRoom(room: MeetRoom) {
@@ -182,21 +158,31 @@ export class RoomsComponent implements OnInit {
 
 	async refreshRooms() {
 		this.isLoading = true;
+		const delaySpinner = setTimeout(() => {
+			this.showLoadingSpinner = true;
+		}, 200);
 		try {
 			const { rooms } = await this.roomService.listRooms();
 			this.createdRooms = rooms;
 			this.dataSource.data = this.createdRooms;
+			this.setupTableFeatures();
 		} catch (error) {
-			console.error('Error refreshing rooms', error);
-			this.notificationService.showAlert('Error refreshing rooms');
+			console.error('Error fetching room preferences', error);
 		} finally {
 			this.isLoading = false;
+			clearTimeout(delaySpinner);
+			this.showLoadingSpinner = false;
 		}
 	}
 
 	async onRoomClicked({ roomId }: MeetRoom) {
-		//TODO: Go to room details page
-		await this.router.navigate([roomId, 'edit'], { relativeTo: this.route });
+		try {
+			this.navigationService.navigateTo(`/console/rooms/${roomId}/edit`);
+		} catch (error) {
+			this.notificationService.showAlert('Error navigating to room details');
+			this.log.e('Error navigating to room details:', error);
+			return;
+		}
 	}
 
 	copyModeratorLink(room: MeetRoom) {
@@ -220,7 +206,14 @@ export class RoomsComponent implements OnInit {
 	}
 
 	async viewPreferences(room: MeetRoom) {
-		// Navigate to room preferences/settings
+		// Check if room is marked for deletion
+		if (room.markedForDeletion) {
+			this.notificationService.showAlert(
+				'Room preferences cannot be modified. This room is marked for deletion.'
+			);
+			return;
+		}
+
 		try {
 			await this.navigationService.navigateTo(`console/rooms/${room.roomId}/edit`);
 		} catch (error) {
@@ -228,69 +221,4 @@ export class RoomsComponent implements OnInit {
 			this.log.e('Error navigating to room preferences:', error);
 		}
 	}
-
-	// async onRecordingToggle(enabled: boolean) {
-	// 	console.log('Recording toggled', enabled);
-
-	// 	try {
-	// 		this.roomPreferences.recordingPreferences.enabled = enabled;
-	// 		await this.roomService.saveRoomPreferences(this.roomPreferences);
-	// 		this.recordingEnabled = enabled;
-
-	// 		// TODO: Show a toast message
-	// 	} catch (error) {
-	// 		console.error('Error saving recording preferences', error);
-	// 		// TODO: Show a toast message
-	// 	}
-	// }
-
-	// async onChatToggle(enabled: boolean) {
-	// 	console.log('Chat toggled', enabled);
-
-	// 	try {
-	// 		this.roomPreferences.chatPreferences.enabled = enabled;
-	// 		await this.roomService.saveRoomPreferences(this.roomPreferences);
-	// 		this.chatEnabled = enabled;
-	// 		// TODO: Show a toast message
-	// 	} catch (error) {
-	// 		console.error('Error saving chat preferences', error);
-	// 		// TODO: Show a toast message
-	// 	}
-	// }
-
-	// async onVirtualBackgroundToggle(enabled: boolean) {
-	// 	console.log('Virtual background toggled', enabled);
-
-	// 	try {
-	// 		this.roomPreferences.virtualBackgroundPreferences.enabled = enabled;
-	// 		await this.roomService.saveRoomPreferences(this.roomPreferences);
-	// 		this.backgroundsEnabled = enabled;
-	// 		// TODO: Show a toast message
-	// 	} catch (error) {
-	// 		console.error('Error saving virtual background preferences', error);
-	// 		// TODO: Show a toast message
-	// 	}
-	// }
-
-	/**
-	 * Loads the room preferences from the global preferences service and assigns them to the component's properties.
-	 *
-	 * @returns {Promise<void>} A promise that resolves when the room preferences have been loaded and assigned.
-	 */
-	// private async loadRoomPreferences() {
-	// 	const preferences = await this.roomService.getRoomPreferences();
-	// 	this.roomPreferences = preferences;
-
-	// 	console.log('Room preferences:', preferences);
-
-	// 	// Destructures the `preferences` object to extract the enabled status of various features.
-	// 	const {
-	// 		recordingPreferences: { enabled: recordingEnabled },
-	// 		chatPreferences: { enabled: chatEnabled },
-	// 		virtualBackgroundPreferences: { enabled: backgroundsEnabled }
-	// 	} = preferences;
-
-	// 	// Assigns the extracted values to the component's properties.
-	// 	Object.assign(this, { recordingEnabled, chatEnabled, backgroundsEnabled });
-	// }
 }

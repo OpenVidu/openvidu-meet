@@ -100,13 +100,12 @@
 						</div>
 					}
 
-					<!-- Desktop Table View -->
+					<!-- Table View -->
 					<div
 						class="table-wrapper desktop-view"
 						[style.display]="dataSource.filteredData.length === 0 && searchTerm ? 'none' : 'block'"
 					>
 						<table mat-table [dataSource]="dataSource" matSort class="rooms-table">
-							<!-- ...existing code... -->
 							<ng-container matColumnDef="roomName">
 								<th mat-header-cell *matHeaderCellDef mat-sort-header class="room-name-header">
 									<div class="header-content">
@@ -116,9 +115,6 @@
 								<td mat-cell *matCellDef="let room" class="room-name-cell">
 									<div class="room-name-content">
 										<span class="room-id">{{ room.roomId }}</span>
-
-										<!-- Display room prefix if available -->
-										<!-- <span class="room-prefix">{{ room.roomIdPrefix }}</span> -->
 									</div>
 								</td>
 							</ng-container>
@@ -153,31 +149,54 @@
 												'status-active': !room.markedForDeletion,
 												'status-deletion': room.markedForDeletion
 											}"
-											matTooltip="{{ room.markedForDeletion ? 'Room deletion pending - will be removed when all participants leave' : '' }}"
+											matTooltip="{{
+												room.markedForDeletion
+													? 'Room will be deleted when last participant leaves'
+													: ''
+											}}"
 										>
 											<mat-icon class="status-icon">
 												{{ room.markedForDeletion ? 'delete_outline' : 'check_circle' }}
 											</mat-icon>
-											<span>{{ room.markedForDeletion ? 'Marked for deletion' : 'Active' }}</span>
+											<span>{{ room.markedForDeletion ? 'Inactive' : 'Active' }}</span>
 										</div>
-										@if (room.markedForDeletion) {
-											<div class="deletion-warning">
-												<mat-icon class="warning-icon">warning</mat-icon>
-												<span>This room will be deleted when last participant leaves.</span>
-											</div>
-										}
-										<!-- Auto-deletion Date -->
+									</div>
+								</td>
+							</ng-container>
+
+							<!-- Auto Deletion Column -->
+							<ng-container matColumnDef="autoDeletion">
+								<th mat-header-cell *matHeaderCellDef mat-sort-header class="auto-deletion-header">
+									<div class="header-content">
+										<span>Auto Deletion</span>
+									</div>
+								</th>
+								<td mat-cell *matCellDef="let room" class="auto-deletion-cell">
+									<div class="auto-deletion-content">
 										@if (room.autoDeletionDate) {
+											<div class="auto-deletion-info">
+												<div class="deletion-badge" matTooltip="Scheduled for auto deletion">
+													<mat-icon class="deletion-icon">auto_delete</mat-icon>
+													<span>Scheduled</span>
+												</div>
+												@if (!room.markedForDeletion) {
+													<div class="deletion-date">
+														<span class="date-primary">{{
+															room.autoDeletionDate | date: 'MMM dd, yyyy'
+														}}</span>
+														<span class="date-secondary">{{
+															room.autoDeletionDate | date: 'HH:mm'
+														}}</span>
+													</div>
+												}
+											</div>
+										} @else {
 											<div
-												class="auto-deletion"
-												matTooltip="This room will be automatically deleted on {{
-													room.autoDeletionDate | date: 'MMM dd, yyyy'
-												}}"
+												class="no-auto-deletion"
+												matTooltip="The room is not scheduled for auto deletion"
 											>
-												<mat-icon class="deletion-icon">auto_delete</mat-icon>
-												<span>
-													{{ room.autoDeletionDate | date: 'MMM dd, HH:mm' }}
-												</span>
+												<mat-icon class="no-deletion-icon">close</mat-icon>
+												<span>Not scheduled</span>
 											</div>
 										}
 									</div>
@@ -192,58 +211,87 @@
 								<td mat-cell *matCellDef="let room" class="actions-cell">
 									<div class="actions-content">
 										<!-- Open room -->
-										<button
-											mat-icon-button
-											matTooltip="Open room"
-											(click)="openRoom(room); $event.stopPropagation()"
-											class="action-btn primary-action"
-										>
-											<mat-icon>open_in_new</mat-icon>
-										</button>
-										<!-- Room preferences -->
-										<button
-											mat-icon-button
-											matTooltip="View room preferences"
-											(click)="viewPreferences(room); $event.stopPropagation()"
-											class="action-btn room-preferences-btn"
-										>
-											<mat-icon>settings</mat-icon>
-										</button>
-
-										<!-- More Actions Menu -->
-										<button
-											mat-icon-button
-											[matMenuTriggerFor]="actionsMenu"
-											matTooltip="More actions"
-											(click)="$event.stopPropagation()"
-											class="action-btn"
-										>
-											<mat-icon>more_vert</mat-icon>
-										</button>
-
-										<mat-menu #actionsMenu="matMenu" class="actions-menu">
-											<button mat-menu-item (click)="viewRecordings(room)">
+										@if (room.markedForDeletion) {
+											<button
+												mat-icon-button
+												(click)="viewRecordings(room)"
+												matTooltip="View recordings"
+											>
 												<mat-icon class="ov-recording-icon">video_library</mat-icon>
-												<span>View Recordings</span>
 											</button>
-											<!-- <button mat-menu-item (click)="viewPreferences(room)">
+										} @else {
+											<button
+												mat-icon-button
+												matTooltip="Open room"
+												(click)="openRoom(room); $event.stopPropagation()"
+												class="action-btn primary-action"
+											>
+												<mat-icon>open_in_new</mat-icon>
+											</button>
+											<!-- Room preferences -->
+											<button
+												mat-icon-button
+												[matTooltip]="
+													room.markedForDeletion
+														? 'Room preferences cannot be modified - room is marked for deletion'
+														: 'View room preferences'
+												"
+												(click)="viewPreferences(room); $event.stopPropagation()"
+												[disabled]="room.markedForDeletion"
+												class="action-btn room-preferences-btn"
+											>
+												<mat-icon>settings</mat-icon>
+											</button>
+
+											<!-- More Actions Menu -->
+											<button
+												mat-icon-button
+												[matMenuTriggerFor]="actionsMenu"
+												matTooltip="More actions"
+												(click)="$event.stopPropagation()"
+												class="action-btn"
+											>
+												<mat-icon>more_vert</mat-icon>
+											</button>
+
+											<mat-menu #actionsMenu="matMenu" class="actions-menu">
+												<button mat-menu-item (click)="viewRecordings(room)">
+													<mat-icon class="ov-recording-icon">video_library</mat-icon>
+													<span>View Recordings</span>
+												</button>
+												<!-- <button mat-menu-item (click)="viewPreferences(room)">
 												<mat-icon class="ov-settings-icon">settings</mat-icon>
 												<span>Room Preferences</span>
 											</button> -->
-											<button mat-menu-item (click)="copyModeratorLink(room)">
-												<mat-icon>content_copy</mat-icon>
-												<span>Copy Moderator Link</span>
-											</button>
-											<button mat-menu-item (click)="copyPublisherLink(room)">
-												<mat-icon>content_copy</mat-icon>
-												<span>Copy Publisher Link</span>
-											</button>
-											<mat-divider></mat-divider>
-											<button mat-menu-item (click)="deleteRoom(room)" class="delete-action">
-												<mat-icon>delete</mat-icon>
-												<span>Delete Room</span>
-											</button>
-										</mat-menu>
+												<button
+													mat-menu-item
+													[disabled]="room.markedForDeletion"
+													(click)="copyModeratorLink(room)"
+												>
+													<mat-icon>content_copy</mat-icon>
+													<span>Copy Moderator Link</span>
+												</button>
+												<button
+													mat-menu-item
+													[disabled]="room.markedForDeletion"
+													(click)="copyPublisherLink(room)"
+												>
+													<mat-icon>content_copy</mat-icon>
+													<span>Copy Publisher Link</span>
+												</button>
+												@if (!room.markedForDeletion) {
+													<mat-divider></mat-divider>
+													<button
+														mat-menu-item
+														(click)="deleteRoom(room)"
+														class="delete-action"
+													>
+														<mat-icon>delete</mat-icon>
+														<span>Delete Room</span>
+													</button>
+												}
+											</mat-menu>
+										}
 									</div>
 								</td>
 							</ng-container>
@@ -254,9 +302,9 @@
 								mat-row
 								*matRowDef="let row; columns: displayedColumns"
 								class="room-row"
-								(click)="onRoomClicked(row)"
+								(click)="!row.markedForDeletion && onRoomClicked(row)"
 								[class.marked-for-deletion]="row.markedForDeletion"
-								[class.clickable-row]="true"
+								[class.clickable-row]="!row.markedForDeletion"
 							></tr>
 						</table>
 					</div>
