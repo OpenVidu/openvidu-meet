@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ConsoleNavLink } from '../../models';
 import { ContextService } from '../../services';
@@ -19,6 +20,7 @@ import { ContextService } from '../../services';
 		MatButtonModule,
 		MatIconModule,
 		MatSidenavModule,
+		MatTooltipModule,
 		RouterModule
 	],
 	templateUrl: './console-nav.component.html',

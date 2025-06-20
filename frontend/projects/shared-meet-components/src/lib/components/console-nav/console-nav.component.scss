@@ -32,8 +32,9 @@ mat-sidenav-container {
 	width: 250px;
 }
 .collapsed {
-	width: 70px;
+	width: 80px;
 }
+
 a {
 	padding: 0;
 }
@@ -87,6 +88,20 @@ mat-sidenav-content {
 .menu-button {
 	height: 60px !important;
 	text-align: justify;
+	transition: all 0.2s ease;
+	border-radius: var(--ov-meet-radius-sm);
+
+	&:hover {
+		background-color: var(--ov-meet-surface-hover) !important;
+	}
+
+	&.active-nav-item {
+		border-right: 3px solid var(--ov-meet-color-primary);
+
+		.entry {
+			font-weight: var(--ov-meet-font-weight-semibold);
+		}
+	}
 }
 .menu-hr {
 	margin: 0px !important;
@@ -94,8 +109,8 @@ mat-sidenav-content {
 .version {
 	margin-top: auto;
 	padding: 0.5rem;
-	font-size: 0.875rem;
-	color: #757575;
+	font-size: var(--ov-meet-font-size-xs);
+	color: var(--ov-meet-text-hint);
 	text-align: center;
 }
 .separator {

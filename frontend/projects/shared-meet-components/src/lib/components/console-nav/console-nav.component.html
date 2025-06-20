@@ -30,7 +30,13 @@
 						mat-list-item
 						class="menu-button"
 						[routerLink]="link.route"
+						routerLinkActive="active-nav-item"
+						[routerLinkActiveOptions]="{ exact: false }"
 						(click)="link.clickHandler ? link.clickHandler() : null"
+						[matTooltip]="isSideMenuCollapsed ? link.label : ''"
+						[matTooltipPosition]="'right'"
+						[matTooltipClass]="'nav-tooltip'"
+						[matTooltipDisabled]="!isSideMenuCollapsed"
 					>
 						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
 							<mat-icon [ngClass]="link.iconClass">{{ link.icon }}</mat-icon>
