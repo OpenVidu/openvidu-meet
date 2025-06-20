@@ -133,7 +133,7 @@ export class OpenViduMeet extends HTMLElement {
 	private updateIframeSrc() {
 		const baseUrl = this.getAttribute('room-url') || this.getAttribute('recording-url');
 		if (!baseUrl) {
-			console.error('The "room-url" attribute is required.');
+			console.error('The "room-url" or "recording-url" attribute is required.');
 			return;
 		}
 
@@ -143,7 +143,7 @@ export class OpenViduMeet extends HTMLElement {
 
 		// Update query params
 		Array.from(this.attributes).forEach((attr) => {
-			if (attr.name !== 'room-url') {
+			if (attr.name !== 'room-url' && attr.name !== 'recording-url') {
 				url.searchParams.set(attr.name, attr.value);
 			}
 		});

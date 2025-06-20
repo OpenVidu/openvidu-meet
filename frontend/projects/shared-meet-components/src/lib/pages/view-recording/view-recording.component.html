@@ -1,25 +1,56 @@
-@if (recording && recordingUrl) {
+@if (recording) {
 	<mat-card class="recording-container">
-		<div class="video-container">
-			<video controls class="video-player">
-				<source [src]="recordingUrl" type="video/mp4" />
-				Your browser does not support the video tag.
-			</video>
-		</div>
+		@if (recordingUrl) {
+			@if (!videoError) {
+				<div class="video-container">
+					<video
+						autoplay
+						controls
+						playsinline
+						class="video-player"
+						[src]="recordingUrl"
+						(error)="videoError = true"
+					></video>
+				</div>
+			} @else {
+				<div class="video-error">
+					<mat-icon color="warn">error</mat-icon>
+					<span>Error loading video. Please try again later.</span>
+				</div>
+			}
+		} @else {
+			@if (['STARTING', 'ACTIVE', 'ENDING'].includes(recording.status)) {
+				<div class="status-message">
+					<mat-icon color="accent">hourglass_empty</mat-icon>
+					<span>Recording is still in progress...</span>
+				</div>
+			} @else {
+				<div class="status-message error">
+					<mat-icon color="warn">error_outline</mat-icon>
+					<span>Recording has failed</span>
+				</div>
+			}
+		}
 
 		<mat-card-content>
 			<h2 class="title">{{ recording.roomId }}</h2>
 			<div class="info-actions">
 				<span class="date">{{ recording.startDate | date: 'M/d/yy, H:mm' }}</span>
-				<div class="actions">
-					<button mat-icon-button color="primary" (click)="downloadRecording()" aria-label="Download">
-						<mat-icon>download</mat-icon>
-					</button>
-					<button mat-icon-button color="accent" (click)="openShareDialog()" aria-label="Share">
-						<mat-icon>share</mat-icon>
-					</button>
-				</div>
+				@if (recordingUrl && !videoError) {
+					<div class="actions">
+						<button mat-icon-button color="primary" (click)="downloadRecording()" aria-label="Download">
+							<mat-icon>download</mat-icon>
+						</button>
+						<button mat-icon-button color="accent" (click)="openShareDialog()" aria-label="Share">
+							<mat-icon>share</mat-icon>
+						</button>
+					</div>
+				}
 			</div>
 		</mat-card-content>
 	</mat-card>
+} @else {
+	<div class="loader-container">
+		<mat-spinner></mat-spinner>
+	</div>
 }

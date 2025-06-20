@@ -9,13 +9,14 @@ import {
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { MEET_API_KEY } from '../environment.js';
-import { LoggerService, MeetStorageService } from './index.js';
+import { AuthService, LoggerService, MeetStorageService } from './index.js';
 
 @injectable()
 export class OpenViduWebhookService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(MeetStorageService) protected globalPrefService: MeetStorageService
+		@inject(MeetStorageService) protected globalPrefService: MeetStorageService,
+		@inject(AuthService) protected authService: AuthService
 	) {}
 
 	/**
@@ -122,11 +123,11 @@ export class OpenViduWebhookService {
 			data: payload
 		};
 
-		const signature = this.generateWebhookSignature(creationDate, data);
-
 		this.logger.info(`Sending webhook event ${data.event}`);
 
 		try {
+			const signature = await this.generateWebhookSignature(creationDate, data);
+
 			await this.fetchWithRetry(webhookPreferences.url!, {
 				method: 'POST',
 				headers: {
@@ -142,9 +143,10 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	protected generateWebhookSignature(timestamp: number, payload: object): string {
+	protected async generateWebhookSignature(timestamp: number, payload: object): Promise<string> {
+		const apiKey = await this.getApiKey();
 		return crypto
-			.createHmac('sha256', MEET_API_KEY)
+			.createHmac('sha256', apiKey)
 			.update(`${timestamp}.${JSON.stringify(payload)}`)
 			.digest('hex');
 	}
@@ -176,5 +178,21 @@ export class OpenViduWebhookService {
 			this.logger.error('Error getting webhook preferences:', error);
 			throw error;
 		}
+	}
+
+	protected async getApiKey(): Promise<string> {
+		const apiKeys = await this.authService.getApiKeys();
+
+		if (apiKeys.length === 0) {
+			// If no API keys are configured, check if the MEET_API_KEY environment variable is set
+			if (MEET_API_KEY) {
+				return MEET_API_KEY;
+			}
+
+			throw new Error('There are no API keys configured yet. Please, create one to use webhooks.');
+		}
+
+		// Return the first API key
+		return apiKeys[0].key;
 	}
 }

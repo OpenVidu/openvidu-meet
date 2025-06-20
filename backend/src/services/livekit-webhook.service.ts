@@ -65,9 +65,17 @@ export class LivekitWebhookService {
 
 				const updatedMetadata = await this.livekitService.getRoomMetadata(room.name);
 
+				if (!updatedMetadata) {
+					this.logger.debug(`[webhookEventBelongsToOpenViduMeet] No metadata found for room: ${room.name}`);
+				}
+
 				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
 
-				return await this.roomService.meetRoomExists(room.name);
+				const roomExists = await this.roomService.meetRoomExists(room.name);
+				this.logger.debug(
+					`[webhookEventBelongsToOpenViduMeet] Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`
+				);
+				return roomExists;
 			}
 
 			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata found for room: ${room.name}`);

@@ -4,25 +4,29 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ShareRecordingDialogComponent } from '@lib/components';
 import { HttpService } from '@lib/services';
-import { ActionService, MeetRecordingInfo } from 'shared-meet-components';
+import { ActionService, MeetRecordingInfo, MeetRecordingStatus } from 'shared-meet-components';
 
 @Component({
 	selector: 'app-view-recording',
 	templateUrl: './view-recording.component.html',
 	styleUrls: ['./view-recording.component.scss'],
 	standalone: true,
-	imports: [MatCardModule, MatButtonModule, MatIconModule, DatePipe]
+	imports: [MatCardModule, MatButtonModule, MatIconModule, DatePipe, MatProgressSpinnerModule]
 })
 export class ViewRecordingComponent implements OnInit {
-	recording: MeetRecordingInfo | undefined;
-	recordingUrl: string | undefined;
+	recording?: MeetRecordingInfo;
+	recordingUrl?: string;
+
+	videoError = false;
 
 	constructor(
 		protected httpService: HttpService,
 		protected actionService: ActionService,
+		protected router: Router,
 		protected route: ActivatedRoute,
 		protected dialog: MatDialog
 	) {}
@@ -31,18 +35,26 @@ export class ViewRecordingComponent implements OnInit {
 		const recordingId = this.route.snapshot.paramMap.get('recording-id');
 		const secret = this.route.snapshot.queryParams['secret'];
 
-		this.recording = await this.httpService.getRecording(recordingId!, secret!);
-		this.playRecording();
-	}
+		try {
+			this.recording = await this.httpService.getRecording(recordingId!, secret!);
 
-	playRecording() {
-		this.recordingUrl = this.httpService.getRecordingMediaUrl(this.recording!.recordingId);
+			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
+				this.recordingUrl = this.httpService.getRecordingMediaUrl(recordingId!, secret!);
+			}
+		} catch (error) {
+			console.error('Error fetching recording:', error);
+		}
 	}
 
 	downloadRecording() {
+		if (!this.recording || !this.recordingUrl) {
+			console.error('Recording is not available for download');
+			return;
+		}
+
 		const link = document.createElement('a');
-		link.href = this.recordingUrl!;
-		link.download = this.recording!.filename || 'openvidu-recording.mp4';
+		link.href = this.recordingUrl;
+		link.download = this.recording.filename || 'openvidu-recording.mp4';
 		link.dispatchEvent(
 			new MouseEvent('click', {
 				bubbles: true,
@@ -58,7 +70,10 @@ export class ViewRecordingComponent implements OnInit {
 	openShareDialog() {
 		this.dialog.open(ShareRecordingDialogComponent, {
 			width: '400px',
-			data: { recordingId: this.recording!.recordingId }
+			data: {
+				recordingId: this.recording!.recordingId,
+				recordingUrl: window.location.href
+			}
 		});
 	}
 }

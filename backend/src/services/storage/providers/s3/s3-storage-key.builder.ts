@@ -39,6 +39,10 @@ export class S3KeyBuilder implements StorageKeyBuilder {
 		return `${INTERNAL_CONFIG.S3_USERS_PREFIX}/${userId}.json`;
 	}
 
+	buildApiKeysKey(): string {
+		return `${INTERNAL_CONFIG.S3_API_KEYS_PREFIX}.json`;
+	}
+
 	buildAccessRecordingSecretsKey(recordingId: string): string {
 		const { roomId, egressId, uid } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 		return `${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/.secrets/${roomId}/${egressId}/${uid}.json`;

@@ -5,7 +5,6 @@ import { ClaimGrants } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { MEET_API_KEY } from '../environment.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
@@ -16,7 +15,7 @@ import {
 	OpenViduMeetError,
 	rejectRequestFromMeetError
 } from '../models/index.js';
-import { LoggerService, TokenService, UserService } from '../services/index.js';
+import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -130,8 +129,21 @@ export const apiKeyValidator = async (req: Request) => {
 		throw errorWithControl(errorUnauthorized(), false);
 	}
 
-	if (apiKey !== MEET_API_KEY) {
-		throw errorWithControl(errorInvalidApiKey(), true);
+	try {
+		const authService = container.get(AuthService);
+		const isValidApiKey = await authService.validateApiKey(apiKey as string);
+
+		if (!isValidApiKey) {
+			throw errorInvalidApiKey();
+		}
+	} catch (error) {
+		if (error instanceof OpenViduMeetError) {
+			throw errorWithControl(error, true);
+		} else {
+			const logger = container.get(LoggerService);
+			logger.error('Error validating API key:', error);
+			throw errorWithControl(internalError('validating API key'), true);
+		}
 	}
 
 	const userService = container.get(UserService);

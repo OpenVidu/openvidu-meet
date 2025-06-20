@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { ContextService, NavigationService } from '../services';
+import { ContextService, NavigationService, SessionStorageService } from '../services';
 import { ErrorReason } from '@lib/models/navigation.model';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
@@ -32,9 +32,12 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 export const extractRecordingQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const contextService = inject(ContextService);
-	const { roomId, secret } = extractParams(route);
+	const sessionStorageService = inject(SessionStorageService);
 
-	if (!secret) {
+	const { roomId, secret } = extractParams(route);
+	const storedSecret = sessionStorageService.getModeratorSecret(roomId);
+
+	if (!secret && !storedSecret) {
 		// If no secret is provided, redirect to the error page
 		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}

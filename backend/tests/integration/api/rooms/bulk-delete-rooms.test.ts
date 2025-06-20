@@ -6,6 +6,7 @@ import {
 	disconnectFakeParticipants,
 	getRoom,
 	joinFakeParticipant,
+	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
@@ -157,25 +158,26 @@ describe('Room API Tests', () => {
 		});
 
 		it('should delete rooms when force=true and participants exist', async () => {
-			// Create a test room
+			// Create test rooms
 			const [room1, room2] = await Promise.all([
 				createRoom({ roomIdPrefix: 'test-bulk-1' }),
 				createRoom({ roomIdPrefix: 'test-bulk-2' })
 			]);
 
-			// Join a participant to the room
+			// Join a participant to the rooms
 			await Promise.all([
 				joinFakeParticipant(room1.roomId, 'test-participant-1'),
 				joinFakeParticipant(room2.roomId, 'test-participant-2')
 			]);
 
-			// Attempt to delete the room with force=false
+			// Attempt to delete the rooms with force=false
 			const response = await bulkDeleteRooms([room1.roomId, room2.roomId], true);
 
 			expect(response.status).toBe(204);
 			expect(response.body).toStrictEqual({});
 
-			// Verify that the room is deleted
+			// Verify that the rooms are deleted
+			await sleep('1s'); // Wait a bit for the meetings to be closed and the rooms deleted
 			const deletedRoom1 = await getRoom(room1.roomId);
 			const deletedRoom2 = await getRoom(room2.roomId);
 			expect(deletedRoom1.status).toBe(404);

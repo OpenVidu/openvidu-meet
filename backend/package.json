@@ -33,6 +33,7 @@
 		"doc:internal-api": "mkdir -p public/openapi && cd openapi && npx openapi-generate-html -i openvidu-meet-internal-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet Internal REST API' --description 'OpenVidu Meet Internal REST API' -o ../public/openapi/internal.html",
 		"start:prod": "NODE_ENV=production node dist/src/server.js",
 		"start:dev": "NODE_ENV=development nodemon",
+		"start:ci": "NODE_ENV=ci node dist/src/server.js",
 		"package:build": "npm run build:prod && npm pack",
 		"lib:sync-pro": "npm run package:build && cp openvidu-meet-server-*.tgz ../../openvidu-meet-pro/backend",
 		"typings:sync": "npm run sync-ce --prefix ../typings",

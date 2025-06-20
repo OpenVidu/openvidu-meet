@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MEET_ADMIN_SECRET } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -12,7 +13,7 @@ describe('Users API Tests', () => {
 
 	afterEach(async () => {
 		// Reset password
-		await changePassword('admin', adminCookie);
+		await changePassword(MEET_ADMIN_SECRET, adminCookie);
 	});
 
 	describe('Change Password Tests', () => {

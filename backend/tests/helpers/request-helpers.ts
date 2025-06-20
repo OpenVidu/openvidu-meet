@@ -48,6 +48,30 @@ export const startTestServer = (): Express => {
 	return app;
 };
 
+export const generateApiKey = async (): Promise<string> => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUser();
+	const response = await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
+		.set('Cookie', adminCookie)
+		.send();
+	expect(response.status).toBe(201);
+	expect(response.body).toHaveProperty('key');
+	return response.body.key;
+};
+
+export const getApiKeys = async () => {
+	checkAppIsRunning();
+
+	const adminCookie = await loginUser();
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
+		.set('Cookie', adminCookie)
+		.send();
+	return response;
+};
+
 export const getAppearancePreferences = async () => {
 	checkAppIsRunning();
 

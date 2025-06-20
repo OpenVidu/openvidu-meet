@@ -96,6 +96,14 @@ export const errorInvalidApiKey = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authentication Error', 'Invalid API key', 401);
 };
 
+export const errorApiKeyNotConfigured = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Authentication Error',
+		'There are no API keys configured yet. Please, create one to access the API',
+		401
+	);
+};
+
 // Recording errors
 
 export const errorRecordingDisabled = (roomId: string): OpenViduMeetError => {
@@ -139,7 +147,11 @@ export const errorRoomHasNoParticipants = (roomId: string): OpenViduMeetError =>
 };
 
 export const errorInvalidRecordingSecret = (recordingId: string, secret: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording Error', `Secret '${secret}' is not recognized for recording '${recordingId}'`, 400);
+	return new OpenViduMeetError(
+		'Recording Error',
+		`Secret '${secret}' is not recognized for recording '${recordingId}'`,
+		400
+	);
 };
 
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {

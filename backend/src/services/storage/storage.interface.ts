@@ -151,6 +151,10 @@ export interface StorageKeyBuilder {
 	 */
 	buildUserKey(userId: string): string;
 
-	buildAccessRecordingSecretsKey(recordingId:string): string;
+	/**
+	 * Builds Api Key
+	 */
+	buildApiKeysKey(): string;
 
+	buildAccessRecordingSecretsKey(recordingId: string): string;
 }

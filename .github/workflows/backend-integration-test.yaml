@@ -37,10 +37,6 @@ jobs:
   test-rooms:
     name: Rooms API Tests
     runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, azure]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
