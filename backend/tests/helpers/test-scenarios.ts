@@ -36,7 +36,11 @@ export interface TestContext {
  * @param withParticipant Whether to join a fake participant in the room.
  * @returns               Room data including secrets and cookies.
  */
-export const setupSingleRoom = async (withParticipant = false, roomPrefix = 'TEST_ROOM', preferences?: MeetRoomPreferences): Promise<RoomData> => {
+export const setupSingleRoom = async (
+	withParticipant = false,
+	roomPrefix = 'TEST_ROOM',
+	preferences?: MeetRoomPreferences
+): Promise<RoomData> => {
 	const room = await createRoom({
 		roomIdPrefix: roomPrefix,
 		preferences
@@ -46,10 +50,13 @@ export const setupSingleRoom = async (withParticipant = false, roomPrefix = 'TES
 	const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 	const [moderatorCookie, publisherCookie] = await Promise.all([
 		generateParticipantTokenCookie(room.roomId, 'MODERATOR', moderatorSecret),
-		generateParticipantTokenCookie(room.roomId, 'PUBLISHER', publisherSecret),
-		// Join participant if needed
-		withParticipant ? joinFakeParticipant(room.roomId, 'TEST_PARTICIPANT') : Promise.resolve()
+		generateParticipantTokenCookie(room.roomId, 'PUBLISHER', publisherSecret)
 	]);
+
+	// Join participant if needed
+	if (withParticipant) {
+		await joinFakeParticipant(room.roomId, 'TEST_PARTICIPANT');
+	}
 
 	return {
 		room,
