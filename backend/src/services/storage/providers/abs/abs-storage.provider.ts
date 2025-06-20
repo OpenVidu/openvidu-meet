@@ -1,16 +1,16 @@
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import { AzureBlobService, LoggerService } from '../../../index.js';
+import { ABSService, LoggerService } from '../../../index.js';
 import { StorageProvider } from '../../storage.interface.js';
 
 /**
  * Basic Azure Blob Storage provider that implements only primitive storage operations.
  */
 @injectable()
-export class AzureStorageProvider implements StorageProvider {
+export class ABSStorageProvider implements StorageProvider {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(AzureBlobService) protected azureBlobService: AzureBlobService
+		@inject(ABSService) protected azureBlobService: ABSService
 	) {}
 
 	/**

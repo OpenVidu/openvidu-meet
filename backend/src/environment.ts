@@ -42,7 +42,7 @@ export const {
 	LIVEKIT_API_KEY = 'devkey',
 	LIVEKIT_API_SECRET = 'secret',
 
-	MEET_PREFERENCES_STORAGE_MODE = 's3',
+	MEET_PREFERENCES_STORAGE_MODE = 's3', // Options: 's3', 'abs'
 
 	// S3 configuration
 	MEET_S3_BUCKET = 'openvidu-appdata',
@@ -121,14 +121,7 @@ export const logEnvVars = () => {
 	console.log('LIVEKIT API KEY: ', credential('****' + LIVEKIT_API_KEY.slice(-3)));
 	console.log('---------------------------------------------------------');
 
-	if (MEET_PREFERENCES_STORAGE_MODE === 'azure') {
-		console.log('Azure Blob Storage Configuration');
-		console.log('---------------------------------------------------------');
-		console.log('MEET AZURE ACCOUNT NAME:', text(MEET_AZURE_ACCOUNT_NAME));
-		console.log('MEET AZURE ACCOUNT KEY:', credential('****' + MEET_AZURE_ACCOUNT_KEY.slice(-3)));
-		console.log('MEET AZURE CONTAINER NAME:', text(MEET_AZURE_CONTAINER_NAME));
-		console.log('---------------------------------------------------------');
-	} else if (MEET_PREFERENCES_STORAGE_MODE === 's3') {
+	if (MEET_PREFERENCES_STORAGE_MODE === 's3') {
 		console.log('S3 Configuration');
 		console.log('---------------------------------------------------------');
 		console.log('MEET S3 BUCKET:', text(MEET_S3_BUCKET));
@@ -138,7 +131,15 @@ export const logEnvVars = () => {
 		console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
 		console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
 		console.log('---------------------------------------------------------');
+	} else if (MEET_PREFERENCES_STORAGE_MODE === 'abs') {
+		console.log('Azure Blob Storage Configuration');
+		console.log('---------------------------------------------------------');
+		console.log('MEET AZURE ACCOUNT NAME:', text(MEET_AZURE_ACCOUNT_NAME));
+		console.log('MEET AZURE ACCOUNT KEY:', credential('****' + MEET_AZURE_ACCOUNT_KEY.slice(-3)));
+		console.log('MEET AZURE CONTAINER NAME:', text(MEET_AZURE_CONTAINER_NAME));
+		console.log('---------------------------------------------------------');
 	}
+
 	console.log('Redis Configuration');
 	console.log('---------------------------------------------------------');
 	console.log('REDIS HOST:', text(REDIS_HOST));

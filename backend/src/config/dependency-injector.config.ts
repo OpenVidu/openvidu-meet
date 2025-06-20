@@ -1,9 +1,9 @@
 import { Container } from 'inversify';
 import { MEET_PREFERENCES_STORAGE_MODE } from '../environment.js';
 import {
+	ABSService,
+	ABSStorageProvider,
 	AuthService,
-	AzureBlobService,
-	AzureStorageProvider,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
@@ -30,7 +30,7 @@ export const container: Container = new Container();
 
 export const STORAGE_TYPES = {
 	StorageProvider: Symbol.for('StorageProvider'),
-	KeyBuilder: Symbol.for('KeyBuilder'),
+	KeyBuilder: Symbol.for('KeyBuilder')
 };
 
 /**
@@ -76,11 +76,11 @@ const configureStorage = (storageMode: string) => {
 			container.bind(S3Service).toSelf().inSingletonScope();
 			container.bind(S3StorageProvider).toSelf().inSingletonScope();
 			break;
-		case 'azure':
-			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(AzureStorageProvider).inSingletonScope();
+		case 'abs':
+			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(ABSStorageProvider).inSingletonScope();
 			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
-			container.bind(AzureBlobService).toSelf().inSingletonScope();
-			container.bind(AzureStorageProvider).toSelf().inSingletonScope();
+			container.bind(ABSService).toSelf().inSingletonScope();
+			container.bind(ABSStorageProvider).toSelf().inSingletonScope();
 			break;
 	}
 };

@@ -17,7 +17,7 @@ import { errorAzureNotAvailable, internalError } from '../../../../models/error.
 import { LoggerService } from '../../../index.js';
 
 @injectable()
-export class AzureBlobService {
+export class ABSService {
 	private blobServiceClient: BlobServiceClient;
 	private containerClient: ContainerClient;
 
