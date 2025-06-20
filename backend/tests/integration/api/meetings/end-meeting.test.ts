@@ -7,6 +7,7 @@ import {
 	disconnectFakeParticipants,
 	endMeeting,
 	getRoom,
+	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -74,6 +75,7 @@ describe('Meetings API Tests', () => {
 			let response = await deleteRoom(roomData.room.roomId, { force: true });
 			expect(response.status).toBe(204);
 
+			await sleep('1s'); // Wait a bit for the meeting to be closed and the room deleted
 			response = await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
 			expect(response.status).toBe(404);
 		});
