@@ -8,10 +8,11 @@ mat-sidenav-container {
 .page-content {
 	@include ov-container;
 }
+
 .toolbar-title {
 	font-size: var(--ov-meet-font-size-xxl);
 	font-weight: var(--ov-meet-font-weight-regular);
-	margin-left: 16px;
+	margin-left: var(--ov-meet-spacing-md);
 }
 
 .toolbar-spacer {
@@ -22,6 +23,7 @@ mat-toolbar {
 	position: fixed;
 	top: 0;
 	z-index: 2;
+	@include ov-theme-transition;
 }
 
 mat-sidenav-container {
@@ -31,6 +33,7 @@ mat-sidenav-container {
 .expanded {
 	width: 250px;
 }
+
 .collapsed {
 	width: 80px;
 }
@@ -41,16 +44,18 @@ a {
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav {
-	background-color: white;
+	@include ov-theme-transition;
+	background-color: var(--ov-meet-surface-color);
 	padding-top: 3.5rem;
-	@media screen and (min-width: 600px) {
+
+	@include ov-tablet-up {
 		padding-top: 4rem;
 	}
 
 	.entry {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: var(--ov-meet-spacing-md);
 		padding: var(--ov-meet-spacing-lg);
 		justify-content: start;
 	}
@@ -61,59 +66,62 @@ mat-sidenav {
 }
 
 .mat-mdc-nav-list {
-	height: calc(100% - 3.5rem - 25px);
+	height: calc(100% - 3.5rem - var(--ov-meet-spacing-lg));
 }
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav-content {
 	padding-top: 3.5rem;
-	@media screen and (min-width: 600px) {
+
+	@include ov-tablet-up {
 		padding-top: 4rem;
 	}
 }
 
-.toolbar-spacer {
-	flex: 1 1 auto;
-}
-
 .main-container {
-	padding: 0px 2rem;
+	padding: 0 var(--ov-meet-spacing-xl);
 	height: 100%;
 }
 
 .section-title {
-	padding-bottom: 0px;
+	padding-bottom: 0;
 }
 
 .menu-button {
 	height: 60px !important;
 	text-align: justify;
-	transition: all 0.2s ease;
+	transition: var(--ov-meet-transition-normal);
 	border-radius: var(--ov-meet-radius-sm);
+	@include ov-theme-transition;
 
 	&:hover {
 		background-color: var(--ov-meet-surface-hover) !important;
 	}
 
 	&.active-nav-item {
-		border-right: 3px solid var(--ov-meet-color-primary);
+		border-left: var(--ov-meet-spacing-xs) solid var(--ov-meet-color-primary);
 
 		.entry {
 			font-weight: var(--ov-meet-font-weight-semibold);
 		}
 	}
 }
+
 .menu-hr {
-	margin: 0px !important;
+	margin: 0 !important;
 }
+
 .version {
 	margin-top: auto;
-	padding: 0.5rem;
+	padding: var(--ov-meet-spacing-sm);
 	font-size: var(--ov-meet-font-size-xs);
 	color: var(--ov-meet-text-hint);
 	text-align: center;
+	@include ov-theme-transition;
 }
+
 .separator {
-	margin: 0px;
-	border-top: 1px solid #e0e0e0;
+	margin: 0;
+	border-top: 1px solid var(--ov-meet-border-color);
+	@include ov-theme-transition;
 }
