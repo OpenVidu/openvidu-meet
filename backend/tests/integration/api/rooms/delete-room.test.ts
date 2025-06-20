@@ -176,6 +176,7 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(204);
 
 			// Try to retrieve the room again
+			await sleep('1s'); // Wait a bit for the meeting to be closed and the room deleted
 			const responseAfterDelete = await getRoom(roomId);
 			expect(responseAfterDelete.status).toBe(404);
 		});

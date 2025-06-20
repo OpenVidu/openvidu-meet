@@ -193,7 +193,8 @@ export class RoomService {
 	/**
 	 * Deletes multiple rooms in bulk, with the option to force delete or gracefully handle rooms with active participants.
 	 * For rooms with participants, when `forceDelete` is false, the method performs a "graceful deletion"
-	 * by marking the room as deleted without disrupting active sessions.
+	 * by marking the room for deletion without disrupting active sessions.
+	 * However, if `forceDelete` is true, it will also end the meetings by removing the rooms from LiveKit.
 	 *
 	 * @param roomIds - Array of room identifiers to be deleted
 	 * @param forceDelete - If true, deletes rooms even if they have active participants.
@@ -210,7 +211,6 @@ export class RoomService {
 			const { toDelete, toMark } = await this.classifyRoomsForDeletion(roomIds, forceDelete);
 
 			// Process each group in parallel
-
 			const [deletedRooms, markedRooms] = await Promise.all([
 				this.batchDeleteRooms(toDelete),
 				this.batchMarkRoomsForDeletion(toMark)
@@ -368,8 +368,8 @@ export class RoomService {
 		const classificationResults = await Promise.allSettled(
 			roomIds.map(async (roomId) => {
 				try {
-					const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
-					const shouldDelete = forceDelete || !hasParticipants;
+					const activeMeeting = await this.livekitService.roomExists(roomId);
+					const shouldDelete = forceDelete || !activeMeeting;
 
 					return {
 						roomId,
@@ -419,11 +419,37 @@ export class RoomService {
 		this.logger.info(`Batch deleting ${roomIds.length} rooms`);
 
 		try {
-			await Promise.all([
-				this.storageService.deleteMeetRooms(roomIds),
-				this.livekitService.batchDeleteRooms(roomIds)
-			]);
+			// Check which rooms have an active LiveKit room (active meeting)
+			const activeRoomChecks = await Promise.all(
+				roomIds.map(async (roomId) => ({
+					roomId,
+					activeMeeting: await this.livekitService.roomExists(roomId)
+				}))
+			);
 
+			const withActiveMeeting = activeRoomChecks.filter((r) => r.activeMeeting).map((r) => r.roomId);
+			const withoutActiveMeeting = activeRoomChecks.filter((r) => !r.activeMeeting).map((r) => r.roomId);
+
+			// Mark all rooms with active meetings for deletion (in batch)
+			// This must be done before deleting the LiveKit rooms to ensure
+			// the rooms are marked when 'room_finished' webhook is sent
+			if (withActiveMeeting.length > 0) {
+				await this.batchMarkRoomsForDeletion(withActiveMeeting);
+			}
+
+			// Delete all LiveKit rooms for rooms with active meetings (in batch)
+			const livekitDeletePromise =
+				withActiveMeeting.length > 0
+					? this.livekitService.batchDeleteRooms(withActiveMeeting)
+					: Promise.resolve();
+
+			// Delete Meet rooms that do not have an active meeting (in batch)
+			const meetRoomsDeletePromise =
+				withoutActiveMeeting.length > 0
+					? this.storageService.deleteMeetRooms(withoutActiveMeeting)
+					: Promise.resolve();
+
+			await Promise.all([livekitDeletePromise, meetRoomsDeletePromise]);
 			return roomIds;
 		} catch (error) {
 			this.logger.error(`Batch deletion failed for rooms: ${roomIds.join(', ')}`, error);
