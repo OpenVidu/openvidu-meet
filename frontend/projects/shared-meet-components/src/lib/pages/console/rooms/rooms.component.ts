@@ -18,6 +18,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RoomService, NotificationService, NavigationService } from '../../../services';
 import { MeetRoom } from '../../../typings/ce';
+import { RoomsListsComponent, RoomTableAction } from '@lib/components';
 
 @Component({
 	selector: 'ov-room-preferences',
@@ -38,6 +39,7 @@ import { MeetRoom } from '../../../typings/ce';
 		MatProgressSpinnerModule,
 		MatFormFieldModule,
 		MatInputModule,
+		RoomsListsComponent,
 		NgClass
 	],
 	templateUrl: './rooms.component.html',
@@ -125,6 +127,38 @@ export class RoomsComponent implements OnInit {
 			this.navigationService.containsRoute('/console/rooms/') &&
 			(this.navigationService.containsRoute('/edit') || this.navigationService.containsRoute('/new'))
 		);
+	}
+
+	async onRoomAction(action: RoomTableAction) {
+		switch (action.action) {
+			case 'refresh':
+				await this.refreshRooms();
+				break;
+			case 'create':
+				await this.createRoom();
+				break;
+			case 'open':
+				this.openRoom(action.rooms[0]);
+				break;
+			case 'delete':
+				await this.deleteRoom(action.rooms[0]);
+				break;
+			case 'edit':
+				await this.viewPreferences(action.rooms[0]);
+				break;
+			case 'viewRecordings':
+				await this.viewRecordings(action.rooms[0]);
+				break;
+			case 'copyModeratorLink':
+				this.copyModeratorLink(action.rooms[0]);
+				break;
+			case 'copyPublisherLink':
+				this.copyPublisherLink(action.rooms[0]);
+				break;
+			case 'batchDelete':
+				// await this.deleteRoom(action.rooms);
+				break;
+		}
 	}
 
 	async createRoom() {

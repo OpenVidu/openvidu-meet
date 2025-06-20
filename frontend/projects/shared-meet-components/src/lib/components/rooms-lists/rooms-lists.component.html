@@ -1,0 +1,259 @@
+<!-- Loading Spinner -->
+@if (loading) {
+	<div class="loading-container">
+		<mat-spinner diameter="40"></mat-spinner>
+		<span>Loading rooms...</span>
+	</div>
+} @else if (rooms.length > 0) {
+	<!-- Rooms Toolbar -->
+	<mat-toolbar class="rooms-toolbar">
+		<!-- Left Section: Search -->
+		<div class="toolbar-left">
+			<mat-form-field class="search-field" appearance="outline">
+				<mat-label>Search rooms</mat-label>
+				<input matInput [formControl]="nameFilterControl" placeholder="Search by room ID or prefix" />
+				<mat-icon matSuffix>search</mat-icon>
+			</mat-form-field>
+		</div>
+
+		<!-- Center Section: Batch Actions (visible when items selected) -->
+		@if (showSelection && selectedRooms().size > 1) {
+			<div class="toolbar-center">
+				<div class="batch-actions">
+					<button
+						mat-icon-button
+						color="warn"
+						(click)="batchDeleteSelected()"
+						[disabled]="loading"
+						matTooltip="Delete selected rooms"
+					>
+						<mat-icon [matBadge]="selectedRooms().size" matBadgePosition="below after"> delete </mat-icon>
+					</button>
+				</div>
+			</div>
+		}
+
+		<!-- Right Section: Actions -->
+		<div class="toolbar-right">
+			<button mat-icon-button (click)="refreshRooms()" [disabled]="loading" matTooltip="Refresh rooms">
+				<mat-icon>refresh</mat-icon>
+			</button>
+
+			@if (canCreateRooms) {
+				<button mat-raised-button color="primary" (click)="createRoom()" class="create-room-btn">
+					<mat-icon>add</mat-icon>
+					Create New Room
+				</button>
+			}
+
+			@if (showFilters) {
+				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms">
+					<mat-icon>tune</mat-icon>
+				</button>
+
+				<mat-menu #filtersMenu="matMenu" class="filters-menu">
+					<div class="filter-content" (click)="$event.stopPropagation()">
+						<h4>Filter by Status</h4>
+						<mat-form-field appearance="outline">
+							<mat-label>Status</mat-label>
+							<mat-select [formControl]="statusFilterControl">
+								@for (option of statusOptions; track option.value) {
+									<mat-option [value]="option.value">{{ option.label }}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+					</div>
+				</mat-menu>
+			}
+		</div>
+	</mat-toolbar>
+
+	<div class="table-container">
+		<table mat-table [dataSource]="rooms" class="rooms-table">
+			<!-- Selection Column -->
+			@if (showSelection) {
+				<ng-container matColumnDef="select">
+					<th mat-header-cell *matHeaderCellDef>
+						<mat-checkbox
+							[checked]="allSelected()"
+							[indeterminate]="someSelected()"
+							(change)="toggleAllSelection()"
+							[disabled]="loading"
+						>
+						</mat-checkbox>
+					</th>
+					<td mat-cell *matCellDef="let room">
+						@if (canSelectRoom(room)) {
+							<mat-checkbox
+								[checked]="isRoomSelected(room)"
+								(change)="toggleRoomSelection(room)"
+								[disabled]="loading"
+							>
+							</mat-checkbox>
+						}
+					</td>
+				</ng-container>
+			}
+
+			<!-- Room ID Column -->
+			<ng-container matColumnDef="roomId">
+				<th mat-header-cell *matHeaderCellDef class="room-header">Room ID</th>
+				<td mat-cell *matCellDef="let room" class="room-cell">
+					<div class="room-info">
+						<span class="room-id">{{ room.roomId }}</span>
+					</div>
+				</td>
+			</ng-container>
+
+			<!-- Status Column -->
+			<ng-container matColumnDef="status">
+				<th mat-header-cell *matHeaderCellDef>Status</th>
+				<td mat-cell *matCellDef="let room">
+					<div class="status-badge" [style.color]="getStatusColor(room)">
+						<mat-icon [style.color]="getStatusColor(room)">
+							{{ getStatusIcon(room) }}
+						</mat-icon>
+						<span class="status-label">{{ getRoomStatus(room) }}</span>
+					</div>
+				</td>
+			</ng-container>
+
+			<!-- Creation Date Column -->
+			<ng-container matColumnDef="creationDate">
+				<th mat-header-cell *matHeaderCellDef>Created</th>
+				<td mat-cell *matCellDef="let room">
+					@if (room.creationDate) {
+						<div class="date-info">
+							<span class="date">{{ room.creationDate | date: 'mediumDate' }}</span>
+							<span class="time">{{ room.creationDate | date: 'shortTime' }}</span>
+						</div>
+					} @else {
+						<span class="no-data">-</span>
+					}
+				</td>
+			</ng-container>
+
+			<!-- Auto Deletion Column -->
+			<ng-container matColumnDef="autoDeletion">
+				<th mat-header-cell *matHeaderCellDef>Auto Deletion</th>
+				<td mat-cell *matCellDef="let room">
+					<div class="auto-deletion-content">
+						@if (hasAutoDeletion(room)) {
+							<div class="auto-deletion-info">
+								<div class="deletion-badge" [matTooltip]="getAutoDeletionTooltip(room)">
+									<mat-icon class="deletion-icon">{{ getAutoDeletionIcon(room) }}</mat-icon>
+									<span>{{ getAutoDeletionStatus(room) }}</span>
+								</div>
+								@if (!room.markedForDeletion) {
+									<div class="deletion-date">
+										<span class="date">{{ room.autoDeletionDate | date: 'mediumDate' }}</span>
+										<span class="time">{{ room.autoDeletionDate | date: 'shortTime' }}</span>
+									</div>
+								}
+							</div>
+						} @else {
+							<div class="no-auto-deletion" [matTooltip]="getAutoDeletionTooltip(room)">
+								<mat-icon class="no-deletion-icon">{{ getAutoDeletionIcon(room) }}</mat-icon>
+								<span>{{ getAutoDeletionStatus(room) }}</span>
+							</div>
+						}
+					</div>
+				</td>
+			</ng-container>
+
+			<!-- Actions Column -->
+			<ng-container matColumnDef="actions">
+				<th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+				<td mat-cell *matCellDef="let room" class="actions-cell">
+					<div class="action-buttons">
+						<!-- Open Room Button -->
+						@if (canOpenRoom(room)) {
+							<button
+								mat-icon-button
+								matTooltip="Open Room"
+								(click)="openRoom(room)"
+								[disabled]="loading"
+								class="primary-action"
+							>
+								<mat-icon>open_in_new</mat-icon>
+							</button>
+						}
+
+						<!-- Settings Button -->
+						@if (canEditRoom(room)) {
+							<button
+								mat-icon-button
+								matTooltip="Room Settings"
+								(click)="editRoom(room)"
+								[disabled]="loading"
+							>
+								<mat-icon class="ov-settings-icon">settings</mat-icon>
+							</button>
+						}
+
+						<!-- More Actions Menu -->
+						<button
+							mat-icon-button
+							[matMenuTriggerFor]="actionsMenu"
+							matTooltip="More Actions"
+							[disabled]="loading"
+						>
+							<mat-icon>more_vert</mat-icon>
+						</button>
+
+						<mat-menu #actionsMenu="matMenu">
+							<button mat-menu-item (click)="viewRecordings(room)">
+								<mat-icon class="ov-recording-icon">video_library</mat-icon>
+								<span>View Recordings</span>
+							</button>
+
+							@if (!room.markedForDeletion) {
+								<button mat-menu-item (click)="copyModeratorLink(room)">
+									<mat-icon>content_copy</mat-icon>
+									<span>Copy Moderator Link</span>
+								</button>
+								<button mat-menu-item (click)="copyPublisherLink(room)">
+									<mat-icon>content_copy</mat-icon>
+									<span>Copy Publisher Link</span>
+								</button>
+							}
+
+							@if (!room.markedForDeletion) {
+								<mat-divider></mat-divider>
+								<button mat-menu-item (click)="deleteRoom(room)" class="delete-action">
+									<mat-icon>delete</mat-icon>
+									<span>Delete room</span>
+								</button>
+							}
+						</mat-menu>
+					</div>
+				</td>
+			</ng-container>
+
+			<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+			<tr
+				mat-row
+				*matRowDef="let row; columns: displayedColumns"
+				[class.selected-row]="isRoomSelected(row)"
+				[class.inactive-row]="isRoomInactive(row)"
+			></tr>
+		</table>
+	</div>
+} @else {
+	<!-- Empty State -->
+	<div class="no-rooms-state">
+		<div class="empty-content">
+			<h3>No rooms created yet</h3>
+			<p>
+				{{ emptyMessage }}. Create your first room to start hosting meetings and manage your video conferences.
+			</p>
+
+			<div class="getting-started-actions">
+				<button mat-raised-button color="primary" (click)="createRoom()" class="create-first-room-btn">
+					<mat-icon>add</mat-icon>
+					Create Your First Room
+				</button>
+			</div>
+		</div>
+	</div>
+}

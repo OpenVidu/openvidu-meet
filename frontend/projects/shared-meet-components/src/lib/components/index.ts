@@ -6,3 +6,4 @@ export * from './dialogs/share-recording-dialog/share-recording-dialog.component
 export * from './spinner/spinner.component';
 export * from './logo-selector/logo-selector.component';
 export * from './recording-lists/recording-lists.component';
+export * from './rooms-lists/rooms-lists.component';
