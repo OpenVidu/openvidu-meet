@@ -5,3 +5,4 @@ export * from './dialogs/basic-dialog/dialog.component';
 export * from './dialogs/share-recording-dialog/share-recording-dialog.component';
 export * from './spinner/spinner.component';
 export * from './logo-selector/logo-selector.component';
+export * from './recording-lists/recording-lists.component';

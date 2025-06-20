@@ -1,7 +1,45 @@
-<h2>Recordings</h2>
-<p>Non implemented!</p>
+@if (isLoading) {
+	@if (showLoadingSpinner) {
+		<!-- Enhanced Loading State with delay -->
+		<div class="loading-container">
+			<div class="loading-content">
+				<div class="loading-header">
+					<div class="loading-title">
+						<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
+						<h1>Loading Recordings</h1>
+					</div>
+					<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+				</div>
 
-<ul>
-	<li>Recording List</li>
-</ul>
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
+			</div>
+		</div>
+	}
+} @else {
+	<div class="recordings-container ov-mb-xxl">
+		<div class="recordings-header">
+			<div class="title">
+				<mat-icon class="ov-recording-icon">video_library</mat-icon>
+				<h1>Recordings</h1>
+			</div>
+			<p class="subtitle">Manage all your meeting recordings, play, download, and share them with others.</p>
+		</div>
 
+		<div class="recordings-content">
+			<ov-recording-lists
+				[recordings]="recordings()"
+				[canDeleteRecordings]="canDeleteRecordings"
+				[canDownloadRecordings]="canDownloadRecordings"
+				[loading]="isLoading"
+				[showFilters]="false"
+				[showSelection]="true"
+				emptyMessage="No recordings match your search criteria"
+				(recordingAction)="onRecordingAction($event)"
+				(refresh)="refreshRecordings()"
+			>
+			</ov-recording-lists>
+		</div>
+	</div>
+}
