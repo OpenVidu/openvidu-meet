@@ -50,7 +50,7 @@ mat-sidenav {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		padding: 0.75rem;
+		padding: var(--ov-meet-spacing-lg);
 		justify-content: start;
 	}
 
