@@ -280,7 +280,7 @@
 	.mat-mdc-cell {
 		border-bottom: 1px solid var(--ov-meet-border-color-light);
 		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-sm);
-		vertical-align: top;
+		vertical-align: middle;
 
 		&.room-cell {
 			min-width: 200px;
