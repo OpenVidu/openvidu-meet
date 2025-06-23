@@ -141,6 +141,7 @@ export class ABSService {
 		this.logger.verbose(`ABS listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
 
 		try {
+			maxResults = Number(maxResults);
 			const iterator = this.containerClient.listBlobsFlat({ prefix: basePrefix }).byPage({
 				maxPageSize: maxResults,
 				continuationToken:
