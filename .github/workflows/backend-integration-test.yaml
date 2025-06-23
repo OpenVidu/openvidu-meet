@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -55,7 +55,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -104,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     timeout-minutes: 30
     steps:
       - name: Setup Node.js
@@ -120,7 +120,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -167,7 +167,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -182,7 +182,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -229,7 +229,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -244,7 +244,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -291,7 +291,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -306,7 +306,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -353,7 +353,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -368,7 +368,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -415,7 +415,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -430,7 +430,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
@@ -477,7 +477,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        storage-provider: [s3, azure]
+        storage-provider: [s3, abs]
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -492,7 +492,7 @@ jobs:
           pre_startup_commands: |
             cat <<'BASH' > pre_startup_commands.sh
             #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "azure" ]]; then
+            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
               echo "Using Azure storage provider"
               yq e -i '
                 del(.storage.s3) |
