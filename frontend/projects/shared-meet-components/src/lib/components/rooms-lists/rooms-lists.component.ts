@@ -315,19 +315,53 @@ export class RoomsListsComponent implements OnInit {
 		return 'var(--ov-meet-color-success)';
 	}
 
+	getStatusTooltip(room: MeetRoom): string {
+		return room.markedForDeletion ? 'Room is inactive and marked for deletion' : 'Room is active and accepting participants';
+	}
+
 	hasAutoDeletion(room: MeetRoom): boolean {
 		return !!room.autoDeletionDate;
 	}
 
 	getAutoDeletionStatus(room: MeetRoom): string {
-		return room.autoDeletionDate ? 'Scheduled' : 'Not scheduled';
+		if (room.markedForDeletion) {
+			return 'Immediate';
+		}
+		return room.autoDeletionDate ? 'Scheduled' : 'Disabled';
 	}
 
 	getAutoDeletionIcon(room: MeetRoom): string {
+		if (room.markedForDeletion) {
+			return 'acute';
+		}
 		return room.autoDeletionDate ? 'auto_delete' : 'close';
 	}
 
+	getAutoDeletionColor(room: MeetRoom): string {
+		if (room.markedForDeletion) {
+			return 'var(--ov-meet-color-warning)';
+		}
+		return room.autoDeletionDate ? 'var(--ov-meet-color-info)' : 'var(--ov-meet-text-hint)';
+	}
+
+	getAutoDeletionClass(room: MeetRoom): string {
+		if (room.markedForDeletion) {
+			return 'auto-deletion-pending';
+		}
+		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-not-scheduled';
+	}
+
+	getAutoDeletionBgColor(room: MeetRoom): string {
+		if (room.markedForDeletion) {
+			return 'var(--ov-meet-bg-error)';
+		}
+		return room.autoDeletionDate ? 'var(--ov-meet-bg-info)' : 'var(--ov-meet-bg-hint)';
+	}
+
 	getAutoDeletionTooltip(room: MeetRoom): string {
-		return room.autoDeletionDate ? 'Scheduled for auto deletion' : 'The room is not scheduled for auto deletion';
+		if (room.markedForDeletion) {
+			return 'Deletes when last participant leaves';
+		}
+		return room.autoDeletionDate ? 'Auto-deletion scheduled' : 'No auto-deletion';
 	}
 }

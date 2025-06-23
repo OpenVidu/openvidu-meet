@@ -96,6 +96,10 @@
 				background-color: var(--ov-meet-surface-hover);
 			}
 		}
+
+		.create-room-btn {
+			@include ov-button-base;
+		}
 	}
 
 	// Responsive design
@@ -322,7 +326,7 @@
 		}
 
 		&.selected-row {
-			background-color: rgba(25, 118, 210, 0.08);
+			background-color: rgba(25, 118, 210, 0.09);
 
 			&:hover {
 				background-color: rgba(25, 118, 210, 0.12);
@@ -367,26 +371,6 @@
 		@include ov-icon(sm);
 	}
 
-	&.status-active {
-		background-color: rgba(76, 175, 80, 0.1);
-		color: var(--ov-meet-color-success);
-		border: 1px solid rgba(76, 175, 80, 0.3);
-
-		.status-icon {
-			color: var(--ov-meet-color-success);
-		}
-	}
-
-	&.status-inactive {
-		background-color: rgba(244, 67, 54, 0.1);
-		color: var(--ov-meet-color-error);
-		border: 1px solid rgba(244, 67, 54, 0.3);
-
-		.status-icon {
-			color: var(--ov-meet-color-error);
-		}
-	}
-
 	.status-label {
 		font-weight: var(--ov-meet-font-weight-semibold);
 	}
@@ -415,6 +399,23 @@
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-xs);
 
+	.deletion-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		border-radius: var(--ov-meet-radius-sm);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		width: fit-content;
+		vertical-align: middle;
+		text-transform: uppercase;
+
+		.deletion-icon {
+			@include ov-icon(sm);
+		}
+	}
+
 	.deletion-date {
 		font-size: var(--ov-meet-font-size-sm);
 		color: var(--ov-meet-text-primary);
@@ -425,24 +426,30 @@
 		color: var(--ov-meet-text-secondary);
 	}
 
-	&.no-deletion {
-		.no-deletion-badge {
-			display: flex;
-			align-items: center;
-			gap: var(--ov-meet-spacing-xs);
-			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-			border-radius: var(--ov-meet-radius-sm);
-			font-size: var(--ov-meet-font-size-xs);
-			font-weight: var(--ov-meet-font-weight-medium);
-			width: fit-content;
-			background-color: rgba(158, 158, 158, 0.1);
-			color: var(--ov-meet-text-hint);
-			border: 1px solid rgba(158, 158, 158, 0.3);
+	.auto-deletion-pending {
+		// background-color: var(--ov-meet-text-disabled)
+		color: var(--ov-meet-color-warn);
+		// border: 1px solid var(--ov-meet-color-warning);
+		.deletion-icon {
+			color: var(--ov-meet-color-warn);
+		}
+	}
 
-			.no-deletion-icon {
-				@include ov-icon(sm);
-				color: var(--ov-meet-text-hint);
-			}
+	.auto-deletion-not-scheduled {
+		color: var(--ov-meet-text-hint);
+		// border: 1px solid var(--ov-meet-border-color-light);
+		.deletion-icon {
+			color: var(--ov-meet-text-hint);
+		}
+	}
+
+	.auto-deletion-scheduled {
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-color-warning);
+
+		// border: 1px solid var(--ov-meet-color-error);
+		.deletion-icon {
+			color: var(--ov-meet-color-warning);
 		}
 	}
 }

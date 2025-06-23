@@ -178,8 +178,14 @@ export class RoomsComponent implements OnInit {
 	async deleteRoom({ roomId }: MeetRoom) {
 		try {
 			const response = await this.roomService.deleteRoom(roomId);
-			if (response.status === 202) {
+			if (response.statusCode === 202) {
 				this.notificationService.showSnackbar('Room marked for deletion');
+				// If the room is marked for deletion, we don't remove it from the list immediately
+				this.createdRooms = this.createdRooms.map((r) =>
+					r.roomId === roomId ? { ...r, markedForDeletion: true } : r
+				);
+				// Update the data source to reflect the change
+				this.dataSource.data = this.createdRooms;
 				return;
 			}
 			this.createdRooms = this.createdRooms.filter((r) => r.roomId !== roomId);
