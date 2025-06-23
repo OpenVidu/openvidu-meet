@@ -201,6 +201,7 @@ describe('Authentication API Tests', () => {
 			const response = await getApiKeys();
 
 			expect(Array.isArray(response.body)).toBe(true);
+
 			if (response.body.length > 0) {
 				expect(response.body[0]).toHaveProperty('key');
 				expect(response.body[0]).toHaveProperty('creationDate');

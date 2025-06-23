@@ -68,7 +68,7 @@ describe('Recording Garbage Collector Tests', () => {
 
 		jest.clearAllMocks();
 
-		// No configurar mocks globalmente para mejorar el aislamiento entre tests
+		// Do not set up global mocks here to improve test isolation
 	});
 
 	afterEach(async () => {
@@ -76,7 +76,7 @@ describe('Recording Garbage Collector Tests', () => {
 		jest.clearAllMocks();
 		jest.restoreAllMocks();
 
-		// Restaurar explícitamente el comportamiento del mock para getLockCreatedAt
+		// Explicitly restore the mock behavior for getLockCreatedAt
 		if (mutexService.getLockCreatedAt && jest.isMockFunction(mutexService.getLockCreatedAt)) {
 			(mutexService.getLockCreatedAt as jest.Mock).mockReset();
 		}

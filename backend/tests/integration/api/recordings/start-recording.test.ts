@@ -1,6 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
+import { MeetStorageService } from '../../../../src/services/index.js';
 import { MeetRoom } from '../../../../src/typings/ce/index.js';
 import {
 	expectValidationError,
@@ -18,8 +20,6 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios.js';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
@@ -27,11 +27,10 @@ describe('Recording API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRecordings();
 	});
 
 	afterAll(async () => {
-		await stopAllRecordings(moderatorCookie);
 		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
@@ -45,8 +44,7 @@ describe('Recording API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await deleteAllRooms();
-			await deleteAllRecordings();
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 			context = null;
 		});
 
@@ -77,7 +75,6 @@ describe('Recording API Tests', () => {
 			expect(archivedRoom?.publisherRoomUrl).toBeDefined();
 			expect(archivedRoom?.preferences).toBeDefined();
 
-			// Check if secrets file is created
 			const secretsResponse = await stopRecording(recordingId, moderatorCookie);
 			expectValidStopRecordingResponse(secretsResponse, recordingId, room.roomId);
 		});

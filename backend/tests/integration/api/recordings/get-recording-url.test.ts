@@ -19,6 +19,7 @@ describe('Recording API Tests', () => {
 
 	beforeAll(async () => {
 		app = startTestServer();
+		await deleteAllRecordings();
 
 		const roomData = await setupSingleRoomWithRecording(true);
 		recordingId = roomData.recordingId!;
@@ -26,8 +27,7 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Get Recording URL Tests', () => {

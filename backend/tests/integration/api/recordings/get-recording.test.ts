@@ -14,22 +14,20 @@ import { setupMultiRecordingsTestContext, TestContext } from '../../../helpers/t
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
-	let room: MeetRoom, moderatorCookie: string, recordingId: string;
+	let room: MeetRoom, recordingId: string;
 
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRecordings();
 
 		// Create a room and join a participant
 		context = await setupMultiRecordingsTestContext(1, 1, 1);
-		({ room, moderatorCookie, recordingId = '' } = context.getRoomByIndex(0)!);
+		({ room, recordingId = '' } = context.getRoomByIndex(0)!);
 	});
 
 	afterAll(async () => {
-		await stopAllRecordings(moderatorCookie);
 		await disconnectFakeParticipants();
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 		context = null;
 	});
 

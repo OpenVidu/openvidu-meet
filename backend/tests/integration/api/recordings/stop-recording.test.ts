@@ -18,15 +18,13 @@ describe('Recording API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
-
+		await deleteAllRecordings();
 	});
 
 	afterAll(async () => {
 		await stopAllRecordings(moderatorCookie);
 		await disconnectFakeParticipants();
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Stop Recording Tests', () => {
@@ -37,14 +35,6 @@ describe('Recording API Tests', () => {
 			({ room, moderatorCookie } = context.getRoomByIndex(0)!);
 			const response = await startRecording(room.roomId, moderatorCookie);
 			recordingId = response.body.recordingId;
-		});
-
-		afterAll(async () => {
-			await disconnectFakeParticipants();
-			await stopAllRecordings(moderatorCookie);
-			await deleteAllRooms();
-			await deleteAllRecordings();
-			context = null;
 		});
 
 		it('should stop an active recording and return 202', async () => {

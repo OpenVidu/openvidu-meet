@@ -4,29 +4,28 @@ import { expectSuccessRecordingMediaResponse, expectValidationError } from '../.
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
+	disconnectFakeParticipants,
 	getRecordingMedia,
 	startTestServer,
-	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
-	let room: MeetRoom, recordingId: string, moderatorCookie: string;
+	let room: MeetRoom, recordingId: string;
 
 	beforeAll(async () => {
 		startTestServer();
-
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRecordings();
 
 		const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '3s');
 		const roomData = testContext.getRoomByIndex(0)!;
 
-		({ room, recordingId = '', moderatorCookie } = roomData);
+		({ room, recordingId = '' } = roomData);
 	});
 
 	afterAll(async () => {
-		await stopAllRecordings(moderatorCookie);
+		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 	});
 

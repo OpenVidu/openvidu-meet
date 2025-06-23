@@ -25,6 +25,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	afterEach(async () => {
 		// Remove all rooms created
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
 

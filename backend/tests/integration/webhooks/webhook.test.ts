@@ -10,7 +10,8 @@ import {
 	endMeeting,
 	updateWebbhookPreferences,
 	deleteAllRooms,
-	deleteRoom
+	deleteRoom,
+	disconnectFakeParticipants
 } from '../../helpers/request-helpers.js';
 import { MeetWebhookEvent, MeetWebhookEventType } from '../../../src/typings/ce/webhook.model.js';
 
@@ -52,8 +53,8 @@ describe('Webhook Integration Tests', () => {
 		await stopWebhookServer();
 		const defaultPreferences = await storageService['getDefaultPreferences']();
 		await updateWebbhookPreferences(defaultPreferences.webhooksPreferences);
-		await deleteAllRecordings();
-		await deleteAllRooms();
+		await disconnectFakeParticipants();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	it('should not send webhooks when disabled', async () => {
@@ -115,9 +116,6 @@ describe('Webhook Integration Tests', () => {
 		const roomData = context.room;
 		// Forcefully delete the room
 		await deleteRoom(roomData.roomId, { force: true });
-
-		// Wait for the room to be closed
-		await sleep('1s');
 
 		// Verify 'meetingEnded' webhook is sent
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);

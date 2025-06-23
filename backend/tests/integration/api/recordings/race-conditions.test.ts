@@ -1,5 +1,7 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { container } from '../../../../src/config/index.js';
+import { setInternalConfig } from '../../../../src/config/internal-config.js';
+import { SystemEventType } from '../../../../src/models/system-event.model.js';
 import { RecordingService } from '../../../../src/services';
 import {
 	expectValidStartRecordingResponse,
@@ -11,6 +13,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
+	disconnectFakeParticipants,
 	getRecording,
 	getRecordingMedia,
 	sleep,
@@ -24,8 +27,6 @@ import {
 	setupMultiRoomTestContext,
 	TestContext
 } from '../../../helpers/test-scenarios';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
-import { SystemEventType } from '../../../../src/models/system-event.model.js';
 
 describe('Recording API Race Conditions Tests', () => {
 	let context: TestContext | null = null;
@@ -33,13 +34,9 @@ describe('Recording API Race Conditions Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
-
 		recordingService = container.get(RecordingService);
-	});
 
-	beforeEach(async () => {
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRecordings();
 		eventController.reset();
 	});
 
@@ -51,6 +48,7 @@ describe('Recording API Race Conditions Tests', () => {
 		}
 
 		eventController.reset();
+		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 		jest.clearAllMocks();
 	});
