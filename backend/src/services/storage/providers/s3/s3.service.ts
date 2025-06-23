@@ -14,6 +14,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
+import INTERNAL_CONFIG from '../../../../config/internal-config.js';
 import {
 	MEET_AWS_REGION,
 	MEET_S3_ACCESS_KEY,
@@ -25,7 +26,6 @@ import {
 } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
-import INTERNAL_CONFIG from '../../../../config/internal-config.js';
 
 @injectable()
 export class S3Service {
@@ -51,11 +51,11 @@ export class S3Service {
 	 */
 	async exists(name: string, bucket: string = MEET_S3_BUCKET): Promise<boolean> {
 		try {
-			await this.getHeaderObject(name, bucket);
-			this.logger.verbose(`S3 exists: file ${this.getFullKey(name)} found in bucket ${bucket}`);
+			await this.getObjectHeaders(name, bucket);
+			this.logger.verbose(`S3 exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
 			return true;
 		} catch (error) {
-			this.logger.warn(`S3 exists: file ${this.getFullKey(name)} not found in bucket ${bucket}`);
+			this.logger.warn(`S3 exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
 			return false;
 		}
 	}
@@ -78,12 +78,12 @@ export class S3Service {
 				Body: JSON.stringify(body)
 			});
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
-			this.logger.verbose(`S3: successfully saved object '${fullKey}' in bucket '${bucket}'`);
+			this.logger.verbose(`S3 saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
-		} catch (error: unknown) {
-			this.logger.error(`S3: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
+		} catch (error: any) {
+			this.logger.error(`S3 saveObject: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
 
-			if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
+			if (error.code === 'ECONNREFUSED') {
 				throw errorS3NotAvailable(error);
 			}
 
@@ -93,12 +93,14 @@ export class S3Service {
 
 	/**
 	 * Bulk deletes objects from S3.
-	 * @param keys Array of object keys to delete. Estos keys deben incluir el subbucket (se obtiene con getFullKey).
+	 * @param keys Array of object keys to delete
 	 * @param bucket S3 bucket name (default: MEET_S3_BUCKET)
 	 */
 	async deleteObjects(keys: string[], bucket: string = MEET_S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
 		try {
-			this.logger.verbose(`S3 delete: attempting to delete ${keys.length} objects from bucket ${bucket}`);
+			this.logger.verbose(
+				`S3 deleteObjects: attempting to delete ${keys.length} objects from bucket '${bucket}'`
+			);
 			const command = new DeleteObjectsCommand({
 				Bucket: bucket,
 				Delete: {
@@ -108,10 +110,10 @@ export class S3Service {
 			});
 			const result = await this.run(command);
 			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
-			this.logger.info(`Successfully deleted ${keys.length} objects from bucket ${bucket}`);
+			this.logger.info(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);
 			return result;
-		} catch (error: any) {
-			this.logger.error(`S3 bulk delete: error deleting objects in bucket ${bucket}: ${error}`);
+		} catch (error) {
+			this.logger.error(`S3 deleteObjects: error deleting objects in bucket '${bucket}': ${error}`);
 			throw internalError('deleting objects from S3');
 		}
 	}
@@ -120,11 +122,9 @@ export class S3Service {
 	 * List objects with pagination.
 	 *
 	 * @param additionalPrefix Additional prefix relative to the subbucket.
-	 *                         Por ejemplo, para listar metadata se pasa ".metadata/".
-	 * @param searchPattern Optional regex pattern to filter keys.
-	 * @param bucket Optional bucket name.
-	 * @param maxKeys Maximum number of objects to return.
+	 * @param maxKeys Maximum number of objects to return. Defaults to 50.
 	 * @param continuationToken Token to retrieve the next page.
+	 * @param bucket Optional bucket name. Defaults to MEET_S3_BUCKET.
 	 *
 	 * @returns The ListObjectsV2CommandOutput with Keys and NextContinuationToken.
 	 */
@@ -138,7 +138,7 @@ export class S3Service {
 		// Example: if s3Subbucket is "recordings" and additionalPrefix is ".metadata/",
 		// it will list objects with keys that start with "recordings/.metadata/".
 		const basePrefix = this.getFullKey(additionalPrefix);
-		this.logger.verbose(`S3 listObjectsPaginated: listing objects with prefix "${basePrefix}"`);
+		this.logger.verbose(`S3 listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
 
 		const command = new ListObjectsV2Command({
 			Bucket: bucket,
@@ -149,13 +149,13 @@ export class S3Service {
 
 		try {
 			return await this.s3.send(command);
-		} catch (error: any) {
-			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix "${basePrefix}": ${error}`);
+		} catch (error) {
+			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);
 			throw internalError('listing objects from S3');
 		}
 	}
 
-	async getObjectAsJson(name: string, bucket: string = MEET_S3_BUCKET): Promise<Object | undefined> {
+	async getObjectAsJson(name: string, bucket: string = MEET_S3_BUCKET): Promise<object | undefined> {
 		try {
 			const obj = await this.getObject(name, bucket);
 			const str = await obj.Body?.transformToString();
@@ -174,7 +174,9 @@ export class S3Service {
 				throw errorS3NotAvailable(error);
 			}
 
-			this.logger.error(`S3 getObjectAsJson: error retrieving object ${name} from bucket ${bucket}: ${error}`);
+			this.logger.error(
+				`S3 getObjectAsJson: error retrieving object '${name}' from bucket '${bucket}': ${error}`
+			);
 			throw internalError('getting object as JSON from S3');
 		}
 	}
@@ -187,18 +189,17 @@ export class S3Service {
 		try {
 			const obj = await this.getObject(name, bucket, range);
 
-			if (obj.Body) {
-				this.logger.info(
-					`S3 getObjectAsStream: successfully retrieved object ${name} stream from bucket ${bucket}`
-				);
-
-				return obj.Body as Readable;
-			} else {
+			if (!obj.Body) {
 				throw new Error('Empty body response');
 			}
+
+			this.logger.info(
+				`S3 getObjectAsStream: successfully retrieved object '${name}' as stream from bucket '${bucket}'`
+			);
+			return obj.Body as Readable;
 		} catch (error: any) {
 			this.logger.error(
-				`S3 getObjectAsStream: error retrieving stream for object ${name} from bucket ${bucket}: ${error}`
+				`S3 getObjectAsStream: error retrieving stream for object '${name}' from bucket '${bucket}': ${error}`
 			);
 
 			if (error.code === 'ECONNREFUSED') {
@@ -209,21 +210,21 @@ export class S3Service {
 		}
 	}
 
-	async getHeaderObject(name: string, bucket: string = MEET_S3_BUCKET): Promise<HeadObjectCommandOutput> {
+	async getObjectHeaders(name: string, bucket: string = MEET_S3_BUCKET): Promise<HeadObjectCommandOutput> {
 		try {
 			const fullKey = this.getFullKey(name);
 			const headParams: HeadObjectCommand = new HeadObjectCommand({
 				Bucket: bucket,
 				Key: fullKey
 			});
-			this.logger.verbose(`S3 getHeaderObject: requesting header for object ${fullKey} in bucket ${bucket}`);
+			this.logger.verbose(`S3 getHeaderObject: requesting headers for object '${fullKey}' in bucket '${bucket}'`);
 			return await this.run(headParams);
 		} catch (error) {
 			this.logger.error(
-				`S3 getHeaderObject: error getting header for object ${this.getFullKey(name)} in bucket ${bucket}: ${error}`
+				`S3 getHeaderObject: error retrieving headers for object '${this.getFullKey(name)}' in bucket '${bucket}': ${error}`
 			);
 
-			throw internalError('getting header for object from S3');
+			throw internalError('getting object headers from S3');
 		}
 	}
 
@@ -259,7 +260,7 @@ export class S3Service {
 			Key: fullKey,
 			Range: range ? `bytes=${range.start}-${range.end}` : undefined
 		});
-		this.logger.verbose(`S3 getObject: requesting object ${fullKey} from bucket ${bucket}`);
+		this.logger.verbose(`S3 getObject: requesting object '${fullKey}' from bucket '${bucket}'`);
 
 		return await this.run(command);
 	}
@@ -276,7 +277,7 @@ export class S3Service {
 		let delayMs = Number(INTERNAL_CONFIG.S3_INITIAL_RETRY_DELAY_MS);
 		const maxRetries = Number(INTERNAL_CONFIG.S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR);
 
-		while (true) {
+		while (attempt < maxRetries) {
 			try {
 				this.logger.verbose(`S3 operation: attempt ${attempt + 1}`);
 				return await operation();
@@ -294,6 +295,8 @@ export class S3Service {
 				delayMs *= 2;
 			}
 		}
+
+		throw new Error('S3 retryOperation: exceeded maximum retry attempts without success');
 	}
 
 	/**

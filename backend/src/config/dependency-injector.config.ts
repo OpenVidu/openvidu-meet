@@ -1,5 +1,8 @@
 import { Container } from 'inversify';
+import { MEET_PREFERENCES_STORAGE_MODE } from '../environment.js';
 import {
+	ABSService,
+	ABSStorageProvider,
 	AuthService,
 	LiveKitService,
 	LivekitWebhookService,
@@ -11,6 +14,7 @@ import {
 	RecordingService,
 	RedisService,
 	RoomService,
+	S3KeyBuilder,
 	S3Service,
 	S3StorageProvider,
 	StorageFactory,
@@ -21,16 +25,12 @@ import {
 	TokenService,
 	UserService
 } from '../services/index.js';
-import { MEET_PREFERENCES_STORAGE_MODE } from '../environment.js';
-import { S3KeyBuilder } from '../services/storage/providers/s3/s3-storage-key.builder.js';
 
 export const container: Container = new Container();
 
 export const STORAGE_TYPES = {
 	StorageProvider: Symbol.for('StorageProvider'),
-	KeyBuilder: Symbol.for('KeyBuilder'),
-	S3StorageProvider: Symbol.for('S3StorageProvider'),
-	S3KeyBuilder: Symbol.for('S3KeyBuilder')
+	KeyBuilder: Symbol.for('KeyBuilder')
 };
 
 /**
@@ -50,8 +50,6 @@ export const registerDependencies = () => {
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 
 	configureStorage(MEET_PREFERENCES_STORAGE_MODE);
-	container.bind(S3Service).toSelf().inSingletonScope();
-	container.bind(S3StorageProvider).toSelf().inSingletonScope();
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 	container.bind(MeetStorageService).toSelf().inSingletonScope();
 
@@ -75,6 +73,14 @@ const configureStorage = (storageMode: string) => {
 		case 's3':
 			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
 			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			container.bind(S3Service).toSelf().inSingletonScope();
+			container.bind(S3StorageProvider).toSelf().inSingletonScope();
+			break;
+		case 'abs':
+			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(ABSStorageProvider).inSingletonScope();
+			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			container.bind(ABSService).toSelf().inSingletonScope();
+			container.bind(ABSStorageProvider).toSelf().inSingletonScope();
 			break;
 	}
 };

@@ -114,7 +114,7 @@ export class S3StorageProvider implements StorageProvider {
 	async getObjectHeaders(key: string): Promise<{ contentLength?: number; contentType?: string }> {
 		try {
 			this.logger.debug(`Getting object headers from S3: ${key}`);
-			const data = await this.s3Service.getHeaderObject(key);
+			const data = await this.s3Service.getObjectHeaders(key);
 			return {
 				contentLength: data.ContentLength,
 				contentType: data.ContentType
