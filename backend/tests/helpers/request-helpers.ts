@@ -262,19 +262,23 @@ export const updateRecordingAccessPreferencesInRoom = async (roomId: string, rec
 export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const result = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query(query);
+	await sleep('1s');
+	return result;
 };
 
 export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const result = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 		.query({ roomIds: roomIds.join(','), force });
+	await sleep('1s');
+	return result;
 };
 
 export const deleteAllRooms = async () => {
@@ -301,6 +305,8 @@ export const deleteAllRooms = async () => {
 			.query({ roomIds: roomIds.join(','), force: true })
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 	} while (nextPageToken);
+
+	await sleep('1s');
 };
 
 /**
