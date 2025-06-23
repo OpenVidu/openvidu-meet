@@ -1,29 +1,5 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
-// Use page container utility
-.developers-container {
-	@extend .ov-page-container;
-
-	button {
-		@include ov-button-base;
-
-		mat-icon {
-			@include ov-icon(md);
-			margin-right: var(--ov-meet-spacing-sm);
-		}
-	}
-}
-
-// Use page content utility
-.developers-content {
-	@extend .ov-page-content;
-}
-
-// Use section card utility
-.section-card {
-	@extend .ov-section-card;
-}
-
 // API Key Section - use utility classes
 .api-key-section {
 	.api-key-display {
@@ -90,6 +66,10 @@
 			justify-content: space-between;
 			align-items: center;
 			padding: 0 var(--ov-meet-spacing-md) var(--ov-meet-spacing-md) 0;
+
+			::ng-deep button {
+				padding: 0 !important;
+			}
 		}
 
 		// Input field styling

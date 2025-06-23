@@ -5,6 +5,10 @@
 	@extend .ov-form-section;
 }
 
+.form-field-header {
+	margin-top: var(--ov-meet-spacing-md)
+}
+
 // Logo upload section
 .logo-upload-section {
 	@extend .ov-logo-upload;

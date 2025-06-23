@@ -35,12 +35,12 @@
 
 		<!-- Right Section: Actions -->
 		<div class="toolbar-right">
-			<button mat-icon-button (click)="refreshRooms()" [disabled]="loading" matTooltip="Refresh rooms">
+			<button mat-icon-button class="refresh-btn" (click)="refreshRooms()" [disabled]="loading" matTooltip="Refresh rooms">
 				<mat-icon>refresh</mat-icon>
 			</button>
 
 			@if (canCreateRooms) {
-				<button mat-raised-button color="primary" (click)="createRoom()" class="create-room-btn">
+				<button mat-raised-button (click)="createRoom()" class="create-room-btn">
 					<mat-icon>add</mat-icon>
 					Create New Room
 				</button>

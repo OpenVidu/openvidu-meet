@@ -1,7 +1,7 @@
 @if (isLoading) {
 	@if (showLoadingSpinner) {
 		<!-- Enhanced Loading State with delay -->
-		<div class="loading-container">
+		<div class="ov-page-loading">
 			<div class="loading-content">
 				<div class="loading-header">
 					<div class="loading-title">
@@ -18,8 +18,8 @@
 		</div>
 	}
 } @else {
-	<div class="recordings-container ov-mb-xxl">
-		<div class="recordings-header">
+	<div class="ov-page-container ov-mb-xxl">
+		<div class="page-header">
 			<div class="title">
 				<mat-icon class="ov-recording-icon">video_library</mat-icon>
 				<h1>Recordings</h1>
@@ -27,7 +27,7 @@
 			<p class="subtitle">Manage all your meeting recordings, play, download, and share them with others.</p>
 		</div>
 
-		<div class="recordings-content">
+		<div class="page-content">
 			<ov-recording-lists
 				[recordings]="recordings()"
 				[canDeleteRecordings]="canDeleteRecordings"

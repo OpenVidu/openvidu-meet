@@ -1,14 +1,5 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
-.overview-container {
-	.overview-header {
-		@include ov-page-header;
-	}
-	.get-started-header {
-		@include ov-get-started-header;
-	}
-}
-
 // Welcome State Styles
 .welcome-content {
 	.welcome-card {

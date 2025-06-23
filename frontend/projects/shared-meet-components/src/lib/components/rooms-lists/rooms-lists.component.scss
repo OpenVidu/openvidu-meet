@@ -4,18 +4,12 @@
 .rooms-toolbar {
 	@extend .ov-data-toolbar;
 
-	.toolbar-right .create-room-btn {
-		@include ov-button-base;
-		color: var(--ov-meet-color-primary);
-		border-color: var(--ov-meet-color-primary);
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
 
-		&:hover {
-			background-color: var(--ov-meet-color-primary-light);
-		}
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
 
-		mat-icon {
-			@include ov-icon(md);
-			margin-right: var(--ov-meet-spacing-sm);
 		}
 	}
 }

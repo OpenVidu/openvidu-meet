@@ -1,28 +1,5 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
-// Use page container utility
-.settings-container {
-	@extend .ov-page-container;
-
-	button {
-		@include ov-button-base;
-
-		mat-icon {
-			@include ov-icon(md);
-			margin-right: var(--ov-meet-spacing-sm);
-		}
-	}
-}
-
-// Use page content utility
-.settings-content {
-	@extend .ov-page-content;
-}
-
-// Use section card utility with color variations
-.section-card {
-	@extend .ov-section-card;
-}
 
 .branding-section {
 	@extend .ov-section-card-primary;
@@ -32,66 +9,6 @@
 	@extend .ov-section-card-accent;
 }
 
-// Use settings form utilities
-.form-section {
-	@extend .ov-settings-form-section;
-
-	.toggle-container {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--ov-meet-spacing-md);
-		margin-bottom: var(--ov-meet-spacing-lg);
-
-		.toggle-info {
-			flex: 1;
-
-			h4 {
-				margin: 0 0 var(--ov-meet-spacing-xs) 0;
-				font-size: var(--ov-meet-font-size-md);
-				font-weight: var(--ov-meet-font-weight-semibold);
-				color: var(--ov-meet-text-primary);
-			}
-
-			p {
-				margin: 0;
-				font-size: var(--ov-meet-font-size-sm);
-				color: var(--ov-meet-text-secondary);
-			}
-		}
-
-		.toggle-control {
-			flex-shrink: 0;
-		}
-	}
-
-	.input-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-md);
-
-		@include ov-tablet-down {
-			gap: var(--ov-meet-spacing-sm);
-		}
-	}
-
-	.action-buttons {
-		display: flex;
-		gap: var(--ov-meet-spacing-sm);
-		justify-content: flex-end;
-		margin-top: var(--ov-meet-spacing-lg);
-		padding-top: var(--ov-meet-spacing-lg);
-		border-top: 1px solid var(--ov-meet-border-color-light);
-
-		@include ov-mobile-down {
-			flex-direction: column;
-
-			button {
-				width: 100%;
-			}
-		}
-	}
-}
 
 // Specific form customizations
 .mat-mdc-form-field {
@@ -116,6 +33,6 @@
 }
 
 // Slide toggle styling
-::ng-deep mat-slide-toggle {
-	@extend .ov-slide-toggle-success;
-}
+// ::ng-deep mat-slide-toggle {
+// 	@extend .ov-slide-toggle-success;
+// }

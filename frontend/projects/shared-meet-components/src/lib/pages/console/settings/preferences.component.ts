@@ -12,6 +12,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NotificationService } from '../../../services';
 import { LogoSelectorComponent } from '../../../components';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 interface AccessPermissions {
 	authenticationForJoining: 'everyone' | 'only-moderators' | 'nobody';
@@ -31,6 +32,7 @@ interface AccessPermissions {
 		MatSelectModule,
 		MatSnackBarModule,
 		MatTooltipModule,
+		MatProgressSpinnerModule,
 		MatDividerModule,
 		ReactiveFormsModule,
 		LogoSelectorComponent

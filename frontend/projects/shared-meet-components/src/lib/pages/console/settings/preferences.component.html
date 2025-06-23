@@ -1,5 +1,5 @@
-<div class="settings-container ov-mb-xxl">
-	<div class="settings-header">
+<div class="ov-page-container ov-mb-xxl">
+	<div class="page-header">
 		<div class="title">
 			<mat-icon class="material-symbols-outlined ov-settings-icon">settings</mat-icon>
 			<h1>Settings</h1>
@@ -8,14 +8,23 @@
 	</div>
 
 	@if (isLoading()) {
-		<div class="loading-container">
-			<div class="loading-spinner">
-				<mat-icon class="rotating">refresh</mat-icon>
+		<div class="ov-page-loading">
+			<div class="loading-content">
+				<div class="loading-header">
+					<div class="loading-title">
+						<mat-icon class="ov-settings-icon loading-icon"> settings </mat-icon>
+						<h1>Loading Settings</h1>
+					</div>
+					<p class="loading-subtitle">Please wait while we fetch your settings...</p>
+				</div>
+
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
 			</div>
-			<p>Loading settings...</p>
 		</div>
 	} @else {
-		<div class="settings-content">
+		<div class="page-content">
 			<!-- Branding Section -->
 			<mat-card class="section-card branding-section">
 				<mat-card-header>
@@ -24,6 +33,8 @@
 					</div>
 					<mat-card-title>Branding</mat-card-title>
 				</mat-card-header>
+
+				<mat-divider class="section-divider"></mat-divider>
 
 				<mat-card-content>
 					<ov-logo-selector></ov-logo-selector>
@@ -38,6 +49,8 @@
 					</div>
 					<mat-card-title>Access & Permissions</mat-card-title>
 				</mat-card-header>
+
+				<mat-divider class="section-divider"></mat-divider>
 
 				<mat-card-content>
 					<form [formGroup]="accessForm" (ngSubmit)="onSaveAccess()">
@@ -60,8 +73,6 @@
 								}
 							</mat-form-field>
 						</div>
-
-						<mat-divider class="section-divider"></mat-divider>
 
 						<!-- Admin Password -->
 						<div class="form-section">

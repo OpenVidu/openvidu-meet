@@ -3,6 +3,14 @@
 // Use utility classes for recordings toolbar
 .recordings-toolbar {
 	@extend .ov-data-toolbar;
+
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
+
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
 }
 
 // Use utility classes for search field, selection info, and batch actions

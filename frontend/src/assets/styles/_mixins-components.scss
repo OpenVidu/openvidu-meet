@@ -97,3 +97,56 @@
 		height: var(--ov-meet-icon-size-lg);
 	}
 }
+
+@mixin ov-page-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+@mixin ov-section-card {
+	@include ov-card;
+	transition: none;
+
+	&:hover {
+		box-shadow: var(--ov-meet-card-shadow);
+	}
+
+	.mat-mdc-card-header {
+		padding: 0;
+		border-bottom: 1px solid var(--ov-border-color-light);
+		align-items: center;
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.mat-mdc-card-avatar {
+			align-content: center;
+			margin: 0;
+		}
+
+		.mat-mdc-card-title {
+			font-size: var(--ov-meet-font-size-lg);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+			text-transform: uppercase;
+
+			@include ov-tablet-down {
+				font-size: var(--ov-meet-font-size-lg);
+			}
+		}
+
+		.mat-mdc-card-subtitle {
+			color: var(--ov-meet-text-secondary);
+			margin-top: var(--ov-meet-spacing-xs);
+			font-size: var(--ov-meet-font-size-md);
+		}
+
+		.section-icon {
+			@include ov-icon(lg);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+
+	.mat-mdc-card-content {
+		padding: 0 var(--ov-meet-spacing-xl);
+	}
+}
