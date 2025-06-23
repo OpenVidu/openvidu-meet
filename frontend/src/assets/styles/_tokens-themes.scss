@@ -1,0 +1,67 @@
+// Theme-specific Design Tokens - Light and Dark theme variables
+// This file contains theme-specific overrides for light and dark modes
+
+:root {
+	// === SURFACE COLORS - LIGHT THEME ===
+	--ov-meet-surface-color: #fdfdfd;
+	--ov-meet-surface-variant: #f5f5f5;
+	--ov-meet-surface-hover: #f0f0f0;
+	--ov-meet-background-color: #fafafa;
+	--ov-meet-background-secondary: #f5f5f5;
+	--ov-meet-surface-elevated: #ffffff;
+	--ov-meet-surface-container: #f3f3f3;
+
+	// === TEXT COLORS - LIGHT THEME ===
+	--ov-meet-text-primary: #212121;
+	--ov-meet-text-secondary: #757575;
+	--ov-meet-text-hint: #9e9e9e;
+	--ov-meet-text-disabled: #bdbdbd;
+	--ov-meet-text-on-primary: #ffffff;
+	--ov-meet-text-on-accent: #ffffff;
+	--ov-meet-text-on-surface: #212121;
+	--ov-meet-text-on-background: #212121;
+
+	// === SHADOWS - LIGHT THEME ===
+	--ov-meet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+	--ov-meet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+	--ov-meet-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.16), 0 8px 16px rgba(0, 0, 0, 0.23);
+	--ov-meet-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+
+	// === BORDERS - LIGHT THEME ===
+	--ov-meet-border-color: #e0e0e0;
+	--ov-meet-border-color-light: #f0f0f0;
+	--ov-meet-border-color-strong: #bdbdbd;
+}
+
+// === DARK THEME ===
+// Activated when the [data-theme="dark"] attribute is present on html
+[data-theme='dark'] {
+	// === SURFACE COLORS - DARK THEME ===
+	--ov-meet-surface-color: #1e1e1e;
+	--ov-meet-surface-variant: #2d2d2d;
+	--ov-meet-surface-hover: #383838;
+	--ov-meet-background-color: #121212;
+	--ov-meet-background-secondary: #1e1e1e;
+	--ov-meet-surface-elevated: #2d2d2d;
+	--ov-meet-surface-container: #242424;
+
+	// === TEXT COLORS - DARK THEME ===
+	--ov-meet-text-primary: #ffffff;
+	--ov-meet-text-secondary: #b3b3b3;
+	--ov-meet-text-hint: #757575;
+	--ov-meet-text-disabled: #5f5f5f;
+	--ov-meet-text-on-surface: #ffffff;
+	--ov-meet-text-on-background: #ffffff;
+
+	// === SHADOWS - DARK THEME ===
+	// Shadows in dark theme are more subtle and can use lighter colors
+	--ov-meet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.5);
+	--ov-meet-shadow-md: 0 3px 6px rgba(0, 0, 0, 0.4), 0 3px 6px rgba(0, 0, 0, 0.6);
+	--ov-meet-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.6);
+	--ov-meet-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.4);
+
+	// === BORDERS - DARK THEME ===
+	--ov-meet-border-color: #3f3f3f;
+	--ov-meet-border-color-light: #2d2d2d;
+	--ov-meet-border-color-strong: #5f5f5f;
+}

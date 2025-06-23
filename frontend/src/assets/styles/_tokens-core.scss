@@ -1,0 +1,115 @@
+// Core Design Tokens - Basic variables for colors, spacing, typography, etc.
+// This file contains the fundamental design tokens used throughout the application
+
+:root {
+	// === PRIMARY COLORS ===
+	// These colors come from Angular Material theme but we centralize them for direct use
+	--ov-meet-color-primary: #1976d2;
+	--ov-meet-color-primary-light: #42a5f5;
+	--ov-meet-color-primary-dark: #1565c0;
+	--ov-meet-color-accent: #7b1fa2;
+	--ov-meet-color-accent-light: #9c27b0;
+	--ov-meet-color-accent-dark: #6a1b9a;
+	--ov-meet-color-warn: #f44336;
+	--ov-meet-color-success: #4caf50;
+	--ov-meet-color-info: #045496;
+	--ov-meet-color-warning: #ff9800;
+	--ov-meet-color-error: #f44336;
+
+	// === CONCEPTUAL ICON COLORS ===
+	// These colors are consistently applied to icons representing specific concepts
+	// to maintain visual consistency across the entire application
+	--ov-meet-icon-rooms: var(--ov-meet-color-primary); // video_chat, meeting_room
+	--ov-meet-icon-recordings: var(--ov-meet-color-accent); // video_library, play_circle
+	--ov-meet-icon-settings: var(--ov-meet-text-secondary); // settings, tune
+	--ov-meet-icon-developer: var(--ov-meet-color-warning); // code, api
+	--ov-meet-icon-actions: var(--ov-meet-text-secondary); // add, edit, delete, refresh
+	--ov-meet-icon-about: var(--ov-meet-color-info); // info, security, help
+
+	// === SPACING AND DIMENSIONS ===
+	--ov-meet-spacing-xs: 4px;
+	--ov-meet-spacing-sm: 8px;
+	--ov-meet-spacing-md: 16px;
+	--ov-meet-spacing-lg: 24px;
+	--ov-meet-spacing-xl: 32px;
+	--ov-meet-spacing-xxl: 48px;
+
+	// === BORDER RADIUS ===
+	--ov-meet-radius-xs: 2px;
+	--ov-meet-radius-sm: 4px;
+	--ov-meet-radius-md: 8px;
+	--ov-meet-radius-lg: 12px;
+	--ov-meet-radius-xl: 16px;
+	--ov-meet-radius-circle: 50%;
+
+	// === TYPOGRAPHY ===
+	--ov-meet-font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+	--ov-meet-font-size-xxs: 0.65rem; // 10px
+	--ov-meet-font-size-xs: 0.75rem; // 12px
+	--ov-meet-font-size-sm: 0.875rem; // 14px
+	--ov-meet-font-size-md: 1rem; // 16px
+	--ov-meet-font-size-lg: 1.125rem; // 18px
+	--ov-meet-font-size-xl: 1.25rem; // 20px
+	--ov-meet-font-size-xxl: 1.5rem; // 24px
+	--ov-meet-font-size-hero: 2.5rem; // 40px
+
+	--ov-meet-font-weight-light: 300;
+	--ov-meet-font-weight-regular: 400;
+	--ov-meet-font-weight-medium: 500;
+	--ov-meet-font-weight-semibold: 600;
+	--ov-meet-font-weight-bold: 700;
+
+	--ov-meet-line-height-tight: 1.2;
+	--ov-meet-line-height-normal: 1.5;
+	--ov-meet-line-height-relaxed: 1.7;
+
+	// === TRANSITIONS ===
+	--ov-meet-transition-fast: 0.15s ease-in-out;
+	--ov-meet-transition-normal: 0.2s ease-in-out;
+	--ov-meet-transition-slow: 0.3s ease-in-out;
+
+	// === LAYOUT ===
+	--ov-meet-container-max-width: 1200px;
+	--ov-meet-container-padding: var(--ov-meet-spacing-xl);
+	--ov-meet-grid-gap: var(--ov-meet-spacing-lg);
+
+	// === ICONS ===
+	--ov-meet-icon-size-sm: 18px;
+	--ov-meet-icon-size-md: 24px;
+	--ov-meet-icon-size-lg: 32px;
+	--ov-meet-icon-size-xl: 48px;
+
+	// === INTERACTION STATES ===
+	--ov-meet-hover-opacity: 0.08;
+	--ov-meet-focus-opacity: 0.12;
+	--ov-meet-selected-opacity: 0.16;
+	--ov-meet-disabled-opacity: 0.38;
+
+	// === BREAKPOINTS ===
+	--ov-meet-breakpoint-mobile: 480px;
+	--ov-meet-breakpoint-tablet: 768px;
+	--ov-meet-breakpoint-desktop: 1024px;
+	--ov-meet-breakpoint-wide: 1200px;
+
+	// === SPECIFIC COMPONENTS ===
+
+	// Cards
+	--ov-meet-card-padding: var(--ov-meet-spacing-lg);
+	--ov-meet-card-border-radius: var(--ov-meet-radius-md);
+	--ov-meet-card-shadow: var(--ov-meet-shadow-sm);
+	--ov-meet-card-shadow-hover: var(--ov-meet-shadow-hover);
+	--ov-meet-card-background: var(--ov-meet-surface-color);
+
+	// Buttons
+	--ov-meet-button-border-radius: var(--ov-meet-radius-sm);
+	--ov-meet-button-padding-horizontal: var(--ov-meet-spacing-md);
+	--ov-meet-button-padding-vertical: var(--ov-meet-spacing-sm);
+	--ov-meet-button-transition: var(--ov-meet-transition-fast);
+	--ov-meet-button-font-weight: var(--ov-meet-font-weight-medium);
+
+	// Forms
+	--ov-meet-input-border-radius: var(--ov-meet-radius-sm);
+	--ov-meet-input-padding: var(--ov-meet-spacing-md);
+	--ov-meet-input-border-color: var(--ov-meet-border-color);
+	--ov-meet-input-border-color-focus: var(--ov-meet-color-primary);
+}

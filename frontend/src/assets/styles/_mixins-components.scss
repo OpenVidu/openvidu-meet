@@ -1,0 +1,99 @@
+// Component Mixins - Specific mixins for UI components like cards, buttons, headers
+// This file contains mixins for specific component patterns
+
+// Mixin for consistent cards
+@mixin ov-card {
+	@include ov-theme-transition;
+	background: var(--ov-meet-card-background);
+	border-radius: var(--ov-meet-card-border-radius);
+	box-shadow: var(--ov-meet-card-shadow);
+	padding: var(--ov-meet-card-padding);
+	transition:
+		box-shadow var(--ov-meet-transition-normal),
+		background-color var(--ov-meet-transition-normal),
+		color var(--ov-meet-transition-normal);
+
+	&:hover {
+		box-shadow: var(--ov-meet-card-shadow-hover);
+	}
+}
+
+// Mixin for consistent buttons
+@mixin ov-button-base {
+	@include ov-theme-transition;
+	border-radius: var(--ov-meet-button-border-radius);
+	font-weight: var(--ov-meet-button-font-weight);
+	transition:
+		var(--ov-meet-button-transition),
+		background-color var(--ov-meet-transition-normal),
+		color var(--ov-meet-transition-normal);
+	padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
+}
+
+// Mixin for statistics and metrics
+@mixin ov-stat-card {
+	@include ov-card;
+	@include ov-hover-lift(-2px);
+
+	.stat-content {
+		.stat-number {
+			font-size: var(--ov-meet-font-size-hero);
+			font-weight: var(--ov-meet-font-weight-light);
+			line-height: var(--ov-meet-line-height-tight);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.stat-label {
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-secondary);
+		}
+
+		.stat-detail {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-hint);
+		}
+	}
+}
+
+// Mixin for page headers
+@mixin ov-get-started-header {
+	@include ov-page-header;
+
+	text-align: center;
+	margin-bottom: var(--ov-meet-spacing-lg);
+	h1 {
+		font-weight: var(--ov-meet-font-weight-light);
+	}
+}
+
+@mixin ov-page-header {
+	text-align: left;
+	margin-bottom: var(--ov-meet-spacing-md);
+
+	h1 {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-hero);
+		font-weight: var(--ov-meet-font-weight-regular);
+		color: var(--ov-meet-text-primary);
+		line-height: var(--ov-meet-line-height-tight);
+	}
+
+	.title {
+		display: flex;
+		margin: 0 0 var(--ov-meet-spacing-xs) 0;
+	}
+	.subtitle {
+		margin: 0 0 0 var(--ov-meet-spacing-sm);
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-lg);
+		line-height: var(--ov-meet-line-height-normal);
+	}
+	mat-icon {
+		margin: 0 var(--ov-meet-spacing-xs) 0 0;
+		align-self: center;
+		font-size: var(--ov-meet-icon-size-lg);
+		width: var(--ov-meet-icon-size-lg);
+		height: var(--ov-meet-icon-size-lg);
+	}
+}

@@ -1,0 +1,63 @@
+// Animations - Keyframes and animation utility classes
+// This file contains all animation-related definitions
+
+// Animation keyframes
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(-30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200px 0;
+	}
+	100% {
+		background-position: calc(200px + 100%) 0;
+	}
+}
+
+// Transition classes
+.fade-in {
+	animation: fadeIn 0.6s ease-out forwards;
+}
+
+.fade-in-delayed {
+	opacity: 0;
+	animation: fadeIn 0.8s ease-out 0.2s forwards;
+}
+
+.fade-in-delayed-more {
+	opacity: 0;
+	animation: fadeIn 1s ease-out 0.4s forwards;
+}
+
+.slide-in {
+	animation: slideIn 0.6s ease-out forwards;
+}

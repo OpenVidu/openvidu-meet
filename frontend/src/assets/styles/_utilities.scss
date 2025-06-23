@@ -1,0 +1,131 @@
+// Utility Classes - Helper classes for common styling patterns
+// This file contains reusable utility classes
+
+// === UTILITY CLASSES ===
+
+.ov-text-center {
+	text-align: center;
+}
+
+.ov-text-truncate {
+	@include ov-text-truncate;
+}
+
+.ov-flex-center {
+	@include ov-flex-center;
+}
+
+// Spacing classes
+.ov-mt-xs {
+	margin-top: var(--ov-meet-spacing-xs);
+}
+.ov-mt-sm {
+	margin-top: var(--ov-meet-spacing-sm);
+}
+.ov-mt-md {
+	margin-top: var(--ov-meet-spacing-md);
+}
+.ov-mt-lg {
+	margin-top: var(--ov-meet-spacing-lg);
+}
+.ov-mt-xl {
+	margin-top: var(--ov-meet-spacing-xl);
+}
+
+.ov-mb-xs {
+	margin-bottom: var(--ov-meet-spacing-xs);
+}
+.ov-mb-sm {
+	margin-bottom: var(--ov-meet-spacing-sm);
+}
+.ov-mb-md {
+	margin-bottom: var(--ov-meet-spacing-md);
+}
+.ov-mb-lg {
+	margin-bottom: var(--ov-meet-spacing-lg);
+}
+.ov-mb-xl {
+	margin-bottom: var(--ov-meet-spacing-xl);
+}
+
+.ov-mb-xxl {
+	margin-bottom: var(--ov-meet-spacing-xxl);
+}
+
+.ov-padding-none {
+	padding: 0;
+}
+.ov-padding-xs {
+	padding: var(--ov-meet-spacing-xs);
+}
+.ov-padding-sm {
+	padding: var(--ov-meet-spacing-sm);
+}
+.ov-padding-md {
+	padding: var(--ov-meet-spacing-md);
+}
+.ov-padding-lg {
+	padding: var(--ov-meet-spacing-lg);
+}
+.ov-padding-xl {
+	padding: var(--ov-meet-spacing-xl);
+}
+
+// === THEME CLASSES ===
+.ov-theme-transition {
+	@include ov-theme-transition;
+}
+
+// === CONCEPTUAL ICON CLASSES ===
+// Apply these classes directly to mat-icon elements for consistent conceptual colors
+.ov-room-icon {
+	color: var(--ov-meet-icon-rooms) !important;
+	@include ov-theme-transition;
+}
+
+.ov-recording-icon {
+	color: var(--ov-meet-icon-recordings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-settings-icon {
+	color: var(--ov-meet-icon-settings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-developer-icon {
+	color: var(--ov-meet-icon-developer) !important;
+	@include ov-theme-transition;
+}
+
+.ov-about-icon {
+	color: var(--ov-meet-icon-about) !important;
+	@include ov-theme-transition;
+}
+
+.ov-action-icon {
+	color: var(--ov-meet-icon-actions) !important;
+	@include ov-theme-transition;
+}
+
+.ov-surface {
+	background-color: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-on-surface);
+	@include ov-theme-transition;
+}
+
+.ov-background {
+	background-color: var(--ov-meet-background-color);
+	color: var(--ov-meet-text-on-background);
+	@include ov-theme-transition;
+}
+
+.ov-text-primary {
+	color: var(--ov-meet-text-primary);
+}
+.ov-text-secondary {
+	color: var(--ov-meet-text-secondary);
+}
+.ov-text-hint {
+	color: var(--ov-meet-text-hint);
+}
