@@ -33,8 +33,7 @@ describe('Recording API Security Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Start Recording Tests', () => {

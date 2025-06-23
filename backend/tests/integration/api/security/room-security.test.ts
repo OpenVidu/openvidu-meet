@@ -9,6 +9,7 @@ import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
+	disconnectFakeParticipants,
 	loginUser,
 	startTestServer,
 	updateRecordingAccessPreferencesInRoom
@@ -28,8 +29,8 @@ describe('Room API Security Tests', () => {
 	});
 
 	afterAll(async () => {
-		await deleteAllRooms();
-		await deleteAllRecordings();
+		await disconnectFakeParticipants();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Create Room Tests', () => {

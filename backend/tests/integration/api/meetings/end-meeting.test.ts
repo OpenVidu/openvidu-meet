@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/index.js';
+import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/index.js';
 import {
 	deleteAllRooms,
@@ -10,7 +11,6 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 
 describe('Meetings API Tests', () => {
 	let livekitService: LiveKitService;

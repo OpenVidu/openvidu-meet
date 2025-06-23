@@ -26,7 +26,7 @@ describe('Recordings API Tests', () => {
 	let context: TestContext | null = null;
 	let room: MeetRoom;
 
-	beforeAll(async () => {
+	beforeAll(() => {
 		startTestServer();
 	});
 
@@ -40,7 +40,7 @@ describe('Recordings API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await deleteAllRooms();
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 			context = null;
 		});
 

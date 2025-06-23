@@ -13,6 +13,7 @@ describe('Room API Tests', () => {
 		chatPreferences: { enabled: true },
 		virtualBackgroundPreferences: { enabled: true }
 	};
+
 	beforeAll(() => {
 		startTestServer();
 	});

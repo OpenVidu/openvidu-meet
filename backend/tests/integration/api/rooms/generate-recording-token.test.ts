@@ -23,8 +23,7 @@ describe('Room API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await deleteAllRecordings();
-		await deleteAllRooms();
+		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	describe('Generate Recording Token Tests', () => {

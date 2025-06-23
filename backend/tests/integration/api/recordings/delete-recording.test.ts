@@ -7,6 +7,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
+	disconnectFakeParticipants,
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
@@ -17,10 +18,11 @@ import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRecordings();
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 

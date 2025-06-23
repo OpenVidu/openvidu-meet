@@ -104,6 +104,7 @@ export interface StorageKeyBuilder {
 	 * Builds the key for global preferences storage.
 	 */
 	buildGlobalPreferencesKey(): string;
+
 	/**
 	 * Builds the key for a specific room.
 	 *
@@ -145,6 +146,13 @@ export interface StorageKeyBuilder {
 	buildAllMeetRecordingsKey(roomId?: string): string;
 
 	/**
+	 * Builds the key for access recording secrets.
+	 *
+	 * @param recordingId - The unique identifier of the recording
+	 */
+	buildAccessRecordingSecretsKey(recordingId: string): string;
+
+	/**
 	 * Builds the key for a specific user
 	 *
 	 * @param userId - The unique identifier of the user
@@ -155,6 +163,4 @@ export interface StorageKeyBuilder {
 	 * Builds Api Key
 	 */
 	buildApiKeysKey(): string;
-
-	buildAccessRecordingSecretsKey(recordingId: string): string;
 }
