@@ -96,6 +96,14 @@
 // Status badge
 .status-badge {
 	@extend .ov-status-badge;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	font-size: var(--ov-meet-font-size-xs);
+	width: fit-content;
+
+	.status-icon {
+		@include ov-icon(sm);
+	}
 }
 
 // Date information
@@ -110,6 +118,10 @@
 // Action buttons
 .action-buttons {
 	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
 }
 
 // Menu item styles

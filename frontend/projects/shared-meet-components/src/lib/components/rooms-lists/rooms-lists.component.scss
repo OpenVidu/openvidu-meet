@@ -9,7 +9,6 @@
 
 		::ng-deep .refresh-btn {
 			padding: var(--ov-meet-spacing-sm);
-
 		}
 	}
 }
@@ -196,6 +195,10 @@
 
 .action-buttons {
 	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
 
 	.mat-mdc-icon-button {
 		&.primary-action {
