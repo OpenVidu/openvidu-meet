@@ -1,220 +1,65 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
-// Loading Container Styles
+// Use page loading utility
 .loading-container {
+	@extend .ov-page-loading;
 	min-height: 60vh;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	animation: fadeIn 0.5s ease-out;
 
 	@include ov-tablet-down {
-		padding: var(--ov-meet-spacing-md);
 		min-height: 50vh;
 	}
 
 	@include ov-mobile-down {
-		padding: var(--ov-meet-spacing-lg);
 		min-height: 40vh;
 	}
-}
 
-.loading-content {
-	text-align: center;
-	max-width: 600px;
-	width: 100%;
-
-	.loading-header {
-		margin-bottom: var(--ov-meet-spacing-xxl);
-
-		.loading-title {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: var(--ov-meet-spacing-md);
-			margin-bottom: var(--ov-meet-spacing-md);
-
-			.loading-icon {
-				@include ov-icon(xl);
-				color: var(--ov-meet-icon-recordings);
-				animation: pulse 2s infinite;
-			}
-
-			h1 {
-				font-size: var(--ov-meet-font-size-xxl);
-				font-weight: var(--ov-meet-font-weight-semibold);
-				color: var(--ov-meet-text-primary);
-				margin: 0;
-				animation: fadeIn 1s ease-out 0.3s both;
-
-				@include ov-mobile-down {
-					font-size: var(--ov-meet-font-size-xl);
-				}
-			}
-		}
-
-		.loading-subtitle {
-			font-size: var(--ov-meet-font-size-md);
-			color: var(--ov-meet-text-secondary);
-			margin: 0;
-			animation: fadeIn 1s ease-out 0.5s both;
-		}
-	}
-
-	.loading-spinner-container {
-		margin-bottom: var(--ov-meet-spacing-xxl);
-
-		mat-spinner {
-			margin: 0 auto;
-
-			::ng-deep {
-				circle {
-					stroke: var(--ov-meet-color-primary);
-				}
-			}
+	.loading-content {
+		.loading-header .loading-title .loading-icon {
+			color: var(--ov-meet-icon-recordings);
 		}
 	}
 }
 
+// Use page container utility
 .recordings-container {
-	@include ov-tablet-down {
-		padding: var(--ov-meet-spacing-md);
-	}
-
-	@include ov-mobile-down {
-		padding: var(--ov-meet-spacing-lg);
-	}
-
-	.recordings-header {
-		@include ov-page-header;
-	}
+	@extend .ov-page-container;
 }
 
 .recordings-content {
-	display: flex;
-	flex-direction: column;
+	@extend .ov-page-content;
 }
 
-// Action Bar Styling
+// Use table page action utilities
 .recordings-actions {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: var(--ov-meet-spacing-md);
+	@extend .ov-table-page-actions;
 	margin-bottom: var(--ov-meet-spacing-lg);
 
-	@include ov-mobile-down {
-		flex-direction: column;
-		align-items: stretch;
-		gap: var(--ov-meet-spacing-sm);
-	}
-
-	.actions-left,
-	.actions-right {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-md);
-
-		@include ov-mobile-down {
-			justify-content: center;
-		}
-	}
-
-	.refresh-btn {
-		@include ov-theme-transition;
-		border-radius: var(--ov-meet-radius-circle);
-
-		&:hover:not([disabled]) {
-			background-color: var(--ov-meet-surface-hover);
-		}
-
-		&[disabled] {
-			opacity: var(--ov-meet-disabled-opacity);
-		}
-
-		mat-icon {
-			@include ov-icon(md);
-		}
-	}
-
 	.recordings-stats {
-		.stats-text {
-			font-size: var(--ov-meet-font-size-sm);
-			color: var(--ov-meet-text-secondary);
-			font-weight: var(--ov-meet-font-weight-medium);
-		}
+		@extend .ov-stats-display;
 	}
 }
 
-// Table Container
+// Use table page container utility
 .recordings-table-container {
-	@include ov-card;
-	padding: 0;
-	overflow: hidden;
-	position: relative;
-
-	.loading-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(var(--ov-meet-surface-color), 0.8);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 10;
-		backdrop-filter: blur(2px);
-		animation: fadeIn 0.3s ease-out;
-	}
+	@extend .ov-table-page-container;
 }
 
-// Load More Section
+// Use load more utility
 .load-more-section {
-	display: flex;
-	justify-content: center;
-	margin-top: var(--ov-meet-spacing-lg);
-	padding-top: var(--ov-meet-spacing-lg);
-	border-top: 1px solid var(--ov-meet-border-color-light);
-
-	button {
-		@include ov-button-base;
-
-		mat-icon {
-			@include ov-icon(md);
-			margin-right: var(--ov-meet-spacing-sm);
-		}
-	}
+	@extend .ov-load-more-section;
 }
 
-// Responsive Design
-@include ov-tablet-down {
-	.recordings-actions {
-		.actions-left,
-		.actions-right {
-			width: 100%;
-		}
-
-		.recordings-stats {
-			text-align: center;
-		}
-	}
-}
-
-// Snackbar styles
+// Use snackbar utilities in global styles
 :host ::ng-deep {
 	.success-snackbar {
-		background-color: var(--ov-meet-color-success);
-		color: white;
+		@extend .ov-snackbar-success;
 	}
 
 	.error-snackbar {
-		background-color: var(--ov-meet-color-error);
-		color: white;
+		@extend .ov-snackbar-error;
 	}
 
 	.warning-snackbar {
-		background-color: var(--ov-meet-color-warning);
-		color: white;
+		@extend .ov-snackbar-warning;
 	}
 }

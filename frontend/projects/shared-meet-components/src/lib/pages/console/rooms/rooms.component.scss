@@ -1,118 +1,27 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
-// Loading Container Styles
+// Use page loading utility
 .loading-container {
-	// @include ov-container;
-	min-height: 60vh;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	animation: fadeIn 0.5s ease-out;
+	@extend .ov-page-loading;
 
-	@include ov-tablet-down {
-		padding: var(--ov-meet-spacing-md);
-		min-height: 50vh;
-	}
-
-	@include ov-mobile-down {
-		padding: var(--ov-meet-spacing-lg);
-		min-height: 40vh;
+	.loading-content .loading-header .loading-title .loading-icon {
+		color: var(--ov-meet-icon-rooms);
 	}
 }
 
-.loading-content {
-	text-align: center;
-	max-width: 600px;
-	width: 100%;
-
-	.loading-header {
-		margin-bottom: var(--ov-meet-spacing-xxl);
-
-		.loading-title {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: var(--ov-meet-spacing-md);
-			margin-bottom: var(--ov-meet-spacing-md);
-
-			.loading-icon {
-				@include ov-icon(xl);
-				color: var(--ov-meet-icon-rooms);
-				animation: pulse 2s ease-in-out infinite;
-			}
-
-			h1 {
-				margin: 0;
-				color: var(--ov-meet-text-primary);
-			}
-		}
-
-		.loading-subtitle {
-			font-size: var(--ov-meet-font-size-md);
-			color: var(--ov-meet-text-secondary);
-			margin: 0;
-			animation: fadeIn 1s ease-out 0.5s both;
-		}
-	}
-
-	.loading-spinner-container {
-		margin-bottom: var(--ov-meet-spacing-xxl);
-
-		mat-spinner {
-			margin: 0 auto;
-
-			::ng-deep {
-				.mdc-circular-progress__determinate-circle,
-				.mdc-circular-progress__indeterminate-circle-graphic {
-					stroke: var(--ov-meet-color-primary);
-				}
-			}
-		}
-	}
-}
-
+// Use page container utility
 .rooms-container {
-	@include ov-tablet-down {
-		padding: var(--ov-meet-spacing-md);
-	}
-
-	@include ov-mobile-down {
-		padding: var(--ov-meet-spacing-lg);
-	}
-
-	.rooms-header {
-		@include ov-page-header;
-	}
+	@extend .ov-page-container;
 }
 
+// Use page content utility
 .rooms-content {
-	display: flex;
-	flex-direction: column;
+	@extend .ov-page-content;
 }
 
-// Action Bar Styling
+// Use table page actions utility
 .rooms-actions {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: var(--ov-meet-spacing-md);
-
-	@include ov-mobile-down {
-		flex-direction: column;
-		align-items: stretch;
-		gap: var(--ov-meet-spacing-sm);
-	}
-
-	.actions-left,
-	.actions-right {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-md);
-
-		@include ov-mobile-down {
-			justify-content: center;
-		}
-	}
+	@extend .ov-table-page-actions;
 
 	.create-room-btn {
 		@include ov-button-base;
@@ -122,90 +31,23 @@
 			margin-right: var(--ov-meet-spacing-sm);
 		}
 	}
-
-	.refresh-btn {
-		@include ov-theme-transition;
-		border-radius: var(--ov-meet-radius-circle);
-
-		&:hover:not([disabled]) {
-			background-color: var(--ov-meet-surface-hover);
-		}
-
-		&[disabled] {
-			opacity: var(--ov-meet-disabled-opacity);
-		}
-
-		mat-icon {
-			@include ov-icon(md);
-		}
-	}
 }
 
-// Search Bar Styling
+// Use search field utility
 .search-bar {
 	.search-field {
-		width: 100%;
+		@extend .ov-search-field;
 		min-width: 400px;
 		max-width: 500px;
 	}
 }
 
-// Table Container
+// Use table page container utility
 .rooms-table-container {
-	@include ov-card;
-	padding: 0;
-	overflow: hidden;
-	position: relative;
-
-	.loading-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(var(--ov-meet-surface-color), 0.8);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 10;
-		backdrop-filter: blur(2px);
-		animation: fadeIn 0.3s ease-out;
-	}
-
-	.no-results-message {
-		text-align: center;
-		padding: var(--ov-meet-spacing-xl);
-		color: var(--ov-meet-text-secondary);
-
-		.no-results-icon {
-			@include ov-icon(lg);
-			color: var(--ov-meet-text-hint);
-			margin-bottom: var(--ov-meet-spacing-md);
-			display: block;
-		}
-
-		h4 {
-			font-size: var(--ov-meet-font-size-lg);
-			font-weight: var(--ov-meet-font-weight-medium);
-			color: var(--ov-meet-text-primary);
-			margin: 0 0 var(--ov-meet-spacing-sm) 0;
-		}
-
-		p {
-			font-size: var(--ov-meet-font-size-sm);
-			margin: 0 0 var(--ov-meet-spacing-md) 0;
-		}
-
-		button {
-			mat-icon {
-				@include ov-icon(sm);
-				margin-right: var(--ov-meet-spacing-xs);
-			}
-		}
-	}
+	@extend .ov-table-page-container;
 }
 
-// Responsive Table Display
+// Responsive table utilities
 .table-wrapper {
 	&.desktop-view {
 		display: block;
@@ -214,366 +56,146 @@
 			display: none;
 		}
 	}
-}
 
-.mobile-view {
-	display: none;
+	&.mobile-view {
+		display: none;
 
-	@include ov-tablet-down {
-		display: block;
+		@include ov-tablet-down {
+			display: block;
+		}
 	}
 }
 
-// Table Styling
+// Use data table utility
 .rooms-table {
-	width: 100%;
-	background-color: transparent;
+	@extend .ov-data-table;
 
-	// Header Styling
-	.mat-mdc-header-row {
-		background-color: var(--ov-meet-surface-variant);
-		border-bottom: 2px solid var(--ov-meet-border-color);
-		height: 56px;
+	.mat-mdc-header-cell {
+		&.room-header {
+			@extend .primary-header;
+		}
 
-		.mat-mdc-header-cell {
-			color: var(--ov-meet-text-primary);
-			font-weight: var(--ov-meet-font-weight-semibold);
-			font-size: var(--ov-meet-font-size-sm);
-			padding: var(--ov-meet-spacing-md);
-			border-bottom: none;
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			text-align: center;
-
-			.header-content {
-				display: flex;
-				align-items: center;
-				gap: var(--ov-meet-spacing-xs);
-			}
-
-			.header-icon {
-				@include ov-icon(sm);
-				vertical-align: middle;
-
-				&.ov-room-icon {
-					color: var(--ov-meet-icon-rooms);
-				}
-			}
-
-			&.room-name-header {
-				min-width: 200px;
-			}
-
-			&.creation-date-header {
-				min-width: 150px;
-			}
-
-			&.status-header {
-				min-width: 140px;
-			}
-
-			&.auto-deletion-header {
-				min-width: 160px;
-			}
-
-			&.actions-header {
-				text-align: center;
-				min-width: 150px;
-			}
-
-			// Sort header styles
-			&.mat-sort-header-sorted {
-				color: var(--ov-meet-color-primary);
-			}
+		&.actions-header {
+			@extend .actions-header;
 		}
 	}
 
-	// Row Styling
-	.mat-mdc-row {
-		@include ov-theme-transition;
-		border-bottom: 1px solid var(--ov-meet-border-color-light);
-		height: 72px;
-
-		&.clickable-row {
-			cursor: pointer;
+	.mat-mdc-cell {
+		&.room-cell {
+			@extend .primary-cell;
 		}
+
+		&.actions-cell {
+			@extend .actions-cell;
+		}
+	}
+}
+
+// Use mobile card utilities
+.mobile-rooms-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+
+	.room-mobile-card {
+		@include ov-card;
+		@include ov-theme-transition;
 
 		&:hover {
-			background-color: var(--ov-meet-surface-hover);
+			@include ov-hover-lift(-2px);
 		}
 
-		&.marked-for-deletion {
-			background-color: rgba(244, 67, 54, 0.05);
+		.room-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: var(--ov-meet-spacing-sm);
 
-			&:hover {
-				background-color: rgba(244, 67, 54, 0.1);
+			.room-title {
+				@extend .primary-text;
+			}
+
+			.room-status {
+				@extend .ov-status-badge;
 			}
 		}
 
-		&:last-child {
-			border-bottom: none;
-		}
-
-		.mat-mdc-cell {
-			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
-			border-bottom: none;
-			vertical-align: middle;
-		}
-	}
-}
-
-// Room Name Column
-.room-name-cell {
-	.room-name-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-xs);
-
-		.room-id {
-			font-weight: var(--ov-meet-font-weight-semibold);
-			color: var(--ov-meet-text-primary);
-			font-size: var(--ov-meet-font-size-sm);
-		}
-	}
-}
-
-// Creation Date Column
-.creation-date-cell {
-	.date-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-xs);
-
-		.date-primary {
-			font-weight: var(--ov-meet-font-weight-medium);
-			color: var(--ov-meet-text-primary);
-			font-size: var(--ov-meet-font-size-sm);
-		}
-
-		.date-secondary {
-			font-size: var(--ov-meet-font-size-xs);
-			color: var(--ov-meet-text-secondary);
-		}
-	}
-}
-
-// Status Column
-.status-cell {
-	.status-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-xs);
-	}
-
-	.status-badge {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-xs);
-		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-		border-radius: var(--ov-meet-radius-sm);
-		font-size: var(--ov-meet-font-size-xs);
-		font-weight: var(--ov-meet-font-weight-medium);
-		width: fit-content;
-
-		.status-icon {
-			@include ov-icon(sm);
-		}
-
-		&.status-active {
-			background-color: rgba(76, 175, 80, 0.1);
-			color: var(--ov-meet-color-success);
-			border: 1px solid rgba(76, 175, 80, 0.3);
-
-			.status-icon {
-				color: var(--ov-meet-color-success);
-			}
-		}
-
-		&.status-deletion {
-			background-color: rgba(244, 67, 54, 0.1);
-			color: var(--ov-meet-color-error);
-			border: 1px solid rgba(244, 67, 54, 0.3);
-
-			.status-icon {
-				color: var(--ov-meet-color-error);
-			}
-		}
-	}
-
-	.deletion-warning {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-xs);
-		font-size: var(--ov-meet-font-size-xs);
-		color: var(--ov-meet-color-error);
-		margin-top: var(--ov-meet-spacing-xs);
-
-		.warning-icon {
-			@include ov-icon(xs);
-			color: var(--ov-meet-color-error);
-		}
-	}
-}
-
-// Auto Deletion Column
-.auto-deletion-cell {
-	.auto-deletion-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-xs);
-	}
-
-	.auto-deletion-info {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-xs);
-
-		.deletion-date {
+		.room-card-content {
 			display: flex;
 			flex-direction: column;
 			gap: var(--ov-meet-spacing-xs);
 
-			.date-primary {
-				font-weight: var(--ov-meet-font-weight-medium);
-				color: var(--ov-meet-text-primary);
+			.room-detail {
+				display: flex;
+				justify-content: space-between;
 				font-size: var(--ov-meet-font-size-sm);
-			}
 
-			.date-secondary {
-				font-size: var(--ov-meet-font-size-xs);
-				color: var(--ov-meet-text-secondary);
-			}
-		}
+				.detail-label {
+					color: var(--ov-meet-text-secondary);
+				}
 
-		.deletion-badge {
-			display: flex;
-			align-items: center;
-			gap: var(--ov-meet-spacing-xs);
-			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-			border-radius: var(--ov-meet-radius-sm);
-
-			font-size: var(--ov-meet-font-size-xs);
-			font-weight: var(--ov-meet-font-weight-medium);
-			width: fit-content;
-			background-color: rgba(255, 152, 0, 0.1);
-			color: var(--ov-meet-color-warning);
-			border: 1px solid rgba(255, 152, 0, 0.3);
-
-			.deletion-icon {
-				@include ov-icon(sm);
-				color: var(--ov-meet-color-warning);
+				.detail-value {
+					color: var(--ov-meet-text-primary);
+				}
 			}
 		}
-	}
 
-	.no-auto-deletion {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-xs);
-		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-		border-radius: var(--ov-meet-radius-md);
-		font-size: var(--ov-meet-font-size-xs);
-		font-weight: var(--ov-meet-font-weight-medium);
-		width: fit-content;
-		background-color: rgba(158, 158, 158, 0.1);
-		color: var(--ov-meet-text-hint);
-		border: 1px solid rgba(158, 158, 158, 0.3);
-
-		.no-deletion-icon {
-			@include ov-icon(sm);
-			color: var(--ov-meet-text-hint);
+		.room-card-actions {
+			@extend .ov-action-buttons;
+			margin-top: var(--ov-meet-spacing-md);
+			padding-top: var(--ov-meet-spacing-md);
+			border-top: 1px solid var(--ov-meet-border-color-light);
 		}
 	}
 }
 
-// Actions Column
-.actions-cell {
-	.actions-content {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--ov-meet-spacing-xs);
-	}
+// Use info display and status utilities
+.room-info {
+	@extend .ov-info-display;
+}
 
-	.action-btn {
-		@include ov-theme-transition;
-		border-radius: var(--ov-meet-radius-circle);
-		width: 40px;
-		height: 40px;
-		min-width: 40px;
+.status-badge {
+	@extend .ov-status-badge;
+}
 
-		mat-icon {
-			@include ov-icon(sm);
-		}
+.participant-count {
+	@extend .ov-date-info;
+}
 
+.creation-date {
+	@extend .ov-date-info;
+}
+
+// Use action buttons utility
+.action-buttons {
+	@extend .ov-action-buttons;
+
+	.mat-mdc-icon-button {
 		&.primary-action {
 			color: var(--ov-meet-color-primary);
 		}
+
 		&.room-preferences-btn {
+			color: var(--ov-meet-icon-settings);
+		}
+
+		&.copy-link-btn {
 			color: var(--ov-meet-text-secondary);
 		}
-	}
-}
 
-// Actions Menu
-.actions-menu {
-	.mat-mdc-menu-item {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-sm);
-		font-size: var(--ov-meet-font-size-sm);
-	}
-}
-// Delete Action
-.delete-action {
-	color: var(--ov-meet-color-error);
-
-	mat-icon {
-		color: var(--ov-meet-color-error);
-	}
-}
-
-// Table Paginator
-.table-paginator {
-	border-top: 1px solid var(--ov-meet-border-color-light);
-	background: var(--ov-meet-surface-variant);
-
-	::ng-deep {
-		.mat-mdc-paginator-range-label {
-			color: var(--ov-meet-text-secondary);
-			font-size: var(--ov-meet-font-size-sm);
+		&.view-recordings-btn {
+			color: var(--ov-meet-icon-recordings);
 		}
 
-		.mat-mdc-icon-button {
-			color: var(--ov-meet-text-primary);
-
-			&:hover {
-				background-color: var(--ov-meet-surface-hover);
-			}
-
-			&[disabled] {
-				color: var(--ov-meet-text-disabled);
-			}
-		}
-
-		.mat-mdc-select {
-			color: var(--ov-meet-text-primary);
-			font-size: var(--ov-meet-font-size-sm);
+		&.delete-room-btn {
+			color: var(--ov-meet-color-error);
 		}
 	}
 }
 
-// Empty State Styling
+// Use empty state utility
 .no-rooms-state {
-	@include ov-card;
-	text-align: center;
-	padding: var(--ov-meet-spacing-xxl);
-	margin: var(--ov-meet-spacing-xl) 0;
-
-	.empty-content {
-		max-width: 500px;
-		margin: 0 auto;
-	}
+	@extend .ov-empty-state;
 
 	.empty-icon {
 		@include ov-icon(xl);
@@ -582,24 +204,13 @@
 		display: block;
 	}
 
-	h3 {
-		font-size: var(--ov-meet-font-size-xl);
-		font-weight: var(--ov-meet-font-weight-medium);
-		color: var(--ov-meet-text-primary);
-		margin: 0 0 var(--ov-meet-spacing-md) 0;
-	}
-
-	p {
-		font-size: var(--ov-meet-font-size-md);
-		color: var(--ov-meet-text-secondary);
-		margin: 0 0 var(--ov-meet-spacing-xl) 0;
-		line-height: var(--ov-meet-line-height-normal);
-	}
-
 	.getting-started-actions {
-		margin-bottom: var(--ov-meet-spacing-xl);
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+		align-items: center;
 
-		.create-first-room-btn {
+		button {
 			@include ov-button-base;
 
 			mat-icon {
@@ -608,104 +219,11 @@
 			}
 		}
 	}
-
-	.features-preview {
-		display: flex;
-		justify-content: center;
-		gap: var(--ov-meet-spacing-lg);
-		flex-wrap: wrap;
-		margin-top: var(--ov-meet-spacing-lg);
-
-		.feature-item {
-			display: flex;
-			align-items: center;
-			gap: var(--ov-meet-spacing-xs);
-			font-size: var(--ov-meet-font-size-sm);
-			color: var(--ov-meet-text-secondary);
-
-			.feature-icon {
-				@include ov-icon(sm);
-
-				&.ov-recording-icon {
-					color: var(--ov-meet-icon-recordings);
-				}
-
-				&.ov-settings-icon {
-					color: var(--ov-meet-icon-settings);
-				}
-			}
-		}
-
-		@include ov-mobile-down {
-			flex-direction: column;
-			gap: var(--ov-meet-spacing-sm);
-		}
-	}
 }
 
-// Responsive Design
-@include ov-tablet-down {
-	.rooms-actions {
-		.actions-left,
-		.actions-right {
-			flex-direction: column;
-			gap: var(--ov-meet-spacing-sm);
-		}
-
-		.rooms-stats {
-			order: -1;
-		}
-	}
-
-	.search-bar {
-		.search-field {
-			max-width: none;
-		}
-	}
-
-	// Desktop table adjustments for very small desktop screens
-	.table-wrapper.desktop-view {
-		.rooms-table {
-			.mat-mdc-header-cell,
-			.mat-mdc-cell {
-				padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-			}
-
-			.mat-mdc-header-cell {
-				font-size: var(--ov-meet-font-size-xs);
-			}
-		}
-	}
-}
-
-@include ov-mobile-down {
-	// Mobile specific adjustments for table paginator
-	.table-paginator {
-		::ng-deep {
-			.mat-mdc-paginator-container {
-				flex-wrap: wrap;
-				gap: var(--ov-meet-spacing-sm);
-			}
-
-			.mat-mdc-paginator-page-size {
-				margin-bottom: var(--ov-meet-spacing-sm);
-			}
-		}
-	}
-
-	.no-rooms-state {
-		padding: var(--ov-meet-spacing-xl) var(--ov-meet-spacing-lg);
-
-		.empty-icon {
-			@include ov-icon(lg);
-		}
-
-		h3 {
-			font-size: var(--ov-meet-font-size-lg);
-		}
-
-		p {
-			font-size: var(--ov-meet-font-size-sm);
-		}
-	}
+// Use focus utilities
+.mat-mdc-checkbox,
+.mat-mdc-icon-button,
+.mat-mdc-button {
+	@extend .ov-focus-visible;
 }
