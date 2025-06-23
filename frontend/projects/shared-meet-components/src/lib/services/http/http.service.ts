@@ -174,18 +174,30 @@ export class HttpService {
 	}
 
 	protected getRequest<T>(path: string): Promise<T> {
-		return lastValueFrom(this.http.get<T>(path));
+		return lastValueFrom(this.http.get<T>(path, { observe: 'response' })).then((response) => ({
+			...(response.body as T),
+			statusCode: response.status
+		}));
 	}
 
 	protected postRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.post<T>(path, body));
+		return lastValueFrom(this.http.post<T>(path, body, { observe: 'response' })).then((response) => ({
+			...(response.body as T),
+			statusCode: response.status
+		}));
 	}
 
 	protected putRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.put<T>(path, body));
+		return lastValueFrom(this.http.put<T>(path, body, { observe: 'response' })).then((response) => ({
+			...(response.body as T),
+			statusCode: response.status
+		}));
 	}
 
 	protected deleteRequest<T>(path: string): Promise<T> {
-		return lastValueFrom(this.http.delete<T>(path));
+		return lastValueFrom(this.http.delete<T>(path, { observe: 'response' })).then((response) => ({
+			...(response.body as T),
+			statusCode: response.status
+		}));
 	}
 }
