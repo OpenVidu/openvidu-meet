@@ -336,10 +336,8 @@
 	font-size: var(--ov-meet-font-size-sm);
 	font-weight: var(--ov-meet-font-weight-medium);
 
-	.mat-icon {
-		font-size: 18px;
-		width: 18px;
-		height: 18px;
+	mat-icon {
+		@include ov-icon(sm);
 	}
 
 	.status-label {
