@@ -41,7 +41,7 @@ app.post('/webhook', (req, res) => {
 	handleWebhook(req, res, io);
 });
 
-const PORT = configService.port;
+const PORT = configService.serverPort;
 server.listen(PORT, () => {
 	console.log('-----------------------------------------');
 	console.log(`Server running on port ${PORT}`);
@@ -52,6 +52,6 @@ server.listen(PORT, () => {
 
 	console.log('Environment variables:');
 	console.log(`OPENVIDU_MEET_URL: ${process.env.OPENVIDU_MEET_URL}`);
-	console.log(`API_KEY: ${process.env.API_KEY} `);
+	console.log(`MEET_API_KEY: ${process.env.MEET_API_KEY} `);
 	console.log(`PORT: ${process.env.PORT}`);
 });

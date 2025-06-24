@@ -12,7 +12,7 @@ export const getAllRecordings = async (): Promise<{
 		pagination: any;
 		recordings: MeetRecordingInfo[];
 	}>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 	});
 
 	while (pagination.isTruncated) {
@@ -21,7 +21,7 @@ export const getAllRecordings = async (): Promise<{
 			pagination: any;
 			recordings: MeetRecordingInfo[];
 		}>(nextPageUrl, {
-			headers: { 'x-api-key': configService.apiKey },
+			headers: { 'x-api-key': configService.meetApiKey },
 		});
 		recordings.push(...nextPageResult.recordings);
 		pagination = nextPageResult.pagination;
@@ -36,6 +36,6 @@ export const deleteAllRecordings = async (
 		configService.meetApiUrl
 	}/recordings?recordingIds=${recordingIds.join(',')}`;
 	await del<void>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 	});
 };

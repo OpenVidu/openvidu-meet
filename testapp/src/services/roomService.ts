@@ -9,7 +9,7 @@ export async function getAllRooms(): Promise<{
 }> {
 	const url = `${configService.meetApiUrl}/rooms`;
 	return get<{ pagination: any; rooms: MeetRoom[] }>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 	});
 }
 
@@ -20,7 +20,7 @@ export async function createRoom(roomData: MeetRoomOptions): Promise<MeetRoom> {
 		roomData.autoDeletionDate = new Date(Date.now() + 60 * 61 * 1000).getTime();
 	console.log('Creating room with options:', roomData);
 	return post<MeetRoom>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 		body: roomData,
 	});
 }
@@ -28,7 +28,7 @@ export async function createRoom(roomData: MeetRoomOptions): Promise<MeetRoom> {
 export async function deleteRoom(roomId: string): Promise<void> {
 	const url = `${configService.meetApiUrl}/rooms/${roomId}`;
 	await del<void>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 	});
 }
 
@@ -36,6 +36,6 @@ export async function deleteAllRooms(roomIds: string[]): Promise<void> {
 	const url = `${configService.meetApiUrl}/rooms?roomIds=${roomIds.join(',')}`;
 
 	await del<void>(url, {
-		headers: { 'x-api-key': configService.apiKey },
+		headers: { 'x-api-key': configService.meetApiKey },
 	});
 }
