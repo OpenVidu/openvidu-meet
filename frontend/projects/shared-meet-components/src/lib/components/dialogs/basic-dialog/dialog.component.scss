@@ -1,15 +1,167 @@
+// Import design system utilities
+@import '../../../../../../../src/assets/styles/design-tokens';
+
+// === DIALOG CONTAINER ===
+::ng-deep {
+	.mat-mdc-dialog-container {
+		border-radius: var(--ov-meet-card-border-radius) !important;
+		overflow: hidden;
+	}
+
+	.mat-mdc-dialog-surface {
+		border-radius: var(--ov-meet-card-border-radius) !important;
+	}
+}
+
+:host {
+	.dialog-container {
+		@include ov-theme-transition;
+		display: block;
+		animation: dialogFadeIn 0.2s ease-out;
+	}
+}
+
+// === DIALOG ANIMATION ===
+@keyframes dialogFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95) translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+// === DIALOG TITLE ===
 .dialog-title {
+	@extend .ov-text-center;
+	@include ov-theme-transition;
+	color: var(--ov-meet-text-primary);
+	font-size: var(--ov-meet-font-size-xl) !important;
+	font-weight: var(--ov-meet-font-weight-medium);
+	margin-bottom: var(--ov-meet-spacing-md);
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg) 0;
+	line-height: var(--ov-meet-line-height-tight);
+}
+
+// === DIALOG CONTENT ===
+::ng-deep mat-dialog-content {
+	@include ov-theme-transition;
+	color: var(--ov-meet-text-secondary);
+	font-size: var(--ov-meet-font-size-md) !important;
+	line-height: var(--ov-meet-line-height-relaxed);
+	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
 	text-align: center;
-}
-button {
-	margin-right: 8px;
+	min-height: auto;
 }
 
+// === DIALOG ACTIONS ===
 .dialog-action {
-	margin: auto;
+	@include ov-flex-center;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-lg);
+	margin: 0;
+
+	// Button styling
+	button {
+		@include ov-button-base;
+		@include ov-theme-transition;
+		min-width: 80px;
+		margin: 0; // Reset default margin
+
+		// Cancel/Secondary button
+		&[mat-button] {
+			color: var(--ov-meet-text-secondary);
+			border: 1px solid var(--ov-meet-border-color);
+			background: transparent;
+
+			&:hover {
+				@include ov-hover-lift(-1px);
+
+				// background: var(--ov-meet-surface-hover);
+				// color: var(--ov-meet-text-primary);
+			}
+
+			// &:focus {
+			// 	outline: 2px solid var(--ov-meet-color-primary);
+			// 	outline-offset: 2px;
+			// }
+		}
+
+		// Confirm/Primary button
+		&[mat-flat-button] {
+			// background: var(--ov-meet-color-primary);
+			color: var(--ov-meet-text-on-primary);
+
+			&:hover {
+				@include ov-hover-lift(-1px);
+				// background: var(--ov-meet-color-primary-dark);
+				// box-shadow: var(--ov-meet-shadow-hover);
+			}
+
+			// &:focus {
+			// 	outline: 2px solid var(--ov-meet-color-primary-light);
+			// 	outline-offset: 2px;
+			// }
+
+			&:active {
+				transform: translateY(0);
+			}
+		}
+	}
 }
 
-.confirm-button {
-	background-color: #007bff;
-	color: white;
+// === RESPONSIVE DESIGN ===
+@include ov-mobile-down {
+	.dialog-title {
+		font-size: var(--ov-meet-font-size-lg);
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-md) 0;
+	}
+
+	mat-dialog-content {
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		font-size: var(--ov-meet-font-size-sm);
+	}
+
+	.dialog-action {
+		padding: var(--ov-meet-spacing-md);
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+
+		button {
+			width: 100%;
+			min-width: auto;
+		}
+	}
+}
+
+// === ACCESSIBILITY ENHANCEMENTS ===
+@media (prefers-reduced-motion: reduce) {
+	:host {
+		animation: none;
+	}
+
+	@keyframes dialogFadeIn {
+		from,
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+}
+
+// === HIGH CONTRAST MODE ===
+@media (prefers-contrast: high) {
+	.dialog-title {
+		font-weight: var(--ov-meet-font-weight-bold);
+	}
+
+	.dialog-action button {
+		border-width: 2px;
+
+		&[mat-button] {
+			border-color: currentColor;
+		}
+	}
 }

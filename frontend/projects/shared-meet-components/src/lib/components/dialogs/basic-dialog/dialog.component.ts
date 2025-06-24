@@ -7,14 +7,16 @@ import type { DialogOptions } from '../../../models';
 	selector: 'ov-dialog',
 	standalone: true,
 	imports: [MatButtonModule, MatDialogActions, MatDialogContent],
-	template: ` <h2 mat-dialog-title class="dialog-title">{{ data.title }}</h2>
-		<mat-dialog-content> {{ data.message }} </mat-dialog-content>
+	template: ` <div class="dialog-container">
+		<h2 mat-dialog-title class="dialog-title ov-text-center">{{ data.title }}</h2>
+		<mat-dialog-content [innerHTML]="data.message"></mat-dialog-content>
 		<mat-dialog-actions class="dialog-action">
 			<button mat-button mat-dialog-close (click)="close('cancel')">{{ data.cancelText }}</button>
 			<button mat-flat-button mat-dialog-close cdkFocusInitial (click)="close('confirm')">
 				{{ data.confirmText }}
 			</button>
-		</mat-dialog-actions>`,
+		</mat-dialog-actions>
+	</div>`,
 	styleUrl: './dialog.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
