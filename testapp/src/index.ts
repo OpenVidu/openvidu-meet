@@ -49,4 +49,9 @@ server.listen(PORT, () => {
 	console.log('-----------------------------------------');
 	console.log('');
 	console.log(`Visit http://localhost:${PORT}/ to access the app`);
+
+	console.log('Environment variables:');
+	console.log(`OPENVIDU_MEET_URL: ${process.env.OPENVIDU_MEET_URL}`);
+	console.log(`API_KEY: ${process.env.API_KEY} `);
+	console.log(`PORT: ${process.env.PORT}`);
 });
