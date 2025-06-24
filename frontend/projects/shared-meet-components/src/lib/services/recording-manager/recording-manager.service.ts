@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ShareRecordingDialogComponent } from '@lib/components';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
+import { ActionService } from 'openvidu-components-angular';
 import { HttpService } from '../../services';
 
 @Injectable({
@@ -9,7 +12,11 @@ export class RecordingManagerService {
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
 	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 
-	constructor(private httpService: HttpService) {}
+	constructor(
+		private httpService: HttpService,
+		private actionService: ActionService,
+		protected dialog: MatDialog
+	) {}
 
 	/**
 	 * Starts recording for a room
@@ -143,5 +150,45 @@ export class RecordingManagerService {
 	async deleteRecording(recordingId: string): Promise<any> {
 		const path = `${this.RECORDINGS_API}/${recordingId}`;
 		return this.httpService.deleteRequest(path);
+	}
+
+	/**
+	 * Plays a recording by opening a dialog with the recording player
+	 *
+	 * @param recordingId - The ID of the recording to play
+	 * @param secret - Optional secret for accessing the recording
+	 */
+	playRecording(recordingId: string, secret?: string) {
+		const recordingUrl = this.getRecordingMediaUrl(recordingId, secret);
+		this.actionService.openRecordingPlayerDialog(recordingUrl);
+	}
+
+	/**
+	 * Downloads a recording by creating a link and triggering a click event
+	 *
+	 * @param recording - The recording information containing the ID and filename
+	 */
+	downloadRecording(recording: MeetRecordingInfo) {
+		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId);
+		const link = document.createElement('a');
+		link.href = recordingUrl;
+		link.download = recording.filename || 'recording.mp4';
+		link.click();
+	}
+
+	/**
+	 * Opens a dialog to share a recording
+	 *
+	 * @param recordingId - The ID of the recording to share
+	 * @param recordingUrl - Optional URL of the recording to share
+	 */
+	openShareRecordingDialog(recordingId: string, recordingUrl?: string) {
+		this.dialog.open(ShareRecordingDialogComponent, {
+			width: '400px',
+			data: {
+				recordingId,
+				recordingUrl
+			}
+		});
 	}
 }

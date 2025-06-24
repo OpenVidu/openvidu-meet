@@ -28,6 +28,7 @@ export class NotificationService {
 			this.spinnerRef = overlayRef.attach(new ComponentPortal(SpinnerComponent));
 		}
 	}
+
 	hideSpinner(): void {
 		if (this.spinnerRef) {
 			this.spinnerRef.detach();

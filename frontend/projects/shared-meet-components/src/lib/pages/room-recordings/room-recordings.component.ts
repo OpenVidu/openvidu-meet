@@ -2,12 +2,10 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
-import { ActionService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
-import { ShareRecordingDialogComponent } from '../../components';
+import { OpenViduComponentsUiModule } from 'openvidu-components-angular';
 import { ContextService, RecordingManagerService } from '../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '../../typings/ce';
 
@@ -37,9 +35,7 @@ export class RoomRecordingsComponent implements OnInit {
 	constructor(
 		protected contextService: ContextService,
 		protected recordingService: RecordingManagerService,
-		protected actionService: ActionService,
-		protected route: ActivatedRoute,
-		protected dialog: MatDialog
+		protected route: ActivatedRoute
 	) {}
 
 	async ngOnInit() {
@@ -66,30 +62,11 @@ export class RoomRecordingsComponent implements OnInit {
 	}
 
 	playRecording(recording: MeetRecordingInfo) {
-		const queryParamForAvoidCache = `?t=${new Date().getTime()}`;
-		let recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
-		recordingUrl += queryParamForAvoidCache;
-		this.actionService.openRecordingPlayerDialog(recordingUrl);
+		this.recordingService.playRecording(recording.recordingId);
 	}
 
 	downloadRecording(recording: MeetRecordingInfo) {
-		const queryParamForAvoidCache = `?t=${new Date().getTime()}`;
-		let recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
-		recordingUrl += queryParamForAvoidCache;
-
-		const link = document.createElement('a');
-		link.href = recordingUrl;
-		link.download = recording.filename || 'openvidu-recording.mp4';
-		link.dispatchEvent(
-			new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			})
-		);
-
-		// For Firefox it is necessary to delay revoking the ObjectURL
-		setTimeout(() => link.remove(), 100);
+		this.recordingService.downloadRecording(recording);
 	}
 
 	async deleteRecording(recording: MeetRecordingInfo) {
@@ -102,12 +79,7 @@ export class RoomRecordingsComponent implements OnInit {
 	}
 
 	openShareDialog(recording: MeetRecordingInfo) {
-		this.dialog.open(ShareRecordingDialogComponent, {
-			width: '400px',
-			data: {
-				recordingId: recording.recordingId
-			}
-		});
+		this.recordingService.openShareRecordingDialog(recording.recordingId);
 	}
 
 	private async loadRecordings() {

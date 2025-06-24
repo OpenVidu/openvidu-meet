@@ -1,12 +1,10 @@
-import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActionService, ILogger, LoggerService } from 'openvidu-components-angular';
+import { ILogger, LoggerService } from 'openvidu-components-angular';
 import {
 	RecordingListsComponent,
 	RecordingTableAction
@@ -43,10 +41,6 @@ export class RecordingsComponent implements OnInit {
 	constructor(
 		protected loggerService: LoggerService,
 		private recordingService: RecordingManagerService,
-		private actionService: ActionService,
-		private dialog: MatDialog,
-		private clipboard: Clipboard,
-
 		private notificationService: NotificationService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
@@ -135,16 +129,11 @@ export class RecordingsComponent implements OnInit {
 	}
 
 	private playRecording(recording: MeetRecordingInfo) {
-		const recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
-		this.actionService.openRecordingPlayerDialog(recordingUrl);
+		this.recordingService.playRecording(recording.recordingId);
 	}
 
 	private downloadRecording(recording: MeetRecordingInfo) {
-		const recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
-		const link = document.createElement('a');
-		link.href = recordingUrl;
-		link.download = recording.filename || 'recording.mp4';
-		link.click();
+		this.recordingService.downloadRecording(recording);
 	}
 
 	private copyLinkToClipboard(recording: MeetRecordingInfo) {
