@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
-import { ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
+import { ContextService, NavigationService, RecordingManagerService, SessionStorageService } from '../services';
 
 /**
  * Guard to validate the access to recordings.
@@ -10,7 +10,7 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {
-	const httpService = inject(HttpService);
+	const recordingService = inject(RecordingManagerService);
 	const contextService = inject(ContextService);
 	const navigationService = inject(NavigationService);
 	const sessionStorageService = inject(SessionStorageService);
@@ -21,7 +21,7 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 
 	try {
 		// Generate a token to access recordings in the room
-		const response = await httpService.generateRecordingToken(roomId, storageSecret || secret);
+		const response = await recordingService.generateRecordingToken(roomId, storageSecret || secret);
 		contextService.setRecordingPermissionsFromToken(response.token);
 
 		if (!contextService.canRetrieveRecordings()) {

@@ -1,14 +1,25 @@
 import { Injectable } from '@angular/core';
-import { MeetRoomPreferences, MeetRoom, MeetRoomOptions } from '../../typings/ce';
-import { HttpService, FeatureConfigurationService } from '../../services';
 import { LoggerService } from 'openvidu-components-angular';
+import { FeatureConfigurationService, HttpService } from '../../services';
+import {
+	MeetRoom,
+	MeetRoomFilters,
+	MeetRoomOptions,
+	MeetRoomPreferences,
+	MeetRoomRoleAndPermissions
+} from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class RoomService {
+	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
+	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
+	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
+
 	protected log;
-	protected roomPreferences: MeetRoomPreferences | undefined;
+	protected roomPreferences?: MeetRoomPreferences;
+
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
@@ -17,37 +28,90 @@ export class RoomService {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
 
-	async createRoom(): Promise<MeetRoom> {
-		// TODO: Improve expiration date
-		const options: MeetRoomOptions = {
-			roomIdPrefix: 'TestRoom-',
-			autoDeletionDate: Date.now() + 1000 * 60 * 60 // 1 hour from now
+	/**
+	 * Creates a new room with the specified options.
+	 *
+	 * @param options - The options for creating the room
+	 * @returns A promise that resolves to the created MeetRoom object
+	 */
+	async createRoom(options?: MeetRoomOptions): Promise<MeetRoom> {
+		return this.httpService.postRequest(this.ROOMS_API, options);
+	}
+
+	/**
+	 * Lists rooms with optional filters for pagination and fields.
+	 *
+	 * @param filters - Optional filters for pagination and fields
+	 * @return A promise that resolves to an object containing rooms and pagination info
+	 */
+	async listRooms(filters?: MeetRoomFilters): Promise<{
+		rooms: MeetRoom[];
+		pagination: {
+			isTruncated: boolean;
+			nextPageToken?: string;
+			maxItems: number;
 		};
-		this.log.d('Creating room', options);
-		return this.httpService.createRoom(options);
+	}> {
+		let path = this.ROOMS_API;
+
+		if (filters) {
+			const queryParams = new URLSearchParams();
+			if (filters.maxItems) {
+				queryParams.set('maxItems', filters.maxItems.toString());
+			}
+			if (filters.nextPageToken) {
+				queryParams.set('nextPageToken', filters.nextPageToken);
+			}
+			if (filters.fields) {
+				queryParams.set('fields', filters.fields);
+			}
+
+			path += `?${queryParams.toString()}`;
+		}
+
+		return this.httpService.getRequest(path);
 	}
 
-	async deleteRoom(roomId: string) {
-		return this.httpService.deleteRoom(roomId);
+	/**
+	 * Gets a room by its ID.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @return A promise that resolves to the MeetRoom object
+	 */
+	async getRoom(roomId: string): Promise<MeetRoom> {
+		let path = `${this.ROOMS_API}/${roomId}`;
+		return this.httpService.getRequest(path);
 	}
 
-	async listRooms() {
-		return this.httpService.listRooms();
+	/**
+	 * Deletes a room by its ID.
+	 *
+	 * @param roomId - The unique identifier of the room to be deleted
+	 * @return A promise that resolves when the room has been deleted
+	 */
+	async deleteRoom(roomId: string): Promise<any> {
+		const path = `${this.ROOMS_API}/${roomId}`;
+		return this.httpService.deleteRequest(path);
 	}
 
-	async getRoom(roomId: string) {
-		return this.httpService.getRoom(roomId);
-	}
-
+	/**
+	 * Retrieves the preferences for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @return A promise that resolves to the MeetRoomPreferences object
+	 */
 	async getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
 		this.log.d('Fetching room preferences for roomId:', roomId);
+
 		try {
-			const preferences = await this.httpService.getRoomPreferences(roomId);
+			const path = `${this.INTERNAL_ROOMS_API}/${roomId}/preferences`;
+			const preferences = await this.httpService.getRequest<MeetRoomPreferences>(path);
 
 			if (!preferences) {
 				this.log.w('Room preferences not found for roomId:', roomId);
 				throw new Error(`Preferences not found for roomId: ${roomId}`);
 			}
+
 			return preferences;
 		} catch (error) {
 			this.log.e('Error fetching room preferences', error);
@@ -55,6 +119,13 @@ export class RoomService {
 		}
 	}
 
+	/**
+	 * Loads the room preferences, either from cache or by fetching from the server.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param forceUpdate - Whether to force an update from the server
+	 * @returns A promise that resolves to the MeetRoomPreferences object
+	 */
 	async loadPreferences(roomId: string, forceUpdate: boolean = false): Promise<MeetRoomPreferences> {
 		if (this.roomPreferences && !forceUpdate) {
 			this.log.d('Returning cached room preferences');
@@ -71,6 +142,19 @@ export class RoomService {
 			this.log.e('Error loading room preferences', error);
 			throw new Error('Failed to load room preferences');
 		}
+	}
+
+	/**
+	 * Saves the room preferences.
+	 *
+	 * @param preferences - The room preferences to be saved.
+	 * @returns A promise that resolves when the preferences have been saved.
+	 */
+	async saveRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
+		this.log.d('Saving room preferences', preferences);
+		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/preferences`;
+		await this.httpService.putRequest(path, preferences);
+		this.roomPreferences = preferences;
 	}
 
 	/**
@@ -95,14 +179,25 @@ export class RoomService {
 	}
 
 	/**
-	 * Saves the room preferences.
+	 * Retrieves the role and permissions for a specified room and secret.
 	 *
-	 * @param {RoomPreferences} preferences - The preferences to be saved.
-	 * @returns {Promise<void>} A promise that resolves when the preferences have been saved.
+	 * @param roomId - The unique identifier of the room
+	 * @param secret - The secret parameter for the room
+	 * @returns A promise that resolves to an object containing the role and permissions
 	 */
-	async saveRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
-		this.log.d('Saving room preferences', preferences);
-		await this.httpService.updateRoomPreferences(roomId, preferences);
-		this.roomPreferences = preferences;
+	async getRoomRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomRoleAndPermissions> {
+		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/roles/${secret}`;
+		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Ends a meeting by its room ID.
+	 *
+	 * @param roomId - The unique identifier of the meeting room
+	 * @returns A promise that resolves when the meeting has been ended
+	 */
+	async endMeeting(roomId: string): Promise<any> {
+		const path = `${this.MEETINGS_API}/${roomId}`;
+		return this.httpService.deleteRequest(path);
 	}
 }

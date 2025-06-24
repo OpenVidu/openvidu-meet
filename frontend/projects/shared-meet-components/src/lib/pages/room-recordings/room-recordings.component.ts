@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { ActionService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
 import { ShareRecordingDialogComponent } from '../../components';
-import { ContextService, HttpService } from '../../services';
+import { ContextService, RecordingManagerService } from '../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '../../typings/ce';
 
 @Component({
@@ -36,7 +36,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	constructor(
 		protected contextService: ContextService,
-		protected httpService: HttpService,
+		protected recordingService: RecordingManagerService,
 		protected actionService: ActionService,
 		protected route: ActivatedRoute,
 		protected dialog: MatDialog
@@ -67,14 +67,14 @@ export class RoomRecordingsComponent implements OnInit {
 
 	playRecording(recording: MeetRecordingInfo) {
 		const queryParamForAvoidCache = `?t=${new Date().getTime()}`;
-		let recordingUrl = this.httpService.getRecordingMediaUrl(recording.recordingId);
+		let recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
 		recordingUrl += queryParamForAvoidCache;
 		this.actionService.openRecordingPlayerDialog(recordingUrl);
 	}
 
 	downloadRecording(recording: MeetRecordingInfo) {
 		const queryParamForAvoidCache = `?t=${new Date().getTime()}`;
-		let recordingUrl = this.httpService.getRecordingMediaUrl(recording.recordingId);
+		let recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
 		recordingUrl += queryParamForAvoidCache;
 
 		const link = document.createElement('a');
@@ -94,7 +94,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async deleteRecording(recording: MeetRecordingInfo) {
 		try {
-			await this.httpService.deleteRecording(recording.recordingId!);
+			await this.recordingService.deleteRecording(recording.recordingId!);
 			this.recordings = this.recordings.filter((r) => r.recordingId !== recording.recordingId);
 		} catch (error) {
 			console.log(error);
@@ -116,7 +116,7 @@ export class RoomRecordingsComponent implements OnInit {
 				roomId: this.roomId,
 				nextPageToken: this.nextPageToken
 			};
-			const response = await this.httpService.getRecordings(recordingFilters);
+			const response = await this.recordingService.listRecordings(recordingFilters);
 			this.recordings.push(...response.recordings);
 			this.recordings = this.sortRecordingsByDate(this.recordings);
 			this.nextPageToken = response.pagination.nextPageToken;

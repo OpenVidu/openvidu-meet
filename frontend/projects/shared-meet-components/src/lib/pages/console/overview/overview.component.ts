@@ -1,11 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { Observable, from, combineLatest, map, catchError, of } from 'rxjs';
-import { NavigationService, ThemeService, HttpService, RoomService } from '../../../services';
+import { MatIconModule } from '@angular/material/icon';
+import { Observable, catchError, combineLatest, from, map, of } from 'rxjs';
+import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '../../../services';
 import { MeetRecordingInfo, MeetRoom } from '../../../typings/ce';
 
 interface OverviewStats {
@@ -24,7 +24,7 @@ interface OverviewStats {
 })
 export class OverviewComponent implements OnInit {
 	private roomService = inject(RoomService);
-	private httpService = inject(HttpService);
+	private recordingService = inject(RecordingManagerService);
 	private navigationService = inject(NavigationService);
 	private themeService = inject(ThemeService);
 
@@ -45,7 +45,7 @@ export class OverviewComponent implements OnInit {
 			catchError(() => of([]))
 		);
 
-		const recordings$ = from(this.httpService.getRecordings()).pipe(
+		const recordings$ = from(this.recordingService.listRecordings()).pipe(
 			map((response) => response.recordings),
 			catchError(() => of([]))
 		);

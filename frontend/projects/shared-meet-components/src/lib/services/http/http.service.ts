@@ -1,200 +1,40 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import {
-	MeetRecordingFilters,
-	MeetRecordingInfo,
-	MeetRoom,
-	MeetRoomOptions,
-	MeetRoomPreferences,
-	MeetRoomRoleAndPermissions,
-	ParticipantOptions,
-	SecurityPreferences,
-	User
-} from '../../typings/ce';
 import { lastValueFrom } from 'rxjs';
+
+const API_V1_VERSION = 'v1';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class HttpService {
-	protected API_V1_VERSION = 'v1';
-	protected API_PATH_PREFIX = `meet/api/${this.API_V1_VERSION}`;
-	protected INTERNAL_API_PATH_PREFIX = `meet/internal-api/${this.API_V1_VERSION}`;
+	public static readonly API_PATH_PREFIX = `meet/api/${API_V1_VERSION}`;
+	public static readonly INTERNAL_API_PATH_PREFIX = `meet/internal-api/${API_V1_VERSION}`;
 
 	constructor(protected http: HttpClient) {}
 
-	createRoom(options: MeetRoomOptions): Promise<MeetRoom> {
-		return this.postRequest(`${this.API_PATH_PREFIX}/rooms`, options);
-	}
-
-	deleteRoom(roomId: string): Promise<any> {
-		return this.deleteRequest(`${this.API_PATH_PREFIX}/rooms/${roomId}`);
-	}
-
-	listRooms(fields?: string): Promise<{
-		rooms: MeetRoom[];
-		pagination: {
-			isTruncated: boolean;
-			nextPageToken?: string;
-			maxItems: number;
-		};
-	}> {
-		let path = `${this.API_PATH_PREFIX}/rooms/`;
-		if (fields) {
-			path += `?fields=${encodeURIComponent(fields)}`;
-		}
-		return this.getRequest(path);
-	}
-
-	getRoom(roomId: string): Promise<MeetRoom> {
-		let path = `${this.API_PATH_PREFIX}/rooms/${roomId}`;
-		return this.getRequest(path);
-	}
-
-	getRoomRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomRoleAndPermissions> {
-		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/roles/${secret}`);
-	}
-
-	endMeeting(roomId: string): Promise<any> {
-		return this.deleteRequest(`${this.INTERNAL_API_PATH_PREFIX}/meetings/${roomId}`);
-	}
-
-	generateParticipantToken(participantOptions: ParticipantOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token`, participantOptions);
-	}
-
-	refreshParticipantToken(participantOptions: ParticipantOptions): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/participants/token/refresh`, participantOptions);
-	}
-
-	getSecurityPreferences(): Promise<SecurityPreferences> {
-		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/preferences/security`);
-	}
-
-	/**
-	 * Retrieves the room preferences.
-	 *
-	 * @returns {Promise<MeetRoomPreferences>} A promise that resolves to the room preferences.
-	 */
-	getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
-		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/preferences`);
-	}
-
-	/**
-	 * Saves the room preferences.
-	 *
-	 * @param preferences - The room preferences to be saved.
-	 * @returns A promise that resolves when the preferences have been successfully saved.
-	 */
-	updateRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<any> {
-		return this.putRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}`, preferences);
-	}
-
-	login(body: { username: string; password: string }): Promise<{ message: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/auth/login`, body);
-	}
-
-	logout(): Promise<{ message: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/auth/logout`);
-	}
-
-	refreshToken(): Promise<{ message: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/auth/refresh`);
-	}
-
-	getProfile(): Promise<User> {
-		return this.getRequest(`${this.INTERNAL_API_PATH_PREFIX}/users/profile`);
-	}
-
-	generateRecordingToken(roomId: string, secret: string): Promise<{ token: string }> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`, { secret });
-	}
-
-	getRecordings(filters?: MeetRecordingFilters): Promise<{
-		recordings: MeetRecordingInfo[];
-		pagination: {
-			isTruncated: boolean;
-			nextPageToken?: string;
-			maxItems: number;
-		};
-	}> {
-		let path = `${this.API_PATH_PREFIX}/recordings`;
-
-		if (filters) {
-			const params = new URLSearchParams();
-			if (filters.maxItems) {
-				params.append('maxItems', filters.maxItems.toString());
-			}
-			if (filters.nextPageToken) {
-				params.append('nextPageToken', filters.nextPageToken);
-			}
-			if (filters.roomId) {
-				params.append('roomId', filters.roomId);
-			}
-			if (filters.fields) {
-				params.append('fields', filters.fields);
-			}
-
-			path += `?${params.toString()}`;
-		}
-
-		return this.getRequest(path);
-	}
-
-	getRecording(recordingId: string, secret?: string): Promise<MeetRecordingInfo> {
-		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}`;
-		if (secret) {
-			path += `?secret=${secret}`;
-		}
-		return this.getRequest<MeetRecordingInfo>(path);
-	}
-
-	getRecordingMediaUrl(recordingId: string, secret?: string): string {
-		let path = `${this.API_PATH_PREFIX}/recordings/${recordingId}/media`;
-		if (secret) {
-			path += `?secret=${secret}`;
-		}
-		return path;
-	}
-
-	generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<{ url: string }> {
-		return this.getRequest(`${this.API_PATH_PREFIX}/recordings/${recordingId}/url?privateAccess=${privateAccess}`);
-	}
-
-	startRecording(roomId: string): Promise<MeetRecordingInfo> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/recordings`, { roomId });
-	}
-
-	stopRecording(recordingId: string): Promise<MeetRecordingInfo> {
-		return this.postRequest(`${this.INTERNAL_API_PATH_PREFIX}/recordings/${recordingId}/stop`);
-	}
-
-	deleteRecording(recordingId: string): Promise<any> {
-		return this.deleteRequest(`${this.API_PATH_PREFIX}/recordings/${recordingId}`);
-	}
-
-	protected getRequest<T>(path: string): Promise<T> {
+	async getRequest<T>(path: string): Promise<T> {
 		return lastValueFrom(this.http.get<T>(path, { observe: 'response' })).then((response) => ({
 			...(response.body as T),
 			statusCode: response.status
 		}));
 	}
 
-	protected postRequest<T>(path: string, body: any = {}): Promise<T> {
+	async postRequest<T>(path: string, body: any = {}): Promise<T> {
 		return lastValueFrom(this.http.post<T>(path, body, { observe: 'response' })).then((response) => ({
 			...(response.body as T),
 			statusCode: response.status
 		}));
 	}
 
-	protected putRequest<T>(path: string, body: any = {}): Promise<T> {
+	async putRequest<T>(path: string, body: any = {}): Promise<T> {
 		return lastValueFrom(this.http.put<T>(path, body, { observe: 'response' })).then((response) => ({
 			...(response.body as T),
 			statusCode: response.status
 		}));
 	}
 
-	protected deleteRequest<T>(path: string): Promise<T> {
+	async deleteRequest<T>(path: string): Promise<T> {
 		return lastValueFrom(this.http.delete<T>(path, { observe: 'response' })).then((response) => ({
 			...(response.body as T),
 			statusCode: response.status

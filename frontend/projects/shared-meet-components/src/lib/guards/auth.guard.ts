@@ -1,8 +1,15 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
+import {
+	AuthService,
+	ContextService,
+	NavigationService,
+	RecordingManagerService,
+	RoomService,
+	SessionStorageService
+} from '../services';
 import { AuthMode, ParticipantRole } from '../typings/ce';
-import { AuthService, ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
@@ -50,7 +57,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	const authService = inject(AuthService);
 	const contextService = inject(ContextService);
 	const sessionStorageService = inject(SessionStorageService);
-	const httpService = inject(HttpService);
+	const roomService = inject(RoomService);
 
 	// Get the role that the participant will have in the room based on the room ID and secret
 	let participantRole: ParticipantRole;
@@ -60,7 +67,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const secret = contextService.getSecret();
 		const storageSecret = sessionStorageService.getModeratorSecret(roomId);
 
-		const roomRoleAndPermissions = await httpService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
+		const roomRoleAndPermissions = await roomService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
 		participantRole = roomRoleAndPermissions.role;
 		contextService.setParticipantRole(participantRole);
 	} catch (error: any) {
@@ -103,7 +110,7 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	const httpService = inject(HttpService);
+	const recordingService = inject(RecordingManagerService);
 	const navigationService = inject(NavigationService);
 
 	const recordingId = route.params['recording-id'];
@@ -116,7 +123,7 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 
 	try {
 		// Attempt to access the recording to check if the secret is valid
-		await httpService.getRecording(recordingId, secret);
+		await recordingService.getRecording(recordingId, secret);
 		return true;
 	} catch (error: any) {
 		console.error('Error checking recording access:', error);

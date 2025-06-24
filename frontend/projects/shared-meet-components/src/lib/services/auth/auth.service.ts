@@ -9,6 +9,9 @@ import { HttpService } from '../../services';
 	providedIn: 'root'
 })
 export class AuthService {
+	protected readonly AUTH_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/auth`;
+	protected readonly USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
+
 	protected hasCheckAuth = false;
 	protected user: User | null = null;
 
@@ -19,7 +22,9 @@ export class AuthService {
 
 	async login(username: string, password: string) {
 		try {
-			await this.httpService.login({ username, password });
+			const path = `${this.AUTH_API}/login`;
+			const body = { username, password };
+			await this.httpService.postRequest(path, body);
 			await this.getAuthenticatedUser(true);
 		} catch (err) {
 			const error = err as HttpErrorResponse;
@@ -28,13 +33,16 @@ export class AuthService {
 		}
 	}
 
-	refreshToken(): Observable<{ message: string }> {
-		return from(this.httpService.refreshToken());
+	refreshToken(): Observable<any> {
+		const path = `${this.AUTH_API}/refresh`;
+		const response = this.httpService.postRequest(path);
+		return from(response);
 	}
 
 	async logout(redirectToAfterLogin?: string) {
 		try {
-			await this.httpService.logout();
+			const path = `${this.AUTH_API}/logout`;
+			await this.httpService.postRequest(path);
 			this.user = null;
 
 			// Redirect to login page with a query parameter if provided
@@ -66,7 +74,8 @@ export class AuthService {
 	private async getAuthenticatedUser(force = false) {
 		if (force || (!this.user && !this.hasCheckAuth)) {
 			try {
-				const user = await this.httpService.getProfile();
+				const path = `${this.USERS_API}/profile`;
+				const user = await this.httpService.getRequest<User>(path);
 				this.user = user;
 			} catch (error) {
 				this.user = null;

@@ -1,15 +1,22 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
-import { catchError, from, Observable, switchMap } from 'rxjs';
-import { AuthService, ContextService, HttpService, SessionStorageService } from '../services';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { catchError, from, Observable, switchMap } from 'rxjs';
+import {
+	AuthService,
+	ContextService,
+	ParticipantTokenService,
+	RecordingManagerService,
+	SessionStorageService
+} from '../services';
 
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router: Router = inject(Router);
 	const authService: AuthService = inject(AuthService);
 	const contextService = inject(ContextService);
 	const sessionStorageService = inject(SessionStorageService);
-	const httpService: HttpService = inject(HttpService);
+	const participantTokenService = inject(ParticipantTokenService);
+	const recordingService = inject(RecordingManagerService);
 
 	const pageUrl = router.getCurrentNavigation()?.finalUrl?.toString() || router.url;
 	const requestUrl = req.url;
@@ -50,7 +57,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
 		const secret = storedSecret || contextService.getSecret();
 
-		return from(httpService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
+		return from(participantTokenService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
 			switchMap((data) => {
 				console.log('Participant token refreshed');
 				contextService.setParticipantTokenAndUpdateContext(data.token);
@@ -80,7 +87,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
 		const secret = storedSecret || contextService.getSecret();
 
-		return from(httpService.generateRecordingToken(roomId, secret)).pipe(
+		return from(recordingService.generateRecordingToken(roomId, secret)).pipe(
 			switchMap((data) => {
 				console.log('Recording token refreshed');
 				contextService.setRecordingPermissionsFromToken(data.token);
@@ -115,14 +122,22 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 				}
 
 				// Expired recording token
-				if (pageUrl.startsWith('/room') && pageUrl.includes('/recordings') && requestUrl.includes('/recordings')) {
+				if (
+					pageUrl.startsWith('/room') &&
+					pageUrl.includes('/recordings') &&
+					requestUrl.includes('/recordings')
+				) {
 					// If the error occurred in the room recordings page and the request is to the recordings endpoint,
 					// refresh the recording token
 					return refreshRecordingToken(error);
 				}
 
 				// Expired participant token
-				if (pageUrl.startsWith('/room') && !pageUrl.includes('/recordings') && !requestUrl.includes('/profile')) {
+				if (
+					pageUrl.startsWith('/room') &&
+					!pageUrl.includes('/recordings') &&
+					!requestUrl.includes('/profile')
+				) {
 					// If the error occurred in a room page and the request is not to the profile endpoint,
 					// refresh the participant token
 					return refreshParticipantToken(error);

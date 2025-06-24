@@ -1,7 +1,12 @@
 import { Injectable } from '@angular/core';
 import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
-import { WebComponentOutboundEventMessage, WebComponentInboundCommandMessage, WebComponentEvent, WebComponentCommand } from '../../typings/ce';
-import { ContextService, HttpService } from '../../services';
+import { ContextService, RoomService } from '../../services';
+import {
+	WebComponentCommand,
+	WebComponentEvent,
+	WebComponentInboundCommandMessage,
+	WebComponentOutboundEventMessage
+} from '../../typings/ce';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
@@ -21,7 +26,7 @@ export class WebComponentManagerService {
 		protected contextService: ContextService,
 		protected panelService: PanelService,
 		protected openviduService: OpenViduService,
-		protected httpService: HttpService
+		protected roomService: RoomService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
@@ -87,7 +92,7 @@ export class WebComponentManagerService {
 				// Moderator only
 				if (this.contextService.isModeratorParticipant()) {
 					const roomId = this.contextService.getRoomId();
-					await this.httpService.endMeeting(roomId);
+					await this.roomService.endMeeting(roomId);
 				}
 				break;
 			// case WebComponentCommand.TOGGLE_CHAT:

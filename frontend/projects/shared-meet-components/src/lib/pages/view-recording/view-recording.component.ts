@@ -7,9 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ActionService } from 'openvidu-components-angular';
-import {MeetRecordingInfo, MeetRecordingStatus} from '../../typings/ce';
 import { ShareRecordingDialogComponent } from '../../components';
-import { HttpService } from '../../services';
+import { RecordingManagerService } from '../../services';
+import { MeetRecordingInfo, MeetRecordingStatus } from '../../typings/ce';
 
 @Component({
 	selector: 'app-view-recording',
@@ -25,7 +25,7 @@ export class ViewRecordingComponent implements OnInit {
 	videoError = false;
 
 	constructor(
-		protected httpService: HttpService,
+		protected recordingService: RecordingManagerService,
 		protected actionService: ActionService,
 		protected router: Router,
 		protected route: ActivatedRoute,
@@ -37,10 +37,10 @@ export class ViewRecordingComponent implements OnInit {
 		const secret = this.route.snapshot.queryParams['secret'];
 
 		try {
-			this.recording = await this.httpService.getRecording(recordingId!, secret!);
+			this.recording = await this.recordingService.getRecording(recordingId!, secret!);
 
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.httpService.getRecordingMediaUrl(recordingId!, secret!);
+				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId!, secret!);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);

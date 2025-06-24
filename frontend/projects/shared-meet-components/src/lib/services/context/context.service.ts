@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { LoggerService } from 'openvidu-components-angular';
 import { ApplicationMode, ContextData, Edition } from '../../models';
+import { FeatureConfigurationService, GlobalPreferencesService } from '../../services';
 import { AuthMode, OpenViduMeetPermissions, ParticipantRole } from '../../typings/ce';
-import { FeatureConfigurationService, HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'
@@ -45,7 +45,7 @@ export class ContextService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected featureConfService: FeatureConfigurationService,
-		protected httpService: HttpService
+		protected preferencesService: GlobalPreferencesService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ContextService');
 	}
@@ -197,7 +197,7 @@ export class ContextService {
 	private async getSecurityPreferences() {
 		if (!this.context.securityPreferences) {
 			try {
-				this.context.securityPreferences = await this.httpService.getSecurityPreferences();
+				this.context.securityPreferences = await this.preferencesService.getSecurityPreferences();
 			} catch (error) {
 				this.log.e('Error getting security preferences', error);
 				throw new Error('Error getting security preferences');

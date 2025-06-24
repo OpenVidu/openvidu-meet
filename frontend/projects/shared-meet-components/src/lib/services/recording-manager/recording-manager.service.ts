@@ -1,18 +1,25 @@
 import { Injectable } from '@angular/core';
+import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class RecordingManagerService {
+	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
+	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
+
 	constructor(private httpService: HttpService) {}
 
 	/**
 	 * Starts recording for a room
+	 *
+	 * @param roomId - The ID of the room to start recording
+	 * @return A promise that resolves to the recording information
 	 */
-	async startRecording(roomId: string): Promise<void> {
+	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		try {
-			await this.httpService.startRecording(roomId);
+			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId });
 		} catch (error) {
 			console.error('Error starting recording:', error);
 			throw error;
@@ -21,17 +28,120 @@ export class RecordingManagerService {
 
 	/**
 	 * Stops recording by recording ID
+	 *
+	 * @param recordingId - The ID of the recording to stop
+	 * @return A promise that resolves to the updated recording information
 	 */
-	async stopRecording(recordingId: string | undefined): Promise<void> {
+	async stopRecording(recordingId?: string): Promise<MeetRecordingInfo> {
 		if (!recordingId) {
 			throw new Error('Recording ID not found when stopping recording');
 		}
 
 		try {
-			await this.httpService.stopRecording(recordingId);
+			const path = `${this.INTERNAL_RECORDINGS_API}/${recordingId}/stop`;
+			return this.httpService.postRequest(path);
 		} catch (error) {
 			console.error('Error stopping recording:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Lists recordings with optional filters for pagination and room ID
+	 *
+	 * @param filters - Optional filters for pagination and room ID
+	 * @return A promise that resolves to an object containing recordings and pagination info
+	 */
+	async listRecordings(filters?: MeetRecordingFilters): Promise<{
+		recordings: MeetRecordingInfo[];
+		pagination: {
+			isTruncated: boolean;
+			nextPageToken?: string;
+			maxItems: number;
+		};
+	}> {
+		let path = this.RECORDINGS_API;
+
+		if (filters) {
+			const params = new URLSearchParams();
+			if (filters.maxItems) {
+				params.append('maxItems', filters.maxItems.toString());
+			}
+			if (filters.nextPageToken) {
+				params.append('nextPageToken', filters.nextPageToken);
+			}
+			if (filters.roomId) {
+				params.append('roomId', filters.roomId);
+			}
+			if (filters.fields) {
+				params.append('fields', filters.fields);
+			}
+
+			path += `?${params.toString()}`;
+		}
+
+		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Gets a specific recording by ID
+	 *
+	 * @param recordingId - The ID of the recording to retrieve
+	 * @param secret - Optional secret for accesing the recording
+	 * @return A promise that resolves to the recording information
+	 */
+	async getRecording(recordingId: string, secret?: string): Promise<MeetRecordingInfo> {
+		let path = `${this.RECORDINGS_API}/${recordingId}`;
+		if (secret) {
+			path += `?secret=${secret}`;
+		}
+
+		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Gets the media URL for a recording
+	 *
+	 * @param recordingId - The ID of the recording
+	 * @param secret - Optional secret for accessing the recording media
+	 * @return The URL to access the recording media
+	 */
+	getRecordingMediaUrl(recordingId: string, secret?: string): string {
+		return `${this.RECORDINGS_API}/${recordingId}/media${secret ? `?secret=${secret}` : ''}`;
+	}
+
+	/**
+	 * Generates a URL for accessing a recording
+	 *
+	 * @param recordingId - The ID of the recording
+	 * @param privateAccess - Whether the access is private
+	 * @return A promise that resolves to an object containing the URL
+	 */
+	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<{ url: string }> {
+		const path = `${this.RECORDINGS_API}/${recordingId}/url?privateAccess=${privateAccess}`;
+		return this.httpService.getRequest(path);
+	}
+
+	/**
+	 * Generates a token for accessing recordings in a room
+	 *
+	 * @param roomId - The ID of the room for which the token is generated
+	 * @param secret - The secret for the room
+	 * @return A promise that resolves to an object containing the token
+	 */
+	async generateRecordingToken(roomId: string, secret: string): Promise<{ token: string }> {
+		const path = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`;
+		return this.httpService.postRequest(path, { secret });
+	}
+
+	/**
+	 * Deletes a recording by ID
+	 *
+	 * @param recordingId - The ID of the recording to delete
+	 * @return A promise that resolves to the deletion response
+	 */
+	async deleteRecording(recordingId: string): Promise<any> {
+		const path = `${this.RECORDINGS_API}/${recordingId}`;
+		return this.httpService.deleteRequest(path);
 	}
 }

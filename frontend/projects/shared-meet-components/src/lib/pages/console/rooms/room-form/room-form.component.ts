@@ -5,9 +5,9 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
-import { HttpService } from '../../../../services';
-import { MeetRoom, MeetRoomOptions } from '../../../../typings/ce';
 import { animals, colors, Config, uniqueNamesGenerator } from 'unique-names-generator';
+import { RoomService } from '../../../../services';
+import { MeetRoom, MeetRoomOptions } from '../../../../typings/ce';
 
 @Component({
 	selector: 'ov-room-form',
@@ -23,7 +23,7 @@ export class RoomFormComponent {
 
 	constructor(
 		private router: Router,
-		private httpService: HttpService
+		private roomService: RoomService
 	) {}
 
 	generateRoomId(event: any) {
@@ -51,7 +51,7 @@ export class RoomFormComponent {
 				autoDeletionDate: Date.now() + MILLISECONDS_PER_DAY // Expires 1 day from now
 			};
 
-			const room: MeetRoom = await this.httpService.createRoom(options);
+			const room: MeetRoom = await this.roomService.createRoom(options);
 
 			const accessRoomUrl = new URL(room.moderatorRoomUrl);
 			const secret = accessRoomUrl.searchParams.get('secret');

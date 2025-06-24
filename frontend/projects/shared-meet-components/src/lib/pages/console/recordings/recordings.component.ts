@@ -1,19 +1,17 @@
-import { Component, OnInit, signal } from '@angular/core';
 import { Clipboard } from '@angular/cdk/clipboard';
-
+import { Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActionService, ILogger, LoggerService } from 'openvidu-components-angular';
 import {
 	RecordingListsComponent,
 	RecordingTableAction
 } from '../../../components/recording-lists/recording-lists.component';
-import { ShareRecordingDialogComponent } from '../../../components/dialogs/share-recording-dialog/share-recording-dialog.component';
-import { HttpService, NotificationService } from '../../../services';
+import { NotificationService, RecordingManagerService } from '../../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '../../../typings/ce';
 
 @Component({
@@ -44,7 +42,7 @@ export class RecordingsComponent implements OnInit {
 
 	constructor(
 		protected loggerService: LoggerService,
-		private httpService: HttpService,
+		private recordingService: RecordingManagerService,
 		private actionService: ActionService,
 		private dialog: MatDialog,
 		private clipboard: Clipboard,
@@ -98,7 +96,7 @@ export class RecordingsComponent implements OnInit {
 				recordingFilters.roomId = filters.nameFilter;
 			}
 
-			const response = await this.httpService.getRecordings(recordingFilters);
+			const response = await this.recordingService.listRecordings(recordingFilters);
 
 			// Filter by status on client side if needed
 			let filteredRecordings = response.recordings;
@@ -137,12 +135,12 @@ export class RecordingsComponent implements OnInit {
 	}
 
 	private playRecording(recording: MeetRecordingInfo) {
-		const recordingUrl = this.httpService.getRecordingMediaUrl(recording.recordingId);
+		const recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
 		this.actionService.openRecordingPlayerDialog(recordingUrl);
 	}
 
 	private downloadRecording(recording: MeetRecordingInfo) {
-		const recordingUrl = this.httpService.getRecordingMediaUrl(recording.recordingId);
+		const recordingUrl = this.recordingService.getRecordingMediaUrl(recording.recordingId);
 		const link = document.createElement('a');
 		link.href = recordingUrl;
 		link.download = recording.filename || 'recording.mp4';
@@ -157,7 +155,7 @@ export class RecordingsComponent implements OnInit {
 	private async deleteRecording(recording: MeetRecordingInfo) {
 		const deleteCallback = async () => {
 			try {
-				await this.httpService.deleteRecording(recording.recordingId);
+				await this.recordingService.deleteRecording(recording.recordingId);
 
 				// Remove from local list
 				const currentRecordings = this.recordings();
@@ -184,7 +182,7 @@ export class RecordingsComponent implements OnInit {
 			try {
 				//TODO: Implement bulk delete logic in the backend
 				// const recordingIds = recordings.map((r) => r.recordingId);
-				// await this.httpService.bulkDeleteRecordings(recordingIds);
+				// await this.recordingService.bulkDeleteRecordings(recordingIds);
 				// // Remove from local list
 				// const currentRecordings = this.recordings();
 				// this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
