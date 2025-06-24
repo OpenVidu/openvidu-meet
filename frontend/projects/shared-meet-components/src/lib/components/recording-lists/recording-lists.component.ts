@@ -23,7 +23,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
-	action: 'play' | 'download' | 'copyLink' | 'delete' | 'batchDelete' | 'batchDownload';
+	action: 'play' | 'download' | 'copyLink' | 'delete' | 'bulkDelete' | 'batchDownload';
 }
 
 /**
@@ -250,10 +250,10 @@ export class RecordingListsComponent implements OnInit {
 		this.recordingAction.emit({ recordings: [recording], action: 'delete' });
 	}
 
-	batchDeleteSelected() {
+	bulkDeleteSelected() {
 		const selectedRecordings = this.getSelectedRecordings();
 		if (selectedRecordings.length > 0) {
-			this.recordingAction.emit({ recordings: selectedRecordings, action: 'batchDelete' });
+			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDelete' });
 		}
 	}
 

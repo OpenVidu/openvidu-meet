@@ -155,7 +155,7 @@ export class RoomsComponent implements OnInit {
 			case 'copyPublisherLink':
 				this.copyPublisherLink(action.rooms[0]);
 				break;
-			case 'batchDelete':
+			case 'bulkDelete':
 				// await this.deleteRoom(action.rooms);
 				break;
 		}

@@ -72,8 +72,8 @@ export class RecordingsComponent implements OnInit {
 			case 'delete':
 				await this.deleteRecording(action.recordings[0]);
 				break;
-			case 'batchDelete':
-				await this.batchDeleteRecordings(action.recordings);
+			case 'bulkDelete':
+				await this.bulkDeleteRecordings(action.recordings);
 				break;
 			case 'batchDownload':
 				// Implement batch download logic if needed
@@ -155,55 +155,54 @@ export class RecordingsComponent implements OnInit {
 	}
 
 	private async deleteRecording(recording: MeetRecordingInfo) {
-		if (!confirm(`Are you sure you want to delete the recording for room "${recording.roomId}"?`)) {
-			return;
-		}
-
-		try {
-			await this.httpService.deleteRecording(recording.recordingId);
-
-			// Remove from local list
-			const currentRecordings = this.recordings();
-			this.recordings.set(currentRecordings.filter((r) => r.recordingId !== recording.recordingId));
-			this.notificationService.showSnackbar('Recording deleted successfully');
-		} catch (error) {
-			console.error('Error deleting recording:', error);
-
-			this.notificationService.showSnackbar('Failed to delete recording');
-		}
-	}
-
-	private async batchDeleteRecordings(recordings: MeetRecordingInfo[]) {
-		const count = recordings.length;
-		if (!confirm(`Are you sure you want to delete ${count} recording(s)?`)) {
-			return;
-		}
-
-		let successCount = 0;
-		let failureCount = 0;
-
-		for (const recording of recordings) {
+		const deleteCallback = async () => {
 			try {
 				await this.httpService.deleteRecording(recording.recordingId);
-				successCount++;
+
+				// Remove from local list
+				const currentRecordings = this.recordings();
+				this.recordings.set(currentRecordings.filter((r) => r.recordingId !== recording.recordingId));
+				this.notificationService.showSnackbar('Recording deleted successfully');
 			} catch (error) {
-				console.error('Error deleting recording:', recording.recordingId, error);
-				failureCount++;
+				console.error('Error deleting recording:', error);
+
+				this.notificationService.showSnackbar('Failed to delete recording');
 			}
-		}
+		};
 
-		// Remove successfully deleted recordings from local list
-		if (successCount > 0) {
-			const deletedIds = new Set(recordings.map((r) => r.recordingId));
-			const currentRecordings = this.recordings();
-			this.recordings.set(currentRecordings.filter((r) => !deletedIds.has(r.recordingId)));
-		}
+		this.notificationService.showDialog({
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			title: 'Delete Recording',
+			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
+			confirmCallback: deleteCallback
+		});
+	}
 
-		// Show result message
-		if (failureCount === 0) {
-			this.notificationService.showSnackbar(`${successCount} recording(s) deleted successfully`);
-		} else {
-			this.notificationService.showSnackbar(`${successCount} recording(s) deleted, ${failureCount} failed`);
-		}
+	private async bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
+		const bulkDeleteCallback = async () => {
+			try {
+				//TODO: Implement bulk delete logic in the backend
+				// const recordingIds = recordings.map((r) => r.recordingId);
+				// await this.httpService.bulkDeleteRecordings(recordingIds);
+				// // Remove from local list
+				// const currentRecordings = this.recordings();
+				// this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
+				// this.notificationService.showSnackbar('Recordings deleted successfully');
+			} catch (error) {
+				console.error('Error deleting recordings:', error);
+
+				this.notificationService.showSnackbar('Failed to delete recordings');
+			}
+		};
+
+		const count = recordings.length;
+		this.notificationService.showDialog({
+			confirmText: 'Delete all',
+			cancelText: 'Cancel',
+			title: 'Delete Recordings',
+			message: `Are you sure you want to delete <b>${count}</b> recordings?`,
+			confirmCallback: () => bulkDeleteCallback
+		});
 	}
 }

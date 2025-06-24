@@ -167,11 +167,11 @@ describe('RoomsListsComponent', () => {
 
     // Select some rooms
     component.toggleRoomSelection(mockRooms[0]);
-    component.batchDeleteSelected();
+    component.bulkDeleteSelected();
 
     expect(component.roomAction.emit).toHaveBeenCalledWith({
       rooms: [mockRooms[0]],
-      action: 'batchDelete'
+      action: 'bulkDelete'
     });
   });
 

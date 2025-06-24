@@ -33,7 +33,7 @@ export interface RoomTableAction {
 		| 'copyPublisherLink'
 		| 'viewRecordings'
 		| 'delete'
-		| 'batchDelete';
+		| 'bulkDelete';
 }
 
 /**
@@ -257,10 +257,10 @@ export class RoomsListsComponent implements OnInit {
 		this.roomAction.emit({ rooms: [room], action: 'delete' });
 	}
 
-	batchDeleteSelected() {
+	bulkDeleteSelected() {
 		const selectedRooms = this.getSelectedRooms();
 		if (selectedRooms.length > 0) {
-			this.roomAction.emit({ rooms: selectedRooms, action: 'batchDelete' });
+			this.roomAction.emit({ rooms: selectedRooms, action: 'bulkDelete' });
 		}
 	}
 
