@@ -25,6 +25,7 @@ export const {
 	MEET_API_KEY = '',
 	MEET_ADMIN_USER = 'admin',
 	MEET_ADMIN_SECRET = 'admin',
+	MEET_COOKIE_SECURE = 'false',
 
 	// Token expiration times
 	MEET_ACCESS_TOKEN_EXPIRATION = '2h',
