@@ -156,7 +156,7 @@ export class RoomsComponent implements OnInit {
 				this.copyPublisherLink(action.rooms[0]);
 				break;
 			case 'bulkDelete':
-				// await this.deleteRoom(action.rooms);
+				// await this.bulkDeleteRoom(action.rooms);
 				break;
 		}
 	}
@@ -176,25 +176,35 @@ export class RoomsComponent implements OnInit {
 	}
 
 	async deleteRoom({ roomId }: MeetRoom) {
-		try {
-			const response = await this.roomService.deleteRoom(roomId);
-			if (response.statusCode === 202) {
-				this.notificationService.showSnackbar('Room marked for deletion');
-				// If the room is marked for deletion, we don't remove it from the list immediately
-				this.createdRooms = this.createdRooms.map((r) =>
-					r.roomId === roomId ? { ...r, markedForDeletion: true } : r
-				);
-				// Update the data source to reflect the change
+		const deleteCallback = async () => {
+			try {
+				const response = await this.roomService.deleteRoom(roomId);
+				if (response.statusCode === 202) {
+					this.notificationService.showSnackbar('Room marked for deletion');
+					// If the room is marked for deletion, we don't remove it from the list immediately
+					this.createdRooms = this.createdRooms.map((r) =>
+						r.roomId === roomId ? { ...r, markedForDeletion: true } : r
+					);
+					// Update the data source to reflect the change
+					this.dataSource.data = this.createdRooms;
+					return;
+				}
+				this.createdRooms = this.createdRooms.filter((r) => r.roomId !== roomId);
 				this.dataSource.data = this.createdRooms;
-				return;
+				this.notificationService.showSnackbar('Room deleted');
+			} catch (error) {
+				this.notificationService.showAlert('Error deleting room');
+				this.log.e('Error deleting room:', error);
 			}
-			this.createdRooms = this.createdRooms.filter((r) => r.roomId !== roomId);
-			this.dataSource.data = this.createdRooms;
-			this.notificationService.showSnackbar('Room deleted');
-		} catch (error) {
-			this.notificationService.showAlert('Error deleting room');
-			this.log.e('Error deleting room:', error);
-		}
+		};
+
+		this.notificationService.showDialog({
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			title: 'Delete Room',
+			message: `Are you sure you want to delete the rom <b>${roomId}</b>?`,
+			confirmCallback: deleteCallback
+		});
 	}
 
 	async refreshRooms() {
