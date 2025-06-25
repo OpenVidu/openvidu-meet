@@ -1,0 +1,223 @@
+@import '../../../../../../../../../../src/assets/styles/design-tokens';
+
+.recording-preferences-step {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-sm);
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+
+		.step-icon {
+			@include ov-icon(xl);
+			color: var(--ov-meet-icon-recordings);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.recording-form {
+			.options-grid {
+				@include ov-grid-responsive(260px);
+				gap: var(--ov-meet-spacing-md);
+
+				.option-card {
+					@include ov-card;
+					@include ov-theme-transition;
+					position: relative;
+					cursor: pointer;
+					border: 2px solid transparent;
+					padding: var(--ov-meet-spacing-md);
+					min-height: 120px;
+					display: flex;
+					flex-direction: column;
+
+					&:hover {
+						@include ov-hover-lift(-3px);
+						border-color: var(--ov-meet-border-color-strong);
+					}
+
+					&.selected {
+						border-color: var(--ov-meet-color-primary);
+						box-shadow:
+							var(--ov-meet-shadow-md),
+							0 0 0 1px var(--ov-meet-color-primary);
+
+						.selection-indicator .selection-icon {
+							color: var(--ov-meet-color-primary);
+						}
+					}
+
+					.selection-indicator {
+						position: absolute;
+						top: var(--ov-meet-spacing-sm);
+						right: var(--ov-meet-spacing-sm);
+
+						.selection-icon {
+							@include ov-icon(md);
+							color: var(--ov-meet-text-hint);
+							@include ov-theme-transition;
+
+							&.selected {
+								color: var(--ov-meet-color-primary);
+								transform: scale(1.1);
+							}
+						}
+					}
+
+					.card-content {
+						flex: 1;
+						display: flex;
+						flex-direction: column;
+
+						.card-header {
+							display: flex;
+							align-items: flex-start;
+							gap: var(--ov-meet-spacing-sm);
+							margin-bottom: var(--ov-meet-spacing-sm);
+							align-items: center;
+							font-weight: var(--ov-meet-font-weight-semibold);
+
+							.option-icon {
+								@include ov-icon(md);
+								// margin-top: var(--ov-meet-spacing-xs);
+								@include ov-theme-transition;
+
+								&.ov-recording-icon {
+									color: var(--ov-meet-icon-recordings);
+								}
+
+								&.ov-settings-icon {
+									color: var(--ov-meet-icon-settings);
+								}
+							}
+
+							.option-title {
+								flex: 1;
+								margin: 0;
+								font-size: var(--ov-meet-font-size-md);
+								font-weight: var(--ov-meet-font-weight-medium);
+								color: var(--ov-meet-text-primary);
+								line-height: var(--ov-meet-line-height-tight);
+							}
+						}
+
+						.option-description {
+							margin: 0;
+							font-size: var(--ov-meet-font-size-sm);
+							color: var(--ov-meet-text-secondary);
+							line-height: var(--ov-meet-line-height-normal);
+							flex: 1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Responsive Design
+	@include ov-mobile-down {
+		.step-header {
+			flex-direction: column;
+			text-align: center;
+			gap: var(--ov-meet-spacing-sm);
+			margin-bottom: var(--ov-meet-spacing-lg);
+
+			.step-icon {
+				align-self: center;
+				margin-top: 0;
+			}
+		}
+
+		.step-content .recording-form .options-grid {
+			grid-template-columns: 1fr;
+			gap: var(--ov-meet-spacing-sm);
+
+			.option-card {
+				min-height: 100px;
+				padding: var(--ov-meet-spacing-sm);
+
+				.card-content .card-header {
+					gap: var(--ov-meet-spacing-sm);
+
+					.option-icon {
+						@include ov-icon(md);
+					}
+
+					.option-title {
+						font-size: var(--ov-meet-font-size-sm);
+					}
+				}
+
+				.card-content .option-description {
+					font-size: var(--ov-meet-font-size-xxs);
+				}
+			}
+		}
+	}
+
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-xs);
+
+		.step-content .recording-form .options-grid {
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// Enhanced animations for step transitions
+.fade-in {
+	animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+// Card selection animation
+@keyframes cardSelect {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.02);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+.option-card.selected {
+	animation: cardSelect 0.3s ease-out;
+}

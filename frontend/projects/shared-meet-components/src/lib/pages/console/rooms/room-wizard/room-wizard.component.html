@@ -21,20 +21,7 @@
 					<ov-room-wizard-basic-info></ov-room-wizard-basic-info>
 				}
 				@case ('recording') {
-					<div class="demo-step fade-in">
-						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px"
-							>videocam</mat-icon
-						>
-						<h3>Recording Settings</h3>
-						<p>Choose whether to enable recording for this room</p>
-						<mat-slide-toggle
-							class="ov-slide-toggle-success ov-mb-md"
-							[checked]="wizardData.recording?.enabled"
-							(change)="toggleRecording($event)"
-						>
-							<span class="toggle-label">Enable Recording</span>
-						</mat-slide-toggle>
-					</div>
+					<ov-recording-preferences></ov-recording-preferences>
 				}
 				@case ('recordingTrigger') {
 					<div class="demo-step fade-in">

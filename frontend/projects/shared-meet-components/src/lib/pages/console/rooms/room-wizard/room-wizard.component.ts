@@ -10,6 +10,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 import { WizardStep, WizardNavigationConfig } from '../../../../models/wizard.model';
 import { NavigationService } from '@lib/services';
 import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
+import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -21,7 +22,8 @@ import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.comp
 		MatButtonModule,
 		MatIconModule,
 		MatSlideToggleModule,
-    RoomWizardBasicInfoComponent
+    RoomWizardBasicInfoComponent,
+    RecordingPreferencesComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -71,15 +73,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-	}
-
-
-
-	toggleRecording(event: any) {
-		const isEnabled = event.checked; // MatSlideToggle uses 'checked' property
-		this.wizardState.updateStepData('recording', {
-			enabled: isEnabled
-		});
 	}
 
 	setTriggerData() {
