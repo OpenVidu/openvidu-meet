@@ -38,75 +38,6 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-
-	.demo-step {
-		text-align: center;
-		padding: var(--ov-meet-spacing-xl);
-
-		h3 {
-			@include ov-text-truncate;
-			margin: 0 0 var(--ov-meet-spacing-sm) 0;
-			font-size: var(--ov-meet-font-size-xl);
-			font-weight: var(--ov-meet-font-weight-medium);
-			color: var(--ov-meet-text-primary);
-		}
-
-		p {
-			margin: 0 0 var(--ov-meet-spacing-lg) 0;
-			font-size: var(--ov-meet-font-size-md);
-			color: var(--ov-meet-text-secondary);
-			line-height: var(--ov-meet-line-height-normal);
-		}
-
-		button {
-			@include ov-button-base;
-			background: var(--ov-meet-color-primary);
-			color: var(--ov-meet-text-on-primary);
-			border: none;
-			cursor: pointer;
-			margin-bottom: var(--ov-meet-spacing-md);
-
-			&:hover {
-				background: var(--ov-meet-color-primary-dark);
-				transform: translateY(-1px);
-			}
-
-			&:focus {
-				outline: 2px solid var(--ov-meet-color-primary-light);
-				outline-offset: 2px;
-			}
-		}
-
-		label {
-			@include ov-flex-center;
-			gap: var(--ov-meet-spacing-sm);
-			margin-bottom: var(--ov-meet-spacing-md);
-			font-size: var(--ov-meet-font-size-md);
-			color: var(--ov-meet-text-primary);
-			cursor: pointer;
-
-			input[type="checkbox"] {
-				width: 18px;
-				height: 18px;
-				accent-color: var(--ov-meet-color-primary);
-			}
-		}
-
-		pre {
-			background: var(--ov-meet-surface-variant);
-			border: 1px solid var(--ov-meet-border-color);
-			border-radius: var(--ov-meet-radius-sm);
-			padding: var(--ov-meet-spacing-md);
-			text-align: left;
-			max-width: 400px;
-			margin: 0 auto;
-			font-size: var(--ov-meet-font-size-xs);
-			color: var(--ov-meet-text-secondary);
-			overflow-x: auto;
-			white-space: pre-wrap;
-			word-break: break-all;
-		}
-	}
 }
 
 // Additional styles for enhanced UI elements
@@ -137,23 +68,6 @@
 
 	&[open] summary {
 		color: var(--ov-meet-color-primary);
-	}
-}
-
-// Enhanced button styles for Material buttons
-.demo-step {
-	button[mat-raised-button] {
-		@include ov-theme-transition;
-		min-width: 140px;
-		box-shadow: var(--ov-meet-shadow-sm);
-
-		&:hover {
-			box-shadow: var(--ov-meet-shadow-md);
-		}
-
-		mat-icon {
-			margin-right: var(--ov-meet-spacing-xs);
-		}
 	}
 }
 
@@ -197,33 +111,12 @@
 			font-size: var(--ov-meet-font-size-xl);
 		}
 	}
-
-	.step-content {
-		.demo-step {
-			padding: var(--ov-meet-spacing-lg);
-
-			h3 {
-				font-size: var(--ov-meet-font-size-lg);
-			}
-		}
-	}
 }
 
 @include ov-mobile-down {
 	.wizard-header {
 		h2 {
 			font-size: var(--ov-meet-font-size-lg);
-		}
-	}
-
-	.step-content {
-		.demo-step {
-			padding: var(--ov-meet-spacing-md);
-
-			pre {
-				font-size: var(--ov-meet-font-size-xxs);
-				max-width: 100%;
-			}
 		}
 	}
 }

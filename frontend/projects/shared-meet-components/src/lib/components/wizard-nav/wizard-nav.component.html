@@ -1,37 +1,63 @@
-<div class="wizard-navigation">
+<nav class="wizard-navigation" [class.loading]="config.isLoading" [class.compact]="config.isCompact">
 	<div class="nav-buttons">
 		<!-- Cancel Button -->
 		@if (config.showCancel) {
-			<button mat-stroked-button color="warn" class="cancel-btn" (click)="onCancel()">
-				<mat-icon>close</mat-icon>
-				Cancel
+			<button
+				mat-stroked-button
+				class="cancel-btn"
+				(click)="onCancel()"
+				[attr.aria-label]="'Cancel wizard and return to previous page'">
+				<mat-icon class="leading-icon">close</mat-icon>
+				{{ config.cancelLabel || 'Cancel' }}
 			</button>
 		}
 
 		<div class="spacer"></div>
 
-		<!-- Previous Button -->
-		@if (config.showPrevious) {
-			<button mat-button [disabled]="config.isPreviousDisabled" (click)="onPrevious()">
-				<mat-icon>chevron_left</mat-icon>
-				{{ config.previousLabel }}
-			</button>
-		}
+		<!-- Navigation Group -->
+		<div class="nav-group">
+			<!-- Previous Button -->
+			@if (config.showPrevious) {
+				<button
+					mat-stroked-button
+					class="prev-btn"
+					[disabled]="config.isPreviousDisabled"
+					(click)="onPrevious()"
+					[attr.aria-label]="'Go to previous step'">
+					<mat-icon class="leading-icon">chevron_left</mat-icon>
+					{{ config.previousLabel || 'Previous' }}
+				</button>
+			}
 
-		<!-- Next Button -->
-		@if (config.showNext) {
-			<button mat-raised-button color="primary" [disabled]="config.isNextDisabled" (click)="onNext()">
-				{{ config.nextLabel }}
-				<mat-icon>chevron_right</mat-icon>
-			</button>
-		}
+			<!-- Next/Continue Button -->
+			@if (config.showNext) {
+				<button
+					mat-raised-button
+					class="next-btn"
+					[disabled]="config.isNextDisabled"
+					(click)="onNext()"
+					[attr.aria-label]="'Continue to next step'">
+					{{ config.nextLabel || 'Next' }}
+					<mat-icon class="trailing-icon">
+						{{ config.isLoading ? 'hourglass_empty' : 'chevron_right' }}
+					</mat-icon>
+				</button>
+			}
 
-		<!-- Finish Button -->
-		@if (config.showFinish) {
-			<button mat-raised-button color="accent" (click)="onFinish()">
-				<mat-icon>check</mat-icon>
-				Finish
-			</button>
-		}
+			<!-- Finish/Save Button -->
+			@if (config.showFinish) {
+				<button
+					mat-raised-button
+					class="finish-btn"
+					[disabled]="config.isFinishDisabled"
+					(click)="onFinish()"
+					[attr.aria-label]="'Complete wizard and save changes'">
+					<mat-icon class="leading-icon">
+						{{ config.isLoading ? 'hourglass_empty' : 'check' }}
+					</mat-icon>
+					{{ config.finishLabel || 'Finish' }}
+				</button>
+			}
+		</div>
 	</div>
-</div>
+</nav>

@@ -8,7 +8,7 @@
 	>
 		@for (step of visibleSteps; track step.id; let i = $index) {
 			<mat-step
-				[stepControl]="getStepControl(step)"
+				[stepControl]="step.validationFormGroup"
 				[state]="getStepState(step)"
 				[editable]="isStepClickable(step)"
 				[label]="step.label"

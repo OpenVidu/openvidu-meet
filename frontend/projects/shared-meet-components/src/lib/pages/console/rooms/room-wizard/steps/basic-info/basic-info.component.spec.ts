@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BasicInfoComponent } from './basic-info.component';
+import { RoomWizardBasicInfoComponent } from './basic-info.component';
 
 describe('BasicInfoComponent', () => {
-  let component: BasicInfoComponent;
-  let fixture: ComponentFixture<BasicInfoComponent>;
+  let component: RoomWizardBasicInfoComponent;
+  let fixture: ComponentFixture<RoomWizardBasicInfoComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BasicInfoComponent]
+      imports: [RoomWizardBasicInfoComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(BasicInfoComponent);
+    fixture = TestBed.createComponent(RoomWizardBasicInfoComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

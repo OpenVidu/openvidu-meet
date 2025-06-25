@@ -1,0 +1,180 @@
+@import '../../../../../../../../../../src/assets/styles/design-tokens';
+
+.basic-info-step {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-md);
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		// margin-bottom: var(--ov-meet-spacing-xl);
+
+		.step-icon {
+			@include ov-icon(xl);
+			color: var(--ov-meet-icon-rooms);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		// margin-bottom: var(--ov-meet-spacing-xl);
+
+		.basic-info-form {
+			@include ov-grid-responsive(280px);
+			gap: var(--ov-meet-spacing-lg);
+
+			.form-field {
+				width: 100%;
+
+				// Material form field customization using existing system
+				::ng-deep {
+					.mat-mdc-form-field-outline {
+						border-radius: var(--ov-meet-radius-sm);
+					}
+
+					.mat-mdc-form-field-label {
+						color: var(--ov-meet-text-secondary);
+					}
+
+					.mat-mdc-form-field-hint {
+						color: var(--ov-meet-text-hint);
+						font-size: var(--ov-meet-font-size-xs);
+					}
+
+					// Icon styling in form fields
+					.mat-mdc-form-field-icon-suffix {
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+
+					.mat-datepicker-toggle {
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	.step-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+		padding-top: var(--ov-meet-spacing-md);
+		border-top: 1px solid var(--ov-meet-border-color-light);
+
+		.action-buttons {
+			display: flex;
+			gap: var(--ov-meet-spacing-md);
+			align-items: center;
+
+			button {
+				@include ov-theme-transition;
+				border-radius: var(--ov-meet-radius-sm);
+
+				&.sample-btn {
+					color: var(--ov-meet-color-primary);
+					border-color: var(--ov-meet-color-primary);
+
+					&:hover {
+						background-color: var(--ov-meet-surface-hover);
+					}
+				}
+
+				&.clear-btn {
+					color: var(--ov-meet-text-secondary);
+					border-color: var(--ov-meet-border-color-strong);
+
+					&:hover:not(:disabled) {
+						background-color: var(--ov-meet-surface-hover);
+					}
+
+					&:disabled {
+						color: var(--ov-meet-text-disabled);
+						border-color: var(--ov-meet-border-color);
+					}
+				}
+
+				mat-icon {
+					@include ov-icon(sm);
+					margin-right: var(--ov-meet-spacing-xs);
+				}
+			}
+		}
+
+		.form-status {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			color: var(--ov-meet-text-hint);
+			font-size: var(--ov-meet-font-size-sm);
+
+			mat-icon {
+				@include ov-icon(sm);
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		.step-header {
+			flex-direction: column;
+			text-align: center;
+			gap: var(--ov-meet-spacing-sm);
+
+			.step-icon {
+				align-self: center;
+				margin-top: 0;
+			}
+		}
+
+		.step-content {
+			.basic-info-form {
+				display: flex;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-md);
+			}
+		}
+
+		.step-actions {
+			.action-buttons {
+				flex-direction: column;
+
+				button {
+					width: 100%;
+				}
+			}
+		}
+	}
+
+	@include ov-tablet-down {
+		.step-content {
+			.basic-info-form {
+				grid-template-columns: 1fr;
+			}
+		}
+	}
+}

@@ -6,8 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { StepIndicatorComponent } from '../../../../components/step-indicator/step-indicator.component';
 import { WizardNavComponent } from '../../../../components/wizard-nav/wizard-nav.component';
-import { WizardStateService } from '../../../../services/wizard-state.service';
+import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 import { WizardStep, WizardNavigationConfig } from '../../../../models/wizard.model';
+import { NavigationService } from '@lib/services';
+import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -18,7 +20,8 @@ import { WizardStep, WizardNavigationConfig } from '../../../../models/wizard.mo
 		WizardNavComponent,
 		MatButtonModule,
 		MatIconModule,
-		MatSlideToggleModule
+		MatSlideToggleModule,
+    RoomWizardBasicInfoComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -41,7 +44,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	};
 	wizardData: any = {};
 
-	constructor(private wizardState: WizardStateService) {}
+	constructor(
+		private wizardState: RoomWizardStateService,
+		private navigationService: NavigationService
+	) {}
 
 	ngOnInit() {
 		this.wizardState.initializeWizard();
@@ -67,12 +73,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		this.destroy$.complete();
 	}
 
-	updateBasicData() {
-		this.wizardState.updateStepData('basic', {
-			roomPrefix: 'demo-room',
-			deletionDate: new Date(Date.now() + 86400000).toISOString()
-		});
-	}
+
 
 	toggleRecording(event: any) {
 		const isEnabled = event.checked; // MatSlideToggle uses 'checked' property
@@ -114,8 +115,18 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	onCancel() {
-		console.log('Wizard cancelled');
+		this.navigationService.navigateTo('/console/rooms', undefined, true);
 		this.wizardState.resetWizard();
+	}
+
+	onStepClick(event: { step: WizardStep; index: number }) {
+		if (event.step.isCompleted) {
+			this.wizardState.goToStep(event.index);
+			this.currentStep = this.wizardState.getCurrentStep();
+			this.navigationConfig = this.wizardState.getNavigationConfig();
+		} else {
+			console.warn('Step is not completed, cannot navigate to it:', event.step);
+		}
 	}
 
 	onFinish() {

@@ -1,1 +1,78 @@
-<p>basic-info works!</p>
+<div class="basic-info-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">Basic Information</h3>
+			<p class="step-description">
+				Configure your room's basic settings including name prefix and automatic deletion date
+			</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="step-content">
+		<form [formGroup]="basicInfoForm" class="basic-info-form">
+			<!-- Room Prefix Field -->
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Room Name Prefix</mat-label>
+				<input
+					matInput
+					formControlName="roomPrefix"
+					placeholder="e.g. demo-room"
+					maxlength="50"
+				/>
+				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
+				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
+			</mat-form-field>
+
+			<!-- Deletion Date Field -->
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Auto-deletion Date</mat-label>
+				<input
+					matInput
+					[matDatepicker]="deletionPicker"
+					formControlName="deletionDate"
+					placeholder="Select deletion date"
+					[min]="minDate"
+					readonly
+					(click)="deletionPicker.open()"
+				/>
+				<mat-datepicker-toggle matSuffix [for]="deletionPicker">
+					<mat-icon matDatepickerToggleIcon class="ov-settings-icon">schedule</mat-icon>
+				</mat-datepicker-toggle>
+				<mat-datepicker #deletionPicker></mat-datepicker>
+				<mat-hint>Optional. Room will be automatically deleted on this date.</mat-hint>
+			</mat-form-field>
+		</form>
+	</main>
+
+	<!-- Actions Section -->
+	<footer class="step-actions">
+		<div class="action-buttons">
+			<!-- Sample Data Button -->
+			<button mat-stroked-button class="sample-btn" (click)="updateBasicData()" type="button">
+				<mat-icon>auto_fix_high</mat-icon>
+				Fill Sample Data
+			</button>
+
+			<!-- Clear Form Button -->
+			<button
+				mat-stroked-button
+				class="clear-btn"
+				(click)="clearForm()"
+				type="button"
+				[disabled]="basicInfoForm.pristine"
+			>
+				<mat-icon>clear_all</mat-icon>
+				Clear Form
+			</button>
+		</div>
+
+		<!-- Form Status Info -->
+		<div class="form-status" *ngIf="!basicInfoForm.pristine">
+			<mat-icon class="ov-action-icon">info</mat-icon>
+			<span class="status-text">Changes saved automatically</span>
+		</div>
+	</footer>
+</div>
