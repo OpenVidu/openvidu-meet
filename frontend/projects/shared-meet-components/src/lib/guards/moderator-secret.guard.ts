@@ -28,7 +28,7 @@ export const removeModeratorSecretGuard: CanActivateFn = (route, _state) => {
 
 				// Store the moderator secret in session storage for the current room and remove it from the URL
 				sessionStorageService.setModeratorSecret(roomId, moderatorSecret);
-				navigationService.removeModeratorSecretFromUrl({ ...route.queryParams });
+				navigationService.removeQueryParamFromUrl(route.queryParams, 'secret');
 			}
 		});
 

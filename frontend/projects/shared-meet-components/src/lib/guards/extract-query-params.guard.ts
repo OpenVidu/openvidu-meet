@@ -6,7 +6,7 @@ import { ErrorReason } from '../models';
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const contextService = inject(ContextService);
-	const { roomId, participantName, secret, leaveRedirectUrl, viewRecordings } = extractParams(route);
+	const { roomId, participantName, secret, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
 
 	if (isValidUrl(leaveRedirectUrl)) {
 		contextService.setLeaveRedirectUrl(leaveRedirectUrl);
@@ -14,16 +14,16 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
-		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
 	contextService.setRoomId(roomId);
 	contextService.setParticipantName(participantName);
 	contextService.setSecret(secret);
 
-	if (viewRecordings === 'true') {
+	if (showOnlyRecordings === 'true') {
 		// Redirect to the room recordings page
-		return navigationService.createRedirectionToRecordingsPage(roomId, secret);
+		return navigationService.createRedirectionTo(`room/${roomId}/recordings`, { secret });
 	}
 
 	return true;
@@ -39,7 +39,7 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 
 	if (!secret && !storedSecret) {
 		// If no secret is provided, redirect to the error page
-		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
 	contextService.setRoomId(roomId);
@@ -53,7 +53,7 @@ const extractParams = (route: ActivatedRouteSnapshot) => ({
 	participantName: route.queryParams['participant-name'],
 	secret: route.queryParams['secret'],
 	leaveRedirectUrl: route.queryParams['leave-redirect-url'],
-	viewRecordings: route.queryParams['view-recordings']
+	showOnlyRecordings: route.queryParams['show-only-recordings']
 });
 
 const isValidUrl = (url: string) => {

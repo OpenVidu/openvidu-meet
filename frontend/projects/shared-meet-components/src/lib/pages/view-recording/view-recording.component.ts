@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ActionService } from 'openvidu-components-angular';
 import { RecordingManagerService } from '../../services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '../../typings/ce';
@@ -25,7 +25,6 @@ export class ViewRecordingComponent implements OnInit {
 	constructor(
 		protected recordingService: RecordingManagerService,
 		protected actionService: ActionService,
-		protected router: Router,
 		protected route: ActivatedRoute
 	) {}
 

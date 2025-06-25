@@ -1,9 +1,8 @@
-import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
-import { from, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { UserRole, User } from '../../typings/ce';
-import { HttpService } from '../../services';
+import { Injectable } from '@angular/core';
+import { from, Observable } from 'rxjs';
+import { HttpService, NavigationService } from '../../services';
+import { User, UserRole } from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'
@@ -17,7 +16,7 @@ export class AuthService {
 
 	constructor(
 		protected httpService: HttpService,
-		protected router: Router
+		protected navigationService: NavigationService
 	) {}
 
 	async login(username: string, password: string) {
@@ -47,10 +46,7 @@ export class AuthService {
 
 			// Redirect to login page with a query parameter if provided
 			// to redirect to the original page after login
-			const queryParams = redirectToAfterLogin
-				? { queryParams: { redirectTo: redirectToAfterLogin } }
-				: undefined;
-			this.router.navigate(['login'], queryParams);
+			this.navigationService.redirectToLoginPage(redirectToAfterLogin, true);
 		} catch (error) {
 			console.error((error as HttpErrorResponse).error.message);
 		}

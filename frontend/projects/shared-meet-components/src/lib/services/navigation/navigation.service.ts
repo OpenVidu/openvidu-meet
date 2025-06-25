@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
 import { Location } from '@angular/common';
+import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { ErrorReason } from '../../models';
 
@@ -14,15 +14,21 @@ export class NavigationService {
 
 	/**
 	 * Redirects to internal or external URLs
+	 *
+	 * @param url - The URL to redirect to
+	 * @param isExternal - If true, treats the URL as an external link; otherwise,
+	 * treats it as an internal route
 	 */
-	async redirectTo(url: string, isExternal: boolean = false): Promise<void> {
+	async redirectTo(url: string, isExternal = false): Promise<void> {
 		if (isExternal) {
 			console.log('Redirecting to external URL:', url);
 			window.location.href = url;
 		} else {
 			console.log('Redirecting to internal route:', url);
+
 			try {
-				await this.router.navigate([url], { replaceUrl: true });
+				let urlTree = this.router.parseUrl(url);
+				await this.router.navigateByUrl(urlTree, { replaceUrl: true });
 			} catch (error) {
 				console.error('Error navigating to internal route:', error);
 			}
@@ -30,56 +36,95 @@ export class NavigationService {
 	}
 
 	/**
-	 * Redirects to error page with specific reason
+	 * Creates a UrlTree for the error page with specific reason and optionally navigates to it.
+	 *
+	 * @param reason - The error reason to include as a query parameter
+	 * @param navigate - If true, navigates to the generated UrlTree
+	 * @returns The UrlTree for the error page
 	 */
-	async redirectToErrorPage(reason: ErrorReason): Promise<void> {
-		try {
-			await this.router.navigate(['error'], { queryParams: { reason } });
-		} catch (error) {
-			console.error('Error redirecting to error page:', error);
+	async redirectToErrorPage(reason: ErrorReason, navigate = false): Promise<UrlTree> {
+		const urlTree = this.createRedirectionTo('error', { reason });
+
+		if (navigate) {
+			try {
+				await this.router.navigateByUrl(urlTree);
+			} catch (error) {
+				console.error('Error redirecting to error page:', error);
+			}
 		}
+
+		return urlTree;
 	}
 
 	/**
-	 * Creates a URL tree for redirecting to error page
+	 * Creates a UrlTree for the login page with a `redirectTo` query parameter and optionally navigates to it.
+	 *
+	 * @param redirectTo - The URL to redirect to after login
+	 * @param navigate - If true, navigates to the generated UrlTree
+	 * @returns The UrlTree for the login page
 	 */
-	createRedirectionToErrorPage(reason: ErrorReason): UrlTree {
-		return this.router.createUrlTree(['error'], { queryParams: { reason } });
+	async redirectToLoginPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
+		const queryParams = redirectTo ? { redirectTo } : undefined;
+		const urlTree = this.createRedirectionTo('login', queryParams);
+
+		if (navigate) {
+			try {
+				await this.router.navigateByUrl(urlTree);
+			} catch (error) {
+				console.error('Error redirecting to login page:', error);
+			}
+		}
+
+		return urlTree;
 	}
 
 	/**
-	 * Creates a URL tree for redirecting to login page with `redirectTo` query parameter
+	 * Creates a URL tree for redirecting to a specific route
+	 *
+	 * @param route - The route to redirect to
+	 * @param queryParams - Optional query parameters to include in the URL
+	 * @returns A UrlTree representing the redirection
 	 */
-	createRedirectionToLoginPage(redirectTo: string): UrlTree {
-		return this.router.createUrlTree(['login'], { queryParams: { redirectTo } });
+	createRedirectionTo(route: string, queryParams?: Params): UrlTree {
+		return this.router.createUrlTree([route], { queryParams });
 	}
 
 	/**
-	 * Navigates to recordings page
+	 * Navigates to a specific route
+	 *
+	 * @param route - The route to navigate to
+	 * @param queryParams - Optional query parameters to include in the navigation
+	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
-	async redirectToRecordingsPage(roomId: string, secret: string): Promise<void> {
+	async navigateTo(route: string, queryParams?: Params, replaceUrl: boolean = false): Promise<void> {
 		try {
-			await this.router.navigate([`room/${roomId}/recordings`], {
-				queryParams: { secret }
+			await this.router.navigate([route], {
+				queryParams,
+				replaceUrl
 			});
 		} catch (error) {
-			console.error('Error navigating to recordings:', error);
+			console.error('Error navigating to route:', error);
 		}
 	}
 
 	/**
-	 * Creates a URL tree for redirecting to recordings page
+	 * Checks if the current URL contains a specific route
+	 *
+	 * @param route - The route to check against the current URL
+	 * @returns True if the current URL contains the route, false otherwise
 	 */
-	createRedirectionToRecordingsPage(roomId: string, secret: string): UrlTree {
-		return this.router.createUrlTree([`room/${roomId}/recordings`], {
-			queryParams: { secret }
-		});
+	containsRoute(route: string): boolean {
+		const currentUrl = this.router.url.split('?')[0]; // Remove query params for comparison
+		return currentUrl.includes(route);
 	}
 
 	/**
-	 * Updates URL query parameters without navigation
+	 * Updates the query parameters in the URL by merging existing parameters with new ones.
+	 *
+	 * @param oldParams - The existing query parameters
+	 * @param newParams - The new query parameters to merge with the existing ones
 	 */
-	updateUrlQueryParams(oldParams: Params, newParams: Record<string, any>): void {
+	updateQueryParamsFromUrl(oldParams: Params, newParams: Params): void {
 		const queryParams = {
 			...oldParams,
 			...newParams
@@ -93,36 +138,16 @@ export class NavigationService {
 	}
 
 	/**
-	 * Removes the 'secret' query parameter from the URL
+	 * Removes a specific query parameter from the URL
+	 *
+	 * @param queryParams - The current query parameters
+	 * @param param - The parameter to remove
 	 */
-	removeModeratorSecretFromUrl(queryParams: Params): void {
-		delete queryParams['secret'];
-		const urlTree = this.router.createUrlTree([], { queryParams });
+	removeQueryParamFromUrl(queryParams: Params, param: string): void {
+		const updatedParams = { ...queryParams };
+		delete updatedParams[param];
+		const urlTree = this.router.createUrlTree([], { queryParams: updatedParams });
 		const newUrl = this.router.serializeUrl(urlTree);
 		this.location.replaceState(newUrl);
-	}
-
-	/**
-	 * Navigates to a specific route
-	 */
-	async navigateTo(route: string, queryParams?: Record<string, any>, replaceUrl: boolean = false): Promise<void> {
-		try {
-			await this.router.navigate([route], {
-				queryParams,
-				replaceUrl
-			});
-		} catch (error) {
-			console.error('Error navigating to route:', error);
-		}
-	}
-
-	/**
-	 * Checks if the current URL contains a specific route
-	 * @param route - The route to check against the current URL
-	 * @returns True if the current URL contains the route, false otherwise
-	 */
-	containsRoute(route: string): boolean {
-		const currentUrl = this.router.url.split('?')[0]; // Remove query params for comparison
-		return currentUrl.includes(route);
 	}
 }

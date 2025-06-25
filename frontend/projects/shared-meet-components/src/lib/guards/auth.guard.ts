@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
 import {
 	AuthService,
@@ -16,15 +16,13 @@ export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 
 	// Check if user is authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (!isAuthenticated) {
 		// Redirect to the login page
-		return router.createUrlTree(['login'], {
-			queryParams: { redirectTo: state.url }
-		});
+		return navigationService.redirectToLoginPage(state.url);
 	}
 
 	// Allow access to the requested page
@@ -36,13 +34,13 @@ export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 	_state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 
 	// Check if user is not authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (isAuthenticated) {
 		// Redirect to the console page
-		return router.createUrlTree(['console']);
+		return navigationService.createRedirectionTo('console');
 	}
 
 	// Allow access to the requested page
@@ -75,12 +73,12 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
 			case 404:
 				// Room not found
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_ROOM);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
 			default:
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
 
@@ -98,7 +96,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const isAuthenticated = await authService.isUserAuthenticated();
 		if (!isAuthenticated) {
 			// Redirect to the login page with query param to redirect back to the room
-			return navigationService.createRedirectionToLoginPage(state.url);
+			return navigationService.redirectToLoginPage(state.url);
 		}
 	}
 
@@ -118,7 +116,7 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
-		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
 	}
 
 	try {
@@ -130,17 +128,17 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
 			case 401:
 				// Unauthorized access
 				// Redirect to the login page with query param to redirect back to the recording
-				return navigationService.createRedirectionToLoginPage(state.url);
+				return navigationService.redirectToLoginPage(state.url);
 			case 404:
 				// Recording not found
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING);
 			default:
 				// Internal error
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
 };

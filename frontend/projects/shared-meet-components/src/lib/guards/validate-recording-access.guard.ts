@@ -26,7 +26,7 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 
 		if (!contextService.canRetrieveRecordings()) {
 			// If the user does not have permission to retrieve recordings, redirect to the error page
-			return navigationService.createRedirectionToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
+			return navigationService.redirectToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
 		}
 
 		return true;
@@ -35,15 +35,15 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
 			case 403:
 				// Recording access is configured for admins only
-				return navigationService.createRedirectionToErrorPage(ErrorReason.RECORDINGS_ADMIN_ONLY_ACCESS);
+				return navigationService.redirectToErrorPage(ErrorReason.RECORDINGS_ADMIN_ONLY_ACCESS);
 			case 404:
 				// There are no recordings in the room or the room does not exist
-				return navigationService.createRedirectionToErrorPage(ErrorReason.NO_RECORDINGS);
+				return navigationService.redirectToErrorPage(ErrorReason.NO_RECORDINGS);
 			default:
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
 };

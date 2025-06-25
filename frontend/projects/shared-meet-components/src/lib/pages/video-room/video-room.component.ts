@@ -1,4 +1,5 @@
 import { AsyncPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
 import {
 	ApiDirectiveModule,
 	OpenViduComponentsUiModule,
@@ -16,20 +16,26 @@ import {
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
+import { Observable } from 'rxjs';
 import { ErrorReason } from '../../models';
 import {
 	ApplicationFeatures,
+	AuthService,
+	ContextService,
 	FeatureConfigurationService,
 	NavigationService,
 	ParticipantTokenService,
 	RecordingManagerService,
-	AuthService,
-	ContextService,
 	RoomService,
 	SessionStorageService,
 	WebComponentManagerService
 } from '../../services';
-import { OpenViduMeetPermissions, ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '../../typings/ce';
+import {
+	OpenViduMeetPermissions,
+	ParticipantRole,
+	WebComponentEvent,
+	WebComponentOutboundEventMessage
+} from '../../typings/ce';
 
 @Component({
 	selector: 'app-video-room',
@@ -165,20 +171,22 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			switch (error.status) {
 				case 400:
 					// Invalid secret
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET, true);
 					break;
 				case 404:
 					// Room not found
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM, true);
 					break;
 				case 409:
 					// Participant already exists.
 					// Show the error message in participant name input form
 					this.participantForm.get('name')?.setErrors({ participantExists: true });
-					throw new Error('Participant already exists in the room');
+					break;
 				default:
-					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);
 			}
+
+			throw new Error('Error generating participant token');
 		}
 	}
 
@@ -198,7 +206,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		// Replace secret and participant name in the URL query parameters
-		this.navigationService.updateUrlQueryParams(this.route.snapshot.queryParams, {
+		this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
 		});
@@ -206,9 +214,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async goToRecordings() {
 		try {
-			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, {
-				queryParams: { secret: this.roomSecret }
-			});
+			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
 		} catch (error) {
 			console.error('Error navigating to recordings:', error);
 		}

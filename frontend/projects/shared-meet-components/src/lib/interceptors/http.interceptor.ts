@@ -144,7 +144,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 				}
 
 				// Expired access token
-				if (!pageUrl.startsWith('/console/login') && !pageUrl.startsWith('/login')) {
+				if (!pageUrl.startsWith('/login')) {
 					// If the error occurred in a page that is not the login page, refresh the access token
 					return refreshAccessToken(error);
 				}
