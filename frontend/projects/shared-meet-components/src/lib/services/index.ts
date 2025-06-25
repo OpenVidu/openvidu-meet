@@ -11,3 +11,4 @@ export * from './recording-manager/recording-manager.service';
 export * from './navigation/navigation.service';
 export * from './theme/theme.service';
 export * from './feature-configuration/feature-configuration.service';
+export * from './wizard-state.service';

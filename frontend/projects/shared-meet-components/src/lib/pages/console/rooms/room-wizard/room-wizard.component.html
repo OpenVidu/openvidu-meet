@@ -1,0 +1,118 @@
+<div class="wizard-container ov-theme-transition">
+	<header class="wizard-header">
+		<div class="title">
+			<mat-icon class="ov-room-icon">meeting_room</mat-icon>
+			<h2>Room Creation Wizard</h2>
+		</div>
+		<p class="subtitle">Create and configure your video room in a few simple steps</p>
+		<ov-step-indicator
+			[steps]="steps"
+			[allowNavigation]="false"
+			[currentStepIndex]="currentStepIndex">
+		</ov-step-indicator>
+	</header>
+
+	<main class="wizard-content">
+		<section class="step-content ov-surface">
+			@switch (currentStep?.id) {
+				@case ('basic') {
+					<div class="demo-step fade-in">
+						<mat-icon class="ov-room-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px;">info</mat-icon>
+						<!-- <h3>Basic Information</h3> -->
+						<p>Configure your room's basic settings including name prefix and expiration date</p>
+						<button mat-raised-button color="primary" (click)="updateBasicData()">
+							<mat-icon>auto_fix_high</mat-icon>
+							Set Sample Data
+						</button>
+						<!-- <div class="ov-mt-md">
+							<details class="debug-section">
+								<summary class="ov-text-secondary">Debug Info</summary>
+								<pre>{{ wizardData.basic | json }}</pre>
+							</details>
+						</div> -->
+					</div>
+				}
+				@case ('recording') {
+					<div class="demo-step fade-in">
+						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px;">videocam</mat-icon>
+						<h3>Recording Settings</h3>
+						<p>Choose whether to enable recording for this room</p>
+						<mat-slide-toggle
+							class="ov-slide-toggle-success ov-mb-md"
+							[checked]="wizardData.recording?.enabled"
+							(change)="toggleRecording($event)">
+							<span class="toggle-label">Enable Recording</span>
+						</mat-slide-toggle>
+						<!-- <div class="ov-mt-md">
+							<details class="debug-section">
+								<summary class="ov-text-secondary">Debug Info</summary>
+								<pre>{{ wizardData.recording | json }}</pre>
+							</details>
+						</div> -->
+					</div>
+				}
+				@case ('recordingTrigger') {
+					<div class="demo-step fade-in">
+						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px;">play_circle</mat-icon>
+						<h3>Recording Trigger</h3>
+						<p>Configure when recording should start automatically</p>
+						<button mat-raised-button color="accent" (click)="setTriggerData()">
+							<mat-icon>touch_app</mat-icon>
+							Set Manual Trigger
+						</button>
+						<!-- <div class="ov-mt-md">
+							<details class="debug-section">
+								<summary class="ov-text-secondary">Debug Info</summary>
+								<pre>{{ wizardData.recordingTrigger | json }}</pre>
+							</details>
+						</div> -->
+					</div>
+				}
+				@case ('recordingLayout') {
+					<div class="demo-step fade-in">
+						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px;">view_module</mat-icon>
+						<h3>Recording Layout</h3>
+						<p>Choose the layout style for your recordings</p>
+						<button mat-raised-button color="accent" (click)="setLayoutData()">
+							<mat-icon>grid_view</mat-icon>
+							Set Grid Layout
+						</button>
+						<!-- <div class="ov-mt-md">
+							<details class="debug-section">
+								<summary class="ov-text-secondary">Debug Info</summary>
+								<pre>{{ wizardData.recordingLayout | json }}</pre>
+							</details>
+						</div> -->
+					</div>
+				}
+				@case ('preferences') {
+					<div class="demo-step fade-in">
+						<mat-icon class="ov-settings-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px;">tune</mat-icon>
+						<h3>Room Preferences</h3>
+						<p>Configure additional room features and participant options</p>
+						<button mat-raised-button color="primary" (click)="setPreferencesData()">
+							<mat-icon>settings</mat-icon>
+							Set Default Preferences
+						</button>
+						<!-- <div class="ov-mt-md">
+							<details class="debug-section">
+								<summary class="ov-text-secondary">Debug Info</summary>
+								<pre>{{ wizardData.preferences | json }}</pre>
+							</details>
+						</div> -->
+					</div>
+				}
+			}
+		</section>
+	</main>
+
+	<footer class="wizard-footer">
+		<ov-wizard-nav
+			[config]="navigationConfig"
+			(previous)="onPrevious()"
+			(next)="onNext()"
+			(cancel)="onCancel()"
+			(finish)="onFinish()">
+		</ov-wizard-nav>
+	</footer>
+</div>

@@ -1,0 +1,37 @@
+<div class="wizard-navigation">
+	<div class="nav-buttons">
+		<!-- Cancel Button -->
+		@if (config.showCancel) {
+			<button mat-stroked-button color="warn" class="cancel-btn" (click)="onCancel()">
+				<mat-icon>close</mat-icon>
+				Cancel
+			</button>
+		}
+
+		<div class="spacer"></div>
+
+		<!-- Previous Button -->
+		@if (config.showPrevious) {
+			<button mat-button [disabled]="config.isPreviousDisabled" (click)="onPrevious()">
+				<mat-icon>chevron_left</mat-icon>
+				{{ config.previousLabel }}
+			</button>
+		}
+
+		<!-- Next Button -->
+		@if (config.showNext) {
+			<button mat-raised-button color="primary" [disabled]="config.isNextDisabled" (click)="onNext()">
+				{{ config.nextLabel }}
+				<mat-icon>chevron_right</mat-icon>
+			</button>
+		}
+
+		<!-- Finish Button -->
+		@if (config.showFinish) {
+			<button mat-raised-button color="accent" (click)="onFinish()">
+				<mat-icon>check</mat-icon>
+				Finish
+			</button>
+		}
+	</div>
+</div>

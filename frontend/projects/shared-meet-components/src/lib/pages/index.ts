@@ -5,6 +5,7 @@ export * from './console/overview/overview.component';
 export * from './console/recordings/recordings.component';
 export * from './console/rooms/rooms.component';
 export * from './console/rooms/room-form/room-form.component';
+export * from './console/rooms/room-wizard/room-wizard.component';
 export * from './console/settings/preferences.component';
 export * from './disconnected/disconnected.component';
 export * from './error/error.component';

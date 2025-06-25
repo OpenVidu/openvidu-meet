@@ -24,7 +24,8 @@ import {
 	RoomRecordingsComponent,
 	RoomsComponent,
 	VideoRoomComponent,
-	ViewRecordingComponent
+	ViewRecordingComponent,
+	RoomWizardComponent
 } from '../pages';
 
 export const baseRoutes: Routes = [
@@ -51,7 +52,7 @@ export const baseRoutes: Routes = [
 				path: 'rooms',
 				component: RoomsComponent,
 				children: [
-					{ path: 'new', component: RoomFormComponent },
+					{ path: 'new', component: RoomWizardComponent },
 					{ path: ':roomId/edit', component: RoomFormComponent }
 				]
 			},

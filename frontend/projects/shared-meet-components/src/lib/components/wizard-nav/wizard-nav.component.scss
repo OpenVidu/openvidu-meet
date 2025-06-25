@@ -1,0 +1,44 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+.wizard-navigation {
+  width: 100%;
+  padding: 1rem 0;
+//   border-top: 1px solid #e0e0e0;
+//   background-color: #fafafa;
+
+  .nav-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+
+    .spacer {
+      flex: 1;
+    }
+
+    .cancel-btn {
+      margin-right: auto;
+    }
+
+    button {
+      margin: 0 0.5rem;
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+      &:last-child {
+        margin-right: 0;
+      }
+
+      mat-icon {
+        margin: 0 4px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}

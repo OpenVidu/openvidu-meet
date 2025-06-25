@@ -1,0 +1,188 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+.step-indicator-wrapper {
+  width: 90%;
+  margin: auto;
+  padding: 1rem 0 0 0;
+
+  .wizard-stepper {
+    background: transparent;
+
+    // Personalización de iconos de paso
+    ::ng-deep .mat-step-icon {
+      background-color: #e0e0e0 !important;
+      color: #666 !important;
+
+      &.mat-step-icon-state-done {
+        background-color: #4caf50 !important;
+        color: white !important;
+      }
+
+      &.mat-step-icon-state-edit {
+        background-color: #2196f3 !important;
+        color: white !important;
+      }
+
+      &.mat-step-icon-selected {
+        background-color: #2196f3 !important;
+        color: white !important;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+      }
+    }
+
+    // Personalización de labels
+    ::ng-deep .mat-step-label {
+      font-weight: 400;
+      color: #666;
+
+      &.mat-step-label-active {
+        font-weight: 500;
+        color: #2196f3;
+      }
+
+      &.mat-step-label-selected {
+        font-weight: 500;
+        color: #2196f3;
+      }
+    }
+
+    // Personalización de conectores
+    ::ng-deep .mat-stepper-horizontal-line {
+      border-color: #e0e0e0;
+
+      &::before {
+        border-color: #4caf50;
+      }
+    }
+
+    ::ng-deep .mat-stepper-vertical-line {
+      border-color: #e0e0e0;
+
+      &::before {
+        border-color: #4caf50;
+      }
+    }
+
+    // Estilos para modo horizontal
+    &.mat-stepper-horizontal {
+      ::ng-deep .mat-horizontal-stepper-header {
+        padding: 0 8px;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.04);
+          border-radius: 8px;
+          cursor: pointer;
+        }
+
+        &:not(.mat-step-header-state-edit):not(.mat-step-header-state-done) {
+          &:hover {
+            cursor: default;
+            background-color: transparent;
+          }
+        }
+      }
+
+      ::ng-deep .mat-step-header {
+        height: auto;
+        padding: 12px 0;
+      }
+    }
+
+    // Estilos para modo vertical (móvil)
+    &.mat-stepper-vertical {
+      ::ng-deep .mat-vertical-stepper-header {
+        padding: 12px 0;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.04);
+          border-radius: 8px;
+        }
+
+        &:not(.mat-step-header-state-edit):not(.mat-step-header-state-done) {
+          &:hover {
+            cursor: default;
+            background-color: transparent;
+          }
+        }
+      }
+
+      ::ng-deep .mat-vertical-content-container {
+        margin-left: 36px;
+        border-left: 1px solid #e0e0e0;
+      }
+    }
+
+    // Ocultar contenido de pasos por defecto (solo mostrar indicadores)
+    ::ng-deep .mat-vertical-content,
+    ::ng-deep .mat-horizontal-content {
+      display: none !important;
+    }
+
+    // Ocultar los botones de navegación del stepper
+    ::ng-deep .mat-stepper-navigation {
+      display: none !important;
+    }
+  }
+
+  .step-label {
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.3s ease;
+
+    &.active {
+      color: #2196f3;
+      font-weight: 500;
+    }
+  }
+
+  .step-content {
+    padding: 16px 0;
+
+    .step-description {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+
+    .wizard-stepper {
+      ::ng-deep .mat-step-label {
+        font-size: 12px;
+      }
+
+      ::ng-deep .mat-step-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+      }
+    }
+  }
+
+  // Animation para transiciones
+  ::ng-deep .mat-step-icon,
+  ::ng-deep .mat-step-label {
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  // Estados especiales
+  .step-indicator-wrapper {
+    &.compact-mode {
+      .wizard-stepper ::ng-deep .mat-step-label {
+        display: none;
+      }
+    }
+
+    &.minimal-mode {
+      .wizard-stepper ::ng-deep {
+        .mat-stepper-horizontal-line,
+        .mat-stepper-vertical-line {
+          display: none;
+        }
+      }
+    }
+  }
+}
