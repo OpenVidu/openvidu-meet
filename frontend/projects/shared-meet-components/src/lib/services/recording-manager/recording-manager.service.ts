@@ -114,7 +114,14 @@ export class RecordingManagerService {
 	 * @return The URL to access the recording media
 	 */
 	getRecordingMediaUrl(recordingId: string, secret?: string): string {
-		return `${this.RECORDINGS_API}/${recordingId}/media${secret ? `?secret=${secret}` : ''}`;
+		const params = new URLSearchParams();
+		if (secret) {
+			params.append('secret', secret);
+		}
+
+		const now = Date.now();
+		params.append('t', now.toString());
+		return `${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`;
 	}
 
 	/**
@@ -153,6 +160,21 @@ export class RecordingManagerService {
 	}
 
 	/**
+	 * Bulk deletes recordings by their IDs
+	 *
+	 * @param recordingIds - An array of recording IDs to delete
+	 * @return A promise that resolves to the deletion response
+	 */
+	async bulkDeleteRecordings(recordingIds: string[]): Promise<any> {
+		if (recordingIds.length === 0) {
+			throw new Error('No recording IDs provided for bulk deletion');
+		}
+
+		const path = `${this.RECORDINGS_API}?recordingIds=${recordingIds.join(',')}`;
+		return this.httpService.deleteRequest(path);
+	}
+
+	/**
 	 * Plays a recording by opening a dialog with the recording player
 	 *
 	 * @param recordingId - The ID of the recording to play
@@ -172,7 +194,24 @@ export class RecordingManagerService {
 		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId);
 		const link = document.createElement('a');
 		link.href = recordingUrl;
-		link.download = recording.filename || 'recording.mp4';
+		link.download = recording.filename || `${recording.recordingId}.mp4`;
+		link.click();
+	}
+
+	/**
+	 * Downloads multiple recordings as a ZIP file
+	 *
+	 * @param recordings - An array of recording IDs to download
+	 */
+	downloadRecordingsAsZip(recordingIds: string[]) {
+		if (recordingIds.length === 0) {
+			throw new Error('No recordings IDs provided for download');
+		}
+
+		const downloadUrl = `${this.RECORDINGS_API}/download?recordingIds=${recordingIds.join(',')}`;
+		const link = document.createElement('a');
+		link.href = downloadUrl;
+		link.download = 'recordings.zip';
 		link.click();
 	}
 
