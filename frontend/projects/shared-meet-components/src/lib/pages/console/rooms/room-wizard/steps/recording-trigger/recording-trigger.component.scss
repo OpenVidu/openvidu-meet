@@ -1,0 +1,111 @@
+@import '../../../../../../../../../../src/assets/styles/design-tokens';
+
+.recording-trigger-step {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-sm);
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.step-icon {
+			@include ov-icon(lg);
+			color: var(--ov-meet-icon-recordings);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-xs) 0;
+				font-size: var(--ov-meet-font-size-lg);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.trigger-form {
+			.options-grid {
+				@include ov-grid-responsive(260px);
+				gap: var(--ov-meet-spacing-md);
+
+				// On larger screens, limit to 3 cards per row
+				@include ov-tablet-up {
+					justify-content: space-between;
+				}
+			}
+		}
+	}
+
+	// Responsive Design
+	@include ov-mobile-down {
+		.step-header {
+			flex-direction: column;
+			text-align: center;
+			gap: var(--ov-meet-spacing-sm);
+			margin-bottom: var(--ov-meet-spacing-lg);
+
+			.step-icon {
+				align-self: center;
+				margin-top: 0;
+			}
+		}
+
+		.step-content .trigger-form .options-grid {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-xs);
+
+		.step-content .trigger-form .options-grid {
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// Enhanced animations for step transitions
+.fade-in {
+	animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+// Pulse animation for recommended badge
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}

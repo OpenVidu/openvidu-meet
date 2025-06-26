@@ -1,1 +1,31 @@
-<p>recording-trigger works!</p>
+<div class="recording-trigger-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="ov-recording-icon step-icon">play_circle</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">Recording Trigger</h3>
+			<p class="step-description">Choose when recording should start automatically</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="step-content">
+		<form [formGroup]="triggerForm" class="trigger-form">
+			<!-- Options Cards -->
+			<div class="options-grid">
+				@for (option of triggerOptions; track option.id) {
+					<ov-selectable-card
+						[option]="option"
+						[selectedValue]="selectedOption"
+						[allowMultiSelect]="false"
+						[showSelectionIndicator]="true"
+						[showProBadge]="true"
+						[showRecommendedBadge]="false"
+						[enableHover]="!option.disabled"
+						(optionSelected)="onOptionChange($event)"
+					></ov-selectable-card>
+				}
+			</div>
+		</form>
+	</main>
+</div>

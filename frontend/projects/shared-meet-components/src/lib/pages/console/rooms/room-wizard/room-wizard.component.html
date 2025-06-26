@@ -24,23 +24,7 @@
 					<ov-recording-preferences></ov-recording-preferences>
 				}
 				@case ('recordingTrigger') {
-					<div class="demo-step fade-in">
-						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px"
-							>play_circle</mat-icon
-						>
-						<h3>Recording Trigger</h3>
-						<p>Configure when recording should start automatically</p>
-						<button mat-raised-button color="accent" (click)="setTriggerData()">
-							<mat-icon>touch_app</mat-icon>
-							Set Manual Trigger
-						</button>
-						<!-- <div class="ov-mt-md">
-							<details class="debug-section">
-								<summary class="ov-text-secondary">Debug Info</summary>
-								<pre>{{ wizardData.recordingTrigger | json }}</pre>
-							</details>
-						</div> -->
-					</div>
+					<ov-recording-trigger></ov-recording-trigger>
 				}
 				@case ('recordingLayout') {
 					<div class="demo-step fade-in">
