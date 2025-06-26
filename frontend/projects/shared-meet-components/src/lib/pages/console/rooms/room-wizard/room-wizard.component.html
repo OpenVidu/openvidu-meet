@@ -30,23 +30,7 @@
 					<ov-recording-layout></ov-recording-layout>
 				}
 				@case ('preferences') {
-					<div class="demo-step fade-in">
-						<mat-icon class="ov-settings-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px"
-							>tune</mat-icon
-						>
-						<h3>Room Preferences</h3>
-						<p>Configure additional room features and participant options</p>
-						<button mat-raised-button color="primary" (click)="setPreferencesData()">
-							<mat-icon>settings</mat-icon>
-							Set Default Preferences
-						</button>
-						<!-- <div class="ov-mt-md">
-							<details class="debug-section">
-								<summary class="ov-text-secondary">Debug Info</summary>
-								<pre>{{ wizardData.preferences | json }}</pre>
-							</details>
-						</div> -->
-					</div>
+					<ov-room-preferences></ov-room-preferences>
 				}
 			}
 		</section>

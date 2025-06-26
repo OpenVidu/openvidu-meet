@@ -1,0 +1,206 @@
+@import '../../../../../../../../../../src/assets/styles/design-tokens';
+
+.room-preferences-step {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-sm);
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-lg);
+
+		.step-icon {
+			@include ov-icon(xl);
+			color: var(--ov-meet-icon-settings);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.preferences-form {
+			display: flex;
+			flex-direction: column;
+		}
+	}
+
+	.preferences-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+		gap: var(--ov-meet-spacing-md);
+		width: 100%;
+
+		@media (max-width: 768px) {
+			grid-template-columns: 1fr;
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	.preference-card {
+		@include ov-card;
+		border: 2px solid var(--ov-meet-border-secondary);
+		transition: all 0.2s ease-in-out;
+		cursor: default;
+
+		&:hover {
+			border-color: var(--ov-meet-border-primary);
+			box-shadow: var(--ov-meet-shadow-md);
+		}
+
+		mat-card-content {
+			padding: 0;
+		}
+
+		.card-header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: var(--ov-meet-spacing-sm);
+			margin-bottom: var(--ov-meet-spacing-md);
+
+			.icon-title-group {
+				display: flex;
+				align-items: flex-start;
+				gap: var(--ov-meet-spacing-sm);
+				flex: 1;
+
+				.feature-icon {
+					@include ov-icon(lg);
+					color: var(--ov-meet-icon-primary);
+					margin-top: var(--ov-meet-spacing-xs);
+				}
+
+				.title-group {
+					flex: 1;
+
+					.card-title {
+						margin: 0 0 var(--ov-meet-spacing-xs) 0;
+						font-size: var(--ov-meet-font-size-lg);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-primary);
+						line-height: var(--ov-meet-line-height-tight);
+					}
+
+					.card-description {
+						margin: 0;
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-text-secondary);
+						line-height: var(--ov-meet-line-height-normal);
+					}
+				}
+			}
+
+			.feature-toggle {
+				flex-shrink: 0;
+				align-self: flex-start;
+			}
+		}
+	}
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+	.room-preferences-step {
+		// padding: var(--ov-meet-spacing-xs);
+
+		.step-header {
+			gap: var(--ov-meet-spacing-xs);
+			margin-bottom: var(--ov-meet-spacing-md);
+		}
+
+		.preferences-grid {
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+@media (max-width: 768px) {
+	.room-preferences-step {
+		.step-header {
+			.step-title-group {
+				.step-title {
+					font-size: var(--ov-meet-font-size-lg);
+				}
+
+				.step-description {
+					font-size: var(--ov-meet-font-size-sm);
+				}
+			}
+		}
+
+		.preferences-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.preference-card {
+			.card-header {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: var(--ov-meet-spacing-sm);
+
+				.feature-toggle {
+					align-self: flex-end;
+				}
+			}
+		}
+	}
+}
+
+@media (max-width: 480px) {
+	.room-preferences-step {
+		.preference-card {
+			.card-header {
+				.icon-title-group {
+					.title-group {
+						.card-title {
+							font-size: var(--ov-meet-font-size-md);
+						}
+
+						.card-description {
+							font-size: var(--ov-meet-font-size-xs);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// Animation classes
+.fade-in {
+	animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

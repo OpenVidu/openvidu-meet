@@ -1,1 +1,67 @@
-<p>room-preferences works!</p>
+<div class="room-preferences-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">Room Preferences</h3>
+			<p class="step-description">Configure additional features and functionality for your room</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="step-content">
+		<form [formGroup]="preferencesForm" class="preferences-form">
+			<!-- Preferences Cards Grid -->
+			<div class="preferences-grid">
+				<!-- Chat Settings Card -->
+				<mat-card class="preference-card">
+					<mat-card-content>
+						<div class="card-header">
+							<div class="icon-title-group">
+								<mat-icon class="feature-icon">chat</mat-icon>
+								<div class="title-group">
+									<h4 class="card-title">Chat</h4>
+									<p class="card-description">
+										Allow participants to send messages during the meeting
+									</p>
+								</div>
+							</div>
+							<mat-slide-toggle
+								[checked]="chatEnabled"
+								(change)="onChatToggleChange($event)"
+								color="primary"
+								class="feature-toggle"
+							>
+							</mat-slide-toggle>
+						</div>
+					</mat-card-content>
+				</mat-card>
+
+				<!-- Virtual Backgrounds Card -->
+				<mat-card class="preference-card">
+					<mat-card-content>
+						<div class="card-header">
+							<div class="icon-title-group">
+								<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
+								<div class="title-group">
+									<h4 class="card-title">Virtual Backgrounds</h4>
+									<p class="card-description">
+										Enable virtual backgrounds and blur effects for participants
+									</p>
+								</div>
+							</div>
+
+							<mat-slide-toggle
+								[checked]="virtualBackgroundsEnabled"
+								(change)="onVirtualBackgroundToggleChange($event)"
+								color="primary"
+								class="feature-toggle"
+							>
+							</mat-slide-toggle>
+						</div>
+					</mat-card-content>
+				</mat-card>
+			</div>
+		</form>
+	</main>
+</div>

@@ -13,6 +13,7 @@ import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.comp
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
+import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -27,7 +28,8 @@ import { RecordingLayoutComponent } from './steps/recording-layout/recording-lay
     RoomWizardBasicInfoComponent,
     RecordingPreferencesComponent,
     RecordingTriggerComponent,
-    RecordingLayoutComponent
+    RecordingLayoutComponent,
+    RoomPreferencesComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -77,13 +79,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-	}
-
-	setPreferencesData() {
-		this.wizardState.updateStepData('preferences', {
-			chatEnabled: true,
-			virtualBackgroundEnabled: false
-		});
 	}
 
 	onPrevious() {
