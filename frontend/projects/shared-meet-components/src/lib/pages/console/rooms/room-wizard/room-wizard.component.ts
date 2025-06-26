@@ -25,11 +25,11 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 		MatButtonModule,
 		MatIconModule,
 		MatSlideToggleModule,
-    RoomWizardBasicInfoComponent,
-    RecordingPreferencesComponent,
-    RecordingTriggerComponent,
-    RecordingLayoutComponent,
-    RoomPreferencesComponent
+		RoomWizardBasicInfoComponent,
+		RecordingPreferencesComponent,
+		RecordingTriggerComponent,
+		RecordingLayoutComponent,
+		RoomPreferencesComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -108,7 +108,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	onFinish() {
+	async onFinish() {
 		console.log('Wizard completed with data:', this.wizardState.getWizardData());
+		try {
+			await this.navigationService.navigateTo('/console/rooms', undefined, true);
+		} catch (error) {}
 	}
 }

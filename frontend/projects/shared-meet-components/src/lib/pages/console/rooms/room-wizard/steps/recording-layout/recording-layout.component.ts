@@ -80,6 +80,9 @@ export class RecordingLayoutComponent implements OnInit, OnDestroy {
 		this.layoutForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
+
+		// Save initial default value if no existing data
+		this.saveInitialDefaultIfNeeded();
 	}
 
 	ngOnDestroy() {
@@ -91,10 +94,20 @@ export class RecordingLayoutComponent implements OnInit, OnDestroy {
 		const wizardData = this.wizardState.getWizardData();
 		const currentData = wizardData?.recordingLayout as RecordingLayoutData;
 
-		if (currentData !== undefined) {
+		if (currentData !== undefined && Object.keys(currentData).length > 0) {
 			this.layoutForm.patchValue({
 				layoutType: currentData.type
 			});
+		}
+	}
+
+	private saveInitialDefaultIfNeeded() {
+		const wizardData = this.wizardState.getWizardData();
+		const currentData = wizardData?.recordingLayout as RecordingLayoutData;
+
+		// If no existing data, save the default value
+		if (currentData === undefined || Object.keys(currentData).length === 0) {
+			this.saveFormData(this.layoutForm.value);
 		}
 	}
 
@@ -134,8 +147,7 @@ export class RecordingLayoutComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	get currentSelection(): SelectableOption | undefined {
-		const selectedId = this.layoutForm.value.layoutType;
-		return this.layoutOptions.find((option) => option.id === selectedId);
+	get selectedOption(): string {
+		return this.layoutForm.value.layoutType || 'grid'; // Default to grid if not set
 	}
 }

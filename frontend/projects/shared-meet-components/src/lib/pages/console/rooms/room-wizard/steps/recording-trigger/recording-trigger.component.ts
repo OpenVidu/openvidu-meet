@@ -80,6 +80,9 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 		this.triggerForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
+
+		// Save initial default value if no existing data
+		this.saveInitialDefaultIfNeeded();
 	}
 
 	ngOnDestroy() {
@@ -91,7 +94,7 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 		const wizardData = this.wizardState.getWizardData();
 		const currentData = wizardData?.recordingTrigger as RecordingTriggerData;
 
-		if (currentData !== undefined) {
+		if (currentData !== undefined && Object.keys(currentData).length > 0) {
 			this.triggerForm.patchValue({
 				triggerType: currentData.type
 			});
@@ -104,6 +107,16 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 		};
 
 		this.wizardState.updateStepData('recordingTrigger', data);
+	}
+
+	private saveInitialDefaultIfNeeded() {
+		const wizardData = this.wizardState.getWizardData();
+		const currentData = wizardData?.recordingTrigger as RecordingTriggerData;
+
+		// If no existing data, save the default value
+		if (!currentData || Object.keys(currentData).length === 0) {
+			this.saveFormData(this.triggerForm.value);
+		}
 	}
 
 	/**

@@ -16,7 +16,10 @@
 				@for (option of layoutOptions; track option.id) {
 					<ov-selectable-card
 						[option]="option"
-						[selectedValue]="selectedValue"
+						[selectedValue]="selectedOption"
+						[showSelectionIndicator]="true"
+						[showProBadge]="true"
+						[showRecommendedBadge]="false"
 						[showImage]="true"
 						[imageAspectRatio]="'1/1'"
 						[showImageAndIcon]="false"

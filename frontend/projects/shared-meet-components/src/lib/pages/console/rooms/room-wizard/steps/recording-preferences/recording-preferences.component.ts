@@ -95,6 +95,9 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		this.recordingForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
+
+		// Save initial default value if no existing data
+		this.saveInitialDefaultIfNeeded();
 	}
 
 	ngOnDestroy() {
@@ -123,6 +126,16 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		};
 
 		this.wizardState.updateStepData('recording', data);
+	}
+
+	private saveInitialDefaultIfNeeded() {
+		const wizardData = this.wizardState.getWizardData();
+		const currentData = wizardData?.recording as RecordingPreferencesData;
+
+		// If no existing data, save the default value
+		if (currentData === undefined) {
+			this.saveFormData(this.recordingForm.value);
+		}
 	}
 
 	onOptionSelect(event: SelectionEvent): void {

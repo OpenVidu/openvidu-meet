@@ -10,68 +10,71 @@ import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
 
 @Component({
-  selector: 'ov-room-preferences',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSlideToggleModule
-  ],
-  templateUrl: './room-preferences.component.html',
-  styleUrl: './room-preferences.component.scss'
+	selector: 'ov-room-preferences',
+	standalone: true,
+	imports: [CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatSlideToggleModule],
+	templateUrl: './room-preferences.component.html',
+	styleUrl: './room-preferences.component.scss'
 })
 export class RoomPreferencesComponent implements OnInit, OnDestroy {
-  preferencesForm: FormGroup;
-  private destroy$ = new Subject<void>();
+	preferencesForm: FormGroup;
+	private destroy$ = new Subject<void>();
 
-  constructor(
-    private fb: FormBuilder,
-    private roomWizardStateService: RoomWizardStateService
-  ) {
-    this.preferencesForm = this.fb.group({
-      chatEnabled: [true],
-      virtualBackgroundsEnabled: [true]
-    });
-  }
+	constructor(
+		private fb: FormBuilder,
+		private roomWizardStateService: RoomWizardStateService
+	) {
+		this.preferencesForm = this.fb.group({
+			chatEnabled: [true],
+			virtualBackgroundsEnabled: [true]
+		});
+	}
 
-  ngOnInit(): void {
-    // Load existing data from wizard state
-    const existingData = this.roomWizardStateService.getWizardData();
-    if (existingData && existingData.preferences) {
-      this.preferencesForm.patchValue(existingData.preferences);
-    }
+	ngOnInit(): void {
+		// Load existing data from wizard state
+		const existingData = this.roomWizardStateService.getWizardData();
+		if (existingData && existingData.preferences) {
+			this.preferencesForm.patchValue(existingData.preferences);
+		}
 
-    // Auto-save form changes
-    this.preferencesForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(value => {
-        this.roomWizardStateService.updateStepData('preferences', value);
-      });
-  }
+		// Auto-save form changes
+		this.preferencesForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+			this.roomWizardStateService.updateStepData('preferences', value);
+		});
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+		// Save initial default values if no existing data
+		this.saveInitialDefaultIfNeeded();
+	}
 
-  onChatToggleChange(event: any): void {
-    const isEnabled = event.checked;
-    this.preferencesForm.patchValue({ chatEnabled: isEnabled });
-  }
+	ngOnDestroy(): void {
+		this.destroy$.next();
+		this.destroy$.complete();
+	}
 
-  onVirtualBackgroundToggleChange(event: any): void {
-    const isEnabled = event.checked;
-    this.preferencesForm.patchValue({ virtualBackgroundsEnabled: isEnabled });
-  }
+	private saveInitialDefaultIfNeeded(): void {
+		const existingData = this.roomWizardStateService.getWizardData();
 
-  get chatEnabled(): boolean {
-    return this.preferencesForm.value.chatEnabled;
-  }
+		// If no existing preferences data, save the default values
+		if (!existingData || !existingData.preferences || Object.keys(existingData.preferences).length === 0) {
+			this.roomWizardStateService.updateStepData('preferences', this.preferencesForm.value);
+		}
+	}
 
-  get virtualBackgroundsEnabled(): boolean {
-    return this.preferencesForm.value.virtualBackgroundsEnabled;
-  }
+	onChatToggleChange(event: any): void {
+		const isEnabled = event.checked;
+		this.preferencesForm.patchValue({ chatEnabled: isEnabled });
+	}
+
+	onVirtualBackgroundToggleChange(event: any): void {
+		const isEnabled = event.checked;
+		this.preferencesForm.patchValue({ virtualBackgroundsEnabled: isEnabled });
+	}
+
+	get chatEnabled(): boolean {
+		return this.preferencesForm.value.chatEnabled;
+	}
+
+	get virtualBackgroundsEnabled(): boolean {
+		return this.preferencesForm.value.virtualBackgroundsEnabled;
+	}
 }
