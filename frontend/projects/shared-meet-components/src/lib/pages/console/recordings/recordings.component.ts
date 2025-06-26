@@ -5,10 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import {
-	RecordingListsComponent,
-	RecordingTableAction
-} from '../../../components/recording-lists/recording-lists.component';
+import { RecordingListsComponent, RecordingTableAction } from '../../../components';
 import { NotificationService, RecordingManagerService } from '../../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '../../../typings/ce';
 
@@ -30,8 +27,6 @@ export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 	isLoading = false;
 	showLoadingSpinner = false;
-	canDeleteRecordings = true; // Set based on user permissions
-	canDownloadRecordings = true; // Set based on user permissions
 	hasMoreRecordings = false;
 
 	// Pagination
@@ -62,13 +57,13 @@ export class RecordingsComponent implements OnInit {
 				this.copyLinkToClipboard(action.recordings[0]);
 				break;
 			case 'delete':
-				await this.deleteRecording(action.recordings[0]);
+				this.deleteRecording(action.recordings[0]);
 				break;
 			case 'bulkDelete':
-				await this.bulkDeleteRecordings(action.recordings);
+				this.bulkDeleteRecordings(action.recordings);
 				break;
-			case 'batchDownload':
-				// Implement batch download logic if needed
+			case 'bulkDownload':
+				this.bulkDownloadRecordings(action.recordings);
 				break;
 		}
 	}
@@ -141,7 +136,7 @@ export class RecordingsComponent implements OnInit {
 		// this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	private async deleteRecording(recording: MeetRecordingInfo) {
+	private deleteRecording(recording: MeetRecordingInfo) {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(recording.recordingId);
@@ -152,7 +147,6 @@ export class RecordingsComponent implements OnInit {
 				this.notificationService.showSnackbar('Recording deleted successfully');
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-
 				this.notificationService.showSnackbar('Failed to delete recording');
 			}
 		};
@@ -166,19 +160,18 @@ export class RecordingsComponent implements OnInit {
 		});
 	}
 
-	private async bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
+	private bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
 		const bulkDeleteCallback = async () => {
 			try {
-				//TODO: Implement bulk delete logic in the backend
-				// const recordingIds = recordings.map((r) => r.recordingId);
-				// await this.recordingService.bulkDeleteRecordings(recordingIds);
-				// // Remove from local list
-				// const currentRecordings = this.recordings();
-				// this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
-				// this.notificationService.showSnackbar('Recordings deleted successfully');
+				const recordingIds = recordings.map((r) => r.recordingId);
+				await this.recordingService.bulkDeleteRecordings(recordingIds);
+
+				// Remove from local list
+				const currentRecordings = this.recordings();
+				this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
+				this.notificationService.showSnackbar('Recordings deleted successfully');
 			} catch (error) {
 				console.error('Error deleting recordings:', error);
-
 				this.notificationService.showSnackbar('Failed to delete recordings');
 			}
 		};
@@ -189,7 +182,12 @@ export class RecordingsComponent implements OnInit {
 			cancelText: 'Cancel',
 			title: 'Delete Recordings',
 			message: `Are you sure you want to delete <b>${count}</b> recordings?`,
-			confirmCallback: () => bulkDeleteCallback
+			confirmCallback: bulkDeleteCallback
 		});
+	}
+
+	private bulkDownloadRecordings(recordings: MeetRecordingInfo[]) {
+		const recordingIds = recordings.map((r) => r.recordingId);
+		this.recordingService.downloadRecordingsAsZip(recordingIds);
 	}
 }
