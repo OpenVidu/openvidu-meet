@@ -28,10 +28,19 @@
 
 	<!-- Card Content -->
 	<div class="card-content">
+		<!-- Image Section -->
+		@if (shouldShowImage()) {
+			<div class="card-image" [style.aspect-ratio]="getImageAspectRatio()">
+				<img [src]="option.imageUrl" [alt]="option.title + ' preview'" loading="lazy" />
+			</div>
+		}
+
 		<!-- Icon and Title -->
 		<div class="card-header">
-			<mat-icon class="option-icon ov-action-icon">{{ option.icon }}</mat-icon>
-			<h4 class="option-title">
+			@if (shouldShowIcon()) {
+				<mat-icon class="option-icon ov-action-icon">{{ option.icon }}</mat-icon>
+			}
+			<h4 class="option-title" [ngClass]="{ 'has-icon': shouldShowIcon(), 'has-image': shouldShowImage() }">
 				{{ option.title }}
 				@if (option.recommended && showRecommendedBadge) {
 					<span class="recommended-badge">Recommended</span>

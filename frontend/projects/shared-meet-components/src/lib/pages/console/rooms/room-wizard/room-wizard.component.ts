@@ -12,6 +12,7 @@ import { NavigationService } from '@lib/services';
 import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
+import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -25,7 +26,8 @@ import { RecordingTriggerComponent } from './steps/recording-trigger/recording-t
 		MatSlideToggleModule,
     RoomWizardBasicInfoComponent,
     RecordingPreferencesComponent,
-    RecordingTriggerComponent
+    RecordingTriggerComponent,
+    RecordingLayoutComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -75,13 +77,6 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-	}
-
-	setLayoutData() {
-		this.wizardState.updateStepData('recordingLayout', {
-			layout: 'GRID',
-			access: 'moderator-only'
-		});
 	}
 
 	setPreferencesData() {

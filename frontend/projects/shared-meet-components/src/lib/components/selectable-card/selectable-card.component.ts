@@ -9,7 +9,8 @@ export interface SelectableOption {
 	id: string;
 	title: string;
 	description: string;
-	icon: string;
+	icon?: string;
+	imageUrl?: string; // Optional image URL for visual layouts
 	recommended?: boolean;
 	isPro?: boolean;
 	disabled?: boolean;
@@ -26,19 +27,6 @@ export interface SelectionEvent {
 	previousSelection?: string;
 }
 
-/**
- * Reusable selectable card component for wizard steps and forms
- *
- * @example
- * ```html
- * <ov-selectable-card
- *   [option]="recordingOption"
- *   [selectedValue]="currentSelection"
- *   [allowMultiSelect]="false"
- *   (optionSelected)="onOptionChange($event)"
- * ></ov-selectable-card>
- * ```
- */
 @Component({
 	selector: 'ov-selectable-card',
 	standalone: true,
@@ -98,6 +86,24 @@ export class SelectableCardComponent {
 	 * @default true
 	 */
 	@Input() showRecommendedBadge: boolean = true;
+
+	/**
+	 * Whether to show image instead of icon (when imageUrl is provided)
+	 * @default false
+	 */
+	@Input() showImage: boolean = false;
+
+	/**
+	 * Whether to show both image and icon (when both are provided)
+	 * @default false
+	 */
+	@Input() showImageAndIcon: boolean = false;
+
+	/**
+	 * Image aspect ratio for layout control
+	 * @default '16/9'
+	 */
+	@Input() imageAspectRatio: string = '16/9';
 
 	/**
 	 * Custom icon for the PRO badge
@@ -287,5 +293,29 @@ export class SelectableCardComponent {
 		const statusLabel = statusParts.length > 0 ? `. ${statusParts.join(', ')}` : '';
 
 		return `${baseLabel}${statusLabel}`;
+	}
+
+	/**
+	 * Check if should show image
+	 */
+	shouldShowImage(): boolean {
+		return this.showImage && !!this.option.imageUrl;
+	}
+
+	/**
+	 * Check if should show icon
+	 */
+	shouldShowIcon(): boolean {
+		if (this.showImageAndIcon) {
+			return !!this.option.icon;
+		}
+		return !this.shouldShowImage() && !!this.option.icon;
+	}
+
+	/**
+	 * Get image aspect ratio styles
+	 */
+	getImageAspectRatio(): string {
+		return this.imageAspectRatio;
 	}
 }

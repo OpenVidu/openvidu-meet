@@ -27,23 +27,7 @@
 					<ov-recording-trigger></ov-recording-trigger>
 				}
 				@case ('recordingLayout') {
-					<div class="demo-step fade-in">
-						<mat-icon class="ov-recording-icon ov-mb-sm" style="font-size: 48px; width: 48px; height: 48px"
-							>view_module</mat-icon
-						>
-						<h3>Recording Layout</h3>
-						<p>Choose the layout style for your recordings</p>
-						<button mat-raised-button color="accent" (click)="setLayoutData()">
-							<mat-icon>grid_view</mat-icon>
-							Set Grid Layout
-						</button>
-						<!-- <div class="ov-mt-md">
-							<details class="debug-section">
-								<summary class="ov-text-secondary">Debug Info</summary>
-								<pre>{{ wizardData.recordingLayout | json }}</pre>
-							</details>
-						</div> -->
-					</div>
+					<ov-recording-layout></ov-recording-layout>
 				}
 				@case ('preferences') {
 					<div class="demo-step fade-in">

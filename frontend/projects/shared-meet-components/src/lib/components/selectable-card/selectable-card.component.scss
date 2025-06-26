@@ -82,6 +82,25 @@
 		flex-direction: column;
 		margin-top: var(--ov-meet-spacing-xs);
 
+		.card-image {
+			margin-bottom: var(--ov-meet-spacing-md);
+			border-radius: var(--ov-meet-border-radius-sm);
+			overflow: hidden;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block;
+				@include ov-theme-transition;
+			}
+
+
+			// &:hover img {
+			// 	transform: scale(1.02);
+			// }
+		}
+
 		.card-header {
 			display: flex;
 			align-items: flex-start;
@@ -102,6 +121,10 @@
 				font-weight: var(--ov-meet-font-weight-medium);
 				color: var(--ov-meet-text-primary);
 				line-height: var(--ov-meet-line-height-tight);
+
+				&.has-image {
+					text-align: center;
+				}
 
 				.recommended-badge {
 					display: inline-block;
