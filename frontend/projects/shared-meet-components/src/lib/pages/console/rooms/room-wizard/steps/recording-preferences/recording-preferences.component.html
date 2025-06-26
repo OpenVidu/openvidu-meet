@@ -13,45 +13,14 @@
 		<form [formGroup]="recordingForm" class="recording-form">
 			<!-- Options Cards -->
 			<div class="options-grid">
-				<div
-					class="option-card"
-					*ngFor="let option of recordingOptions"
-					[class.selected]="isOptionSelected(option.id)"
-					(click)="onOptionSelect(option.id)"
-				>
-					<!-- Selection Indicator -->
-					<div class="selection-indicator">
-						<mat-icon class="selection-icon" [class.selected]="isOptionSelected(option.id)">
-							{{ isOptionSelected(option.id) ? 'radio_button_checked' : 'radio_button_unchecked' }}
-						</mat-icon>
-					</div>
-
-					<!-- Card Content -->
-					<div class="card-content">
-						<!-- Icon and Title -->
-						<div class="card-header">
-							<mat-icon
-								class="option-icon"
-								[class.ov-recording-icon]="option.id === 'enabled'"
-								[class.ov-settings-icon]="option.id === 'disabled'"
-							>
-								{{ option.icon }}
-							</mat-icon>
-							<h4 class="option-title">
-								{{ option.title }}
-							</h4>
-						</div>
-
-						<!-- Description -->
-						<p class="option-description">{{ option.description }}</p>
-					</div>
-				</div>
+				@for (option of recordingOptions; track option.id) {
+					<ov-selectable-card
+						[option]="option"
+						[selectedValue]="selectedValue"
+						(optionSelected)="onOptionSelect($event)"
+					></ov-selectable-card>
+				}
 			</div>
-
-			<!-- Hidden radio input for form control -->
-			<mat-radio-group formControlName="recordingEnabled" style="display: none">
-				<mat-radio-button *ngFor="let option of recordingOptions" [value]="option.id"> </mat-radio-button>
-			</mat-radio-group>
 		</form>
 	</main>
 </div>

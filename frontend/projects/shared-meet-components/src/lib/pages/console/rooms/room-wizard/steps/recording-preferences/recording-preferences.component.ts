@@ -7,13 +7,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatRadioModule } from '@angular/material/radio';
 import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
-
-interface RecordingOption {
-	id: 'disabled' | 'enabled';
-	title: string;
-	description: string;
-	icon: string;
-}
+import {
+	SelectableCardComponent,
+	SelectableOption,
+	SelectionEvent
+} from '../../../../../../components/selectable-card/selectable-card.component';
 
 interface RecordingPreferencesData {
 	enabled: boolean;
@@ -22,7 +20,15 @@ interface RecordingPreferencesData {
 @Component({
 	selector: 'ov-recording-preferences',
 	standalone: true,
-	imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatCardModule, MatRadioModule],
+	imports: [
+		CommonModule,
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatCardModule,
+		MatRadioModule,
+		SelectableCardComponent
+	],
 	templateUrl: './recording-preferences.component.html',
 	styleUrl: './recording-preferences.component.scss'
 })
@@ -30,7 +36,7 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 	recordingForm: FormGroup;
 	private destroy$ = new Subject<void>();
 
-	recordingOptions: RecordingOption[] = [
+	recordingOptions: SelectableOption[] = [
 		{
 			id: 'disabled',
 			title: 'No Recording',
@@ -89,9 +95,9 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		this.wizardState.updateStepData('recording', data);
 	}
 
-	onOptionSelect(optionId: 'disabled' | 'enabled') {
+	onOptionSelect(event: SelectionEvent): void {
 		this.recordingForm.patchValue({
-			recordingEnabled: optionId
+			recordingEnabled: event.optionId
 		});
 	}
 
@@ -99,17 +105,25 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		return this.recordingForm.value.recordingEnabled === optionId;
 	}
 
+	get selectedValue(): string {
+		return this.recordingForm.value.recordingEnabled;
+	}
+
 	// Método para establecer datos de ejemplo
 	setRecommendedOption() {
-		this.onOptionSelect('enabled');
+		this.recordingForm.patchValue({
+			recordingEnabled: 'enabled'
+		});
 	}
 
 	// Método para restablecer a la opción por defecto
 	setDefaultOption() {
-		this.onOptionSelect('disabled');
+		this.recordingForm.patchValue({
+			recordingEnabled: 'disabled'
+		});
 	}
 
-	get currentSelection(): RecordingOption | undefined {
+	get currentSelection(): SelectableOption | undefined {
 		const selectedId = this.recordingForm.value.recordingEnabled;
 		return this.recordingOptions.find((option) => option.id === selectedId);
 	}
