@@ -254,7 +254,7 @@ export class RecordingService {
 
 				if (recRoomId !== roomId) {
 					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-					notDeletedRecordings.add({ recordingId, error: `Recording does not belong to room '${roomId}'` });
+					notDeletedRecordings.add({ recordingId, error: `Recording '${recordingId}' does not belong to room '${roomId}'` });
 					continue;
 				}
 			}

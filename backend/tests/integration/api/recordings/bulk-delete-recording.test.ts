@@ -7,12 +7,13 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	generateRecordingTokenCookie,
 	getAllRecordings,
 	startRecording,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
-import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
@@ -106,6 +107,36 @@ describe('Recording API Tests', () => {
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
 
 			expect(deleteResponse.status).toBe(204);
+		});
+
+		it('should only delete recordings belonging to the room when using a recording token', async () => {
+			// Create a room and start a recording
+			const roomData = await setupSingleRoomWithRecording(true);
+			const roomId = roomData.room.roomId;
+			const recordingId = roomData.recordingId;
+
+			// Generate a recording token for the room
+			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.moderatorSecret);
+
+			// Create another room and start a recording
+			const otherRoomData = await setupSingleRoomWithRecording(true);
+			const otherRecordingId = otherRoomData.recordingId;
+
+			// Intenta eliminar ambas grabaciones usando el token de la primera sala
+			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingCookie);
+
+			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.body).toEqual({
+				deleted: [recordingId],
+				notDeleted: [
+					{
+						recordingId: otherRecordingId,
+						error: expect.stringContaining(
+							`Recording '${otherRecordingId}' does not belong to room '${roomId}'`
+						)
+					}
+				]
+			});
 		});
 
 		it('should delete all recordings and their secrets', async () => {

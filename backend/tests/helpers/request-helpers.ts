@@ -594,14 +594,48 @@ export const deleteRecording = async (recordingId: string) => {
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
 };
 
-export const bulkDeleteRecordings = async (recordingIds: any[]): Promise<Response> => {
+export const bulkDeleteRecordings = async (recordingIds: any[], recordingTokenCookie?: string): Promise<Response> => {
 	checkAppIsRunning();
 
-	const response = await request(app)
+	const req = request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-		.query({ recordingIds: recordingIds.join(',') })
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
-	return response;
+		.query({ recordingIds: recordingIds.join(',') });
+
+	if (recordingTokenCookie) {
+		req.set('Cookie', recordingTokenCookie);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+	}
+
+	return await req;
+};
+
+export const downloadRecordings = async (
+	recordingIds: string[],
+	asBuffer = true,
+	recordingTokenCookie?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+
+	const req = request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
+		.query({ recordingIds: recordingIds.join(',') });
+
+	if (recordingTokenCookie) {
+		req.set('Cookie', recordingTokenCookie);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+	}
+
+	if (asBuffer) {
+		return await req.buffer().parse((res, cb) => {
+			const data: Buffer[] = [];
+			res.on('data', (chunk) => data.push(chunk));
+			res.on('end', () => cb(null, Buffer.concat(data)));
+		});
+	}
+
+	return await req;
 };
 
 export const stopAllRecordings = async (moderatorCookie: string) => {

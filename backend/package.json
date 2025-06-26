@@ -85,6 +85,7 @@
 		"@types/node": "^20.12.14",
 		"@types/supertest": "^6.0.2",
 		"@types/swagger-ui-express": "^4.1.6",
+		"@types/unzipper": "0.10.11",
 		"@types/validator": "^13.12.2",
 		"@types/yamljs": "^0.2.34",
 		"@typescript-eslint/eslint-plugin": "6.7.5",
@@ -103,7 +104,8 @@
 		"ts-jest": "^29.2.5",
 		"ts-jest-resolver": "^2.0.1",
 		"ts-node": "10.9.2",
-		"typescript": "5.4.5"
+		"typescript": "5.4.5",
+		"unzipper": "0.12.3"
 	},
 	"jest-junit": {
 		"outputDirectory": "test-results",
