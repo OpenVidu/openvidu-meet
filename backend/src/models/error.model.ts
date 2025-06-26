@@ -154,6 +154,14 @@ export const errorInvalidRecordingSecret = (recordingId: string, secret: string)
 	);
 };
 
+export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`None of the provided recording IDs belong to room '${roomId}'`,
+		400
+	);
+};
+
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
 	return (
 		error instanceof OpenViduMeetError &&

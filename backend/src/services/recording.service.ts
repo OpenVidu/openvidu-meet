@@ -233,19 +233,34 @@ export class RecordingService {
 	 * For each provided egressId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
 	 * @param recordingIds Array of recording identifiers.
-	 * @returns An array with the MeetRecordingInfo of the successfully deleted recordings.
+	 * @param roomId Optional room identifier to delete only recordings from a specific room.
+	 * @returns An object containing:
+	 * - `deleted`: An array of successfully deleted recording IDs.
+	 * - `notDeleted`: An array of objects containing recording IDs and error messages for those that could not be deleted.
 	 */
 	async bulkDeleteRecordingsAndAssociatedFiles(
-		recordingIds: string[]
+		recordingIds: string[],
+		roomId?: string
 	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 		const roomsToCheck: Set<string> = new Set();
 
-		// Check if the recording is in progress
 		for (const recordingId of recordingIds) {
+			// If a roomId is provided, only process recordings from that room
+			if (roomId) {
+				const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+
+				if (recRoomId !== roomId) {
+					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
+					notDeletedRecordings.add({ recordingId, error: `Recording does not belong to room '${roomId}'` });
+					continue;
+				}
+			}
+
 			try {
+				// Check if the recording is in progress
 				const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
 
 				if (!RecordingHelper.canBeDeleted(recordingInfo)) {

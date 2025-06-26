@@ -64,7 +64,7 @@ const GetRecordingSchema = z.object({
 	})
 });
 
-const BulkDeleteRecordingsSchema = z.object({
+const MultipleRecordingIdsSchema = z.object({
 	recordingIds: z.preprocess(
 		(arg) => {
 			if (typeof arg === 'string') {
@@ -187,8 +187,8 @@ export const withValidRecordingFiltersRequest = (req: Request, res: Response, ne
 	next();
 };
 
-export const withValidRecordingBulkDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = BulkDeleteRecordingsSchema.safeParse(req.query);
+export const withValidMultipleRecordingIds = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = MultipleRecordingIdsSchema.safeParse(req.query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

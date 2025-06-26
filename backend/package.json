@@ -52,8 +52,9 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "3.673.0",
-		"@sesamecare-oss/redlock": "1.4.0",
 		"@azure/storage-blob": "^12.27.0",
+		"@sesamecare-oss/redlock": "1.4.0",
+		"archiver": "7.0.1",
 		"bcrypt": "5.1.1",
 		"chalk": "5.4.1",
 		"cookie-parser": "1.4.7",
@@ -74,6 +75,7 @@
 	},
 	"devDependencies": {
 		"@openapitools/openapi-generator-cli": "^2.16.3",
+		"@types/archiver": "6.0.3",
 		"@types/bcrypt": "5.0.2",
 		"@types/cookie-parser": "1.4.7",
 		"@types/cors": "2.8.17",
