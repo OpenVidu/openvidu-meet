@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
 import {
@@ -12,9 +14,16 @@ import {
 	SelectableOption,
 	SelectionEvent
 } from '../../../../../../components/selectable-card/selectable-card.component';
+import { MeetRecordingAccess } from '../../../../../../../../../../../typings/src/room-preferences';
 
 interface RecordingPreferencesData {
 	enabled: boolean;
+	allowAccessTo?: MeetRecordingAccess;
+}
+
+interface RecordingAccessOption {
+	value: MeetRecordingAccess;
+	label: string;
 }
 
 @Component({
@@ -27,6 +36,8 @@ interface RecordingPreferencesData {
 		MatIconModule,
 		MatCardModule,
 		MatRadioModule,
+		MatSelectModule,
+		MatFormFieldModule,
 		SelectableCardComponent
 	],
 	templateUrl: './recording-preferences.component.html',
@@ -35,6 +46,7 @@ interface RecordingPreferencesData {
 export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 	recordingForm: FormGroup;
 	private destroy$ = new Subject<void>();
+	isAnimatingOut = false;
 
 	recordingOptions: SelectableOption[] = [
 		{
@@ -52,20 +64,34 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		}
 	];
 
+	recordingAccessOptions: RecordingAccessOption[] = [
+		{
+			value: MeetRecordingAccess.ADMIN,
+			label: 'Only Admin'
+		},
+		{
+			value: MeetRecordingAccess.ADMIN_MODERATOR,
+			label: 'Admin and Moderators'
+		},
+		{
+			value: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER,
+			label: 'Admin, Moderators and Publishers'
+		}
+	];
+
 	constructor(
 		private fb: FormBuilder,
 		private wizardState: RoomWizardStateService
 	) {
 		this.recordingForm = this.fb.group({
-			recordingEnabled: ['disabled'] // default to no recording
+			recordingEnabled: ['disabled'], // default to no recording
+			allowAccessTo: ['admin'] // default access level
 		});
 	}
 
 	ngOnInit() {
-		// Cargar datos existentes si los hay
 		this.loadExistingData();
 
-		// Suscribirse a cambios del formulario para guardar automáticamente
 		this.recordingForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
@@ -82,23 +108,43 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 
 		if (currentData !== undefined) {
 			this.recordingForm.patchValue({
-				recordingEnabled: currentData.enabled ? 'enabled' : 'disabled'
+				recordingEnabled: currentData.enabled ? 'enabled' : 'disabled',
+				allowAccessTo: currentData.allowAccessTo || 'admin'
 			});
 		}
 	}
 
 	private saveFormData(formValue: any) {
 		const data: RecordingPreferencesData = {
-			enabled: formValue.recordingEnabled === 'enabled'
+			enabled: formValue.recordingEnabled === 'enabled',
+			...(formValue.recordingEnabled === 'enabled' && {
+				allowAccessTo: formValue.allowAccessTo
+			})
 		};
 
 		this.wizardState.updateStepData('recording', data);
 	}
 
 	onOptionSelect(event: SelectionEvent): void {
-		this.recordingForm.patchValue({
-			recordingEnabled: event.optionId
-		});
+		const previouslyEnabled = this.isRecordingEnabled;
+		const willBeEnabled = event.optionId === 'enabled';
+
+		// If we are disabling the recording, we want to animate out
+		if (previouslyEnabled && !willBeEnabled) {
+			this.isAnimatingOut = true;
+			// Wait for the animation to finish before updating the form
+			setTimeout(() => {
+				this.recordingForm.patchValue({
+					recordingEnabled: event.optionId
+				});
+				this.isAnimatingOut = false;
+			}, 100); // Animation duration
+		} else {
+			// If we are enabling or keeping it enabled, just update the form
+			this.recordingForm.patchValue({
+				recordingEnabled: event.optionId
+			});
+		}
 	}
 
 	isOptionSelected(optionId: 'disabled' | 'enabled'): boolean {
@@ -109,14 +155,20 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		return this.recordingForm.value.recordingEnabled;
 	}
 
-	// Método para establecer datos de ejemplo
+	get isRecordingEnabled(): boolean {
+		return this.recordingForm.value.recordingEnabled === 'enabled';
+	}
+
+	get shouldShowAccessSection(): boolean {
+		return this.isRecordingEnabled || this.isAnimatingOut;
+	}
+
 	setRecommendedOption() {
 		this.recordingForm.patchValue({
 			recordingEnabled: 'enabled'
 		});
 	}
 
-	// Método para restablecer a la opción por defecto
 	setDefaultOption() {
 		this.recordingForm.patchValue({
 			recordingEnabled: 'disabled'

@@ -34,7 +34,8 @@
 	@include ov-section-card;
 	width: 100%;
 	max-width: 600px;
-	min-height: 400px;
+	min-height: 450px;
+	max-height: 450px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;

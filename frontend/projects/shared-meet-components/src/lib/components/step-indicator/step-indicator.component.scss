@@ -1,5 +1,8 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+// @import '../../../../../../src/assets/styles/design-tokens';
 
+::ng-deep .mat-horizontal-content-container {
+	padding: 0 !important;
+}
 
 // .step-indicator-wrapper {
 //   @include ov-responsive-container;
