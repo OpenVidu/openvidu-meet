@@ -2,11 +2,9 @@ name: recordingIds
 in: query
 required: true
 description: >
-    A comma-separated list of recording IDs to delete.
+    A comma-separated list of recording IDs.
     <br>
-    Each recording ID should be in the format 'roomId--sessionId--recordingId'.
-
-    > ⚠️ **Note:** If the recording is in progress, it cannot be deleted.
+    Each recording ID should be in the format 'roomId--egressId--uid'
 
 schema:
     type: string

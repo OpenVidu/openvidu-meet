@@ -57,11 +57,16 @@
         summary: Bulk delete recordings
         description: >
             Deletes multiple recordings at once with the specified recording IDs.
+
+            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            all specified recordings must belong to the same room included in the token.
+            If a recording does not belong to that room, it will not be deleted.
         tags:
             - OpenVidu Meet - Recordings
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
+            - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-ids.yaml'
         responses:
@@ -74,6 +79,52 @@
                 description: >
                     All specified recordings were deleted successfully.
                     No content is returned.
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+
+/recordings/download:
+    get:
+        operationId: downloadRecordings
+        summary: Download recordings
+        description: >
+            Downloads multiple recordings as a ZIP file with the specified recording IDs.
+            The ZIP file will contain all recordings in MP4 format.
+
+            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            all specified recordings must belong to the same room included in the token.
+            If a recording does not belong to that room, it will not be included in the ZIP file.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+            - recordingTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/recording-ids.yaml'
+        responses:
+            '200':
+                description: Successfully created a ZIP file containing the requested recordings
+                headers:
+                    Content-Disposition:
+                        description: >
+                            Indicates that the response is a file download.
+                            The filename will be `recordings.zip`.
+                        schema:
+                            type: string
+                            example: attachment; filename="recordings.zip"
+                content:
+                    application/zip:
+                        schema:
+                            type: string
+                            format: binary
+            '400':
+                $ref: '../components/responses/error-recordings-not-same-room.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
