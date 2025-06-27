@@ -227,7 +227,16 @@
 						</button>
 
 						<mat-menu #actionsMenu="matMenu">
-							<button mat-menu-item (click)="viewRecordings(room)">
+							<button
+								mat-menu-item
+								(click)="viewRecordings(room)"
+								[disabled]="!room.preferences.recordingPreferences.enabled"
+								[matTooltip]="
+									!room.preferences.recordingPreferences.enabled
+										? 'Recording is disabled for this room'
+										: ''
+								"
+							>
 								<mat-icon class="ov-recording-icon">video_library</mat-icon>
 								<span>View Recordings</span>
 							</button>

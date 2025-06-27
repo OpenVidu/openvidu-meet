@@ -334,6 +334,8 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		if (room.markedForDeletion) {
 			return 'Deletes when last participant leaves';
 		}
-		return room.autoDeletionDate ? 'Auto-deletion scheduled' : 'No auto-deletion';
+		return room.autoDeletionDate
+			? 'Auto-deletion scheduled'
+			: 'No auto-deletion. Room remains until manually deleted';
 	}
 }
