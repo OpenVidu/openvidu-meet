@@ -17,7 +17,7 @@
 		</div>
 
 		<!-- Center Section: Batch Actions (visible when items selected) -->
-		@if (showSelection && selectedRooms().size > 1) {
+		@if (showSelection && selectedRooms().size > 0) {
 			<div class="toolbar-center">
 				<div class="batch-actions">
 					<button
@@ -35,16 +35,20 @@
 
 		<!-- Right Section: Actions -->
 		<div class="toolbar-right">
-			<button mat-icon-button class="refresh-btn" (click)="refreshRooms()" [disabled]="loading" matTooltip="Refresh rooms">
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refresh.emit()"
+				[disabled]="loading"
+				matTooltip="Refresh rooms"
+			>
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			@if (canCreateRooms) {
-				<button mat-raised-button (click)="createRoom()" class="create-room-btn">
-					<mat-icon>add</mat-icon>
-					Create New Room
-				</button>
-			}
+			<button mat-raised-button (click)="createRoom()" class="create-room-btn">
+				<mat-icon>add</mat-icon>
+				Create New Room
+			</button>
 
 			@if (showFilters) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms">
@@ -263,9 +267,7 @@
 	<div class="no-rooms-state">
 		<div class="empty-content">
 			<h3>No rooms created yet</h3>
-			<p>
-				{{ emptyMessage }}. Create your first room to start hosting meetings and manage your video conferences.
-			</p>
+			<p>No rooms found. Create your first room to start hosting meetings and manage your video conferences.</p>
 
 			<div class="getting-started-actions">
 				<button mat-raised-button (click)="createRoom()" class="create-room-btn">

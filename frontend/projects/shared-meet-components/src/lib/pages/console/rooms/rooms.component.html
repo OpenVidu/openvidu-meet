@@ -34,10 +34,11 @@
 
 		<div class="page-content">
 			<ov-rooms-lists
-				[rooms]="createdRooms"
+				[rooms]="rooms()"
 				[loading]="isLoading"
 				[showSelection]="true"
 				(roomAction)="onRoomAction($event)"
+				(refresh)="refreshRooms()"
 			></ov-rooms-lists>
 		</div>
 	</div>

@@ -95,6 +95,21 @@ export class RoomService {
 	}
 
 	/**
+	 * Bulk deletes rooms by their IDs.
+	 *
+	 * @param roomIds - An array of room IDs to be deleted
+	 * @return A promise that resolves when the rooms have been deleted
+	 */
+	async bulkDeleteRooms(roomIds: string[]): Promise<any> {
+		if (roomIds.length === 0) {
+			throw new Error('No room IDs provided for bulk deletion');
+		}
+
+		const path = `${this.ROOMS_API}?roomIds=${roomIds.join(',')}`;
+		return this.httpService.deleteRequest(path);
+	}
+
+	/**
 	 * Retrieves the preferences for a specific room.
 	 *
 	 * @param roomId - The unique identifier of the room

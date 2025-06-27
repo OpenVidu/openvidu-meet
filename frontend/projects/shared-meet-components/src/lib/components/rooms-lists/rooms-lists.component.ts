@@ -1,9 +1,20 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, EventEmitter, HostBinding, Input, OnInit, Output, signal } from '@angular/core';
+import {
+	Component,
+	EventEmitter,
+	HostBinding,
+	Input,
+	OnChanges,
+	OnInit,
+	Output,
+	signal,
+	SimpleChanges
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,24 +22,17 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatDividerModule } from '@angular/material/divider';
-import { ActionService } from 'openvidu-components-angular';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { Clipboard } from '@angular/cdk/clipboard';
-import { HttpService, NotificationService } from '../../services';
 import { MeetRoom } from '../../typings/ce';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
 	action:
-		| 'refresh'
 		| 'create'
 		| 'open'
 		| 'edit'
-		| 'settings'
 		| 'copyModeratorLink'
 		| 'copyPublisherLink'
 		| 'viewRecordings'
@@ -37,13 +41,13 @@ export interface RoomTableAction {
 }
 
 /**
- * Reusable component for displaying a list of rooms with filtering, selection, and batch operations.
+ * Reusable component for displaying a list of rooms with filtering, selection, and bulk operations.
  *
  * Features:
  * - Display rooms in a Material Design table
  * - Filter by room name and status
- * - Multi-selection for batch operations
- * - Individual room actions (open, settings, copy links, view recordings, delete)
+ * - Multi-selection for bulk operations
+ * - Individual room actions (open, edit, copy links, view recordings, delete)
  * - Responsive design with mobile optimization
  * - Status-based styling using design tokens
  *
@@ -51,11 +55,9 @@ export interface RoomTableAction {
  * ```html
  * <ov-rooms-lists
  *   [rooms]="rooms"
- *   [canDeleteRooms]="true"
  *   [loading]="isLoading"
  *   [showFilters]="true"
  *   [showSelection]="true"
- *   emptyMessage="No rooms found"
  *   (roomAction)="handleRoomAction($event)"
  *   (filterChange)="handleFilterChange($event)"
  *   (refresh)="refreshRooms()">
@@ -87,14 +89,12 @@ export interface RoomTableAction {
 	templateUrl: './rooms-lists.component.html',
 	styleUrl: './rooms-lists.component.scss'
 })
-export class RoomsListsComponent implements OnInit {
+export class RoomsListsComponent implements OnInit, OnChanges {
 	// Input properties
 	@Input() rooms: MeetRoom[] = [];
-	@Input() canCreateRooms = true;
 	@Input() showFilters = false;
 	@Input() showSelection = true;
 	@Input() loading = false;
-	@Input() emptyMessage = 'No rooms found';
 
 	// Host binding for styling when rooms are selected
 	@HostBinding('class.has-selections')
@@ -105,6 +105,7 @@ export class RoomsListsComponent implements OnInit {
 	// Output events
 	@Output() roomAction = new EventEmitter<RoomTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() refresh = new EventEmitter<void>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
@@ -125,24 +126,20 @@ export class RoomsListsComponent implements OnInit {
 		{ value: 'inactive', label: 'Inactive' }
 	];
 
-	// Room status groups for different states
-	private static readonly STATUS_GROUPS = {
-		ACTIVE: ['active'] as readonly string[],
-		INACTIVE: ['inactive'] as readonly string[],
-		SELECTABLE: ['active', 'inactive'] as readonly string[]
-	} as const;
-
-	constructor(
-		private dialog: MatDialog,
-		private httpService: HttpService,
-		private actionService: ActionService,
-		private clipboard: Clipboard,
-		private notificationService: NotificationService
-	) {}
+	constructor() {}
 
 	ngOnInit() {
 		this.setupFilters();
 		this.updateDisplayedColumns();
+	}
+
+	ngOnChanges(changes: SimpleChanges) {
+		if (changes['rooms']) {
+			const validIds = new Set(this.rooms.map((r) => r.roomId));
+			const filteredSelection = new Set([...this.selectedRooms()].filter((id) => validIds.has(id)));
+			this.selectedRooms.set(filteredSelection);
+			this.updateSelectionState();
+		}
 	}
 
 	// ===== INITIALIZATION METHODS =====
@@ -176,6 +173,7 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	// ===== SELECTION METHODS =====
+
 	toggleAllSelection() {
 		const selected = this.selectedRooms();
 		if (this.allSelected()) {
@@ -226,13 +224,10 @@ export class RoomsListsComponent implements OnInit {
 
 	// ===== ACTION METHODS =====
 
-	refreshRooms() {
-		this.roomAction.emit({ rooms: [], action: 'refresh' });
-	}
-
 	createRoom() {
 		this.roomAction.emit({ rooms: [], action: 'create' });
 	}
+
 	openRoom(room: MeetRoom) {
 		this.roomAction.emit({ rooms: [room], action: 'open' });
 	}
@@ -264,30 +259,19 @@ export class RoomsListsComponent implements OnInit {
 		}
 	}
 
-	clearSelection() {
-		this.selectedRooms.set(new Set());
-		this.updateSelectionState();
+	// ===== FILTER METHODS =====
+
+	hasActiveFilters(): boolean {
+		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+	}
+
+	clearFilters() {
+		this.nameFilterControl.setValue('');
+		this.statusFilterControl.setValue('');
 	}
 
 	// ===== STATUS UTILITY METHODS =====
 
-	/**
-	 * Check if a room is active (not marked for deletion)
-	 */
-	isRoomActive(room: MeetRoom): boolean {
-		return !room.markedForDeletion;
-	}
-
-	/**
-	 * Check if a room is inactive (marked for deletion)
-	 */
-	isRoomInactive(room: MeetRoom): boolean {
-		return !!room.markedForDeletion;
-	}
-
-	/**
-	 * Get room status label
-	 */
 	getRoomStatus(room: MeetRoom): string {
 		return room.markedForDeletion ? 'INACTIVE' : 'ACTIVE';
 	}
@@ -316,7 +300,9 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	getStatusTooltip(room: MeetRoom): string {
-		return room.markedForDeletion ? 'Room is inactive and marked for deletion' : 'Room is active and accepting participants';
+		return room.markedForDeletion
+			? 'Room is inactive and marked for deletion'
+			: 'Room is active and accepting participants';
 	}
 
 	hasAutoDeletion(room: MeetRoom): boolean {
@@ -337,25 +323,11 @@ export class RoomsListsComponent implements OnInit {
 		return room.autoDeletionDate ? 'auto_delete' : 'close';
 	}
 
-	getAutoDeletionColor(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'var(--ov-meet-color-warning)';
-		}
-		return room.autoDeletionDate ? 'var(--ov-meet-color-info)' : 'var(--ov-meet-text-hint)';
-	}
-
 	getAutoDeletionClass(room: MeetRoom): string {
 		if (room.markedForDeletion) {
 			return 'auto-deletion-pending';
 		}
 		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-not-scheduled';
-	}
-
-	getAutoDeletionBgColor(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'var(--ov-meet-bg-error)';
-		}
-		return room.autoDeletionDate ? 'var(--ov-meet-bg-info)' : 'var(--ov-meet-bg-hint)';
 	}
 
 	getAutoDeletionTooltip(room: MeetRoom): string {
