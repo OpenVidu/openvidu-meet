@@ -1,4 +1,6 @@
-description: Mixed results for bulk deletion operation
+description: >
+    **Mixed results**. Some rooms were deleted immediately while others were
+    marked for deletion (due to active participants).
 content:
     application/json:
         schema:

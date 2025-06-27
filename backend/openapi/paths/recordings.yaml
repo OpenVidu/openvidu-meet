@@ -72,9 +72,6 @@
         responses:
             '200':
                 $ref: '../components/responses/success-bulk-delete-recordings.yaml'
-                description: >
-                    **Mixed results**. Some recordings were deleted successfully while others
-                    could not be deleted (e.g., due to being in progress or not found).
             '204':
                 description: >
                     All specified recordings were deleted successfully.

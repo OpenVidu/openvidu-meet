@@ -1,5 +1,5 @@
 description: >
-    The room was marked for deletion (due to active participants)
+    All specified rooms were marked error for deletion (due to active participants)
     and will be removed once all participants leave.
 content:
     application/json:
@@ -9,4 +9,4 @@ content:
                 message:
                     type: string
         example:
-            message: Room 'room-123' marked for deletion
+            message: Rooms 'room-123, room-456' marked for deletion
