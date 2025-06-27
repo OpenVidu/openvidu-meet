@@ -39,10 +39,11 @@
 	<footer class="wizard-footer">
 		<ov-wizard-nav
 			[config]="navigationConfig"
+			[currentStepId]="currentStepIndex"
 			(previous)="onPrevious()"
 			(next)="onNext()"
 			(cancel)="onCancel()"
-			(finish)="onFinish()"
+			(finish)="onFinish($event)"
 		>
 		</ov-wizard-nav>
 	</footer>

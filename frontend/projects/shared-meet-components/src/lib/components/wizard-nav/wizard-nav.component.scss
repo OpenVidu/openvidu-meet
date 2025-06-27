@@ -46,6 +46,12 @@
 				}
 			}
 
+			&.skip-btn {
+				background-color: var(--ov-meet-color-success);
+				color: var(--ov-meet-text-on-primary);
+				box-shadow: var(--ov-meet-shadow-sm);
+			}
+
 			&.prev-btn {
 				color: var(--ov-meet-color-primary);
 				border-color: var(--ov-meet-color-primary);

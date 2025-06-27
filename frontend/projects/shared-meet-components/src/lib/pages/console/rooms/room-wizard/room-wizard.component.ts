@@ -7,7 +7,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { StepIndicatorComponent } from '../../../../components/step-indicator/step-indicator.component';
 import { WizardNavComponent } from '../../../../components/wizard-nav/wizard-nav.component';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-import { WizardStep, WizardNavigationConfig } from '../../../../models/wizard.model';
+import { WizardStep, WizardNavigationConfig, WizardNavigationEvent } from '../../../../models/wizard.model';
 import { NavigationService, RoomService } from '@lib/services';
 import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
@@ -110,26 +110,40 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	async onFinish() {
-		console.log('Wizard completed with data:', this.wizardState.getWizardData());
-		try {
-			const wizardResult = this.wizardState.getWizardData();
-			const roomOpts: MeetRoomOptions = {
-				roomIdPrefix: wizardResult.basic.roomIdPrefix,
-				autoDeletionDate: wizardResult.basic.autoDeletionDate,
-				preferences: {
-					chatPreferences: { enabled: wizardResult.preferences.chatEnabled },
-					virtualBackgroundPreferences: { enabled: wizardResult.preferences.virtualBackgroundsEnabled },
-					recordingPreferences: {
-						enabled: wizardResult.recording.enabled,
-						allowAccessTo: wizardResult.recording.allowAccessTo
-					}
-				}
-			};
+	async onFinish(event: WizardNavigationEvent) {
+		console.log('Wizard completed with data:', event, this.wizardState.getWizardData());
 
-			console.log('Creating room with options:', roomOpts);
-			await this.roomService.createRoom(roomOpts);
+		try {
+			const roomOptions = this.buildRoomOptions();
+			await this.roomService.createRoom(roomOptions);
 			await this.navigationService.navigateTo('/console/rooms', undefined, true);
-		} catch (error) {}
+		} catch (error) {
+			console.error('Failed to create room:', error);
+		}
+	}
+
+	private buildRoomOptions(): MeetRoomOptions | undefined {
+		if (this.wizardState.isWizardSkipped()) {
+			return undefined;
+		}
+
+		const wizardData = this.wizardState.getWizardData();
+
+		return {
+			roomIdPrefix: wizardData.basic.roomIdPrefix,
+			autoDeletionDate: wizardData.basic.autoDeletionDate,
+			preferences: {
+				chatPreferences: {
+					enabled: wizardData.preferences.chatEnabled
+				},
+				virtualBackgroundPreferences: {
+					enabled: wizardData.preferences.virtualBackgroundsEnabled
+				},
+				recordingPreferences: {
+					enabled: wizardData.recording.enabled,
+					allowAccessTo: wizardData.recording.allowAccessTo
+				}
+			}
+		};
 	}
 }

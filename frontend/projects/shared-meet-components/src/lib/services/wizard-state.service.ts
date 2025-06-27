@@ -238,6 +238,10 @@ export class RoomWizardStateService {
 		return this.wizardFormData;
 	}
 
+	isWizardSkipped(): boolean {
+		return this._currentStepIndex.getValue() === 0;
+	}
+
 	resetWizard() {
 		this.wizardFormData = {
 			basic: {},
