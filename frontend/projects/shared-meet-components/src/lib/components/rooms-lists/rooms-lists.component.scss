@@ -24,6 +24,9 @@
 
 .batch-actions {
 	@extend .ov-batch-actions;
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
 }
 
 .filters-menu {
@@ -201,6 +204,9 @@
 	}
 
 	.mat-mdc-icon-button {
+		&:hover {
+			background-color: transparent;
+		}
 		&.primary-action {
 			color: var(--ov-meet-color-primary);
 		}
