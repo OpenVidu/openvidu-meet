@@ -18,7 +18,7 @@
 				<mat-label>Room Name Prefix</mat-label>
 				<input
 					matInput
-					formControlName="roomPrefix"
+					formControlName="roomIdPrefix"
 					placeholder="e.g. demo-room"
 					maxlength="50"
 				/>
@@ -32,7 +32,7 @@
 				<input
 					matInput
 					[matDatepicker]="deletionPicker"
-					formControlName="deletionDate"
+					formControlName="autoDeletionDate"
 					placeholder="Select deletion date"
 					[min]="minDate"
 					readonly

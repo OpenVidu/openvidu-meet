@@ -8,12 +8,13 @@ import { StepIndicatorComponent } from '../../../../components/step-indicator/st
 import { WizardNavComponent } from '../../../../components/wizard-nav/wizard-nav.component';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 import { WizardStep, WizardNavigationConfig } from '../../../../models/wizard.model';
-import { NavigationService } from '@lib/services';
+import { NavigationService, RoomService } from '@lib/services';
 import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
+import { MeetRoomOptions } from '@lib/typings/ce';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -54,6 +55,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 
 	constructor(
 		private wizardState: RoomWizardStateService,
+		protected roomService: RoomService,
 		private navigationService: NavigationService
 	) {}
 
@@ -111,6 +113,22 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	async onFinish() {
 		console.log('Wizard completed with data:', this.wizardState.getWizardData());
 		try {
+			const wizardResult = this.wizardState.getWizardData();
+			const roomOpts: MeetRoomOptions = {
+				roomIdPrefix: wizardResult.basic.roomIdPrefix,
+				autoDeletionDate: wizardResult.basic.autoDeletionDate,
+				preferences: {
+					chatPreferences: { enabled: wizardResult.preferences.chatEnabled },
+					virtualBackgroundPreferences: { enabled: wizardResult.preferences.virtualBackgroundsEnabled },
+					recordingPreferences: {
+						enabled: wizardResult.recording.enabled,
+						allowAccessTo: wizardResult.recording.allowAccessTo
+					}
+				}
+			};
+
+			console.log('Creating room with options:', roomOpts);
+			await this.roomService.createRoom(roomOpts);
 			await this.navigationService.navigateTo('/console/rooms', undefined, true);
 		} catch (error) {}
 	}

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { WizardStep, WizardNavigationConfig } from '../models/wizard.model';
 import { FormBuilder, Validators } from '@angular/forms';
 
@@ -228,7 +228,13 @@ export class RoomWizardStateService {
 		};
 	}
 
-	getWizardData() {
+	getWizardData(): {
+		basic: any;
+		recording: any;
+		recordingTrigger: any;
+		recordingLayout: any;
+		preferences: any;
+	} {
 		return this.wizardFormData;
 	}
 

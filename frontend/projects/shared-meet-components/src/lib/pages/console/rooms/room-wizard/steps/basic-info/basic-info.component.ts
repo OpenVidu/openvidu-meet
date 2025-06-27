@@ -11,8 +11,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
 
 interface BasicInfoData {
-	roomPrefix?: string;
-	deletionDate?: string;
+	roomIdPrefix?: string;
+	autoDeletionDate?: string;
 }
 
 @Component({
@@ -40,8 +40,8 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 		private wizardState: RoomWizardStateService
 	) {
 		this.basicInfoForm = this.fb.group({
-			roomPrefix: ['', [Validators.maxLength(50)]],
-			deletionDate: [null]
+			roomIdPrefix: ['', [Validators.maxLength(50)]],
+			autoDeletionDate: [null]
 		});
 	}
 
@@ -66,20 +66,20 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 
 		if (currentData) {
 			this.basicInfoForm.patchValue({
-				roomPrefix: currentData.roomPrefix || '',
-				deletionDate: currentData.deletionDate ? new Date(currentData.deletionDate) : null
+				roomIdPrefix: currentData.roomIdPrefix || '',
+				autoDeletionDate: currentData.autoDeletionDate ? new Date(currentData.autoDeletionDate) : null
 			});
 		}
 	}
 
 	private saveFormData(formValue: any) {
 		const data: BasicInfoData = {
-			roomPrefix: formValue.roomPrefix || undefined,
-			deletionDate: formValue.deletionDate ? formValue.deletionDate.toISOString() : undefined
+			roomIdPrefix: formValue.roomIdPrefix || undefined,
+			autoDeletionDate: formValue.autoDeletionDate ? formValue.autoDeletionDate.getTime() : undefined
 		};
 
 		// Solo guardar si hay algún valor
-		if (data.roomPrefix || data.deletionDate) {
+		if (data.roomIdPrefix || data.autoDeletionDate) {
 			this.wizardState.updateStepData('basic', data);
 		}
 	}
@@ -87,8 +87,8 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	// Método para establecer datos de ejemplo
 	updateBasicData() {
 		const sampleData = {
-			roomPrefix: 'demo-room',
-			deletionDate: new Date(Date.now() + 86400000) // 24 horas desde ahora
+			roomIdPrefix: 'demo-room',
+			autoDeletionDate: new Date(Date.now() + 86400000).getTime() // 24 horas desde ahora
 		};
 
 		this.basicInfoForm.patchValue(sampleData);
