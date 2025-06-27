@@ -1145,7 +1145,7 @@
 .ov-api-key-display {
 	display: flex;
 	align-items: center;
-	gap: var(--ov-meet-spacing-lg);
+	gap: var(--ov-meet-spacing-md);
 	padding: var(--ov-meet-spacing-md);
 
 	@include ov-mobile-down {

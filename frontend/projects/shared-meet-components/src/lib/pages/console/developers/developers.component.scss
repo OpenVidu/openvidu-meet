@@ -23,6 +23,12 @@
 				padding: var(--ov-meet-spacing-sm);
 			}
 		}
+
+		.api-key-field {
+			button {
+				padding: 0;
+			}
+		}
 	}
 
 	.no-api-key {
@@ -38,7 +44,7 @@
 		p {
 			color: var(--ov-meet-text-secondary);
 			font-size: var(--ov-meet-font-size-md);
-			max-width: 400px;
+			max-width: 450px;
 			margin: 0 auto;
 		}
 
