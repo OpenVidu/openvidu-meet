@@ -16,12 +16,7 @@
 			<!-- Room Prefix Field -->
 			<mat-form-field appearance="outline" class="form-field">
 				<mat-label>Room Name Prefix</mat-label>
-				<input
-					matInput
-					formControlName="roomIdPrefix"
-					placeholder="e.g. demo-room"
-					maxlength="50"
-				/>
+				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" maxlength="50" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
 				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
 			</mat-form-field>
@@ -46,33 +41,4 @@
 			</mat-form-field>
 		</form>
 	</main>
-
-	<!-- Actions Section -->
-	<footer class="step-actions">
-		<div class="action-buttons">
-			<!-- Sample Data Button -->
-			<button mat-stroked-button class="sample-btn" (click)="updateBasicData()" type="button">
-				<mat-icon>auto_fix_high</mat-icon>
-				Fill Sample Data
-			</button>
-
-			<!-- Clear Form Button -->
-			<button
-				mat-stroked-button
-				class="clear-btn"
-				(click)="clearForm()"
-				type="button"
-				[disabled]="basicInfoForm.pristine"
-			>
-				<mat-icon>clear_all</mat-icon>
-				Clear Form
-			</button>
-		</div>
-
-		<!-- Form Status Info -->
-		<div class="form-status" *ngIf="!basicInfoForm.pristine">
-			<mat-icon class="ov-action-icon">info</mat-icon>
-			<span class="status-text">Changes saved automatically</span>
-		</div>
-	</footer>
 </div>

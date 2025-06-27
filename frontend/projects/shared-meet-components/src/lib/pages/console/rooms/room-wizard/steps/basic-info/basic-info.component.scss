@@ -80,65 +80,6 @@
 		}
 	}
 
-	.step-actions {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-md);
-		padding-top: var(--ov-meet-spacing-md);
-		border-top: 1px solid var(--ov-meet-border-color-light);
-
-		.action-buttons {
-			display: flex;
-			gap: var(--ov-meet-spacing-md);
-			align-items: center;
-
-			button {
-				@include ov-theme-transition;
-				border-radius: var(--ov-meet-radius-sm);
-
-				&.sample-btn {
-					color: var(--ov-meet-color-primary);
-					border-color: var(--ov-meet-color-primary);
-
-					&:hover {
-						background-color: var(--ov-meet-surface-hover);
-					}
-				}
-
-				&.clear-btn {
-					color: var(--ov-meet-text-secondary);
-					border-color: var(--ov-meet-border-color-strong);
-
-					&:hover:not(:disabled) {
-						background-color: var(--ov-meet-surface-hover);
-					}
-
-					&:disabled {
-						color: var(--ov-meet-text-disabled);
-						border-color: var(--ov-meet-border-color);
-					}
-				}
-
-				mat-icon {
-					@include ov-icon(sm);
-					margin-right: var(--ov-meet-spacing-xs);
-				}
-			}
-		}
-
-		.form-status {
-			display: flex;
-			align-items: center;
-			gap: var(--ov-meet-spacing-xs);
-			color: var(--ov-meet-text-hint);
-			font-size: var(--ov-meet-font-size-sm);
-
-			mat-icon {
-				@include ov-icon(sm);
-			}
-		}
-	}
-
 	@include ov-mobile-down {
 		.step-header {
 			flex-direction: column;
@@ -156,16 +97,6 @@
 				display: flex;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-md);
-			}
-		}
-
-		.step-actions {
-			.action-buttons {
-				flex-direction: column;
-
-				button {
-					width: 100%;
-				}
 			}
 		}
 	}
