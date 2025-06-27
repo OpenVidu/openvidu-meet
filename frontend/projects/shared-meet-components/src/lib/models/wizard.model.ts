@@ -51,7 +51,7 @@ export interface WizardNavigationConfig {
  */
 export interface WizardNavigationEvent {
 	action: 'next' | 'previous' | 'cancel' | 'finish';
-	currentStepId?: string;
+	currentStepId?: number;
 	targetStepId?: string;
 	data?: any;
 }
