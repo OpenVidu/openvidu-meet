@@ -1,9 +1,20 @@
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, EventEmitter, HostBinding, Input, OnInit, Output, signal } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import {
+	Component,
+	EventEmitter,
+	HostBinding,
+	Input,
+	OnChanges,
+	OnInit,
+	Output,
+	signal,
+	SimpleChanges
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -11,28 +22,23 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { ActionService } from 'openvidu-components-angular';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { ShareRecordingDialogComponent } from '../dialogs/share-recording-dialog/share-recording-dialog.component';
-import { HttpService } from '../../services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '../../typings/ce';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatDividerModule } from '@angular/material/divider';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
-	action: 'play' | 'download' | 'copyLink' | 'delete' | 'bulkDelete' | 'bulkDownload';
+	action: 'play' | 'download' | 'shareLink' | 'delete' | 'bulkDelete' | 'bulkDownload';
 }
 
 /**
- * Reusable component for displaying a list of recordings with filtering, selection, and batch operations.
+ * Reusable component for displaying a list of recordings with filtering, selection, and bulk operations.
  *
  * Features:
  * - Display recordings in a Material Design table
  * - Filter by room name and status
- * - Multi-selection for batch operations
+ * - Multi-selection for bulk operations
  * - Individual recording actions (play, download, share, delete)
  * - Responsive design with mobile optimization
  * - Status-based styling using design tokens
@@ -68,21 +74,18 @@ export interface RecordingTableAction {
 		MatToolbarModule,
 		MatBadgeModule,
 		MatDividerModule,
-		DatePipe,
-		DecimalPipe
+		DatePipe
 	],
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss'
 })
-export class RecordingListsComponent implements OnInit {
+export class RecordingListsComponent implements OnInit, OnChanges {
 	// Input properties
 	@Input() recordings: MeetRecordingInfo[] = [];
 	@Input() canDeleteRecordings = false;
-	@Input() canDownloadRecordings = true;
 	@Input() showFilters = false;
 	@Input() showSelection = true;
 	@Input() loading = false;
-	@Input() emptyMessage = 'No recordings found';
 
 	// Host binding for styling when recordings are selected
 	@HostBinding('class.has-selections')
@@ -120,12 +123,8 @@ export class RecordingListsComponent implements OnInit {
 	];
 
 	// Recording status sets for different states using enum constants
-	private static readonly STATUS_GROUPS = {
-		ACTIVE: [
-			MeetRecordingStatus.STARTING,
-			MeetRecordingStatus.ACTIVE,
-			MeetRecordingStatus.ENDING
-		] as readonly MeetRecordingStatus[],
+	private readonly STATUS_GROUPS = {
+		ACTIVE: [MeetRecordingStatus.ACTIVE] as readonly MeetRecordingStatus[],
 		COMPLETED: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
 		ERROR: [
 			MeetRecordingStatus.FAILED,
@@ -143,15 +142,20 @@ export class RecordingListsComponent implements OnInit {
 		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
 	} as const;
 
-	constructor(
-		private dialog: MatDialog,
-		private httpService: HttpService,
-		private actionService: ActionService
-	) {}
+	constructor() {}
 
 	ngOnInit() {
 		this.setupFilters();
 		this.updateDisplayedColumns();
+	}
+
+	ngOnChanges(changes: SimpleChanges) {
+		if (changes['recordings']) {
+			const validIds = new Set(this.recordings.map((r) => r.recordingId));
+			const filteredSelection = new Set([...this.selectedRecordings()].filter((id) => validIds.has(id)));
+			this.selectedRecordings.set(filteredSelection);
+			this.updateSelectionState();
+		}
 	}
 
 	// ===== INITIALIZATION METHODS =====
@@ -185,6 +189,7 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	// ===== SELECTION METHODS =====
+
 	toggleAllSelection() {
 		const selected = this.selectedRecordings();
 		if (this.allSelected()) {
@@ -225,7 +230,7 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	canSelectRecording(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.SELECTABLE.includes(recording.status);
+		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {
@@ -234,6 +239,7 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	// ===== ACTION METHODS =====
+
 	playRecording(recording: MeetRecordingInfo) {
 		this.recordingAction.emit({ recordings: [recording], action: 'play' });
 	}
@@ -242,8 +248,8 @@ export class RecordingListsComponent implements OnInit {
 		this.recordingAction.emit({ recordings: [recording], action: 'download' });
 	}
 
-	copyAccessLink(recording: MeetRecordingInfo) {
-		this.recordingAction.emit({ recordings: [recording], action: 'copyLink' });
+	shareRecordingLink(recording: MeetRecordingInfo) {
+		this.recordingAction.emit({ recordings: [recording], action: 'shareLink' });
 	}
 
 	deleteRecording(recording: MeetRecordingInfo) {
@@ -257,46 +263,28 @@ export class RecordingListsComponent implements OnInit {
 		}
 	}
 
-	batchDownloadSelected() {
+	bulkDownloadSelected() {
 		const selectedRecordings = this.getSelectedRecordings();
 		if (selectedRecordings.length > 0) {
 			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDownload' });
 		}
 	}
 
-	clearSelection() {
-		this.selectedRecordings.set(new Set());
-		this.updateSelectionState();
+	// ===== FILTER METHODS =====
+
+	hasActiveFilters(): boolean {
+		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+	}
+
+	clearFilters() {
+		this.nameFilterControl.setValue('');
+		this.statusFilterControl.setValue('');
 	}
 
 	// ===== STATUS UTILITY METHODS =====
 
-	/**
-	 * Utility methods for status checking
-	 */
-	private static isStatusInGroup(status: MeetRecordingStatus, group: readonly MeetRecordingStatus[]): boolean {
+	private isStatusInGroup(status: MeetRecordingStatus, group: readonly MeetRecordingStatus[]): boolean {
 		return group.includes(status);
-	}
-
-	/**
-	 * Check if a recording is in an active/processing state
-	 */
-	isRecordingActive(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.ACTIVE.includes(recording.status);
-	}
-
-	/**
-	 * Check if a recording is completed successfully
-	 */
-	isRecordingCompleted(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.COMPLETED.includes(recording.status);
-	}
-
-	/**
-	 * Check if a recording has an error status
-	 */
-	isRecordingError(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.ERROR.includes(recording.status);
 	}
 
 	/**
@@ -310,17 +298,16 @@ export class RecordingListsComponent implements OnInit {
 
 	// ===== PERMISSION AND CAPABILITY METHODS =====
 
-	// Utility methods
 	canPlayRecording(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.PLAYABLE.includes(recording.status);
+		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.PLAYABLE);
 	}
 
 	canDownloadRecording(recording: MeetRecordingInfo): boolean {
-		return RecordingListsComponent.STATUS_GROUPS.DOWNLOADABLE.includes(recording.status);
+		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.DOWNLOADABLE);
 	}
 
 	canDeleteRecording(recording: MeetRecordingInfo): boolean {
-		return this.canDeleteRecordings && RecordingListsComponent.STATUS_GROUPS.SELECTABLE.includes(recording.status);
+		return this.canDeleteRecordings && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
 	}
 
 	// ===== UI HELPER METHODS =====
@@ -347,16 +334,16 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	getStatusColor(status: MeetRecordingStatus): string {
-		if (RecordingListsComponent.STATUS_GROUPS.COMPLETED.includes(status)) {
+		if (this.isStatusInGroup(status, this.STATUS_GROUPS.COMPLETED)) {
 			return 'var(--ov-meet-color-success)';
 		}
-		if (status === MeetRecordingStatus.ACTIVE) {
+		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ACTIVE)) {
 			return 'var(--ov-meet-color-primary)';
 		}
-		if (RecordingListsComponent.STATUS_GROUPS.IN_PROGRESS.includes(status)) {
+		if (this.isStatusInGroup(status, this.STATUS_GROUPS.IN_PROGRESS)) {
 			return 'var(--ov-meet-color-warning)';
 		}
-		if (RecordingListsComponent.STATUS_GROUPS.ERROR.includes(status)) {
+		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ERROR)) {
 			return 'var(--ov-meet-color-error)';
 		}
 		return 'var(--ov-meet-text-secondary)';

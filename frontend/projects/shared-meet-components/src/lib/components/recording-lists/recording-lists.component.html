@@ -16,8 +16,8 @@
 			</mat-form-field>
 		</div>
 
-		<!-- Center Section: Batch Actions (visible when items selected) -->
-		@if (showSelection && selectedRecordings().size > 1) {
+		<!-- Center Section: Bulk Actions (visible when items selected) -->
+		@if (showSelection && selectedRecordings().size > 0) {
 			<div class="toolbar-center">
 				<div class="batch-actions">
 					@if (canDeleteRecordings) {
@@ -34,25 +34,29 @@
 						</button>
 					}
 
-					@if (canDownloadRecordings) {
-						<button
-							mat-icon-button
-							(click)="batchDownloadSelected()"
-							[disabled]="loading"
-							matTooltip="Download selected recordings"
-						>
-							<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
-								download
-							</mat-icon>
-						</button>
-					}
+					<button
+						mat-icon-button
+						(click)="bulkDownloadSelected()"
+						[disabled]="loading"
+						matTooltip="Download selected recordings"
+					>
+						<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
+							download
+						</mat-icon>
+					</button>
 				</div>
 			</div>
 		}
 
 		<!-- Right Section: Filters -->
 		<div class="toolbar-right">
-			<button mat-icon-button class="refresh-btn" (click)="refresh.emit()" [disabled]="loading" matTooltip="Refresh recordings">
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refresh.emit()"
+				[disabled]="loading"
+				matTooltip="Refresh recordings"
+			>
 				<mat-icon> refresh </mat-icon>
 			</button>
 
@@ -202,9 +206,9 @@
 						</button>
 
 						<mat-menu #actionsMenu="matMenu">
-							<button mat-menu-item (click)="copyAccessLink(recording)">
-								<mat-icon>content_copy</mat-icon>
-								<span>Copy access link</span>
+							<button mat-menu-item (click)="shareRecordingLink(recording)">
+								<mat-icon>share</mat-icon>
+								<span>Share link</span>
 							</button>
 
 							@if (canDeleteRecording(recording)) {
@@ -233,13 +237,23 @@
 		<div class="empty-content">
 			<h3>No recordings yet</h3>
 			<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
-
 			<div class="getting-started-actions">
 				<button mat-raised-button color="primary" (click)="refresh.emit()" class="refresh-recordings-btn">
 					<mat-icon>refresh</mat-icon>
 					Refresh Recordings
 				</button>
 			</div>
+			<!-- TODO: Show this when no recordings match the filters
+			@if (hasActiveFilters()) {
+				<h3>No recordings match your search criteria</h3>
+				<p>Try adjusting or clearing your filters to see more recordings.</p>
+				<div class="getting-started-actions">
+					<button mat-raised-button color="primary" (click)="clearFilters()" class="clear-filters-btn">
+						<mat-icon>filter_alt_off</mat-icon>
+						Clear Filters
+					</button>
+				</div>
+			} -->
 		</div>
 	</div>
 }

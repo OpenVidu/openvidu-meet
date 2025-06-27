@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RecordingListsComponent, RecordingTableAction } from '../../../components';
 import { NotificationService, RecordingManagerService } from '../../../services';
@@ -27,22 +28,31 @@ export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 	isLoading = false;
 	showLoadingSpinner = false;
-	hasMoreRecordings = false;
 
 	// Pagination
+	hasMoreRecordings = false;
 	private nextPageToken?: string;
+
 	protected log: ILogger;
 
 	constructor(
 		protected loggerService: LoggerService,
 		private recordingService: RecordingManagerService,
-		private notificationService: NotificationService
+		private notificationService: NotificationService,
+		protected route: ActivatedRoute
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
 	}
 
 	async ngOnInit() {
-		await this.refreshRecordings();
+		const roomId = this.route.snapshot.queryParamMap.get('room-id');
+		if (roomId) {
+			// If a specific room ID is provided, filter recordings by that room
+			await this.loadRecordings({ nameFilter: roomId, statusFilter: '' });
+		} else {
+			// Load all recordings if no room ID is specified
+			await this.loadRecordings();
+		}
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
@@ -53,8 +63,8 @@ export class RecordingsComponent implements OnInit {
 			case 'download':
 				this.downloadRecording(action.recordings[0]);
 				break;
-			case 'copyLink':
-				this.copyLinkToClipboard(action.recordings[0]);
+			case 'shareLink':
+				this.shareRecordingLink(action.recordings[0]);
 				break;
 			case 'delete':
 				this.deleteRecording(action.recordings[0]);
@@ -68,7 +78,7 @@ export class RecordingsComponent implements OnInit {
 		}
 	}
 
-	async loadRecordings(filters?: { nameFilter: string; statusFilter: string }) {
+	private async loadRecordings(filters?: { nameFilter: string; statusFilter: string }) {
 		this.isLoading = true;
 		const delaySpinner = setTimeout(() => {
 			this.showLoadingSpinner = true;
@@ -101,7 +111,6 @@ export class RecordingsComponent implements OnInit {
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRecordings = response.pagination.isTruncated;
 		} catch (error) {
-			console.error('Error loading recordings:', error);
 			this.notificationService.showAlert('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
@@ -116,11 +125,11 @@ export class RecordingsComponent implements OnInit {
 		await this.loadRecordings();
 	}
 
-	async refreshRecordings() {
+	async refreshRecordings(filters?: { nameFilter: string; statusFilter: string }) {
 		this.recordings.set([]);
 		this.nextPageToken = undefined;
 		this.hasMoreRecordings = false;
-		await this.loadRecordings();
+		await this.loadRecordings(filters);
 	}
 
 	private playRecording(recording: MeetRecordingInfo) {
@@ -131,9 +140,8 @@ export class RecordingsComponent implements OnInit {
 		this.recordingService.downloadRecording(recording);
 	}
 
-	private copyLinkToClipboard(recording: MeetRecordingInfo) {
-		// this.clipboard.copy('recordingLink');
-		// this.notificationService.showSnackbar('Moderator link copied to clipboard');
+	private shareRecordingLink(recording: MeetRecordingInfo) {
+		this.recordingService.openShareRecordingDialog(recording.recordingId);
 	}
 
 	private deleteRecording(recording: MeetRecordingInfo) {
@@ -146,7 +154,7 @@ export class RecordingsComponent implements OnInit {
 				this.recordings.set(currentRecordings.filter((r) => r.recordingId !== recording.recordingId));
 				this.notificationService.showSnackbar('Recording deleted successfully');
 			} catch (error) {
-				console.error('Error deleting recording:', error);
+				this.log.e('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');
 			}
 		};
@@ -164,14 +172,37 @@ export class RecordingsComponent implements OnInit {
 		const bulkDeleteCallback = async () => {
 			try {
 				const recordingIds = recordings.map((r) => r.recordingId);
-				await this.recordingService.bulkDeleteRecordings(recordingIds);
+				const response = await this.recordingService.bulkDeleteRecordings(recordingIds);
 
-				// Remove from local list
 				const currentRecordings = this.recordings();
-				this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
-				this.notificationService.showSnackbar('Recordings deleted successfully');
+
+				switch (response.statusCode) {
+					case 204:
+						// All recordings deleted successfully
+						this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
+						this.notificationService.showSnackbar('All recordings deleted successfully');
+						break;
+					case 200:
+						// Some recordings were deleted, some not
+						const { deleted = [], notDeleted = [] } = response;
+
+						// Remove deleted recordings from the list
+						this.recordings.set(currentRecordings.filter((r) => !deleted.includes(r.recordingId)));
+
+						let msg = '';
+						if (deleted.length > 0) {
+							msg += `${deleted.length} recording(s) deleted successfully. `;
+						}
+						if (notDeleted.length > 0) {
+							msg += `${notDeleted.length} recording(s) could not be deleted.`;
+						}
+
+						this.notificationService.showSnackbar(msg.trim());
+						this.log.w('Some recordings could not be deleted:', notDeleted);
+						break;
+				}
 			} catch (error) {
-				console.error('Error deleting recordings:', error);
+				this.log.e('Error deleting recordings:', error);
 				this.notificationService.showSnackbar('Failed to delete recordings');
 			}
 		};

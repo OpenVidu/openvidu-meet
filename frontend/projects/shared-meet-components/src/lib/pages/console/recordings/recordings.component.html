@@ -31,13 +31,12 @@
 			<ov-recording-lists
 				[recordings]="recordings()"
 				[canDeleteRecordings]="true"
-				[canDownloadRecordings]="true"
 				[loading]="isLoading"
-				[showFilters]="false"
+				[showFilters]="true"
 				[showSelection]="true"
-				emptyMessage="No recordings match your search criteria"
 				(recordingAction)="onRecordingAction($event)"
 				(refresh)="refreshRecordings()"
+				(filterChange)="refreshRecordings($event)"
 			>
 			</ov-recording-lists>
 		</div>
