@@ -40,6 +40,26 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
+/preferences/webhooks/test:
+    post:
+        operationId: testWebhookUrl
+        summary: Test webhook URL
+        description: >
+            Tests the provided webhook URL to ensure it is reachable and valid.
+        tags:
+            - Internal API - Global Preferences
+        requestBody:
+            $ref: '../../components/requestBodies/internal/test-webhook-url-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-test-webhook-url.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-webhook-url-unreachable.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
 /preferences/security:
     get:
         operationId: getSecurityPreferences

@@ -1,0 +1,8 @@
+description: Webhook URL is unreachable
+content:
+    application/json:
+        schema:
+            $ref: ../../schemas/error.yaml
+        example:
+            error:  Webhook Error
+            message: 'Webhook URL "http://localhost:5080/webhook" is unreachable'
