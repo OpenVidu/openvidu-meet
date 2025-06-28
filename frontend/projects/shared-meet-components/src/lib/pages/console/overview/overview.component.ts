@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, catchError, combineLatest, from, map, of } from 'rxjs';
 import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '../../../services';
-import { MeetRecordingInfo, MeetRoom } from '../../../typings/ce';
+import { MeetRoom } from '../../../typings/ce';
 
 interface OverviewStats {
 	totalRooms: number;
@@ -23,51 +22,49 @@ interface OverviewStats {
 	styleUrl: './overview.component.scss'
 })
 export class OverviewComponent implements OnInit {
-	private roomService = inject(RoomService);
-	private recordingService = inject(RecordingManagerService);
-	private navigationService = inject(NavigationService);
-	private themeService = inject(ThemeService);
-
-	stats$: Observable<OverviewStats> = of({
+	stats: OverviewStats = {
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
 		hasData: false
-	});
+	};
 
-	ngOnInit() {
-		this.loadStats();
+	constructor(
+		private roomService: RoomService,
+		private recordingService: RecordingManagerService,
+		private navigationService: NavigationService,
+		private themeService: ThemeService
+	) {}
+
+	async ngOnInit() {
+		await this.loadStats();
 	}
 
-	private loadStats() {
-		const rooms$ = from(this.roomService.listRooms()).pipe(
-			map((response) => response.rooms),
-			catchError(() => of([]))
-		);
-
-		const recordings$ = from(this.recordingService.listRecordings()).pipe(
-			map((response) => response.recordings),
-			catchError(() => of([]))
-		);
-
-		this.stats$ = combineLatest([rooms$, recordings$]).pipe(
-			map(([rooms, recordings]: [MeetRoom[], MeetRecordingInfo[]]) => {
-				const totalRooms = rooms.length;
-				const activeRooms = rooms.filter((room: MeetRoom) => !room.markedForDeletion).length;
-				const totalRecordings = recordings.length;
-				const hasData = totalRooms > 0 || totalRecordings > 0;
-
-				return {
-					totalRooms,
-					activeRooms,
-					totalRecordings,
-					hasData
-				};
-			})
-		);
+	private async loadStats() {
+		try {
+			const [roomsResp, recordingsResp] = await Promise.all([
+				this.roomService.listRooms(),
+				this.recordingService.listRecordings()
+			]);
+			const rooms = roomsResp.rooms;
+			const recordings = recordingsResp.recordings;
+			this.stats = {
+				totalRooms: rooms.length,
+				activeRooms: rooms.filter((room: MeetRoom) => !room.markedForDeletion).length,
+				totalRecordings: recordings.length,
+				hasData: rooms.length > 0 || recordings.length > 0
+			};
+		} catch {
+			this.stats = {
+				totalRooms: 0,
+				activeRooms: 0,
+				totalRecordings: 0,
+				hasData: false
+			};
+		}
 	}
 
-	async navigateTo(section: 'rooms' | 'recordings' | 'settings' | 'developers') {
+	async navigateTo(section: 'rooms' | 'rooms/new' | 'recordings' | 'settings' | 'developers') {
 		try {
 			await this.navigationService.navigateTo(`console/${section}`);
 		} catch (error) {
@@ -75,7 +72,7 @@ export class OverviewComponent implements OnInit {
 		}
 	}
 
-	refreshData() {
-		this.loadStats();
+	async refreshData() {
+		await this.loadStats();
 	}
 }
