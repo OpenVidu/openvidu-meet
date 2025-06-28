@@ -19,7 +19,7 @@
 			</mat-card-header>
 
 			<mat-card-content>
-				@if (apiKeyData().key) {
+				@if (apiKeyData()) {
 					<div class="api-key-display">
 						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
 							<mat-label>API Key</mat-label>
@@ -27,7 +27,7 @@
 								matInput
 								readonly
 								[type]="showApiKey() ? 'text' : 'password'"
-								[value]="apiKeyData().key"
+								[value]="apiKeyData()!.key"
 							/>
 							<button
 								mat-icon-button
@@ -51,7 +51,7 @@
 					<!-- <div class="api-key-info">
 						<p class="info-text">
 							<mat-icon class="info-icon">info</mat-icon>
-							Generated on: {{ apiKeyData().lastGenerated | date: 'medium' }}
+							Generated on: {{ apiKeyData()!.creationDate | date: 'medium' }}
 						</p>
 						<p class="warning-text">
 							<mat-icon class="warning-icon">warning</mat-icon>
@@ -70,7 +70,7 @@
 				}
 			</mat-card-content>
 
-			@if (apiKeyData().key) {
+			@if (apiKeyData()) {
 				<mat-card-actions>
 					<button mat-raised-button color="primary" (click)="regenerateApiKey()">
 						<mat-icon>refresh</mat-icon>

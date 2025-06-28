@@ -1,35 +1,18 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Clipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { Component, OnInit, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NotificationService } from '../../../services';
-
-interface ApiKeyData {
-	key: string;
-	creationDate: string | null;
-	// isActive: boolean;
-}
-
-interface WebhookConfig {
-	url: string;
-	isEnabled: boolean;
-	events: {
-		roomCreated: boolean;
-		roomDeleted: boolean;
-		participantJoined: boolean;
-		participantLeft: boolean;
-		recordingStarted: boolean;
-		recordingFinished: boolean;
-	};
-}
+import { MeetApiKey } from '@lib/typings/ce';
+import { AuthService, GlobalPreferencesService, NotificationService } from '../../../services';
 
 @Component({
 	selector: 'ov-developers-settings',
@@ -51,37 +34,28 @@ interface WebhookConfig {
 	styleUrl: './developers.component.scss'
 })
 export class DevelopersSettingsComponent implements OnInit {
-	private fb = inject(FormBuilder);
-
-	private notificationService = inject(NotificationService);
-
-	// API Key section
-	apiKeyData = signal<ApiKeyData>({
-		key: '',
-		creationDate: null
-		// isActive: false
-	});
-
+	apiKeyData = signal<MeetApiKey | undefined>(undefined);
 	showApiKey = signal(false);
 
-	// Webhook section
-	webhookForm: FormGroup;
+	webhookForm = new FormGroup({
+		isEnabled: new FormControl(false),
+		url: new FormControl('', [Validators.required, Validators.pattern(/^https?:\/\/.+/)])
+		// roomCreated: [true],
+		// roomDeleted: [true],
+		// participantJoined: [false],
+		// participantLeft: [false],
+		// recordingStarted: [true],
+		// recordingFinished: [true]
+	});
 
-	constructor() {
-		this.webhookForm = this.fb.group({
-			url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
-			isEnabled: [false]
-			// roomCreated: [true],
-			// roomDeleted: [true],
-			// participantJoined: [false],
-			// participantLeft: [false],
-			// recordingStarted: [true],
-			// recordingFinished: [true]
-		});
-
+	constructor(
+		protected authService: AuthService,
+		protected preferencesService: GlobalPreferencesService,
+		protected notificationService: NotificationService,
+		protected clipboard: Clipboard
+	) {
 		// Disable url field initially and enable/disable based on isEnabled toggle
 		this.webhookForm.get('url')?.disable();
-
 		this.webhookForm.get('isEnabled')?.valueChanges.subscribe((isEnabled) => {
 			if (isEnabled) {
 				this.webhookForm.get('url')?.enable();
@@ -91,26 +65,43 @@ export class DevelopersSettingsComponent implements OnInit {
 		});
 	}
 
-	ngOnInit() {
-		this.loadApiKeyData();
-		this.loadWebhookConfig();
+	async ngOnInit() {
+		await this.loadApiKeyData();
+		await this.loadWebhookConfig();
 	}
 
-	// API Key methods
-	generateApiKey() {
-		const newKey = this.generateRandomKey();
-		this.apiKeyData.set({
-			key: newKey,
-			creationDate: new Date().toISOString()
-			// isActive: true
-		});
-		this.saveApiKeyData();
-		this.notificationService.showSnackbar('API Key generated successfully');
+	// ===== API KEY METHODS =====
+
+	private async loadApiKeyData() {
+		try {
+			const apiKeys = await this.authService.getApiKeys();
+			if (apiKeys.length > 0) {
+				const apiKey = apiKeys[0]; // Assuming we only handle one API key
+				this.apiKeyData.set(apiKey);
+			} else {
+				this.apiKeyData.set(undefined);
+			}
+		} catch (error) {
+			console.error('Error loading API key data:', error);
+			this.notificationService.showSnackbar('Failed to load API Key data');
+			this.apiKeyData.set(undefined);
+		}
 	}
 
-	regenerateApiKey() {
-		this.generateApiKey();
-		this.notificationService.showSnackbar('API Key regenerated successfully');
+	async generateApiKey() {
+		try {
+			const newApiKey = await this.authService.generateApiKey();
+			this.apiKeyData.set(newApiKey);
+			this.showApiKey.set(true);
+			this.notificationService.showSnackbar('API Key generated successfully');
+		} catch (error) {
+			console.error('Error generating API key:', error);
+			this.notificationService.showSnackbar('Failed to generate API Key');
+		}
+	}
+
+	async regenerateApiKey() {
+		await this.generateApiKey();
 	}
 
 	toggleApiKeyVisibility() {
@@ -118,96 +109,81 @@ export class DevelopersSettingsComponent implements OnInit {
 	}
 
 	copyApiKey() {
-		const apiKey = this.apiKeyData().key;
+		const apiKey = this.apiKeyData();
 		if (apiKey) {
-			navigator.clipboard.writeText(apiKey).then(() => {
-				this.notificationService.showSnackbar('API Key copied to clipboard');
+			this.clipboard.copy(apiKey.key);
+			this.notificationService.showSnackbar('API Key copied to clipboard');
+		}
+	}
+
+	async revokeApiKey() {
+		try {
+			await this.authService.deleteApiKeys();
+			this.apiKeyData.set(undefined);
+			this.showApiKey.set(false);
+			this.notificationService.showSnackbar('API Key revoked successfully');
+		} catch (error) {
+			console.error('Error revoking API key:', error);
+			this.notificationService.showSnackbar('Failed to revoke API Key');
+		}
+	}
+
+	// ===== WEBHOOK CONFIGURATION METHODS =====
+
+	private async loadWebhookConfig() {
+		try {
+			const webhookPreferences = await this.preferencesService.getWebhookPreferences();
+			this.webhookForm.patchValue({
+				isEnabled: webhookPreferences.enabled,
+				url: webhookPreferences.url
+				// roomCreated: webhookPreferences.events.roomCreated,
+				// roomDeleted: webhookPreferences.events.roomDeleted,
+				// participantJoined: webhookPreferences.events.participantJoined,
+				// participantLeft: webhookPreferences.events.participantLeft,
+				// recordingStarted: webhookPreferences.events.recordingStarted,
+				// recordingFinished: webhookPreferences.events.recordingFinished
 			});
+		} catch (error) {
+			console.error('Error loading webhook configuration:', error);
+			this.notificationService.showSnackbar('Failed to load webhook configuration');
 		}
 	}
 
-	revokeApiKey() {
-		this.apiKeyData.set({
-			key: '',
-			creationDate: null
-			// isActive: false
-		});
-		this.saveApiKeyData();
-		this.notificationService.showSnackbar('API Key revoked successfully');
-	}
+	async saveWebhookConfig() {
+		if (!this.webhookForm.valid) return;
 
-	// Webhook methods
-	saveWebhookConfig() {
-		if (this.webhookForm.valid) {
-			const formValue = this.webhookForm.value;
-			const webhookConfig: WebhookConfig = {
-				url: formValue.url,
-				isEnabled: formValue.isEnabled,
-				events: {
-					roomCreated: formValue.roomCreated,
-					roomDeleted: formValue.roomDeleted,
-					participantJoined: formValue.participantJoined,
-					participantLeft: formValue.participantLeft,
-					recordingStarted: formValue.recordingStarted,
-					recordingFinished: formValue.recordingFinished
-				}
-			};
+		const formValue = this.webhookForm.value;
+		const webhookPreferences = {
+			enabled: formValue.isEnabled!,
+			url: formValue.url ?? undefined
+			// events: {
+			// 	roomCreated: formValue.roomCreated,
+			// 	roomDeleted: formValue.roomDeleted,
+			// 	participantJoined: formValue.participantJoined,
+			// 	participantLeft: formValue.participantLeft,
+			// 	recordingStarted: formValue.recordingStarted,
+			// 	recordingFinished: formValue.recordingFinished
+			// }
+		};
 
-			localStorage.setItem('ov-meet-webhook-config', JSON.stringify(webhookConfig));
-			this.notificationService.showSnackbar('Webhook configuration saved');
+		try {
+			await this.preferencesService.saveWebhookPreferences(webhookPreferences);
+			this.notificationService.showSnackbar('Webhook configuration saved successfully');
+		} catch (error) {
+			console.error('Error saving webhook configuration:', error);
+			this.notificationService.showSnackbar('Failed to save webhook configuration');
 		}
 	}
 
-	testWebhook() {
+	async testWebhook() {
 		const url = this.webhookForm.get('url')?.value;
 		if (url) {
-			// Mock test - in real implementation this would send a test webhook
-			this.notificationService.showSnackbar('Test webhook sent successfully');
-		}
-	}
-
-	// Private methods
-	// TODO: Use endpoint to generate a secure API key
-	private generateRandomKey(): string {
-		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-		let result = 'ovmeet_';
-		for (let i = 0; i < 32; i++) {
-			result += chars.charAt(Math.floor(Math.random() * chars.length));
-		}
-		return result;
-	}
-
-	// TODO: Use endpoint to load API key data securely
-	private loadApiKeyData() {
-		const saved = localStorage.getItem('ov-meet-api-key');
-		if (saved) {
-			const parsed = JSON.parse(saved);
-			this.apiKeyData.set({
-				...parsed,
-				lastGenerated: parsed.lastGenerated ? new Date(parsed.lastGenerated) : null
-			});
-		}
-	}
-
-	// TODO: Use endpoint to save API key data securely
-	private saveApiKeyData() {
-		localStorage.setItem('ov-meet-api-key', JSON.stringify(this.apiKeyData()));
-	}
-
-	private loadWebhookConfig() {
-		const saved = localStorage.getItem('ov-meet-webhook-config');
-		if (saved) {
-			const parsed: WebhookConfig = JSON.parse(saved);
-			this.webhookForm.patchValue({
-				url: parsed.url,
-				isEnabled: parsed.isEnabled,
-				roomCreated: parsed.events.roomCreated,
-				roomDeleted: parsed.events.roomDeleted,
-				participantJoined: parsed.events.participantJoined,
-				participantLeft: parsed.events.participantLeft,
-				recordingStarted: parsed.events.recordingStarted,
-				recordingFinished: parsed.events.recordingFinished
-			});
+			try {
+				await this.preferencesService.testWebhookUrl(url);
+				this.notificationService.showSnackbar('Test webhook sent successfully. Your URL is reachable.');
+			} catch (error) {
+				this.notificationService.showSnackbar('Failed to send test webhook. Your URL may not be reachable.');
+			}
 		}
 	}
 }
