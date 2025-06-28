@@ -14,24 +14,15 @@ export class HttpService {
 	constructor(protected http: HttpClient) {}
 
 	async getRequest<T>(path: string): Promise<T> {
-		return lastValueFrom(this.http.get<T>(path, { observe: 'response' })).then((response) => ({
-			...(response.body as T),
-			statusCode: response.status
-		}));
+		return lastValueFrom(this.http.get<T>(path));
 	}
 
 	async postRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.post<T>(path, body, { observe: 'response' })).then((response) => ({
-			...(response.body as T),
-			statusCode: response.status
-		}));
+		return lastValueFrom(this.http.post<T>(path, body));
 	}
 
 	async putRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.put<T>(path, body, { observe: 'response' })).then((response) => ({
-			...(response.body as T),
-			statusCode: response.status
-		}));
+		return lastValueFrom(this.http.put<T>(path, body));
 	}
 
 	async deleteRequest<T>(path: string): Promise<T> {
