@@ -2,7 +2,7 @@ import { WebhookPreferences } from '@typings-ce';
 import { Request, Response } from 'express';
 import { container } from '../../config/index.js';
 import { handleError } from '../../models/error.model.js';
-import { LoggerService, MeetStorageService } from '../../services/index.js';
+import { LoggerService, MeetStorageService, OpenViduWebhookService } from '../../services/index.js';
 
 export const updateWebhookPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -42,5 +42,22 @@ export const getWebhookPreferences = async (_req: Request, res: Response) => {
 		return res.status(200).json(preferences.webhooksPreferences);
 	} catch (error) {
 		handleError(res, error, 'getting webhooks preferences');
+	}
+};
+
+export const testWebhook = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const webhookService = container.get(OpenViduWebhookService);
+
+	logger.verbose(`Testing webhook URL: ${req.body.url}`);
+	const url = req.body.url;
+
+	try {
+		await webhookService.testWebhookUrl(url);
+		logger.info(`Webhook URL '${url}' is valid`);
+		// If the URL is valid, we can return a success response
+		return res.status(200).json({ message: 'Webhook URL is valid' });
+	} catch (error) {
+		handleError(res, error, 'testing webhook URL');
 	}
 };

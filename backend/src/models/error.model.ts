@@ -62,6 +62,10 @@ export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
+export const errorWebhookUrlUnreachable = (url: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is unreachable`, 400);
+};
+
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {

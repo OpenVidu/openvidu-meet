@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { MEET_API_KEY } from '../environment.js';
 import { AuthService, LoggerService, MeetStorageService } from './index.js';
+import { errorWebhookUrlUnreachable } from '../models/error.model.js';
 
 @injectable()
 export class OpenViduWebhookService {
@@ -93,6 +94,38 @@ export class OpenViduWebhookService {
 	}
 
 	/**
+	 * Tests a webhook URL by sending a test event to it.
+	 *
+	 * This method sends a test event to the specified webhook URL to verify if it is reachable and functioning correctly.
+	 * If the request fails, it throws an error indicating that the webhook URL is unreachable.
+	 *
+	 * @param url - The webhook URL to test
+	 */
+	async testWebhookUrl(url: string) {
+		const creationDate = Date.now();
+		const data = {
+			event: 'testEvent',
+			creationDate,
+			data: {
+				message: 'This is a test webhook event'
+			}
+		};
+
+		try {
+			await this.sendRequest(url, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(data)
+			});
+		} catch (error) {
+			this.logger.error(`Error testing webhook URL ${url}: ${error}`);
+			throw errorWebhookUrlUnreachable(url);
+		}
+	}
+
+	/**
 	 * Sends a webhook event asynchronously in the background without blocking the main execution flow.
 	 * If the webhook fails, logs a warning message with the error details and optional context information.
 	 *
@@ -153,11 +186,7 @@ export class OpenViduWebhookService {
 
 	protected async fetchWithRetry(url: string, options: RequestInit, retries = 5, delay = 300): Promise<void> {
 		try {
-			const response = await fetch(url, options);
-
-			if (!response.ok) {
-				throw new Error(`Request failed with status ${response.status}`);
-			}
+			await this.sendRequest(url, options);
 		} catch (error) {
 			if (retries <= 0) {
 				throw new Error(`Request failed: ${error}`);
@@ -167,6 +196,14 @@ export class OpenViduWebhookService {
 			await new Promise((resolve) => setTimeout(resolve, delay));
 			// Retry the request after a delay with exponential backoff
 			return this.fetchWithRetry(url, options, retries - 1, delay * 2);
+		}
+	}
+
+	protected async sendRequest(url: string, options: RequestInit): Promise<void> {
+		const response = await fetch(url, options);
+
+		if (!response.ok) {
+			throw new Error(`Request failed with status ${response.status}`);
 		}
 	}
 
