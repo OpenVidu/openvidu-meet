@@ -4,13 +4,4 @@ content:
         schema:
             type: array
             items:
-                type: object
-                properties:
-                    apiKey:
-                        type: string
-                        description: The API key that was created.
-                        example: 'ovmeet-1234567890abcdef1234567890abcdef'
-                    creationDate:
-                        type: number
-                        description: The date when the API key was created.
-                        example: 1620000000000
+                $ref: '../../schemas/internal/meet-api-key.yaml'
