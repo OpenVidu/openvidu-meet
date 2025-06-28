@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { from, Observable } from 'rxjs';
 import { HttpService, NavigationService } from '../../services';
-import { User, UserRole } from '../../typings/ce';
+import { MeetApiKey, User, UserRole } from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'
@@ -79,5 +79,20 @@ export class AuthService {
 
 			this.hasCheckAuth = true;
 		}
+	}
+
+	async generateApiKey(): Promise<MeetApiKey> {
+		const path = `${this.AUTH_API}/api-keys`;
+		return this.httpService.postRequest<MeetApiKey>(path);
+	}
+
+	async getApiKeys(): Promise<MeetApiKey[]> {
+		const path = `${this.AUTH_API}/api-keys`;
+		return this.httpService.getRequest<MeetApiKey[]>(path);
+	}
+
+	async deleteApiKeys(): Promise<any> {
+		const path = `${this.AUTH_API}/api-keys`;
+		return this.httpService.deleteRequest(path);
 	}
 }
