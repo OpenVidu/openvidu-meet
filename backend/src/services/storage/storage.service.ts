@@ -1,4 +1,13 @@
-import { AuthMode, AuthType, GlobalPreferences, MeetRecordingInfo, MeetRoom, User, UserRole } from '@typings-ce';
+import {
+	AuthMode,
+	AuthType,
+	GlobalPreferences,
+	MeetApiKey,
+	MeetRecordingInfo,
+	MeetRoom,
+	User,
+	UserRole
+} from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
@@ -579,21 +588,18 @@ export class MeetStorageService<
 		return await this.saveCacheAndStorage(userRedisKey, storageUserKey, user);
 	}
 
-	async saveApiKey(apiKeyData: { key: string; creationDate: number }): Promise<void> {
+	async saveApiKey(apiKeyData: MeetApiKey): Promise<void> {
 		const redisKey = RedisKeyName.API_KEYS;
 		const storageKey = this.keyBuilder.buildApiKeysKey();
 		this.logger.debug(`Saving API key to Redis and storage: ${redisKey}`);
 		await this.saveCacheAndStorage(redisKey, storageKey, [apiKeyData]);
 	}
 
-	async getApiKeys(): Promise<{ key: string; creationDate: number }[]> {
+	async getApiKeys(): Promise<MeetApiKey[]> {
 		const redisKey = RedisKeyName.API_KEYS;
 		const storageKey = this.keyBuilder.buildApiKeysKey();
 		this.logger.debug(`Retrieving API key from Redis and storage: ${redisKey}`);
-		const apiKeys = await this.getFromCacheAndStorage<{ key: string; creationDate: number }[]>(
-			redisKey,
-			storageKey
-		);
+		const apiKeys = await this.getFromCacheAndStorage<MeetApiKey[]>(redisKey, storageKey);
 
 		if (!apiKeys || apiKeys.length === 0) {
 			this.logger.warn('API key not found in cache or storage');

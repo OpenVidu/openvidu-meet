@@ -1,3 +1,4 @@
+import { MeetApiKey } from '@typings-ce';
 import bcrypt from 'bcrypt';
 import { uid } from 'uid/secure';
 
@@ -13,7 +14,7 @@ export class PasswordHelper {
 	}
 
 	// Generate a secure API key using uid with a length of 32 characters
-	static generateApiKey(): { key: string; creationDate: number } {
+	static generateApiKey(): MeetApiKey {
 		return { key: `ovmeet-${uid(32)}`, creationDate: new Date().getTime() };
 	}
 }
