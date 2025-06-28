@@ -1,3 +1,4 @@
+export * from './api-key.js';
 export * from './auth-preferences.js';
 export * from './global-preferences.js';
 
