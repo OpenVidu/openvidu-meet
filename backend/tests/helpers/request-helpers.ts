@@ -117,6 +117,15 @@ export const updateWebbhookPreferences = async (preferences: WebhookPreferences)
 	return response;
 };
 
+export const testWebhookUrl = async (url: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks/test`)
+		.send({ url });
+	return response;
+};
+
 export const getSecurityPreferences = async () => {
 	checkAppIsRunning();
 
