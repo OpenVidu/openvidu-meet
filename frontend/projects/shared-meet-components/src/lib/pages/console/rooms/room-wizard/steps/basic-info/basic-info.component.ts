@@ -7,12 +7,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
 
 interface BasicInfoData {
 	roomIdPrefix?: string;
-	autoDeletionDate?: string;
+	autoDeletionDate?: number;
 }
 
 @Component({
@@ -26,7 +28,9 @@ interface BasicInfoData {
 		MatInputModule,
 		MatFormFieldModule,
 		MatDatepickerModule,
-		MatNativeDateModule
+		MatNativeDateModule,
+		MatSelectModule,
+		MatTooltipModule
 	],
 	templateUrl: './basic-info.component.html',
 	styleUrl: './basic-info.component.scss'
@@ -35,21 +39,25 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	basicInfoForm: FormGroup;
 	private destroy$ = new Subject<void>();
 
+	// Arrays for time selection
+	hours = Array.from({ length: 24 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
+	minutes = Array.from({ length: 60 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
+
 	constructor(
 		private fb: FormBuilder,
 		private wizardState: RoomWizardStateService
 	) {
 		this.basicInfoForm = this.fb.group({
 			roomIdPrefix: ['', [Validators.maxLength(50)]],
-			autoDeletionDate: [null]
+			autoDeletionDate: [null],
+			autoDeletionHour: [23], // Default to 23:59
+			autoDeletionMinute: [59]
 		});
 	}
 
 	ngOnInit() {
-		// Cargar datos existentes si los hay
 		this.loadExistingData();
 
-		// Suscribirse a cambios del formulario para guardar automáticamente
 		this.basicInfoForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
@@ -58,50 +66,92 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
+		this.clearForm();
 	}
 
 	private loadExistingData() {
 		const wizardData = this.wizardState.getWizardData();
 		const currentData = wizardData?.basic as BasicInfoData;
 
-		if (currentData) {
+		if (currentData && currentData.autoDeletionDate) {
+			const date = new Date(currentData.autoDeletionDate);
 			this.basicInfoForm.patchValue({
 				roomIdPrefix: currentData.roomIdPrefix || '',
-				autoDeletionDate: currentData.autoDeletionDate ? new Date(currentData.autoDeletionDate) : null
+				autoDeletionDate: date,
+				autoDeletionHour: date.getHours(),
+				autoDeletionMinute: date.getMinutes()
+			});
+		} else if (currentData) {
+			this.basicInfoForm.patchValue({
+				roomIdPrefix: currentData.roomIdPrefix || ''
 			});
 		}
 	}
-
 	private saveFormData(formValue: any) {
+		let autoDeletionDateTime: number | undefined = undefined;
+
+		debugger;
+		// If date is selected, combine it with time
+		if (formValue.autoDeletionDate) {
+			const date = new Date(formValue.autoDeletionDate);
+			date.setHours(formValue.autoDeletionHour || 23);
+			date.setMinutes(formValue.autoDeletionMinute || 59);
+			date.setSeconds(0);
+			date.setMilliseconds(0);
+			autoDeletionDateTime = date.getTime();
+		}
+
 		const data: BasicInfoData = {
 			roomIdPrefix: formValue.roomIdPrefix || undefined,
-			autoDeletionDate: formValue.autoDeletionDate ? formValue.autoDeletionDate.getTime() : undefined
+			autoDeletionDate: autoDeletionDateTime
 		};
 
-		// Solo guardar si hay algún valor
-		if (data.roomIdPrefix || data.autoDeletionDate) {
-			this.wizardState.updateStepData('basic', data);
-		}
+		// Always save to wizard state (including when values are cleared)
+		this.wizardState.updateStepData('basic', data);
 	}
 
-	// Método para establecer datos de ejemplo
-	updateBasicData() {
-		const sampleData = {
-			roomIdPrefix: 'demo-room',
-			autoDeletionDate: new Date(Date.now() + 86400000).getTime() // 24 horas desde ahora
-		};
-
-		this.basicInfoForm.patchValue(sampleData);
-	}
-
-	// Método para limpiar el formulario
 	clearForm() {
 		this.basicInfoForm.reset();
 		this.wizardState.updateStepData('basic', {});
 	}
 
-	// Validación para fecha mínima (hoy)
 	get minDate(): Date {
 		return new Date();
+	}
+
+	clearDeletionDate() {
+		this.basicInfoForm.patchValue({
+			autoDeletionDate: null,
+			autoDeletionHour: 23, // Reset to default values
+			autoDeletionMinute: 59
+		});
+	}
+
+	get hasDateSelected(): boolean {
+		return !!this.basicInfoForm.get('autoDeletionDate')?.value;
+	}
+
+	getFormattedDateTime(): string {
+		const formValue = this.basicInfoForm.value;
+		if (!formValue.autoDeletionDate) {
+			return '';
+		}
+
+		const date = new Date(formValue.autoDeletionDate);
+		const hour = formValue.autoDeletionHour || 23;
+		const minute = formValue.autoDeletionMinute || 59;
+
+		date.setHours(hour);
+		date.setMinutes(minute);
+
+		return date.toLocaleString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+			hour12: false
+		});
 	}
 }

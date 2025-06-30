@@ -75,6 +75,57 @@
 							@include ov-icon(sm);
 						}
 					}
+
+					// Clear button styling
+					.clear-date-button {
+						@include ov-button-base;
+						padding: var(--ov-meet-spacing-xs);
+
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+				}
+			}
+
+			// Time selection styling
+			.time-selection-container {
+				.time-selection-row {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-sm);
+
+					.time-field {
+						flex: 1;
+						max-width: 120px;
+					}
+
+					.time-separator {
+						font-size: var(--ov-meet-font-size-lg);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-secondary);
+						padding: 0 var(--ov-meet-spacing-xs);
+					}
+				}
+
+				.time-hint {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-xs);
+					background-color: var(--ov-meet-surface-accent);
+					border-radius: var(--ov-meet-radius-sm);
+					border-left: 3px solid var(--ov-meet-primary);
+
+					.hint-icon {
+						@include ov-icon(sm);
+						color: var(--ov-meet-color-warn);
+					}
+
+					span {
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-color-warn);
+						font-weight: var(--ov-meet-font-weight-medium);
+					}
 				}
 			}
 		}
@@ -97,6 +148,22 @@
 				display: flex;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-md);
+
+				.time-selection-container {
+					.time-selection-row {
+						flex-direction: column;
+						align-items: stretch;
+						gap: var(--ov-meet-spacing-sm);
+
+						.time-field {
+							max-width: none;
+						}
+
+						.time-separator {
+							display: none; // Hide separator in mobile vertical layout
+						}
+					}
+				}
 			}
 		}
 	}
