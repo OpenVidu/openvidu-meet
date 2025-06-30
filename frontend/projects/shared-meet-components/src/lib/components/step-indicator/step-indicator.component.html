@@ -1,11 +1,12 @@
-<div class="step-indicator-wrapper" [attr.data-layout]="(layoutType$ | async)">
+<div class="step-indicator-wrapper" [attr.data-layout]="layoutType$ | async">
 	<mat-stepper
 		#stepper
 		[selectedIndex]="currentStepIndex"
 		[orientation]="(stepperOrientation$ | async)!"
 		[linear]="!allowNavigation"
 		class="wizard-stepper"
-		[attr.data-layout]="(layoutType$ | async)"
+		[attr.data-layout]="layoutType$ | async"
+		(selectionChange)="onStepClick($event)"
 	>
 		@for (step of visibleSteps; track step.id; let i = $index) {
 			<mat-step
@@ -13,7 +14,6 @@
 				[state]="getStepState(step)"
 				[editable]="isStepClickable(step)"
 				[label]="step.label"
-				(click)="onStepClick(step, i)"
 			>
 				<!-- Custom step icon template -->
 				<ng-template matStepperIcon="edit">
@@ -23,11 +23,6 @@
 				<ng-template matStepperIcon="done">
 					<mat-icon>check</mat-icon>
 				</ng-template>
-
-				<!-- Contenido mínimo del paso -->
-				<!-- <div class="step-content">
-					<p class="step-description">{{ step.label }} configuration</p>
-				</div> -->
 			</mat-step>
 		}
 	</mat-stepper>

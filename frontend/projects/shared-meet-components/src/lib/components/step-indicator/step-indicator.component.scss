@@ -5,7 +5,7 @@
 	height: 100%;
 
 	// Large Desktop: Vertical Sidebar Layout (>1200px)
-	&[data-layout="vertical-sidebar"] {
+	&[data-layout='vertical-sidebar'] {
 		.wizard-stepper {
 			padding: var(--ov-meet-spacing-lg);
 			@include ov-theme-transition;
@@ -48,7 +48,7 @@
 	}
 
 	// Medium Desktop: Horizontal Compact Layout (768-1200px)
-	&[data-layout="horizontal-compact"] {
+	&[data-layout='horizontal-compact'] {
 		.wizard-stepper {
 			width: 100%;
 			max-width: 100%;
@@ -88,6 +88,7 @@
 							white-space: nowrap;
 							overflow: hidden;
 							text-overflow: ellipsis;
+							text-wrap: auto !important;
 							max-width: 120px;
 						}
 					}
@@ -103,7 +104,7 @@
 	}
 
 	// Mobile/Tablet: Vertical Compact Layout (<768px)
-	&[data-layout="vertical-compact"] {
+	&[data-layout='vertical-compact'] {
 		.wizard-stepper {
 			width: 100%;
 			padding: var(--ov-meet-spacing-md);
@@ -162,5 +163,13 @@
 	.mat-stepper-vertical {
 		position: absolute;
 		left: 10;
+	}
+
+	.mat-step-header .mat-step-icon-selected {
+		background-color: var(--ov-meet-color-primary) !important;
+	}
+	.mat-step-icon-state-done {
+		background-color: var(--ov-meet-color-success) !important;
+		color: var(--ov-meet-text-on-primary) !important;
 	}
 }

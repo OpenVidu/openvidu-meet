@@ -4,7 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatIcon } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { StepperOrientation } from '@angular/cdk/stepper';
+import { StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -36,8 +36,11 @@ export class StepIndicatorComponent implements OnChanges {
 		// - Medium desktop (768-1200px): Horizontal compact
 		// - Tablet/Mobile (<768px): Vertical compact
 
-		const breakpointState$ = this.breakpointObserver
-			.observe(['(min-width: 1200px)', '(min-width: 768px)', Breakpoints.HandsetPortrait]);
+		const breakpointState$ = this.breakpointObserver.observe([
+			'(min-width: 1200px)',
+			'(min-width: 768px)',
+			Breakpoints.HandsetPortrait
+		]);
 
 		this.layoutType$ = breakpointState$.pipe(
 			map(() => {
@@ -57,7 +60,7 @@ export class StepIndicatorComponent implements OnChanges {
 		);
 
 		// Emit layout changes for parent component
-		this.layoutType$.subscribe(layoutType => {
+		this.layoutType$.subscribe((layoutType) => {
 			this.layoutChange.emit(layoutType);
 		});
 	}
@@ -105,9 +108,11 @@ export class StepIndicatorComponent implements OnChanges {
 		return step.validationFormGroup;
 	}
 
-	onStepClick(step: WizardStep, index: number) {
-		if (this.allowNavigation && (step.isCompleted || step.isActive)) {
-			this.stepClick.emit({ step, index });
+	onStepClick(event: StepperSelectionEvent) {
+		console.warn('Step clicked:', event);
+		if (this.allowNavigation) {
+			const step = this.steps[event.selectedIndex];
+			this.stepClick.emit({ step, index: event.selectedIndex });
 		}
 	}
 
@@ -122,7 +127,7 @@ export class StepIndicatorComponent implements OnChanges {
 	}
 
 	isStepClickable(step: WizardStep): boolean {
-		return this.allowNavigation; //&& (step.isCompleted || step.isActive);
+		return this.allowNavigation && (step.isCompleted || step.isActive);
 	}
 
 	getStepIcon(step: WizardStep): string {
