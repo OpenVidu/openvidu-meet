@@ -11,11 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../../../services';
-
-interface BasicInfoData {
-	roomIdPrefix?: string;
-	autoDeletionDate?: number;
-}
+import { MeetRoomOptions } from '../../../../../../typings/ce';
 
 @Component({
 	selector: 'ov-room-wizard-basic-info',
@@ -70,23 +66,23 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	}
 
 	private loadExistingData() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.basic as BasicInfoData;
+		const roomOptions = this.wizardState.getRoomOptions();
 
-		if (currentData && currentData.autoDeletionDate) {
-			const date = new Date(currentData.autoDeletionDate);
+		if (roomOptions.autoDeletionDate) {
+			const date = new Date(roomOptions.autoDeletionDate);
 			this.basicInfoForm.patchValue({
-				roomIdPrefix: currentData.roomIdPrefix || '',
+				roomIdPrefix: roomOptions.roomIdPrefix || '',
 				autoDeletionDate: date,
 				autoDeletionHour: date.getHours(),
 				autoDeletionMinute: date.getMinutes()
 			});
-		} else if (currentData) {
+		} else {
 			this.basicInfoForm.patchValue({
-				roomIdPrefix: currentData.roomIdPrefix || ''
+				roomIdPrefix: roomOptions.roomIdPrefix || ''
 			});
 		}
 	}
+
 	private saveFormData(formValue: any) {
 		let autoDeletionDateTime: number | undefined = undefined;
 
@@ -100,13 +96,13 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 			autoDeletionDateTime = date.getTime();
 		}
 
-		const data: BasicInfoData = {
+		const stepData: Partial<MeetRoomOptions> = {
 			roomIdPrefix: formValue.roomIdPrefix || undefined,
 			autoDeletionDate: autoDeletionDateTime
 		};
 
 		// Always save to wizard state (including when values are cleared)
-		this.wizardState.updateStepData('basic', data);
+		this.wizardState.updateStepData('basic', stepData);
 	}
 
 	clearForm() {

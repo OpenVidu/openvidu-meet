@@ -52,7 +52,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		isNextDisabled: false,
 		isPreviousDisabled: true
 	};
-	wizardData: any = {};
+	wizardData: MeetRoomOptions = {};
 
 	constructor(
 		private wizardState: RoomWizardStateService,
@@ -70,8 +70,8 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			this.navigationConfig = this.wizardState.getNavigationConfig();
 		});
 
-		this.wizardState.wizardData$.pipe(takeUntil(this.destroy$)).subscribe((data) => {
-			this.wizardData = data;
+		this.wizardState.roomOptions$.pipe(takeUntil(this.destroy$)).subscribe((options) => {
+			this.wizardData = options;
 		});
 
 		this.wizardState.currentStepIndex$.pipe(takeUntil(this.destroy$)).subscribe((index) => {
@@ -116,10 +116,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	async onFinish(event: WizardNavigationEvent) {
-		console.log('Wizard completed with data:', event, this.wizardState.getWizardData());
+		console.log('Wizard completed with data:', event, this.wizardState.getRoomOptions());
 
 		try {
-			const roomOptions = this.buildRoomOptions();
+			const roomOptions = this.wizardState.getRoomOptions();
 			await this.roomService.createRoom(roomOptions);
 			await this.navigationService.navigateTo('/console/rooms', undefined, true);
 		} catch (error) {
@@ -127,28 +127,4 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	private buildRoomOptions(): MeetRoomOptions | undefined {
-		if (this.wizardState.isWizardSkipped()) {
-			return undefined;
-		}
-
-		const wizardData = this.wizardState.getWizardData();
-
-		return {
-			roomIdPrefix: wizardData.basic.roomIdPrefix,
-			autoDeletionDate: wizardData.basic.autoDeletionDate,
-			preferences: {
-				chatPreferences: {
-					enabled: wizardData.preferences.chatEnabled
-				},
-				virtualBackgroundPreferences: {
-					enabled: wizardData.preferences.virtualBackgroundsEnabled
-				},
-				recordingPreferences: {
-					enabled: wizardData.recording.enabled,
-					allowAccessTo: wizardData.recording.allowAccessTo
-				}
-			}
-		};
-	}
 }

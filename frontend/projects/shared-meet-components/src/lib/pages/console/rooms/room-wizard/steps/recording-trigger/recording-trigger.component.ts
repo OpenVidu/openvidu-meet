@@ -13,10 +13,6 @@ import {
 	SelectionEvent
 } from '../../../../../../components/selectable-card/selectable-card.component';
 
-interface RecordingTriggerData {
-	type: 'manual' | 'auto1' | 'auto2';
-}
-
 @Component({
 	selector: 'ov-recording-trigger',
 	standalone: true,
@@ -91,31 +87,29 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 	}
 
 	private loadExistingData() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recordingTrigger as RecordingTriggerData;
-
-		if (currentData !== undefined && Object.keys(currentData).length > 0) {
-			this.triggerForm.patchValue({
-				triggerType: currentData.type
-			});
-		}
+		// Note: This component doesn't need to store data in MeetRoomOptions
+		// Recording trigger settings are typically stored as metadata or used for UI state only
+		// For now, we'll use form state only
+		this.triggerForm.patchValue({
+			triggerType: 'manual' // Always default to manual
+		});
 	}
 
 	private saveFormData(formValue: any) {
-		const data: RecordingTriggerData = {
-			type: formValue.triggerType
-		};
+		// Note: Recording trigger type is not part of MeetRoomOptions
+		// This is UI state that affects how recording is initiated but not stored in room options
+		// We could extend this to store in a metadata field if needed in the future
 
-		this.wizardState.updateStepData('recordingTrigger', data);
+		// For now, just keep the form state - this affects UI behavior but not the final room creation
+		console.log('Recording trigger type selected:', formValue.triggerType);
 	}
 
 	private saveInitialDefaultIfNeeded() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recordingTrigger as RecordingTriggerData;
-
-		// If no existing data, save the default value
-		if (!currentData || Object.keys(currentData).length === 0) {
-			this.saveFormData(this.triggerForm.value);
+		// Always ensure manual is selected as default
+		if (!this.triggerForm.value.triggerType) {
+			this.triggerForm.patchValue({
+				triggerType: 'manual'
+			});
 		}
 	}
 

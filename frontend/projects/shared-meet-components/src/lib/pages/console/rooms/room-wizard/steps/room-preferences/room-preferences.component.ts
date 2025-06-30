@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Subject, takeUntil } from 'rxjs';
-
 import { RoomWizardStateService } from '../../../../../../services';
 
 @Component({
@@ -32,14 +31,19 @@ export class RoomPreferencesComponent implements OnInit, OnDestroy {
 
 	ngOnInit(): void {
 		// Load existing data from wizard state
-		const existingData = this.roomWizardStateService.getWizardData();
-		if (existingData && existingData.preferences) {
-			this.preferencesForm.patchValue(existingData.preferences);
+		const roomOptions = this.roomWizardStateService.getRoomOptions();
+		const preferences = roomOptions.preferences;
+
+		if (preferences) {
+			this.preferencesForm.patchValue({
+				chatEnabled: preferences.chatPreferences?.enabled ?? true,
+				virtualBackgroundsEnabled: preferences.virtualBackgroundPreferences?.enabled ?? true
+			});
 		}
 
 		// Auto-save form changes
 		this.preferencesForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-			this.roomWizardStateService.updateStepData('preferences', value);
+			this.saveFormData(value);
 		});
 
 		// Save initial default values if no existing data
@@ -51,12 +55,28 @@ export class RoomPreferencesComponent implements OnInit, OnDestroy {
 		this.destroy$.complete();
 	}
 
+	private saveFormData(formValue: any): void {
+		const stepData: any = {
+			preferences: {
+				chatPreferences: {
+					enabled: formValue.chatEnabled
+				},
+				virtualBackgroundPreferences: {
+					enabled: formValue.virtualBackgroundsEnabled
+				}
+			}
+		};
+
+		this.roomWizardStateService.updateStepData('preferences', stepData);
+	}
+
 	private saveInitialDefaultIfNeeded(): void {
-		const existingData = this.roomWizardStateService.getWizardData();
+		const roomOptions = this.roomWizardStateService.getRoomOptions();
+		const preferences = roomOptions.preferences;
 
 		// If no existing preferences data, save the default values
-		if (!existingData || !existingData.preferences || Object.keys(existingData.preferences).length === 0) {
-			this.roomWizardStateService.updateStepData('preferences', this.preferencesForm.value);
+		if (!preferences?.chatPreferences || !preferences?.virtualBackgroundPreferences) {
+			this.saveFormData(this.preferencesForm.value);
 		}
 	}
 

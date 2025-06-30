@@ -14,12 +14,7 @@ import {
 	SelectableOption,
 	SelectionEvent
 } from '../../../../../../components/selectable-card/selectable-card.component';
-import { MeetRecordingAccess } from '../../../../../../../../../../../typings/src/room-preferences';
-
-interface RecordingPreferencesData {
-	enabled: boolean;
-	allowAccessTo?: MeetRecordingAccess;
-}
+import { MeetRecordingAccess, MeetRoomOptions } from '../../../../../../typings/ce';
 
 interface RecordingAccessOption {
 	value: MeetRecordingAccess;
@@ -106,34 +101,38 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 	}
 
 	private loadExistingData() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recording as RecordingPreferencesData;
+		const roomOptions = this.wizardState.getRoomOptions();
+		const recordingPrefs = roomOptions.preferences?.recordingPreferences;
 
-		if (currentData !== undefined) {
+		if (recordingPrefs !== undefined) {
 			this.recordingForm.patchValue({
-				recordingEnabled: currentData.enabled ? 'enabled' : 'disabled',
-				allowAccessTo: currentData.allowAccessTo || 'admin'
+				recordingEnabled: recordingPrefs.enabled ? 'enabled' : 'disabled',
+				allowAccessTo: recordingPrefs.allowAccessTo || MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
 			});
 		}
 	}
 
 	private saveFormData(formValue: any) {
-		const data: RecordingPreferencesData = {
-			enabled: formValue.recordingEnabled === 'enabled',
-			...(formValue.recordingEnabled === 'enabled' && {
-				allowAccessTo: formValue.allowAccessTo
-			})
+		const enabled = formValue.recordingEnabled === 'enabled';
+
+		const stepData: any = {
+			preferences: {
+				recordingPreferences: {
+					enabled,
+					...(enabled && { allowAccessTo: formValue.allowAccessTo })
+				}
+			}
 		};
 
-		this.wizardState.updateStepData('recording', data);
+		this.wizardState.updateStepData('recording', stepData);
 	}
 
 	private saveInitialDefaultIfNeeded() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recording as RecordingPreferencesData;
+		const roomOptions = this.wizardState.getRoomOptions();
+		const recordingPrefs = roomOptions.preferences?.recordingPreferences;
 
 		// If no existing data, save the default value
-		if (currentData === undefined) {
+		if (recordingPrefs === undefined) {
 			this.saveFormData(this.recordingForm.value);
 		}
 	}

@@ -13,10 +13,6 @@ import {
 	SelectionEvent
 } from '../../../../../../components/selectable-card/selectable-card.component';
 
-interface RecordingLayoutData {
-	type: 'grid' | 'speaker' | 'single-speaker';
-}
-
 @Component({
 	selector: 'ov-recording-layout',
 	standalone: true,
@@ -91,59 +87,34 @@ export class RecordingLayoutComponent implements OnInit, OnDestroy {
 	}
 
 	private loadExistingData() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recordingLayout as RecordingLayoutData;
+		// Note: This component doesn't need to store data in MeetRoomOptions
+		// Recording layout settings are typically stored as metadata or used for UI state only
+		this.layoutForm.patchValue({
+			layoutType: 'grid' // Always default to grid
+		});
+	}
 
-		if (currentData !== undefined && Object.keys(currentData).length > 0) {
+	private saveInitialDefaultIfNeeded() {
+		// Always ensure grid is selected as default
+		if (!this.layoutForm.value.layoutType) {
 			this.layoutForm.patchValue({
-				layoutType: currentData.type
+				layoutType: 'grid'
 			});
 		}
 	}
 
-	private saveInitialDefaultIfNeeded() {
-		const wizardData = this.wizardState.getWizardData();
-		const currentData = wizardData?.recordingLayout as RecordingLayoutData;
-
-		// If no existing data, save the default value
-		if (currentData === undefined || Object.keys(currentData).length === 0) {
-			this.saveFormData(this.layoutForm.value);
-		}
-	}
-
 	private saveFormData(formValue: any) {
-		const data: RecordingLayoutData = {
-			type: formValue.layoutType
-		};
+		// Note: Recording layout type is not part of MeetRoomOptions
+		// This is UI state that affects recording layout but not stored in room options
+		// We could extend this to store in a metadata field if needed in the future
 
-		this.wizardState.updateStepData('recordingLayout', data);
+		// For now, just keep the form state - this affects UI behavior but not the final room creation
+		console.log('Recording layout type selected:', formValue.layoutType);
 	}
 
 	onOptionSelect(event: SelectionEvent): void {
 		this.layoutForm.patchValue({
 			layoutType: event.optionId
-		});
-	}
-
-	isOptionSelected(optionId: 'grid' | 'speaker' | 'single-speaker'): boolean {
-		return this.layoutForm.value.layoutType === optionId;
-	}
-
-	get selectedValue(): string {
-		return this.layoutForm.value.layoutType;
-	}
-
-	// Set recommended option (grid)
-	setRecommendedOption() {
-		this.layoutForm.patchValue({
-			layoutType: 'grid'
-		});
-	}
-
-	// Set default option (grid)
-	setDefaultOption() {
-		this.layoutForm.patchValue({
-			layoutType: 'grid'
 		});
 	}
 

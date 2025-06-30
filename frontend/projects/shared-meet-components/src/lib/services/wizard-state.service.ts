@@ -2,99 +2,186 @@ import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { WizardStep, WizardNavigationConfig } from '../models/wizard.model';
 import { FormBuilder, Validators } from '@angular/forms';
+import { MeetRoomOptions, MeetRoomPreferences, MeetRecordingAccess } from '../typings/ce';
 
+/**
+ * Service to manage the state of the room creation wizard.
+ * Handles step navigation, form data management, and room options building.
+ */
 @Injectable({
 	providedIn: 'root'
 })
 export class RoomWizardStateService {
-	private _formBuilder = inject(FormBuilder);
+	private readonly _formBuilder = inject(FormBuilder);
 
-	private _currentStepIndex = new BehaviorSubject<number>(0);
-	private _steps = new BehaviorSubject<WizardStep[]>([]);
-	private _wizardData = new BehaviorSubject<any>({});
+	// Observables for reactive state management
+	private readonly _currentStepIndex = new BehaviorSubject<number>(0);
+	private readonly _steps = new BehaviorSubject<WizardStep[]>([]);
+	private readonly _roomOptions = new BehaviorSubject<MeetRoomOptions>({});
 
-	currentStepIndex$ = this._currentStepIndex.asObservable();
-	steps$ = this._steps.asObservable();
-	wizardData$ = this._wizardData.asObservable();
+	public readonly currentStepIndex$ = this._currentStepIndex.asObservable();
+	public readonly steps$ = this._steps.asObservable();
+	public readonly roomOptions$ = this._roomOptions.asObservable();
 
-	// Datos del formulario
-	private wizardFormData: any = {
-		basic: {},
-		recording: { enabled: false },
-		recordingTrigger: {},
-		recordingLayout: {},
-		preferences: {}
+	// Default room preferences following the platform's defaults
+	private readonly DEFAULT_PREFERENCES: MeetRoomPreferences = {
+		recordingPreferences: {
+			enabled: false,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+		},
+		chatPreferences: { enabled: true },
+		virtualBackgroundPreferences: { enabled: true }
 	};
 
-	initializeWizard(editMode: boolean = false, existingData?: any) {
+	/**
+	 * Initializes the wizard with base steps and default room options.
+	 * @param editMode - Whether the wizard is in edit mode (not implemented yet)
+	 * @param existingData - Existing room options to prefill the wizard
+	 */
+	initializeWizard(editMode: boolean = false, existingData?: MeetRoomOptions): void {
+		// Initialize room options with defaults
+		const initialRoomOptions: MeetRoomOptions = {
+			preferences: this.DEFAULT_PREFERENCES,
+			...existingData
+		};
+
+		this._roomOptions.next(initialRoomOptions);
+
+		// Define base wizard steps
 		const baseSteps: WizardStep[] = [
 			{
 				id: 'basic',
-				label: 'Basic Info',
+				label: 'Room Details',
 				isCompleted: false,
 				isActive: true,
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
-					roomPrefix: ['', Validators.required],
+					roomPrefix: ['', [Validators.required, Validators.minLength(2)]],
 					deletionDate: ['']
 				}),
 				order: 1
 			},
 			{
 				id: 'recording',
-				label: 'Recording',
+				label: 'Recording Settings',
 				isCompleted: false,
 				isActive: false,
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
-					enabled: [false]
+					enabled: [initialRoomOptions.preferences?.recordingPreferences?.enabled ?? true]
 				}),
 				order: 2
 			},
 			{
 				id: 'preferences',
-				label: 'Preferences',
+				label: 'Room Features',
 				isCompleted: false,
 				isActive: false,
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
-					preference1: [''],
-					preference2: ['']
+					chatPreferences: this._formBuilder.group({
+						enabled: [initialRoomOptions.preferences?.chatPreferences?.enabled ?? true]
+					}),
+					virtualBackgroundPreferences: this._formBuilder.group({
+						enabled: [initialRoomOptions.preferences?.virtualBackgroundPreferences?.enabled ?? true]
+					})
 				}),
-				order: 5 // Se ajustará dinámicamente
+				order: 5
 			}
 		];
 
 		this._steps.next(baseSteps);
 		this._currentStepIndex.next(0);
-
-		if (existingData) {
-			this.wizardFormData = { ...existingData };
-			this._wizardData.next(this.wizardFormData);
-		}
-	}
-
-	updateStepData(stepId: string, data: any) {
-		this.wizardFormData[stepId] = { ...this.wizardFormData[stepId], ...data };
-		this._wizardData.next(this.wizardFormData);
-
-		// Actualizar visibilidad de pasos según los datos
 		this.updateStepVisibility();
 	}
 
-	private updateStepVisibility() {
-		const currentSteps = this._steps.value;
-		const recordingEnabled = this.wizardFormData.recording?.enabled;
+	/**
+	 * Updates room options for a specific step.
+	 * This method merges the provided data with the current room options.
+	 * @param stepId - The ID of the step being updated
+	 * @param stepData - The data to update in the room options
+	 */
+	updateStepData(stepId: string, stepData: Partial<MeetRoomOptions>): void {
+		const currentOptions = this._roomOptions.value;
+		let updatedOptions: MeetRoomOptions;
 
-		// Remover pasos de recording si existen
-		const filteredSteps = currentSteps.filter((step) => !['recordingTrigger', 'recordingLayout'].includes(step.id));
+		switch (stepId) {
+			case 'basic':
+				updatedOptions = {
+					...currentOptions,
+					roomIdPrefix: stepData.roomIdPrefix,
+					autoDeletionDate: stepData.autoDeletionDate
+				};
+				break;
+
+			case 'recording':
+				updatedOptions = {
+					...currentOptions,
+					preferences: {
+						...currentOptions.preferences,
+						recordingPreferences: {
+							...currentOptions.preferences?.recordingPreferences,
+							...stepData.preferences?.recordingPreferences
+						}
+					} as MeetRoomPreferences
+				};
+				break;
+
+			case 'recordingTrigger':
+			case 'recordingLayout':
+				// These steps don't directly modify room options but could store additional metadata
+				updatedOptions = { ...currentOptions };
+				break;
+
+			case 'preferences':
+				updatedOptions = {
+					...currentOptions,
+					preferences: {
+						...currentOptions.preferences,
+						chatPreferences: {
+							...currentOptions.preferences?.chatPreferences,
+							...stepData.preferences?.chatPreferences
+						},
+						virtualBackgroundPreferences: {
+							...currentOptions.preferences?.virtualBackgroundPreferences,
+							...stepData.preferences?.virtualBackgroundPreferences
+						},
+						recordingPreferences: {
+							...currentOptions.preferences?.recordingPreferences
+						}
+					} as MeetRoomPreferences
+				};
+				break;
+
+			default:
+				console.warn(`Unknown step ID: ${stepId}`);
+				updatedOptions = currentOptions;
+		}
+
+		this._roomOptions.next(updatedOptions);
+		this.updateStepVisibility();
+	}
+
+	/**
+	 * Updates the visibility of wizard steps based on current room options.
+	 * For example, recording-related steps are only visible when recording is enabled.
+	 */
+	private updateStepVisibility(): void {
+		const currentSteps = this._steps.value;
+		const currentOptions = this._roomOptions.value;
+		const recordingEnabled = currentOptions.preferences?.recordingPreferences?.enabled ?? false;
+
+		// Remove recording-specific steps if they exist
+		const filteredSteps = currentSteps.filter((step) =>
+			!['recordingTrigger', 'recordingLayout'].includes(step.id)
+		);
 
 		if (recordingEnabled) {
-			// Agregar pasos de recording
+			// Add recording-specific steps
 			const recordingSteps: WizardStep[] = [
 				{
 					id: 'recordingTrigger',
-					label: 'Trigger',
+					label: 'Recording Trigger',
 					isCompleted: false,
 					isActive: false,
 					isVisible: true,
@@ -105,7 +192,7 @@ export class RoomWizardStateService {
 				},
 				{
 					id: 'recordingLayout',
-					label: 'Layout',
+					label: 'Recording Layout',
 					isCompleted: false,
 					isActive: false,
 					isVisible: true,
@@ -117,7 +204,7 @@ export class RoomWizardStateService {
 				}
 			];
 
-			// Injects recording steps into the correct position
+			// Insert recording steps at the correct position (after recording step)
 			filteredSteps.splice(2, 0, ...recordingSteps);
 		}
 
@@ -228,29 +315,32 @@ export class RoomWizardStateService {
 		};
 	}
 
-	getWizardData(): {
-		basic: any;
-		recording: any;
-		recordingTrigger: any;
-		recordingLayout: any;
-		preferences: any;
-	} {
-		return this.wizardFormData;
+	/**
+	 * Gets the current room options configured in the wizard.
+	 * @returns The current MeetRoomOptions object
+	 */
+	getRoomOptions(): MeetRoomOptions {
+		return this._roomOptions.value;
 	}
 
+	/**
+	 * Checks if the wizard was skipped (user is still on the first step).
+	 * @returns True if the wizard was skipped, false otherwise
+	 */
 	isWizardSkipped(): boolean {
 		return this._currentStepIndex.getValue() === 0;
 	}
 
-	resetWizard() {
-		this.wizardFormData = {
-			basic: {},
-			recording: { enabled: false },
-			recordingTrigger: {},
-			recordingLayout: {},
-			preferences: {}
+	/**
+	 * Resets the wizard to its initial state with default options.
+	 */
+	resetWizard(): void {
+		const defaultOptions: MeetRoomOptions = {
+			preferences: this.DEFAULT_PREFERENCES
 		};
+
+		this._roomOptions.next(defaultOptions);
 		this._currentStepIndex.next(0);
-		this._wizardData.next(this.wizardFormData);
+		this.initializeWizard();
 	}
 }
