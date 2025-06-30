@@ -90,7 +90,6 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	private saveFormData(formValue: any) {
 		let autoDeletionDateTime: number | undefined = undefined;
 
-		debugger;
 		// If date is selected, combine it with time
 		if (formValue.autoDeletionDate) {
 			const date = new Date(formValue.autoDeletionDate);
