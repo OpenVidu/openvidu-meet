@@ -52,10 +52,23 @@
 		.wizard-stepper {
 			width: 100%;
 			max-width: 100%;
-			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-xs);
 			@include ov-theme-transition;
 
 			::ng-deep {
+				.mat-step-text-label {
+					white-space: normal;
+					overflow: hidden;
+					text-wrap: auto;
+					text-overflow: clip !important;
+					max-width: 120px;
+				}
+				.mat-stepper-horizontal-line {
+					flex: 0 0 24px !important;
+					min-width: var(--ov-meet-spacing-sm) !important;
+					margin: auto !important;
+				}
+
 				.mat-stepper-horizontal {
 					background: transparent;
 
@@ -69,6 +82,7 @@
 						justify-content: center;
 						align-items: center;
 						gap: var(--ov-meet-spacing-md);
+						margin: auto;
 					}
 
 					.mat-step-header {
@@ -85,18 +99,13 @@
 						.mat-step-label {
 							font-size: var(--ov-meet-font-size-sm);
 							font-weight: var(--ov-meet-font-weight-medium);
-							white-space: nowrap;
+							white-space: normal;
 							overflow: hidden;
-							text-overflow: ellipsis;
-							text-wrap: auto !important;
+							// text-overflow: ellipsis;
+							text-wrap: auto;
+							text-overflow: clip !important;
 							max-width: 120px;
 						}
-					}
-
-					.mat-stepper-horizontal-line {
-						flex: 0 0 24px;
-						min-width: 24px;
-						margin: 0 var(--ov-meet-spacing-xs);
 					}
 				}
 			}
@@ -158,6 +167,17 @@
 
 	mat-stepper {
 		background: transparent !important;
+	}
+
+	.mat-horizontal-stepper-header {
+		height: auto !important;
+		padding: 5px 15px !important;
+
+		.mat-step-label {
+			white-space: normal !important;
+			text-wrap: auto;
+			text-overflow: clip;
+		}
 	}
 
 	.mat-stepper-vertical {
