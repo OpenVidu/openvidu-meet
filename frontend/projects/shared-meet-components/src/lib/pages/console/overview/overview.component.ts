@@ -12,6 +12,7 @@ interface OverviewStats {
 	activeRooms: number;
 	totalRecordings: number;
 	hasData: boolean;
+	isLoading: boolean;
 }
 
 @Component({
@@ -26,7 +27,8 @@ export class OverviewComponent implements OnInit {
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
-		hasData: false
+		hasData: false,
+		isLoading: true // Empezamos con loading true para evitar flickering
 	};
 
 	constructor(
@@ -42,24 +44,29 @@ export class OverviewComponent implements OnInit {
 
 	private async loadStats() {
 		try {
+			this.stats.isLoading = true;
+
 			const [roomsResp, recordingsResp] = await Promise.all([
 				this.roomService.listRooms(),
 				this.recordingService.listRecordings()
 			]);
 			const rooms = roomsResp.rooms;
 			const recordings = recordingsResp.recordings;
+
 			this.stats = {
 				totalRooms: rooms.length,
 				activeRooms: rooms.filter((room: MeetRoom) => !room.markedForDeletion).length,
 				totalRecordings: recordings.length,
-				hasData: rooms.length > 0 || recordings.length > 0
+				hasData: rooms.length > 0 || recordings.length > 0,
+				isLoading: false
 			};
 		} catch {
 			this.stats = {
 				totalRooms: 0,
 				activeRooms: 0,
 				totalRecordings: 0,
-				hasData: false
+				hasData: false,
+				isLoading: false
 			};
 		}
 	}
