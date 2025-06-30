@@ -1,23 +1,19 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { Component, OnInit, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NotificationService } from '../../../services';
+import { AuthMode } from '@lib/typings/ce';
 import { LogoSelectorComponent } from '../../../components';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
-interface AccessPermissions {
-	authenticationForJoining: 'everyone' | 'only-moderators' | 'nobody';
-	adminPassword: string;
-}
+import { AuthService, GlobalPreferencesService, NotificationService } from '../../../services';
 
 @Component({
 	selector: 'ov-preferences',
@@ -41,83 +37,70 @@ interface AccessPermissions {
 	styleUrl: './preferences.component.scss'
 })
 export class PreferencesComponent implements OnInit {
-	private notificationService = inject(NotificationService);
-	private formBuilder = inject(FormBuilder);
-
-	// Signals for reactive state management
 	isLoading = signal(false);
 	isSavingBranding = signal(false);
 	isSavingAccess = signal(false);
 
-	accessForm!: FormGroup;
-
-	accessData = signal<AccessPermissions>({
-		authenticationForJoining: 'everyone',
-		adminPassword: ''
+	authForm = new FormGroup({
+		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required]),
+		adminPassword: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 
-	// Authentication options for dropdown
-	authenticationOptions = [
-		{ value: 'everyone', label: 'Everyone' },
-		{ value: 'only-moderators', label: 'Only Moderators' },
-		{ value: 'nobody', label: 'Nobody' }
+	// Auth mode options for the select dropdown
+	authModeOptions = [
+		{ value: AuthMode.ALL_USERS, label: 'Everyone' },
+		{ value: AuthMode.MODERATORS_ONLY, label: 'Only Moderators' },
+		{ value: AuthMode.NONE, label: 'Nobody' }
 	];
 
-	ngOnInit(): void {
-		this.initializeForms();
-		this.loadSettings();
+	constructor(
+		private preferencesService: GlobalPreferencesService,
+		private authService: AuthService,
+		private notificationService: NotificationService
+	) {}
+
+	async ngOnInit() {
+		await this.loadSettings();
 	}
 
-	private initializeForms(): void {
-		this.accessForm = this.formBuilder.group({
-			authenticationForJoining: ['everyone', [Validators.required]],
-			adminPassword: ['', [Validators.required, Validators.minLength(8)]]
-		});
-	}
-
-	private loadSettings(): void {
+	private async loadSettings() {
 		this.isLoading.set(true);
 
-		// Load access settings
-		this.accessData.set({
-			authenticationForJoining: 'everyone',
-			adminPassword: ''
-		});
-
-		this.accessForm.patchValue({
-			authenticationForJoining: this.accessData().authenticationForJoining,
-			adminPassword: this.accessData().adminPassword
-		});
+		try {
+			const securityPrefs = await this.preferencesService.getSecurityPreferences();
+			this.authForm.get('authModeToAccessRoom')?.setValue(securityPrefs.authentication.authModeToAccessRoom);
+		} catch (error) {
+			console.error('Error loading security preferences:', error);
+			this.notificationService.showSnackbar('Failed to load security preferences');
+		}
 
 		this.isLoading.set(false);
 	}
 
-	onSaveAccess(): void {
-		if (this.accessForm.invalid) {
-			this.markFormGroupTouched(this.accessForm);
+	async onSaveAccess() {
+		if (this.authForm.invalid) {
 			return;
 		}
 
 		this.isSavingAccess.set(true);
-		const formData = this.accessForm.value;
+		const formData = this.authForm.value;
 
-		// Simulate API call
-		setTimeout(() => {
-			this.accessData.set({
-				authenticationForJoining: formData.authenticationForJoining,
-				adminPassword: formData.adminPassword
-			});
+		try {
+			const securityPrefs = await this.preferencesService.getSecurityPreferences();
+			securityPrefs.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
+			await this.preferencesService.saveSecurityPreferences(securityPrefs);
+
+			if (formData.adminPassword) {
+				await this.authService.changePassword(formData.adminPassword);
+			}
 
 			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
+		} catch (error) {
+			console.error('Error saving access permissions:', error);
+			this.notificationService.showSnackbar('Failed to save Access & Permissions settings');
+		} finally {
 			this.isSavingAccess.set(false);
-		}, 1000);
-	}
-
-	private markFormGroupTouched(formGroup: FormGroup): void {
-		Object.keys(formGroup.controls).forEach((key) => {
-			const control = formGroup.get(key);
-			control?.markAsTouched();
-		});
+		}
 	}
 
 	// Utility methods for form validation
@@ -144,7 +127,7 @@ export class PreferencesComponent implements OnInit {
 	private getFieldLabel(fieldName: string): string {
 		const labels: Record<string, string> = {
 			logoUrl: 'Logo URL',
-			authenticationForJoining: 'Authentication method',
+			authModeToAccessRoom: 'Authentication mode to access room',
 			adminPassword: 'Admin password'
 		};
 		return labels[fieldName] || fieldName;

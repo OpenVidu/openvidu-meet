@@ -53,7 +53,7 @@
 				<mat-divider class="section-divider"></mat-divider>
 
 				<mat-card-content>
-					<form [formGroup]="accessForm" (ngSubmit)="onSaveAccess()">
+					<form [formGroup]="authForm" (ngSubmit)="onSaveAccess()">
 						<!-- Authentication for joining room -->
 						<div class="form-section">
 							<div class="form-field-header">
@@ -63,13 +63,13 @@
 
 							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="auth-select-field">
 								<mat-label>Select...</mat-label>
-								<mat-select formControlName="authenticationForJoining">
-									@for (option of authenticationOptions; track option.value) {
+								<mat-select formControlName="authModeToAccessRoom">
+									@for (option of authModeOptions; track option.value) {
 										<mat-option [value]="option.value">{{ option.label }}</mat-option>
 									}
 								</mat-select>
-								@if (getFieldError(accessForm, 'authenticationForJoining')) {
-									<mat-error>{{ getFieldError(accessForm, 'authenticationForJoining') }}</mat-error>
+								@if (getFieldError(authForm, 'authModeToAccessRoom')) {
+									<mat-error>{{ getFieldError(authForm, 'authModeToAccessRoom') }}</mat-error>
 								}
 							</mat-form-field>
 						</div>
@@ -89,8 +89,8 @@
 									placeholder="••••••••"
 								/>
 								<mat-hint>Minimum of 8 characters</mat-hint>
-								@if (getFieldError(accessForm, 'adminPassword')) {
-									<mat-error>{{ getFieldError(accessForm, 'adminPassword') }}</mat-error>
+								@if (getFieldError(authForm, 'adminPassword')) {
+									<mat-error>{{ getFieldError(authForm, 'adminPassword') }}</mat-error>
 								}
 							</mat-form-field>
 						</div>
