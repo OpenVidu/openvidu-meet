@@ -156,14 +156,17 @@
 		}
 	}
 
-	.deletion-date {
-		font-size: var(--ov-meet-font-size-sm);
-		color: var(--ov-meet-text-primary);
-	}
+	.deletion-date-time {
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		.deletion-date {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-primary);
+		}
 
-	.deletion-time {
-		font-size: var(--ov-meet-font-size-xs);
-		color: var(--ov-meet-text-secondary);
+		.deletion-time {
+			font-size: var(--ov-meet-font-size-xs);
+			color: var(--ov-meet-text-secondary);
+		}
 	}
 
 	.auto-deletion-pending {
