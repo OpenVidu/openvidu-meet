@@ -132,6 +132,7 @@
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/force-deletion.yaml'
         responses:
             '202':
                 $ref: '../components/responses/success-room-marked-for-deletion.yaml'
