@@ -307,7 +307,8 @@ export class RoomWizardStateService {
 			showFinish: isLastStep,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
-			isNextDisabled: false, // Aquí podrías agregar validación
+			finishLabel: 'Create Room',
+			isNextDisabled: false,
 			isPreviousDisabled: isFirstStep
 		};
 	}

@@ -49,6 +49,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		showFinish: false,
 		nextLabel: 'Next',
 		previousLabel: 'Previous',
+		finishLabel: 'Create Room',
 		isNextDisabled: false,
 		isPreviousDisabled: true
 	};
