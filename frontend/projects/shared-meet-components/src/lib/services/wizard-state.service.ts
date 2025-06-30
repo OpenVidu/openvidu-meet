@@ -56,7 +56,7 @@ export class RoomWizardStateService {
 				isActive: true,
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
-					roomPrefix: ['', [Validators.required, Validators.minLength(2)]],
+					roomPrefix: ['', [Validators.minLength(2)]],
 					deletionDate: ['']
 				}),
 				order: 1
@@ -172,9 +172,7 @@ export class RoomWizardStateService {
 		const recordingEnabled = currentOptions.preferences?.recordingPreferences?.enabled ?? false;
 
 		// Remove recording-specific steps if they exist
-		const filteredSteps = currentSteps.filter((step) =>
-			!['recordingTrigger', 'recordingLayout'].includes(step.id)
-		);
+		const filteredSteps = currentSteps.filter((step) => !['recordingTrigger', 'recordingLayout'].includes(step.id));
 
 		if (recordingEnabled) {
 			// Add recording-specific steps
@@ -220,19 +218,18 @@ export class RoomWizardStateService {
 		const currentIndex = this._currentStepIndex.value;
 		const steps = this._steps.value;
 		const visibleSteps = steps.filter((step) => step.isVisible);
-
 		if (currentIndex < visibleSteps.length - 1) {
-			// Marcar paso actual como completado
+			// Mark current step as completed
 			const currentStep = visibleSteps[currentIndex];
 			currentStep.isCompleted = true;
 			currentStep.isActive = false;
 
-			// Activar siguiente paso
+			// Activate next step
 			const nextStep = visibleSteps[currentIndex + 1];
 			nextStep.isActive = true;
 
 			this._currentStepIndex.next(currentIndex + 1);
-			this._steps.next(steps);
+			this._steps.next([...steps]);
 			return true;
 		}
 		return false;
@@ -244,16 +241,16 @@ export class RoomWizardStateService {
 		const visibleSteps = steps.filter((step) => step.isVisible);
 
 		if (currentIndex > 0) {
-			// Desactivar paso actual
+			// Deactivate current step
 			const currentStep = visibleSteps[currentIndex];
 			currentStep.isActive = false;
 
-			// Activar paso anterior
+			// Activate previous step
 			const previousStep = visibleSteps[currentIndex - 1];
 			previousStep.isActive = true;
 
 			this._currentStepIndex.next(currentIndex - 1);
-			this._steps.next(steps);
+			this._steps.next([...steps]);
 			return true;
 		}
 		return false;
@@ -279,18 +276,18 @@ export class RoomWizardStateService {
 		const visibleSteps = this.getVisibleSteps();
 
 		if (targetIndex >= 0 && targetIndex < visibleSteps.length) {
-			// Desactivar paso actual
+			// Deactivate current step
 			const currentStep = this.getCurrentStep();
 			if (currentStep) {
 				currentStep.isActive = false;
 			}
 
-			// Activar paso objetivo
+			// Activate target step
 			const targetStep = visibleSteps[targetIndex];
 			targetStep.isActive = true;
 
 			this._currentStepIndex.next(targetIndex);
-			this._steps.next(this._steps.value);
+			this._steps.next([...this._steps.value]);
 			return true;
 		}
 		return false;

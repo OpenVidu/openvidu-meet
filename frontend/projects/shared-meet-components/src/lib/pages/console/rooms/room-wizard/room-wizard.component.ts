@@ -126,5 +126,4 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 			console.error('Failed to create room:', error);
 		}
 	}
-
 }

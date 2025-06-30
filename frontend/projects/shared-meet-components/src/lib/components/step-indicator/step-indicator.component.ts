@@ -109,25 +109,32 @@ export class StepIndicatorComponent implements OnChanges {
 	}
 
 	onStepClick(event: StepperSelectionEvent) {
-		console.warn('Step clicked:', event);
 		if (this.allowNavigation) {
 			const step = this.steps[event.selectedIndex];
 			this.stepClick.emit({ step, index: event.selectedIndex });
+		} else {
+			console.warn('Navigation is not allowed. Step click ignored:', event.selectedIndex);
 		}
 	}
 
 	getStepState(step: WizardStep): 'done' | 'edit' | 'error' | 'number' {
-		if (step.isCompleted) {
+		if (step.isCompleted && !step.isActive) {
 			return 'done';
 		}
+
+		if (step.isActive && step.validationFormGroup?.invalid) {
+			return 'error';
+		}
+
 		if (step.isActive) {
 			return 'edit';
 		}
-		return 'number';
-	}
 
-	isStepClickable(step: WizardStep): boolean {
-		return this.allowNavigation && (step.isCompleted || step.isActive);
+		if (step.isCompleted) {
+			return 'done';
+		}
+
+		return 'number';
 	}
 
 	getStepIcon(step: WizardStep): string {

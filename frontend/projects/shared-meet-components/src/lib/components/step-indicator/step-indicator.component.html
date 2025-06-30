@@ -12,8 +12,9 @@
 			<mat-step
 				[stepControl]="step.validationFormGroup"
 				[state]="getStepState(step)"
-				[editable]="isStepClickable(step)"
+				[editable]="step.isActive"
 				[label]="step.label"
+				[completed]="step.isCompleted"
 			>
 				<!-- Custom step icon template -->
 				<ng-template matStepperIcon="edit">
