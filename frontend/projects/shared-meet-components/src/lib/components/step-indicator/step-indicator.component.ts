@@ -23,15 +23,43 @@ export class StepIndicatorComponent implements OnChanges {
 	@Input() allowNavigation: boolean = false;
 	@Input() currentStepIndex: number = 0;
 	@Output() stepClick = new EventEmitter<{ step: WizardStep; index: number }>();
+	@Output() layoutChange = new EventEmitter<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>();
+
 	visibleSteps: WizardStep[] = [];
 	stepperOrientation$: Observable<StepperOrientation>;
+	layoutType$: Observable<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>;
 	stepControls: { [key: string]: FormControl } = {};
 
 	constructor(private breakpointObserver: BreakpointObserver) {
-		// Responsive: vertical en móvil, horizontal en desktop
-		this.stepperOrientation$ = this.breakpointObserver
-			.observe([Breakpoints.Handset])
-			.pipe(map((result) => (result.matches ? 'vertical' : 'horizontal')));
+		// Enhanced responsive strategy:
+		// - Large desktop (>1200px): Vertical sidebar for space efficiency
+		// - Medium desktop (768-1200px): Horizontal compact
+		// - Tablet/Mobile (<768px): Vertical compact
+
+		const breakpointState$ = this.breakpointObserver
+			.observe(['(min-width: 1200px)', '(min-width: 768px)', Breakpoints.HandsetPortrait]);
+
+		this.layoutType$ = breakpointState$.pipe(
+			map(() => {
+				const isLargeDesktop = this.breakpointObserver.isMatched('(min-width: 1200px)');
+				const isMediumDesktop = this.breakpointObserver.isMatched('(min-width: 768px)') && !isLargeDesktop;
+
+				if (isLargeDesktop) return 'vertical-sidebar';
+				if (isMediumDesktop) return 'horizontal-compact';
+				return 'vertical-compact';
+			})
+		);
+
+		this.stepperOrientation$ = this.layoutType$.pipe(
+			map((layoutType) => {
+				return layoutType === 'horizontal-compact' ? 'horizontal' : 'vertical';
+			})
+		);
+
+		// Emit layout changes for parent component
+		this.layoutType$.subscribe(layoutType => {
+			this.layoutChange.emit(layoutType);
+		});
 	}
 
 	ngOnChanges(changes: SimpleChanges) {

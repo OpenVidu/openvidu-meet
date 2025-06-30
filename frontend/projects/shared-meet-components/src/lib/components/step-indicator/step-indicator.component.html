@@ -1,10 +1,11 @@
-<div class="step-indicator-wrapper">
+<div class="step-indicator-wrapper" [attr.data-layout]="(layoutType$ | async)">
 	<mat-stepper
 		#stepper
 		[selectedIndex]="currentStepIndex"
 		[orientation]="(stepperOrientation$ | async)!"
 		[linear]="!allowNavigation"
 		class="wizard-stepper"
+		[attr.data-layout]="(layoutType$ | async)"
 	>
 		@for (step of visibleSteps; track step.id; let i = $index) {
 			<mat-step

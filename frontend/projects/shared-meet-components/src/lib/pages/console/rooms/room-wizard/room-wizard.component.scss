@@ -1,4 +1,3 @@
-// Import the centralized design system
 @import '../../../../../../../../src/assets/styles/design-tokens';
 
 .wizard-container {
@@ -10,9 +9,6 @@
 
 .wizard-header {
 	@include ov-get-started-header;
-	// border-bottom: 1px solid var(--ov-meet-border-color);
-	// margin-bottom: var(--ov-meet-spacing-lg);
-	// padding-bottom: var(--ov-meet-spacing-lg);
 
 	h2 {
 		margin-bottom: var(--ov-meet-spacing-md);
@@ -27,7 +23,6 @@
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	// padding: var(--ov-meet-spacing-xl) 0;
 }
 
 .step-content {
@@ -41,7 +36,6 @@
 	justify-content: center;
 }
 
-// Additional styles for enhanced UI elements
 .wizard-footer {
 	margin-top: auto;
 }

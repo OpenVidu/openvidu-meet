@@ -1,12 +1,166 @@
-::ng-deep .mat-horizontal-content-container {
-	padding: 0 !important;
+@import '../../../../../../src/assets/styles/design-tokens';
+
+.step-indicator-wrapper {
+	width: 100%;
+	height: 100%;
+
+	// Large Desktop: Vertical Sidebar Layout (>1200px)
+	&[data-layout="vertical-sidebar"] {
+		.wizard-stepper {
+			padding: var(--ov-meet-spacing-lg);
+			@include ov-theme-transition;
+
+			::ng-deep {
+				.mat-stepper-vertical {
+					background: transparent;
+
+					.mat-vertical-content-container {
+						margin-left: 0;
+						border-left: none;
+						padding-left: 0;
+					}
+
+					.mat-vertical-stepper-content {
+						padding: 0;
+						margin-left: 0;
+					}
+
+					.mat-step-header {
+						padding: var(--ov-meet-spacing-md) 0;
+						margin-bottom: var(--ov-meet-spacing-sm);
+						pointer-events: none;
+
+						.mat-step-icon {
+							width: 32px;
+							height: 32px;
+							margin-right: var(--ov-meet-spacing-md);
+						}
+
+						.mat-step-label {
+							font-size: var(--ov-meet-font-size-md);
+							font-weight: var(--ov-meet-font-weight-medium);
+							color: var(--ov-meet-text-primary);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Medium Desktop: Horizontal Compact Layout (768-1200px)
+	&[data-layout="horizontal-compact"] {
+		.wizard-stepper {
+			width: 100%;
+			max-width: 100%;
+			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+			@include ov-theme-transition;
+
+			::ng-deep {
+				.mat-stepper-horizontal {
+					background: transparent;
+
+					.mat-horizontal-content-container {
+						padding: 0;
+						display: none; // Hide content in compact mode
+					}
+
+					.mat-horizontal-stepper-header-container {
+						display: flex;
+						justify-content: center;
+						align-items: center;
+						gap: var(--ov-meet-spacing-md);
+					}
+
+					.mat-step-header {
+						padding: var(--ov-meet-spacing-sm);
+						flex: 0 0 auto;
+						pointer-events: none;
+
+						.mat-step-icon {
+							width: 28px;
+							height: 28px;
+							margin-right: var(--ov-meet-spacing-xs);
+						}
+
+						.mat-step-label {
+							font-size: var(--ov-meet-font-size-sm);
+							font-weight: var(--ov-meet-font-weight-medium);
+							white-space: nowrap;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							max-width: 120px;
+						}
+					}
+
+					.mat-stepper-horizontal-line {
+						flex: 0 0 24px;
+						min-width: 24px;
+						margin: 0 var(--ov-meet-spacing-xs);
+					}
+				}
+			}
+		}
+	}
+
+	// Mobile/Tablet: Vertical Compact Layout (<768px)
+	&[data-layout="vertical-compact"] {
+		.wizard-stepper {
+			width: 100%;
+			padding: var(--ov-meet-spacing-md);
+			background-color: var(--ov-meet-surface-variant);
+			border-radius: var(--ov-meet-radius-md);
+			margin-bottom: var(--ov-meet-spacing-md);
+			@include ov-theme-transition;
+
+			::ng-deep {
+				.mat-stepper-vertical {
+					background: transparent;
+
+					.mat-vertical-content-container {
+						margin-left: 0;
+						border-left: none;
+						padding-left: 0;
+					}
+
+					.mat-vertical-stepper-content {
+						padding: 0;
+						margin-left: 0;
+					}
+
+					.mat-step-header {
+						padding: var(--ov-meet-spacing-sm) 0;
+						margin-bottom: var(--ov-meet-spacing-xs);
+						pointer-events: none;
+
+						.mat-step-icon {
+							width: 24px;
+							height: 24px;
+							margin-right: var(--ov-meet-spacing-sm);
+						}
+
+						.mat-step-label {
+							font-size: var(--ov-meet-font-size-sm);
+							font-weight: var(--ov-meet-font-weight-medium);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
-::ng-deep mat-stepper {
-	background: transparent !important;
-}
+// Global stepper overrides
+::ng-deep {
+	.mat-horizontal-content-container {
+		padding: 0 !important;
+	}
 
-::ng-deep .mat-stepper-vertical {
-	position: absolute;
-	left: 0;
+	mat-stepper {
+		background: transparent !important;
+	}
+
+	.mat-stepper-vertical {
+		position: absolute;
+		left: 10;
+	}
 }

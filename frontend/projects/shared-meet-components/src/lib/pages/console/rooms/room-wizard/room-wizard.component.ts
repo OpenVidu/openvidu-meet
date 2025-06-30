@@ -41,6 +41,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	steps: WizardStep[] = [];
 	currentStep: WizardStep | null = null;
 	currentStepIndex: number = 0;
+	currentLayout: 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact' = 'horizontal-compact';
 	navigationConfig: WizardNavigationConfig = {
 		showPrevious: false,
 		showNext: true,
@@ -108,6 +109,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		} else {
 			console.warn('Step is not completed, cannot navigate to it:', event.step);
 		}
+	}
+
+	onLayoutChange(layout: 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact') {
+		this.currentLayout = layout;
 	}
 
 	async onFinish(event: WizardNavigationEvent) {
