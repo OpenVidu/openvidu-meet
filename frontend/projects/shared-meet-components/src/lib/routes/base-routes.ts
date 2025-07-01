@@ -18,7 +18,7 @@ import {
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
-	PreferencesComponent,
+	UsersPermissionsComponent,
 	RecordingsComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
@@ -64,8 +64,8 @@ export const baseRoutes: Routes = [
 				component: DevelopersSettingsComponent
 			},
 			{
-				path: 'settings',
-				component: PreferencesComponent
+				path: 'users-permissions',
+				component: UsersPermissionsComponent
 			},
 			// {
 			// 	path: 'about',

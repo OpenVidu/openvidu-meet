@@ -21,7 +21,7 @@ export class ConsoleComponent {
 			icon: 'code_blocks',
 			iconClass: 'material-symbols-outlined ov-developer-icon'
 		},
-		{ label: 'Settings', route: 'settings', icon: 'settings', iconClass: 'ov-settings-icon' }
+		{ label: 'Users & Permissions', route: 'users-permissions', icon: 'passkey', iconClass: 'ov-settings-icon material-symbols-outlined' }
 
 		// { label: 'About', route: 'about', icon: 'info' }
 	];

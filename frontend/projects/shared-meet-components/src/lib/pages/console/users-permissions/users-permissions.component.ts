@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { LogoSelectorComponent } from '@lib/components';
+import { LogoSelectorComponent, ProFeatureBadgeComponent } from '@lib/components';
 import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
 
@@ -31,12 +31,14 @@ import { AuthMode } from '@lib/typings/ce';
 		MatProgressSpinnerModule,
 		MatDividerModule,
 		ReactiveFormsModule,
-		LogoSelectorComponent
+		LogoSelectorComponent,
+		ProFeatureBadgeComponent,
+		MatSelectModule
 	],
-	templateUrl: './preferences.component.html',
-	styleUrl: './preferences.component.scss'
+	templateUrl: './users-permissions.component.html',
+	styleUrl: './users-permissions.component.scss'
 })
-export class PreferencesComponent implements OnInit {
+export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(false);
 	isSavingBranding = signal(false);
 	isSavingAccess = signal(false);
