@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -14,7 +15,7 @@ import { RecordingPreferencesComponent } from './steps/recording-preferences/rec
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
-import { MeetRoomOptions } from '@lib/typings/ce';
+import { MeetRoomOptions, MeetRoom } from '@lib/typings/ce';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -36,6 +37,10 @@ import { MeetRoomOptions } from '@lib/typings/ce';
 	styleUrl: './room-wizard.component.scss'
 })
 export class RoomWizardComponent implements OnInit, OnDestroy {
+	editMode: boolean = false;
+	roomId: string | null = null;
+	existingRoomData: MeetRoomOptions | null = null;
+
 	private destroy$ = new Subject<void>();
 
 	steps: WizardStep[] = [];
@@ -58,17 +63,37 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	constructor(
 		private wizardState: RoomWizardStateService,
 		protected roomService: RoomService,
-		private navigationService: NavigationService
+		private navigationService: NavigationService,
+		private route: ActivatedRoute
 	) {}
 
-	ngOnInit() {
-		this.wizardState.initializeWizard();
+	async ngOnInit() {
+		console.log('RoomWizard ngOnInit - starting');
+
+		// Detect edit mode from route
+		this.detectEditMode();
+		console.log('Edit mode detected:', this.editMode, 'Room ID:', this.roomId);
+
+		// If in edit mode, load room data
+		if (this.editMode && this.roomId) {
+			await this.loadRoomData();
+			console.log('Loaded room data:', this.existingRoomData);
+		}
+
+		// Initialize wizard with edit mode and existing data
+		console.log('Initializing wizard with editMode:', this.editMode, 'existingData:', this.existingRoomData);
+		this.wizardState.initializeWizard(this.editMode, this.existingRoomData || undefined);
 
 		this.wizardState.steps$.pipe(takeUntil(this.destroy$)).subscribe((steps) => {
 			this.steps = steps;
 			this.currentStep = this.wizardState.getCurrentStep();
 			this.currentStepIndex = this.wizardState.getCurrentStepIndex();
 			this.navigationConfig = this.wizardState.getNavigationConfig();
+
+			// Update navigation config for edit mode
+			if (this.editMode) {
+				this.navigationConfig.finishLabel = 'Update Room';
+			}
 		});
 
 		this.wizardState.roomOptions$.pipe(takeUntil(this.destroy$)).subscribe((options) => {
@@ -78,6 +103,35 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		this.wizardState.currentStepIndex$.pipe(takeUntil(this.destroy$)).subscribe((index) => {
 			this.currentStepIndex = index;
 		});
+	}
+
+	private detectEditMode() {
+		// Check if URL contains '/edit' to determine edit mode
+		const url = this.route.snapshot.url;
+		this.editMode = url.some((segment) => segment.path === 'edit');
+
+		// Get roomId from route parameters
+		this.roomId = this.route.snapshot.paramMap.get('roomId');
+	}
+
+	private async loadRoomData() {
+		if (!this.roomId) return;
+
+		try {
+			// Fetch room data from the service
+			const room: MeetRoom = await this.roomService.getRoom(this.roomId);
+
+			// Convert MeetRoom to MeetRoomOptions
+			this.existingRoomData = {
+				roomIdPrefix: room.roomIdPrefix,
+				autoDeletionDate: room.autoDeletionDate,
+				preferences: room.preferences
+			};
+		} catch (error) {
+			console.error('Error loading room data:', error);
+			// Navigate back to rooms list if room not found
+			await this.navigationService.navigateTo('/console/rooms', undefined, true);
+		}
 	}
 
 	ngOnDestroy() {
@@ -103,13 +157,9 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	onStepClick(event: { step: WizardStep; index: number }) {
-		if (event.step.isCompleted) {
-			this.wizardState.goToStep(event.index);
-			this.currentStep = this.wizardState.getCurrentStep();
-			this.navigationConfig = this.wizardState.getNavigationConfig();
-		} else {
-			console.warn('Step is not completed, cannot navigate to it:', event.step);
-		}
+		this.wizardState.goToStep(event.index);
+		this.currentStep = this.wizardState.getCurrentStep();
+		this.navigationConfig = this.wizardState.getNavigationConfig();
 	}
 
 	onLayoutChange(layout: 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact') {
@@ -117,14 +167,34 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	async onFinish(event: WizardNavigationEvent) {
-		console.log('Wizard completed with data:', event, this.wizardState.getRoomOptions());
+		const roomOptions = this.wizardState.getRoomOptions();
+		console.log('Wizard completed with data:', event, roomOptions);
 
 		try {
-			const roomOptions = this.wizardState.getRoomOptions();
-			await this.roomService.createRoom(roomOptions);
+			if (this.editMode && this.roomId && roomOptions.preferences) {
+				await this.roomService.updateRoom(this.roomId, roomOptions.preferences);
+				//TODO: Show success notification
+			} else {
+				// Create new room
+				await this.roomService.createRoom(roomOptions);
+				console.log('Room created successfully');
+				// TODO: Show error notification
+			}
+
 			await this.navigationService.navigateTo('/console/rooms', undefined, true);
 		} catch (error) {
-			console.error('Failed to create room:', error);
+			console.error(`Failed to ${this.editMode ? 'update' : 'create'} room:`, error);
 		}
 	}
 }
+
+/**
+ * Room creation and editing wizard component.
+ *
+ * This component automatically detects the mode based on the route:
+ * - Create mode: /console/rooms/new
+ * - Edit mode: /console/rooms/{roomId}/edit
+ *
+ * In edit mode, it automatically loads the room data using the roomId from the route.
+ * The basic room details step is disabled in edit mode as it contains non-editable fields.
+ */

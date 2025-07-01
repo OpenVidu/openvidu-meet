@@ -4,10 +4,11 @@
 			<mat-icon class="ov-room-icon">meeting_room</mat-icon>
 			<h2>Room Creation Wizard</h2>
 		</div> -->
-		<p class="subtitle">Create and configure your video room in a few simple steps</p>
+		<p class="subtitle">{{ editMode ? 'Edit your room settings' : 'Create and configure your video room in a few simple steps' }}</p>
 		<ov-step-indicator
 			[steps]="steps"
-			[allowNavigation]="false"
+			[allowNavigation]="true"
+			[editMode]="editMode"
 			[currentStepIndex]="currentStepIndex"
 			(stepClick)="onStepClick($event)"
 			(layoutChange)="onLayoutChange($event)"
@@ -19,7 +20,7 @@
 		<section class="step-content ov-surface">
 			@switch (currentStep?.id) {
 				@case ('basic') {
-					<ov-room-wizard-basic-info></ov-room-wizard-basic-info>
+					<ov-room-wizard-basic-info [editMode]="editMode"></ov-room-wizard-basic-info>
 				}
 				@case ('recording') {
 					<ov-recording-preferences></ov-recording-preferences>

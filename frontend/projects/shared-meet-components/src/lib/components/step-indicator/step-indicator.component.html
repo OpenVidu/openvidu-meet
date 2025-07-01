@@ -3,7 +3,7 @@
 		#stepper
 		[selectedIndex]="currentStepIndex"
 		[orientation]="(stepperOrientation$ | async)!"
-		[linear]="!allowNavigation"
+		[linear]="false"
 		class="wizard-stepper"
 		[attr.data-layout]="layoutType$ | async"
 		(selectionChange)="onStepClick($event)"
@@ -12,7 +12,7 @@
 			<mat-step
 				[stepControl]="step.validationFormGroup"
 				[state]="getStepState(step)"
-				[editable]="step.isActive"
+				[editable]="true"
 				[label]="step.label"
 				[completed]="step.isCompleted"
 			>

@@ -20,6 +20,7 @@ export class WizardNavComponent implements OnInit, OnChanges {
 		showNext: true,
 		showCancel: true,
 		showFinish: false,
+		showQuickCreate: false,
 		nextLabel: 'Next',
 		previousLabel: 'Previous',
 		cancelLabel: 'Cancel',

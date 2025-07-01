@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -32,6 +32,7 @@ import { MeetRoomOptions } from '../../../../../../typings/ce';
 	styleUrl: './basic-info.component.scss'
 })
 export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
+	@Input() editMode: boolean = false; // Input to control edit mode from parent component
 	basicInfoForm: FormGroup;
 	private destroy$ = new Subject<void>();
 
@@ -46,12 +47,20 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 		this.basicInfoForm = this.fb.group({
 			roomIdPrefix: ['', [Validators.maxLength(50)]],
 			autoDeletionDate: [null],
-			autoDeletionHour: [23], // Default to 23:59
+			autoDeletionHour: [23],
 			autoDeletionMinute: [59]
 		});
 	}
 
 	ngOnInit() {
+		// Disable form controls in edit mode
+		if (this.editMode) {
+			this.basicInfoForm.get('roomIdPrefix')?.disable();
+			this.basicInfoForm.get('autoDeletionDate')?.disable();
+			this.basicInfoForm.get('autoDeletionHour')?.disable();
+			this.basicInfoForm.get('autoDeletionMinute')?.disable();
+		}
+
 		this.loadExistingData();
 
 		this.basicInfoForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {

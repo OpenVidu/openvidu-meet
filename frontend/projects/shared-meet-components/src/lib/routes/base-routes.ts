@@ -53,7 +53,7 @@ export const baseRoutes: Routes = [
 				component: RoomsComponent,
 				children: [
 					{ path: 'new', component: RoomWizardComponent },
-					{ path: ':roomId/edit', component: RoomFormComponent }
+					{ path: ':roomId/edit', component: RoomWizardComponent }
 				]
 			},
 			{

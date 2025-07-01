@@ -19,8 +19,8 @@ import { WizardStep } from '../../models/wizard.model';
 })
 export class StepIndicatorComponent implements OnChanges {
 	@Input() steps: WizardStep[] = [];
-	// Indicates if navigation between steps is allowed
 	@Input() allowNavigation: boolean = false;
+	@Input() editMode: boolean = false; // New input for edit mode
 	@Input() currentStepIndex: number = 0;
 	@Output() stepClick = new EventEmitter<{ step: WizardStep; index: number }>();
 	@Output() layoutChange = new EventEmitter<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>();
@@ -82,7 +82,6 @@ export class StepIndicatorComponent implements OnChanges {
 	private createStepControls() {
 		this.stepControls = {};
 		this.visibleSteps.forEach((step) => {
-			// Crear FormControl para cada paso, válido si está completado o es opcional
 			this.stepControls[step.id] = new FormControl({
 				value: step.isCompleted,
 				disabled: !step.isCompleted && !step.isActive
@@ -115,6 +114,22 @@ export class StepIndicatorComponent implements OnChanges {
 		} else {
 			console.warn('Navigation is not allowed. Step click ignored:', event.selectedIndex);
 		}
+	}
+
+	isStepClickable(step: WizardStep): boolean {
+		if (!this.allowNavigation) {
+			return false;
+		}
+		if (this.editMode) {
+			// In edit mode, allow clicking on any step
+			return true;
+		}
+
+		return step.isActive || step.isCompleted;
+	}
+
+	isStepEditable(step: WizardStep): boolean {
+		return this.isStepClickable(step);
 	}
 
 	getStepState(step: WizardStep): 'done' | 'edit' | 'error' | 'number' {
