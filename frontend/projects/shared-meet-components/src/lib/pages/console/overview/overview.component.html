@@ -93,13 +93,15 @@
 
 						<mat-card class="feature-card">
 							<mat-card-content>
-								<mat-icon class="ov-settings-icon">settings</mat-icon>
-								<h3>Configure OpenVidu Meet</h3>
+								<mat-icon class="ov-settings-icon material-symbols-outlined"> passkey </mat-icon>
+								<h3>Configure Authentication</h3>
 								<p>
-									Customize OpenVidu Meet to fit your needs. Configure security settings, access
-									controls, branding, and other essential features.
+									Set up user authentication and manage access permissions to ensure secure and
+									controlled participation in your video conferences.
 								</p>
-								<button mat-stroked-button (click)="navigateTo('settings')">Go to Settings</button>
+								<button mat-stroked-button (click)="navigateTo('users-permissions')">
+									Go to Users & Permissions
+								</button>
 							</mat-card-content>
 						</mat-card>
 
