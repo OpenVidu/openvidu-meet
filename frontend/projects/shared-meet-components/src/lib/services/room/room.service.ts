@@ -193,9 +193,9 @@ export class RoomService {
 	 * @param preferences - The room preferences to be saved.
 	 * @returns A promise that resolves when the preferences have been saved.
 	 */
-	async saveRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
+	async updateRoom(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
 		this.log.d('Saving room preferences', preferences);
-		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/preferences`;
+		const path = `${this.INTERNAL_ROOMS_API}/${roomId}`;
 		await this.httpService.putRequest(path, preferences);
 		this.roomPreferences = preferences;
 	}
