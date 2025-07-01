@@ -301,7 +301,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	res.setHeader('Content-Type', 'application/zip');
 	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
 
-	const archive = archiver('zip', { zlib: { level: 9 } });
+	const archive = archiver('zip', { zlib: { level: 0 } });
 
 	// Handle errors in the archive
 	archive.on('error', (err) => {
