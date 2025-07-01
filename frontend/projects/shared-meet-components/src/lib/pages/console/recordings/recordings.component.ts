@@ -5,10 +5,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
+import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
+import { NotificationService, RecordingManagerService } from '@lib/services';
+import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { RecordingListsComponent, RecordingTableAction } from '../../../components';
-import { NotificationService, RecordingManagerService } from '../../../services';
-import { MeetRecordingFilters, MeetRecordingInfo } from '../../../typings/ce';
 
 @Component({
 	selector: 'ov-recordings',

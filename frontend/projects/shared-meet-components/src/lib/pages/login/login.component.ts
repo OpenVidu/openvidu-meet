@@ -6,8 +6,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService, NavigationService } from '../../services';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService, NavigationService } from '@lib/services';
 
 @Component({
 	selector: 'ov-login',

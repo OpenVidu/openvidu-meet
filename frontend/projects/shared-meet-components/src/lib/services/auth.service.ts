@@ -1,8 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { HttpService, NavigationService } from '@lib/services';
+import { MeetApiKey, User, UserRole } from '@lib/typings/ce';
 import { from, Observable } from 'rxjs';
-import { HttpService, NavigationService } from '../../services';
-import { MeetApiKey, User, UserRole } from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'

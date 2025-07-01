@@ -24,8 +24,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MeetRoom } from '@lib/typings/ce';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { MeetRoom } from '../../typings/ce';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];

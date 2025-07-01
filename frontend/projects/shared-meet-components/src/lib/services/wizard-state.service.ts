@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { WizardStep, WizardNavigationConfig } from '../models/wizard.model';
 import { FormBuilder, Validators } from '@angular/forms';
-import { MeetRoomOptions, MeetRoomPreferences, MeetRecordingAccess } from '../typings/ce';
+import { WizardNavigationConfig, WizardStep } from '@lib/models';
+import { MeetRecordingAccess, MeetRoomOptions, MeetRoomPreferences } from '@lib/typings/ce';
+import { BehaviorSubject } from 'rxjs';
 
 /**
  * Service to manage the state of the room creation wizard.

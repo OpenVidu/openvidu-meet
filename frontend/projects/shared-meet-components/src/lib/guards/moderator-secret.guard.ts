@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, NavigationEnd, Router } from '@angular/router';
+import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '@lib/services';
 import { filter, take } from 'rxjs';
-import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '../services';
 
 /**
  * Guard that intercepts navigation to remove the 'secret' query parameter from the URL

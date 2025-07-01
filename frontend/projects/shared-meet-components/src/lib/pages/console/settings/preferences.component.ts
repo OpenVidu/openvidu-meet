@@ -11,9 +11,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { LogoSelectorComponent } from '@lib/components';
+import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
-import { LogoSelectorComponent } from '../../../components';
-import { AuthService, GlobalPreferencesService, NotificationService } from '../../../services';
 
 @Component({
 	selector: 'ov-preferences',

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
-import { AppDataService, ParticipantTokenService, RoomService } from '../../services';
+import { AppDataService, ParticipantTokenService, RoomService } from '@lib/services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
 	WebComponentInboundCommandMessage,
 	WebComponentOutboundEventMessage
-} from '../../typings/ce';
+} from '@lib/typings/ce';
+import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.

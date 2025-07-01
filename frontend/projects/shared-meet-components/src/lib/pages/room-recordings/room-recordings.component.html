@@ -3,10 +3,6 @@
 		<span id="header-title">
 			Recordings for room: <span id="room-id">{{ roomId }}</span>
 		</span>
-
-		<button id="refresh-btn" mat-icon-button aria-label="Refresh" (click)="refreshRecordings()">
-			<mat-icon>refresh</mat-icon>
-		</button>
 	</mat-toolbar>
 
 	<div class="dashboard-body">
@@ -114,14 +110,5 @@
 				</div>
 			}
 		</div>
-
-		@if (moreRecordings) {
-			<div class="load-more-container">
-				<button mat-fab extended class="load-more-btn" (click)="loadMoreRecordings()">
-					<mat-icon>keyboard_double_arrow_down</mat-icon>
-					Load more
-				</button>
-			</div>
-		}
 	</div>
 </div>

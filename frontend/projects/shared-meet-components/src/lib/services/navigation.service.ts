@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
-import { ErrorReason } from '../../models';
+import { ErrorReason } from '@lib/models';
 
 @Injectable({
 	providedIn: 'root'

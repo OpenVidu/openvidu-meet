@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RecordingManagerService } from '../../../services';
+import { RecordingManagerService } from '@lib/services';
 
 @Component({
 	selector: 'ov-share-recording-dialog',

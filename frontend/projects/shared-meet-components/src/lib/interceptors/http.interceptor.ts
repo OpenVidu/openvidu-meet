@@ -1,8 +1,8 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService, ParticipantTokenService, RecordingManagerService, RoomService } from '@lib/services';
 import { catchError, from, Observable, switchMap } from 'rxjs';
-import { AuthService, ParticipantTokenService, RecordingManagerService, RoomService } from '../services';
 
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router: Router = inject(Router);

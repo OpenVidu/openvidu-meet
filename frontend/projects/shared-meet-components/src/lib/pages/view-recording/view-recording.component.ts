@@ -5,9 +5,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
+import { RecordingManagerService } from '@lib/services';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { ActionService } from 'openvidu-components-angular';
-import { RecordingManagerService } from '../../services';
-import { MeetRecordingInfo, MeetRecordingStatus } from '../../typings/ce';
 
 @Component({
 	selector: 'app-view-recording',

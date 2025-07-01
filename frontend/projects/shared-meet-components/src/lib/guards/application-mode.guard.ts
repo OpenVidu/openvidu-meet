@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { ApplicationMode } from '../models';
-import { AppDataService, WebComponentManagerService } from '../services';
+import { ApplicationMode } from '@lib/models';
+import { AppDataService, WebComponentManagerService } from '@lib/services';
 
 export const applicationModeGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
 	const appDataService = inject(AppDataService);

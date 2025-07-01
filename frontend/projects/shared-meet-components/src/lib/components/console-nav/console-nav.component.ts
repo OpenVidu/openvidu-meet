@@ -7,8 +7,8 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { ConsoleNavLink } from '../../models';
-import { AppDataService } from '../../services';
+import { ConsoleNavLink } from '@lib/models';
+import { AppDataService } from '@lib/services';
 
 @Component({
 	selector: 'ov-console-nav',

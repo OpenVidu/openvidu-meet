@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
-import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole } from '../../typings/ce';
 
 /**
  * Interface that defines all available features in the application

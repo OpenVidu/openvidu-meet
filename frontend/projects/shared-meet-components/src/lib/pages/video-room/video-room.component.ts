@@ -5,16 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute } from '@angular/router';
-import {
-	ApiDirectiveModule,
-	OpenViduComponentsUiModule,
-	ParticipantLeftEvent,
-	ParticipantLeftReason,
-	ParticipantModel,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
-} from 'openvidu-components-angular';
-import { ErrorReason } from '../../models';
+import { ErrorReason } from '@lib/models';
 import {
 	ApplicationFeatures,
 	AuthService,
@@ -25,8 +16,17 @@ import {
 	RoomService,
 	SessionStorageService,
 	WebComponentManagerService
-} from '../../services';
-import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '../../typings/ce';
+} from '@lib/services';
+import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '@lib/typings/ce';
+import {
+	ApiDirectiveModule,
+	OpenViduComponentsUiModule,
+	ParticipantLeftEvent,
+	ParticipantLeftReason,
+	ParticipantModel,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent
+} from 'openvidu-components-angular';
 
 @Component({
 	selector: 'app-video-room',

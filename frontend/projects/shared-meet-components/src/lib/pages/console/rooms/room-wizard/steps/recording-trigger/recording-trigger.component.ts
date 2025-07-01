@@ -1,17 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
+import { SelectableCardComponent, SelectableOption, SelectionEvent } from '@lib/components';
+import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
-import { RoomWizardStateService } from '../../../../../../services/wizard-state.service';
-import {
-	SelectableCardComponent,
-	SelectableOption,
-	SelectionEvent
-} from '../../../../../../components/selectable-card/selectable-card.component';
 
 @Component({
 	selector: 'ov-recording-trigger',

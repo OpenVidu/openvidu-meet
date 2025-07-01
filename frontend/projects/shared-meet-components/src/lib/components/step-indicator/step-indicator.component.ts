@@ -1,14 +1,14 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatStepperModule } from '@angular/material/stepper';
-import { MatIcon } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { StepperOrientation, StepperSelectionEvent } from '@angular/cdk/stepper';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatStepperModule } from '@angular/material/stepper';
+import { WizardStep } from '@lib/models';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { WizardStep } from '../../models/wizard.model';
 
 @Component({
 	selector: 'ov-step-indicator',

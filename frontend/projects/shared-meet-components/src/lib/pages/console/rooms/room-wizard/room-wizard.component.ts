@@ -1,21 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { StepIndicatorComponent } from '../../../../components/step-indicator/step-indicator.component';
-import { WizardNavComponent } from '../../../../components/wizard-nav/wizard-nav.component';
-import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-import { WizardStep, WizardNavigationConfig, WizardNavigationEvent } from '../../../../models/wizard.model';
-import { NavigationService, RoomService } from '@lib/services';
+import { ActivatedRoute } from '@angular/router';
+import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
+import { WizardNavigationConfig, WizardNavigationEvent, WizardStep } from '@lib/models';
+import { NavigationService, RoomService, RoomWizardStateService } from '@lib/services';
+import { MeetRoom, MeetRoomOptions } from '@lib/typings/ce';
+import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
+import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
-import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
-import { MeetRoomOptions, MeetRoom } from '@lib/typings/ce';
 
 @Component({
 	selector: 'ov-room-wizard',

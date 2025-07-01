@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AppData, ApplicationMode, Edition } from '../../models';
+import { AppData, ApplicationMode, Edition } from '@lib/models';
 
 @Injectable({
 	providedIn: 'root'

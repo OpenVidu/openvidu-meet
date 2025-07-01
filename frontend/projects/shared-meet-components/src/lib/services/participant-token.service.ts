@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
+import { ParticipantTokenInfo } from '@lib/models';
+import { FeatureConfigurationService, HttpService } from '@lib/services';
 import { ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
-import { ParticipantTokenInfo } from '../../models/auth.model';
-import { FeatureConfigurationService, HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'

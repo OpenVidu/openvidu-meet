@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '../models';
-import { NavigationService, RecordingManagerService, RoomService } from '../services';
+import { ErrorReason } from '@lib/models';
+import { NavigationService, RecordingManagerService, RoomService } from '@lib/services';
 
 /**
  * Guard to validate the access to recordings.

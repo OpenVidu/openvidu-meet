@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
-import { LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService, SessionStorageService } from '../../services';
+import { FeatureConfigurationService, HttpService, SessionStorageService } from '@lib/services';
 import {
 	MeetRoom,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
 	MeetRoomRoleAndPermissions
-} from '../../typings/ce';
+} from '@lib/typings/ce';
+import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
 	providedIn: 'root'

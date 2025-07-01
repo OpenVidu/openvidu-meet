@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
-import { RoomWizardStateService } from '../../../../../../services';
 
 @Component({
 	selector: 'ov-room-preferences',

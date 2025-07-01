@@ -4,8 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '../../../services';
-import { MeetRoom } from '../../../typings/ce';
+import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '@lib/services';
+import { MeetRoom } from '@lib/typings/ce';
 
 interface OverviewStats {
 	totalRooms: number;

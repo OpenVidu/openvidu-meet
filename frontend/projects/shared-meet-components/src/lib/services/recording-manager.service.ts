@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
+import { HttpService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { ActionService, LoggerService } from 'openvidu-components-angular';
-import { HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'

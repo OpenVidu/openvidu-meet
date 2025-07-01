@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import type { WizardNavigationConfig, WizardNavigationEvent } from '../../models';
+import type { WizardNavigationConfig, WizardNavigationEvent } from '@lib/models';
 
 @Component({
 	selector: 'ov-wizard-nav',

@@ -11,8 +11,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { MeetApiKey } from '@lib/typings/ce';
-import { AuthService, GlobalPreferencesService, NotificationService } from '../../../services';
 
 @Component({
 	selector: 'ov-developers-settings',

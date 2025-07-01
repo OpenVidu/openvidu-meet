@@ -5,9 +5,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
+import { RecordingManagerService } from '@lib/services';
+import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { OpenViduComponentsUiModule } from 'openvidu-components-angular';
-import { RecordingManagerService } from '../../services';
-import { MeetRecordingFilters, MeetRecordingInfo } from '../../typings/ce';
 
 @Component({
 	selector: 'app-room-recordings',

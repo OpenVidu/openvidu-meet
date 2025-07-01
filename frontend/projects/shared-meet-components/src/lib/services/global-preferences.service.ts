@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
+import { HttpService } from '@lib/services';
+import { AuthMode, SecurityPreferences, WebhookPreferences } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
-import { HttpService } from '../../services';
-import { AuthMode, SecurityPreferences, WebhookPreferences } from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'

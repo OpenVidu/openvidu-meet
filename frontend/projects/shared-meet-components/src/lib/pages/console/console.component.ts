@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { ConsoleNavComponent } from '../../components';
-import { ConsoleNavLink } from '../../models';
-import { AuthService } from '../../services';
+import { ConsoleNavComponent } from '@lib/components';
+import { ConsoleNavLink } from '@lib/models';
+import { AuthService } from '@lib/services';
 
 @Component({
 	selector: 'app-console',

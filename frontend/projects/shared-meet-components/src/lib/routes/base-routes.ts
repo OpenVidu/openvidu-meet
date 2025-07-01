@@ -10,7 +10,7 @@ import {
 	removeModeratorSecretGuard,
 	runGuardsSerially,
 	validateRecordingAccessGuard
-} from '../guards';
+} from '@lib/guards';
 import {
 	ConsoleComponent,
 	DevelopersSettingsComponent,
@@ -20,13 +20,12 @@ import {
 	OverviewComponent,
 	PreferencesComponent,
 	RecordingsComponent,
-	RoomFormComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
+	RoomWizardComponent,
 	VideoRoomComponent,
-	ViewRecordingComponent,
-	RoomWizardComponent
-} from '../pages';
+	ViewRecordingComponent
+} from '@lib/pages';
 
 export const baseRoutes: Routes = [
 	{
