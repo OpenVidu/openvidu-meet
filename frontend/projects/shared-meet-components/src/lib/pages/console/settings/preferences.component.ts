@@ -67,8 +67,8 @@ export class PreferencesComponent implements OnInit {
 		this.isLoading.set(true);
 
 		try {
-			const securityPrefs = await this.preferencesService.getSecurityPreferences();
-			this.authForm.get('authModeToAccessRoom')?.setValue(securityPrefs.authentication.authModeToAccessRoom);
+			const authMode = await this.preferencesService.getAuthModeToAccessRoom();
+			this.authForm.get('authModeToAccessRoom')?.setValue(authMode);
 		} catch (error) {
 			console.error('Error loading security preferences:', error);
 			this.notificationService.showSnackbar('Failed to load security preferences');

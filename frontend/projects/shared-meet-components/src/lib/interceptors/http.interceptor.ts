@@ -2,19 +2,12 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpReq
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, Observable, switchMap } from 'rxjs';
-import {
-	AuthService,
-	ContextService,
-	ParticipantTokenService,
-	RecordingManagerService,
-	SessionStorageService
-} from '../services';
+import { AuthService, ParticipantTokenService, RecordingManagerService, RoomService } from '../services';
 
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router: Router = inject(Router);
 	const authService: AuthService = inject(AuthService);
-	const contextService = inject(ContextService);
-	const sessionStorageService = inject(SessionStorageService);
+	const roomService = inject(RoomService);
 	const participantTokenService = inject(ParticipantTokenService);
 	const recordingService = inject(RecordingManagerService);
 
@@ -52,15 +45,13 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	const refreshParticipantToken = (firstError: HttpErrorResponse): Observable<HttpEvent<unknown>> => {
 		console.log('Refreshing participant token...');
-		const roomId = contextService.getRoomId();
-		const participantName = contextService.getParticipantName();
-		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
-		const secret = storedSecret || contextService.getSecret();
+		const roomId = roomService.getRoomId();
+		const secret = roomService.getRoomSecret();
+		const participantName = participantTokenService.getParticipantName();
 
 		return from(participantTokenService.refreshParticipantToken({ roomId, participantName, secret })).pipe(
-			switchMap((data) => {
+			switchMap(() => {
 				console.log('Participant token refreshed');
-				contextService.setParticipantTokenAndUpdateContext(data.token);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {
@@ -83,14 +74,12 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	const refreshRecordingToken = (firstError: HttpErrorResponse): Observable<HttpEvent<unknown>> => {
 		console.log('Refreshing recording token...');
-		const roomId = contextService.getRoomId();
-		const storedSecret = sessionStorageService.getModeratorSecret(roomId);
-		const secret = storedSecret || contextService.getSecret();
+		const roomId = roomService.getRoomId();
+		const secret = roomService.getRoomSecret();
 
 		return from(recordingService.generateRecordingToken(roomId, secret)).pipe(
-			switchMap((data) => {
+			switchMap(() => {
 				console.log('Recording token refreshed');
-				contextService.setRecordingPermissionsFromToken(data.token);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService } from '../../services';
+import { FeatureConfigurationService, HttpService, SessionStorageService } from '../../services';
 import {
 	MeetRoom,
 	MeetRoomFilters,
@@ -17,15 +17,37 @@ export class RoomService {
 	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 
-	protected log;
+	protected roomId: string = '';
+	protected roomSecret: string = '';
 	protected roomPreferences?: MeetRoomPreferences;
+
+	protected log;
 
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected featureConfService: FeatureConfigurationService
+		protected featureConfService: FeatureConfigurationService,
+		protected sessionStorageService: SessionStorageService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
+	}
+
+	setRoomId(roomId: string) {
+		this.roomId = roomId;
+	}
+
+	getRoomId(): string {
+		return this.roomId;
+	}
+
+	setRoomSecret(secret: string) {
+		// If a secret is stored in session storage for the current room, use it instead of the provided secret
+		const storedSecret = this.sessionStorageService.getModeratorSecret(this.roomId);
+		this.roomSecret = storedSecret || secret;
+	}
+
+	getRoomSecret(): string {
+		return this.roomSecret;
 	}
 
 	/**
@@ -89,8 +111,11 @@ export class RoomService {
 	 * @param roomId - The unique identifier of the room to be deleted
 	 * @return A promise that resolves when the room has been deleted
 	 */
-	async deleteRoom(roomId: string): Promise<any> {
-		const path = `${this.ROOMS_API}/${roomId}`;
+	async deleteRoom(roomId: string, force = false): Promise<any> {
+		let path = `${this.ROOMS_API}/${roomId}`;
+		if (force) {
+			path += '?force=true';
+		}
 		return this.httpService.deleteRequest(path);
 	}
 
@@ -100,12 +125,15 @@ export class RoomService {
 	 * @param roomIds - An array of room IDs to be deleted
 	 * @return A promise that resolves when the rooms have been deleted
 	 */
-	async bulkDeleteRooms(roomIds: string[]): Promise<any> {
+	async bulkDeleteRooms(roomIds: string[], force = false): Promise<any> {
 		if (roomIds.length === 0) {
 			throw new Error('No room IDs provided for bulk deletion');
 		}
 
-		const path = `${this.ROOMS_API}?roomIds=${roomIds.join(',')}`;
+		let path = `${this.ROOMS_API}?roomIds=${roomIds.join(',')}`;
+		if (force) {
+			path += '&force=true';
+		}
 		return this.httpService.deleteRequest(path);
 	}
 

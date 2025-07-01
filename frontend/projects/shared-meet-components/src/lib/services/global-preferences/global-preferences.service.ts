@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../services';
-import { SecurityPreferences, WebhookPreferences } from '../../typings/ce';
+import { AuthMode, SecurityPreferences, WebhookPreferences } from '../../typings/ce';
 
 @Injectable({
 	providedIn: 'root'
@@ -34,6 +34,11 @@ export class GlobalPreferencesService {
 			this.log.e('Error fetching security preferences:', error);
 			throw error;
 		}
+	}
+
+	async getAuthModeToAccessRoom(): Promise<AuthMode> {
+		await this.getSecurityPreferences();
+		return this.securityPreferences!.authentication.authModeToAccessRoom;
 	}
 
 	async saveSecurityPreferences(preferences: SecurityPreferences) {

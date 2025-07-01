@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
-import { ContextService, RoomService } from '../../services';
+import { AppDataService, ParticipantTokenService, RoomService } from '../../services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -17,13 +17,15 @@ import {
 	providedIn: 'root'
 })
 export class WebComponentManagerService {
+	protected parentDomain: string = '';
 	protected isListenerStarted = false;
 	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
 	protected log;
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected contextService: ContextService,
+		protected appDataService: AppDataService,
+		protected participantService: ParticipantTokenService,
 		protected panelService: PanelService,
 		protected openviduService: OpenViduService,
 		protected roomService: RoomService
@@ -57,30 +59,28 @@ export class WebComponentManagerService {
 	}
 
 	sendMessageToParent(event: WebComponentOutboundEventMessage) {
-		if (!this.contextService.isEmbeddedMode()) return;
+		if (!this.appDataService.isEmbeddedMode()) return;
 		this.log.d('Sending message to parent :', event);
-		const origin = this.contextService.getParentDomain();
-		window.parent.postMessage(event, origin);
+		window.parent.postMessage(event, this.parentDomain);
 	}
 
 	protected async handleMessage(event: MessageEvent): Promise<void> {
 		const message: WebComponentInboundCommandMessage = event.data;
-		const parentDomain = this.contextService.getParentDomain();
 		const { command, payload } = message;
 
-		if (!parentDomain) {
+		if (!this.parentDomain) {
 			if (command === WebComponentCommand.INITIALIZE) {
 				if (!payload || !('domain' in payload)) {
 					console.error('Parent domain not provided in message payload');
 					return;
 				}
 				this.log.d(`Parent domain set: ${event.origin}`);
-				this.contextService.setParentDomain(payload['domain']);
+				this.parentDomain = payload['domain'];
 			}
 			return;
 		}
 
-		if (event.origin !== parentDomain) {
+		if (event.origin !== this.parentDomain) {
 			// console.warn(`Untrusted origin: ${event.origin}`);
 			return;
 		}
@@ -90,8 +90,8 @@ export class WebComponentManagerService {
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
 				// Moderator only
-				if (this.contextService.isModeratorParticipant()) {
-					const roomId = this.contextService.getRoomId();
+				if (this.participantService.isModeratorParticipant()) {
+					const roomId = this.roomService.getRoomId();
 					await this.roomService.endMeeting(roomId);
 				}
 				break;

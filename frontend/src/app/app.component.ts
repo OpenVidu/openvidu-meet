@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ContextService } from '@lib/services';
+import { AppDataService } from '@lib/services';
 import packageInfo from '../../package.json';
 
 @Component({
@@ -11,10 +11,9 @@ import packageInfo from '../../package.json';
 	imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
-	constructor(private contextService: ContextService) {}
+	constructor(private appDataService: AppDataService) {}
 
 	ngOnInit() {
-		this.contextService.setVersion(packageInfo.version);
-		this.contextService.setOpenViduLogoUrl('assets/images/openvidu_logo.png');
+		this.appDataService.setVersion(packageInfo.version);
 	}
 }

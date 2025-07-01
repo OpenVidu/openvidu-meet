@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
-import { ContextService, NavigationService, RecordingManagerService, SessionStorageService } from '../services';
+import { NavigationService, RecordingManagerService, RoomService } from '../services';
 
 /**
  * Guard to validate the access to recordings.
@@ -10,21 +10,18 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {
+	const roomService = inject(RoomService);
 	const recordingService = inject(RecordingManagerService);
-	const contextService = inject(ContextService);
 	const navigationService = inject(NavigationService);
-	const sessionStorageService = inject(SessionStorageService);
 
-	const roomId = contextService.getRoomId();
-	const secret = contextService.getSecret();
-	const storageSecret = sessionStorageService.getModeratorSecret(roomId);
+	const roomId = roomService.getRoomId();
+	const secret = roomService.getRoomSecret();
 
 	try {
 		// Generate a token to access recordings in the room
-		const response = await recordingService.generateRecordingToken(roomId, storageSecret || secret);
-		contextService.setRecordingPermissionsFromToken(response.token);
+		await recordingService.generateRecordingToken(roomId, secret);
 
-		if (!contextService.canRetrieveRecordings()) {
+		if (!recordingService.canRetrieveRecordings()) {
 			// If the user does not have permission to retrieve recordings, redirect to the error page
 			return navigationService.redirectToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
 		}

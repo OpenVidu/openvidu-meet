@@ -1,25 +1,29 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { ContextService, NavigationService, SessionStorageService } from '../services';
 import { ErrorReason } from '../models';
+import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '../services';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const contextService = inject(ContextService);
+	const roomService = inject(RoomService);
+	const participantService = inject(ParticipantTokenService);
 	const { roomId, participantName, secret, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
-
-	if (isValidUrl(leaveRedirectUrl)) {
-		contextService.setLeaveRedirectUrl(leaveRedirectUrl);
-	}
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	contextService.setRoomId(roomId);
-	contextService.setParticipantName(participantName);
-	contextService.setSecret(secret);
+	roomService.setRoomId(roomId);
+	roomService.setRoomSecret(secret);
+
+	if (participantName) {
+		participantService.setParticipantName(participantName);
+	}
+
+	if (isValidUrl(leaveRedirectUrl)) {
+		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
+	}
 
 	if (showOnlyRecordings === 'true') {
 		// Redirect to the room recordings page
@@ -31,7 +35,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 export const extractRecordingQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const contextService = inject(ContextService);
+	const roomService = inject(RoomService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret } = extractParams(route);
@@ -42,8 +46,8 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	contextService.setRoomId(roomId);
-	contextService.setSecret(secret);
+	roomService.setRoomId(roomId);
+	roomService.setRoomSecret(secret);
 
 	return true;
 };

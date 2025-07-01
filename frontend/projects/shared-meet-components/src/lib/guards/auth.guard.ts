@@ -3,11 +3,11 @@ import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@ang
 import { ErrorReason } from '../models';
 import {
 	AuthService,
-	ContextService,
+	GlobalPreferencesService,
 	NavigationService,
+	ParticipantTokenService,
 	RecordingManagerService,
-	RoomService,
-	SessionStorageService
+	RoomService
 } from '../services';
 import { AuthMode, ParticipantRole } from '../typings/ce';
 
@@ -53,21 +53,20 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 ) => {
 	const navigationService = inject(NavigationService);
 	const authService = inject(AuthService);
-	const contextService = inject(ContextService);
-	const sessionStorageService = inject(SessionStorageService);
+	const preferencesService = inject(GlobalPreferencesService);
 	const roomService = inject(RoomService);
+	const participantService = inject(ParticipantTokenService);
 
 	// Get the role that the participant will have in the room based on the room ID and secret
 	let participantRole: ParticipantRole;
 
 	try {
-		const roomId = contextService.getRoomId();
-		const secret = contextService.getSecret();
-		const storageSecret = sessionStorageService.getModeratorSecret(roomId);
+		const roomId = roomService.getRoomId();
+		const secret = roomService.getRoomSecret();
 
-		const roomRoleAndPermissions = await roomService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
+		const roomRoleAndPermissions = await roomService.getRoomRoleAndPermissions(roomId, secret);
 		participantRole = roomRoleAndPermissions.role;
-		contextService.setParticipantRole(participantRole);
+		participantService.setParticipantRole(participantRole);
 	} catch (error: any) {
 		console.error('Error getting participant role:', error);
 		switch (error.status) {
@@ -82,7 +81,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		}
 	}
 
-	const authMode = await contextService.getAuthModeToAccessRoom();
+	const authMode = await preferencesService.getAuthModeToAccessRoom();
 
 	// If the user is a moderator and the room requires authentication for moderators only,
 	// or if the room requires authentication for all users,

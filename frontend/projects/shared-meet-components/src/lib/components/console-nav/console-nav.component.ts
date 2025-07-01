@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ConsoleNavLink } from '../../models';
-import { ContextService } from '../../services';
+import { AppDataService } from '../../services';
 
 @Component({
 	selector: 'ov-console-nav',
@@ -36,8 +36,8 @@ export class ConsoleNavComponent {
 	@Input() navLinks: ConsoleNavLink[] = [];
 	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
 
-	constructor(private contextService: ContextService) {
-		this.version = this.contextService.getVersion();
+	constructor(private appDataService: AppDataService) {
+		this.version = this.appDataService.getVersion();
 	}
 
 	async toggleSideMenu() {

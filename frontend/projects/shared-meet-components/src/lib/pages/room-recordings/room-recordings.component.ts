@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { OpenViduComponentsUiModule } from 'openvidu-components-angular';
-import { ContextService, RecordingManagerService } from '../../services';
+import { RecordingManagerService } from '../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '../../typings/ce';
 
 @Component({
@@ -33,7 +33,6 @@ export class RoomRecordingsComponent implements OnInit {
 	private nextPageToken: string | undefined;
 
 	constructor(
-		protected contextService: ContextService,
 		protected recordingService: RecordingManagerService,
 		protected route: ActivatedRoute
 	) {}
@@ -42,7 +41,7 @@ export class RoomRecordingsComponent implements OnInit {
 		this.route.params.subscribe((params) => {
 			this.roomId = params['room-id'];
 		});
-		this.canDeleteRecordings = this.contextService.canDeleteRecordings();
+		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
 
 		await this.loadRecordings();
 	}

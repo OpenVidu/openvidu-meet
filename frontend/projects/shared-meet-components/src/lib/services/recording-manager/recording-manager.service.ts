@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
-import { ActionService } from 'openvidu-components-angular';
-import { HttpService } from '../../services';
+import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
+import { ActionService, LoggerService } from 'openvidu-components-angular';
+import { FeatureConfigurationService, HttpService } from '../../services';
+import { getValidDecodedToken } from '@lib/utils';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,11 +13,22 @@ export class RecordingManagerService {
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
 	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 
+	protected recordingPermissions: RecordingPermissions = {
+		canRetrieveRecordings: false,
+		canDeleteRecordings: false
+	};
+
+	protected log;
+
 	constructor(
+		protected loggerService: LoggerService,
 		private httpService: HttpService,
+		protected featureConfService: FeatureConfigurationService,
 		private actionService: ActionService,
 		protected dialog: MatDialog
-	) {}
+	) {
+		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
+	}
 
 	/**
 	 * Starts recording for a room
@@ -141,11 +153,40 @@ export class RecordingManagerService {
 	 *
 	 * @param roomId - The ID of the room for which the token is generated
 	 * @param secret - The secret for the room
-	 * @return A promise that resolves to an object containing the token
+	 * @return A promise that resolves to an object containing the recording permissions
 	 */
-	async generateRecordingToken(roomId: string, secret: string): Promise<{ token: string }> {
+	async generateRecordingToken(roomId: string, secret: string): Promise<RecordingPermissions> {
 		const path = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`;
-		return this.httpService.postRequest(path, { secret });
+		const { token } = await this.httpService.postRequest<{ token: string }>(path, { secret });
+
+		this.setRecordingPermissionsFromToken(token);
+		return this.recordingPermissions;
+	}
+
+	/**
+	 * Sets recording permissions from a token
+	 *
+	 * @param token - The JWT token containing recording permissions
+	 */
+	protected setRecordingPermissionsFromToken(token: string) {
+		try {
+			const decodedToken = getValidDecodedToken(token);
+			this.recordingPermissions = decodedToken.metadata.recordingPermissions;
+
+			// Update feature configuration
+			this.featureConfService.setRecordingPermissions(this.recordingPermissions);
+		} catch (error) {
+			this.log.e('Error setting recording permissions from token', error);
+			throw new Error('Error setting recording permissions from token');
+		}
+	}
+
+	canRetrieveRecordings(): boolean {
+		return this.recordingPermissions.canRetrieveRecordings;
+	}
+
+	canDeleteRecordings(): boolean {
+		return this.recordingPermissions.canDeleteRecordings;
 	}
 
 	/**

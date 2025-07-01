@@ -7,10 +7,20 @@ import { ErrorReason } from '../../models';
 	providedIn: 'root'
 })
 export class NavigationService {
+	protected leaveRedirectUrl: string = '';
+
 	constructor(
 		private router: Router,
 		private location: Location
 	) {}
+
+	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
+		this.leaveRedirectUrl = leaveRedirectUrl;
+	}
+
+	getLeaveRedirectURL(): string {
+		return this.leaveRedirectUrl;
+	}
 
 	/**
 	 * Redirects to internal or external URLs
