@@ -59,6 +59,7 @@
 					<div class="form-section">
 						<div class="form-field-header">
 							<h3>User Authentication</h3>
+							<ov-pro-feature-badge class="users-pro-badge"></ov-pro-feature-badge>
 						</div>
 						<p class="field-description">Choose how users will authenticate to join rooms.</p>
 						<mat-form-field
@@ -70,7 +71,6 @@
 								<mat-option value="single">Single user</mat-option>
 								<mat-option value="multiusers" [disabled]="true">
 									Multi-user authentication (OAuth & credentials)
-									<ov-pro-feature-badge class="users-pro-badge"></ov-pro-feature-badge>
 								</mat-option>
 								<mat-option value="oauth" [disabled]="true">Only OAuth </mat-option>
 							</mat-select>
