@@ -62,7 +62,6 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-		this.clearForm();
 	}
 
 	private loadExistingData() {
@@ -97,7 +96,7 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 		}
 
 		const stepData: Partial<MeetRoomOptions> = {
-			roomIdPrefix: formValue.roomIdPrefix || undefined,
+			roomIdPrefix: formValue.roomIdPrefix,
 			autoDeletionDate: autoDeletionDateTime
 		};
 
@@ -107,7 +106,10 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 
 	clearForm() {
 		this.basicInfoForm.reset();
-		this.wizardState.updateStepData('basic', {});
+		this.wizardState.updateStepData('basic', {
+			roomIdPrefix: '',
+			autoDeletionDate: undefined
+		});
 	}
 
 	get minDate(): Date {

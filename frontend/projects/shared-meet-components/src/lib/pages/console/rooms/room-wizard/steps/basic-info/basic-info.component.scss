@@ -118,12 +118,12 @@
 
 					.hint-icon {
 						@include ov-icon(sm);
-						color: var(--ov-meet-color-warn);
+						color: var(--ov-meet-color-warning);
 					}
 
 					span {
 						font-size: var(--ov-meet-font-size-sm);
-						color: var(--ov-meet-color-warn);
+						color: var(--ov-meet-color-warning);
 						font-weight: var(--ov-meet-font-weight-medium);
 					}
 				}
