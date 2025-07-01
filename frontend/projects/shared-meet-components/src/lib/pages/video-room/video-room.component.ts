@@ -1,5 +1,4 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -15,7 +14,6 @@ import {
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
-import { Observable } from 'rxjs';
 import { ErrorReason } from '../../models';
 import {
 	ApplicationFeatures,
@@ -43,8 +41,7 @@ import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } 
 		FormsModule,
 		ReactiveFormsModule,
 		MatCardModule,
-		MatButtonModule,
-		AsyncPipe
+		MatButtonModule
 	]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
@@ -59,7 +56,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
 
-	features$: Observable<ApplicationFeatures>;
+	features: Signal<ApplicationFeatures>;
 
 	constructor(
 		protected route: ActivatedRoute,
@@ -72,7 +69,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService
 	) {
-		this.features$ = this.featureConfService.features$;
+		this.features = this.featureConfService.features;
 	}
 
 	async ngOnInit() {

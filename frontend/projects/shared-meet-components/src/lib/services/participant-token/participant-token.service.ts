@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@lib/typings/ce';
+import { ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 import { ParticipantTokenInfo } from '../../models/auth.model';
@@ -73,7 +73,10 @@ export class ParticipantTokenService {
 			this.currentTokenInfo = {
 				token: token,
 				role: decodedToken.metadata.role,
-				permissions: decodedToken.metadata.permissions
+				permissions: {
+					livekit: decodedToken.video,
+					openvidu: decodedToken.metadata.permissions
+				}
 			};
 			this.participantRole = this.currentTokenInfo.role;
 
@@ -102,7 +105,7 @@ export class ParticipantTokenService {
 		return this.getParticipantRole() === ParticipantRole.MODERATOR;
 	}
 
-	getParticipantPermissions(): OpenViduMeetPermissions | undefined {
+	getParticipantPermissions(): ParticipantPermissions | undefined {
 		return this.currentTokenInfo?.permissions;
 	}
 }

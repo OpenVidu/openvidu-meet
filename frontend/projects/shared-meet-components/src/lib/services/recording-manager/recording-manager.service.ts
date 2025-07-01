@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
-import { ActionService, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService } from '../../services';
 import { getValidDecodedToken } from '@lib/utils';
+import { ActionService, LoggerService } from 'openvidu-components-angular';
+import { HttpService } from '../../services';
 
 @Injectable({
 	providedIn: 'root'
@@ -23,7 +23,6 @@ export class RecordingManagerService {
 	constructor(
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
-		protected featureConfService: FeatureConfigurationService,
 		private actionService: ActionService,
 		protected dialog: MatDialog
 	) {
@@ -172,9 +171,6 @@ export class RecordingManagerService {
 		try {
 			const decodedToken = getValidDecodedToken(token);
 			this.recordingPermissions = decodedToken.metadata.recordingPermissions;
-
-			// Update feature configuration
-			this.featureConfService.setRecordingPermissions(this.recordingPermissions);
 		} catch (error) {
 			this.log.e('Error setting recording permissions from token', error);
 			throw new Error('Error setting recording permissions from token');

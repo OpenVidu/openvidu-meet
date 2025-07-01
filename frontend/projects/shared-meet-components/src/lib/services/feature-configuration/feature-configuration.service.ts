@@ -1,45 +1,28 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
+import { computed, Injectable, signal } from '@angular/core';
 import { LoggerService } from 'openvidu-components-angular';
-import {
-	MeetRoomPreferences,
-	GlobalPreferences,
-	OpenViduMeetPermissions,
-	ParticipantRole,
-	RecordingPermissions
-} from '../../typings/ce';
-import { GlobalPreferencesService } from '../../services';
+import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole } from '../../typings/ce';
 
 /**
  * Interface that defines all available features in the application
  */
 export interface ApplicationFeatures {
-	// Video Room Features
+	// Media Features
 	videoEnabled: boolean;
 	audioEnabled: boolean;
 	showMicrophone: boolean;
 	showCamera: boolean;
 	showScreenShare: boolean;
-	showPrejoin: boolean;
 
-	// Communication Features
+	// UI Features
 	showChat: boolean;
 	showRecording: boolean;
 	showBackgrounds: boolean;
-
-	// UI Features
 	showParticipantList: boolean;
 	showSettings: boolean;
 	showFullscreen: boolean;
 
 	// Admin Features
 	canModerateRoom: boolean;
-	canManageRecordings: boolean;
-	canAccessConsole: boolean;
-
-	// Recording Features
-	canDeleteRecordings: boolean;
-	canRetrieveRecordings: boolean;
 }
 
 /**
@@ -51,23 +34,18 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showMicrophone: true,
 	showCamera: true,
 	showScreenShare: true,
-	showPrejoin: true,
 	showChat: true,
 	showRecording: true,
 	showBackgrounds: true,
 	showParticipantList: true,
 	showSettings: true,
 	showFullscreen: true,
-	canModerateRoom: false,
-	canManageRecordings: false,
-	canAccessConsole: false,
-	canDeleteRecordings: false,
-	canRetrieveRecordings: false
+	canModerateRoom: false
 };
 
 /**
  * Centralized service to manage feature configuration
- * based on global preferences, room preferences, and participant permissions
+ * based on room preferences and participant permissions
  */
 @Injectable({
 	providedIn: 'root'
@@ -75,117 +53,66 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 export class FeatureConfigurationService {
 	protected log;
 
-	// Subjects to handle reactive state
-	protected globalPreferencesSubject = new BehaviorSubject<GlobalPreferences | null>(null);
-	protected roomPreferencesSubject = new BehaviorSubject<MeetRoomPreferences | null>(null);
-	protected participantPermissionsSubject = new BehaviorSubject<OpenViduMeetPermissions | null>(null);
-	protected recordingPermissionsSubject = new BehaviorSubject<RecordingPermissions | null>(null);
-	protected participantRoleSubject = new BehaviorSubject<ParticipantRole | null>(null);
+	// Signals to handle reactive
+	protected roomPreferences = signal<MeetRoomPreferences | undefined>(undefined);
+	protected participantPermissions = signal<ParticipantPermissions | undefined>(undefined);
+	protected participantRole = signal<ParticipantRole | undefined>(undefined);
 
-	// Observable that combines all configurations
-	public readonly features$: Observable<ApplicationFeatures>;
+	// Computed signal to derive features based on current configurations
+	public readonly features = computed<ApplicationFeatures>(() =>
+		this.calculateFeatures(this.roomPreferences(), this.participantPermissions(), this.participantRole())
+	);
 
-	constructor(
-		protected loggerService: LoggerService,
-		protected globalPreferencesService: GlobalPreferencesService
-	) {
+	constructor(protected loggerService: LoggerService) {
 		this.log = this.loggerService.get('OpenVidu Meet - FeatureConfigurationService');
-
-		// Configure the combined observable
-		this.features$ = combineLatest([
-			this.globalPreferencesSubject.asObservable(),
-			this.roomPreferencesSubject.asObservable(),
-			this.participantPermissionsSubject.asObservable(),
-			this.recordingPermissionsSubject.asObservable(),
-			this.participantRoleSubject.asObservable()
-		]).pipe(
-			map(([globalPrefs, roomPrefs, participantPerms, recordingPerms, role]) =>
-				this.calculateFeatures(globalPrefs, roomPrefs, participantPerms, recordingPerms, role)
-			)
-		);
-	}
-
-	/**
-	 * Updates global preferences
-	 */
-	setGlobalPreferences(preferences: GlobalPreferences | null): void {
-		this.log.d('Updating global preferences', preferences);
-		this.globalPreferencesSubject.next(preferences);
 	}
 
 	/**
 	 * Updates room preferences
 	 */
-	setRoomPreferences(preferences: MeetRoomPreferences | null): void {
+	setRoomPreferences(preferences: MeetRoomPreferences): void {
 		this.log.d('Updating room preferences', preferences);
-		this.roomPreferencesSubject.next(preferences);
+		this.roomPreferences.set(preferences);
 	}
 
 	/**
 	 * Updates participant permissions
 	 */
-	setParticipantPermissions(permissions: OpenViduMeetPermissions | null): void {
+	setParticipantPermissions(permissions: ParticipantPermissions): void {
 		this.log.d('Updating participant permissions', permissions);
-		this.participantPermissionsSubject.next(permissions);
-	}
-
-	/**
-	 * Updates recording permissions
-	 */
-	setRecordingPermissions(permissions: RecordingPermissions | null): void {
-		this.log.d('Updating recording permissions', permissions);
-		this.recordingPermissionsSubject.next(permissions);
+		this.participantPermissions.set(permissions);
 	}
 
 	/**
 	 * Updates participant role
 	 */
-	setParticipantRole(role: ParticipantRole | null): void {
+	setParticipantRole(role: ParticipantRole): void {
 		this.log.d('Updating participant role', role);
-		this.participantRoleSubject.next(role);
-	}
-
-	/**
-	 * Gets the current feature configuration synchronously
-	 */
-	getCurrentFeatures(): ApplicationFeatures {
-		return this.calculateFeatures(
-			this.globalPreferencesSubject.value,
-			this.roomPreferencesSubject.value,
-			this.participantPermissionsSubject.value,
-			this.recordingPermissionsSubject.value,
-			this.participantRoleSubject.value
-		);
+		this.participantRole.set(role);
 	}
 
 	/**
 	 * Checks if a specific feature is enabled
 	 */
 	isFeatureEnabled(featureName: keyof ApplicationFeatures): boolean {
-		return this.getCurrentFeatures()[featureName];
+		return this.features()[featureName];
 	}
 
 	/**
 	 * Core logic to calculate features based on all configurations
 	 */
 	protected calculateFeatures(
-		globalPrefs: GlobalPreferences | null,
-		roomPrefs: MeetRoomPreferences | null,
-		participantPerms: OpenViduMeetPermissions | null,
-		recordingPerms: RecordingPermissions | null,
-		role: ParticipantRole | null
+		roomPrefs?: MeetRoomPreferences,
+		participantPerms?: ParticipantPermissions,
+		role?: ParticipantRole
 	): ApplicationFeatures {
 		// Start with default configuration
 		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
 
-		// Apply global preferences restrictions
-		if (globalPrefs) {
-		}
-
 		// Apply room configurations
 		if (roomPrefs) {
 			features.showChat = roomPrefs.chatPreferences.enabled;
-			features.showRecording = roomPrefs.recordingPreferences.enabled && role === ParticipantRole.MODERATOR;
+			features.showRecording = roomPrefs.recordingPreferences.enabled;
 			features.showBackgrounds = roomPrefs.virtualBackgroundPreferences.enabled;
 		}
 
@@ -193,30 +120,29 @@ export class FeatureConfigurationService {
 		if (participantPerms) {
 			// Only restrict if the feature is already enabled
 			if (features.showChat) {
-				features.showChat = participantPerms.canChat;
+				features.showChat = participantPerms.openvidu.canChat;
 			}
 			if (features.showRecording) {
-				features.showRecording = participantPerms.canRecord;
+				features.showRecording = participantPerms.openvidu.canRecord;
 			}
 			if (features.showBackgrounds) {
-				features.showBackgrounds = participantPerms.canChangeVirtualBackground;
+				features.showBackgrounds = participantPerms.openvidu.canChangeVirtualBackground;
 			}
 			if (features.showScreenShare) {
-				features.showScreenShare = participantPerms.canPublishScreen;
+				features.showScreenShare = participantPerms.openvidu.canPublishScreen;
 			}
-		}
 
-		if (recordingPerms) {
-			// Apply recording permissions
-			features.canDeleteRecordings = recordingPerms.canDeleteRecordings;
-			features.canRetrieveRecordings = recordingPerms.canRetrieveRecordings;
+			// Check if the participant can publish media
+			const canPublish = participantPerms.livekit.canPublish ?? true;
+			features.videoEnabled = canPublish;
+			features.audioEnabled = canPublish;
+			features.showMicrophone = canPublish;
+			features.showCamera = canPublish;
 		}
 
 		// Apply role-based configurations
 		if (role) {
 			features.canModerateRoom = role === ParticipantRole.MODERATOR;
-			features.canManageRecordings = role === ParticipantRole.MODERATOR;
-			features.canAccessConsole = role === ParticipantRole.MODERATOR;
 		}
 
 		this.log.d('Calculated features', features);
@@ -224,26 +150,11 @@ export class FeatureConfigurationService {
 	}
 
 	/**
-	 * Loads initial preferences from services
-	 */
-	async initializeConfiguration(): Promise<void> {
-		try {
-			this.log.d('Initializing feature configuration');
-
-			// Load global preferences if available
-			// (this will depend on your GlobalPreferencesService implementation)
-		} catch (error) {
-			this.log.e('Error initializing feature configuration', error);
-		}
-	}
-
-	/**
 	 * Resets all configurations to their initial values
 	 */
 	reset(): void {
-		this.globalPreferencesSubject.next(null);
-		this.roomPreferencesSubject.next(null);
-		this.participantPermissionsSubject.next(null);
-		this.participantRoleSubject.next(null);
+		this.roomPreferences.set(undefined);
+		this.participantPermissions.set(undefined);
+		this.participantRole.set(undefined);
 	}
 }
