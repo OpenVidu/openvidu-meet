@@ -35,29 +35,6 @@
 			box-shadow: var(--ov-meet-card-shadow) !important;
 		}
 	}
-
-	.pro-badge {
-		position: absolute;
-		top: var(--ov-meet-spacing-xs);
-		right: var(--ov-meet-spacing-xs);
-		background: linear-gradient(45deg, var(--ov-meet-color-warning), var(--ov-meet-color-accent));
-		color: white;
-		border-radius: var(--ov-meet-radius-sm);
-		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-xs);
-		font-size: var(--ov-meet-font-size-xxs);
-		font-weight: var(--ov-meet-font-weight-semibold);
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		z-index: 2;
-
-		mat-icon {
-			@include ov-icon(xs);
-		}
-	}
-
 	.selection-indicator {
 		position: absolute;
 		top: var(--ov-meet-spacing-sm);
@@ -94,7 +71,6 @@
 				display: block;
 				@include ov-theme-transition;
 			}
-
 
 			// &:hover img {
 			// 	transform: scale(1.02);

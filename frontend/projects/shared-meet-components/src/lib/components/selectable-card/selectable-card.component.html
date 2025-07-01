@@ -13,10 +13,7 @@
 >
 	<!-- Pro Badge -->
 	@if (option.isPro && showProBadge) {
-		<div class="pro-badge">
-			<mat-icon>{{ proBadgeIcon }}</mat-icon>
-			<span>{{ proBadgeText }}</span>
-		</div>
+		<ov-pro-feature-badge badgeText="PRO"></ov-pro-feature-badge>
 	} @else if (showSelectionIndicator) {
 		<!-- Selection Indicator -->
 		<div class="selection-indicator">

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
 
 /**
  * Interface for selectable card option data
@@ -30,7 +31,7 @@ export interface SelectionEvent {
 @Component({
 	selector: 'ov-selectable-card',
 	standalone: true,
-	imports: [CommonModule, MatIconModule],
+	imports: [CommonModule, MatIconModule, ProFeatureBadgeComponent],
 	templateUrl: './selectable-card.component.html',
 	styleUrl: './selectable-card.component.scss'
 })
