@@ -60,7 +60,7 @@ export const baseRoutes: Routes = [
 				component: RecordingsComponent
 			},
 			{
-				path: 'developers',
+				path: 'embedded',
 				component: DevelopersSettingsComponent
 			},
 			{
