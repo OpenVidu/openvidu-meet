@@ -9,7 +9,7 @@ export class ConfigService {
 
 	constructor() {
 		this.meetApiUrl = process.env.OPENVIDU_MEET_URL!;
-		this.meetApiKey = process.env.API_KEY!;
+		this.meetApiKey = process.env.MEET_API_KEY!;
 		this.serverPort = parseInt(process.env.PORT!, 10);
 	}
 }
