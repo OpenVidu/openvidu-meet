@@ -10,7 +10,7 @@
 		"dev:server": "ts-node-dev --respawn --watch src,public/ts,public/views src/index.ts",
 		"dev": "concurrently \"npm:watch:client\" \"npm run dev:server\" --kill-others",
 		"build:server": "tsc --rootDir ../",
-    "build:client": "tsc -p tsconfig.client.json",
+		"build:client": "tsc -p tsconfig.client.json",
 		"watch:client": "tsc -p tsconfig.client.json --watch"
 	},
 	"keywords": [],

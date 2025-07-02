@@ -7,11 +7,11 @@ export class ConfigService {
 	public meetApiKey: string;
 	public serverPort: number;
 
-  constructor() {
-    this.meetApiUrl = process.env.OPENVIDU_MEET_URL || 'http://localhost:6080/api/v1';
-    this.apiKey = process.env.API_KEY || 'meet-api-key';
-    this.port = parseInt(process.env.PORT || '5080', 10);
-  }
+	constructor() {
+		this.meetApiUrl = process.env.OPENVIDU_MEET_URL!;
+		this.meetApiKey = process.env.API_KEY!;
+		this.serverPort = parseInt(process.env.PORT!, 10);
+	}
 }
 
 export const configService = new ConfigService();
