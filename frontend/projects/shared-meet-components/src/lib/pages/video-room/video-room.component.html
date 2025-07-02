@@ -89,13 +89,13 @@
 					<mat-icon>call_end</mat-icon>
 				</button>
 				<mat-menu #leaveMenu="matMenu">
-					<button mat-menu-item (click)="leaveMeeting()">
+					<button mat-menu-item (click)="leaveMeeting()" id="leave-option">
 						<mat-icon>logout</mat-icon>
 
 						<span>Leave meeting</span>
 					</button>
 					<mat-divider></mat-divider>
-					<button mat-menu-item (click)="endMeeting()">
+					<button mat-menu-item (click)="endMeeting()" id="end-meeting-option">
 						<mat-icon>no_meeting_room</mat-icon>
 						<span>End meeting for all</span>
 					</button>
