@@ -1,81 +1,264 @@
-.form-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 100vh;
-	background-color: var(--ov-meet-surface-background);
-	padding: 20px;
+@import '../../../../../../src/assets/styles/design-tokens';
 
-	.card-wrapper {
-		display: flex;
-		gap: 40px;
-		flex-wrap: wrap;
-		justify-content: center;
-		align-items: flex-start;
+// Room Access Container - Main layout using design tokens
+.room-access-container {
+	@include ov-container;
+	@include ov-page-content;
+	min-height: 100vh;
+	padding-top: var(--ov-meet-spacing-xxl);
+	background: var(--ov-meet-background-color);
+	gap: 0;
+}
+
+// Room Header - Clean title section
+.room-header {
+	@include ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	margin-bottom: var(--ov-meet-spacing-xxl);
+	text-align: center;
+
+	.room-icon {
+		@include ov-icon(xl);
+		color: var(--ov-meet-icon-rooms);
+		margin-bottom: var(--ov-meet-spacing-sm);
 	}
 
-	.form-card {
-		width: 400px;
-		padding: 20px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-		border-radius: var(--ov-meet-surface-radius);
-		background-color: var(--ov-meet-surface-primary);
+	.room-info {
+		.room-title {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-hero);
+			font-weight: var(--ov-meet-font-weight-light);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+		}
+
+		.room-subtitle {
+			margin: var(--ov-meet-spacing-xs) 0 0 0;
+			font-size: var(--ov-meet-font-size-lg);
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-normal);
+		}
+	}
+}
+
+// Action Cards Grid - Responsive layout
+.action-cards-grid {
+	@include ov-grid-responsive(320px);
+	gap: var(--ov-meet-spacing-xl);
+	margin-bottom: var(--ov-meet-spacing-xxl);
+	justify-content: center;
+
+	// When there's only one card, limit its width to maintain visual consistency
+	&:has(.action-card:only-child) {
+		display: flex;
+		justify-content: center;
+
+		.action-card {
+			max-width: 400px;
+			width: 100%;
+		}
+	}
+
+	@include ov-tablet-down {
+		grid-template-columns: 1fr;
+		gap: var(--ov-meet-spacing-lg);
+
+		// On tablets and mobile, single cards should use full width
+		&:has(.action-card:only-child) {
+			.action-card {
+				max-width: none;
+			}
+		}
+	}
+}
+
+// Action Card Base - Consistent card styling
+.action-card {
+	@include ov-card;
+	@include ov-hover-lift(-4px);
+	@include ov-theme-transition;
+	padding: 0;
+	overflow: hidden;
+	min-height: 300px;
+	display: flex;
+	flex-direction: column;
+
+	// Card Header
+	.card-header {
+		padding: var(--ov-meet-spacing-lg);
+		border-bottom: 1px solid var(--ov-meet-border-color-light);
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+		flex-shrink: 0;
+
+		.card-icon {
+			@include ov-icon(lg);
+			flex-shrink: 0;
+		}
+
+		.card-title-group {
+			flex: 1;
+
+			.mat-mdc-card-title {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-semibold);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.mat-mdc-card-subtitle {
+				margin: var(--ov-meet-spacing-xs) 0 0 0;
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	// Card Content
+	.card-content {
+		padding: var(--ov-meet-spacing-lg);
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 	}
+}
 
-	.recordings-card {
-		padding: 16px;
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-		border-radius: var(--ov-meet-surface-radius);
-		background-color: var(--ov-meet-surface-primary);
-		width: fit-content;
-		align-self: center;
-	}
-
-	.recordings-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 12px;
-	}
-
-	.form-title {
-		text-align: center;
-		margin-bottom: 20px;
-		color: var(--ov-meet-text-primary);
-
-		strong {
-			font-style: italic;
-		}
-	}
-
-	.full-width {
-		width: 100%;
-		margin-bottom: 20px;
-	}
-
-	button {
-		height: 56px;
-		border-radius: var(--ov-meet-surface-radius);
-	}
-
-	button:not([disabled]) {
-		background-color: var(--ov-meet-color-accent);
-		color: var(--ov-meet-text-on-accent);
+// Primary Card - Join meeting styling
+.primary-card {
+	.card-header {
+		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-primary-light) 180%);
+		color: var(--ov-meet-text-on-primary);
 	}
 }
 
+// Secondary Card - Recordings styling
+.secondary-card {
+	.card-header {
+		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-accent) 180%);
+	}
+}
+
+// Join Form - Form styling
+.join-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+	flex: 1;
+
+	.name-field {
+		width: 100%;
+
+		.mat-mdc-form-field-icon-suffix {
+			color: var(--ov-meet-text-hint);
+		}
+	}
+
+	.join-button {
+		@include ov-button-base;
+		height: 56px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-top: auto;
+		background-color: var(--ov-meet-color-secondary);
+		color: var(--ov-meet-text-on-secondary);
+	}
+}
+
+// Recordings Info - Content for recordings card
+.recordings-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+
+	.recordings-description {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-relaxed);
+	}
+}
+
+.recordings-button {
+	@include ov-button-base;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ov-meet-spacing-sm);
+	margin-top: auto;
+}
+
+// Quick Actions - Footer actions
+.quick-actions {
+	@include ov-flex-center;
+	margin-top: var(--ov-meet-spacing-xl);
+
+	.quick-action-button {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		color: var(--ov-meet-text-secondary);
+		@include ov-theme-transition;
+
+		&:hover {
+			color: var(--ov-meet-text-primary);
+			background-color: var(--ov-meet-surface-hover);
+		}
+	}
+}
+
+// Responsive adjustments
+@include ov-mobile-down {
+	.room-access-container {
+		padding: var(--ov-meet-spacing-lg);
+		padding-top: var(--ov-meet-spacing-xl);
+	}
+
+	.room-header {
+		margin-bottom: var(--ov-meet-spacing-xl);
+
+		.room-info .room-title {
+			font-size: var(--ov-meet-font-size-xxl);
+		}
+	}
+
+	.action-card {
+		min-height: auto;
+
+		.card-header {
+			padding: var(--ov-meet-spacing-md);
+
+			.card-title-group {
+				.mat-mdc-card-title {
+					font-size: var(--ov-meet-font-size-lg);
+				}
+			}
+		}
+
+		.card-content {
+			padding: var(--ov-meet-spacing-md);
+		}
+	}
+}
+
+// Custom leave button styling (existing functionality)
 ::ng-deep {
 	#media-buttons-container .custom-leave-btn > button {
 		&:hover {
-			background-color: var(--ov-error-color) !important;
+			background-color: var(--ov-meet-color-error) !important;
 		}
 		text-align: center;
-		background-color: var(--ov-error-color) !important;
-		color: var(--ov-secondary-action-color);
-		border-radius: var(--ov-leave-button-radius) !important;
+		background-color: var(--ov-meet-color-error) !important;
+		color: var(--ov-meet-text-on-primary);
+		border-radius: var(--ov-meet-radius-sm) !important;
 		width: 65px !important;
 		margin: 0px !important;
 	}

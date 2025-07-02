@@ -61,7 +61,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		name: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	showRoom = false;
-
+	showRecordingCard = false;
 	roomId = '';
 	roomSecret = '';
 	participantName = '';
@@ -89,6 +89,14 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
+
+		const { recordings } = await this.recManagerService.listRecordings({
+			maxItems: 1,
+			roomId: this.roomId,
+			fields: 'recordingId'
+		});
+
+		this.showRecordingCard = recordings.length > 0;
 
 		await this.initializeParticipantName();
 	}
@@ -221,6 +229,14 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
 		} catch (error) {
 			console.error('Error navigating to recordings:', error);
+		}
+	}
+
+	async goBack() {
+		try {
+			await this.navigationService.navigateTo('rooms');
+		} catch (error) {
+			console.error('Error navigating back to rooms:', error);
 		}
 	}
 

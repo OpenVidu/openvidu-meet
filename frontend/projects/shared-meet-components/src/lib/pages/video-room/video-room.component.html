@@ -1,53 +1,106 @@
 @if (!showRoom) {
-	<div class="form-container">
-		<div class="card-wrapper">
-			<mat-card class="form-card">
-				<h2 class="form-title">
-					Access room <strong>{{ roomId }}</strong>
-				</h2>
-				<form [formGroup]="participantForm" (ngSubmit)="submitAccessRoom()">
-					<mat-form-field appearance="outline" class="full-width">
-						<mat-label>Name</mat-label>
-						<input
-							id="participant-name-input"
-							matInput
-							placeholder="Enter your name"
-							formControlName="name"
-							required
-						/>
-						@if (participantForm.get('name')?.hasError('minlength')) {
-							<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
-						}
-						@if (participantForm.get('name')?.hasError('required')) {
-							<mat-error> The name is <strong>required</strong> </mat-error>
-						}
-						@if (participantForm.get('name')?.hasError('participantExists')) {
-							<mat-error>
-								The name is already taken. <strong> Please choose another name </strong>
-							</mat-error>
-						}
-					</mat-form-field>
-
-					<button
-						mat-raised-button
-						color="primary"
-						id="participant-name-submit"
-						class="full-width"
-						[disabled]="participantForm.invalid"
-					>
-						Continue to room
-					</button>
-				</form>
-			</mat-card>
-
-			<mat-card class="recordings-card">
-				<div class="recordings-content">
-					<h3>View recordings</h3>
-					<button id="view-recordings-btn" mat-stroked-button color="accent" (click)="goToRecordings()">
-						Go to recordings
-					</button>
+	<div class="ov-page-container">
+		<div class="room-access-container fade-in">
+			<!-- Header Section -->
+			<div class="room-header">
+				<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
+				<div class="room-info">
+					<h1 class="room-title">{{ roomId }}</h1>
+					<p class="room-subtitle">Choose how you want to proceed</p>
 				</div>
-			</mat-card>
+			</div>
+
+			<!-- Action Cards Grid -->
+			<div class="action-cards-grid">
+				<!-- Join Room Card -->
+				<mat-card class="action-card primary-card fade-in">
+					<mat-card-header class="card-header">
+						<mat-icon class="ov-room-icon card-icon">meeting_room</mat-icon>
+						<div class="card-title-group">
+							<mat-card-title>Join Meeting</mat-card-title>
+							<mat-card-subtitle>Enter the room and start connecting</mat-card-subtitle>
+						</div>
+					</mat-card-header>
+
+					<mat-card-content class="card-content">
+						<form [formGroup]="participantForm" (ngSubmit)="submitAccessRoom()" class="join-form">
+							<mat-form-field appearance="outline" class="name-field">
+								<mat-label>Your display name</mat-label>
+								<input
+									id="participant-name-input"
+									matInput
+									placeholder="Enter your name"
+									formControlName="name"
+									required
+								/>
+								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
+								@if (participantForm.get('name')?.hasError('minlength')) {
+									<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
+								}
+								@if (participantForm.get('name')?.hasError('required')) {
+									<mat-error> The name is <strong>required</strong> </mat-error>
+								}
+								@if (participantForm.get('name')?.hasError('participantExists')) {
+									<mat-error>
+										The name is already taken. <strong> Please choose another name </strong>
+									</mat-error>
+								}
+							</mat-form-field>
+
+							<button
+								mat-raised-button
+								color="primary"
+								id="participant-name-submit"
+								type="submit"
+								class="join-button"
+								[disabled]="participantForm.invalid"
+							>
+								<span>Join Meeting</span>
+							</button>
+						</form>
+					</mat-card-content>
+				</mat-card>
+
+				<!-- View Recordings Card -->
+				@if (showRecordingCard) {
+					<mat-card class="action-card secondary-card fade-in-delayed">
+						<mat-card-header class="card-header">
+							<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
+							<div class="card-title-group">
+								<mat-card-title>View Recordings</mat-card-title>
+								<mat-card-subtitle>Browse and manage past recordings</mat-card-subtitle>
+							</div>
+						</mat-card-header>
+
+						<mat-card-content class="card-content">
+							<div class="recordings-info">
+								<p class="recordings-description">
+									Access previously recorded meetings from this room. You can watch, download, or
+									manage existing recordings.
+								</p>
+							</div>
+
+							<button
+								id="view-recordings-btn"
+								mat-stroked-button
+								color="accent"
+								(click)="goToRecordings()"
+								class="recordings-button"
+							>
+								<span>Browse Recordings</span>
+							</button>
+						</mat-card-content>
+					</mat-card>
+				}
+			</div>
+
+			<!-- Quick Actions -->
+			<div class="quick-actions fade-in-delayed-more">
+				<button mat-button class="quick-action-button" (click)="goBack()">
+					<mat-icon>arrow_back</mat-icon>
+					<span>Back to Rooms</span>
+				</button>
+			</div>
 		</div>
 	</div>
 } @else {
