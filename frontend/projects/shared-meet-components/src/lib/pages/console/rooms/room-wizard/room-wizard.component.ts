@@ -82,14 +82,18 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		this.wizardState.initializeWizard(this.editMode, this.existingRoomData || undefined);
 
 		this.wizardState.steps$.pipe(takeUntil(this.destroy$)).subscribe((steps) => {
-			this.steps = steps;
-			this.currentStep = this.wizardState.getCurrentStep();
-			this.currentStepIndex = this.wizardState.getCurrentStepIndex();
-			this.navigationConfig = this.wizardState.getNavigationConfig();
+			// Only update current step info after steps are available
 
-			// Update navigation config for edit mode
-			if (this.editMode) {
-				this.navigationConfig.finishLabel = 'Update Room';
+			if (steps.length > 0) {
+				this.steps = steps;
+				this.currentStep = this.wizardState.getCurrentStep();
+				this.currentStepIndex = this.wizardState.getCurrentStepIndex();
+				this.navigationConfig = this.wizardState.getNavigationConfig();
+
+				// Update navigation config for edit mode
+				if (this.editMode) {
+					this.navigationConfig.finishLabel = 'Update Room';
+				}
 			}
 		});
 
@@ -98,7 +102,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		});
 
 		this.wizardState.currentStepIndex$.pipe(takeUntil(this.destroy$)).subscribe((index) => {
-			this.currentStepIndex = index;
+			// Only update if we have visible steps
+			if (this.steps.filter((s) => s.isVisible).length > 0) {
+				this.currentStepIndex = index;
+			}
 		});
 	}
 

@@ -1,7 +1,7 @@
 <div class="step-indicator-wrapper" [attr.data-layout]="layoutType$ | async">
 	<mat-stepper
 		#stepper
-		[selectedIndex]="currentStepIndex"
+		[selectedIndex]="safeCurrentStepIndex"
 		[orientation]="(stepperOrientation$ | async)!"
 		[linear]="false"
 		class="wizard-stepper"

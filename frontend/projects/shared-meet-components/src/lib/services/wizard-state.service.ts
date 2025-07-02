@@ -63,7 +63,6 @@ export class RoomWizardStateService {
 
 		console.log('Initial room options created:', initialRoomOptions);
 		this._roomOptions.next(initialRoomOptions);
-		console.log('Wizard initialized with options:', initialRoomOptions);
 
 		// Define base wizard steps
 		const baseSteps: WizardStep[] = [
@@ -86,7 +85,7 @@ export class RoomWizardStateService {
 				id: 'recording',
 				label: 'Recording Settings',
 				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: editMode, // Start with recording step in edit mode
+				isActive: editMode, // Only active in edit mode
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
 					enabled: [
@@ -122,11 +121,15 @@ export class RoomWizardStateService {
 
 		this._steps.next(baseSteps);
 
-		// Set initial step index based on mode
-		const initialStepIndex = editMode ? 1 : 0; // Skip basic step in edit mode
-		this._currentStepIndex.next(initialStepIndex);
+		// Set the initial step index after a short delay to ensure steps are processed
+		setTimeout(() => {
+			const initialStepIndex = editMode ? 1 : 0; // Skip basic step in edit mode
+			console.log('Setting initial step index:', initialStepIndex);
+			this._currentStepIndex.next(initialStepIndex);
 
-		this.updateStepVisibility();
+			// Update step visibility after index is set
+			this.updateStepVisibility();
+		}, 0);
 	}
 
 	/**

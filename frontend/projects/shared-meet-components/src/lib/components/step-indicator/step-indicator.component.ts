@@ -107,9 +107,30 @@ export class StepIndicatorComponent implements OnChanges {
 		return step.validationFormGroup;
 	}
 
+	get safeCurrentStepIndex(): number {
+		if (this.visibleSteps.length === 0) {
+			console.warn('No visible steps available. Defaulting to index 0.');
+			return 0;
+		}
+
+		// In edit mode, ensure the index is valid for visible steps
+		let adjustedIndex = this.currentStepIndex;
+
+		// If we are in edit mode and the current index is greater than available visible steps
+		if (this.editMode && this.currentStepIndex >= this.visibleSteps.length) {
+			// Find the first active step in the visible steps
+			const activeStepIndex = this.visibleSteps.findIndex((step) => step.isActive);
+			adjustedIndex = activeStepIndex >= 0 ? activeStepIndex : 0;
+		}
+
+		const safeIndex = Math.min(Math.max(0, adjustedIndex), this.visibleSteps.length - 1);
+		console.log('Safe current step index:', safeIndex, 'for visibleSteps length:', this.visibleSteps.length);
+		return safeIndex;
+	}
+
 	onStepClick(event: StepperSelectionEvent) {
 		if (this.allowNavigation) {
-			const step = this.steps[event.selectedIndex];
+			const step = this.visibleSteps[event.selectedIndex];
 			this.stepClick.emit({ step, index: event.selectedIndex });
 		} else {
 			console.warn('Navigation is not allowed. Step click ignored:', event.selectedIndex);
