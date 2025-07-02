@@ -1,4 +1,4 @@
 import { Routes } from '@angular/router';
-import { baseRoutes } from 'projects/shared-meet-components/src/public-api';
+import { baseRoutes } from '@lib/routes/base-routes';
 
 export const routes: Routes = baseRoutes;

@@ -1,103 +1,84 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
 #dashboard-container,
 mat-sidenav-container {
-	height: 100%;
+	@extend .ov-nav-container;
 }
 
 .page-content {
-	height: calc(100% - (64px + 40px));
-	padding: 20px;
-}
-.toolbar-title {
-	font-size: 1.5rem;
-	font-weight: bold;
-	margin-left: 16px;
-}
-
-.toolbar-spacer {
-	flex: 1 1 auto;
+	@extend .page-content;
 }
 
 mat-toolbar {
-	position: fixed;
-	top: 0;
-	z-index: 2;
+	@extend .ov-nav-toolbar;
 }
 
-mat-sidenav-container {
-	height: 100%;
+.toolbar-title {
+	@extend .toolbar-title;
+}
+
+.toolbar-spacer {
+	@extend .toolbar-spacer;
 }
 
 .expanded {
 	width: 250px;
 }
+
 .collapsed {
-	width: 70px;
+	width: 80px;
 }
+
 a {
 	padding: 0;
 }
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav {
-	background-color: white;
-	padding-top: 3.5rem;
-	@media screen and (min-width: 600px) {
-		padding-top: 4rem;
-	}
+	@extend .ov-sidenav;
 
 	.entry {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.75rem;
-		justify-content: start;
+		@extend .nav-entry;
 	}
 
 	.centeredEntry {
-		justify-content: center !important;
+		@extend .centered;
 	}
 }
 
 .mat-mdc-nav-list {
-	height: calc(100% - 3.5rem - 25px);
+	@extend .nav-list;
 }
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav-content {
-	padding-top: 3.5rem;
-	@media screen and (min-width: 600px) {
-		padding-top: 4rem;
-	}
-}
-
-.toolbar-spacer {
-	flex: 1 1 auto;
+	@extend .ov-sidenav-content;
 }
 
 .main-container {
-	padding: 0px 2rem;
-	height: 100%;
+	@extend .main-container;
 }
 
 .section-title {
-	padding-bottom: 0px;
+	padding-bottom: 0;
 }
 
 .menu-button {
-	height: 60px !important;
-	text-align: justify;
+	@extend .ov-menu-button;
+
+	&.active-nav-item {
+		@extend .active;
+	}
 }
+
 .menu-hr {
-	margin: 0px !important;
+	margin: 0 !important;
 }
+
 .version {
-	margin-top: auto;
-	padding: 0.5rem;
-	font-size: 0.875rem;
-	color: #757575;
-	text-align: center;
+	@extend .ov-nav-version;
 }
+
 .separator {
-	margin: 0px;
-	border-top: 1px solid #e0e0e0;
+	@extend .ov-nav-separator;
 }

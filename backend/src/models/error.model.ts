@@ -62,6 +62,10 @@ export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
+export const errorWebhookUrlUnreachable = (url: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is unreachable`, 400);
+};
+
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
@@ -150,6 +154,14 @@ export const errorInvalidRecordingSecret = (recordingId: string, secret: string)
 	return new OpenViduMeetError(
 		'Recording Error',
 		`Secret '${secret}' is not recognized for recording '${recordingId}'`,
+		400
+	);
+};
+
+export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Recording Error',
+		`None of the provided recording IDs belong to room '${roomId}'`,
 		400
 	);
 };

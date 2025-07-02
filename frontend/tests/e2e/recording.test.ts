@@ -115,7 +115,7 @@ describe('Testing Recording Functionality', () => {
 
 		if (downloadedFile) {
 			const stats = fs.statSync(`${downloadDir}/${downloadedFile}`);
-			expect(stats.size).to.be.greaterThan(0, 'El archivo descargado está vacío');
+			expect(stats.size).to.be.greaterThan(0, 'The downloaded file is empty');
 			await utils.checkRecordingFileIsPlayable(`${downloadDir}/${downloadedFile}`);
 		} else {
 			throw new Error('Downloaded file not found');

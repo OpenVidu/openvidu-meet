@@ -1,0 +1,85 @@
+<nav class="wizard-navigation" [class.loading]="config.isLoading" [class.compact]="config.isCompact" id="wizard-navigation">
+	<div class="nav-buttons">
+		<!-- Cancel Button -->
+		@if (config.showCancel) {
+			<button
+				mat-stroked-button
+				class="cancel-btn"
+				id="wizard-cancel-btn"
+				(click)="onCancel()"
+				[attr.aria-label]="'Cancel wizard and return to previous page'"
+			>
+				<mat-icon class="leading-icon">close</mat-icon>
+				{{ config.cancelLabel || 'Cancel' }}
+			</button>
+		}
+
+		<div class="spacer"></div>
+
+		<!-- Navigation Group -->
+		<div class="nav-group">
+			<!-- Previous Button -->
+			@if (config.showPrevious) {
+				<button
+					mat-stroked-button
+					class="prev-btn"
+					id="wizard-previous-btn"
+					[disabled]="config.isPreviousDisabled"
+					(click)="onPrevious()"
+					[attr.aria-label]="'Go to previous step'"
+				>
+					<mat-icon class="leading-icon">chevron_left</mat-icon>
+					{{ config.previousLabel || 'Previous' }}
+				</button>
+			}
+
+			@if (config.showQuickCreate) {
+				<!-- Skip Wizard Button -->
+				<button
+					mat-raised-button
+					class="skip-btn"
+					id="wizard-quick-create-btn"
+					(click)="skipAndFinish()"
+					type="button"
+				>
+					<mat-icon>bolt</mat-icon>
+					Create with defaults
+				</button>
+			}
+
+			<!-- Next/Continue Button -->
+			@if (config.showNext) {
+				<button
+					mat-raised-button
+					class="next-btn"
+					id="wizard-next-btn"
+					[disabled]="config.isNextDisabled"
+					(click)="onNext()"
+					[attr.aria-label]="'Continue to next step'"
+				>
+					{{ config.nextLabel || 'Next' }}
+					<mat-icon class="trailing-icon">
+						{{ config.isLoading ? 'hourglass_empty' : 'chevron_right' }}
+					</mat-icon>
+				</button>
+			}
+
+			<!-- Finish/Save Button -->
+			@if (config.showFinish) {
+				<button
+					mat-raised-button
+					class="finish-btn"
+					id="wizard-finish-btn"
+					[disabled]="config.isFinishDisabled"
+					(click)="onFinish()"
+					[attr.aria-label]="'Complete wizard and save changes'"
+				>
+					<mat-icon class="leading-icon">
+						{{ config.isLoading ? 'hourglass_empty' : 'check' }}
+					</mat-icon>
+					{{ config.finishLabel || 'Finish' }}
+				</button>
+			}
+		</div>
+	</div>
+</nav>

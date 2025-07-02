@@ -1,4 +1,6 @@
-description: Mixed results for bulk deletion operation
+description: >
+    **Mixed results**. Some recordings were deleted successfully while others
+    could not be deleted (e.g., due to being in progress or not found).
 content:
     application/json:
         schema:

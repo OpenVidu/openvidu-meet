@@ -22,6 +22,8 @@ paths:
         $ref: './paths/internal/users.yaml#/~1users~1change-password'
     /preferences/webhooks:
         $ref: './paths/internal/global-preferences.yaml#/~1preferences~1webhooks'
+    /preferences/webhooks/test:
+        $ref: './paths/internal/global-preferences.yaml#/~1preferences~1webhooks~1test'
     /preferences/security:
         $ref: './paths/internal/global-preferences.yaml#/~1preferences~1security'
     /preferences/appearance:

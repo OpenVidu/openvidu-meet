@@ -1,105 +1,219 @@
-.grid-item {
-	padding: 0px;
-	border: 1px solid #e9ecef;
+// @import '../../../../../../../src/assets/styles/design-tokens';
 
-	.empty-rooms-message {
-		padding: 10px;
-		text-align: center;
-		color: #757575;
-	}
+// Use page loading utility
+// .loading-container {
+// 	@extend .ov-page-loading;
 
-	.item-subheader {
-		background-color: #f8f9fa;
-		padding: 5px 15px;
-		margin: 0;
-		display: flex;
-		justify-content: space-between;
-		border: 1px solid #e9ecef;
+// 	.loading-content .loading-header .loading-title .loading-icon {
+// 		color: var(--ov-meet-icon-rooms);
+// 	}
+// }
 
-		.subheader-button {
-			align-content: center;
-			button {
-				border-radius: 4px !important;
-			}
-		}
-	}
+// Use table page actions utility
+// .rooms-actions {
+// 	@extend .ov-table-page-actions;
 
-	.list-item {
-		display: flex;
-		align-items: center;
-		padding: 10px;
-		border-radius: 4px;
-		background-color: #fff;
-		cursor: pointer;
-		transition: box-shadow 0.3s;
+// 	.create-room-btn {
+// 		@include ov-button-base;
 
-		&:hover {
-			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-		}
+// 		mat-icon {
+// 			@include ov-icon(md);
+// 			margin-right: var(--ov-meet-spacing-sm);
+// 		}
+// 	}
+// }
 
-		.list-icon-container {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 60px;
-			height: 60px;
-			border-radius: 4px;
-			background-color: #f5f5f5;
-			margin: 0 10px;
-		}
+// Use search field utility
+// .search-bar {
+// 	.search-field {
+// 		@extend .ov-search-field;
+// 		min-width: 400px;
+// 		max-width: 500px;
+// 	}
+// }
 
-		.item-title {
-			font-size: 1.2em;
-			font-weight: 600;
-			flex-grow: 1;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
+// Use table page container utility
+// .rooms-table-container {
+// 	@extend .ov-table-page-container;
+// }
 
-		.list-icon {
-			font-size: 28px;
-		}
+// Responsive table utilities
+// .table-wrapper {
+// 	&.desktop-view {
+// 		display: block;
 
-		.item-details {
-			display: flex;
-			align-items: center;
+// 		@include ov-tablet-down {
+// 			display: none;
+// 		}
+// 	}
 
-			> div {
-				display: flex;
-				align-items: center;
-				margin-top: 5px;
-				margin-right: 10px;
-				font-size: 0.8rem;
-				color: #757575;
+// 	&.mobile-view {
+// 		display: none;
 
-				.icon {
-					font-size: 20px;
-					text-align: center;
-				}
-			}
-		}
+// 		@include ov-tablet-down {
+// 			display: block;
+// 		}
+// 	}
+// }
 
-		.button-container {
-			position: absolute;
-			top: 25%;
-			right: 15px;
+// // Use data table utility
+// .rooms-table {
+// 	@extend .ov-data-table;
 
-			display: flex;
-			gap: 10px;
+// 	.mat-mdc-header-cell {
+// 		&.room-header {
+// 			@extend .primary-header;
+// 		}
 
-			button {
-				background-color: rgb(189, 189, 189);
-				width: 40px;
-				height: 40px;
-				border-radius: 4px;
-				color: #fff;
-			}
+// 		&.actions-header {
+// 			@extend .actions-header;
+// 		}
+// 	}
 
-			.delete-button {
-				background-color: #e23e3e;
-				color: #fff;
-			}
-		}
-	}
-}
+// 	.mat-mdc-cell {
+// 		&.room-cell {
+// 			@extend .primary-cell;
+// 		}
+
+// 		&.actions-cell {
+// 			@extend .actions-cell;
+// 		}
+// 	}
+// }
+
+// Use mobile card utilities
+// .mobile-rooms-list {
+// 	display: flex;
+// 	flex-direction: column;
+// 	gap: var(--ov-meet-spacing-md);
+
+// 	.room-mobile-card {
+// 		@include ov-card;
+// 		@include ov-theme-transition;
+
+// 		&:hover {
+// 			@include ov-hover-lift(-2px);
+// 		}
+
+// 		.room-card-header {
+// 			display: flex;
+// 			justify-content: space-between;
+// 			align-items: flex-start;
+// 			margin-bottom: var(--ov-meet-spacing-sm);
+
+// 			.room-title {
+// 				@extend .primary-text;
+// 			}
+
+// 			.room-status {
+// 				@extend .ov-status-badge;
+// 			}
+// 		}
+
+// 		.room-card-content {
+// 			display: flex;
+// 			flex-direction: column;
+// 			gap: var(--ov-meet-spacing-xs);
+
+// 			.room-detail {
+// 				display: flex;
+// 				justify-content: space-between;
+// 				font-size: var(--ov-meet-font-size-sm);
+
+// 				.detail-label {
+// 					color: var(--ov-meet-text-secondary);
+// 				}
+
+// 				.detail-value {
+// 					color: var(--ov-meet-text-primary);
+// 				}
+// 			}
+// 		}
+
+// 		.room-card-actions {
+// 			@extend .ov-action-buttons;
+// 			margin-top: var(--ov-meet-spacing-md);
+// 			padding-top: var(--ov-meet-spacing-md);
+// 			border-top: 1px solid var(--ov-meet-border-color-light);
+// 		}
+// 	}
+// }
+
+// // Use info display and status utilities
+// .room-info {
+// 	@extend .ov-info-display;
+// }
+
+// .status-badge {
+// 	@extend .ov-status-badge;
+// }
+
+// .participant-count {
+// 	@extend .ov-date-info;
+// }
+
+// .creation-date {
+// 	@extend .ov-date-info;
+// }
+
+// // Use action buttons utility
+// .action-buttons {
+// 	@extend .ov-action-buttons;
+
+// 	.mat-mdc-icon-button {
+// 		&.primary-action {
+// 			color: var(--ov-meet-color-primary);
+// 		}
+
+// 		&.room-preferences-btn {
+// 			color: var(--ov-meet-icon-settings);
+// 		}
+
+// 		&.copy-link-btn {
+// 			color: var(--ov-meet-text-secondary);
+// 		}
+
+// 		&.view-recordings-btn {
+// 			color: var(--ov-meet-icon-recordings);
+// 		}
+
+// 		&.delete-room-btn {
+// 			color: var(--ov-meet-color-error);
+// 		}
+// 	}
+// }
+
+// // Use empty state utility
+// .no-rooms-state {
+// 	@extend .ov-empty-state;
+
+// 	.empty-icon {
+// 		@include ov-icon(xl);
+// 		color: var(--ov-meet-text-hint);
+// 		margin-bottom: var(--ov-meet-spacing-lg);
+// 		display: block;
+// 	}
+
+// 	.getting-started-actions {
+// 		display: flex;
+// 		flex-direction: column;
+// 		gap: var(--ov-meet-spacing-md);
+// 		align-items: center;
+
+// 		button {
+// 			@include ov-button-base;
+
+// 			mat-icon {
+// 				@include ov-icon(md);
+// 				margin-right: var(--ov-meet-spacing-sm);
+// 			}
+// 		}
+// 	}
+// }
+
+// // Use focus utilities
+// .mat-mdc-checkbox,
+// .mat-mdc-icon-button,
+// .mat-mdc-button {
+// 	@extend .ov-focus-visible;
+// }

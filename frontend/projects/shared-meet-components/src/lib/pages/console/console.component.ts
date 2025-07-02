@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
-import { ConsoleNavLink } from '../../models/sidenav.model';
-import { AuthService } from '../../services';
+import { ConsoleNavComponent } from '@lib/components';
+import { ConsoleNavLink } from '@lib/models';
+import { AuthService } from '@lib/services';
 
 @Component({
 	selector: 'app-console',
@@ -13,11 +13,16 @@ import { AuthService } from '../../services';
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[] = [
 		{ label: 'Overview', route: 'overview', icon: 'dashboard' },
-		{ label: 'Rooms', route: 'rooms', icon: 'video_settings' },
-		{ label: 'Recordings', route: 'recordings', icon: 'radio_button_checked' }
-		// { label: 'Access & Permissions', route: 'access-permissions', icon: 'lock' },
-		// { label: 'Appearance', route: 'appearance', icon: 'palette' },
-		// { label: 'Security', route: 'security-preferences', icon: 'security' },
+		{ label: 'Rooms', route: 'rooms', icon: 'video_chat', iconClass: 'ov-room-icon' },
+		{ label: 'Recordings', route: 'recordings', icon: 'video_library', iconClass: 'ov-recording-icon' },
+		{
+			label: 'Embedded',
+			route: 'embedded',
+			icon: 'code_blocks',
+			iconClass: 'material-symbols-outlined ov-developer-icon'
+		},
+		{ label: 'Users & Permissions', route: 'users-permissions', icon: 'passkey', iconClass: 'ov-settings-icon material-symbols-outlined' }
+
 		// { label: 'About', route: 'about', icon: 'info' }
 	];
 

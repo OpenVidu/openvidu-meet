@@ -1,21 +1,18 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { WebComponentManagerService, ContextService } from '../services';
-import { ApplicationMode } from 'projects/shared-meet-components/src/public-api';
+import { ApplicationMode } from '@lib/models';
+import { AppDataService, WebComponentManagerService } from '@lib/services';
 
-export const applicationModeGuard: CanActivateFn = (
-	_route: ActivatedRouteSnapshot,
-	_state: RouterStateSnapshot
-) => {
-	const contextService = inject(ContextService);
+export const applicationModeGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, _state: RouterStateSnapshot) => {
+	const appDataService = inject(AppDataService);
 	const commandsManagerService = inject(WebComponentManagerService);
 
 	const isRequestedFromIframe = window.self !== window.top;
 
 	const applicationMode = isRequestedFromIframe ? ApplicationMode.EMBEDDED : ApplicationMode.STANDALONE;
-	contextService.setApplicationMode(applicationMode);
+	appDataService.setApplicationMode(applicationMode);
 
-	if (contextService.isEmbeddedMode()) {
+	if (appDataService.isEmbeddedMode()) {
 		// Start listening for commands from the iframe
 		commandsManagerService.startCommandsListener();
 	}

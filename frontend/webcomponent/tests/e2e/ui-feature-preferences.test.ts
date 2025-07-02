@@ -118,12 +118,6 @@ test.describe('UI Feature Preferences Tests', () => {
 	// ==========================================
 
 	test.describe('Recording Feature', () => {
-		test.afterEach(async ({ page }) => {
-			try {
-				await leaveRoom(page);
-			} catch (error) {}
-		});
-
 		test('should show recording button for moderators', async ({ page }) => {
 			roomId = await createTestRoom(testRoomPrefix, {
 				chatPreferences: { enabled: true },
@@ -152,6 +146,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await interactWithElementInIframe(page, '#activities-panel-btn', { action: 'click' });
 			await page.waitForTimeout(500);
 			await waitForElementInIframe(page, 'ov-recording-activity', { state: 'visible' });
+			await leaveRoom(page, 'moderator');
 		});
 
 		test('should not show recording button for publisher', async ({ page }) => {
@@ -172,6 +167,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			// Check that recording button is not visible for publisher
 			const recordingButton = page.frameLocator('openvidu-meet >>> iframe').locator('#recording-btn');
 			await expect(recordingButton).toBeHidden();
+			await leaveRoom(page);
 		});
 
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
@@ -197,6 +193,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForElementInIframe(page, '#activities-panel-btn', {
 				state: 'hidden'
 			});
+			await leaveRoom(page, 'moderator');
 		});
 	});
 

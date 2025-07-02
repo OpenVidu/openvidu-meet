@@ -2,13 +2,12 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, Router } from '@angular/router';
-import { ShareRecordingDialogComponent } from '@lib/components';
-import { HttpService } from '@lib/services';
-import { ActionService, MeetRecordingInfo, MeetRecordingStatus } from 'shared-meet-components';
+import { ActivatedRoute } from '@angular/router';
+import { RecordingManagerService } from '@lib/services';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
+import { ActionService } from 'openvidu-components-angular';
 
 @Component({
 	selector: 'app-view-recording',
@@ -24,11 +23,9 @@ export class ViewRecordingComponent implements OnInit {
 	videoError = false;
 
 	constructor(
-		protected httpService: HttpService,
+		protected recordingService: RecordingManagerService,
 		protected actionService: ActionService,
-		protected router: Router,
-		protected route: ActivatedRoute,
-		protected dialog: MatDialog
+		protected route: ActivatedRoute
 	) {}
 
 	async ngOnInit() {
@@ -36,10 +33,10 @@ export class ViewRecordingComponent implements OnInit {
 		const secret = this.route.snapshot.queryParams['secret'];
 
 		try {
-			this.recording = await this.httpService.getRecording(recordingId!, secret!);
+			this.recording = await this.recordingService.getRecording(recordingId!, secret);
 
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.httpService.getRecordingMediaUrl(recordingId!, secret!);
+				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId!, secret);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);
@@ -52,28 +49,11 @@ export class ViewRecordingComponent implements OnInit {
 			return;
 		}
 
-		const link = document.createElement('a');
-		link.href = this.recordingUrl;
-		link.download = this.recording.filename || 'openvidu-recording.mp4';
-		link.dispatchEvent(
-			new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			})
-		);
-
-		// For Firefox it is necessary to delay revoking the ObjectURL
-		setTimeout(() => link.remove(), 100);
+		this.recordingService.downloadRecording(this.recording);
 	}
 
 	openShareDialog() {
-		this.dialog.open(ShareRecordingDialogComponent, {
-			width: '400px',
-			data: {
-				recordingId: this.recording!.recordingId,
-				recordingUrl: window.location.href
-			}
-		});
+		const url = window.location.href;
+		this.recordingService.openShareRecordingDialog(this.recording!.recordingId, url);
 	}
 }

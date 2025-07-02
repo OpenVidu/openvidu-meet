@@ -1,0 +1,209 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+.wizard-navigation {
+	width: 100%;
+	padding: var(--ov-meet-spacing-md) 0 0 0;
+
+	.nav-buttons {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		@include ov-container;
+
+		.spacer {
+			flex: 1;
+		}
+
+		.cancel-btn {
+			margin-right: auto;
+		}
+
+		.nav-group {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-md);
+		}
+
+		button {
+			@include ov-button-base;
+			border-radius: var(--ov-meet-radius-sm);
+			min-width: 120px;
+
+			&:first-child {
+				margin-left: 0;
+			}
+
+			&:last-child {
+				margin-right: 0;
+			}
+
+			&.cancel-btn {
+				color: var(--ov-meet-text-secondary);
+				border-color: var(--ov-meet-border-color-strong);
+
+				&:hover {
+					background-color: var(--ov-meet-surface-hover);
+				}
+			}
+
+			&.skip-btn {
+				background-color: var(--ov-meet-color-success);
+				color: var(--ov-meet-text-on-primary);
+				box-shadow: var(--ov-meet-shadow-sm);
+			}
+
+			&.prev-btn {
+				color: var(--ov-meet-color-primary);
+				border-color: var(--ov-meet-color-primary);
+
+				&:hover {
+					background-color: var(--ov-meet-surface-hover);
+				}
+
+				&:disabled {
+					color: var(--ov-meet-text-disabled);
+					border-color: var(--ov-meet-border-color);
+				}
+			}
+
+			&.next-btn,
+			&.continue-btn {
+				background-color: var(--ov-meet-color-primary);
+				color: var(--ov-meet-text-on-primary);
+				box-shadow: var(--ov-meet-shadow-sm);
+
+				&:hover {
+					background-color: var(--ov-meet-color-primary-dark);
+					box-shadow: var(--ov-meet-shadow-md);
+				}
+
+				&:disabled {
+					background-color: var(--ov-meet-border-color);
+					color: var(--ov-meet-text-disabled);
+					box-shadow: none;
+				}
+			}
+
+			&.finish-btn,
+			&.save-btn {
+				background-color: var(--ov-meet-color-success);
+				color: var(--ov-meet-text-on-primary);
+				box-shadow: var(--ov-meet-shadow-sm);
+
+				&:hover {
+					box-shadow: var(--ov-meet-shadow-md);
+				}
+
+				&:disabled {
+					background-color: var(--ov-meet-border-color);
+					color: var(--ov-meet-text-disabled);
+					box-shadow: none;
+				}
+			}
+
+			mat-icon {
+				@include ov-icon(sm);
+				margin: 0 var(--ov-meet-spacing-xs);
+
+				&.leading-icon {
+					margin-right: var(--ov-meet-spacing-sm);
+					margin-left: 0;
+				}
+
+				&.trailing-icon {
+					margin-left: var(--ov-meet-spacing-sm);
+					margin-right: 0;
+				}
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-md) 0;
+
+		.nav-buttons {
+			padding: 0 var(--ov-meet-spacing-sm);
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-md);
+
+			.cancel-btn {
+				margin-right: 0;
+				order: 3;
+				width: 100%;
+			}
+
+			.nav-group {
+				width: 100%;
+				justify-content: space-between;
+
+				button {
+					flex: 1;
+					min-width: auto;
+					max-width: 150px;
+				}
+			}
+		}
+	}
+
+	@include ov-tablet-down {
+		.nav-buttons {
+			.nav-group {
+				gap: var(--ov-meet-spacing-sm);
+
+				button {
+					min-width: 100px;
+				}
+			}
+		}
+	}
+
+	button {
+		&:focus-visible {
+			outline: 2px solid var(--ov-meet-color-primary);
+			outline-offset: 2px;
+		}
+
+		&[aria-disabled='true'] {
+			pointer-events: none;
+			opacity: 0.6;
+		}
+	}
+
+	&.loading {
+		button:not(.cancel-btn) {
+			pointer-events: none;
+			opacity: 0.7;
+
+			mat-icon {
+				animation: spin 1s linear infinite;
+			}
+		}
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	&.compact {
+		padding: var(--ov-meet-spacing-sm) 0;
+		border-top: none;
+
+		.nav-buttons {
+			padding: 0 var(--ov-meet-spacing-sm);
+
+			button {
+				min-width: 80px;
+				padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+
+				mat-icon {
+					@include ov-icon(xs);
+				}
+			}
+		}
+	}
+}

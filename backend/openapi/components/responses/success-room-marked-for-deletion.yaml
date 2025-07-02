@@ -1,4 +1,6 @@
-description: All specified rooms have been marked for deletion.
+description: >
+    The room was marked for deletion (due to active participants)
+    and will be removed once all participants leave.
 content:
     application/json:
         schema:
@@ -7,4 +9,4 @@ content:
                 message:
                     type: string
         example:
-            message: Rooms room-123 marked for deletion
+            message: Room 'room-123' marked for deletion

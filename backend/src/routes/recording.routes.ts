@@ -16,7 +16,7 @@ import {
 	withValidGetRecordingMediaRequest,
 	withValidGetRecordingRequest,
 	withValidGetRecordingUrlRequest,
-	withValidRecordingBulkDeleteRequest,
+	withValidMultipleRecordingIds,
 	withValidRecordingFiltersRequest,
 	withValidRecordingId,
 	withValidStartRecordingRequest
@@ -36,9 +36,17 @@ recordingRouter.get(
 );
 recordingRouter.delete(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
-	withValidRecordingBulkDeleteRequest,
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withValidMultipleRecordingIds,
+	withCanDeleteRecordingsPermission,
 	recordingCtrl.bulkDeleteRecordings
+);
+recordingRouter.get(
+	'/download',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withValidMultipleRecordingIds,
+	withCanRetrieveRecordingsPermission,
+	recordingCtrl.downloadRecordingsZip
 );
 recordingRouter.get(
 	'/:recordingId',

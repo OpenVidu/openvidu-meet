@@ -71,19 +71,13 @@
             - $ref: '../components/parameters/force-deletion.yaml'
         responses:
             '200':
-                description: >
-                    **Mixed results**. Some rooms were deleted immediately while others were
-                    marked for deletion (due to active participants).
                 $ref: '../components/responses/success-bulk-delete-rooms.yaml'
             '202':
-                description: >
-                    All specified rooms were marked for deletion (due to active participants)
-                    and will be removed once all participants leave.
-                $ref: '../components/responses/success-room-marked-for-deletion.yaml'
+                $ref: '../components/responses/success-rooms-marked-for-deletion.yaml'
             '204':
                 description: >
                     All specified rooms were successfully deleted immediately.
-                    No content is returned in the response body.
+                    No content is returned.
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -138,14 +132,12 @@
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/force-deletion.yaml'
         responses:
             '202':
-                description: >
-                    The room was marked for deletion (due to active participants)
-                    and will be removed once all participants leave.
                 $ref: '../components/responses/success-room-marked-for-deletion.yaml'
             '204':
-                description: Successfully deleted the OpenVidu Meet room
+                description: Successfully deleted the OpenVidu Meet room. No content is returned.
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

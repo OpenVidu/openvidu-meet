@@ -1,0 +1,96 @@
+<div class="basic-info-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">Basic Information</h3>
+			<p class="step-description">
+				Configure your room's basic settings including name prefix and automatic deletion date
+			</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="step-content">
+		<form [formGroup]="basicInfoForm" class="basic-info-form">
+			<!-- Room Prefix Field -->
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Room Name Prefix</mat-label>
+				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" maxlength="50" />
+				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
+				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
+			</mat-form-field>
+
+			<!-- Deletion Date Field -->
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Auto-deletion Date</mat-label>
+				<input
+					matInput
+					[matDatepicker]="deletionPicker"
+					formControlName="autoDeletionDate"
+					placeholder="Select deletion date"
+					[min]="minDate"
+					readonly
+					(click)="deletionPicker.open()"
+				/>
+				<!-- Show clear button if date is selected, otherwise show date picker toggle -->
+				@if (hasDateSelected) {
+					<button
+						matSuffix
+						mat-icon-button
+						type="button"
+						(click)="clearDeletionDate()"
+						matTooltip="Clear date selection"
+						class="clear-date-button"
+					>
+						<mat-icon class="ov-settings-icon">clear</mat-icon>
+					</button>
+				} @else {
+					<mat-datepicker-toggle matSuffix [for]="deletionPicker">
+						<mat-icon matDatepickerToggleIcon class="ov-settings-icon">schedule</mat-icon>
+					</mat-datepicker-toggle>
+				}
+
+				<mat-datepicker #deletionPicker></mat-datepicker>
+				<mat-hint>Optional. Room will be automatically deleted on this date and time.</mat-hint>
+			</mat-form-field>
+
+			<!-- Time Selection (only shown when date is selected) -->
+			@if (basicInfoForm.get('autoDeletionDate')?.value) {
+				<div class="time-selection-container">
+					<div class="time-selection-row">
+						<mat-form-field appearance="outline" class="time-field">
+							<mat-label>Hour</mat-label>
+							<mat-select formControlName="autoDeletionHour">
+								@for (hour of hours; track hour.value) {
+									<mat-option [value]="hour.value">
+										{{ hour.display }}
+									</mat-option>
+								}
+							</mat-select>
+							<mat-icon matSuffix class="ov-settings-icon">schedule</mat-icon>
+						</mat-form-field>
+
+						<span class="time-separator">:</span>
+
+						<mat-form-field appearance="outline" class="time-field">
+							<mat-label>Minute</mat-label>
+							<mat-select formControlName="autoDeletionMinute">
+								@for (minute of minutes; track minute.value) {
+									<mat-option [value]="minute.value">
+										{{ minute.display }}
+									</mat-option>
+								}
+							</mat-select>
+							<mat-icon matSuffix class="ov-settings-icon">access_time</mat-icon>
+						</mat-form-field>
+					</div>
+					<div class="time-hint">
+						<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
+						<span>Room will be deleted at {{ getFormattedDateTime() }}</span>
+					</div>
+				</div>
+			}
+		</form>
+	</main>
+</div>

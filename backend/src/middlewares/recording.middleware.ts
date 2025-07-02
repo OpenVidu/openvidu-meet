@@ -100,7 +100,7 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
 		return next();
 	}
 
-	const sameRoom = payload.video?.room === roomId;
+	const sameRoom = roomId ? payload.video?.room === roomId : true;
 	const metadata = JSON.parse(payload.metadata || '{}');
 	const permissions = metadata.recordingPermissions as RecordingPermissions | undefined;
 	const canDeleteRecordings = permissions?.canDeleteRecordings;

@@ -1,9 +1,12 @@
+import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorRecordingNotFound,
+	errorRecordingsNotFromSameRoom,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
@@ -67,13 +70,22 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 	const { recordingIds } = req.query;
 
+	// If recording token is present, delete only recordings for the room associated with the token
+	const payload = req.session?.tokenClaims;
+	let roomId: string | undefined;
+
+	if (payload && payload.video) {
+		roomId = payload.video.room;
+	}
+
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		// TODO: Check role to determine if the request is from an admin or a participant
 		const recordingIdsArray = (recordingIds as string).split(',');
-		const { deleted, notDeleted } =
-			await recordingService.bulkDeleteRecordingsAndAssociatedFiles(recordingIdsArray);
+		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(
+			recordingIdsArray,
+			roomId
+		);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && notDeleted.length === 0) {
@@ -245,4 +257,74 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	} catch (error) {
 		handleError(res, error, `getting URL for recording '${recordingId}'`);
 	}
+};
+
+export const downloadRecordingsZip = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
+
+	const recordingIds = req.query.recordingIds as string;
+	const recordingIdsArray = (recordingIds as string).split(',');
+
+	// If recording token is present, download only recordings for the room associated with the token
+	const payload = req.session?.tokenClaims;
+	let roomId: string | undefined;
+
+	if (payload && payload.video) {
+		roomId = payload.video.room;
+	}
+
+	// Filter recording IDs if a room ID is provided
+	let validRecordingIds = recordingIdsArray;
+
+	if (roomId) {
+		validRecordingIds = recordingIdsArray.filter((recordingId) => {
+			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+			const isValid = recRoomId === roomId;
+
+			if (!isValid) {
+				logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
+			}
+
+			return isValid;
+		});
+	}
+
+	if (validRecordingIds.length === 0) {
+		logger.warn(`None of the provided recording IDs belong to room '${roomId}'`);
+		const error = errorRecordingsNotFromSameRoom(roomId!);
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	logger.info(`Creating ZIP for recordings: ${recordingIds}`);
+
+	res.setHeader('Content-Type', 'application/zip');
+	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
+
+	const archive = archiver('zip', { zlib: { level: 0 } });
+
+	// Handle errors in the archive
+	archive.on('error', (err) => {
+		logger.error(`ZIP archive error: ${err.message}`);
+		res.status(500).end();
+	});
+
+	// Pipe the archive to the response
+	archive.pipe(res);
+
+	for (const recordingId of validRecordingIds) {
+		try {
+			logger.debug(`Adding recording '${recordingId}' to ZIP`);
+			const result = await recordingService.getRecordingAsStream(recordingId);
+			const recordingInfo = await recordingService.getRecording(recordingId, 'filename');
+
+			const filename = recordingInfo.filename || `${recordingId}.mp4`;
+			archive.append(result.fileStream, { name: filename });
+		} catch (error) {
+			logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
+		}
+	}
+
+	// Finalize the archive
+	archive.finalize();
 };

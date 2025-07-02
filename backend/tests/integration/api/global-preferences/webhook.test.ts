@@ -1,11 +1,14 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { Request } from 'express';
 import { MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getWebbhookPreferences,
 	startTestServer,
+	testWebhookUrl,
 	updateWebbhookPreferences
 } from '../../../helpers/request-helpers.js';
+import { startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
 
 const restoreDefaultWebhookPreferences = async () => {
 	const defaultPreferences = {
@@ -114,6 +117,35 @@ describe('Webhook Preferences API Tests', () => {
 				enabled: MEET_WEBHOOK_ENABLED === 'true',
 				url: MEET_WEBHOOK_URL
 			});
+		});
+	});
+
+	describe('Test webhook URL', () => {
+		beforeAll(async () => {
+			// Start a webhook server to test against
+			await startWebhookServer(5080, (req: Request) => {
+				console.log('Webhook received:', req.body);
+			});
+		});
+
+		afterAll(async () => {
+			await stopWebhookServer();
+		});
+
+		it('should return 200 if the webhook URL is reachable', async () => {
+			const response = await testWebhookUrl('http://localhost:5080/webhook');
+			expect(response.status).toBe(200);
+		});
+
+		it('should return 400 if the webhook URL is not reachable', async () => {
+			const response = await testWebhookUrl('http://localhost:5999/doesnotexist');
+			expect(response.status).toBe(400);
+			expect(response.body.error).toBeDefined();
+		});
+
+		it('should return 422 if the webhook URL is invalid', async () => {
+			const response = await testWebhookUrl('not-a-valid-url');
+			expectValidationError(response, 'url', 'URL must start with http:// or https://');
 		});
 	});
 });

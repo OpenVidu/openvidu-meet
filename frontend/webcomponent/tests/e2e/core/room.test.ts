@@ -124,7 +124,7 @@ test.describe('Room Functionality Tests', () => {
 
 			// Cleanup
 			await leaveRoom(page);
-			await leaveRoom(moderatorPage);
+			await leaveRoom(moderatorPage, 'moderator');
 			await context.close();
 		});
 	});
@@ -204,7 +204,7 @@ test.describe('Room Functionality Tests', () => {
 			const activitiesPanel = await waitForElementInIframe(page, 'ov-activities-panel');
 			await expect(activitiesPanel).toBeVisible();
 
-			await leaveRoom(page);
+			await leaveRoom(page, 'moderator');
 		});
 
 		test('should show participants panel', async ({ page }) => {

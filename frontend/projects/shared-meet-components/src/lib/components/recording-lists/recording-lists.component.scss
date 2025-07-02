@@ -1,0 +1,159 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+// Use utility classes for recordings toolbar
+.recordings-toolbar {
+	@extend .ov-data-toolbar;
+
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
+
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// Use utility classes for search field, selection info, and batch actions
+.search-field {
+	@extend .ov-search-field;
+}
+
+.selection-info {
+	@extend .ov-selection-info;
+}
+
+.batch-actions {
+	@extend .ov-batch-actions;
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+}
+
+// Filters Menu Styling
+.filters-menu {
+	@extend .ov-filters-menu;
+}
+
+.loading-container {
+	@extend .ov-loading-container;
+}
+
+// Enhanced Table Container
+.table-container {
+	@extend .ov-table-container;
+	margin-top: 0; // Remove top margin since toolbar is attached
+}
+
+// Toolbar + Table Integration
+.recordings-toolbar + .table-container {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-top: none;
+	box-shadow: var(--ov-meet-shadow-sm);
+}
+
+// Ensure proper spacing when no toolbar
+:host:not(:has(.recordings-toolbar)) .table-container {
+	margin-top: var(--ov-meet-spacing-md);
+}
+
+.recordings-table {
+	@extend .ov-data-table;
+
+	// Header customizations
+	.mat-mdc-header-cell {
+		&.room-header {
+			@extend .primary-header;
+		}
+
+		&.actions-header {
+			@extend .actions-header;
+		}
+	}
+
+	// Cell customizations
+	.mat-mdc-cell {
+		&.room-cell {
+			@extend .primary-cell;
+		}
+
+		&.actions-cell {
+			@extend .actions-cell;
+		}
+	}
+}
+
+// Room information
+.room-info {
+	@extend .ov-info-display;
+
+	.room-id {
+		@extend .primary-text;
+	}
+
+	.filename {
+		@extend .secondary-text, .monospace-text;
+	}
+}
+
+// Status badge
+.status-badge {
+	@extend .ov-status-badge;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	font-size: var(--ov-meet-font-size-xs);
+	width: fit-content;
+
+	.status-icon {
+		@include ov-icon(sm);
+	}
+}
+
+// Date information
+.date-info {
+	@extend .ov-date-info;
+}
+
+.no-data {
+	@extend .ov-no-data;
+}
+
+// Action buttons
+.action-buttons {
+	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+
+	.mat-mdc-icon-button {
+		&:hover {
+			background-color: transparent;
+		}
+	}
+}
+
+// Menu item styles
+.delete-action {
+	@extend .ov-delete-action;
+}
+
+// Empty State Styling
+.no-recordings-state {
+	@extend .ov-empty-state;
+
+	.getting-started-actions {
+		@extend .action-buttons;
+
+		.refresh-recordings-btn {
+			@extend .refresh-btn;
+		}
+	}
+}
+
+// Apply focus states for accessibility
+.mat-mdc-checkbox,
+.mat-mdc-icon-button,
+.mat-mdc-button {
+	@extend .ov-focus-visible;
+}

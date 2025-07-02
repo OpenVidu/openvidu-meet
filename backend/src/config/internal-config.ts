@@ -2,9 +2,8 @@ import { StringValue } from 'ms';
 
 const INTERNAL_CONFIG = {
 	// Base paths for the API
-	API_BASE_PATH: '/meet/api',
-	INTERNAL_API_BASE_PATH_V1: '/meet/internal-api/v1',
-	API_BASE_PATH_V1: '/meet/api/v1',
+	API_BASE_PATH_V1: '/api/v1',
+	INTERNAL_API_BASE_PATH_V1: '/internal-api/v1',
 
 	// Cookie names
 	ACCESS_TOKEN_COOKIE_NAME: 'OvMeetAccessToken',
@@ -36,9 +35,7 @@ const INTERNAL_CONFIG = {
 	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
 	// Additional intervals
 	MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '1h' as StringValue, // Minimum time for room auto-deletion date
-	// !FIXME (LK BUG): When this is defined, the room will be closed although there are participants
 	MEETING_EMPTY_TIMEOUT: '' as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
-	// !FIXME (LK BUG): When this is defined, the room will be closed although there are participants
 	MEETING_DEPARTURE_TIMEOUT: '' as StringValue // Seconds to keep the meeting (LK room) open after the last participant leaves
 };
 

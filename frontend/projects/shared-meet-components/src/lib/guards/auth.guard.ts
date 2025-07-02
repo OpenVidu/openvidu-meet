@@ -1,23 +1,28 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
+import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
+import { ErrorReason } from '@lib/models';
+import {
+	AuthService,
+	GlobalPreferencesService,
+	NavigationService,
+	ParticipantTokenService,
+	RecordingManagerService,
+	RoomService
+} from '@lib/services';
 import { AuthMode, ParticipantRole } from '@lib/typings/ce';
-import { AuthService, ContextService, HttpService, NavigationService, SessionStorageService } from '../services';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 
 	// Check if user is authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (!isAuthenticated) {
 		// Redirect to the login page
-		return router.createUrlTree(['login'], {
-			queryParams: { redirectTo: state.url }
-		});
+		return navigationService.redirectToLoginPage(state.url);
 	}
 
 	// Allow access to the requested page
@@ -29,13 +34,13 @@ export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 	_state: RouterStateSnapshot
 ) => {
 	const authService = inject(AuthService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 
 	// Check if user is not authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (isAuthenticated) {
-		// Redirect to the console page
-		return router.createUrlTree(['console']);
+		// Redirect to home page
+		return navigationService.createRedirectionTo('');
 	}
 
 	// Allow access to the requested page
@@ -48,36 +53,35 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 ) => {
 	const navigationService = inject(NavigationService);
 	const authService = inject(AuthService);
-	const contextService = inject(ContextService);
-	const sessionStorageService = inject(SessionStorageService);
-	const httpService = inject(HttpService);
+	const preferencesService = inject(GlobalPreferencesService);
+	const roomService = inject(RoomService);
+	const participantService = inject(ParticipantTokenService);
 
 	// Get the role that the participant will have in the room based on the room ID and secret
 	let participantRole: ParticipantRole;
 
 	try {
-		const roomId = contextService.getRoomId();
-		const secret = contextService.getSecret();
-		const storageSecret = sessionStorageService.getModeratorSecret(roomId);
+		const roomId = roomService.getRoomId();
+		const secret = roomService.getRoomSecret();
 
-		const roomRoleAndPermissions = await httpService.getRoomRoleAndPermissions(roomId, storageSecret || secret);
+		const roomRoleAndPermissions = await roomService.getRoomRoleAndPermissions(roomId, secret);
 		participantRole = roomRoleAndPermissions.role;
-		contextService.setParticipantRole(participantRole);
+		participantService.setParticipantRole(participantRole);
 	} catch (error: any) {
 		console.error('Error getting participant role:', error);
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
 			case 404:
 				// Room not found
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_ROOM);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
 			default:
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
 
-	const authMode = await contextService.getAuthModeToAccessRoom();
+	const authMode = await preferencesService.getAuthModeToAccessRoom();
 
 	// If the user is a moderator and the room requires authentication for moderators only,
 	// or if the room requires authentication for all users,
@@ -91,7 +95,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		const isAuthenticated = await authService.isUserAuthenticated();
 		if (!isAuthenticated) {
 			// Redirect to the login page with query param to redirect back to the room
-			return navigationService.createRedirectionToLoginPage(state.url);
+			return navigationService.redirectToLoginPage(state.url);
 		}
 	}
 
@@ -103,7 +107,7 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	const httpService = inject(HttpService);
+	const recordingService = inject(RecordingManagerService);
 	const navigationService = inject(NavigationService);
 
 	const recordingId = route.params['recording-id'];
@@ -111,29 +115,29 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
-		return navigationService.createRedirectionToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
 	}
 
 	try {
 		// Attempt to access the recording to check if the secret is valid
-		await httpService.getRecording(recordingId, secret);
+		await recordingService.getRecording(recordingId, secret);
 		return true;
 	} catch (error: any) {
 		console.error('Error checking recording access:', error);
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
 			case 401:
 				// Unauthorized access
 				// Redirect to the login page with query param to redirect back to the recording
-				return navigationService.createRedirectionToLoginPage(state.url);
+				return navigationService.redirectToLoginPage(state.url);
 			case 404:
 				// Recording not found
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INVALID_RECORDING);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING);
 			default:
 				// Internal error
-				return navigationService.createRedirectionToErrorPage(ErrorReason.INTERNAL_ERROR);
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}
 };

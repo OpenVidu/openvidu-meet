@@ -1,39 +1,38 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatRippleModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ErrorReason } from '@lib/models/navigation.model';
+import { ErrorReason } from '@lib/models';
 import {
 	ApplicationFeatures,
-	FeatureConfigurationService
-} from '@lib/services/feature-configuration/feature-configuration.service';
-import { NavigationService } from '@lib/services/navigation/navigation.service';
-import { ParticipantTokenService } from '@lib/services/participant-token/participant-token.service';
-import { RecordingManagerService } from '@lib/services/recording-manager/recording-manager.service';
-import { OpenViduMeetPermissions, ParticipantRole } from '@lib/typings/ce';
+	AuthService,
+	FeatureConfigurationService,
+	NavigationService,
+	ParticipantTokenService,
+	RecordingManagerService,
+	RoomService,
+	SessionStorageService,
+	WebComponentManagerService
+} from '@lib/services';
+import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '@lib/typings/ce';
 import {
 	ApiDirectiveModule,
 	OpenViduComponentsUiModule,
+	OpenViduService,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from 'openvidu-components-angular';
-import { Observable } from 'rxjs';
-import { WebComponentEvent } from 'webcomponent/src/models/event.model';
-import { OutboundEventMessage } from 'webcomponent/src/models/message.type';
-import {
-	AuthService,
-	ContextService,
-	RoomService,
-	SessionStorageService,
-	WebComponentManagerService
-} from '../../services';
 
 @Component({
 	selector: 'app-video-room',
@@ -49,7 +48,12 @@ import {
 		ReactiveFormsModule,
 		MatCardModule,
 		MatButtonModule,
-		AsyncPipe
+		MatIconModule,
+		MatIconButton,
+		MatMenuModule,
+		MatDividerModule,
+		MatTooltipModule,
+		MatRippleModule
 	]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
@@ -63,14 +67,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	participantName = '';
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
-	participantPermissions: OpenViduMeetPermissions = {
-		canRecord: false,
-		canChat: false,
-		canChangeVirtualBackground: false,
-		canPublishScreen: false
-	};
 
-	features$!: Observable<ApplicationFeatures>;
+	features: Signal<ApplicationFeatures>;
 
 	constructor(
 		protected route: ActivatedRoute,
@@ -78,20 +76,19 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected participantTokenService: ParticipantTokenService,
 		protected recManagerService: RecordingManagerService,
 		protected authService: AuthService,
-		protected ctxService: ContextService,
 		protected roomService: RoomService,
+		protected openviduService: OpenViduService,
+		protected participantService: ParticipantTokenService,
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService
 	) {
-		this.features$ = this.featureConfService.features$;
+		this.features = this.featureConfService.features;
 	}
 
 	async ngOnInit() {
-		this.roomId = this.ctxService.getRoomId();
-		const secret = this.ctxService.getSecret();
-		const storageSecret = this.sessionStorageService.getModeratorSecret(this.roomId);
-		this.roomSecret = storageSecret || secret;
+		this.roomId = this.roomService.getRoomId();
+		this.roomSecret = this.roomService.getRoomSecret();
 
 		await this.initializeParticipantName();
 	}
@@ -109,6 +106,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		this.participantName = value.name.trim();
+		this.participantTokenService.setParticipantName(this.participantName);
 
 		try {
 			await this.generateParticipantToken();
@@ -122,25 +120,34 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async onTokenRequested() {
 		// Participant token must be set only when requested
-		this.participantToken = this.ctxService.getParticipantToken();
+		this.participantToken = this.participantTokenService.getParticipantToken() || '';
+	}
+
+	async leaveMeeting() {
+		await this.openviduService.disconnectRoom();
+	}
+
+	async endMeeting() {
+		if (this.participantService.isModeratorParticipant()) {
+			const roomId = this.roomService.getRoomId();
+			await this.roomService.endMeeting(roomId);
+		}
 	}
 
 	/**
 	 * Initializes the participant name in the form control.
 	 *
-	 * Retrieves the participant name from the context service first, and if not available,
+	 * Retrieves the participant name from the ParticipantTokenService first, and if not available,
 	 * falls back to the authenticated username. Sets the retrieved name value in the
 	 * participant form's 'name' control if a valid name is found.
 	 *
-	 * @private
-	 * @async
-	 * @returns {Promise<void>} A promise that resolves when the participant name has been initialized
+	 * @returns A promise that resolves when the participant name has been initialized
 	 */
 	private async initializeParticipantName() {
-		// Apply participant name from context if set, otherwise use authenticated username
-		const contextParticipantName = this.ctxService.getParticipantName();
+		// Apply participant name from ParticipantTokenService if set, otherwise use authenticated username
+		const currentParticipantName = this.participantTokenService.getParticipantName();
 		const username = await this.authService.getUsername();
-		const participantName = contextParticipantName || username;
+		const participantName = currentParticipantName || username;
 
 		if (participantName) {
 			this.participantForm.get('name')?.setValue(participantName);
@@ -150,39 +157,40 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	/**
 	 * Generates a participant token for joining a video room.
 	 *
-	 * @throws {Error} When participant already exists in the room (status 409)
-	 * @returns {Promise<void>} Promise that resolves when token is generated and set, or rejects on participant conflict
+	 * @throws When participant already exists in the room (status 409)
+	 * @returns Promise that resolves when token is generated
 	 */
 	private async generateParticipantToken() {
 		try {
-			const { role, permissions } = await this.participantTokenService.generateToken(
-				this.roomId,
-				this.participantName,
-				this.roomSecret
-			);
+			const { /*token,*/ role } = await this.participantTokenService.generateToken({
+				roomId: this.roomId,
+				participantName: this.participantName,
+				secret: this.roomSecret
+			});
 			// The components library needs the token to be set in the 'onTokenRequested' method
 			// this.participantToken = token;
 			this.participantRole = role;
-			this.participantPermissions = permissions;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);
 			switch (error.status) {
 				case 400:
 					// Invalid secret
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET, true);
 					break;
 				case 404:
 					// Room not found
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM, true);
 					break;
 				case 409:
 					// Participant already exists.
 					// Show the error message in participant name input form
 					this.participantForm.get('name')?.setErrors({ participantExists: true });
-					throw new Error('Participant already exists in the room');
+					break;
 				default:
-					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
+					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);
 			}
+
+			throw new Error('Error generating participant token');
 		}
 	}
 
@@ -202,18 +210,22 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 
 		// Replace secret and participant name in the URL query parameters
-		this.navigationService.updateUrlQueryParams(this.route.snapshot.queryParams, {
+		this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
 		});
 	}
 
 	async goToRecordings() {
-		await this.navigationService.redirectToRecordingsPage(this.roomId, this.roomSecret);
+		try {
+			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
+		} catch (error) {
+			console.error('Error navigating to recordings:', error);
+		}
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
-		const message: OutboundEventMessage = {
+		const message: WebComponentOutboundEventMessage = {
 			event: WebComponentEvent.JOIN,
 			payload: {
 				roomId: event.getProperties().room?.name || '',
@@ -225,11 +237,11 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async onParticipantLeft(event: ParticipantLeftEvent) {
 		console.warn('Participant left the room. Redirecting to:');
-		const redirectURL = this.ctxService.getLeaveRedirectURL() || '/disconnected';
+		const redirectURL = this.navigationService.getLeaveRedirectURL() || '/disconnected';
 		const isExternalURL = /^https?:\/\//.test(redirectURL);
 		const isRoomDeleted = event.reason === ParticipantLeftReason.ROOM_DELETED;
 
-		let message: OutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
+		let message: WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
 
 		if (isRoomDeleted) {
 			message = {
@@ -237,7 +249,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				payload: {
 					roomId: event.roomName
 				}
-			} as OutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
+			} as WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
 		} else {
 			message = {
 				event: WebComponentEvent.LEFT,
@@ -246,7 +258,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 					participantName: event.participantName,
 					reason: event.reason
 				}
-			} as OutboundEventMessage<WebComponentEvent.LEFT>;
+			} as WebComponentOutboundEventMessage<WebComponentEvent.LEFT>;
 		}
 
 		this.wcManagerService.sendMessageToParent(message);

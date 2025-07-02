@@ -1,8 +1,10 @@
 @use '@angular/material' as mat;
 @use './assets/styles/openvidu-theme.scss';
+@import './assets/styles/design-tokens';
 
 @include mat.core();
 
+// Light theme by default
 html {
 	@include mat.core-theme(openvidu-theme.$light-theme);
 	@include mat.all-component-bases(openvidu-theme.$light-theme);
@@ -10,12 +12,23 @@ html {
 	@include mat.all-component-typographies(openvidu-theme.$light-theme);
 	@include mat.all-component-densities(openvidu-theme.$light-theme);
 }
+
+// Dark theme styles when data-theme="dark"
+html[data-theme='dark'] {
+	@include mat.all-component-colors(openvidu-theme.$dark-theme);
+}
+
 html,
 body {
 	height: 100%;
 	overflow: hidden;
+	transition:
+		background-color 0.2s ease-in-out,
+		color 0.2s ease-in-out;
 }
 body {
 	margin: 0;
-	font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+	font-family: var(--ov-meet-font-family);
+	background-color: var(--ov-meet-background-color);
+	color: var(--ov-meet-text-on-background);
 }

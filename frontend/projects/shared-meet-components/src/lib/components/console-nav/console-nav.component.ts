@@ -5,9 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { ConsoleNavLink } from '../../models/sidenav.model';
-import { ContextService } from 'shared-meet-components';
+import { ConsoleNavLink } from '@lib/models';
+import { AppDataService } from '@lib/services';
 
 @Component({
 	selector: 'ov-console-nav',
@@ -19,6 +20,7 @@ import { ContextService } from 'shared-meet-components';
 		MatButtonModule,
 		MatIconModule,
 		MatSidenavModule,
+		MatTooltipModule,
 		RouterModule
 	],
 	templateUrl: './console-nav.component.html',
@@ -34,8 +36,8 @@ export class ConsoleNavComponent {
 	@Input() navLinks: ConsoleNavLink[] = [];
 	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
 
-	constructor(private contextService: ContextService) {
-		this.version = this.contextService.getVersion();
+	constructor(private appDataService: AppDataService) {
+		this.version = this.appDataService.getVersion();
 	}
 
 	async toggleSideMenu() {

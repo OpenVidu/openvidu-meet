@@ -1,0 +1,11 @@
+description: Webhook URL
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                url:
+                    type: string
+                    format: uri
+                    description: The URL to test the webhook

@@ -9,9 +9,11 @@ import {
 } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
+import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
 import {
 	errorInvalidRoomSecret,
@@ -28,8 +30,6 @@ import {
 	TaskSchedulerService,
 	TokenService
 } from './index.js';
-import ms from 'ms';
-import { MEET_NAME_ID } from '../environment.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -228,25 +228,6 @@ export class RoomService {
 			this.logger.error('Error deleting rooms:', error);
 			throw error;
 		}
-	}
-
-	/**
-	 * Marks a room as deleted in the storage system.
-	 *
-	 * @param roomId - The unique identifier of the room to mark for deletion
-	 * @returns A promise that resolves when the room has been successfully marked as deleted
-	 * @throws May throw an error if the room cannot be found or if saving fails
-	 */
-	protected async markRoomAsDeleted(roomId: string): Promise<void> {
-		const room = await this.storageService.getMeetRoom(roomId);
-
-		if (!room) {
-			this.logger.error(`Room with ID ${roomId} not found for deletion.`);
-			throw errorRoomNotFound(roomId);
-		}
-
-		room.markedForDeletion = true;
-		await this.storageService.saveMeetRoom(room);
 	}
 
 	/**

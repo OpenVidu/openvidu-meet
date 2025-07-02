@@ -1,0 +1,12 @@
+description: >
+    All specified rooms were marked error for deletion (due to active participants)
+    and will be removed once all participants leave.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: Rooms 'room-123, room-456' marked for deletion

@@ -1,114 +1,48 @@
-<!-- <div>
-	<h2>Rooms</h2>
-	@for (room of createdRooms; track room.name) {
-		<div>
-			<mat-card>
-				<mat-card-header>
-					<mat-card-title>{{ room.name }}</mat-card-title>
-				</mat-card-header>
-				<mat-card-content>
-					<p><strong>📅 Creada:</strong> {{ room.creationTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-					<p><strong>⌛ Expira:</strong> {{ room.creationTime * 1000 | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-					<p>
-						<strong>👥 Máximo de Participantes:</strong>
-						@if (room.maxParticipants === 0) {
-							<span>Ilimitado</span>
-						} @else {
-							<span>{{ room.maxParticipants }}</span>
-						}
-					</p>
+@if (isLoading) {
+	@if (showLoadingSpinner) {
+		<!-- Enhanced Loading State with delay -->
+		<div class="ov-page-loading">
+			<div class="loading-content">
+				<div class="loading-header">
+					<div class="loading-title">
+						<mat-icon class="ov-room-icon loading-icon"> video_chat </mat-icon>
+						<h1>Loading Rooms</h1>
+					</div>
+					<p class="loading-subtitle">Please wait while we fetch your rooms...</p>
+				</div>
 
-					<button mat-flat-button (click)="openRoom(room.name)">JOIN</button>
-				</mat-card-content>
-			</mat-card>
-		</div>
-	}
-
-	@if (createdRooms.length === 0) {
-		<p>No rooms created yet</p>
-	}
-</div> -->
-<h1>Rooms</h1>
-
-<!-- <ov-dynamic-grid [maxColumns]="2" [withHeader]="true" [gutter]="'10px'" [layoutMode]="'grid'"> -->
-<!-- Custom Header-->
-<!-- <div header></div> -->
-
-@if (!isInRoomForm()) {
-	<mat-list class="grid-item" [attr.data-span]="2">
-		<div mat-subheader class="item-subheader">
-			<h3>Rooms</h3>
-			<div class="subheader-button">
-				<button mat-flat-button color="primary" (click)="createRoom()">
-					<mat-icon class="icon-left">add</mat-icon>
-					Create Room
-				</button>
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
 			</div>
 		</div>
-		@for (item of createdRooms; track item) {
-			<mat-list-item (click)="onRoomClicked(item)" class="list-item">
-				<div matListItemIcon class="list-icon-container">
-					<mat-icon class="list-icon">video_camera_front</mat-icon>
-				</div>
-				<div matListItemTitle class="item-title">{{ item.roomId }}</div>
-				<div matListItemLine class="item-details">
-					<div>
-						<mat-icon class="icon">auto_delete</mat-icon>
-						<p>Expires: {{ item.autoDeletionDate | date: 'dd/MM/yyyy' }}</p>
-					</div>
-				</div>
+	}
+} @else if (isInRoomForm()) {
+	<!-- Edit and create Room view  -->
+	<div>
+		<router-outlet></router-outlet>
+	</div>
+} @else {
+	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
+		<div class="page-header" id="rooms-page-header">
+			<div class="title" id="rooms-title">
+				<mat-icon class="ov-room-icon" id="rooms-icon"> video_chat </mat-icon>
+				<h1 id="rooms-heading">Rooms</h1>
+			</div>
+			<p class="subtitle" id="rooms-subtitle">
+				Manage your rooms, create new ones, and configure settings for your meetings.
+			</p>
+		</div>
 
-				<div matListItemSecondaryAction class="button-container" (click)="$event.stopPropagation()">
-					<!-- <button mat-icon-button color="primary">
-						<mat-icon>edit</mat-icon>
-					</button> -->
-					<button mat-icon-button color="warn" class="delete-button" (click)="deleteRoom(item)">
-						<mat-icon>delete</mat-icon>
-					</button>
-				</div>
-			</mat-list-item>
-		}
-		@if (createdRooms.length === 0) {
-			<p class="empty-rooms-message">No rooms created yet</p>
-		}
-	</mat-list>
+		<div class="page-content" id="rooms-content">
+			<ov-rooms-lists
+				id="rooms-list"
+				[rooms]="rooms()"
+				[loading]="isLoading"
+				[showSelection]="true"
+				(roomAction)="onRoomAction($event)"
+				(refresh)="refreshRooms()"
+			></ov-rooms-lists>
+		</div>
+	</div>
 }
-
-<!-- Recording Toggle -->
-<!-- <ov-toggle-card
-		[title]="'Recording'"
-		[description]="'Allow record your rooms for later use'"
-		[icon]="'radio_button_checked'"
-		[iconBackgroundColor]="'#e23e3e'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="recordingEnabled"
-		(onToggleValueChanged)="onRecordingToggle($event)"
-	>
-	</ov-toggle-card> -->
-
-<!-- Chat Toggle -->
-<!-- <ov-toggle-card
-		[title]="'Chat'"
-		[description]="'Allow participants to communicate via chat'"
-		[icon]="'message'"
-		[iconBackgroundColor]="'#598eff'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="chatEnabled"
-		(onToggleValueChanged)="onChatToggle($event)"
-	>
-	</ov-toggle-card> -->
-
-<!-- <ov-toggle-card
-		[title]="'Backgrounds'"
-		[description]="'Allow participants to change their backgrounds'"
-		[icon]="'blur_on'"
-		[iconBackgroundColor]="'#444444'"
-		[cardBackgroundColor]="'#ffffff'"
-		[toggleValue]="backgroundsEnabled"
-		(onToggleValueChanged)="onVirtualBackgroundToggle($event)"
-	>
-	</ov-toggle-card> -->
-<!-- </ov-dynamic-grid> -->
-<div>
-	<router-outlet></router-outlet>
-</div>

@@ -10,72 +10,28 @@ import {
 	removeModeratorSecretGuard,
 	runGuardsSerially,
 	validateRecordingAccessGuard
-} from '../guards';
+} from '@lib/guards';
 import {
 	ConsoleComponent,
+	DevelopersSettingsComponent,
 	DisconnectedComponent,
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
+	UsersPermissionsComponent,
 	RecordingsComponent,
-	RoomFormComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
+	RoomWizardComponent,
 	VideoRoomComponent,
 	ViewRecordingComponent
-} from '../pages';
+} from '@lib/pages';
 
 export const baseRoutes: Routes = [
 	{
 		path: 'login',
 		component: LoginComponent,
 		canActivate: [checkUserNotAuthenticatedGuard]
-	},
-	{
-		path: 'console',
-		component: ConsoleComponent,
-		canActivate: [checkUserAuthenticatedGuard],
-		children: [
-			{
-				path: '',
-				redirectTo: 'overview',
-				pathMatch: 'full'
-			},
-			{
-				path: 'overview',
-				component: OverviewComponent
-			},
-			{
-				path: 'rooms',
-				component: RoomsComponent,
-				children: [
-					{ path: 'new', component: RoomFormComponent },
-					{ path: ':roomId/edit', component: RoomFormComponent }
-				]
-			},
-			{
-				path: 'recordings',
-				component: RecordingsComponent
-			},
-			// {
-			// 	path: 'access-permissions',
-			// 	component: AccessPermissionsComponent
-			// },
-			// {
-			// 	path: 'appearance',
-			// 	component: AppearanceComponent
-			// },
-
-			// {
-			// 	path: 'security-preferences',
-			// 	component: SecurityPreferencesComponent
-			// },
-			// {
-			// 	path: 'about',
-			// 	component: AboutComponent
-			// },
-			{ path: '**', redirectTo: 'overview' }
-		]
 	},
 	{
 		path: 'room/:room-id',
@@ -104,7 +60,48 @@ export const baseRoutes: Routes = [
 	},
 	{ path: 'disconnected', component: DisconnectedComponent },
 	{ path: 'error', component: ErrorComponent },
+	{
+		path: '',
+		component: ConsoleComponent,
+		canActivate: [checkUserAuthenticatedGuard],
+		children: [
+			{
+				path: '',
+				redirectTo: 'overview',
+				pathMatch: 'full'
+			},
+			{
+				path: 'overview',
+				component: OverviewComponent
+			},
+			{
+				path: 'rooms',
+				component: RoomsComponent,
+				children: [
+					{ path: 'new', component: RoomWizardComponent },
+					{ path: ':roomId/edit', component: RoomWizardComponent }
+				]
+			},
+			{
+				path: 'recordings',
+				component: RecordingsComponent
+			},
+			{
+				path: 'embedded',
+				component: DevelopersSettingsComponent
+			},
+			{
+				path: 'users-permissions',
+				component: UsersPermissionsComponent
+			},
+			// {
+			// 	path: 'about',
+			// 	component: AboutComponent
+			// },
+			{ path: '**', redirectTo: 'overview' }
+		]
+	},
 
 	// Redirect all other routes to the console
-	{ path: '**', redirectTo: 'console' }
+	{ path: '**', redirectTo: '' }
 ];

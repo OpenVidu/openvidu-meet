@@ -31,6 +31,13 @@ const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z
 		}
 	);
 
+const WebhookTestSchema = z.object({
+	url: z
+		.string()
+		.url('Must be a valid URL')
+		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
+});
+
 const AuthModeSchema: z.ZodType<AuthMode> = z.enum([AuthMode.NONE, AuthMode.MODERATORS_ONLY, AuthMode.ALL_USERS]);
 
 const AuthTypeSchema: z.ZodType<AuthType> = z.enum([AuthType.SINGLE_USER]);
@@ -52,6 +59,17 @@ const SecurityPreferencesSchema: z.ZodType<SecurityPreferences> = z.object({
 
 export const validateWebhookPreferences = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = WebhookPreferencesSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.body = data;
+	next();
+};
+
+export const withValidWebhookTestRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = WebhookTestSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

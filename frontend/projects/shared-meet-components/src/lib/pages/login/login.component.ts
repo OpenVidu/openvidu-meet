@@ -6,8 +6,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../services/index';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { AuthService, NavigationService } from '@lib/services';
 
 @Component({
 	selector: 'ov-login',
@@ -31,10 +31,10 @@ export class LoginComponent implements OnInit {
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
-	redirectTo = 'console'; // By default, redirect to the console page
+	redirectTo = ''; // By default, redirect to home page
 
 	constructor(
-		private router: Router,
+		private navigationService: NavigationService,
 		private route: ActivatedRoute,
 		private authService: AuthService
 	) {}
@@ -53,9 +53,7 @@ export class LoginComponent implements OnInit {
 
 		try {
 			await this.authService.login(username!, password!);
-
-			let urlTree = this.router.parseUrl(this.redirectTo);
-			this.router.navigateByUrl(urlTree);
+			await this.navigationService.redirectTo(this.redirectTo);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
 				this.loginErrorMessage = 'Too many login attempts. Please try again later';

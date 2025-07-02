@@ -20,6 +20,7 @@
 		"experimentalDecorators": true,
 		"paths": {
 			"core-js/es7/reflect": ["./node_modules/core-js/proposals/reflect-metadata"],
+			"@environment/*": ["src/environments/*"],
 			"@app/*": ["src/app/*"],
 			"@lib/*": ["projects/shared-meet-components/src/lib/*"],
 			"@typings-ce": ["projects/shared-meet-components/src/lib/typings/ce/index.ts"],
@@ -27,8 +28,6 @@
 			// "@models/*": ["src/app/models/*"],
 			// "@guards/*": ["src/app/guards/*"],
 			// "@pages/*": ["src/app/pages/*"],
-			"@environment/*": ["src/environments/*"],
-			"shared-meet-components": ["projects/shared-meet-components/src/public-api.ts"]
 		},
 		"importHelpers": true,
 		"target": "ES2022",

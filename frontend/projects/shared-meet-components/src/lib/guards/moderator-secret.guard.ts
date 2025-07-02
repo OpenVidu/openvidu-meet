@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, NavigationEnd, Router } from '@angular/router';
+import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '@lib/services';
 import { filter, take } from 'rxjs';
-import { ContextService, NavigationService, SessionStorageService } from '../services';
 
 /**
  * Guard that intercepts navigation to remove the 'secret' query parameter from the URL
@@ -10,7 +10,8 @@ import { ContextService, NavigationService, SessionStorageService } from '../ser
  * enhance security.
  */
 export const removeModeratorSecretGuard: CanActivateFn = (route, _state) => {
-	const contextService = inject(ContextService);
+	const roomService = inject(RoomService);
+	const participantService = inject(ParticipantTokenService);
 	const navigationService = inject(NavigationService);
 	const router = inject(Router);
 	const sessionStorageService = inject(SessionStorageService);
@@ -21,14 +22,13 @@ export const removeModeratorSecretGuard: CanActivateFn = (route, _state) => {
 			take(1)
 		)
 		.subscribe(async () => {
-			if (contextService.isModeratorParticipant()) {
-				const roomId = contextService.getRoomId();
-				const storedSecret = sessionStorageService.getModeratorSecret(roomId);
-				const moderatorSecret = storedSecret || contextService.getSecret();
+			if (participantService.isModeratorParticipant()) {
+				const roomId = roomService.getRoomId();
+				const moderatorSecret = roomService.getRoomSecret();
 
 				// Store the moderator secret in session storage for the current room and remove it from the URL
 				sessionStorageService.setModeratorSecret(roomId, moderatorSecret);
-				navigationService.removeModeratorSecretFromUrl({ ...route.queryParams });
+				navigationService.removeQueryParamFromUrl(route.queryParams, 'secret');
 			}
 		});
 

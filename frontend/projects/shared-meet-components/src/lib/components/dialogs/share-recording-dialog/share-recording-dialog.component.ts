@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { HttpService } from 'shared-meet-components';
+import { RecordingManagerService } from '@lib/services';
 
 @Component({
 	selector: 'ov-share-recording-dialog',
@@ -47,7 +47,7 @@ export class ShareRecordingDialogComponent {
 
 	constructor(
 		@Inject(MAT_DIALOG_DATA) public data: { recordingId: string; recordingUrl?: string },
-		private httpService: HttpService,
+		private recordingService: RecordingManagerService,
 		private clipboard: Clipboard
 	) {
 		this.recordingUrl = data.recordingUrl;
@@ -59,7 +59,7 @@ export class ShareRecordingDialogComponent {
 
 		try {
 			const privateAccess = this.accessType === 'private';
-			const { url } = await this.httpService.generateRecordingUrl(this.data.recordingId, privateAccess);
+			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
 			this.recordingUrl = url;
 		} catch (error) {
 			this.erroMessage = 'Failed to generate recording URL. Please try again later.';

@@ -1,10 +1,125 @@
-<p>Non implemented!</p>
-<h1>Welcome To OpenVidu Meet</h1>
+<div class="ov-page-container ov-mb-xxl">
+	@if (stats.isLoading) {
+		<!-- Loading State -->
+		<div class="loading-state">
+			<div class="page-header">
+				<div class="title">
+					<mat-icon>dashboard</mat-icon>
+					<h1>Overview</h1>
+				</div>
+				<p class="subtitle">Loading your dashboard...</p>
+			</div>
+		</div>
+	} @else if (stats.hasData) {
+		<div class="page-header">
+			<div class="title">
+				<mat-icon>dashboard</mat-icon>
+				<h1>Overview</h1>
+			</div>
+			<p class="subtitle">Monitor your system status and recent activity</p>
+		</div>
+		<!-- Dashboard State -->
+		<div class="dashboard-content">
+			<!-- Stats Grid -->
+			<div class="stats-grid">
+				<mat-card class="stat-card rooms-card">
+					<mat-card-content>
+						<div class="stat-icon">
+							<mat-icon class="ov-room-icon">video_chat</mat-icon>
+						</div>
+						<div class="stat-content">
+							<div class="stat-number">{{ stats.totalRooms }}</div>
+							<div class="stat-label">Total Rooms</div>
+							<div class="stat-detail">{{ stats.activeRooms }} active</div>
+						</div>
+					</mat-card-content>
+					<mat-card-actions>
+						<button mat-stroked-button (click)="navigateTo('rooms/new')">
+							<mat-icon class="ov-action-icon">add</mat-icon>
+							Create Room
+						</button>
+						<button mat-button (click)="navigateTo('rooms')">
+							View all
+							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
+						</button>
+					</mat-card-actions>
+				</mat-card>
 
+				<mat-card class="stat-card recordings-card">
+					<mat-card-content>
+						<div class="stat-icon">
+							<mat-icon class="ov-recording-icon">video_library</mat-icon>
+						</div>
+						<div class="stat-content">
+							<div class="stat-number">{{ stats.totalRecordings }}</div>
+							<div class="stat-label">Total Recordings</div>
+							<div class="stat-detail">Available for playback</div>
+						</div>
+					</mat-card-content>
+					<mat-card-actions>
+						<button mat-button (click)="navigateTo('recordings')">
+							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
+							View all
+						</button>
+					</mat-card-actions>
+				</mat-card>
+			</div>
+		</div>
+	} @else {
+		<!-- First Time User State -->
+		<div class="get-started-header">
+			<h1>Get started with OpenVidu Meet</h1>
+			<p class="subtitle">Your video conference management dashboard.</p>
+			<p class="subtitle">Get the most out of your app, start with these quick setup actions.</p>
+		</div>
+		<div class="welcome-content">
+			<div class="welcome-card">
+				<div class="welcome-actions">
+					<div class="getting-started-grid">
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon class="ov-room-icon">video_chat</mat-icon>
+								<h3>Create your first room</h3>
+								<p>
+									Create dedicated spaces for video conferences where participants can connect,
+									collaborate, and communicate seamlessly.
+								</p>
+								<button mat-stroked-button (click)="navigateTo('rooms/new')">
+									<mat-icon class="ov-action-icon">add</mat-icon>
+									Create Room
+								</button>
+							</mat-card-content>
+						</mat-card>
 
-<ul>
-	<li>Resumen</li>
-	<li>Numero room activas</li>
-	<li>Numero de recordings creados</li>
-	<li>Create a room with no code</li>
-</ul>
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon class="ov-settings-icon material-symbols-outlined"> passkey </mat-icon>
+								<h3>Configure Authentication</h3>
+								<p>
+									Set up user authentication and manage access permissions to ensure secure and
+									controlled participation in your video conferences.
+								</p>
+								<button mat-stroked-button (click)="navigateTo('users-permissions')">
+									Go to Users & Permissions
+								</button>
+							</mat-card-content>
+						</mat-card>
+
+						<mat-card class="feature-card">
+							<mat-card-content>
+								<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
+
+								<h3>Embed OpenVidu Meet</h3>
+								<p>
+									Embed OpenVidu Meet into your applications using our comprehensive REST API for
+									programmatic room creation and management.
+								</p>
+								<button mat-stroked-button (click)="navigateTo('embedded')">Go to Embedded</button>
+							</mat-card-content>
+						</mat-card>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+</div>

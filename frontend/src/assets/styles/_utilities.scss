@@ -1,0 +1,1482 @@
+// Utility Classes - Helper classes for common styling patterns
+// This file contains reusable utility classes
+
+// === UTILITY CLASSES ===
+
+.ov-text-center {
+	text-align: center;
+}
+
+.ov-text-truncate {
+	@include ov-text-truncate;
+}
+
+.ov-flex-center {
+	@include ov-flex-center;
+}
+
+// Spacing classes
+.ov-mt-xs {
+	margin-top: var(--ov-meet-spacing-xs);
+}
+.ov-mt-sm {
+	margin-top: var(--ov-meet-spacing-sm);
+}
+.ov-mt-md {
+	margin-top: var(--ov-meet-spacing-md);
+}
+.ov-mt-lg {
+	margin-top: var(--ov-meet-spacing-lg);
+}
+.ov-mt-xl {
+	margin-top: var(--ov-meet-spacing-xl);
+}
+
+.ov-mb-xs {
+	margin-bottom: var(--ov-meet-spacing-xs);
+}
+.ov-mb-sm {
+	margin-bottom: var(--ov-meet-spacing-sm);
+}
+.ov-mb-md {
+	margin-bottom: var(--ov-meet-spacing-md);
+}
+.ov-mb-lg {
+	margin-bottom: var(--ov-meet-spacing-lg);
+}
+.ov-mb-xl {
+	margin-bottom: var(--ov-meet-spacing-xl);
+}
+
+.ov-mb-xxl {
+	margin-bottom: var(--ov-meet-spacing-xxl);
+}
+
+.ov-padding-none {
+	padding: 0;
+}
+.ov-padding-xs {
+	padding: var(--ov-meet-spacing-xs);
+}
+.ov-padding-sm {
+	padding: var(--ov-meet-spacing-sm);
+}
+.ov-padding-md {
+	padding: var(--ov-meet-spacing-md);
+}
+.ov-padding-lg {
+	padding: var(--ov-meet-spacing-lg);
+}
+.ov-padding-xl {
+	padding: var(--ov-meet-spacing-xl);
+}
+
+// === THEME CLASSES ===
+.ov-theme-transition {
+	@include ov-theme-transition;
+}
+
+// === CONCEPTUAL ICON CLASSES ===
+// Apply these classes directly to mat-icon elements for consistent conceptual colors
+.ov-room-icon {
+	color: var(--ov-meet-icon-rooms) !important;
+	@include ov-theme-transition;
+}
+
+.ov-recording-icon {
+	color: var(--ov-meet-icon-recordings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-settings-icon {
+	color: var(--ov-meet-icon-settings) !important;
+	@include ov-theme-transition;
+}
+
+.ov-developer-icon {
+	color: var(--ov-meet-icon-developer) !important;
+	@include ov-theme-transition;
+}
+
+.ov-about-icon {
+	color: var(--ov-meet-icon-about) !important;
+	@include ov-theme-transition;
+}
+
+.ov-action-icon {
+	color: var(--ov-meet-icon-actions) !important;
+	@include ov-theme-transition;
+}
+
+.ov-surface {
+	background-color: var(--ov-meet-surface-color);
+	color: var(--ov-meet-text-on-surface);
+	@include ov-theme-transition;
+}
+
+.ov-background {
+	background-color: var(--ov-meet-background-color);
+	color: var(--ov-meet-text-on-background);
+	@include ov-theme-transition;
+}
+
+.ov-text-primary {
+	color: var(--ov-meet-text-primary);
+}
+.ov-text-secondary {
+	color: var(--ov-meet-text-secondary);
+}
+.ov-text-hint {
+	color: var(--ov-meet-text-hint);
+}
+
+// === MATERIAL COMPONENT UTILITIES ===
+// Common Material component overrides to maintain consistency
+
+// Material Slide Toggle - Success themed
+.ov-slide-toggle-success {
+	.mdc-switch__track {
+		border-radius: var(--ov-meet-radius-md);
+	}
+
+	// Selected state styling with success color
+	--mdc-switch-selected-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-pressed-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-hover-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-focus-handle-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-pressed-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-hover-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-focus-track-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-pressed-state-layer-color: var(--ov-meet-color-success);
+	--mdc-switch-selected-hover-state-layer-color: var(--ov-meet-surface-color);
+	--mdc-switch-selected-focus-state-layer-color: var(--ov-meet-surface-color);
+}
+
+// Material Navigation List - Clean borders
+.ov-nav-list-clean {
+	.mat-mdc-list-item {
+		border-radius: 0 !important;
+	}
+}
+
+// === DATA LIST COMPONENT UTILITIES ===
+// Comprehensive utilities for list-based components (recordings, rooms, etc.)
+
+// Modern Toolbar Base
+.ov-data-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 var(--ov-meet-spacing-md) 0 0;
+	margin-bottom: var(--ov-meet-spacing-md);
+	min-height: 64px;
+	gap: var(--ov-meet-spacing-md);
+
+	.toolbar-left {
+		display: flex;
+		align-items: center;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.toolbar-center {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-lg);
+		flex: 0 0 auto;
+	}
+
+	.toolbar-right {
+		display: flex;
+		align-items: center;
+		flex: 0 0 auto;
+	}
+}
+
+// Search Field Styling
+.ov-search-field {
+	width: 100%;
+	max-width: 400px;
+
+	::ng-deep {
+		.mat-mdc-form-field-subscript-wrapper {
+			display: none;
+		}
+
+		.mdc-notched-outline {
+			border-color: var(--ov-meet-border-light);
+		}
+
+		&.mat-focused .mdc-notched-outline {
+			border-color: var(--ov-meet-color-primary);
+		}
+	}
+}
+
+// Selection Info Badge
+.ov-selection-info {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	background: var(--ov-meet-color-primary-light);
+	border-radius: var(--ov-meet-radius-md);
+	color: var(--ov-meet-color-primary);
+
+	.selection-icon {
+		@include ov-icon(md);
+	}
+
+	.selection-text {
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+}
+
+// Batch Actions Container
+.ov-batch-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+
+	button {
+		@include ov-theme-transition;
+
+		&[color='warn'] {
+			color: var(--ov-meet-color-error);
+
+			&:hover {
+				background-color: var(--ov-meet-color-error-light);
+			}
+		}
+
+		&:hover {
+			background-color: var(--ov-meet-surface-hover);
+		}
+	}
+}
+
+// Enhanced Table Container
+.ov-table-container {
+	background-color: var(--ov-meet-surface-elevated);
+	border-radius: var(--ov-meet-radius-md);
+	box-shadow: var(--ov-meet-shadow-sm);
+	overflow: hidden;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--ov-meet-border-light);
+
+	// Subtle glow effect when selections are active
+	:host(.has-selections) & {
+		box-shadow:
+			var(--ov-meet-shadow-md),
+			0 0 0 1px var(--ov-meet-color-primary-light);
+	}
+}
+
+// Toolbar + Table Integration
+.ov-data-toolbar + .ov-table-container {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-top: none;
+	box-shadow: var(--ov-meet-shadow-sm);
+}
+
+// Data Table Base Styling
+.ov-data-table {
+	width: 100%;
+
+	// Header styles
+	.mat-mdc-header-cell {
+		background-color: var(--ov-meet-surface-variant);
+		color: var(--ov-meet-text-primary);
+		font-weight: var(--ov-meet-font-weight-medium);
+		font-size: var(--ov-meet-font-size-sm);
+		border-bottom: 1px solid var(--ov-meet-border-color);
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-sm);
+
+		&.primary-header {
+			min-width: 200px;
+		}
+
+		&.actions-header {
+			width: 120px;
+			text-align: center;
+		}
+	}
+
+	// Cell styles
+	.mat-mdc-cell {
+		border-bottom: 1px solid var(--ov-meet-border-color-light);
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-sm);
+		vertical-align: middle;
+
+		&.primary-cell {
+			min-width: 200px;
+		}
+
+		&.actions-cell {
+			width: 120px;
+		}
+	}
+
+	// Row styles
+	.mat-mdc-row {
+		transition: background-color var(--ov-meet-transition-fast);
+
+		&:hover {
+			background-color: var(--ov-meet-surface-hover);
+		}
+
+		&.selected-row {
+			background-color: rgba(25, 118, 210, 0.08);
+
+			&:hover {
+				background-color: rgba(25, 118, 210, 0.12);
+			}
+		}
+	}
+}
+
+// Info Display Components
+.ov-info-display {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-xs);
+
+	.primary-text {
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-primary);
+		font-size: var(--ov-meet-font-size-sm);
+	}
+
+	.secondary-text {
+		font-size: var(--ov-meet-font-size-xs);
+		color: var(--ov-meet-text-secondary);
+	}
+
+	.monospace-text {
+		font-family: 'Roboto Mono', monospace;
+	}
+}
+
+// Status Badge
+.ov-status-badge {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	font-size: var(--ov-meet-font-size-sm);
+	font-weight: var(--ov-meet-font-weight-medium);
+
+	mat-icon {
+		@include ov-icon(sm);
+	}
+
+	.status-label {
+		font-weight: var(--ov-meet-font-weight-semibold);
+	}
+}
+
+// Date Information Display
+.ov-date-info {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-xs);
+
+	.date {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-primary);
+	}
+
+	.time {
+		font-size: var(--ov-meet-font-size-xs);
+		color: var(--ov-meet-text-secondary);
+	}
+}
+
+// Action Buttons Container
+.ov-action-buttons {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ov-meet-spacing-xs);
+
+	.mat-mdc-icon-button {
+		.mat-icon {
+			@include ov-icon(sm);
+		}
+
+		&:hover {
+			background-color: var(--ov-meet-surface-hover);
+		}
+	}
+}
+
+// Loading Container
+.ov-loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--ov-meet-spacing-xxl);
+	gap: var(--ov-meet-spacing-md);
+	background: var(--ov-meet-surface-elevated);
+	border-radius: var(--ov-meet-radius-md);
+	border: 1px solid var(--ov-meet-border-light);
+	margin: var(--ov-meet-spacing-md) 0;
+
+	span {
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-sm);
+	}
+
+	mat-spinner {
+		::ng-deep circle {
+			stroke: var(--ov-meet-color-primary);
+		}
+	}
+}
+
+// Empty State
+.ov-empty-state {
+	@include ov-card;
+	text-align: center;
+	margin: var(--ov-meet-spacing-xl) 0;
+
+	.empty-content {
+		max-width: 500px;
+		margin: 0 auto;
+	}
+
+	h3 {
+		font-size: var(--ov-meet-font-size-xl);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-primary);
+		margin: 0 0 var(--ov-meet-spacing-md) 0;
+	}
+
+	p {
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-secondary);
+		margin: 0 0 var(--ov-meet-spacing-xl) 0;
+		line-height: var(--ov-meet-line-height-normal);
+	}
+
+	.action-buttons {
+		.refresh-btn {
+			@include ov-button-base;
+
+			mat-icon {
+				@include ov-icon(md);
+				margin-right: var(--ov-meet-spacing-sm);
+			}
+		}
+	}
+}
+
+// === NAVIGATION UTILITIES ===
+// For console navigation and sidebar components
+
+.ov-nav-container {
+	height: 100%;
+
+	mat-sidenav-container {
+		height: 100%;
+	}
+}
+
+.ov-nav-toolbar {
+	position: fixed;
+	top: 0;
+	z-index: 2;
+	@include ov-theme-transition;
+
+	.toolbar-title {
+		font-size: var(--ov-meet-font-size-xxl);
+		font-weight: var(--ov-meet-font-weight-regular);
+		margin-left: var(--ov-meet-spacing-md);
+	}
+
+	.toolbar-spacer {
+		flex: 1 1 auto;
+	}
+}
+
+.ov-sidenav {
+	@include ov-theme-transition;
+	background-color: var(--ov-meet-surface-color);
+	padding-top: 3.5rem;
+
+	@include ov-tablet-up {
+		padding-top: 4rem;
+	}
+
+	&.expanded {
+		width: 250px;
+	}
+
+	&.collapsed {
+		width: 80px;
+	}
+
+	.nav-entry {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+		padding: var(--ov-meet-spacing-lg);
+		justify-content: start;
+
+		&.centered {
+			justify-content: center !important;
+		}
+	}
+
+	.nav-list {
+		height: calc(100% - 3.5rem - var(--ov-meet-spacing-lg));
+	}
+}
+
+.ov-sidenav-content {
+	padding-top: 3.5rem;
+
+	@include ov-tablet-up {
+		padding-top: 4rem;
+	}
+
+	.main-container {
+		padding: 0 var(--ov-meet-spacing-xl);
+		height: 100%;
+	}
+
+	.page-content {
+		@include ov-container;
+	}
+}
+
+.ov-menu-button {
+	height: 60px !important;
+	text-align: justify;
+	transition: var(--ov-meet-transition-normal);
+	border-radius: var(--ov-meet-radius-sm);
+	@include ov-theme-transition;
+
+	&:hover {
+		background-color: var(--ov-meet-surface-hover) !important;
+	}
+
+	&.active {
+		border-left: var(--ov-meet-spacing-xs) solid var(--ov-meet-color-primary);
+
+		.nav-entry {
+			font-weight: var(--ov-meet-font-weight-semibold);
+		}
+	}
+}
+
+.ov-nav-version {
+	margin-top: auto;
+	padding: var(--ov-meet-spacing-sm);
+	font-size: var(--ov-meet-font-size-xs);
+	color: var(--ov-text-hint);
+	text-align: center;
+	@include ov-theme-transition;
+}
+
+.ov-nav-separator {
+	margin: 0;
+	border-top: 1px solid var(--ov-border-color);
+	@include ov-theme-transition;
+}
+
+// === MENU AND FILTER UTILITIES ===
+
+.ov-filters-menu {
+	::ng-deep .mat-mdc-menu-panel {
+		min-width: 280px;
+	}
+
+	.filter-content {
+		padding: var(--ov-meet-spacing-md);
+
+		h4 {
+			margin: 0 0 var(--ov-meet-spacing-md) 0;
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		mat-form-field {
+			width: 100%;
+
+			::ng-deep {
+				.mat-mdc-form-field-subscript-wrapper {
+					display: none;
+				}
+			}
+		}
+	}
+}
+
+// === RESPONSIVE UTILITIES ===
+
+// Toolbar Responsive Patterns
+.ov-data-toolbar {
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		gap: var(--ov-meet-spacing-sm);
+
+		.toolbar-left .ov-search-field {
+			max-width: 300px;
+		}
+
+		.toolbar-center {
+			gap: var(--ov-meet-spacing-md);
+
+			.ov-selection-info {
+				padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+
+				.selection-text {
+					font-size: var(--ov-meet-font-size-xs);
+				}
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm);
+
+		.toolbar-left,
+		.toolbar-center,
+		.toolbar-right {
+			justify-content: center;
+		}
+
+		.toolbar-left .ov-search-field {
+			max-width: none;
+		}
+
+		.toolbar-center {
+			order: 3;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
+
+			.ov-selection-info {
+				align-self: center;
+			}
+
+			.ov-batch-actions {
+				justify-content: center;
+			}
+		}
+
+		.toolbar-right {
+			order: 2;
+		}
+	}
+}
+
+// Table Responsive Patterns
+.ov-table-container {
+	@include ov-mobile-down {
+		margin: 0 calc(-1 * var(--ov-meet-spacing-sm));
+		border-radius: var(--ov-meet-radius-sm);
+		border-left: none;
+		border-right: none;
+	}
+}
+
+.ov-data-table {
+	@include ov-tablet-down {
+		.mat-mdc-header-cell,
+		.mat-mdc-cell {
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-xs);
+		}
+
+		.ov-info-display .primary-text,
+		.ov-date-info .date {
+			font-size: var(--ov-meet-font-size-xs);
+		}
+
+		.ov-info-display .secondary-text,
+		.ov-date-info .time {
+			font-size: var(--ov-meet-font-size-xxs);
+		}
+	}
+
+	@include ov-mobile-down {
+		font-size: var(--ov-meet-font-size-xs);
+
+		.mat-mdc-header-cell {
+			&.primary-header {
+				min-width: 150px;
+			}
+
+			&.actions-header {
+				width: 80px;
+			}
+		}
+
+		.mat-mdc-cell {
+			&.primary-cell {
+				min-width: 150px;
+			}
+
+			&.actions-cell {
+				width: 80px;
+			}
+		}
+	}
+}
+
+.ov-action-buttons {
+	@include ov-mobile-down {
+		.mat-mdc-icon-button {
+			width: 28px;
+			height: 28px;
+			line-height: 28px;
+
+			.mat-icon {
+				font-size: 16px;
+				width: 16px;
+				height: 16px;
+			}
+		}
+	}
+}
+
+.ov-empty-state {
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-xl) var(--ov-meet-spacing-lg);
+
+		.empty-icon {
+			font-size: var(--ov-meet-icon-size-xl);
+			width: var(--ov-meet-icon-size-xl);
+			height: var(--ov-meet-icon-size-xl);
+		}
+
+		h3 {
+			font-size: var(--ov-meet-font-size-lg);
+		}
+
+		p {
+			font-size: var(--ov-meet-font-size-sm);
+		}
+	}
+}
+
+// === ACCESSIBILITY UTILITIES ===
+
+.ov-focus-visible {
+	&:focus-visible {
+		outline: 2px solid var(--ov-meet-color-primary);
+		outline-offset: 2px;
+	}
+}
+
+// === THEME SUPPORT UTILITIES ===
+
+// Dark theme support (for future implementation)
+@media (prefers-color-scheme: dark) {
+	.ov-data-table {
+		.mat-mdc-row {
+			&.selected-row {
+				background-color: rgba(144, 202, 249, 0.12);
+
+				&:hover {
+					background-color: rgba(144, 202, 249, 0.16);
+				}
+			}
+		}
+	}
+}
+
+// === CONTEXTUAL UTILITIES ===
+
+.ov-delete-action {
+	color: var(--ov-meet-color-error) !important;
+
+	.mat-icon {
+		color: var(--ov-meet-color-error) !important;
+	}
+}
+
+.ov-no-data {
+	color: var(--ov-meet-text-hint);
+	font-style: italic;
+}
+
+// === FORM UTILITIES ===
+// Common form patterns for settings and configuration components
+
+.ov-form-section {
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	.form-field-header {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		h3 {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.pro-badge {
+			background: var(--ov-meet-color-warning);
+			color: white;
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			border-radius: var(--ov-meet-radius-sm);
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			text-transform: uppercase;
+		}
+	}
+
+	.field-description {
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-sm);
+		margin: 0 0 var(--ov-meet-spacing-md) 0;
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
+.ov-logo-upload {
+	display: flex;
+	gap: var(--ov-meet-spacing-lg);
+	align-items: flex-start;
+
+	@include ov-tablet-down {
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+	}
+
+	.logo-preview {
+		flex-shrink: 0;
+
+		.logo-placeholder {
+			width: 120px;
+			height: 80px;
+			background: var(--ov-meet-surface-variant);
+			border: 2px dashed var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-radius-md);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			.logo-image {
+				max-width: 60px;
+			}
+
+			mat-icon {
+				@include ov-icon(xl);
+				color: var(--ov-meet-text-hint);
+			}
+		}
+	}
+
+	.pro-upgrade-message {
+		flex: 1;
+		text-align: center;
+		padding: var(--ov-meet-spacing-xl);
+		background: var(--ov-meet-surface-variant);
+		border-radius: var(--ov-meet-radius-md);
+		border: 1px solid var(--ov-border-color);
+
+		p {
+			margin: 0 0 var(--ov-meet-spacing-md) 0;
+			color: var(--ov-meet-text-secondary);
+			font-size: var(--ov-meet-font-size-sm);
+		}
+
+		button {
+			@include ov-button-base;
+
+			mat-icon {
+				@include ov-icon(sm);
+			}
+		}
+	}
+
+	.logo-url-field {
+		flex: 1;
+		width: 100%;
+	}
+}
+
+// === PAGE LOADING UTILITIES ===
+// Common loading states for page components
+
+.ov-page-loading {
+	min-height: 60vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: fadeIn 0.5s ease-out;
+
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-md);
+		min-height: 50vh;
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-lg);
+		min-height: 40vh;
+	}
+
+	.loading-content {
+		text-align: center;
+		max-width: 600px;
+		width: 100%;
+
+		.loading-header {
+			margin-bottom: var(--ov-meet-spacing-xxl);
+
+			.loading-title {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-md);
+				margin-bottom: var(--ov-meet-spacing-md);
+
+				.loading-icon {
+					@include ov-icon(xl);
+					animation: pulse 2s ease-in-out infinite;
+				}
+
+				h1 {
+					margin: 0;
+					color: var(--ov-meet-text-primary);
+				}
+			}
+
+			.loading-subtitle {
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				margin: 0;
+				animation: fadeIn 1s ease-out 0.5s both;
+			}
+		}
+
+		.loading-spinner-container {
+			margin-bottom: var(--ov-meet-spacing-xxl);
+
+			mat-spinner {
+				margin: 0 auto;
+
+				::ng-deep {
+					.mdc-circular-progress__determinate-circle,
+					.mdc-circular-progress__indeterminate-circle-graphic {
+						stroke: var(--ov-meet-color-primary);
+					}
+				}
+			}
+		}
+	}
+}
+
+// === PAGE STRUCTURE UTILITIES ===
+
+.ov-page-container {
+	button {
+		@include ov-button-base;
+	}
+	@include ov-tablet-down {
+		padding: var(--ov-meet-spacing-md);
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-lg);
+	}
+
+	.page-header {
+		@include ov-page-header;
+	}
+
+	.page-content {
+		@include ov-page-content;
+	}
+
+	.get-started-header {
+		@include ov-get-started-header;
+	}
+
+	.section-card {
+		@include ov-section-card;
+	}
+
+	.section-divider {
+		border-top: 1px solid var(--ov-meet-border-color-strong);
+		margin: var(--ov-meet-spacing-sm) 0;
+	}
+}
+
+// === TABLE PAGE UTILITIES ===
+// For pages that contain complex data tables
+
+.ov-table-page-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--ov-meet-spacing-md);
+
+	@include ov-mobile-down {
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--ov-meet-spacing-sm);
+	}
+
+	.actions-left,
+	.actions-right {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+
+		@include ov-mobile-down {
+			justify-content: center;
+		}
+	}
+
+	.refresh-btn {
+		@include ov-theme-transition;
+		border-radius: var(--ov-meet-radius-circle);
+
+		&:hover:not([disabled]) {
+			background-color: var(--ov-meet-surface-hover);
+		}
+
+		&[disabled] {
+			opacity: var(--ov-meet-disabled-opacity);
+		}
+
+		mat-icon {
+			@include ov-icon(md);
+		}
+	}
+}
+
+.ov-table-page-container {
+	@include ov-card;
+	padding: 0;
+	overflow: hidden;
+	position: relative;
+
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(var(--ov-meet-surface-color), 0.8);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+		backdrop-filter: blur(2px);
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	.no-results-message {
+		text-align: center;
+		padding: var(--ov-meet-spacing-xl);
+		color: var(--ov-meet-text-secondary);
+
+		.no-results-icon {
+			@include ov-icon(lg);
+			color: var(--ov-meet-text-hint);
+			margin-bottom: var(--ov-meet-spacing-md);
+			display: block;
+		}
+
+		h4 {
+			font-size: var(--ov-meet-font-size-lg);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+		}
+
+		p {
+			font-size: var(--ov-meet-font-size-sm);
+			margin: 0 0 var(--ov-meet-spacing-md) 0;
+		}
+
+		button {
+			mat-icon {
+				@include ov-icon(sm);
+				margin-right: var(--ov-meet-spacing-xs);
+			}
+		}
+	}
+}
+
+// === SECTION CARD UTILITIES ===
+// For settings, developers, and similar pages with section-based content
+
+// Section card color variations
+.ov-section-card-primary .section-icon {
+	color: var(--ov-meet-color-primary) !important;
+}
+
+.ov-section-card-accent .section-icon {
+	color: var(--ov-meet-color-accent) !important;
+}
+
+.ov-section-card-success .section-icon {
+	color: var(--ov-meet-color-success) !important;
+}
+
+.ov-section-card-warning .section-icon {
+	color: var(--ov-meet-color-warning) !important;
+}
+
+// === API KEY & CREDENTIAL DISPLAY UTILITIES ===
+
+.ov-api-key-display {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-md);
+	padding: var(--ov-meet-spacing-md);
+
+	@include ov-mobile-down {
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+	}
+
+	.api-key-field {
+		flex: 1;
+		min-width: 400px;
+		margin-bottom: 0;
+
+		::ng-deep .mat-mdc-text-field-wrapper {
+			background-color: var(--ov-meet-surface);
+			border-radius: var(--ov-meet-border-radius-sm);
+		}
+
+		::ng-deep .mdc-notched-outline__leading,
+		::ng-deep .mdc-notched-outline__notch,
+		::ng-deep .mdc-notched-outline__trailing {
+			border-color: var(--ov-border-color);
+		}
+
+		@include ov-tablet-down {
+			min-width: 100%;
+		}
+	}
+
+	.copy-api-key-btn {
+		@include ov-button-base;
+		background-color: var(--ov-meet-color-primary);
+		color: white;
+
+		&:hover {
+			background-color: var(--ov-meet-color-primary-dark);
+		}
+
+		mat-icon {
+			@include ov-icon(md);
+			margin-right: var(--ov-meet-spacing-sm);
+		}
+
+		@include ov-mobile-down {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+}
+
+.ov-credential-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+
+	.credential-row {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+
+		@include ov-mobile-down {
+			flex-direction: column;
+			align-items: stretch;
+			gap: var(--ov-meet-spacing-sm);
+		}
+
+		.credential-field {
+			flex: 1;
+		}
+	}
+
+	.credential-actions {
+		display: flex;
+		gap: var(--ov-meet-spacing-sm);
+		justify-content: flex-end;
+
+		@include ov-mobile-down {
+			justify-content: center;
+		}
+	}
+}
+
+// === SETTINGS FORM UTILITIES ===
+
+.ov-settings-form-section {
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	.form-field-header {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		h3 {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.field-icon {
+			@include ov-icon(md);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+
+	.form-field-description {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		margin-bottom: var(--ov-meet-spacing-md);
+		line-height: 1.4;
+	}
+
+	.form-controls {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+
+		.control-group {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+
+			@include ov-mobile-down {
+				flex-direction: column;
+				align-items: stretch;
+			}
+		}
+	}
+}
+
+// === STATISTICS & METRICS UTILITIES ===
+
+.ov-stats-display {
+	.stats-text {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+}
+
+.ov-load-more-section {
+	display: flex;
+	justify-content: center;
+	margin-top: var(--ov-meet-spacing-lg);
+	padding-top: var(--ov-meet-spacing-lg);
+	border-top: 1px solid var(--ov-border-color-light);
+
+	button {
+		@include ov-button-base;
+
+		mat-icon {
+			@include ov-icon(md);
+			margin-right: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// === SNACKBAR UTILITY STYLES ===
+
+.ov-snackbar-success {
+	background-color: var(--ov-meet-color-success);
+	color: white;
+}
+
+.ov-snackbar-error {
+	background-color: var(--ov-meet-color-error);
+	color: white;
+}
+
+.ov-snackbar-warning {
+	background-color: var(--ov-meet-color-warning);
+	color: white;
+}
+
+.ov-snackbar-info {
+	background-color: var(--ov-meet-color-primary);
+	color: white;
+}
+
+// === CONTENT LAYOUT UTILITIES ===
+
+.ov-content-with-actions {
+	display: flex;
+	flex-direction: column;
+
+	.content-actions {
+		margin-bottom: var(--ov-meet-spacing-lg);
+	}
+}
+
+// === OVERVIEW & DASHBOARD UTILITIES ===
+
+.ov-welcome-card {
+	max-width: var(--ov-meet-container-max-width);
+	margin: 0 auto;
+
+	mat-card-header {
+		display: flex;
+		align-items: center;
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		mat-card-title {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			font-size: var(--ov-meet-font-size-xxl);
+			font-weight: var(--ov-meet-font-weight-medium);
+
+			mat-icon {
+				font-size: var(--ov-meet-icon-size-lg);
+				width: var(--ov-meet-icon-size-lg);
+				height: var(--ov-meet-icon-size-lg);
+			}
+		}
+	}
+}
+
+.ov-feature-card {
+	@include ov-card;
+	@include ov-hover-lift(-5px);
+	text-align: center;
+
+	mat-card-content {
+		padding: var(--ov-meet-spacing-lg);
+
+		mat-icon {
+			@include ov-icon(xl);
+			margin-bottom: var(--ov-meet-spacing-md);
+		}
+
+		h3 {
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+			font-size: var(--ov-meet-font-size-xl);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+		}
+
+		p {
+			margin: 0 0 var(--ov-meet-spacing-lg) 0;
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-normal);
+		}
+
+		button {
+			@include ov-button-base;
+			width: 100%;
+
+			mat-icon {
+				@include ov-icon(md);
+				margin-right: var(--ov-meet-spacing-sm);
+			}
+		}
+	}
+}
+
+.ov-getting-started-grid {
+	@include ov-grid-responsive(280px);
+	margin-top: var(--ov-meet-spacing-lg);
+}
+
+.ov-quick-actions {
+	@include ov-flex-center;
+	gap: var(--ov-meet-spacing-md);
+	margin-bottom: var(--ov-meet-spacing-xxl);
+
+	button {
+		@include ov-button-base;
+
+		mat-icon {
+			margin-right: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+.ov-stats-grid {
+	@include ov-grid-responsive(300px);
+}
+
+.ov-stats-card {
+	@include ov-card;
+	text-align: center;
+	@include ov-theme-transition;
+
+	&:hover {
+		@include ov-hover-lift(-3px);
+	}
+
+	.stats-content {
+		flex: 1;
+	}
+
+	.stats-icon {
+		@include ov-icon(lg);
+		margin-bottom: var(--ov-meet-spacing-sm);
+	}
+
+	.stats-value {
+		font-size: var(--ov-meet-font-size-xxl);
+		font-weight: var(--ov-meet-font-weight-bold);
+		color: var(--ov-text-primary);
+		margin-bottom: var(--ov-meet-spacing-xs);
+	}
+
+	.stats-label {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-text-secondary);
+		text-transform: uppercase;
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+
+	mat-card-content {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+		padding: var(--ov-meet-spacing-lg);
+	}
+
+	mat-card-actions {
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
+		gap: var(--ov-meet-spacing-xs);
+
+		button {
+			@include ov-button-base;
+
+			mat-icon {
+				margin-left: var(--ov-meet-spacing-xs);
+			}
+		}
+	}
+}

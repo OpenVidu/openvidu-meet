@@ -1,0 +1,147 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
+.option-card {
+	@include ov-card;
+	@include ov-theme-transition;
+	position: relative;
+	cursor: pointer;
+	border: 2px solid transparent;
+	padding: var(--ov-meet-spacing-md);
+	min-height: 120px;
+	display: flex;
+	flex-direction: column;
+
+	&:hover:not(.no-hover):not(.selected) {
+		@include ov-hover-lift(-2px);
+	}
+
+	&.selected {
+		border-color: var(--ov-meet-color-primary);
+		box-shadow:
+			var(--ov-meet-shadow-md),
+			0 0 0 1px var(--ov-meet-color-primary);
+
+		.selection-indicator .selection-icon {
+			color: var(--ov-meet-color-primary);
+		}
+	}
+
+	&.pro-feature {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+	&.no-hover {
+		&:hover {
+			box-shadow: var(--ov-meet-card-shadow) !important;
+		}
+	}
+	.selection-indicator {
+		position: absolute;
+		top: var(--ov-meet-spacing-sm);
+		right: var(--ov-meet-spacing-sm);
+		z-index: 2;
+
+		.selection-icon {
+			@include ov-icon(md);
+			color: var(--ov-meet-text-hint);
+			@include ov-theme-transition;
+
+			&.selected {
+				color: var(--ov-meet-color-primary);
+				transform: scale(1.1);
+			}
+		}
+	}
+
+	.card-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		margin-top: var(--ov-meet-spacing-xs);
+
+		.card-image {
+			margin-bottom: var(--ov-meet-spacing-md);
+			border-radius: var(--ov-meet-border-radius-sm);
+			overflow: hidden;
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block;
+				@include ov-theme-transition;
+			}
+
+			// &:hover img {
+			// 	transform: scale(1.02);
+			// }
+		}
+
+		.card-header {
+			display: flex;
+			align-items: flex-start;
+			gap: var(--ov-meet-spacing-sm);
+			margin-bottom: var(--ov-meet-spacing-sm);
+			align-items: center;
+			font-weight: var(--ov-meet-font-weight-semibold);
+
+			.option-icon {
+				@include ov-icon(md);
+				@include ov-theme-transition;
+			}
+
+			.option-title {
+				flex: 1;
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+
+				&.has-image {
+					text-align: center;
+				}
+
+				.recommended-badge {
+					display: inline-block;
+					background: linear-gradient(45deg, var(--ov-meet-color-primary), var(--ov-meet-color-accent));
+					color: var(--ov-meet-text-on-primary);
+					padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+					border-radius: var(--ov-meet-radius-sm);
+					font-size: var(--ov-meet-font-size-xxs);
+					font-weight: var(--ov-meet-font-weight-semibold);
+					text-transform: uppercase;
+					letter-spacing: 0.5px;
+					margin-left: var(--ov-meet-spacing-xs);
+					vertical-align: middle;
+					animation: pulse 2s ease-in-out infinite;
+				}
+			}
+		}
+
+		.option-description {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-normal);
+			flex: 1;
+		}
+	}
+}
+
+// Card selection animation
+@keyframes cardSelect {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.02);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+.option-card.selected {
+	animation: cardSelect 0.3s ease-out;
+}

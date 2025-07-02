@@ -1,0 +1,101 @@
+@import '../../../../../../../../src/assets/styles/design-tokens';
+
+.wizard-container {
+	@include ov-container;
+	@include ov-page-content;
+	min-height: 600px;
+	gap: 0;
+}
+
+.wizard-header {
+	@include ov-get-started-header;
+
+	h2 {
+		margin-bottom: var(--ov-meet-spacing-md);
+		font-size: var(--ov-meet-font-size-xxl);
+		font-weight: var(--ov-meet-font-weight-light);
+		color: var(--ov-meet-text-primary);
+	}
+}
+
+.wizard-content {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+.step-content {
+	@include ov-section-card;
+	width: 100%;
+	max-width: 600px;
+	min-height: 450px;
+	max-height: 450px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.wizard-footer {
+	margin-top: auto;
+}
+
+.toggle-label {
+	font-size: var(--ov-meet-font-size-md);
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-meet-text-primary);
+}
+
+.debug-section {
+	margin-top: var(--ov-meet-spacing-md);
+
+	summary {
+		cursor: pointer;
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-secondary);
+		margin-bottom: var(--ov-meet-spacing-sm);
+
+		&:hover {
+			color: var(--ov-meet-text-primary);
+		}
+	}
+
+	&[open] summary {
+		color: var(--ov-meet-color-primary);
+	}
+}
+
+// Slide toggle customization
+.ov-slide-toggle-success {
+	.mat-mdc-slide-toggle {
+		--mdc-switch-selected-track-color: var(--ov-meet-color-success);
+		--mdc-switch-selected-handle-color: var(--ov-meet-color-success);
+		--mdc-switch-selected-hover-handle-color: var(--ov-meet-color-success);
+		--mdc-switch-selected-focus-handle-color: var(--ov-meet-color-success);
+		--mdc-switch-selected-pressed-handle-color: var(--ov-meet-color-success);
+	}
+}
+
+// Responsive design using the system mixins
+@include ov-tablet-down {
+	.wizard-container {
+		padding: var(--ov-meet-spacing-md);
+	}
+
+	.wizard-header {
+		padding-bottom: var(--ov-meet-spacing-md);
+
+		h2 {
+			font-size: var(--ov-meet-font-size-xl);
+		}
+	}
+}
+
+@include ov-mobile-down {
+	.wizard-header {
+		h2 {
+			font-size: var(--ov-meet-font-size-lg);
+		}
+	}
+}

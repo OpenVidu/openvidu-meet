@@ -1,0 +1,178 @@
+@import '../../../../../../../../../../src/assets/styles/design-tokens';
+
+.basic-info-step {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-md);
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		// margin-bottom: var(--ov-meet-spacing-xl);
+
+		.step-icon {
+			@include ov-icon(xl);
+			color: var(--ov-meet-icon-rooms);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.step-content {
+		// margin-bottom: var(--ov-meet-spacing-xl);
+
+		.basic-info-form {
+			@include ov-grid-responsive(280px);
+			gap: var(--ov-meet-spacing-lg);
+
+			.form-field {
+				width: 100%;
+
+				// Material form field customization using existing system
+				::ng-deep {
+					.mat-mdc-form-field-outline {
+						border-radius: var(--ov-meet-radius-sm);
+					}
+
+					.mat-mdc-form-field-label {
+						color: var(--ov-meet-text-secondary);
+					}
+
+					.mat-mdc-form-field-hint {
+						color: var(--ov-meet-text-hint);
+						font-size: var(--ov-meet-font-size-xs);
+					}
+
+					// Icon styling in form fields
+					.mat-mdc-form-field-icon-suffix {
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+
+					.mat-datepicker-toggle {
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+
+					// Clear button styling
+					.clear-date-button {
+						@include ov-button-base;
+						padding: var(--ov-meet-spacing-xs);
+
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+				}
+			}
+
+			// Time selection styling
+			.time-selection-container {
+				.time-selection-row {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-sm);
+
+					.time-field {
+						flex: 1;
+						max-width: 120px;
+					}
+
+					.time-separator {
+						font-size: var(--ov-meet-font-size-lg);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-secondary);
+						padding: 0 var(--ov-meet-spacing-xs);
+					}
+				}
+
+				.time-hint {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-xs);
+					background-color: var(--ov-meet-surface-accent);
+					border-radius: var(--ov-meet-radius-sm);
+					border-left: 3px solid var(--ov-meet-primary);
+
+					.hint-icon {
+						@include ov-icon(sm);
+						color: var(--ov-meet-color-warning);
+					}
+
+					span {
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-color-warning);
+						font-weight: var(--ov-meet-font-weight-medium);
+					}
+				}
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		.step-header {
+			flex-direction: column;
+			text-align: center;
+			gap: var(--ov-meet-spacing-sm);
+
+			.step-icon {
+				align-self: center;
+				margin-top: 0;
+			}
+		}
+
+		.step-content {
+			.basic-info-form {
+				display: flex;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-md);
+
+				.time-selection-container {
+					.time-selection-row {
+						flex-direction: column;
+						align-items: stretch;
+						gap: var(--ov-meet-spacing-sm);
+
+						.time-field {
+							max-width: none;
+						}
+
+						.time-separator {
+							display: none; // Hide separator in mobile vertical layout
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@include ov-tablet-down {
+		.step-content {
+			.basic-info-form {
+				grid-template-columns: 1fr;
+			}
+		}
+	}
+}

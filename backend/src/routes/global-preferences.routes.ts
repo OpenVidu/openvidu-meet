@@ -8,7 +8,8 @@ import {
 	tokenAndRoleValidator,
 	validateSecurityPreferences,
 	validateWebhookPreferences,
-	withAuth
+	withAuth,
+	withValidWebhookTestRequest
 } from '../middlewares/index.js';
 
 export const preferencesRouter = Router();
@@ -27,6 +28,7 @@ preferencesRouter.get(
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
 	webhookPrefCtrl.getWebhookPreferences
 );
+preferencesRouter.post('/webhooks/test', withValidWebhookTestRequest, webhookPrefCtrl.testWebhook);
 
 // Security preferences
 preferencesRouter.put(

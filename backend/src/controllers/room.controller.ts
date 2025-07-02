@@ -77,7 +77,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
 		}
 
 		// Room was marked as deleted
-		return res.status(202).json({ message: `Room '${roomId}' marked as deleted` });
+		return res.status(202).json({ message: `Room '${roomId}' marked for deletion` });
 	} catch (error) {
 		handleError(res, error, `deleting room '${roomId}'`);
 	}
