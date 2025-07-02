@@ -87,7 +87,14 @@ list_targets() {
     log_info "Available targets and their paths:"
     echo
     for target in "${!TARGET_DIRECTORIES[@]}"; do
-        echo -e "  ${BLUE}${target}${NC}: ${TARGET_DIRECTORIES[$target]}"
+        local target_dir="${TARGET_DIRECTORIES[$target]}"
+        local status=""
+        if [ -d "$target_dir" ]; then
+            status=" ${GREEN}[EXISTS]${NC}"
+        else
+            status=" ${YELLOW}[WILL BE CREATED]${NC}"
+        fi
+        echo -e "  ${BLUE}${target}${NC}: ${target_dir}${status}"
     done
     echo
     log_info "Available target groups:"
@@ -111,6 +118,43 @@ validate_source() {
     fi
 
     log_info "Found $d_ts_files TypeScript declaration files in source directory"
+    return 0
+}
+
+# Validate and prepare target directories
+validate_targets() {
+    local targets="$1"
+    local failed_targets=""
+
+    log_info "Validating target directories..."
+
+    for target in $targets; do
+        local target_dir="${TARGET_DIRECTORIES[$target]}"
+
+        if [ -z "$target_dir" ]; then
+            log_error "No directory configured for target: $target"
+            failed_targets="$failed_targets $target"
+            continue
+        fi
+
+        # Try to create the directory structure to validate the path
+        if [ "$DRY_RUN" = "false" ]; then
+            local test_dir="$target_dir"
+            if ! mkdir -p "$test_dir" 2>/dev/null; then
+                log_error "Cannot create directory for target '$target': $test_dir"
+                failed_targets="$failed_targets $target"
+                continue
+            fi
+        fi
+
+        [ "$VERBOSE" = "true" ] && log_info "Target '$target' validated: $target_dir"
+    done
+
+    if [ -n "$failed_targets" ]; then
+        log_error "Failed to validate targets:$failed_targets"
+        return 1
+    fi
+
     return 0
 }
 
@@ -156,20 +200,15 @@ copy_files_with_headers() {
 
     log_info "Syncing types to $target_name ($target_dir)..."
 
-    # Check if target directory parent exists
-    local parent_dir
-    parent_dir=$(dirname "$target_dir")
-    if [ ! -d "$parent_dir" ] && [ "$DRY_RUN" = "false" ]; then
-        log_warning "Parent directory '$parent_dir' does not exist. Target may not be available."
-    fi
-
+    # Create target directory and all necessary parent directories
     if [ "$DRY_RUN" = "true" ]; then
         echo "  Would create directory: $target_dir"
     else
-        mkdir -p "$target_dir" || {
+        if ! mkdir -p "$target_dir"; then
             log_error "Failed to create target directory: $target_dir"
             return 1
-        }
+        fi
+        [ "$VERBOSE" = "true" ] && log_info "Created/verified target directory: $target_dir"
     fi
 
     # Determine source path based on target
@@ -203,11 +242,11 @@ copy_files_with_headers() {
         if [ "$DRY_RUN" = "true" ]; then
             echo "  Would copy: $file -> $dest_file"
         else
-            mkdir -p "$dest_dir" || {
+            if ! mkdir -p "$dest_dir"; then
                 log_error "Failed to create directory: $dest_dir"
                 rm -f "$temp_file_list"
                 return 1
-            }
+            fi
 
             if printf "%s\n\n%s" "$HEADER" "$(cat "$file")" >"$dest_file"; then
                 [ "$VERBOSE" = "true" ] && echo "  Copied: $file -> $dest_file"
@@ -256,6 +295,9 @@ sync_types() {
 
     # Validate source directory
     validate_source || exit 1
+
+    # Validate target directories
+    validate_targets "$targets" || exit 1
 
     # Add headers to source if requested
     [ "$ADD_HEADERS" = "true" ] && add_headers_to_source
