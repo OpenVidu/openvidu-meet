@@ -74,7 +74,7 @@ export class RoomsComponent implements OnInit {
 
 	isInRoomForm(): boolean {
 		return (
-			this.navigationService.containsRoute('/console/rooms/') &&
+			this.navigationService.containsRoute('/rooms/') &&
 			(this.navigationService.containsRoute('/edit') || this.navigationService.containsRoute('/new'))
 		);
 	}
@@ -209,7 +209,7 @@ export class RoomsComponent implements OnInit {
 
 	private async createRoom() {
 		try {
-			await this.navigationService.navigateTo('/console/rooms/new');
+			await this.navigationService.navigateTo('rooms/new');
 		} catch (error) {
 			this.notificationService.showAlert('Error creating room');
 			this.log.e('Error creating room:', error);
@@ -231,7 +231,7 @@ export class RoomsComponent implements OnInit {
 		}
 
 		try {
-			await this.navigationService.navigateTo(`console/rooms/${room.roomId}/edit`);
+			await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
 		} catch (error) {
 			this.notificationService.showAlert('Error navigating to room preferences');
 			this.log.e('Error navigating to room preferences:', error);
@@ -251,7 +251,7 @@ export class RoomsComponent implements OnInit {
 	private async viewRecordings(room: MeetRoom) {
 		// Navigate to recordings page for this room
 		try {
-			await this.navigationService.navigateTo('/console/recordings', { 'room-id': room.roomId });
+			await this.navigationService.navigateTo('recordings', { 'room-id': room.roomId });
 		} catch (error) {
 			this.notificationService.showAlert('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);

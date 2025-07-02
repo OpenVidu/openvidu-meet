@@ -34,7 +34,34 @@ export const baseRoutes: Routes = [
 		canActivate: [checkUserNotAuthenticatedGuard]
 	},
 	{
-		path: 'console',
+		path: 'room/:room-id',
+		component: VideoRoomComponent,
+		canActivate: [
+			runGuardsSerially(applicationModeGuard, extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard)
+		]
+	},
+	{
+		path: 'room/:room-id/recordings',
+		component: RoomRecordingsComponent,
+		canActivate: [
+			runGuardsSerially(
+				applicationModeGuard,
+				extractRecordingQueryParamsGuard,
+				checkParticipantRoleAndAuthGuard,
+				validateRecordingAccessGuard,
+				removeModeratorSecretGuard
+			)
+		]
+	},
+	{
+		path: 'recording/:recording-id',
+		component: ViewRecordingComponent,
+		canActivate: [runGuardsSerially(applicationModeGuard, checkRecordingAuthGuard)]
+	},
+	{ path: 'disconnected', component: DisconnectedComponent },
+	{ path: 'error', component: ErrorComponent },
+	{
+		path: '',
 		component: ConsoleComponent,
 		canActivate: [checkUserAuthenticatedGuard],
 		children: [
@@ -74,34 +101,7 @@ export const baseRoutes: Routes = [
 			{ path: '**', redirectTo: 'overview' }
 		]
 	},
-	{
-		path: 'room/:room-id',
-		component: VideoRoomComponent,
-		canActivate: [
-			runGuardsSerially(applicationModeGuard, extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard)
-		]
-	},
-	{
-		path: 'room/:room-id/recordings',
-		component: RoomRecordingsComponent,
-		canActivate: [
-			runGuardsSerially(
-				applicationModeGuard,
-				extractRecordingQueryParamsGuard,
-				checkParticipantRoleAndAuthGuard,
-				validateRecordingAccessGuard,
-				removeModeratorSecretGuard
-			)
-		]
-	},
-	{
-		path: 'recording/:recording-id',
-		component: ViewRecordingComponent,
-		canActivate: [runGuardsSerially(applicationModeGuard, checkRecordingAuthGuard)]
-	},
-	{ path: 'disconnected', component: DisconnectedComponent },
-	{ path: 'error', component: ErrorComponent },
 
 	// Redirect all other routes to the console
-	{ path: '**', redirectTo: 'console' }
+	{ path: '**', redirectTo: '' }
 ];

@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
 		password: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
 	loginErrorMessage: string | undefined;
-	redirectTo = 'console'; // By default, redirect to the console page
+	redirectTo = ''; // By default, redirect to home page
 
 	constructor(
 		private navigationService: NavigationService,

@@ -128,7 +128,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		} catch (error) {
 			console.error('Error loading room data:', error);
 			// Navigate back to rooms list if room not found
-			await this.navigationService.navigateTo('/console/rooms', undefined, true);
+			await this.navigationService.navigateTo('rooms', undefined, true);
 		}
 	}
 
@@ -150,7 +150,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 	}
 
 	onCancel() {
-		this.navigationService.navigateTo('/console/rooms', undefined, true);
+		this.navigationService.navigateTo('rooms', undefined, true);
 		this.wizardState.resetWizard();
 	}
 
@@ -179,7 +179,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 				// TODO: Show error notification
 			}
 
-			await this.navigationService.navigateTo('/console/rooms', undefined, true);
+			await this.navigationService.navigateTo('rooms', undefined, true);
 		} catch (error) {
 			console.error(`Failed to ${this.editMode ? 'update' : 'create'} room:`, error);
 		}
@@ -190,8 +190,8 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
  * Room creation and editing wizard component.
  *
  * This component automatically detects the mode based on the route:
- * - Create mode: /console/rooms/new
- * - Edit mode: /console/rooms/{roomId}/edit
+ * - Create mode: /rooms/new
+ * - Edit mode: /rooms/{roomId}/edit
  *
  * In edit mode, it automatically loads the room data using the roomId from the route.
  * The basic room details step is disabled in edit mode as it contains non-editable fields.
