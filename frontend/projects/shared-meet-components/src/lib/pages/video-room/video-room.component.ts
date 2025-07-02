@@ -267,7 +267,40 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			this.sessionStorageService.removeModeratorSecret(event.roomName);
 		}
 
-		await this.navigationService.redirectTo(redirectURL, isExternalURL);
+		// Add disconnect reason as query parameter if redirecting to disconnect page
+		let finalRedirectURL = redirectURL;
+		if (!isExternalURL && (redirectURL === '/disconnected' || redirectURL.includes('/disconnected'))) {
+			const reasonParam = this.getReasonParamFromEvent(event.reason, isRoomDeleted);
+			const separator = redirectURL.includes('?') ? '&' : '?';
+			finalRedirectURL = `${redirectURL}${separator}reason=${encodeURIComponent(reasonParam)}`;
+		}
+
+		await this.navigationService.redirectTo(finalRedirectURL, isExternalURL);
+	}
+
+	/**
+	 * Maps ParticipantLeftReason to a query parameter value
+	 */
+	private getReasonParamFromEvent(reason: ParticipantLeftReason, isRoomDeleted: boolean): string {
+		if (isRoomDeleted) {
+			return 'roomDeleted';
+		}
+
+		switch (reason) {
+			default:
+			case ParticipantLeftReason.LEAVE:
+				return 'disconnect';
+			case ParticipantLeftReason.PARTICIPANT_REMOVED:
+				return 'forceDisconnectByUser';
+			case ParticipantLeftReason.SERVER_SHUTDOWN:
+				return 'sessionClosedByServer';
+			case ParticipantLeftReason.NETWORK_DISCONNECT:
+				return 'networkDisconnect';
+			case ParticipantLeftReason.SIGNAL_CLOSE:
+				return 'openviduDisconnect';
+			case ParticipantLeftReason.BROWSER_UNLOAD:
+				return 'browserClosed';
+		}
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
