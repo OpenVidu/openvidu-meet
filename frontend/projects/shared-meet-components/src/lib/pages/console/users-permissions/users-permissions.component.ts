@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,9 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { LogoSelectorComponent, ProFeatureBadgeComponent } from '@lib/components';
+import { ProFeatureBadgeComponent } from '@lib/components';
 import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
 
@@ -19,41 +16,36 @@ import { AuthMode } from '@lib/typings/ce';
 	selector: 'ov-preferences',
 	standalone: true,
 	imports: [
-		CommonModule,
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
 		MatSelectModule,
-		MatSnackBarModule,
-		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatDividerModule,
 		ReactiveFormsModule,
-		LogoSelectorComponent,
-		ProFeatureBadgeComponent,
-		MatSelectModule
+		ProFeatureBadgeComponent
 	],
 	templateUrl: './users-permissions.component.html',
 	styleUrl: './users-permissions.component.scss'
 })
 export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(false);
-	isSavingBranding = signal(false);
-	isSavingAccess = signal(false);
 
-	authForm = new FormGroup({
+	adminCredentialsForm = new FormGroup({
+		adminUsername: new FormControl({ value: '', disabled: true }, [Validators.required]),
+		adminPassword: new FormControl('', [Validators.required, Validators.minLength(4)])
+	});
+	accessSettingsForm = new FormGroup({
 		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required])
 	});
 
-	adminPasswordControl = new FormControl('', [Validators.required, Validators.minLength(8)]);
-
 	// Auth mode options for the select dropdown
 	authModeOptions = [
-		{ value: AuthMode.ALL_USERS, label: 'Everyone' },
-		{ value: AuthMode.MODERATORS_ONLY, label: 'Only Moderators' },
-		{ value: AuthMode.NONE, label: 'Nobody' }
+		{ value: AuthMode.NONE, label: 'Nobody' },
+		{ value: AuthMode.MODERATORS_ONLY, label: 'Only moderators' },
+		{ value: AuthMode.ALL_USERS, label: 'Everyone' }
 	];
 
 	constructor(
@@ -63,52 +55,72 @@ export class UsersPermissionsComponent implements OnInit {
 	) {}
 
 	async ngOnInit() {
-		await this.loadSettings();
+		this.isLoading.set(true);
+		await this.loadAdminUsername();
+		await this.loadAccessSettings();
+		this.isLoading.set(false);
 	}
 
-	private async loadSettings() {
-		this.isLoading.set(true);
+	private async loadAdminUsername() {
+		const username = await this.authService.getUsername();
+		if (!username) {
+			console.error('Admin username not found');
+			this.notificationService.showSnackbar('Failed to load admin username');
+			return;
+		}
 
+		this.adminCredentialsForm.get('adminUsername')?.setValue(username);
+	}
+
+	private async loadAccessSettings() {
 		try {
 			const authMode = await this.preferencesService.getAuthModeToAccessRoom();
-			this.authForm.get('authModeToAccessRoom')?.setValue(authMode);
+			this.accessSettingsForm.get('authModeToAccessRoom')?.setValue(authMode);
 		} catch (error) {
 			console.error('Error loading security preferences:', error);
 			this.notificationService.showSnackbar('Failed to load security preferences');
 		}
-
-		this.isLoading.set(false);
 	}
 
-	async onSaveAccess() {
-		if (this.authForm.invalid || this.adminPasswordControl.invalid) {
+	async onSaveAdminCredentials() {
+		if (this.adminCredentialsForm.invalid) {
 			return;
 		}
 
-		this.isSavingAccess.set(true);
-		const formData = this.authForm.value;
-		const adminPassword = this.adminPasswordControl.value;
+		const formData = this.adminCredentialsForm.value;
+		const adminPassword = formData.adminPassword!;
+
+		try {
+			await this.authService.changePassword(adminPassword);
+			this.notificationService.showSnackbar('Admin credentials updated successfully');
+		} catch (error) {
+			console.error('Error saving admin credentials:', error);
+			this.notificationService.showSnackbar('Failed to save admin credentials');
+		}
+	}
+
+	async onSaveAccessSettings() {
+		if (this.accessSettingsForm.invalid) {
+			return;
+		}
+
+		const formData = this.accessSettingsForm.value;
 
 		try {
 			const securityPrefs = await this.preferencesService.getSecurityPreferences();
 			securityPrefs.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
+
 			await this.preferencesService.saveSecurityPreferences(securityPrefs);
-
-			if (adminPassword) {
-				await this.authService.changePassword(adminPassword);
-			}
-
 			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
 		} catch (error) {
 			console.error('Error saving access permissions:', error);
 			this.notificationService.showSnackbar('Failed to save Access & Permissions settings');
-		} finally {
-			this.isSavingAccess.set(false);
 		}
 	}
 
+	// Utility methods for form validation
 	getAdminPasswordError(): string {
-		const control = this.adminPasswordControl;
+		const control = this.adminCredentialsForm.get('adminPassword')!;
 		if (!control.touched || !control.errors) {
 			return '';
 		}
@@ -122,35 +134,5 @@ export class UsersPermissionsComponent implements OnInit {
 		}
 
 		return '';
-	}
-
-	// Utility methods for form validation
-	getFieldError(formGroup: FormGroup, fieldName: string): string {
-		const field = formGroup.get(fieldName);
-		if (!field || !field.touched || !field.errors) {
-			return '';
-		}
-
-		const errors = field.errors;
-		if (errors['required']) {
-			return `${this.getFieldLabel(fieldName)} is required`;
-		}
-		if (errors['minlength']) {
-			return `${this.getFieldLabel(fieldName)} must be at least ${errors['minlength'].requiredLength} characters`;
-		}
-		if (errors['invalidUrl']) {
-			return `${this.getFieldLabel(fieldName)} must be a valid URL`;
-		}
-
-		return '';
-	}
-
-	private getFieldLabel(fieldName: string): string {
-		const labels: Record<string, string> = {
-			logoUrl: 'Logo URL',
-			authModeToAccessRoom: 'Authentication mode to access room',
-			adminPassword: 'Admin password'
-		};
-		return labels[fieldName] || fieldName;
 	}
 }

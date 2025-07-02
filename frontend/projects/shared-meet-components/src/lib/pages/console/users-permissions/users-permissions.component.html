@@ -15,7 +15,7 @@
 			<div class="loading-content">
 				<div class="loading-header">
 					<div class="loading-title">
-						<mat-icon class="ov-settings-icon loading-icon"> settings </mat-icon>
+						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
 						<h1>Loading Settings</h1>
 					</div>
 					<p class="loading-subtitle">Please wait while we fetch your settings...</p>
@@ -61,7 +61,7 @@
 							<h3>User Authentication</h3>
 							<ov-pro-feature-badge class="users-pro-badge"></ov-pro-feature-badge>
 						</div>
-						<p class="field-description">Choose how users will authenticate to join rooms.</p>
+						<p class="field-description">Choose how users will authenticate to access OpenVidu Meet.</p>
 						<mat-form-field
 							subscriptSizing="dynamic"
 							appearance="outline"
@@ -70,47 +70,53 @@
 							<mat-select [value]="'single'">
 								<mat-option value="single">Single user</mat-option>
 								<mat-option value="multiusers" [disabled]="true">
-									Multi-user authentication (OAuth & credentials)
+									Multi-user (credentials & optional OAuth)
 								</mat-option>
-								<mat-option value="oauth" [disabled]="true">Only OAuth </mat-option>
+								<mat-option value="oauth" [disabled]="true">Multi-user (only OAuth)</mat-option>
 							</mat-select>
 						</mat-form-field>
 					</div>
 
 					<!-- Change Admin Password -->
-					<div class="form-section">
-						<div class="form-field-header">
-							<h3>Admin Authentication</h3>
-							<p class="field-description">
-								Change the password for the admin user for OpenVidu Meet access.
-							</p>
-						</div>
+					<form [formGroup]="adminCredentialsForm" (ngSubmit)="onSaveAdminCredentials()">
+						<div class="form-section">
+							<div class="form-field-header">
+								<h3>Admin Credentials</h3>
+								<p class="field-description">Change the password for the admin user.</p>
+							</div>
 
-						<div class="admin-auth-form">
-							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="username-field">
-								<mat-label>Username</mat-label>
-								<input matInput type="text" value="Admin (TODO)" disabled />
-							</mat-form-field>
+							<div class="admin-auth-form">
+								<mat-form-field subscriptSizing="dynamic" appearance="outline" class="username-field">
+									<mat-label>Username</mat-label>
+									<input matInput type="text" formControlName="adminUsername" placeholder="admin" />
+								</mat-form-field>
 
-							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="password-field">
-								<mat-label>Password</mat-label>
-								<input
-									matInput
-									type="password"
-									[formControl]="adminPasswordControl"
-									placeholder="••••••••"
-								/>
-								<mat-hint>Minimum of 8 characters</mat-hint>
-								@if (getAdminPasswordError()) {
-									<mat-error>{{ getAdminPasswordError() }}</mat-error>
-								}
-							</mat-form-field>
+								<mat-form-field subscriptSizing="dynamic" appearance="outline" class="password-field">
+									<mat-label>Password</mat-label>
+									<input
+										matInput
+										type="password"
+										formControlName="adminPassword"
+										placeholder="••••••••"
+									/>
+									<mat-hint>Minimum of 4 characters</mat-hint>
+									@if (getAdminPasswordError()) {
+										<mat-error>{{ getAdminPasswordError() }}</mat-error>
+									}
+								</mat-form-field>
+							</div>
 						</div>
-					</div>
+					</form>
 				</mat-card-content>
 				<mat-card-actions>
-					<button mat-raised-button color="primary" type="submit" (click)="onSaveAccess()">
-						Save Admin password
+					<button
+						mat-raised-button
+						color="primary"
+						type="submit"
+						[disabled]="adminCredentialsForm.invalid"
+						(click)="onSaveAdminCredentials()"
+					>
+						Save admin password
 					</button>
 				</mat-card-actions>
 			</mat-card>
@@ -127,7 +133,7 @@
 				<mat-divider class="section-divider"></mat-divider>
 
 				<mat-card-content>
-					<form [formGroup]="authForm" (ngSubmit)="onSaveAccess()">
+					<form [formGroup]="accessSettingsForm" (ngSubmit)="onSaveAccessSettings()">
 						<!-- Authentication for joining room -->
 						<div class="form-section">
 							<div class="form-field-header">
@@ -142,16 +148,13 @@
 										<mat-option [value]="option.value">{{ option.label }}</mat-option>
 									}
 								</mat-select>
-								@if (getFieldError(authForm, 'authModeToAccessRoom')) {
-									<mat-error>{{ getFieldError(authForm, 'authModeToAccessRoom') }}</mat-error>
-								}
 							</mat-form-field>
 						</div>
 					</form>
 				</mat-card-content>
 				<mat-card-actions>
-					<button mat-raised-button color="primary" type="submit" (click)="onSaveAccess()">
-						Save Configuration
+					<button mat-raised-button color="primary" type="submit" (click)="onSaveAccessSettings()">
+						Save configuration
 					</button>
 				</mat-card-actions>
 			</mat-card>
