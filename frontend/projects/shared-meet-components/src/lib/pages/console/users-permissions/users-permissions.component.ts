@@ -31,7 +31,7 @@ import { AuthMode } from '@lib/typings/ce';
 	styleUrl: './users-permissions.component.scss'
 })
 export class UsersPermissionsComponent implements OnInit {
-	isLoading = signal(false);
+	isLoading = signal(true);
 
 	adminCredentialsForm = new FormGroup({
 		adminUsername: new FormControl({ value: '', disabled: true }, [Validators.required]),

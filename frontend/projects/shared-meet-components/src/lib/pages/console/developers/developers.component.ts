@@ -1,15 +1,13 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { MeetApiKey } from '@lib/typings/ce';
@@ -18,22 +16,22 @@ import { MeetApiKey } from '@lib/typings/ce';
 	selector: 'ov-developers-settings',
 	standalone: true,
 	imports: [
-		CommonModule,
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
 		MatSlideToggleModule,
-		MatSnackBarModule,
 		MatTooltipModule,
-		MatDividerModule,
-		ReactiveFormsModule
+		ReactiveFormsModule,
+		MatProgressSpinnerModule
 	],
 	templateUrl: './developers.component.html',
 	styleUrl: './developers.component.scss'
 })
 export class DevelopersSettingsComponent implements OnInit {
+	isLoading = signal(true);
+
 	apiKeyData = signal<MeetApiKey | undefined>(undefined);
 	showApiKey = signal(false);
 
@@ -66,8 +64,10 @@ export class DevelopersSettingsComponent implements OnInit {
 	}
 
 	async ngOnInit() {
+		this.isLoading.set(true);
 		await this.loadApiKeyData();
 		await this.loadWebhookConfig();
+		this.isLoading.set(false);
 	}
 
 	// ===== API KEY METHODS =====
