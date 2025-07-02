@@ -357,7 +357,7 @@ export class RoomWizardStateService {
 			showNext: !isLastStep,
 			showCancel: true,
 			showFinish: isLastStep,
-			showQuickCreate: !isEditMode,
+			showQuickCreate: !isEditMode && isFirstStep,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
 			finishLabel: isEditMode ? 'Update Room' : 'Create Room',
