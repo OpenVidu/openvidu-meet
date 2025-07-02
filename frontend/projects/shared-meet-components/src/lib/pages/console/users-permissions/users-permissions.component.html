@@ -97,12 +97,12 @@
 								<input
 									matInput
 									type="password"
-									formControlName="adminPassword"
+									[formControl]="adminPasswordControl"
 									placeholder="••••••••"
 								/>
 								<mat-hint>Minimum of 8 characters</mat-hint>
-								@if (getFieldError(authForm, 'adminPassword')) {
-									<mat-error>{{ getFieldError(authForm, 'adminPassword') }}</mat-error>
+								@if (getAdminPasswordError()) {
+									<mat-error>{{ getAdminPasswordError() }}</mat-error>
 								}
 							</mat-form-field>
 						</div>

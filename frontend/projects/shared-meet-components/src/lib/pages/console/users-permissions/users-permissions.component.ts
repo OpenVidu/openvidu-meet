@@ -44,9 +44,10 @@ export class UsersPermissionsComponent implements OnInit {
 	isSavingAccess = signal(false);
 
 	authForm = new FormGroup({
-		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required]),
-		adminPassword: new FormControl('', [Validators.required, Validators.minLength(4)])
+		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required])
 	});
+
+	adminPasswordControl = new FormControl('', [Validators.required, Validators.minLength(8)]);
 
 	// Auth mode options for the select dropdown
 	authModeOptions = [
@@ -80,20 +81,21 @@ export class UsersPermissionsComponent implements OnInit {
 	}
 
 	async onSaveAccess() {
-		if (this.authForm.invalid) {
+		if (this.authForm.invalid || this.adminPasswordControl.invalid) {
 			return;
 		}
 
 		this.isSavingAccess.set(true);
 		const formData = this.authForm.value;
+		const adminPassword = this.adminPasswordControl.value;
 
 		try {
 			const securityPrefs = await this.preferencesService.getSecurityPreferences();
 			securityPrefs.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
 			await this.preferencesService.saveSecurityPreferences(securityPrefs);
 
-			if (formData.adminPassword) {
-				await this.authService.changePassword(formData.adminPassword);
+			if (adminPassword) {
+				await this.authService.changePassword(adminPassword);
 			}
 
 			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
@@ -103,6 +105,23 @@ export class UsersPermissionsComponent implements OnInit {
 		} finally {
 			this.isSavingAccess.set(false);
 		}
+	}
+
+	getAdminPasswordError(): string {
+		const control = this.adminPasswordControl;
+		if (!control.touched || !control.errors) {
+			return '';
+		}
+
+		const errors = control.errors;
+		if (errors['required']) {
+			return 'Admin password is required';
+		}
+		if (errors['minlength']) {
+			return `Admin password must be at least ${errors['minlength'].requiredLength} characters`;
+		}
+
+		return '';
 	}
 
 	// Utility methods for form validation
