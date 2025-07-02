@@ -23,17 +23,20 @@
 		<router-outlet></router-outlet>
 	</div>
 } @else {
-	<div class="ov-page-container ov-mb-xxl">
-		<div class="page-header">
-			<div class="title">
-				<mat-icon class="ov-room-icon"> video_chat </mat-icon>
-				<h1>Rooms</h1>
+	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
+		<div class="page-header" id="rooms-page-header">
+			<div class="title" id="rooms-title">
+				<mat-icon class="ov-room-icon" id="rooms-icon"> video_chat </mat-icon>
+				<h1 id="rooms-heading">Rooms</h1>
 			</div>
-			<p class="subtitle">Manage your rooms, create new ones, and configure settings for your meetings.</p>
+			<p class="subtitle" id="rooms-subtitle">
+				Manage your rooms, create new ones, and configure settings for your meetings.
+			</p>
 		</div>
 
-		<div class="page-content">
+		<div class="page-content" id="rooms-content">
 			<ov-rooms-lists
+				id="rooms-list"
 				[rooms]="rooms()"
 				[loading]="isLoading"
 				[showSelection]="true"

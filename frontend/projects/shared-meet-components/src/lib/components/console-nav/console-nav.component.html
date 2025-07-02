@@ -1,29 +1,30 @@
-<mat-toolbar color="primary">
-	<button mat-icon-button aria-label="Menu icon" (click)="toggleSideMenu()">
+<mat-toolbar color="primary" id="main-toolbar">
+	<button mat-icon-button aria-label="Menu icon" (click)="toggleSideMenu()" id="menu-toggle-btn">
 		<mat-icon>menu</mat-icon>
 	</button>
 
-	<span class="toolbar-title">OpenVidu Meet</span>
+	<span class="toolbar-title" id="app-title">OpenVidu Meet</span>
 
 	<span class="toolbar-spacer"></span>
 
-	<button mat-icon-button aria-label="Profile">
+	<button mat-icon-button aria-label="Profile" id="profile-btn">
 		<mat-icon>account_circle</mat-icon>
 	</button>
 
-	<button mat-icon-button (click)="onLogoutClicked.emit()" aria-label="Logout">
+	<button mat-icon-button (click)="onLogoutClicked.emit()" aria-label="Logout" id="logout-btn">
 		<mat-icon>logout</mat-icon>
 	</button>
 </mat-toolbar>
 
-<mat-sidenav-container autosize class="sidenav-container">
+<mat-sidenav-container autosize class="sidenav-container" id="sidenav-container">
 	<mat-sidenav
 		#sidenav
 		[ngClass]="isSideMenuCollapsed ? 'collapsed' : 'expanded'"
 		[mode]="isMobile ? 'over' : 'side'"
 		[opened]="isMobile ? 'false' : 'true'"
+		id="side-navigation"
 	>
-		<mat-nav-list>
+		<mat-nav-list id="nav-list">
 			@for (link of navLinks; track link.route) {
 				<ng-container>
 					<a
@@ -37,6 +38,7 @@
 						[matTooltipPosition]="'right'"
 						[matTooltipClass]="'nav-tooltip'"
 						[matTooltipDisabled]="!isSideMenuCollapsed"
+						[id]="'nav-link-' + link.route!.replace('/', '')"
 					>
 						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
 							<mat-icon [ngClass]="link.iconClass">{{ link.icon }}</mat-icon>
@@ -50,16 +52,16 @@
 		</mat-nav-list>
 
 		@if (!isSideMenuCollapsed) {
-			<div class="separator"></div>
-			<div class="version">
+			<div class="separator" id="nav-separator"></div>
+			<div class="version" id="version-info">
 				<p>v{{ version }}</p>
 			</div>
 		}
 	</mat-sidenav>
 
 	<!-- Main content -->
-	<mat-sidenav-content>
-		<div class="page-content">
+	<mat-sidenav-content id="main-content">
+		<div class="page-content" id="page-content">
 			<router-outlet></router-outlet>
 		</div>
 	</mat-sidenav-content>

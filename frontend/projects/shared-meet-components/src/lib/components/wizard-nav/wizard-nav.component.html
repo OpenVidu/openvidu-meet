@@ -1,10 +1,11 @@
-<nav class="wizard-navigation" [class.loading]="config.isLoading" [class.compact]="config.isCompact">
+<nav class="wizard-navigation" [class.loading]="config.isLoading" [class.compact]="config.isCompact" id="wizard-navigation">
 	<div class="nav-buttons">
 		<!-- Cancel Button -->
 		@if (config.showCancel) {
 			<button
 				mat-stroked-button
 				class="cancel-btn"
+				id="wizard-cancel-btn"
 				(click)="onCancel()"
 				[attr.aria-label]="'Cancel wizard and return to previous page'"
 			>
@@ -22,6 +23,7 @@
 				<button
 					mat-stroked-button
 					class="prev-btn"
+					id="wizard-previous-btn"
 					[disabled]="config.isPreviousDisabled"
 					(click)="onPrevious()"
 					[attr.aria-label]="'Go to previous step'"
@@ -33,7 +35,13 @@
 
 			@if (config.showQuickCreate) {
 				<!-- Skip Wizard Button -->
-				<button mat-raised-button class="skip-btn" (click)="skipAndFinish()" type="button">
+				<button
+					mat-raised-button
+					class="skip-btn"
+					id="wizard-quick-create-btn"
+					(click)="skipAndFinish()"
+					type="button"
+				>
 					<mat-icon>bolt</mat-icon>
 					Create with defaults
 				</button>
@@ -44,6 +52,7 @@
 				<button
 					mat-raised-button
 					class="next-btn"
+					id="wizard-next-btn"
 					[disabled]="config.isNextDisabled"
 					(click)="onNext()"
 					[attr.aria-label]="'Continue to next step'"
@@ -60,6 +69,7 @@
 				<button
 					mat-raised-button
 					class="finish-btn"
+					id="wizard-finish-btn"
 					[disabled]="config.isFinishDisabled"
 					(click)="onFinish()"
 					[attr.aria-label]="'Complete wizard and save changes'"
