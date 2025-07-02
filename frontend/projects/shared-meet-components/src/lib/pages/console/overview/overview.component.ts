@@ -28,7 +28,7 @@ export class OverviewComponent implements OnInit {
 		activeRooms: 0,
 		totalRecordings: 0,
 		hasData: false,
-		isLoading: true // Empezamos con loading true para evitar flickering
+		isLoading: true
 	};
 
 	constructor(
