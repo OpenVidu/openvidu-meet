@@ -2,14 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 
-const API_V1_VERSION = 'v1';
+const API_VERSION = 'v1';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class HttpService {
-	public static readonly API_PATH_PREFIX = `meet/api/${API_V1_VERSION}`;
-	public static readonly INTERNAL_API_PATH_PREFIX = `meet/internal-api/${API_V1_VERSION}`;
+	public static readonly API_PATH_PREFIX = `api/${API_VERSION}`;
+	public static readonly INTERNAL_API_PATH_PREFIX = `internal-api/${API_VERSION}`;
 
 	constructor(protected http: HttpClient) {}
 

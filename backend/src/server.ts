@@ -64,12 +64,12 @@ const createApp = () => {
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
 
-	app.use('/meet/health', (_req: Request, res: Response) => res.status(200).send('OK'));
+	app.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
 	// LiveKit Webhook route
 	app.use('/livekit/webhook', livekitWebhookRouter);
 	// Serve OpenVidu Meet webcomponent bundle file
-	app.get('/meet/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
+	app.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
 	// Serve OpenVidu Meet index.html file for all non-API routes
 	app.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => res.sendFile(frontendHtmlPath));
 	// Catch all other routes and return 404

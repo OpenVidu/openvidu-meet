@@ -102,7 +102,7 @@ export const createTestRoom = async (
 	roomIdPrefix: string,
 	preferences: MeetRoomPreferences = getDefaultRoomPreferences()
 ) => {
-	const response = await fetch(`http://localhost:6080/meet/api/v1/rooms`, {
+	const response = await fetch(`http://localhost:6080/api/v1/rooms`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ export const createTestRoom = async (
 
 // Helper function to update room preferences via REST API
 export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
-	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/rooms/${roomId}`, {
+	const response = await fetch(`http://localhost:6080/internal-api/v1/rooms/${roomId}`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export const updateRoomPreferences = async (roomId: string, preferences: any, ad
 
 // Helper function to login and get admin cookie
 export const loginAsAdmin = async (): Promise<string> => {
-	const response = await fetch(`http://localhost:6080/meet/internal-api/v1/auth/login`, {
+	const response = await fetch(`http://localhost:6080/internal-api/v1/auth/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
@@ -178,7 +178,7 @@ export const loginAsAdmin = async (): Promise<string> => {
 
 // Helper function to delete a room
 export const deleteTestRoom = async (roomIdToDelete: string) => {
-	await fetch(`http://localhost:6080/meet/api/v1/rooms/${roomIdToDelete}`, {
+	await fetch(`http://localhost:6080/api/v1/rooms/${roomIdToDelete}`, {
 		method: 'DELETE',
 		headers: {
 			'x-api-key': 'meet-api-key'
