@@ -71,7 +71,7 @@ export class RoomWizardStateService {
 				id: 'basic',
 				label: 'Room Details',
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
-				isActive: true,
+				isActive: !editMode, // Start with basic step active in create mode
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
 					roomPrefix: [
@@ -86,7 +86,7 @@ export class RoomWizardStateService {
 				id: 'recording',
 				label: 'Recording Settings',
 				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: true, // Start with recording step in edit mode
+				isActive: editMode, // Start with recording step in edit mode
 				isVisible: true,
 				validationFormGroup: this._formBuilder.group({
 					enabled: [
@@ -354,6 +354,7 @@ export class RoomWizardStateService {
 			showNext: !isLastStep,
 			showCancel: true,
 			showFinish: isLastStep,
+			showQuickCreate: !isEditMode,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
 			finishLabel: isEditMode ? 'Update Room' : 'Create Room',

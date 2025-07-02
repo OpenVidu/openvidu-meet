@@ -26,7 +26,7 @@ export interface WizardNavigationConfig {
 	showNext: boolean;
 	showCancel: boolean;
 	showFinish: boolean;
-	showQuickCreate?: boolean; // Optional for quick create functionality
+	showQuickCreate: boolean; // Optional for quick create functionality
 
 	// Button labels (customizable)
 	nextLabel?: string;

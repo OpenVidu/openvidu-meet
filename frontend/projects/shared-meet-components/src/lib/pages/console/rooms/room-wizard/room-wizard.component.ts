@@ -50,6 +50,7 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		showNext: true,
 		showCancel: true,
 		showFinish: false,
+		showQuickCreate: true,
 		nextLabel: 'Next',
 		previousLabel: 'Previous',
 		finishLabel: 'Create Room',
@@ -70,16 +71,14 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 
 		// Detect edit mode from route
 		this.detectEditMode();
-		console.log('Edit mode detected:', this.editMode, 'Room ID:', this.roomId);
 
 		// If in edit mode, load room data
 		if (this.editMode && this.roomId) {
+			this.navigationConfig.showQuickCreate = false;
 			await this.loadRoomData();
-			console.log('Loaded room data:', this.existingRoomData);
 		}
 
 		// Initialize wizard with edit mode and existing data
-		console.log('Initializing wizard with editMode:', this.editMode, 'existingData:', this.existingRoomData);
 		this.wizardState.initializeWizard(this.editMode, this.existingRoomData || undefined);
 
 		this.wizardState.steps$.pipe(takeUntil(this.destroy$)).subscribe((steps) => {
@@ -108,8 +107,10 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		const url = this.route.snapshot.url;
 		this.editMode = url.some((segment) => segment.path === 'edit');
 
-		// Get roomId from route parameters
-		this.roomId = this.route.snapshot.paramMap.get('roomId');
+		// Get roomId from route parameters when in edit mode
+		if (this.editMode) {
+			this.roomId = this.route.snapshot.paramMap.get('roomId');
+		}
 	}
 
 	private async loadRoomData() {
@@ -185,14 +186,3 @@ export class RoomWizardComponent implements OnInit, OnDestroy {
 		}
 	}
 }
-
-/**
- * Room creation and editing wizard component.
- *
- * This component automatically detects the mode based on the route:
- * - Create mode: /rooms/new
- * - Edit mode: /rooms/{roomId}/edit
- *
- * In edit mode, it automatically loads the room data using the roomId from the route.
- * The basic room details step is disabled in edit mode as it contains non-editable fields.
- */

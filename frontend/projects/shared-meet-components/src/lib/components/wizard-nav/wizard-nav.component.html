@@ -29,7 +29,9 @@
 					<mat-icon class="leading-icon">chevron_left</mat-icon>
 					{{ config.previousLabel || 'Previous' }}
 				</button>
-			} @else if (config.showQuickCreate) {
+			}
+
+			@if (config.showQuickCreate) {
 				<!-- Skip Wizard Button -->
 				<button mat-raised-button class="skip-btn" (click)="skipAndFinish()" type="button">
 					<mat-icon>bolt</mat-icon>
