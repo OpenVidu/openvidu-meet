@@ -249,9 +249,14 @@ export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Pa
 	await interactWithElementInIframe(page, '#view-recordings-btn', { action: 'click' });
 };
 
-export const leaveRoom = async (page: Page) => {
+export const leaveRoom = async (page: Page, role: 'moderator' | 'publisher' = 'publisher') => {
 	const button = await waitForElementInIframe(page, '#leave-btn');
 	await button.click();
+	if (role === 'moderator') {
+		await page.waitForTimeout(500); // Wait for leave animation
+		const option = await waitForElementInIframe(page, '#leave-option');
+		await option.click();
+	}
 	await page.waitForSelector('.event-LEFT');
 };
 

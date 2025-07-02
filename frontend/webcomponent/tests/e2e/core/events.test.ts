@@ -3,6 +3,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	joinRoomAs,
+	leaveRoom,
 	waitForElementInIframe
 } from '../../helpers/function-helpers';
 
@@ -85,8 +86,7 @@ test.describe('Web Component E2E Tests', () => {
 		}) => {
 			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
 
-			const button = await waitForElementInIframe(page, '#leave-btn');
-			await button.click();
+			await leaveRoom(page, 'moderator');
 			await page.waitForSelector('.event-LEFT');
 			const leftElements = await page.locator('.event-LEFT').all();
 			expect(leftElements.length).toBe(1);
