@@ -1,3 +1,5 @@
+@import '../../../../../../src/assets/styles/design-tokens';
+
 .dashboard-container {
 	height: 100%;
 }
@@ -21,20 +23,4 @@
 .dashboard-body {
 	background-color: var(--ov-secondary-action-color);
 	height: 100%;
-}
-
-.recordings-container {
-	background-color: var(--ov-secondary-action-color);
-	height: 100%;
-	overflow-y: auto;
-	overflow-x: hidden;
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-	grid-auto-rows: max-content;
-	gap: 15px;
-	justify-content: center;
-	align-items: center;
-	padding: 20px;
-	padding-bottom: 80px;
-	box-sizing: border-box;
 }

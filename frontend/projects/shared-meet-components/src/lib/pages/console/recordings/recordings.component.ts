@@ -1,9 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
 import { NotificationService, RecordingManagerService } from '@lib/services';
@@ -13,14 +10,7 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 @Component({
 	selector: 'ov-recordings',
 	standalone: true,
-	imports: [
-		RecordingListsComponent,
-		MatButtonModule,
-		MatIconModule,
-		MatProgressSpinnerModule,
-		MatSnackBarModule,
-		MatTooltipModule
-	],
+	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
 	templateUrl: './recordings.component.html',
 	styleUrl: './recordings.component.scss'
 })
