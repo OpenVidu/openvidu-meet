@@ -1,9 +1,14 @@
 import { Component, OnDestroy, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
+import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatRippleModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ErrorReason } from '@lib/models';
 import {
@@ -21,6 +26,7 @@ import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } 
 import {
 	ApiDirectiveModule,
 	OpenViduComponentsUiModule,
+	OpenViduService,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
@@ -41,7 +47,13 @@ import {
 		FormsModule,
 		ReactiveFormsModule,
 		MatCardModule,
-		MatButtonModule
+		MatButtonModule,
+		MatIconModule,
+		MatIconButton,
+		MatMenuModule,
+		MatDividerModule,
+		MatTooltipModule,
+		MatRippleModule
 	]
 })
 export class VideoRoomComponent implements OnInit, OnDestroy {
@@ -65,6 +77,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected recManagerService: RecordingManagerService,
 		protected authService: AuthService,
 		protected roomService: RoomService,
+		protected openviduService: OpenViduService,
+		protected participantService: ParticipantTokenService,
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService
@@ -107,6 +121,17 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async onTokenRequested() {
 		// Participant token must be set only when requested
 		this.participantToken = this.participantTokenService.getParticipantToken() || '';
+	}
+
+	async leaveMeeting() {
+		await this.openviduService.disconnectRoom();
+	}
+
+	async endMeeting() {
+		if (this.participantService.isModeratorParticipant()) {
+			const roomId = this.roomService.getRoomId();
+			await this.roomService.endMeeting(roomId);
+		}
 	}
 
 	/**

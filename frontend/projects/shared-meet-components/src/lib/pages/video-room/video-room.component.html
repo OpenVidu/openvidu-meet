@@ -58,6 +58,7 @@
 		[prejoinDisplayParticipantName]="false"
 		[videoEnabled]="features().videoEnabled"
 		[audioEnabled]="features().audioEnabled"
+		[toolbarLeaveButton]="!features().canModerateRoom"
 		[toolbarCameraButton]="features().showCamera"
 		[toolbarMicrophoneButton]="features().showMicrophone"
 		[toolbarScreenshareButton]="features().showScreenShare"
@@ -77,5 +78,29 @@
 		(onRecordingStartRequested)="onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
 	>
+		@if (features().canModerateRoom) {
+			<div *ovToolbarAdditionalButtons id="leave-btn" class="custom-leave-btn" style="text-align: center">
+				<button
+					mat-icon-button
+					[matMenuTriggerFor]="leaveMenu"
+					matTooltip="Leave options"
+					[disableRipple]="true"
+				>
+					<mat-icon>call_end</mat-icon>
+				</button>
+				<mat-menu #leaveMenu="matMenu">
+					<button mat-menu-item (click)="leaveMeeting()">
+						<mat-icon>logout</mat-icon>
+
+						<span>Leave meeting</span>
+					</button>
+					<mat-divider></mat-divider>
+					<button mat-menu-item (click)="endMeeting()">
+						<mat-icon>no_meeting_room</mat-icon>
+						<span>End meeting for all</span>
+					</button>
+				</mat-menu>
+			</div>
+		}
 	</ov-videoconference>
 }
