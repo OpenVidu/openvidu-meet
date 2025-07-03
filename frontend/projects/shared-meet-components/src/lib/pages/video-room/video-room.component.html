@@ -135,6 +135,29 @@
 	>
 		@if (features().canModerateRoom) {
 			<div *ovToolbarAdditionalButtons>
+				<!-- Copy Links Button -->
+				<button
+					id="copy-links-btn"
+					mat-icon-button
+					[matMenuTriggerFor]="linksMenu"
+					matTooltip="Copy meeting links"
+					[disableRipple]="true"
+					class="copy-links-btn"
+				>
+					<mat-icon>link</mat-icon>
+				</button>
+				<mat-menu #linksMenu="matMenu">
+					<button mat-menu-item (click)="copyModeratorLink()" id="copy-moderator-link">
+						<mat-icon>content_copy</mat-icon>
+						<span>Copy Moderator Link</span>
+					</button>
+					<button mat-menu-item (click)="copyPublisherLink()" id="copy-publisher-link">
+						<mat-icon>content_copy</mat-icon>
+						<span>Copy Publisher Link</span>
+					</button>
+				</mat-menu>
+
+				<!-- Leave Button -->
 				<button
 					id="leave-btn"
 					mat-icon-button
@@ -160,7 +183,7 @@
 
 			<!-- Participant Panel Item Elements -->
 			<div *ovParticipantPanelItemElements="let participant">
-				<!-- Leave Button for Local Participant -->
+				<!-- Kick participant -->
 				@if (!participant.isLocal) {
 					<button
 						mat-icon-button

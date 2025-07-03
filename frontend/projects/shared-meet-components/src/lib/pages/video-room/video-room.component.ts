@@ -1,3 +1,4 @@
+import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, OnDestroy, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
@@ -81,7 +82,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected participantService: ParticipantTokenService,
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
-		protected featureConfService: FeatureConfigurationService
+		protected featureConfService: FeatureConfigurationService,
+		protected clipboard: Clipboard
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -148,6 +150,18 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	async forceDisconnectParticipant(participant: ParticipantModel) {
 		await this.roomService.kickParticipant(this.roomId, participant.identity);
+	}
+
+	// TODO: Improve this method for avoiding rest requests
+	async copyModeratorLink() {
+		const room = await this.roomService.getRoom(this.roomId);
+		this.clipboard.copy(room.moderatorRoomUrl);
+	}
+
+	// TODO: Improve this method for avoiding rest requests
+	async copyPublisherLink() {
+		const room = await this.roomService.getRoom(this.roomId);
+		this.clipboard.copy(room.publisherRoomUrl);
 	}
 
 	/**
