@@ -146,6 +146,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 	}
 
+	async forceDisconnectParticipant(participant: ParticipantModel) {
+		await this.roomService.kickParticipant(this.roomId, participant.identity);
+	}
+
 	/**
 	 * Initializes the participant name in the form control.
 	 *

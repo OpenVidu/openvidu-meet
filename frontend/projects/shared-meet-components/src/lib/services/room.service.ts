@@ -243,4 +243,10 @@ export class RoomService {
 		const path = `${this.MEETINGS_API}/${roomId}`;
 		return this.httpService.deleteRequest(path);
 	}
+
+	async kickParticipant(roomId: string, participantId: string): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
+		await this.httpService.deleteRequest(path);
+		this.log.d(`Participant ${participantId} kicked from room ${roomId}`);
+	}
 }

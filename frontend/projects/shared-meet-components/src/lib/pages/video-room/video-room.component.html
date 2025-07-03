@@ -146,7 +146,6 @@
 				<mat-menu #leaveMenu="matMenu">
 					<button mat-menu-item (click)="leaveMeeting()" id="leave-option">
 						<mat-icon>logout</mat-icon>
-
 						<span>Leave meeting</span>
 					</button>
 					<mat-divider></mat-divider>
@@ -155,6 +154,21 @@
 						<span>End meeting for all</span>
 					</button>
 				</mat-menu>
+			</div>
+
+			<!-- Participant Panel Item Elements -->
+			<div *ovParticipantPanelItemElements="let participant">
+				<!-- Leave Button for Local Participant -->
+				@if (!participant.isLocal) {
+					<button
+						mat-icon-button
+						(click)="forceDisconnectParticipant(participant)"
+						matTooltip="Disconnect participant"
+						class="force-disconnect-btn"
+					>
+						<mat-icon>call_end</mat-icon>
+					</button>
+				}
 			</div>
 		}
 	</ov-videoconference>
