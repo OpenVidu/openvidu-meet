@@ -134,12 +134,14 @@
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
 	>
 		@if (features().canModerateRoom) {
-			<div *ovToolbarAdditionalButtons id="leave-btn" class="custom-leave-btn" style="text-align: center">
+			<div *ovToolbarAdditionalButtons>
 				<button
+					id="leave-btn"
 					mat-icon-button
 					[matMenuTriggerFor]="leaveMenu"
 					matTooltip="Leave options"
 					[disableRipple]="true"
+					class="custom-leave-btn"
 				>
 					<mat-icon>call_end</mat-icon>
 				</button>

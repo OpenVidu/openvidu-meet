@@ -251,7 +251,7 @@
 
 // Custom leave button styling (existing functionality)
 ::ng-deep {
-	#media-buttons-container .custom-leave-btn > button {
+	#media-buttons-container .custom-leave-btn {
 		&:hover {
 			background-color: var(--ov-meet-color-error) !important;
 		}
@@ -266,5 +266,5 @@
 
 // Custom force disconnect button
 .force-disconnect-btn {
-	color: var(--ov-meet-color-error)
+	color: var(--ov-meet-color-error);
 }
