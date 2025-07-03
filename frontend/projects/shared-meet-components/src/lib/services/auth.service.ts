@@ -67,6 +67,10 @@ export class AuthService {
 		return this.user?.roles;
 	}
 
+	isAdmin(): boolean {
+		return this.user?.roles.includes(UserRole.ADMIN) || false;
+	}
+
 	private async getAuthenticatedUser(force = false) {
 		if (force || (!this.user && !this.hasCheckAuth)) {
 			try {

@@ -105,6 +105,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		this.wcManagerService.stopCommandsListener();
 	}
 
+	get isAdmin(): boolean {
+		return this.authService.isAdmin();
+	}
+
 	async submitAccessRoom() {
 		const { valid, value } = this.participantForm;
 		if (!valid || !value.name?.trim()) {

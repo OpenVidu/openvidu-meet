@@ -95,12 +95,14 @@
 			</div>
 
 			<!-- Quick Actions -->
-			<div class="quick-actions fade-in-delayed-more">
-				<button mat-button class="quick-action-button" (click)="goBack()">
-					<mat-icon>arrow_back</mat-icon>
-					<span>Back to Rooms</span>
-				</button>
-			</div>
+			@if (isAdmin) {
+				<div class="quick-actions fade-in-delayed-more">
+					<button mat-button class="quick-action-button" (click)="goBack()">
+						<mat-icon>arrow_back</mat-icon>
+						<span>Back to Rooms</span>
+					</button>
+				</div>
+			}
 		</div>
 	</div>
 } @else {
