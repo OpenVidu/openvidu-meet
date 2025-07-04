@@ -1,5 +1,6 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
-import { SendDataOptions } from 'livekit-server-sdk';
+import { EgressInfo, EgressStatus, SendDataOptions } from 'livekit-server-sdk';
+import { RecordingHelper } from './recording.helper.js';
 
 const enum OpenViduComponentsDataTopic {
 	CHAT = 'chat',
@@ -27,9 +28,14 @@ export class OpenViduComponentsAdapterHelper {
 		return { payload, options };
 	}
 
-	static generateRoomStatusSignal(isRecordingStarted: boolean, participantSid?: string) {
+	static generateRoomStatusSignal(recordingEgress: EgressInfo[], participantSid?: string) {
+		const isRecordingActive = recordingEgress.some((egress) => egress.status === EgressStatus.EGRESS_ACTIVE);
 		const payload = {
-			isRecordingStarted
+			isRecordingStarted: isRecordingActive,
+			recordingList: recordingEgress.map((egress) => {
+				const recInfo = RecordingHelper.toRecordingInfo(egress);
+				return OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(recInfo);
+			})
 		};
 
 		const options = {

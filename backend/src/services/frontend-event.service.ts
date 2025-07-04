@@ -45,18 +45,11 @@ export class FrontendEventService {
 		this.logger.debug(`Sending room status signal for room ${roomId} to OpenVidu Components.`);
 
 		try {
-			// Check if recording is started in the room
-			const activeEgressArray = await this.livekitService.getActiveEgress(roomId);
-			const isRecordingStarted = activeEgressArray.length > 0;
-
-			// Skip if recording is not started
-			if (!isRecordingStarted) {
-				return;
-			}
+			const recordingEgress = await this.livekitService.getRecordingsEgress(roomId);
 
 			// Construct the payload and signal options
 			const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
-				isRecordingStarted,
+				recordingEgress,
 				participantSid
 			);
 
