@@ -14,6 +14,7 @@ import {
 	RoomService,
 	DistributedEventService
 } from './index.js';
+import { FrontendEventService } from './frontend-event.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -26,6 +27,7 @@ export class LivekitWebhookService {
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
@@ -139,7 +141,7 @@ export class LivekitWebhookService {
 		if (this.livekitService.isEgressParticipant(participant)) return;
 
 		try {
-			await this.roomService.sendRoomStatusSignalToOpenViduComponents(room.name, participant.sid);
+			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(room.name, participant.sid);
 		} catch (error) {
 			this.logger.error('Error sending room status signal on participant join:', error);
 		}
@@ -229,7 +231,7 @@ export class LivekitWebhookService {
 			// Common tasks for all webhook types
 			const commonTasks = [
 				this.storageService.saveRecordingMetadata(recordingInfo),
-				this.recordingService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+				this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
 			];
 
 			const specificTasks: Promise<unknown>[] = [];

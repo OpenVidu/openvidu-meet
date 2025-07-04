@@ -11,6 +11,7 @@ export * from './user.service.js';
 export * from './auth.service.js';
 
 export * from './livekit.service.js';
+export * from './frontend-event.service.js';
 export * from './room.service.js';
 export * from './participant.service.js';
 export * from './recording.service.js';

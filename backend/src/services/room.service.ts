@@ -8,13 +8,13 @@ import {
 	RecordingPermissions
 } from '@typings-ce';
 import { inject, injectable } from 'inversify';
-import { CreateOptions, Room, SendDataOptions } from 'livekit-server-sdk';
+import { CreateOptions, Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_NAME_ID } from '../environment.js';
-import { MeetRoomHelper, OpenViduComponentsAdapterHelper, UtilsHelper } from '../helpers/index.js';
+import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
 import {
 	errorInvalidRoomSecret,
 	errorRoomMetadataNotFound,
@@ -22,13 +22,14 @@ import {
 	internalError
 } from '../models/error.model.js';
 import {
+	DistributedEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
 	MeetStorageService,
-	DistributedEventService,
 	TaskSchedulerService,
-	TokenService
+	TokenService,
+	FrontendEventService
 } from './index.js';
 
 /**
@@ -44,6 +45,7 @@ export class RoomService {
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(TokenService) protected tokenService: TokenService
 	) {
@@ -131,7 +133,10 @@ export class RoomService {
 
 		await this.storageService.saveMeetRoom(room);
 		// Update the archived room metadata if it exists
-		await this.storageService.archiveRoomMetadata(roomId, true);
+		await Promise.all([
+			this.storageService.archiveRoomMetadata(roomId, true),
+			this.frontendEventService.sendRoomPreferencesUpdatedSignal(roomId, room)
+		]);
 		return room;
 	}
 
@@ -296,44 +301,6 @@ export class RoomService {
 			canRetrieveRecordings,
 			canDeleteRecordings
 		};
-	}
-
-	async sendRoomStatusSignalToOpenViduComponents(roomId: string, participantSid: string) {
-		this.logger.debug(`Sending room status signal for room ${roomId} to OpenVidu Components.`);
-
-		try {
-			// Check if recording is started in the room
-			const activeEgressArray = await this.livekitService.getActiveEgress(roomId);
-			const isRecordingStarted = activeEgressArray.length > 0;
-
-			// Skip if recording is not started
-			if (!isRecordingStarted) {
-				return;
-			}
-
-			// Construct the payload and signal options
-			const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
-				isRecordingStarted,
-				participantSid
-			);
-
-			await this.sendSignal(roomId, payload, options);
-		} catch (error) {
-			this.logger.debug(`Error sending room status signal for room ${roomId}:`, error);
-		}
-	}
-
-	/**
-	 * Sends a signal to participants in a specified room.
-	 *
-	 * @param roomId - The name of the room where the signal will be sent.
-	 * @param rawData - The raw data to be sent as the signal.
-	 * @param options - Options for sending the data, including the topic and destination identities.
-	 * @returns A promise that resolves when the signal has been sent.
-	 */
-	async sendSignal(roomId: string, rawData: Record<string, unknown>, options: SendDataOptions): Promise<void> {
-		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);
-		await this.livekitService.sendData(roomId, rawData, options);
 	}
 
 	/**

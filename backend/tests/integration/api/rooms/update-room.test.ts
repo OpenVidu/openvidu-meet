@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
 import {
 	createRoom,
@@ -7,6 +7,9 @@ import {
 	startTestServer,
 	updateRoomPreferences
 } from '../../../helpers/request-helpers.js';
+import { FrontendEventService } from '../../../../src/services/index.js';
+import { container } from '../../../../src/config/index.js';
+import { MeetSignalType } from '../../../../src/typings/ce/event.model.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
@@ -19,7 +22,15 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Update Room Tests', () => {
+		let frontendEventService: FrontendEventService;
+
+		beforeAll(() => {
+			// Ensure the FrontendEventService is registered
+			frontendEventService = container.get(FrontendEventService);
+		});
+
 		it('should successfully update room preferences', async () => {
+			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 			const createdRoom = await createRoom({
 				roomIdPrefix: 'update-test',
 				preferences: {
@@ -43,6 +54,18 @@ describe('Room API Tests', () => {
 			};
 
 			const updateResponse = await updateRoomPreferences(createdRoom.roomId, updatedPreferences);
+
+			// Verify a method of frontend event service is called
+			expect(sendSignalSpy).toHaveBeenCalledWith(
+				createdRoom.roomId,
+				{
+					roomId: createdRoom.roomId,
+					preferences: updatedPreferences
+				},
+				{
+					topic: MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED
+				}
+			);
 
 			// Verify update response
 			expect(updateResponse.status).toBe(200);

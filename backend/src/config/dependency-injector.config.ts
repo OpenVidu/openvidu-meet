@@ -23,7 +23,8 @@ import {
 	DistributedEventService,
 	TaskSchedulerService,
 	TokenService,
-	UserService
+	UserService,
+	FrontendEventService
 } from '../services/index.js';
 
 export const container: Container = new Container();
@@ -57,6 +58,7 @@ export const registerDependencies = () => {
 	container.bind(UserService).toSelf().inSingletonScope();
 	container.bind(AuthService).toSelf().inSingletonScope();
 
+	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
 	container.bind(ParticipantService).toSelf().inSingletonScope();

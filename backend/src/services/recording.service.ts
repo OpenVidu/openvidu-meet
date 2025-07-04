@@ -6,8 +6,9 @@ import { Readable } from 'stream';
 import { uid } from 'uid';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_S3_SUBBUCKET } from '../environment.js';
-import { MeetLock, OpenViduComponentsAdapterHelper, RecordingHelper, UtilsHelper } from '../helpers/index.js';
+import { MeetLock, RecordingHelper, UtilsHelper } from '../helpers/index.js';
 import {
+	DistributedEventType,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
 	errorRecordingCannotBeStoppedWhileStarting,
@@ -19,10 +20,10 @@ import {
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
-	OpenViduMeetError,
-	DistributedEventType
+	OpenViduMeetError
 } from '../models/index.js';
 import {
+	DistributedEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
@@ -30,7 +31,6 @@ import {
 	MutexService,
 	RedisLock,
 	RoomService,
-	DistributedEventService,
 	TaskSchedulerService
 } from './index.js';
 
@@ -254,7 +254,10 @@ export class RecordingService {
 
 				if (recRoomId !== roomId) {
 					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-					notDeletedRecordings.add({ recordingId, error: `Recording '${recordingId}' does not belong to room '${roomId}'` });
+					notDeletedRecordings.add({
+						recordingId,
+						error: `Recording '${recordingId}' does not belong to room '${roomId}'`
+					});
 					continue;
 				}
 			}
@@ -493,24 +496,6 @@ export class RecordingService {
 			} catch (error) {
 				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended: ${error}`);
 			}
-		}
-	}
-
-	/**
-	 * Sends a recording signal to OpenVidu Components within a specified room.
-	 *
-	 * This method constructs a signal with the appropriate topic and payload,
-	 * and sends it to the OpenVidu Components in the given room. The payload
-	 * is adapted to match the expected format for OpenVidu Components.
-	 */
-	async sendRecordingSignalToOpenViduComponents(roomId: string, recordingInfo: MeetRecordingInfo) {
-		this.logger.debug(`Sending recording signal to OpenVidu Components for room '${roomId}'`);
-		const { payload, options } = OpenViduComponentsAdapterHelper.generateRecordingSignal(recordingInfo);
-
-		try {
-			await this.roomService.sendSignal(roomId, payload, options);
-		} catch (error) {
-			this.logger.debug(`Error sending recording signal to OpenVidu Components for room '${roomId}': ${error}`);
 		}
 	}
 
