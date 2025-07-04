@@ -92,14 +92,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
 
-		const { recordings } = await this.recManagerService.listRecordings({
-			maxItems: 1,
-			roomId: this.roomId,
-			fields: 'recordingId'
-		});
-
-		this.showRecordingCard = recordings.length > 0;
-
+		await this.checkForRecordings();
 		await this.initializeParticipantName();
 	}
 
@@ -162,6 +155,30 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async copyPublisherLink() {
 		const room = await this.roomService.getRoom(this.roomId);
 		this.clipboard.copy(room.publisherRoomUrl);
+	}
+
+	/**
+	 * Checks if there are recordings in the room and updates the visibility of the recordings card.
+	 *
+	 * It is necessary to previously generate a recording token in order to list the recordings.
+	 * If token generation fails or the user does not have sufficient permissions to list recordings,
+	 * the error will be caught and the recordings card will be hidden (`showRecordingCard` will be set to `false`).
+	 *
+	 * If recordings exist, sets `showRecordingCard` to `true`; otherwise, to `false`.
+	 */
+	private async checkForRecordings() {
+		try {
+			await this.recManagerService.generateRecordingToken(this.roomId, this.roomSecret);
+			const { recordings } = await this.recManagerService.listRecordings({
+				maxItems: 1,
+				roomId: this.roomId,
+				fields: 'recordingId'
+			});
+			this.showRecordingCard = recordings.length > 0;
+		} catch (error) {
+			console.error('Error checking for recordings:', error);
+			this.showRecordingCard = false;
+		}
 	}
 
 	/**
