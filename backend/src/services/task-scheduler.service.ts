@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MeetLock } from '../helpers/index.js';
-import { LoggerService, MutexService, SystemEventService } from './index.js';
+import { LoggerService, MutexService, DistributedEventService } from './index.js';
 
 export type TaskType = 'cron' | 'timeout';
 
@@ -22,7 +22,7 @@ export class TaskSchedulerService {
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(SystemEventService) protected systemEventService: SystemEventService,
+		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
 		@inject(MutexService) protected mutexService: MutexService
 	) {
 		this.systemEventService.onRedisReady(() => {

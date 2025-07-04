@@ -20,7 +20,7 @@ import {
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
 	OpenViduMeetError,
-	SystemEventType
+	DistributedEventType
 } from '../models/index.js';
 import {
 	IScheduledTask,
@@ -30,7 +30,7 @@ import {
 	MutexService,
 	RedisLock,
 	RoomService,
-	SystemEventService,
+	DistributedEventService,
 	TaskSchedulerService
 } from './index.js';
 
@@ -41,7 +41,7 @@ export class RecordingService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
-		@inject(SystemEventService) protected systemEventService: SystemEventService,
+		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
@@ -77,7 +77,7 @@ export class RecordingService {
 					isOperationCompleted = true;
 
 					//Clean up the event listener and timeout
-					this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
 					this.handleRecordingLockTimeout(recordingId, roomId).catch(() => {});
 					reject(errorRecordingStartTimeout(roomId));
 				}, ms(INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT));
@@ -92,11 +92,11 @@ export class RecordingService {
 					isOperationCompleted = true;
 
 					clearTimeout(timeoutId);
-					this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
 					resolve(info as unknown as MeetRecordingInfo);
 				};
 
-				this.systemEventService.on(SystemEventType.RECORDING_ACTIVE, eventListener);
+				this.systemEventService.on(DistributedEventType.RECORDING_ACTIVE, eventListener);
 			});
 
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
@@ -119,7 +119,7 @@ export class RecordingService {
 						if (!isOperationCompleted) {
 							isOperationCompleted = true;
 							clearTimeout(timeoutId);
-							this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+							this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
 							return recordingInfo;
 						}
 					}
@@ -153,7 +153,7 @@ export class RecordingService {
 					// This prevents unnecessary cleanup operations when the request was rejected
 					// due to another recording already in progress in this room.
 					clearTimeout(timeoutId);
-					this.systemEventService.off(SystemEventType.RECORDING_ACTIVE, eventListener);
+					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
 					await this.releaseRecordingLockIfNoEgress(roomId);
 				}
 			} catch (e) {

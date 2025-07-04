@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { container } from '../../../../src/config/index.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
-import { SystemEventType } from '../../../../src/models/system-event.model.js';
+import { DistributedEventType } from '../../../../src/models/distributed-event.model.js';
 import { RecordingService } from '../../../../src/services';
 import {
 	expectValidStartRecordingResponse,
@@ -68,7 +68,7 @@ describe('Recording API Race Conditions Tests', () => {
 		try {
 			// Attempt to start recording
 			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(SystemEventType.RECORDING_ACTIVE, expect.any(Function));
+			expect(eventServiceOffSpy).toHaveBeenCalledWith(DistributedEventType.RECORDING_ACTIVE, expect.any(Function));
 			expect(handleRecordingLockTimeoutSpy).not.toHaveBeenCalledWith(
 				'', // empty recordingId since it never started
 				roomData.room.roomId
@@ -121,7 +121,7 @@ describe('Recording API Race Conditions Tests', () => {
 			// Start recording with a short timeout
 			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
 
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(SystemEventType.RECORDING_ACTIVE, expect.any(Function));
+			expect(eventServiceOffSpy).toHaveBeenCalledWith(DistributedEventType.RECORDING_ACTIVE, expect.any(Function));
 			// Expect the recording to fail due to timeout
 			expect(handleTimeoutSpy).toHaveBeenCalledWith(
 				'', // empty recordingId since it never started

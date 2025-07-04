@@ -20,7 +20,7 @@ import {
 	StorageFactory,
 	StorageKeyBuilder,
 	StorageProvider,
-	SystemEventService,
+	DistributedEventService,
 	TaskSchedulerService,
 	TokenService,
 	UserService
@@ -45,7 +45,7 @@ export const registerDependencies = () => {
 	console.log('Registering CE dependencies');
 	container.bind(LoggerService).toSelf().inSingletonScope();
 	container.bind(RedisService).toSelf().inSingletonScope();
-	container.bind(SystemEventService).toSelf().inSingletonScope();
+	container.bind(DistributedEventService).toSelf().inSingletonScope();
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 

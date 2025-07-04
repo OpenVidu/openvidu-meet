@@ -14,7 +14,7 @@ import {
 	REDIS_SENTINEL_PASSWORD,
 	REDIS_USERNAME
 } from '../environment.js';
-import { internalError, SystemEventPayload } from '../models/index.js';
+import { internalError, DistributedEventPayload } from '../models/index.js';
 import { LoggerService } from './index.js';
 
 @injectable()
@@ -24,7 +24,7 @@ export class RedisService extends EventEmitter {
 	protected redisPublisher: Redis;
 	protected redisSubscriber: Redis;
 	protected isConnected = false;
-	protected eventHandler?: (event: SystemEventPayload) => void;
+	protected eventHandler?: (event: DistributedEventPayload) => void;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		super();

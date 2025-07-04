@@ -1,10 +1,14 @@
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
-import { SystemEventPayload, SystemEventType } from '../models/system-event.model.js';
+import { DistributedEventPayload, DistributedEventType } from '../models/distributed-event.model.js';
 import { LoggerService, RedisService } from './index.js';
 
+/**
+ * Service for managing distributed events using Redis pub/sub pattern.
+ * Handles internal communication between services and microservices.
+ */
 @injectable()
-export class SystemEventService {
+export class DistributedEventService {
 	protected emitter: EventEmitter = new EventEmitter();
 	protected readonly OPENVIDU_MEET_CHANNEL = 'ov_meet_channel';
 	constructor(
@@ -21,7 +25,7 @@ export class SystemEventService {
 	 * @param event The event type to subscribe to.
 	 * @param listener The callback to invoke when the event is emitted.
 	 */
-	on(event: SystemEventType, listener: (payload: Record<string, unknown>) => void): void {
+	on(event: DistributedEventType, listener: (payload: Record<string, unknown>) => void): void {
 		this.emitter.on(event, listener);
 	}
 
@@ -31,7 +35,7 @@ export class SystemEventService {
 	 * @param event The event type to subscribe to.
 	 * @param listener The callback to invoke when the event is emitted.
 	 */
-	once(event: SystemEventType, listener: (payload: Record<string, unknown>) => void): void {
+	once(event: DistributedEventType, listener: (payload: Record<string, unknown>) => void): void {
 		this.emitter.once(event, listener);
 	}
 
@@ -41,7 +45,7 @@ export class SystemEventService {
 	 * @param event The event type to unsubscribe from.
 	 * @param listener Optional: the specific listener to remove. If not provided, all listeners for that event are removed.
 	 */
-	off(event: SystemEventType, listener?: (payload: Record<string, unknown>) => void): void {
+	off(event: DistributedEventType, listener?: (payload: Record<string, unknown>) => void): void {
 		if (listener) {
 			this.emitter.off(event, listener);
 		} else {
@@ -56,7 +60,7 @@ export class SystemEventService {
 	 * @param type The event type.
 	 * @param payload The event payload.
 	 */
-	async publishEvent(eventType: SystemEventType, payload: Record<string, unknown>): Promise<void> {
+	async publishEvent(eventType: DistributedEventType, payload: Record<string, unknown>): Promise<void> {
 		const message = JSON.stringify({ eventType, payload });
 		this.logger.verbose(`Publishing system event: ${eventType}`, payload);
 		await this.redisService.publishEvent(this.OPENVIDU_MEET_CHANNEL, message);
@@ -84,7 +88,7 @@ export class SystemEventService {
 	 */
 	protected handleRedisMessage(message: string): void {
 		try {
-			const eventData: SystemEventPayload = JSON.parse(message);
+			const eventData: DistributedEventPayload = JSON.parse(message);
 			const { eventType, payload } = eventData;
 
 			if (!eventType) {
@@ -97,7 +101,7 @@ export class SystemEventService {
 			// Forward the event to all listeners
 			this.emitter.emit(eventType, payload);
 		} catch (error) {
-			this.logger.error('Error parsing redis message in SystemEventsService:', error);
+			this.logger.error('Error parsing redis message in DistributedEventService:', error);
 		}
 	}
 }

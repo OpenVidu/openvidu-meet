@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
 import { MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
-import { SystemEventType } from '../models/system-event.model.js';
+import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
 	LiveKitService,
 	LoggerService,
@@ -12,7 +12,7 @@ import {
 	OpenViduWebhookService,
 	RecordingService,
 	RoomService,
-	SystemEventService
+	DistributedEventService
 } from './index.js';
 
 @injectable()
@@ -25,7 +25,7 @@ export class LivekitWebhookService {
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(SystemEventService) protected systemEventService: SystemEventService,
+		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
@@ -249,8 +249,8 @@ export class LivekitWebhookService {
 					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
 						// Send system event for active recording with the aim of cancelling the cleanup timer
 						specificTasks.push(
-							this.systemEventService.publishEvent(
-								SystemEventType.RECORDING_ACTIVE,
+							this.distributedEventService.publishEvent(
+								DistributedEventType.RECORDING_ACTIVE,
 								recordingInfo as unknown as Record<string, unknown>
 							)
 						);

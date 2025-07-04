@@ -26,7 +26,7 @@ import {
 	LiveKitService,
 	LoggerService,
 	MeetStorageService,
-	SystemEventService,
+	DistributedEventService,
 	TaskSchedulerService,
 	TokenService
 } from './index.js';
@@ -43,7 +43,7 @@ export class RoomService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(SystemEventService) protected systemEventService: SystemEventService,
+		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(TokenService) protected tokenService: TokenService
 	) {
