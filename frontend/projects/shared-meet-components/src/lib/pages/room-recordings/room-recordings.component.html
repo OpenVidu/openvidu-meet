@@ -1,55 +1,49 @@
-<div class="dashboard-container">
-	<mat-toolbar class="header">
-		<span id="header-title">
-			Recordings for room: <span id="room-id">{{ roomId }}</span>
-		</span>
-	</mat-toolbar>
+<div class="ov-page-container">
+	<!-- Room Recordings Header -->
+	<div class="recordings-page-header fade-in">
+		<div class="recordings-header">
+			<mat-icon class="ov-recording-icon room-icon">video_library</mat-icon>
+			<div class="room-info">
+				<h1 class="room-title">
+					Recordings for room
+					<span class="room-id">
+						{{ roomId }}
+					</span>
+				</h1>
+			</div>
+		</div>
+	</div>
 
-	<div class="dashboard-body">
-		@if (isLoading) {
-			@if (showLoadingSpinner) {
-				<!-- Enhanced Loading State with delay -->
-				<div class="ov-page-loading">
-					<div class="loading-content">
-						<div class="loading-header">
-							<div class="loading-title">
-								<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
-								<h1>Loading Recordings</h1>
-							</div>
-							<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
-						</div>
-
-						<div class="loading-spinner-container">
-							<mat-spinner diameter="48"></mat-spinner>
-						</div>
-					</div>
-				</div>
-			}
-		} @else {
-			<div class="ov-page-container ov-mb-xxl">
-				<div class="page-header">
-					<div class="title">
-						<mat-icon class="ov-recording-icon">video_library</mat-icon>
-						<h1>Recordings</h1>
-					</div>
-					<p class="subtitle">
-						Manage recordings from room, play, download, and share them with others.
-					</p>
-				</div>
-
-				<div class="page-content">
-					<ov-recording-lists
-						[recordings]="recordings()"
-						[canDeleteRecordings]="canDeleteRecordings"
-						[loading]="isLoading"
-						[showFilters]="false"
-						[showSelection]="true"
-						(recordingAction)="onRecordingAction($event)"
-						(refresh)="refreshRecordings()"
-					>
-					</ov-recording-lists>
+	<!-- Loading State -->
+	@if (isLoading && showLoadingSpinner) {
+		<div class="recordings-loading-container fade-in">
+			<div class="loading-card">
+				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
+				<h2 class="loading-title">Loading Recordings</h2>
+				<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
 				</div>
 			</div>
-		}
-	</div>
+		</div>
+	}
+
+	<!-- Content -->
+	@if (!isLoading || recordings().length > 0) {
+		<div class="recordings-content fade-in-delayed">
+			<div class="section-content">
+				<ov-recording-lists
+					[recordings]="recordings()"
+					[canDeleteRecordings]="canDeleteRecordings"
+					[loading]="isLoading"
+					[showFilters]="false"
+					[showSelection]="true"
+					(recordingAction)="onRecordingAction($event)"
+					(refresh)="refreshRecordings()"
+					class="recordings-list"
+				>
+				</ov-recording-lists>
+			</div>
+		</div>
+	}
 </div>

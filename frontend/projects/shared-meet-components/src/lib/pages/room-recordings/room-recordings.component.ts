@@ -1,10 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
-import { NotificationService, RecordingManagerService } from '@lib/services';
+import { NavigationService, NotificationService, RecordingManagerService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
@@ -13,7 +14,7 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 	templateUrl: './room-recordings.component.html',
 	styleUrls: ['./room-recordings.component.scss'],
 	standalone: true,
-	imports: [MatToolbarModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule]
+	imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule]
 })
 export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
@@ -33,6 +34,7 @@ export class RoomRecordingsComponent implements OnInit {
 		protected loggerService: LoggerService,
 		protected recordingService: RecordingManagerService,
 		protected notificationService: NotificationService,
+		protected navigationService: NavigationService,
 		protected route: ActivatedRoute
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomRecordingsComponent');
