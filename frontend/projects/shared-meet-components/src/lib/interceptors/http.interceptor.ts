@@ -112,7 +112,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 				// Expired recording token
 				if (
-					pageUrl.startsWith('/room') &&
+					pageUrl.startsWith('/room/') &&
 					pageUrl.includes('/recordings') &&
 					requestUrl.includes('/recordings')
 				) {
@@ -123,7 +123,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 				// Expired participant token
 				if (
-					pageUrl.startsWith('/room') &&
+					pageUrl.startsWith('/room/') &&
 					!pageUrl.includes('/recordings') &&
 					!requestUrl.includes('/profile')
 				) {
