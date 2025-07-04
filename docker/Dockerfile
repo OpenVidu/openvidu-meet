@@ -14,6 +14,9 @@ COPY --chown=node:node backend/package*.json ./backend/
 COPY --chown=node:node typings/package*.json ./typings/
 COPY --chown=node:node . .
 
+RUN ls -la frontend && ls -la frontend/projects/shared-meet-components && \
+	cat frontend/package.json && cat frontend/projects/shared-meet-components/package.json
+
 ARG BASE_HREF=/
 
 # Prepare project
