@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
     $ref: './info/info.yaml'
 servers:
-    - url: /meet/api/v1
+    - url: /api/v1
       description: OpenVidu Meet API
 tags:
     $ref: './tags/tags.yaml'

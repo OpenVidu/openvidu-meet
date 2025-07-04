@@ -19,7 +19,7 @@ content:
                         - roomId: 'room-123'
                           roomIdPrefix: 'room'
                           creationDate: 1620000000000
-                          autoDeletionDate: 1620000800000
+                          autoDeletionDate: 1900000000000
                           preferences:
                               chatPreferences:
                                   enabled: true
@@ -32,7 +32,7 @@ content:
                         - roomId: 'room-456'
                           roomIdPrefix: 'room'
                           creationDate: 1620001000000
-                          autoDeletionDate: 1620001800000
+                          autoDeletionDate: 1900000000000
                           preferences:
                               chatPreferences:
                                   enabled: false
@@ -62,7 +62,7 @@ content:
                         - roomId: 'room-123'
                           roomIdPrefix: 'room'
                           creationDate: 1620000000000
-                          autoDeletionDate: 1620000800000
+                          autoDeletionDate: 1900000000000
                           preferences:
                               chatPreferences:
                                   enabled: true
@@ -73,7 +73,7 @@ content:
                         - roomId: 'room-456'
                           roomIdPrefix: 'room'
                           creationDate: 1620001000000
-                          autoDeletionDate: 1620001800000
+                          autoDeletionDate: 1900000000000
                           preferences:
                               chatPreferences:
                                   enabled: false

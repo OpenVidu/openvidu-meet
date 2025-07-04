@@ -2,7 +2,7 @@ type: object
 properties:
     autoDeletionDate:
         type: [number, 'null']
-        example: 1620000000000
+        example: 1900000000000
         description: >
             The date and time when the room will be deleted (must be one hour in the future or more) represented in milliseconds since the Unix epoch.
 
