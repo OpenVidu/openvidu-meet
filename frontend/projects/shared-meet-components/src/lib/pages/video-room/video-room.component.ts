@@ -23,16 +23,27 @@ import {
 	SessionStorageService,
 	WebComponentManagerService
 } from '@lib/services';
-import { ParticipantRole, WebComponentEvent, WebComponentOutboundEventMessage } from '@lib/typings/ce';
+import {
+	MeetRoomPreferences,
+	ParticipantRole,
+	WebComponentEvent,
+	WebComponentOutboundEventMessage
+} from '@lib/typings/ce';
+import { MeetSignalType } from '@lib/typings/ce/event.model';
+
 import {
 	ApiDirectiveModule,
+	DataPacket_Kind,
 	OpenViduComponentsUiModule,
 	OpenViduService,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
+	RecordingStopRequestedEvent,
+	RemoteParticipant,
+	Room,
+	RoomEvent
 } from 'openvidu-components-angular';
 
 @Component({
@@ -98,6 +109,19 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	ngOnDestroy(): void {
 		this.wcManagerService.stopCommandsListener();
+	}
+
+	onRoomCreated(room: Room) {
+		room.on(
+			RoomEvent.DataReceived,
+			(payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
+				const event = JSON.parse(new TextDecoder().decode(payload));
+				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
+					const roomPreferences: MeetRoomPreferences = event.preferences;
+					this.featureConfService.setRoomPreferences(roomPreferences);
+				}
+			}
+		);
 	}
 
 	get isAdmin(): boolean {

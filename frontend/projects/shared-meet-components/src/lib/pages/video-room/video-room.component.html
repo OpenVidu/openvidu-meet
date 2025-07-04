@@ -133,6 +133,7 @@
 		(onParticipantLeft)="onParticipantLeft($event)"
 		(onRecordingStartRequested)="onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
+		(onRoomCreated)="onRoomCreated($event)"
 	>
 		@if (features().canModerateRoom) {
 			<div *ovToolbarAdditionalButtons>
