@@ -10,7 +10,7 @@ describe('Web Component Events', () => {
 
 	beforeEach(() => {
 		component = document.createElement('openvidu-meet') as OpenViduMeet;
-		eventsManager = new EventsManager(component);
+		eventsManager = component['eventsManager'] as EventsManager;
 		document.body.appendChild(component);
 	});
 
