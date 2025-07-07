@@ -72,13 +72,6 @@ export class RoomsComponent implements OnInit {
 		await this.loadRooms();
 	}
 
-	isInRoomForm(): boolean {
-		return (
-			this.navigationService.containsRoute('/rooms/') &&
-			(this.navigationService.containsRoute('/edit') || this.navigationService.containsRoute('/new'))
-		);
-	}
-
 	async onRoomAction(action: RoomTableAction) {
 		switch (action.action) {
 			case 'create':
