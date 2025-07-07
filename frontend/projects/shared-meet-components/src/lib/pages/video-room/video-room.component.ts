@@ -17,6 +17,7 @@ import {
 	AuthService,
 	FeatureConfigurationService,
 	NavigationService,
+	NotificationService,
 	ParticipantTokenService,
 	RecordingManagerService,
 	RoomService,
@@ -24,6 +25,7 @@ import {
 	WebComponentManagerService
 } from '@lib/services';
 import {
+	MeetRoom,
 	MeetRoomPreferences,
 	ParticipantRole,
 	WebComponentEvent,
@@ -74,6 +76,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	});
 	showRoom = false;
 	showRecordingCard = false;
+
+	room?: MeetRoom;
 	roomId = '';
 	roomSecret = '';
 	participantName = '';
@@ -94,7 +98,8 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService,
-		protected clipboard: Clipboard
+		protected clipboard: Clipboard,
+		protected notificationService: NotificationService
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -102,6 +107,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
+		this.room = await this.roomService.getRoom(this.roomId);
 
 		await this.checkForRecordings();
 		await this.initializeParticipantName();
@@ -169,16 +175,14 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		await this.roomService.kickParticipant(this.roomId, participant.identity);
 	}
 
-	// TODO: Improve this method for avoiding rest requests
 	async copyModeratorLink() {
-		const room = await this.roomService.getRoom(this.roomId);
-		this.clipboard.copy(room.moderatorRoomUrl);
+		this.clipboard.copy(this.room!.moderatorRoomUrl);
+		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	// TODO: Improve this method for avoiding rest requests
 	async copyPublisherLink() {
-		const room = await this.roomService.getRoom(this.roomId);
-		this.clipboard.copy(room.publisherRoomUrl);
+		this.clipboard.copy(this.room!.publisherRoomUrl);
+		this.notificationService.showSnackbar('Publisher link copied to clipboard');
 	}
 
 	/**
