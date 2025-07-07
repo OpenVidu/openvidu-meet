@@ -1,29 +1,22 @@
 <div class="step-indicator-wrapper" [attr.data-layout]="layoutType$ | async">
 	<mat-stepper
 		#stepper
-		[selectedIndex]="safeCurrentStepIndex"
+		[selectedIndex]="currentStepIndex()"
 		[orientation]="(stepperOrientation$ | async)!"
 		[linear]="false"
 		class="wizard-stepper"
 		[attr.data-layout]="layoutType$ | async"
 		(selectionChange)="onStepClick($event)"
 	>
-		@for (step of visibleSteps; track step.id; let i = $index) {
+		@for (step of visibleSteps(); track step.id; let i = $index) {
 			<mat-step
-				[stepControl]="step.validationFormGroup"
+				[stepControl]="step.formGroup"
 				[state]="getStepState(step)"
+				errorMessage="Invalid fields"
 				[editable]="true"
 				[label]="step.label"
 				[completed]="step.isCompleted"
 			>
-				<!-- Custom step icon template -->
-				<ng-template matStepperIcon="edit">
-					<mat-icon>edit</mat-icon>
-				</ng-template>
-
-				<ng-template matStepperIcon="done">
-					<mat-icon>check</mat-icon>
-				</ng-template>
 			</mat-step>
 		}
 	</mat-stepper>

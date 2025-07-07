@@ -1,8 +1,17 @@
-import { inject, Injectable } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { computed, Injectable, signal } from '@angular/core';
+import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { MeetRecordingAccess, MeetRoomOptions, MeetRoomPreferences } from '@lib/typings/ce';
-import { BehaviorSubject } from 'rxjs';
+
+// Default room preferences following the app's defaults
+const DEFAULT_PREFERENCES: MeetRoomPreferences = {
+	recordingPreferences: {
+		enabled: true,
+		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+	},
+	chatPreferences: { enabled: true },
+	virtualBackgroundPreferences: { enabled: true }
+};
 
 /**
  * Service to manage the state of the room creation wizard.
@@ -12,35 +21,29 @@ import { BehaviorSubject } from 'rxjs';
 	providedIn: 'root'
 })
 export class RoomWizardStateService {
-	private readonly _formBuilder = inject(FormBuilder);
-
-	// Observables for reactive state management
-	private readonly _currentStepIndex = new BehaviorSubject<number>(0);
-	private readonly _steps = new BehaviorSubject<WizardStep[]>([]);
-	private readonly _roomOptions = new BehaviorSubject<MeetRoomOptions>({
-		preferences: {
-			recordingPreferences: {
-				enabled: false,
-				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
-			},
-			chatPreferences: { enabled: true },
-			virtualBackgroundPreferences: { enabled: true }
-		}
+	// Signals for reactive state management
+	private _steps = signal<WizardStep[]>([]);
+	private _visibleSteps = computed(() => this._steps().filter((step) => step.isVisible));
+	private _currentStepIndex = signal<number>(0);
+	private _roomOptions = signal<MeetRoomOptions>({
+		preferences: DEFAULT_PREFERENCES
 	});
 
-	public readonly currentStepIndex$ = this._currentStepIndex.asObservable();
-	public readonly steps$ = this._steps.asObservable();
-	public readonly roomOptions$ = this._roomOptions.asObservable();
+	public readonly steps = computed(() => this._steps());
+	public readonly currentStepIndex = computed(() => this._currentStepIndex());
+	public readonly currentStep = computed<WizardStep | undefined>(() => {
+		const visibleSteps = this._visibleSteps();
+		const currentIndex = this._currentStepIndex();
 
-	// Default room preferences following the platform's defaults
-	private readonly DEFAULT_PREFERENCES: MeetRoomPreferences = {
-		recordingPreferences: {
-			enabled: false,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
-		},
-		chatPreferences: { enabled: true },
-		virtualBackgroundPreferences: { enabled: true }
-	};
+		if (currentIndex < 0 || currentIndex >= visibleSteps.length) {
+			return undefined;
+		}
+
+		return visibleSteps[currentIndex];
+	});
+	public readonly roomOptions = computed(() => this._roomOptions());
+
+	constructor(private formBuilder: FormBuilder) {}
 
 	/**
 	 * Initializes the wizard with base steps and default room options.
@@ -49,22 +52,17 @@ export class RoomWizardStateService {
 	 */
 	initializeWizard(editMode: boolean = false, existingData?: MeetRoomOptions): void {
 		// Initialize room options with defaults merged with existing data
-		console.log('Initializing wizard - editMode:', editMode, 'existingData:', existingData);
-
-		const mergedPreferences: MeetRoomPreferences = {
-			...this.DEFAULT_PREFERENCES,
-			...existingData?.preferences
-		};
-
 		const initialRoomOptions: MeetRoomOptions = {
 			...existingData,
-			preferences: mergedPreferences
+			preferences: {
+				...DEFAULT_PREFERENCES,
+				...(existingData?.preferences || {})
+			}
 		};
 
-		console.log('Initial room options created:', initialRoomOptions);
-		this._roomOptions.next(initialRoomOptions);
+		this._roomOptions.set(initialRoomOptions);
 
-		// Define base wizard steps
+		// Define wizard steps
 		const baseSteps: WizardStep[] = [
 			{
 				id: 'basic',
@@ -72,14 +70,62 @@ export class RoomWizardStateService {
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
 				isActive: !editMode, // Start with basic step active in create mode
 				isVisible: true,
-				validationFormGroup: this._formBuilder.group({
-					roomPrefix: [
-						{ value: initialRoomOptions.roomIdPrefix || '', disabled: editMode },
-						editMode ? [] : [Validators.minLength(2)]
-					],
-					deletionDate: [{ value: initialRoomOptions.autoDeletionDate || '', disabled: editMode }]
-				}),
-				order: 1
+				formGroup: this.formBuilder.group(
+					{
+						roomIdPrefix: [
+							{ value: initialRoomOptions.roomIdPrefix || '', disabled: editMode },
+							editMode ? [] : [Validators.maxLength(50)]
+						],
+						autoDeletionDate: [
+							{
+								value: initialRoomOptions.autoDeletionDate
+									? new Date(initialRoomOptions.autoDeletionDate)
+									: undefined,
+								disabled: editMode
+							}
+						],
+						autoDeletionHour: [
+							{
+								value: initialRoomOptions.autoDeletionDate
+									? new Date(initialRoomOptions.autoDeletionDate).getHours()
+									: 23,
+								disabled: editMode
+							},
+							editMode ? [] : [Validators.min(0), Validators.max(23)]
+						],
+						autoDeletionMinute: [
+							{
+								value: initialRoomOptions.autoDeletionDate
+									? new Date(initialRoomOptions.autoDeletionDate).getMinutes()
+									: 59,
+								disabled: editMode
+							},
+							editMode ? [] : [Validators.min(0), Validators.max(59)]
+						]
+					},
+					{
+						// Apply future date-time validation only if not in edit mode
+						validators: editMode
+							? []
+							: [
+									(control: AbstractControl): ValidationErrors | null => {
+										const date = control.get('autoDeletionDate')?.value as Date | null;
+										const hour = control.get('autoDeletionHour')?.value as number | null;
+										const minute = control.get('autoDeletionMinute')?.value as number | null;
+
+										if (!date) return null;
+
+										const selected = new Date(date);
+										selected.setHours(hour ?? 0, minute ?? 0, 0, 0);
+
+										const now = new Date();
+										now.setMinutes(now.getMinutes() + 61, 0, 0); // Ensure at least 1 hour in the future
+
+										return selected.getTime() < now.getTime() ? { minFutureDateTime: true } : null;
+									}
+								]
+					}
+				)
 			},
 			{
 				id: 'recording',
@@ -87,13 +133,32 @@ export class RoomWizardStateService {
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: editMode, // Only active in edit mode
 				isVisible: true,
-				validationFormGroup: this._formBuilder.group({
-					enabled: [
-						initialRoomOptions.preferences?.recordingPreferences?.enabled ??
-							this.DEFAULT_PREFERENCES.recordingPreferences.enabled
-					]
-				}),
-				order: 2
+				formGroup: this.formBuilder.group({
+					recordingEnabled: initialRoomOptions.preferences!.recordingPreferences.enabled
+						? 'enabled'
+						: 'disabled',
+					allowAccessTo: initialRoomOptions.preferences!.recordingPreferences.allowAccessTo
+				})
+			},
+			{
+				id: 'recordingTrigger',
+				label: 'Recording Trigger',
+				isCompleted: editMode, // In edit mode, all editable steps are completed
+				isActive: false,
+				isVisible: false, // Initially hidden, will be shown based on recording settings
+				formGroup: this.formBuilder.group({
+					triggerType: 'manual'
+				})
+			},
+			{
+				id: 'recordingLayout',
+				label: 'Recording Layout',
+				isCompleted: editMode, // In edit mode, all editable steps are completed
+				isActive: false,
+				isVisible: false, // Initially hidden, will be shown based on recording settings
+				formGroup: this.formBuilder.group({
+					layoutType: 'grid'
+				})
 			},
 			{
 				id: 'preferences',
@@ -101,35 +166,19 @@ export class RoomWizardStateService {
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: true,
-				validationFormGroup: this._formBuilder.group({
-					chatPreferences: this._formBuilder.group({
-						enabled: [
-							initialRoomOptions.preferences?.chatPreferences?.enabled ??
-								this.DEFAULT_PREFERENCES.chatPreferences.enabled
-						]
-					}),
-					virtualBackgroundPreferences: this._formBuilder.group({
-						enabled: [
-							initialRoomOptions.preferences?.virtualBackgroundPreferences?.enabled ??
-								this.DEFAULT_PREFERENCES.virtualBackgroundPreferences.enabled
-						]
-					})
-				}),
-				order: 5
+				formGroup: this.formBuilder.group({
+					chatEnabled: initialRoomOptions.preferences!.chatPreferences.enabled,
+					virtualBackgroundsEnabled: initialRoomOptions.preferences!.virtualBackgroundPreferences.enabled
+				})
 			}
 		];
 
-		this._steps.next(baseSteps);
+		this._steps.set(baseSteps);
+		const initialStepIndex = editMode ? 1 : 0; // Skip basic step in edit mode
+		this._currentStepIndex.set(initialStepIndex);
 
-		// Set the initial step index after a short delay to ensure steps are processed
-		setTimeout(() => {
-			const initialStepIndex = editMode ? 1 : 0; // Skip basic step in edit mode
-			console.log('Setting initial step index:', initialStepIndex);
-			this._currentStepIndex.next(initialStepIndex);
-
-			// Update step visibility after index is set
-			this.updateStepVisibility();
-		}, 0);
+		// Update step visibility after index is set
+		this.updateStepsVisibility();
 	}
 
 	/**
@@ -139,8 +188,7 @@ export class RoomWizardStateService {
 	 * @param stepData - The data to update in the room options
 	 */
 	updateStepData(stepId: string, stepData: Partial<MeetRoomOptions>): void {
-		console.log(`updateStepData called - stepId: '${stepId}', stepData:`, stepData);
-		const currentOptions = this._roomOptions.value;
+		const currentOptions = this._roomOptions();
 		let updatedOptions: MeetRoomOptions;
 
 		switch (stepId) {
@@ -148,6 +196,7 @@ export class RoomWizardStateService {
 				updatedOptions = {
 					...currentOptions
 				};
+
 				// Only update fields that are explicitly provided
 				if ('roomIdPrefix' in stepData) {
 					updatedOptions.roomIdPrefix = stepData.roomIdPrefix;
@@ -155,8 +204,8 @@ export class RoomWizardStateService {
 				if ('autoDeletionDate' in stepData) {
 					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;
 				}
-				break;
 
+				break;
 			case 'recording':
 				updatedOptions = {
 					...currentOptions,
@@ -169,13 +218,11 @@ export class RoomWizardStateService {
 					} as MeetRoomPreferences
 				};
 				break;
-
 			case 'recordingTrigger':
 			case 'recordingLayout':
-				// These steps don't directly modify room options but could store additional metadata
+				// These steps don't update room options
 				updatedOptions = { ...currentOptions };
 				break;
-
 			case 'preferences':
 				updatedOptions = {
 					...currentOptions,
@@ -196,77 +243,41 @@ export class RoomWizardStateService {
 					} as MeetRoomPreferences
 				};
 				break;
-
 			default:
 				console.warn(`Unknown step ID: ${stepId}`);
 				updatedOptions = currentOptions;
 		}
 
-		this._roomOptions.next(updatedOptions);
-		console.log(`Updated room options for step '${stepId}':`, updatedOptions);
-		this.updateStepVisibility();
+		this._roomOptions.set(updatedOptions);
+		this.updateStepsVisibility();
 	}
 
 	/**
 	 * Updates the visibility of wizard steps based on current room options.
 	 * For example, recording-related steps are only visible when recording is enabled.
 	 */
-	private updateStepVisibility(): void {
-		const currentSteps = this._steps.value;
-		const currentOptions = this._roomOptions.value;
-		const recordingEnabled = currentOptions.preferences?.recordingPreferences?.enabled ?? false;
+	private updateStepsVisibility(): void {
+		const currentSteps = this._steps();
+		const currentOptions = this._roomOptions();
+		const recordingEnabled = currentOptions.preferences?.recordingPreferences.enabled ?? false;
 
-		// Determine if we're in edit mode by checking if basic step is completed and disabled
-		const basicStep = currentSteps.find((step) => step.id === 'basic');
-		const isEditMode = !!basicStep?.validationFormGroup?.disabled;
-
-		// Remove recording-specific steps if they exist
-		const filteredSteps = currentSteps.filter((step) => !['recordingTrigger', 'recordingLayout'].includes(step.id));
-
-		if (recordingEnabled) {
-			// Add recording-specific steps
-			const recordingSteps: WizardStep[] = [
-				{
-					id: 'recordingTrigger',
-					label: 'Recording Trigger',
-					isCompleted: isEditMode, // In edit mode, mark as completed
-					isActive: false,
-					isVisible: true,
-					validationFormGroup: this._formBuilder.group({
-						type: ['manual']
-					}),
-					order: 3
-				},
-				{
-					id: 'recordingLayout',
-					label: 'Recording Layout',
-					isCompleted: isEditMode, // In edit mode, mark as completed
-					isActive: false,
-					isVisible: true,
-					validationFormGroup: this._formBuilder.group({
-						layout: ['GRID'],
-						access: ['moderator-only']
-					}),
-					order: 4
-				}
-			];
-
-			// Insert recording steps at the correct position (after recording step)
-			filteredSteps.splice(2, 0, ...recordingSteps);
-		}
-
-		// Reorder steps based on visibility
-		filteredSteps.forEach((step, index) => {
-			step.order = index + 1;
+		// Update recording steps visibility based on recordingEnabled
+		const updatedSteps = currentSteps.map((step) => {
+			if (step.id === 'recordingTrigger' || step.id === 'recordingLayout') {
+				return {
+					...step,
+					isVisible: recordingEnabled // Only show if recording is enabled
+				};
+			}
+			return step;
 		});
-
-		this._steps.next(filteredSteps);
+		this._steps.set(updatedSteps);
 	}
 
 	goToNextStep(): boolean {
-		const currentIndex = this._currentStepIndex.value;
-		const steps = this._steps.value;
-		const visibleSteps = steps.filter((step) => step.isVisible);
+		const currentIndex = this._currentStepIndex();
+		const visibleSteps = this._visibleSteps();
+
 		if (currentIndex < visibleSteps.length - 1) {
 			// Mark current step as completed
 			const currentStep = visibleSteps[currentIndex];
@@ -277,17 +288,18 @@ export class RoomWizardStateService {
 			const nextStep = visibleSteps[currentIndex + 1];
 			nextStep.isActive = true;
 
-			this._currentStepIndex.next(currentIndex + 1);
-			this._steps.next([...steps]);
+			this._currentStepIndex.set(currentIndex + 1);
+			const steps = this._steps();
+			this._steps.set([...steps]); // Trigger reactivity
 			return true;
 		}
+
 		return false;
 	}
 
 	goToPreviousStep(): boolean {
-		const currentIndex = this._currentStepIndex.value;
-		const steps = this._steps.value;
-		const visibleSteps = steps.filter((step) => step.isVisible);
+		const currentIndex = this._currentStepIndex();
+		const visibleSteps = this._visibleSteps();
 
 		if (currentIndex > 0) {
 			// Deactivate current step
@@ -298,34 +310,26 @@ export class RoomWizardStateService {
 			const previousStep = visibleSteps[currentIndex - 1];
 			previousStep.isActive = true;
 
-			this._currentStepIndex.next(currentIndex - 1);
-			this._steps.next([...steps]);
+			this._currentStepIndex.set(currentIndex - 1);
+			const steps = this._steps();
+			this._steps.set([...steps]); // Trigger reactivity
 			return true;
 		}
+
 		return false;
 	}
 
-	getCurrentStep(): WizardStep | null {
-		const steps = this._steps.value;
-		const visibleSteps = steps.filter((step) => step.isVisible);
-		const currentIndex = this._currentStepIndex.value;
-
-		return visibleSteps[currentIndex] || null;
-	}
-
-	getCurrentStepIndex(): number {
-		return this._currentStepIndex.value;
-	}
-
-	getVisibleSteps(): WizardStep[] {
-		return this._steps.value.filter((step) => step.isVisible);
-	}
-
 	goToStep(targetIndex: number): boolean {
-		const visibleSteps = this.getVisibleSteps();
+		const currentIndex = this._currentStepIndex();
+		if (targetIndex === currentIndex) {
+			return false; // No change if the target index is the same as current
+		}
+
+		const visibleSteps = this._visibleSteps();
+
 		if (targetIndex >= 0 && targetIndex < visibleSteps.length) {
 			// Deactivate current step
-			const currentStep = this.getCurrentStep();
+			const currentStep = this.currentStep();
 			if (currentStep) {
 				currentStep.isActive = false;
 			}
@@ -334,54 +338,48 @@ export class RoomWizardStateService {
 			const targetStep = visibleSteps[targetIndex];
 			targetStep.isActive = true;
 
-			this._currentStepIndex.next(targetIndex);
-			this._steps.next([...this._steps.value]);
+			this._currentStepIndex.set(targetIndex);
+			const steps = this._steps();
+			this._steps.set([...steps]); // Trigger reactivity
 			return true;
 		}
+
 		return false;
 	}
 
 	getNavigationConfig(): WizardNavigationConfig {
-		const currentIndex = this._currentStepIndex.value;
-		const steps = this._steps.value;
-		const visibleSteps = steps.filter((step) => step.isVisible);
-		const isLastStep = currentIndex === visibleSteps.length - 1;
+		const currentIndex = this._currentStepIndex();
+		const visibleSteps = this._visibleSteps();
 		const isFirstStep = currentIndex === 0;
+		const isLastStep = currentIndex === visibleSteps.length - 1;
 
-		// Determine if we're in edit mode
-		const basicStep = steps.find((step) => step.id === 'basic');
-		const isEditMode = !!(basicStep?.isCompleted && basicStep.validationFormGroup?.disabled);
+		const isEditMode = this.isEditMode();
+		const isSomeStepInvalid = visibleSteps.some((step) => step.formGroup.invalid);
 
 		return {
 			showPrevious: !isFirstStep,
 			showNext: !isLastStep,
 			showCancel: true,
 			showFinish: isLastStep,
-			showQuickCreate: !isEditMode && isFirstStep,
+			showSkipAndFinish: !isEditMode && isFirstStep,
+			disableFinish: isSomeStepInvalid,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
 			finishLabel: isEditMode ? 'Update Room' : 'Create Room',
-			isNextDisabled: false,
-			isPreviousDisabled: isFirstStep
+			skipAndFinishLabel: 'Create with defaults'
 		};
 	}
 
 	/**
-	 * Gets the current room options configured in the wizard.
-	 * @returns The current MeetRoomOptions object
+	 * Checks if the wizard is in edit mode.
+	 * Edit mode is determined by whether the basic step is completed and its form is disabled.
+	 * @returns True if in edit mode, false otherwise
 	 */
-	getRoomOptions(): MeetRoomOptions {
-		const options = this._roomOptions.getValue();
-		console.log('Getting room options:', options);
-		return options;
-	}
-
-	/**
-	 * Checks if the wizard was skipped (user is still on the first step).
-	 * @returns True if the wizard was skipped, false otherwise
-	 */
-	isWizardSkipped(): boolean {
-		return this._currentStepIndex.getValue() === 0;
+	private isEditMode(): boolean {
+		const visibleSteps = this._visibleSteps();
+		const basicStep = visibleSteps.find((step) => step.id === 'basic');
+		const isEditMode = !!basicStep && basicStep.isCompleted && basicStep.formGroup.disabled;
+		return isEditMode;
 	}
 
 	/**
@@ -389,11 +387,10 @@ export class RoomWizardStateService {
 	 */
 	resetWizard(): void {
 		const defaultOptions: MeetRoomOptions = {
-			preferences: this.DEFAULT_PREFERENCES
+			preferences: DEFAULT_PREFERENCES
 		};
-
-		this._roomOptions.next(defaultOptions);
-		this._currentStepIndex.next(0);
-		this.initializeWizard();
+		this._roomOptions.set(defaultOptions);
+		this._steps.set([]);
+		this._currentStepIndex.set(0);
 	}
 }

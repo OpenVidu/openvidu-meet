@@ -13,7 +13,7 @@
 >
 	<!-- Pro Badge -->
 	@if (option.isPro && showProBadge) {
-		<ov-pro-feature-badge badgeText="PRO"></ov-pro-feature-badge>
+		<ov-pro-feature-badge [badgeText]="proBadgeText" [badgeIcon]="proBadgeIcon"></ov-pro-feature-badge>
 	} @else if (showSelectionIndicator) {
 		<!-- Selection Indicator -->
 		<div class="selection-indicator">
@@ -27,7 +27,7 @@
 	<div class="card-content">
 		<!-- Image Section -->
 		@if (shouldShowImage()) {
-			<div class="card-image" [style.aspect-ratio]="getImageAspectRatio()">
+			<div class="card-image" [style.aspect-ratio]="imageAspectRatio">
 				<img [src]="option.imageUrl" [alt]="option.title + ' preview'" loading="lazy" />
 			</div>
 		}

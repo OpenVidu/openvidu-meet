@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, OnDestroy } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -34,27 +34,26 @@ interface RecordingAccessOption {
 	templateUrl: './recording-preferences.component.html',
 	styleUrl: './recording-preferences.component.scss'
 })
-export class RecordingPreferencesComponent implements OnInit, OnDestroy {
+export class RecordingPreferencesComponent implements OnDestroy {
 	recordingForm: FormGroup;
-	private destroy$ = new Subject<void>();
 	isAnimatingOut = false;
 
 	recordingOptions: SelectableOption[] = [
-		{
-			id: 'disabled',
-			title: 'No Recording',
-			description: 'Room will not be recorded. Participants can join without recording concerns.',
-			icon: 'videocam_off'
-		},
 		{
 			id: 'enabled',
 			title: 'Allow Recording',
 			description:
 				'Enable recording capabilities for this room. Recordings can be started manually or automatically.',
-			icon: 'video_library'
+			icon: 'video_library',
+			recommended: true
+		},
+		{
+			id: 'disabled',
+			title: 'No Recording',
+			description: 'Room will not be recorded. Participants can join without recording concerns.',
+			icon: 'videocam_off'
 		}
 	];
-
 	recordingAccessOptions: RecordingAccessOption[] = [
 		{
 			value: MeetRecordingAccess.ADMIN,
@@ -70,42 +69,20 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		}
 	];
 
-	constructor(
-		private fb: FormBuilder,
-		private wizardState: RoomWizardStateService
-	) {
-		this.recordingForm = this.fb.group({
-			recordingEnabled: ['disabled'], // default to no recording
-			allowAccessTo: ['admin'] // default access level
-		});
-	}
+	private destroy$ = new Subject<void>();
 
-	ngOnInit() {
-		this.loadExistingData();
+	constructor(private wizardState: RoomWizardStateService) {
+		const currentStep = this.wizardState.currentStep();
+		this.recordingForm = currentStep!.formGroup;
 
 		this.recordingForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
-
-		// Save initial default value if no existing data
-		this.saveInitialDefaultIfNeeded();
 	}
 
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-	}
-
-	private loadExistingData() {
-		const roomOptions = this.wizardState.getRoomOptions();
-		const recordingPrefs = roomOptions.preferences?.recordingPreferences;
-
-		if (recordingPrefs !== undefined) {
-			this.recordingForm.patchValue({
-				recordingEnabled: recordingPrefs.enabled ? 'enabled' : 'disabled',
-				allowAccessTo: recordingPrefs.allowAccessTo || MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
-			});
-		}
 	}
 
 	private saveFormData(formValue: any) {
@@ -121,16 +98,6 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		};
 
 		this.wizardState.updateStepData('recording', stepData);
-	}
-
-	private saveInitialDefaultIfNeeded() {
-		const roomOptions = this.wizardState.getRoomOptions();
-		const recordingPrefs = roomOptions.preferences?.recordingPreferences;
-
-		// If no existing data, save the default value
-		if (recordingPrefs === undefined) {
-			this.saveFormData(this.recordingForm.value);
-		}
 	}
 
 	onOptionSelect(event: SelectionEvent): void {
@@ -155,36 +122,15 @@ export class RecordingPreferencesComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	isOptionSelected(optionId: 'disabled' | 'enabled'): boolean {
-		return this.recordingForm.value.recordingEnabled === optionId;
-	}
-
 	get selectedValue(): string {
-		return this.recordingForm.value.recordingEnabled;
+		return this.recordingForm.value.recordingEnabled || 'disabled';
 	}
 
 	get isRecordingEnabled(): boolean {
-		return this.recordingForm.value.recordingEnabled === 'enabled';
+		return this.selectedValue === 'enabled';
 	}
 
 	get shouldShowAccessSection(): boolean {
 		return this.isRecordingEnabled || this.isAnimatingOut;
-	}
-
-	setRecommendedOption() {
-		this.recordingForm.patchValue({
-			recordingEnabled: 'enabled'
-		});
-	}
-
-	setDefaultOption() {
-		this.recordingForm.patchValue({
-			recordingEnabled: 'disabled'
-		});
-	}
-
-	get currentSelection(): SelectableOption | undefined {
-		const selectedId = this.recordingForm.value.recordingEnabled;
-		return this.recordingOptions.find((option) => option.id === selectedId);
 	}
 }

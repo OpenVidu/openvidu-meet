@@ -19,8 +19,8 @@
 						[selectedValue]="selectedOption"
 						[allowMultiSelect]="false"
 						[showSelectionIndicator]="true"
-						[showProBadge]="true"
-						[showRecommendedBadge]="false"
+						[showProBadge]="option.isPro ?? false"
+						[showRecommendedBadge]="option.recommended ?? false"
 						[enableHover]="!option.disabled"
 						(optionSelected)="onOptionChange($event)"
 					></ov-selectable-card>

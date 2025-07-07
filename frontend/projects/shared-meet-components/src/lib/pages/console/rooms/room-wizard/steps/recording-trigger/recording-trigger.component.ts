@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, OnDestroy } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,18 +24,15 @@ import { Subject, takeUntil } from 'rxjs';
 	templateUrl: './recording-trigger.component.html',
 	styleUrl: './recording-trigger.component.scss'
 })
-export class RecordingTriggerComponent implements OnInit, OnDestroy {
+export class RecordingTriggerComponent implements OnDestroy {
 	triggerForm: FormGroup;
-	private destroy$ = new Subject<void>();
-
 	triggerOptions: SelectableOption[] = [
 		{
 			id: 'manual',
 			title: 'Manual Recording',
 			description: 'Start recording manually when needed',
 			icon: 'touch_app',
-			recommended: true,
-			isPro: false
+			recommended: true
 		},
 		{
 			id: 'auto1',
@@ -55,26 +52,15 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 		}
 	];
 
-	constructor(
-		private fb: FormBuilder,
-		private wizardState: RoomWizardStateService
-	) {
-		this.triggerForm = this.fb.group({
-			triggerType: ['manual'] // default to manual
-		});
-	}
+	private destroy$ = new Subject<void>();
 
-	ngOnInit() {
-		// Load existing data if available
-		this.loadExistingData();
+	constructor(private wizardService: RoomWizardStateService) {
+		const currentStep = this.wizardService.currentStep();
+		this.triggerForm = currentStep!.formGroup;
 
-		// Subscribe to form changes for auto-save
 		this.triggerForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
-
-		// Save initial default value if no existing data
-		this.saveInitialDefaultIfNeeded();
 	}
 
 	ngOnDestroy() {
@@ -82,31 +68,9 @@ export class RecordingTriggerComponent implements OnInit, OnDestroy {
 		this.destroy$.complete();
 	}
 
-	private loadExistingData() {
-		// Note: This component doesn't need to store data in MeetRoomOptions
-		// Recording trigger settings are typically stored as metadata or used for UI state only
-		// For now, we'll use form state only
-		this.triggerForm.patchValue({
-			triggerType: 'manual' // Always default to manual
-		});
-	}
-
 	private saveFormData(formValue: any) {
 		// Note: Recording trigger type is not part of MeetRoomOptions
-		// This is UI state that affects how recording is initiated but not stored in room options
-		// We could extend this to store in a metadata field if needed in the future
-
-		// For now, just keep the form state - this affects UI behavior but not the final room creation
-		console.log('Recording trigger type selected:', formValue.triggerType);
-	}
-
-	private saveInitialDefaultIfNeeded() {
-		// Always ensure manual is selected as default
-		if (!this.triggerForm.value.triggerType) {
-			this.triggerForm.patchValue({
-				triggerType: 'manual'
-			});
-		}
+		// For now, just keep the form state
 	}
 
 	/**

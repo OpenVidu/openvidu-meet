@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import type { WizardNavigationConfig, WizardNavigationEvent } from '@lib/models';
@@ -7,30 +6,25 @@ import type { WizardNavigationConfig, WizardNavigationEvent } from '@lib/models'
 @Component({
 	selector: 'ov-wizard-nav',
 	standalone: true,
-	imports: [CommonModule, MatButton, MatIcon],
+	imports: [MatButton, MatIcon],
 	templateUrl: './wizard-nav.component.html',
 	styleUrl: './wizard-nav.component.scss'
 })
-export class WizardNavComponent implements OnInit, OnChanges {
+export class WizardNavComponent {
 	/**
 	 * Navigation configuration with default values
 	 */
 	@Input() config: WizardNavigationConfig = {
-		showPrevious: true,
+		showPrevious: false,
 		showNext: true,
 		showCancel: true,
 		showFinish: false,
-		showQuickCreate: true,
+		showSkipAndFinish: false,
+		disableFinish: false,
 		nextLabel: 'Next',
 		previousLabel: 'Previous',
 		cancelLabel: 'Cancel',
-		finishLabel: 'Finish',
-		isNextDisabled: false,
-		isPreviousDisabled: false,
-		isFinishDisabled: false,
-		isLoading: false,
-		isCompact: false,
-		ariaLabel: 'Wizard navigation'
+		finishLabel: 'Finish'
 	};
 
 	/**
@@ -51,90 +45,56 @@ export class WizardNavComponent implements OnInit, OnChanges {
 	 */
 	@Output() navigate = new EventEmitter<WizardNavigationEvent>();
 
-	ngOnInit() {
-		this.validateConfig();
-	}
-
-	ngOnChanges(changes: SimpleChanges) {
-		if (changes['config']) {
-			this.validateConfig();
-		}
-	}
-
-	/**
-	 * Validates navigation configuration
-	 */
-	private validateConfig() {
-		if (!this.config.nextLabel) this.config.nextLabel = 'Next';
-		if (!this.config.previousLabel) this.config.previousLabel = 'Previous';
-		if (!this.config.cancelLabel) this.config.cancelLabel = 'Cancel';
-		if (!this.config.finishLabel) this.config.finishLabel = 'Finish';
-	}
-
-	/**
-	 * Handle previous step navigation
-	 */
 	onPrevious() {
-		if (!this.config.isPreviousDisabled && !this.config.isLoading) {
-			const event: WizardNavigationEvent = {
-				action: 'previous',
-				currentStepId: this.currentStepId
-			};
+		if (!this.config.showPrevious) return;
 
-			this.previous.emit(event);
-			this.navigate.emit(event);
-		}
+		const event: WizardNavigationEvent = {
+			action: 'previous',
+			currentStepIndex: this.currentStepId
+		};
+		this.previous.emit(event);
+		this.navigate.emit(event);
 	}
 
-	/**
-	 * Handle next step navigation
-	 */
 	onNext() {
-		if (!this.config.isNextDisabled && !this.config.isLoading) {
-			const event: WizardNavigationEvent = {
-				action: 'next',
-				currentStepId: this.currentStepId
-			};
+		if (!this.config.showNext) return;
 
-			this.next.emit(event);
-			this.navigate.emit(event);
-		}
+		const event: WizardNavigationEvent = {
+			action: 'next',
+			currentStepIndex: this.currentStepId
+		};
+		this.next.emit(event);
+		this.navigate.emit(event);
 	}
 
-	/**
-	 * Handle wizard cancellation
-	 */
 	onCancel() {
-		if (!this.config.isLoading) {
-			const event: WizardNavigationEvent = {
-				action: 'cancel',
-				currentStepId: this.currentStepId
-			};
+		if (!this.config.showCancel) return;
 
-			this.cancel.emit(event);
-			this.navigate.emit(event);
-		}
+		const event: WizardNavigationEvent = {
+			action: 'cancel',
+			currentStepIndex: this.currentStepId
+		};
+		this.cancel.emit(event);
+		this.navigate.emit(event);
 	}
 
-	/**
-	 * Handle wizard completion
-	 */
 	onFinish() {
-		if (!this.config.isFinishDisabled && !this.config.isLoading) {
-			const event: WizardNavigationEvent = {
-				action: 'finish',
-				currentStepId: this.currentStepId
-			};
+		if (!this.config.showFinish) return;
 
-			this.finish.emit(event);
-			this.navigate.emit(event);
-		}
+		const event: WizardNavigationEvent = {
+			action: 'finish',
+			currentStepIndex: this.currentStepId
+		};
+		this.finish.emit(event);
+		this.navigate.emit(event);
 	}
 
 	skipAndFinish() {
+		if (!this.config.showSkipAndFinish) return;
+
 		const event: WizardNavigationEvent = {
 			action: 'finish',
-			currentStepId: this.currentStepId
+			currentStepIndex: this.currentStepId
 		};
 		this.finish.emit(event);
 		this.navigate.emit(event);

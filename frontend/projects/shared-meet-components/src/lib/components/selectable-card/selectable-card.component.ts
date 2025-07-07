@@ -16,7 +16,6 @@ export interface SelectableOption {
 	isPro?: boolean;
 	disabled?: boolean;
 	badge?: string;
-	value?: any; // Additional data associated with the option
 }
 
 /**
@@ -25,7 +24,7 @@ export interface SelectableOption {
 export interface SelectionEvent {
 	optionId: string;
 	option: SelectableOption;
-	previousSelection?: string;
+	previousSelection?: string | string[];
 }
 
 @Component({
@@ -45,30 +44,13 @@ export class SelectableCardComponent {
 	 * Currently selected value(s)
 	 * Can be a string (single select) or string[] (multi select)
 	 */
-	@Input() selectedValue: string | string[] | null = null;
+	@Input() selectedValue: string | string[] | undefined;
 
 	/**
 	 * Whether multiple options can be selected simultaneously
 	 * @default false
 	 */
 	@Input() allowMultiSelect: boolean = false;
-
-	/**
-	 * Whether the card should show hover effects
-	 * @default true
-	 */
-	@Input() enableHover: boolean = true;
-
-	/**
-	 * Whether the card should show selection animations
-	 * @default true
-	 */
-	@Input() enableAnimations: boolean = true;
-
-	/**
-	 * Custom CSS classes to apply to the card
-	 */
-	@Input() customClasses: string = '';
 
 	/**
 	 * Whether to show the selection indicator (radio button)
@@ -81,6 +63,18 @@ export class SelectableCardComponent {
 	 * @default true
 	 */
 	@Input() showProBadge: boolean = true;
+
+	/**
+	 * Custom icon for the PRO badge
+	 * @default 'crown'
+	 */
+	@Input() proBadgeIcon: string = 'crown';
+
+	/**
+	 * Custom text for the PRO badge
+	 * @default 'PRO'
+	 */
+	@Input() proBadgeText: string = 'PRO';
 
 	/**
 	 * Whether to show the recommended badge
@@ -107,26 +101,26 @@ export class SelectableCardComponent {
 	@Input() imageAspectRatio: string = '16/9';
 
 	/**
-	 * Custom icon for the PRO badge
-	 * @default 'star'
+	 * Whether the card should show hover effects
+	 * @default true
 	 */
-	@Input() proBadgeIcon: string = 'star';
+	@Input() enableHover: boolean = true;
 
 	/**
-	 * Custom text for the PRO badge
-	 * @default 'PRO'
+	 * Whether the card should show selection animations
+	 * @default true
 	 */
-	@Input() proBadgeText: string = 'PRO';
+	@Input() enableAnimations: boolean = true;
+
+	/**
+	 * Custom CSS classes to apply to the card
+	 */
+	@Input() customClasses: string = '';
 
 	/**
 	 * Event emitted when an option is selected
 	 */
 	@Output() optionSelected = new EventEmitter<SelectionEvent>();
-
-	/**
-	 * Event emitted when the card is clicked (even if selection doesn't change)
-	 */
-	@Output() cardClicked = new EventEmitter<SelectableOption>();
 
 	/**
 	 * Event emitted when the card is hovered
@@ -157,48 +151,17 @@ export class SelectableCardComponent {
 			return;
 		}
 
-		// Emit card clicked event
-		this.cardClicked.emit(this.option);
-
-		// Handle selection logic
 		const wasSelected = this.isOptionSelected(optionId);
-		let newSelection: string | string[] | null;
-		let previousSelection: string | undefined;
-
-		if (this.allowMultiSelect) {
-			// Multi-select logic
-			const currentArray = Array.isArray(this.selectedValue) ? [...this.selectedValue] : [];
-
-			if (wasSelected) {
-				// Remove from selection
-				newSelection = currentArray.filter((id) => id !== optionId);
-				if (newSelection.length === 0) {
-					newSelection = null;
-				}
-			} else {
-				// Add to selection
-				newSelection = [...currentArray, optionId];
-			}
-		} else {
-			// Single-select logic
-			if (wasSelected) {
-				// Deselect (optional behavior)
-				newSelection = null;
-				previousSelection = optionId;
-			} else {
-				// Select new option
-				previousSelection = Array.isArray(this.selectedValue) ? undefined : this.selectedValue || undefined;
-				newSelection = optionId;
-			}
+		if (!this.allowMultiSelect && wasSelected) {
+			return; // No change if already selected
 		}
 
 		// Emit selection event
 		const selectionEvent: SelectionEvent = {
 			optionId,
 			option: this.option,
-			previousSelection
+			previousSelection: this.selectedValue
 		};
-
 		this.optionSelected.emit(selectionEvent);
 	}
 
@@ -229,27 +192,21 @@ export class SelectableCardComponent {
 		if (this.isOptionSelected(this.option.id)) {
 			classes.push('selected');
 		}
-
 		if (this.option.recommended && this.showRecommendedBadge) {
 			classes.push('recommended');
 		}
-
 		if (this.option.isPro && this.showProBadge) {
 			classes.push('pro-feature');
 		}
-
 		if (this.option.disabled) {
 			classes.push('disabled');
 		}
-
 		if (!this.enableHover) {
 			classes.push('no-hover');
 		}
-
 		if (!this.enableAnimations) {
 			classes.push('no-animations');
 		}
-
 		if (this.customClasses) {
 			classes.push(this.customClasses);
 		}
@@ -278,21 +235,17 @@ export class SelectableCardComponent {
 		if (this.option.recommended) {
 			statusParts.push('Recommended');
 		}
-
 		if (this.option.isPro) {
 			statusParts.push('PRO feature');
 		}
-
 		if (this.option.disabled) {
 			statusParts.push('Disabled');
 		}
-
 		if (this.isOptionSelected(this.option.id)) {
 			statusParts.push('Selected');
 		}
 
 		const statusLabel = statusParts.length > 0 ? `. ${statusParts.join(', ')}` : '';
-
 		return `${baseLabel}${statusLabel}`;
 	}
 
@@ -311,12 +264,5 @@ export class SelectableCardComponent {
 			return !!this.option.icon;
 		}
 		return !this.shouldShowImage() && !!this.option.icon;
-	}
-
-	/**
-	 * Get image aspect ratio styles
-	 */
-	getImageAspectRatio(): string {
-		return this.imageAspectRatio;
 	}
 }

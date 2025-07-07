@@ -1,4 +1,4 @@
-<nav class="wizard-navigation" [class.loading]="config.isLoading" [class.compact]="config.isCompact" id="wizard-navigation">
+<nav class="wizard-navigation" [class.loading]="false" [class.compact]="false" id="wizard-navigation">
 	<div class="nav-buttons">
 		<!-- Cancel Button -->
 		@if (config.showCancel) {
@@ -24,7 +24,6 @@
 					mat-stroked-button
 					class="prev-btn"
 					id="wizard-previous-btn"
-					[disabled]="config.isPreviousDisabled"
 					(click)="onPrevious()"
 					[attr.aria-label]="'Go to previous step'"
 				>
@@ -33,50 +32,46 @@
 				</button>
 			}
 
-			@if (config.showQuickCreate) {
+			@if (config.showSkipAndFinish) {
 				<!-- Skip Wizard Button -->
 				<button
 					mat-raised-button
-					class="skip-btn"
+					class="finish-btn"
 					id="wizard-quick-create-btn"
+					[disabled]="config.disableFinish ?? false"
 					(click)="skipAndFinish()"
-					type="button"
+					[attr.aria-label]="'Skip wizard and finish'"
 				>
 					<mat-icon>bolt</mat-icon>
-					Create with defaults
+					{{ config.skipAndFinishLabel || 'Skip and Finish' }}
 				</button>
 			}
 
-			<!-- Next/Continue Button -->
+			<!-- Next Button -->
 			@if (config.showNext) {
 				<button
 					mat-raised-button
 					class="next-btn"
 					id="wizard-next-btn"
-					[disabled]="config.isNextDisabled"
 					(click)="onNext()"
 					[attr.aria-label]="'Continue to next step'"
 				>
 					{{ config.nextLabel || 'Next' }}
-					<mat-icon class="trailing-icon">
-						{{ config.isLoading ? 'hourglass_empty' : 'chevron_right' }}
-					</mat-icon>
+					<mat-icon class="trailing-icon">chevron_right</mat-icon>
 				</button>
 			}
 
-			<!-- Finish/Save Button -->
+			<!-- Finish Button -->
 			@if (config.showFinish) {
 				<button
 					mat-raised-button
 					class="finish-btn"
 					id="wizard-finish-btn"
-					[disabled]="config.isFinishDisabled"
+					[disabled]="config.disableFinish ?? false"
 					(click)="onFinish()"
 					[attr.aria-label]="'Complete wizard and save changes'"
 				>
-					<mat-icon class="leading-icon">
-						{{ config.isLoading ? 'hourglass_empty' : 'check' }}
-					</mat-icon>
+					<mat-icon class="leading-icon">check</mat-icon>
 					{{ config.finishLabel || 'Finish' }}
 				</button>
 			}

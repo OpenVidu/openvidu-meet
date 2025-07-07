@@ -9,42 +9,27 @@ export interface WizardStep {
 	isCompleted: boolean;
 	isActive: boolean;
 	isVisible: boolean;
-	isOptional?: boolean;
-	order: number;
-	validationFormGroup: FormGroup;
-	description?: string;
-	icon?: string;
+	formGroup: FormGroup;
 }
 
 /**
  * Configuration interface for wizard navigation controls
- * Supports theming and responsive behavior
  */
 export interface WizardNavigationConfig {
-	// Button visibility
+	// Button visibility flags
 	showPrevious: boolean;
 	showNext: boolean;
 	showCancel: boolean;
 	showFinish: boolean;
-	showQuickCreate: boolean; // Optional for quick create functionality
+	showSkipAndFinish: boolean; // Used for quick create actions
+	disableFinish?: boolean;
 
-	// Button labels (customizable)
+	// Button labels
 	nextLabel?: string;
 	previousLabel?: string;
 	cancelLabel?: string;
 	finishLabel?: string;
-
-	// Button states
-	isNextDisabled: boolean;
-	isPreviousDisabled: boolean;
-	isFinishDisabled?: boolean;
-
-	// UI states
-	isLoading?: boolean;
-	isCompact?: boolean;
-
-	// Accessibility
-	ariaLabel?: string;
+	skipAndFinishLabel?: string;
 }
 
 /**
@@ -52,7 +37,5 @@ export interface WizardNavigationConfig {
  */
 export interface WizardNavigationEvent {
 	action: 'next' | 'previous' | 'cancel' | 'finish';
-	currentStepId?: number;
-	targetStepId?: string;
-	data?: any;
+	currentStepIndex?: number;
 }

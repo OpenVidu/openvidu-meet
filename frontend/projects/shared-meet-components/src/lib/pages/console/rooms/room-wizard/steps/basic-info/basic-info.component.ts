@@ -1,6 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnDestroy } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -17,7 +16,6 @@ import { Subject, takeUntil } from 'rxjs';
 	selector: 'ov-room-wizard-basic-info',
 	standalone: true,
 	imports: [
-		CommonModule,
 		ReactiveFormsModule,
 		MatButtonModule,
 		MatIconModule,
@@ -31,37 +29,18 @@ import { Subject, takeUntil } from 'rxjs';
 	templateUrl: './basic-info.component.html',
 	styleUrl: './basic-info.component.scss'
 })
-export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
-	@Input() editMode: boolean = false; // Input to control edit mode from parent component
+export class RoomWizardBasicInfoComponent implements OnDestroy {
 	basicInfoForm: FormGroup;
-	private destroy$ = new Subject<void>();
 
 	// Arrays for time selection
 	hours = Array.from({ length: 24 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
 	minutes = Array.from({ length: 60 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
 
-	constructor(
-		private fb: FormBuilder,
-		private wizardState: RoomWizardStateService
-	) {
-		this.basicInfoForm = this.fb.group({
-			roomIdPrefix: ['', [Validators.maxLength(50)]],
-			autoDeletionDate: [null],
-			autoDeletionHour: [23],
-			autoDeletionMinute: [59]
-		});
-	}
+	private destroy$ = new Subject<void>();
 
-	ngOnInit() {
-		// Disable form controls in edit mode
-		if (this.editMode) {
-			this.basicInfoForm.get('roomIdPrefix')?.disable();
-			this.basicInfoForm.get('autoDeletionDate')?.disable();
-			this.basicInfoForm.get('autoDeletionHour')?.disable();
-			this.basicInfoForm.get('autoDeletionMinute')?.disable();
-		}
-
-		this.loadExistingData();
+	constructor(private wizardService: RoomWizardStateService) {
+		const currentStep = this.wizardService.currentStep();
+		this.basicInfoForm = currentStep!.formGroup;
 
 		this.basicInfoForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
@@ -71,24 +50,6 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		this.destroy$.next();
 		this.destroy$.complete();
-	}
-
-	private loadExistingData() {
-		const roomOptions = this.wizardState.getRoomOptions();
-
-		if (roomOptions.autoDeletionDate) {
-			const date = new Date(roomOptions.autoDeletionDate);
-			this.basicInfoForm.patchValue({
-				roomIdPrefix: roomOptions.roomIdPrefix || '',
-				autoDeletionDate: date,
-				autoDeletionHour: date.getHours(),
-				autoDeletionMinute: date.getMinutes()
-			});
-		} else {
-			this.basicInfoForm.patchValue({
-				roomIdPrefix: roomOptions.roomIdPrefix || ''
-			});
-		}
 	}
 
 	private saveFormData(formValue: any) {
@@ -110,27 +71,13 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 		};
 
 		// Always save to wizard state (including when values are cleared)
-		this.wizardState.updateStepData('basic', stepData);
-	}
-
-	clearForm() {
-		this.basicInfoForm.reset();
-		this.wizardState.updateStepData('basic', {
-			roomIdPrefix: '',
-			autoDeletionDate: undefined
-		});
+		this.wizardService.updateStepData('basic', stepData);
 	}
 
 	get minDate(): Date {
-		return new Date();
-	}
-
-	clearDeletionDate() {
-		this.basicInfoForm.patchValue({
-			autoDeletionDate: null,
-			autoDeletionHour: 23, // Reset to default values
-			autoDeletionMinute: 59
-		});
+		const now = new Date();
+		now.setHours(now.getHours() + 1, 0, 0, 0); // Set to 1 hour in the future
+		return now;
 	}
 
 	get hasDateSelected(): boolean {
@@ -158,6 +105,14 @@ export class RoomWizardBasicInfoComponent implements OnInit, OnDestroy {
 			hour: '2-digit',
 			minute: '2-digit',
 			hour12: false
+		});
+	}
+
+	clearDeletionDate() {
+		this.basicInfoForm.patchValue({
+			autoDeletionDate: null,
+			autoDeletionHour: 23,
+			autoDeletionMinute: 59
 		});
 	}
 }

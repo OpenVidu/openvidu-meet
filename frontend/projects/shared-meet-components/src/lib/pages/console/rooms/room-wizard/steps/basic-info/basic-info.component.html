@@ -16,9 +16,12 @@
 			<!-- Room Prefix Field -->
 			<mat-form-field appearance="outline" class="form-field">
 				<mat-label>Room Name Prefix</mat-label>
-				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" maxlength="50" />
+				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
 				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
+				@if (basicInfoForm.get('roomIdPrefix')?.hasError('maxlength')) {
+					<mat-error> Room name prefix cannot exceed 50 characters </mat-error>
+				}
 			</mat-form-field>
 
 			<!-- Deletion Date Field -->
@@ -39,6 +42,7 @@
 						matSuffix
 						mat-icon-button
 						type="button"
+						[disabled]="basicInfoForm.get('autoDeletionDate')?.disabled"
 						(click)="clearDeletionDate()"
 						matTooltip="Clear date selection"
 						class="clear-date-button"
@@ -85,10 +89,14 @@
 							<mat-icon matSuffix class="ov-settings-icon">access_time</mat-icon>
 						</mat-form-field>
 					</div>
-					<div class="time-hint">
-						<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
-						<span>Room will be deleted at {{ getFormattedDateTime() }}</span>
-					</div>
+					@if (!basicInfoForm.hasError('minFutureDateTime')) {
+						<div class="time-hint">
+							<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
+							<span>Room will be deleted at {{ getFormattedDateTime() }}</span>
+						</div>
+					} @else {
+						<mat-error> Deletion date and time must be at least one hour in the future </mat-error>
+					}
 				</div>
 			}
 		</form>

@@ -17,6 +17,9 @@
 					<ov-selectable-card
 						[option]="option"
 						[selectedValue]="selectedValue"
+						[allowMultiSelect]="false"
+						[showSelectionIndicator]="true"
+						[showRecommendedBadge]="option.recommended ?? false"
 						(optionSelected)="onOptionSelect($event)"
 					></ov-selectable-card>
 				}
