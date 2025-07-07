@@ -5,14 +5,16 @@ import styles from '../assets/css/styles.css';
 
 /**
  * The `OpenViduMeet` web component provides an interface for embedding an OpenVidu Meet room within a web page.
- * It allows for dynamic configuration through attributes and provides methods to interact with the OpenVidu Meet.
+ * It can also be used to view a recording of a meeting.
+ * It allows for dynamic configuration through attributes and provides methods to interact with OpenVidu Meet.
  *
  * @example
  * ```html
- * <openvidu-meet roomUrl="https://your-openvidu-server.com/room"></openvidu-meet>
+ * <openvidu-meet room-url="https://your-openvidu-server.com/room"></openvidu-meet>
  * ```
  *
- * @attribute roomUrl - The base URL of the OpenVidu Meet room. This attribute is required.
+ * @attribute room-url - The base URL of the OpenVidu Meet room. This attribute is required unless `recording-url` is provided.
+ * @attribute recording-url - The URL of a recording to view. If this is provided, the `room-url` is not required.
  *
  * @public
  */
@@ -43,7 +45,7 @@ export class OpenViduMeet extends HTMLElement {
 		);
 
 		this.commandsManager = new CommandsManager(this.iframe, this.targetIframeOrigin);
-		this.eventsManager = new EventsManager(this);
+		this.eventsManager = new EventsManager(this, this.targetIframeOrigin);
 
 		// Listen for changes in attributes to update the iframe src
 		const observer = new MutationObserver(() => this.updateIframeSrc());
@@ -117,7 +119,8 @@ export class OpenViduMeet extends HTMLElement {
 			this.loadTimeout = null;
 			this.iframe.onload = null;
 		};
-		// this.iframe.onload = this.handleIframeLoaded.bind(this);
+
+		// Handle iframe errors
 		this.iframe.onerror = (event: Event | string) => {
 			console.error('Iframe error:', event);
 			clearTimeout(this.loadTimeout);
@@ -140,6 +143,7 @@ export class OpenViduMeet extends HTMLElement {
 		const url = new URL(baseUrl);
 		this.targetIframeOrigin = url.origin;
 		this.commandsManager.setTargetOrigin(this.targetIframeOrigin);
+		this.eventsManager.setTargetOrigin(this.targetIframeOrigin);
 
 		// Update query params
 		Array.from(this.attributes).forEach((attr) => {

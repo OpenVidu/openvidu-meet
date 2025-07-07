@@ -3,23 +3,23 @@
  * @category Communication
  */
 export enum WebComponentEvent {
-	/**
-	 * Event emitted when application is ready to receive commands.
-	 * @private
-	 */
-	READY = 'READY',
-	/**
-	 * Event emitted when the local participant joins the room.
-	 */
-	JOIN = 'JOIN',
-	/**
-	 * Event emitted when the local participant leaves the room.
-	 */
-	LEFT = 'LEFT',
-	/**
-	 * Event emitted when a moderator ends the meeting.
-	 */
-	MEETING_ENDED = 'MEETING_ENDED'
+    /**
+     * Event emitted when application is ready to receive commands.
+     * @private
+     */
+    READY = 'READY',
+    /**
+     * Event emitted when the local participant joins the room.
+     */
+    JOIN = 'JOIN',
+    /**
+     * Event emitted when the local participant leaves the room.
+     */
+    LEFT = 'LEFT',
+    /**
+     * Event emitted when a moderator ends the meeting.
+     */
+    MEETING_ENDED = 'MEETING_ENDED'
 }
 
 /**
@@ -28,23 +28,23 @@ export enum WebComponentEvent {
  * @category Communication
  */
 export interface WebComponentEventPayloads {
-	/**
-	 * Payload for the {@link WebComponentEvent.READY} event.
-	 * @private
-	 */
-	[WebComponentEvent.READY]: {};
-	[WebComponentEvent.JOIN]: {
-		roomId: string;
-		participantName: string;
-	};
-	[WebComponentEvent.LEFT]: {
-		roomId: string;
-		participantName: string;
-		reason: string;
-	};
-	[WebComponentEvent.MEETING_ENDED]: {
-		roomId: string;
-	};
+    /**
+     * Payload for the {@link WebComponentEvent.READY} event.
+     * @private
+     */
+    [WebComponentEvent.READY]: {};
+    [WebComponentEvent.JOIN]: {
+        roomId: string;
+        participantName: string;
+    };
+    [WebComponentEvent.LEFT]: {
+        roomId: string;
+        participantName: string;
+        reason: string;
+    };
+    [WebComponentEvent.MEETING_ENDED]: {
+        roomId: string;
+    };
 }
 
 /**
@@ -53,4 +53,6 @@ export interface WebComponentEventPayloads {
  * @category Type Helpers
  * @private
  */
-export type WebComponentEventPayloadFor<T extends WebComponentEvent> = T extends keyof WebComponentEventPayloads ? WebComponentEventPayloads[T] : never;
+export type WebComponentEventPayloadFor<T extends WebComponentEvent> = T extends keyof WebComponentEventPayloads
+    ? WebComponentEventPayloads[T]
+    : never;

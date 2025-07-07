@@ -57,6 +57,17 @@ export class CommandsManager {
 	}
 
 	/**
+	 * Updates the target origin used when sending messages to the iframe.
+	 * This should be called once the iframe URL is known to improve security.
+	 *
+	 * @param newOrigin - The origin of the content loaded in the iframe
+	 *                    (e.g. 'https://meet.example.com')
+	 */
+	public setTargetOrigin(newOrigin: string): void {
+		this.targetIframeOrigin = newOrigin;
+	}
+
+	/**
 	 * Subscribe to an event
 	 * @param eventName Name of the event to listen for
 	 * @param callback Function to be called when the event is triggered
@@ -85,9 +96,7 @@ export class CommandsManager {
 		handlers?.add(callback);
 
 		// Register with standard DOM API
-
 		element.addEventListener(eventName, listener);
-
 		return this;
 	}
 
@@ -112,7 +121,6 @@ export class CommandsManager {
 		};
 
 		this.on(element, eventName, wrapperCallback);
-
 		return this;
 	}
 
@@ -156,30 +164,16 @@ export class CommandsManager {
 		this.sendMessage(message);
 	}
 
-	// public toggleChat() {
-	// 	const message: ParentMessage = { action: WebComponentActionType.TOGGLE_CHAT };
-	// 	this.commandsManager.sendMessage(message);
-	// }
-
-	/**
-	 * Updates the target origin used when sending messages to the iframe.
-	 * This should be called once the iframe URL is known to improve security.
-	 *
-	 * @param newOrigin - The origin of the content loaded in the iframe
-	 *                    (e.g. 'https://meet.example.com')
-	 */
-	public setTargetOrigin(newOrigin: string): void {
-		this.targetIframeOrigin = newOrigin;
-	}
-
 	/**
 	 * Sends a message to the iframe using window.postMessage
 	 *
 	 * @param message - The message to send to the iframe
-	 * @param explicitTargetOrigin - Optional override for the target origin
+	 * @param targetOrigin - Optional override for the target origin
 	 */
-	private sendMessage(message: WebComponentInboundCommandMessage, explicitTargetOrigin?: string): void {
-		explicitTargetOrigin = explicitTargetOrigin || this.targetIframeOrigin;
-		this.iframe.contentWindow?.postMessage(message, explicitTargetOrigin);
+	private sendMessage(
+		message: WebComponentInboundCommandMessage,
+		targetOrigin: string = this.targetIframeOrigin
+	): void {
+		this.iframe.contentWindow?.postMessage(message, targetOrigin);
 	}
 }
