@@ -195,6 +195,14 @@ export class LiveKitService {
 	}
 
 	async sendData(roomName: string, rawData: Record<string, any>, options: SendDataOptions): Promise<void> {
+		// Check if the room exists before sending data
+		const roomExists = await this.roomExists(roomName);
+
+		if (!roomExists) {
+			this.logger.warn(`Skipping sending data because LiveKit room '${roomName}' does not exist`);
+			return;
+		}
+
 		try {
 			const data: Uint8Array = new TextEncoder().encode(JSON.stringify(rawData));
 			await this.roomClient.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
