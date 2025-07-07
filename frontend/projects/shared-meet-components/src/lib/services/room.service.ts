@@ -232,21 +232,4 @@ export class RoomService {
 		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/roles/${secret}`;
 		return this.httpService.getRequest(path);
 	}
-
-	/**
-	 * Ends a meeting by its room ID.
-	 *
-	 * @param roomId - The unique identifier of the meeting room
-	 * @returns A promise that resolves when the meeting has been ended
-	 */
-	async endMeeting(roomId: string): Promise<any> {
-		const path = `${this.MEETINGS_API}/${roomId}`;
-		return this.httpService.deleteRequest(path);
-	}
-
-	async kickParticipant(roomId: string, participantId: string): Promise<void> {
-		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
-		await this.httpService.deleteRequest(path);
-		this.log.d(`Participant ${participantId} kicked from room ${roomId}`);
-	}
 }

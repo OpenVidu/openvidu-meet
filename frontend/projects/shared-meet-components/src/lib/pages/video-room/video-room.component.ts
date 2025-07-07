@@ -16,6 +16,7 @@ import {
 	ApplicationFeatures,
 	AuthService,
 	FeatureConfigurationService,
+	MeetingService,
 	NavigationService,
 	NotificationService,
 	ParticipantTokenService,
@@ -32,7 +33,6 @@ import {
 	WebComponentOutboundEventMessage
 } from '@lib/typings/ce';
 import { MeetSignalType } from '@lib/typings/ce/event.model';
-
 import {
 	ApiDirectiveModule,
 	DataPacket_Kind,
@@ -93,6 +93,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected recManagerService: RecordingManagerService,
 		protected authService: AuthService,
 		protected roomService: RoomService,
+		protected meetingService: MeetingService,
 		protected openviduService: OpenViduService,
 		protected participantService: ParticipantTokenService,
 		protected wcManagerService: WebComponentManagerService,
@@ -167,12 +168,12 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async endMeeting() {
 		if (this.participantService.isModeratorParticipant()) {
 			const roomId = this.roomService.getRoomId();
-			await this.roomService.endMeeting(roomId);
+			await this.meetingService.endMeeting(roomId);
 		}
 	}
 
 	async forceDisconnectParticipant(participant: ParticipantModel) {
-		await this.roomService.kickParticipant(this.roomId, participant.identity);
+		await this.meetingService.kickParticipant(this.roomId, participant.identity);
 	}
 
 	async copyModeratorLink() {
