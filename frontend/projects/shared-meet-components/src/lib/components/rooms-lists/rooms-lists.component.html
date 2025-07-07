@@ -267,12 +267,6 @@
 							<button
 								mat-menu-item
 								(click)="viewRecordings(room)"
-								[disabled]="!room.preferences.recordingPreferences.enabled"
-								[matTooltip]="
-									!room.preferences.recordingPreferences.enabled
-										? 'Recording is disabled for this room'
-										: ''
-								"
 								id="view-recordings-btn-{{ room.roomId }}"
 							>
 								<mat-icon class="ov-recording-icon">video_library</mat-icon>
