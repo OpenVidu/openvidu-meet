@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { AppDataService, ParticipantTokenService, RoomService } from '@lib/services';
+import { AppDataService, MeetingService, ParticipantTokenService, RoomService } from '@lib/services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
 	WebComponentInboundCommandMessage,
 	WebComponentOutboundEventMessage
 } from '@lib/typings/ce';
-import { LoggerService, OpenViduService, PanelService } from 'openvidu-components-angular';
+import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
@@ -26,9 +26,9 @@ export class WebComponentManagerService {
 		protected loggerService: LoggerService,
 		protected appDataService: AppDataService,
 		protected participantService: ParticipantTokenService,
-		protected panelService: PanelService,
 		protected openviduService: OpenViduService,
-		protected roomService: RoomService
+		protected roomService: RoomService,
+		protected meetingService: MeetingService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
@@ -41,7 +41,7 @@ export class WebComponentManagerService {
 		// Listen for messages from the iframe
 		window.addEventListener('message', this.boundHandleMessage);
 		// Send ready message to parent
-		window.parent.postMessage(
+		this.sendMessageToParent(
 			{
 				event: WebComponentEvent.READY,
 				payload: {}
@@ -58,10 +58,10 @@ export class WebComponentManagerService {
 		this.log.d('Stopped commands listener');
 	}
 
-	sendMessageToParent(event: WebComponentOutboundEventMessage) {
+	sendMessageToParent(event: WebComponentOutboundEventMessage, targetOrigin: string = this.parentDomain) {
 		if (!this.appDataService.isEmbeddedMode()) return;
-		this.log.d('Sending message to parent :', event);
-		window.parent.postMessage(event, this.parentDomain);
+		this.log.d('Sending message to parent:', event);
+		window.parent.postMessage(event, targetOrigin);
 	}
 
 	protected async handleMessage(event: MessageEvent): Promise<void> {
@@ -81,26 +81,35 @@ export class WebComponentManagerService {
 		}
 
 		if (event.origin !== this.parentDomain) {
-			// console.warn(`Untrusted origin: ${event.origin}`);
+			console.warn(`Untrusted origin: ${event.origin}`);
+			return;
+		}
+
+		// Check if the room is connected before processing command
+		if (!this.openviduService.isRoomConnected()) {
+			this.log.w('Received command but room is not connected');
 			return;
 		}
 
 		console.debug('Message received from parent:', event.data);
-		// TODO: reject if room is not connected
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
-				// Moderator only
-				if (this.participantService.isModeratorParticipant()) {
-					const roomId = this.roomService.getRoomId();
-					await this.roomService.endMeeting(roomId);
+				// Only moderators can end the meeting
+				if (!this.participantService.isModeratorParticipant()) {
+					this.log.w('End meeting command received but participant is not a moderator');
+					return;
 				}
+
+				try {
+					this.log.d('Ending meeting...');
+					const roomId = this.roomService.getRoomId();
+					await this.meetingService.endMeeting(roomId);
+				} catch (error) {
+					this.log.e('Error ending meeting:', error);
+				}
+
 				break;
-			// case WebComponentCommand.TOGGLE_CHAT:
-			// Toggle chat
-			// this.panelService.togglePanel(PanelType.CHAT);
-			// break;
 			case WebComponentCommand.LEAVE_ROOM:
-				// Leave room.
 				await this.openviduService.disconnectRoom();
 				break;
 			default:
