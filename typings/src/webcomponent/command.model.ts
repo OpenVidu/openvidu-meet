@@ -16,7 +16,12 @@ export enum WebComponentCommand {
     /**
      * Disconnects the local participant from the current room.
      */
-    LEAVE_ROOM = 'LEAVE_ROOM'
+    LEAVE_ROOM = 'LEAVE_ROOM',
+    /**
+     * Kicks a participant from the meeting.
+     * This command is only available for the moderator.
+     */
+    KICK_PARTICIPANT = 'KICK_PARTICIPANT'
 }
 
 /**
@@ -34,7 +39,9 @@ export interface WebComponentCommandPayloads {
     };
     [WebComponentCommand.END_MEETING]: void;
     [WebComponentCommand.LEAVE_ROOM]: void;
-    // [WebComponentCommand.TOGGLE_CHAT]: void;
+    [WebComponentCommand.KICK_PARTICIPANT]: {
+        participantIdentity: string;
+    };
 }
 
 /**

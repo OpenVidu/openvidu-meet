@@ -164,6 +164,14 @@ export class CommandsManager {
 		this.sendMessage(message);
 	}
 
+	public kickParticipant(participantIdentity: string) {
+		const message: WebComponentInboundCommandMessage = {
+			command: WebComponentCommand.KICK_PARTICIPANT,
+			payload: { participantIdentity }
+		};
+		this.sendMessage(message);
+	}
+
 	/**
 	 * Sends a message to the iframe using window.postMessage
 	 *

@@ -217,4 +217,12 @@ export class OpenViduMeet extends HTMLElement {
 	public leaveRoom() {
 		this.commandsManager.leaveRoom();
 	}
+
+	/**
+	 * Kicks a participant from the meeting.
+	 * @param participantIdentity The identity of the participant to kick
+	 */
+	public kickParticipant(participantIdentity: string) {
+		this.commandsManager.kickParticipant(participantIdentity);
+	}
 }

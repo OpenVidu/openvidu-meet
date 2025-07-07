@@ -112,6 +112,29 @@ export class WebComponentManagerService {
 			case WebComponentCommand.LEAVE_ROOM:
 				await this.openviduService.disconnectRoom();
 				break;
+			case WebComponentCommand.KICK_PARTICIPANT:
+				// Only moderators can kick participants
+				if (!this.participantService.isModeratorParticipant()) {
+					this.log.w('Kick participant command received but participant is not a moderator');
+					return;
+				}
+
+				if (!payload || !('participantIdentity' in payload)) {
+					this.log.e('Kick participant command received without participant identity');
+					return;
+				}
+
+				const participantIdentity = payload['participantIdentity'];
+
+				try {
+					this.log.d(`Kicking participant '${participantIdentity}' from the meeting...`);
+					const roomId = this.roomService.getRoomId();
+					await this.meetingService.kickParticipant(roomId, participantIdentity);
+				} catch (error) {
+					this.log.e(`Error kicking participant '${participantIdentity}':`, error);
+				}
+
+				break;
 			default:
 				break;
 		}
