@@ -1,11 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
+import { MEET_TESTAPP_URL } from '../config';
 import {
 	applyVirtualBackground,
 	closeMoreOptionsMenu,
 	createTestRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	deleteTestRoom,
 	interactWithElementInIframe,
 	isVirtualBackgroundApplied,
 	joinRoomAs,
@@ -17,12 +18,10 @@ import {
 	waitForElementInIframe,
 	waitForVirtualBackgroundToApply
 } from '../helpers/function-helpers';
-import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
 
 let subscribedToAppErrors = false;
 
 test.describe('UI Feature Preferences Tests', () => {
-	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'ui-feature-testing-room';
 	let participantName: string;
 	let roomId: string;
@@ -35,7 +34,6 @@ test.describe('UI Feature Preferences Tests', () => {
 	test.beforeAll(async () => {
 		// Login as admin to get authentication cookie
 		adminCookie = await loginAsAdmin();
-		// Create test room
 	});
 
 	test.beforeEach(async ({ page }) => {
@@ -83,8 +81,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that chat button is visible
@@ -104,11 +101,11 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that chat button is not visible
-			const chatButton = page.frameLocator('openvidu-meet >>> iframe').locator('#chat-panel-btn');
+			const chatButton = await waitForElementInIframe(page, '#chat-panel-btn', { state: 'hidden' });
 			await expect(chatButton).toBeHidden();
 		});
 	});
@@ -129,8 +126,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('moderator', participantName, page);
 
 			await openMoreOptionsMenu(page);
@@ -150,22 +146,21 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 
 		test('should not show recording button for publisher', async ({ page }) => {
-			// Ensure recording is enabled but only for moderators
 			roomId = await createTestRoom(testRoomPrefix, {
 				chatPreferences: { enabled: true },
 				recordingPreferences: {
 					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
 				},
 				virtualBackgroundPreferences: { enabled: true }
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that recording button is not visible for publisher
-			const recordingButton = page.frameLocator('openvidu-meet >>> iframe').locator('#recording-btn');
+			const recordingButton = await waitForElementInIframe(page, '#recording-btn', { state: 'hidden' });
 			await expect(recordingButton).toBeHidden();
 			await leaveRoom(page);
 		});
@@ -182,7 +177,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('moderator', participantName, page);
 
 			// Check that recording button is not visible
@@ -219,7 +214,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Click more options to reveal virtual background button
@@ -244,7 +239,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Click more options to reveal virtual background button
@@ -269,11 +264,10 @@ test.describe('UI Feature Preferences Tests', () => {
 			});
 
 			await page.reload();
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 
 			await applyVirtualBackground(page, '2');
-
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
@@ -294,54 +288,12 @@ test.describe('UI Feature Preferences Tests', () => {
 			await leaveRoom(page);
 			await page.reload();
 
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 			await joinRoomAs('publisher', participantName, page);
 			await page.waitForTimeout(2000);
-			const isVBApplied = await isVirtualBackgroundApplied(page);
 
+			const isVBApplied = await isVirtualBackgroundApplied(page);
 			expect(isVBApplied).toBe(false);
 		});
 	});
-
-	// ==========================================
-	// ROLE-BASED FEATURE TESTS
-	// ==========================================
-
-	// test.describe('Role-based Feature Access', () => {
-	// 	test('should show different features for moderator vs publisher', async ({ page, browser }) => {
-	// 		// Setup recording to be available for moderators only
-	// 		await updateRoomPreferences({
-	// 			...getDefaultRoomPreferences(),
-	// 			recordingPreferences: {
-	// 				enabled: true,
-	// 				allowAccessTo: 'admin-moderator'
-	// 			}
-	// 		});
-
-	// 		// Test as moderator
-	// 		await joinRoomAs('moderator', `moderator-${participantName}`, page);
-
-	// 		// Moderator should see recording button
-	// 		const moderatorRecordingButton = await waitForElementInIframe(page, '#recording-btn', { state: 'visible' });
-	// 		await expect(moderatorRecordingButton).toBeVisible();
-
-	// 		await leaveRoom(page);
-
-	// 		// Test as publisher in a new context
-	// 		const publisherContext = await browser.newContext();
-	// 		const publisherPage = await publisherContext.newPage();
-	// 		await prepareForJoiningRoom(publisherPage, testAppUrl, testRoomPrefix);
-
-	// 		await joinRoomAs('publisher', `publisher-${participantName}`, publisherPage);
-
-	// 		// Publisher should not see recording button
-	// 		const publisherRecordingButton = publisherPage
-	// 			.frameLocator('openvidu-meet >>> iframe')
-	// 			.locator('#recording-btn');
-	// 		await expect(publisherRecordingButton).toBeHidden();
-
-	// 		await leaveRoom(publisherPage);
-	// 		await publisherContext.close();
-	// 	});
-	// });
 });

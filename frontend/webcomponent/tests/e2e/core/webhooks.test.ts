@@ -1,21 +1,29 @@
-import { test, expect } from '@playwright/test';
-import { deleteAllRecordings, deleteAllRooms, joinRoomAs, startStopRecording } from '../../helpers/function-helpers';
+import { expect, test } from '@playwright/test';
+import { MEET_TESTAPP_URL } from '../../config.js';
+import {
+	deleteAllRecordings,
+	deleteAllRooms,
+	joinRoomAs,
+	prepareForJoiningRoom,
+	startStopRecording
+} from '../../helpers/function-helpers';
 
 let subscribedToAppErrors = false;
 
 test.describe('Web Component E2E Tests', () => {
-	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'test-room';
+	let participantName: string;
 
 	test.beforeAll(async ({ browser }) => {
 		// Create a test room before all tests
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await tempPage.goto(testAppUrl);
+		await tempPage.goto(MEET_TESTAPP_URL);
 		await tempPage.waitForSelector('.create-room');
 		await tempPage.fill('#room-id-prefix', testRoomPrefix);
 		await tempPage.click('.create-room-btn');
 		await tempPage.waitForSelector(`#${testRoomPrefix}`);
+
 		await tempPage.close();
 		await tempContext.close();
 	});
@@ -29,12 +37,9 @@ test.describe('Web Component E2E Tests', () => {
 			});
 			subscribedToAppErrors = true;
 		}
-		await page.goto(testAppUrl);
-		await page.waitForSelector('.rooms-container');
-		await page.waitForSelector(`#${testRoomPrefix}`);
-		await page.click('.dropdown-button');
-		await page.waitForSelector('#join-as-moderator');
-		await page.waitForSelector('#join-as-publisher');
+
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 	});
 
 	test.afterEach(async ({ context }) => {
@@ -53,7 +58,7 @@ test.describe('Web Component E2E Tests', () => {
 
 	test.describe('Webhook Handling', () => {
 		test('should successfully receive meetingStarted and meetingEnded webhooks', async ({ page }) => {
-			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+			await joinRoomAs('moderator', participantName, page);
 
 			await page.waitForSelector('.webhook-meetingStarted');
 			const meetingStartedElements = await page.locator('.webhook-meetingStarted').all();
@@ -66,10 +71,10 @@ test.describe('Web Component E2E Tests', () => {
 			expect(meetingEndedElements.length).toBe(1);
 		});
 
-		test('should successfully receive recordingStarted, recordingUpdated and recordingEnded  webhooks', async ({
+		test('should successfully receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({
 			page
 		}) => {
-			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+			await joinRoomAs('moderator', participantName, page);
 
 			// Start recording
 			await startStopRecording(page, 'start');

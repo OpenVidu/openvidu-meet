@@ -1,8 +1,8 @@
-import { MeetRecordingAccess, MeetRoomPreferences } from '../../../../typings/src/room-preferences';
-import { Page, Locator, FrameLocator } from '@playwright/test';
-import { expect } from '@playwright/test';
-import { PNG } from 'pngjs';
+import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 import * as fs from 'fs';
+import { PNG } from 'pngjs';
+import { MeetRecordingAccess, MeetRoomPreferences } from '../../../../typings/src/room-preferences';
+import { MEET_ADMIN_PASSWORD, MEET_ADMIN_USER, MEET_API_KEY, MEET_API_URL, MEET_TESTAPP_URL } from '../config';
 
 /**
  * Gets a FrameLocator for an iframe inside a Shadow DOM
@@ -55,11 +55,10 @@ export async function waitForElementInIframe(
 
 	// Wait for the element with the specified state
 	await elementLocator.waitFor({ state, timeout });
-
 	return elementLocator;
 }
 
-// Interacti with an element inside an iframe within Shadow DOM
+// Interact with an element inside an iframe within Shadow DOM
 export async function interactWithElementInIframe(
 	page: Page,
 	elementSelector: string,
@@ -74,7 +73,8 @@ export async function interactWithElementInIframe(
 	}
 ): Promise<void> {
 	const { action, value = '', timeout = 30000 } = options;
-	const element = await waitForElementInIframe(page, elementSelector);
+	const element = await waitForElementInIframe(page, elementSelector, { timeout });
+
 	// Perform the specified action
 	switch (action) {
 		case 'click':
@@ -87,6 +87,7 @@ export async function interactWithElementInIframe(
 			throw new Error(`Unsupported action: ${action}`);
 	}
 }
+
 // Helper function to get default room preferences
 const getDefaultRoomPreferences = (): MeetRoomPreferences => ({
 	recordingPreferences: {
@@ -102,11 +103,11 @@ export const createTestRoom = async (
 	roomIdPrefix: string,
 	preferences: MeetRoomPreferences = getDefaultRoomPreferences()
 ) => {
-	const response = await fetch(`http://localhost:6080/api/v1/rooms`, {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			'x-api-key': 'meet-api-key'
+			'x-api-key': MEET_API_KEY
 		},
 		body: JSON.stringify({
 			roomIdPrefix,
@@ -127,7 +128,7 @@ export const createTestRoom = async (
 
 // Helper function to update room preferences via REST API
 export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
-	const response = await fetch(`http://localhost:6080/internal-api/v1/rooms/${roomId}`, {
+	const response = await fetch(`${MEET_API_URL}/internal-api/v1/rooms/${roomId}`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
@@ -145,14 +146,14 @@ export const updateRoomPreferences = async (roomId: string, preferences: any, ad
 
 // Helper function to login and get admin cookie
 export const loginAsAdmin = async (): Promise<string> => {
-	const response = await fetch(`http://localhost:6080/internal-api/v1/auth/login`, {
+	const response = await fetch(`${MEET_API_URL}/internal-api/v1/auth/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
-			username: 'admin',
-			password: 'admin'
+			username: MEET_ADMIN_USER,
+			password: MEET_ADMIN_PASSWORD
 		})
 	});
 
@@ -168,7 +169,6 @@ export const loginAsAdmin = async (): Promise<string> => {
 
 	// Extract the access token cookie
 	const accessTokenCookie = cookies.split(';').find((cookie) => cookie.trim().startsWith('OvMeetAccessToken='));
-
 	if (!accessTokenCookie) {
 		throw new Error('Access token cookie not found');
 	}
@@ -177,23 +177,23 @@ export const loginAsAdmin = async (): Promise<string> => {
 };
 
 // Helper function to delete a room
-export const deleteTestRoom = async (roomIdToDelete: string) => {
-	await fetch(`http://localhost:6080/api/v1/rooms/${roomIdToDelete}`, {
+export const deleteTestRoom = async (roomId: string) => {
+	await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}`, {
 		method: 'DELETE',
 		headers: {
-			'x-api-key': 'meet-api-key'
+			'x-api-key': MEET_API_KEY
 		}
 	});
 };
 
 export const deleteAllRecordings = async (page: Page) => {
-	await page.goto('http://localhost:5080/');
+	await page.goto(MEET_TESTAPP_URL);
 	await page.waitForSelector('#delete-all-recordings-btn', { state: 'visible' });
 	await page.click('#delete-all-recordings-btn');
 };
 
 export const deleteAllRooms = async (page: Page) => {
-	await page.goto('http://localhost:5080/');
+	await page.goto(MEET_TESTAPP_URL);
 	await page.waitForSelector('#delete-all-rooms-btn', { state: 'visible' });
 	await page.click('#delete-all-rooms-btn');
 };
@@ -203,9 +203,11 @@ export const startStopRecording = async (page: Page, action: 'start' | 'stop') =
 	if (action === 'start') {
 		await openMoreOptionsMenu(page);
 	}
+
 	await waitForElementInIframe(page, buttonSelector, { state: 'visible' });
 	await interactWithElementInIframe(page, buttonSelector, { action: 'click' });
 	await page.waitForTimeout(500); // Wait for recording action to complete
+
 	if (action === 'start') {
 		await page.waitForSelector('.webhook-recordingUpdated', { timeout: 10000 });
 	}
@@ -213,6 +215,7 @@ export const startStopRecording = async (page: Page, action: 'start' | 'stop') =
 		await page.waitForSelector('.webhook-recordingEnded', { timeout: 10000 });
 	}
 };
+
 export const prepareForJoiningRoom = async (page: Page, url: string, roomPrefix: string) => {
 	await page.goto(url);
 	await page.waitForSelector('.rooms-container');
@@ -241,6 +244,12 @@ export const joinRoomAs = async (role: 'moderator' | 'publisher', pName: string,
 	await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
 };
 
+export const accessRoomAs = async (role: 'moderator' | 'publisher', page: Page) => {
+	await page.click('#join-as-' + role);
+	const component = page.locator('openvidu-meet');
+	await expect(component).toBeVisible();
+};
+
 export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Page) => {
 	await page.click('#join-as-' + role);
 	const component = page.locator('openvidu-meet');
@@ -252,11 +261,13 @@ export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Pa
 export const leaveRoom = async (page: Page, role: 'moderator' | 'publisher' = 'publisher') => {
 	const button = await waitForElementInIframe(page, '#leave-btn');
 	await button.click();
+
 	if (role === 'moderator') {
 		await page.waitForTimeout(500); // Wait for leave animation
 		const option = await waitForElementInIframe(page, '#leave-option');
 		await option.click();
 	}
+
 	await page.waitForSelector('.event-LEFT');
 };
 

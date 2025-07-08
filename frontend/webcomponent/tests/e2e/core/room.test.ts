@@ -1,7 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import * as fs from 'fs';
-import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
+import { MEET_TESTAPP_URL } from '../../config.js';
 import {
 	applyVirtualBackground,
 	deleteAllRecordings,
@@ -21,9 +22,8 @@ let subscribedToAppErrors = false;
 
 // Test suite for room functionality in OpenVidu Meet
 test.describe('Room Functionality Tests', () => {
-	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'testing-room';
-	let participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
+	let participantName: string;
 
 	// ==========================================
 	// SETUP & TEARDOWN
@@ -33,11 +33,12 @@ test.describe('Room Functionality Tests', () => {
 		// Create a test room before all tests
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await tempPage.goto(testAppUrl);
+		await tempPage.goto(MEET_TESTAPP_URL);
 		await tempPage.waitForSelector('.create-room');
 		await tempPage.fill('#room-id-prefix', testRoomPrefix);
 		await tempPage.click('.create-room-btn');
 		await tempPage.waitForSelector(`#${testRoomPrefix}`);
+
 		await tempPage.close();
 		await tempContext.close();
 	});
@@ -51,7 +52,8 @@ test.describe('Room Functionality Tests', () => {
 			});
 			subscribedToAppErrors = true;
 		}
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 	});
 
@@ -73,9 +75,10 @@ test.describe('Room Functionality Tests', () => {
 	// ==========================================
 	// COMPONENT RENDERING TESTS
 	// ==========================================
+
 	test.describe('Component Rendering', () => {
 		test('should load the web component with proper iframe', async ({ page }) => {
-			await joinRoomAs('moderator', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+			await joinRoomAs('moderator', participantName, page);
 
 			const component = page.locator('openvidu-meet');
 			await expect(component).toBeVisible();
@@ -94,7 +97,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Basic Room Features', () => {
 		test('should show the toolbar and media buttons', async ({ page }) => {
-			await joinRoomAs('publisher', `P-${Math.random().toString(36).substring(2, 9)}`, page);
+			await joinRoomAs('publisher', participantName, page);
 			await waitForElementInIframe(page, '#toolbar');
 
 			// Check media buttons are present
@@ -105,7 +108,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
-			// First participant joins
+			// First participant (publisher) joins
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check local video element
@@ -115,7 +118,7 @@ test.describe('Room Functionality Tests', () => {
 			// Second participant (moderator) joins
 			const context = await browser.newContext();
 			const moderatorPage = await context.newPage();
-			await prepareForJoiningRoom(moderatorPage, testAppUrl, testRoomPrefix);
+			await prepareForJoiningRoom(moderatorPage, MEET_TESTAPP_URL, testRoomPrefix);
 
 			await joinRoomAs('moderator', 'moderator', moderatorPage);
 
