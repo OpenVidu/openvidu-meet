@@ -95,7 +95,7 @@
 			</div>
 
 			<!-- Quick Actions -->
-			@if (isAdmin) {
+			@if (isAdmin && !isEmbeddedMode) {
 				<div class="quick-actions fade-in-delayed-more">
 					<button mat-button class="quick-action-button" (click)="goBack()">
 						<mat-icon>arrow_back</mat-icon>

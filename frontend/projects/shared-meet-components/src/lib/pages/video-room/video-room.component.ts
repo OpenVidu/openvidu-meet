@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ErrorReason } from '@lib/models';
 import {
+	AppDataService,
 	ApplicationFeatures,
 	AuthService,
 	FeatureConfigurationService,
@@ -96,6 +97,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		protected meetingService: MeetingService,
 		protected openviduService: OpenViduService,
 		protected participantService: ParticipantTokenService,
+		protected appDataService: AppDataService,
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService,
@@ -132,6 +134,10 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 	get isAdmin(): boolean {
 		return this.authService.isAdmin();
+	}
+
+	get isEmbeddedMode(): boolean {
+		return this.appDataService.isEmbeddedMode();
 	}
 
 	async submitAccessRoom() {
