@@ -108,7 +108,6 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
-		this.room = await this.roomService.getRoom(this.roomId);
 
 		await this.checkForRecordings();
 		await this.initializeParticipantName();
@@ -177,13 +176,21 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	}
 
 	async copyModeratorLink() {
+		await this.loadRoomIfAbsent();
 		this.clipboard.copy(this.room!.moderatorRoomUrl);
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
 	async copyPublisherLink() {
+		await this.loadRoomIfAbsent();
 		this.clipboard.copy(this.room!.publisherRoomUrl);
 		this.notificationService.showSnackbar('Publisher link copied to clipboard');
+	}
+
+	private async loadRoomIfAbsent() {
+		if (!this.room) {
+			this.room = await this.roomService.getRoom(this.roomId);
+		}
 	}
 
 	/**
