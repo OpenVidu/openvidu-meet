@@ -42,9 +42,17 @@
 					<button id="leave-room-btn" class="btn btn-warning">
 						Leave Room
 					</button>
-					<!-- <button id="toggle-chat-btn" class="btn btn-success">
-						Toggle Chat
-					</button> -->
+					{{#isModerator}}
+					<input
+						type="text"
+						id="participant-identity-input"
+						placeholder="Participant Identity"
+						class="form-control mb-2"
+					/>
+					<button id="kick-participant-btn" class="btn btn-info">
+						Kick Participant
+					</button>
+					{{/isModerator}}
 				</div>
 
 				<!-- Events -->
@@ -82,7 +90,9 @@
 					<openvidu-meet
 						room-url="{{ roomUrl }}"
 						participant-name="{{ participantName }}"
-						leave-redirect-url="https://openvidu.io"
+						{{#showOnlyRecordings}}
+						show-only-recordings=true
+						{{/showOnlyRecordings}}
 					></openvidu-meet>
 				</div>
 			</div>

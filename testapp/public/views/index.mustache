@@ -109,24 +109,29 @@
 											</button>
 										</form>
 									</li>
-									{{! ONLY RECORDINGS LINK }}
+									{{! SHOW ONLY RECORDINGS LINK }}
 									<li>
 										<form action="/join-room" method="post">
 											<input
 												type="hidden"
 												name="roomUrl"
-												value="{{ publisherRoomUrl + '?viewRecordings=true' }}"
+												value="{{ moderatorRoomUrl }}"
 											/>
 											<input
 												type="hidden"
 												name="participantRole"
-												value="publisher"
+												value="moderator"
 											/>
 											<input type="hidden" name="roomId" value="{{ roomId }}" />
+											<input
+												type="hidden"
+												name="showOnlyRecordings"
+												value="true"
+											/>
 
 											<button
 												type="submit"
-												id="join-as-publisher"
+												id="view-recordings"
 												class="dropdown-item"
 											>
 												View Recordings
@@ -273,7 +278,6 @@
 												<option value="admin-moderator-publisher" selected>
 													Admin, Moderator & Publisher
 												</option>
-												<option value="public">Public Access</option>
 											</select>
 										</div>
 									</div>

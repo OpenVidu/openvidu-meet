@@ -1,13 +1,13 @@
 import express from 'express';
 import http from 'http';
-import { Server as IOServer } from 'socket.io';
 import path from 'path';
+import { Server as IOServer } from 'socket.io';
 import {
-	getHome,
-	postCreateRoom,
-	deleteRoomCtrl,
-	deleteAllRoomsCtrl,
-	deleteAllRecordingsCtrl,
+    deleteAllRecordingsCtrl,
+    deleteAllRoomsCtrl,
+    deleteRoomCtrl,
+    getHome,
+    postCreateRoom
 } from './controllers/homeController';
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
@@ -31,27 +31,24 @@ app.use(express.json());
 
 // Routes
 app.get('/', getHome);
-app.get('/room', joinRoom);
 app.post('/room', postCreateRoom);
 app.post('/room/delete', deleteRoomCtrl);
 app.post('/delete-all-rooms', deleteAllRoomsCtrl);
 app.post('/delete-all-recordings', deleteAllRecordingsCtrl);
 app.post('/join-room', joinRoom);
 app.post('/webhook', (req, res) => {
-	handleWebhook(req, res, io);
+    handleWebhook(req, res, io);
 });
 
 const PORT = configService.serverPort;
 server.listen(PORT, () => {
-	console.log('-----------------------------------------');
-	console.log(`Server running on port ${PORT}`);
-	console.log(`Meet API URL: ${configService.meetApiUrl}`);
-	console.log('-----------------------------------------');
-	console.log('');
-	console.log(`Visit http://localhost:${PORT}/ to access the app`);
+    console.log('-----------------------------------------');
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Visit http://localhost:${PORT}/ to access the app`);
+    console.log('-----------------------------------------');
+    console.log('');
 
-	console.log('Environment variables:');
-	console.log(`OPENVIDU_MEET_URL: ${process.env.OPENVIDU_MEET_URL}`);
-	console.log(`MEET_API_KEY: ${process.env.MEET_API_KEY} `);
-	console.log(`PORT: ${process.env.PORT}`);
+    console.log('OpenVidu Meet Configuration:');
+    console.log(`Meet API URL: ${configService.meetApiUrl}`);
+    console.log(`Meet API key: ${configService.meetApiKey}`);
 });
