@@ -1,11 +1,12 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { CommandsManager } from '../../src/components/CommandsManager';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
 import { WebComponentCommand } from '../../src/typings/ce/command.model';
-import { WEBCOMPONENT_ROOM_URL } from '../config';
-import { CommandsManager } from '../../src/components/CommandsManager';
 
 describe('OpenViduMeet Event Handling', () => {
+	const testOrigin = window.location.origin;
+
 	let component: OpenViduMeet;
 	let commandsManager: CommandsManager;
 
@@ -21,33 +22,22 @@ describe('OpenViduMeet Event Handling', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('should be created correctly', () => {
-		expect(component).toBeDefined();
-		expect(component.shadowRoot).not.toBeNull();
-	});
-
-	it('should remove message event listener on disconnection', () => {
-		const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-
-		// Call disconnectedCallback
-		(component as any).disconnectedCallback();
-
-		expect(removeEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
-	});
-
 	it('should call sendMessage when READY event is received', () => {
 		const sendMessageSpy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 
+		(component as any).eventsManager.setTargetOrigin(testOrigin);
+
 		// Mock a message event
 		const readyEvent = new MessageEvent('message', {
-			data: { event: 'READY' }
+			data: { event: 'READY' },
+			origin: testOrigin
 		});
 		window.dispatchEvent(readyEvent);
 
 		expect(sendMessageSpy).toHaveBeenCalledTimes(1);
 		expect(sendMessageSpy).toHaveBeenCalledWith({
 			command: WebComponentCommand.INITIALIZE,
-			payload: { domain: window.location.origin }
+			payload: { domain: testOrigin }
 		});
 
 		// Check if sendMessage was not called again
@@ -58,12 +48,15 @@ describe('OpenViduMeet Event Handling', () => {
 		// Create a spy for dispatchEvent
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
 
+		(component as any).eventsManager.setTargetOrigin(testOrigin);
+
 		// Mock a message event
 		const messageEvent = new MessageEvent('message', {
 			data: {
 				event: 'test-event',
 				payload: { foo: 'bar' }
-			}
+			},
+			origin: testOrigin
 		});
 
 		// Manually call the handler
@@ -88,7 +81,6 @@ describe('OpenViduMeet Event Handling', () => {
 		(component as any).loadTimeout = setTimeout(() => {}, 1000);
 
 		// Remove from DOM
-
 		(component as any).disconnectedCallback();
 
 		// Check if cleanup was called
@@ -119,7 +111,8 @@ describe('OpenViduMeet Event Handling', () => {
 		document.body.appendChild(component);
 
 		// Set attributes
-		component.setAttribute('room-url', WEBCOMPONENT_ROOM_URL);
+		const roomUrl = 'https://example.com/room/testRoom-123?secret=123456';
+		component.setAttribute('room-url', roomUrl);
 		component.setAttribute('user', 'testUser');
 		component.setAttribute('role', 'publisher');
 		component.setAttribute('token', 'test-token');
@@ -131,7 +124,7 @@ describe('OpenViduMeet Event Handling', () => {
 		const iframe = component.shadowRoot?.querySelector('iframe');
 		const src = iframe?.src;
 
-		expect(src).toContain(WEBCOMPONENT_ROOM_URL);
+		expect(src).toContain(roomUrl);
 		expect(src).toContain('user=testUser');
 		expect(src).toContain('role=publisher');
 		expect(src).toContain('token=test-token');

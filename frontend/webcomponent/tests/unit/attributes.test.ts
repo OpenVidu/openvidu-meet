@@ -1,9 +1,8 @@
-import { describe, it, expect, jest } from '@jest/globals';
-import { WEBCOMPONENT_ROOM_URL } from '../config';
+import { describe, expect, it, jest } from '@jest/globals';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
 
-describe('Web Component Attributes', () => {
+describe('OpenViduMeet WebComponent Attributes', () => {
 	let component: OpenViduMeet;
 
 	beforeEach(() => {
@@ -21,8 +20,10 @@ describe('Web Component Attributes', () => {
 		expect(iframe).not.toBeNull();
 		expect(iframe?.getAttribute('allow')).toContain('camera');
 		expect(iframe?.getAttribute('allow')).toContain('microphone');
-		expect(iframe?.getAttribute('allow')).toContain('fullscreen');
 		expect(iframe?.getAttribute('allow')).toContain('display-capture');
+		expect(iframe?.getAttribute('allow')).toContain('fullscreen');
+		expect(iframe?.getAttribute('allow')).toContain('autoplay');
+		expect(iframe?.getAttribute('allow')).toContain('compute-pressure');
 	});
 
 	it('should reject rendering iframe when "room-url" attribute is missing', () => {
@@ -41,25 +42,28 @@ describe('Web Component Attributes', () => {
 	});
 
 	it('should update iframe src when "room-url" attribute changes', () => {
-		component.setAttribute('room-url', WEBCOMPONENT_ROOM_URL);
+		const roomUrl = 'https://example.com/room/testRoom-123?secret=123456';
+		component.setAttribute('room-url', roomUrl);
 		component.setAttribute('user', 'testUser');
 
 		// Manually trigger the update (MutationObserver doesn't always trigger in tests)
 		(component as any).updateIframeSrc();
 
 		const iframe = component.shadowRoot?.querySelector('iframe');
-		expect(iframe?.src).toEqual(`${WEBCOMPONENT_ROOM_URL}?user=testUser`);
+		expect(iframe?.src).toEqual(`${roomUrl}&user=testUser`);
 	});
 
 	it('should extract origin from room-url and set as allowed origin', () => {
-		const roomUrl = 'https://example.com/room/123';
+		const domain = 'https://example.com';
+		const roomUrl = `${domain}/room/testRoom-123?secret=123456`;
 		component.setAttribute('room-url', roomUrl);
 
 		// Trigger update
 		(component as any).updateIframeSrc();
 
 		// Check if origin was extracted and set
-		expect((component as any).targetIframeOrigin).toBe('https://example.com');
-		expect((component as any).commandsManager.targetIframeOrigin).toBe('https://example.com');
+		expect((component as any).targetIframeOrigin).toBe(domain);
+		expect((component as any).commandsManager.targetIframeOrigin).toBe(domain);
+		expect((component as any).eventsManager.targetIframeOrigin).toBe(domain);
 	});
 });
