@@ -68,7 +68,10 @@ describe('Recording API Race Conditions Tests', () => {
 		try {
 			// Attempt to start recording
 			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(DistributedEventType.RECORDING_ACTIVE, expect.any(Function));
+			expect(eventServiceOffSpy).toHaveBeenCalledWith(
+				DistributedEventType.RECORDING_ACTIVE,
+				expect.any(Function)
+			);
 			expect(handleRecordingLockTimeoutSpy).not.toHaveBeenCalledWith(
 				'', // empty recordingId since it never started
 				roomData.room.roomId
@@ -121,7 +124,10 @@ describe('Recording API Race Conditions Tests', () => {
 			// Start recording with a short timeout
 			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
 
-			expect(eventServiceOffSpy).toHaveBeenCalledWith(DistributedEventType.RECORDING_ACTIVE, expect.any(Function));
+			expect(eventServiceOffSpy).toHaveBeenCalledWith(
+				DistributedEventType.RECORDING_ACTIVE,
+				expect.any(Function)
+			);
 			// Expect the recording to fail due to timeout
 			expect(handleTimeoutSpy).toHaveBeenCalledWith(
 				'', // empty recordingId since it never started

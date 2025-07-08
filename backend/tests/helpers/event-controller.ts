@@ -1,9 +1,9 @@
 import { container } from '../../src/config/index.js';
-import { SystemEventType } from '../../src/models/system-event.model.js';
-import { SystemEventService } from '../../src/services/index.js';
+import { DistributedEventType } from '../../src/models';
+import { DistributedEventService } from '../../src/services';
 
 export const eventController = {
-	systemEventService: undefined as unknown as SystemEventService,
+	systemEventService: undefined as unknown as DistributedEventService,
 	pausedEvents: new Map<string, Array<{ eventType: string; payload: any }>>(),
 	isInitialized: false,
 	originalEmit: null as any,
@@ -11,7 +11,7 @@ export const eventController = {
 	initialize() {
 		if (this.isInitialized) return;
 
-		this.systemEventService = container.get(SystemEventService);
+		this.systemEventService = container.get(DistributedEventService);
 		this.originalEmit = this.systemEventService['emitter'].emit;
 		this.pausedEvents.clear();
 		this.isInitialized = true;
@@ -22,7 +22,7 @@ export const eventController = {
 
 			// Check if the event is paused for the room
 			if (
-				eventType === SystemEventType.RECORDING_ACTIVE &&
+				eventType === DistributedEventType.RECORDING_ACTIVE &&
 				payload?.roomId &&
 				this.pausedEvents.has(payload.roomId)
 			) {
