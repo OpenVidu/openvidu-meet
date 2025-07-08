@@ -1,28 +1,25 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
+import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
+import { MEET_TESTAPP_URL } from '../config';
 import {
-	closeMoreOptionsMenu,
+	accessRoomAs,
 	createTestRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	deleteTestRoom,
-	interactWithElementInIframe,
 	joinRoomAs,
 	leaveRoom,
 	loginAsAdmin,
-	openMoreOptionsMenu,
 	prepareForJoiningRoom,
 	startStopRecording,
 	updateRoomPreferences,
 	viewRecordingsAs,
 	waitForElementInIframe
 } from '../helpers/function-helpers';
-import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
 
 let subscribedToAppErrors = false;
 let recordingCreated = false;
 
 test.describe('Recording Access Tests', () => {
-	const testAppUrl = 'http://localhost:5080';
 	const testRoomPrefix = 'recording-access-test';
 	let participantName: string;
 	let roomId: string;
@@ -41,7 +38,7 @@ test.describe('Recording Access Tests', () => {
 		});
 	});
 
-	test.beforeEach(async ({ page }) => {
+	test.beforeEach(async ({ browser, page }) => {
 		if (!subscribedToAppErrors) {
 			page.on('console', (msg) => {
 				const type = msg.type();
@@ -50,17 +47,23 @@ test.describe('Recording Access Tests', () => {
 			});
 			subscribedToAppErrors = true;
 		}
+
 		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
+
 		if (!recordingCreated) {
-			await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-			await joinRoomAs('moderator', participantName, page);
+			const tempContext = await browser.newContext();
+			const tempPage = await tempContext.newPage();
+			await prepareForJoiningRoom(tempPage, MEET_TESTAPP_URL, testRoomPrefix);
+			await joinRoomAs('moderator', participantName, tempPage);
 
-			await startStopRecording(page, 'start');
-
-			await page.waitForTimeout(2000);
-
-			await startStopRecording(page, 'stop');
+			await startStopRecording(tempPage, 'start');
+			await tempPage.waitForTimeout(2000);
+			await startStopRecording(tempPage, 'stop');
 			recordingCreated = true;
+
+			await leaveRoom(tempPage, 'moderator');
+			await tempContext.close();
+			await tempPage.close();
 		}
 	});
 
@@ -88,11 +91,11 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-		await viewRecordingsAs('moderator', page);
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await accessRoomAs('moderator', page);
 
-		await waitForElementInIframe(page, 'ov-error', { state: 'visible' });
+		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
 	test('should publisher not be able to access recording when access level is set to admin', async ({ page }) => {
@@ -109,11 +112,11 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-		await viewRecordingsAs('publisher', page);
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await accessRoomAs('publisher', page);
 
-		await waitForElementInIframe(page, 'ov-error', { state: 'visible' });
+		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
 	test('should allow moderator to access recording when access level is set to moderator', async ({ page }) => {
@@ -130,13 +133,13 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 		await viewRecordingsAs('moderator', page);
 
-		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
+
 	test('should publisher not be able to access recording when access level is set to moderator', async ({ page }) => {
 		await updateRoomPreferences(
 			roomId,
@@ -151,10 +154,11 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
-		await viewRecordingsAs('publisher', page);
-		await waitForElementInIframe(page, 'ov-error', { state: 'visible' });
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await accessRoomAs('publisher', page);
+
+		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
 	test('should allow moderators to access recording when access level is set to publisher', async ({ page }) => {
@@ -171,10 +175,10 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 		await viewRecordingsAs('moderator', page);
-		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
+
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
 
@@ -192,10 +196,10 @@ test.describe('Recording Access Tests', () => {
 			adminCookie
 		);
 
-		await page.goto(testAppUrl);
-		await prepareForJoiningRoom(page, testAppUrl, testRoomPrefix);
+		await page.goto(MEET_TESTAPP_URL);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 		await viewRecordingsAs('publisher', page);
-		await waitForElementInIframe(page, 'ov-error', { state: 'hidden' });
+
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
 });
