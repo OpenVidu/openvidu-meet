@@ -24,16 +24,27 @@ export const {
 	// Authentication configuration
 	MEET_API_KEY = '',
 	MEET_ADMIN_USER = 'admin',
+	/**
+	 * IMPORTANT:
+	 * - This variable is only used the first time the server starts, storing the value in the database.
+	 * - To change it after the initial start, use the OpenVidu Meet API instead of modifying this environment variable.
+	 */
 	MEET_ADMIN_SECRET = 'admin',
 	MEET_COOKIE_SECURE = 'false',
 
 	// Token expiration times
 	MEET_ACCESS_TOKEN_EXPIRATION = '2h',
 	MEET_REFRESH_TOKEN_EXPIRATION = '1d',
-	MEET_PARTICIPANT_TOKEN_EXPIRATION = '6h',
+	MEET_PARTICIPANT_TOKEN_EXPIRATION = '2h',
 	MEET_RECORDING_TOKEN_EXPIRATION = '2h',
 
-	// Webhook configuration
+	/**
+	 * Webhook configuration
+	 *
+	 * IMPORTANT:
+	 * - These variables are only used the first time the server starts, storing the values in the database.
+	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
+	 */
 	MEET_WEBHOOK_ENABLED = 'false',
 	MEET_WEBHOOK_URL = 'http://localhost:5080/webhook',
 
