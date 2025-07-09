@@ -161,7 +161,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	async onTokenRequested() {
+	onTokenRequested() {
 		// Participant token must be set only when requested
 		this.participantToken = this.participantTokenService.getParticipantToken() || '';
 	}

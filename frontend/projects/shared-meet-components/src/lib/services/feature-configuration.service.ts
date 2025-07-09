@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
+import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole, TrackSource } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
 /**
@@ -14,15 +14,16 @@ export interface ApplicationFeatures {
 	showScreenShare: boolean;
 
 	// UI Features
+	showRecordings: boolean;
 	showChat: boolean;
-	showRecording: boolean;
 	showBackgrounds: boolean;
 	showParticipantList: boolean;
 	showSettings: boolean;
 	showFullscreen: boolean;
 
-	// Admin Features
+	// Permissions
 	canModerateRoom: boolean;
+	canRecordRoom: boolean;
 }
 
 /**
@@ -34,13 +35,16 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showMicrophone: true,
 	showCamera: true,
 	showScreenShare: true,
+
+	showRecordings: true,
 	showChat: true,
-	showRecording: true,
 	showBackgrounds: true,
 	showParticipantList: true,
 	showSettings: true,
 	showFullscreen: true,
-	canModerateRoom: false
+
+	canModerateRoom: false,
+	canRecordRoom: false
 };
 
 /**
@@ -111,33 +115,33 @@ export class FeatureConfigurationService {
 
 		// Apply room configurations
 		if (roomPrefs) {
+			features.showRecordings = roomPrefs.recordingPreferences.enabled;
 			features.showChat = roomPrefs.chatPreferences.enabled;
-			features.showRecording = roomPrefs.recordingPreferences.enabled;
 			features.showBackgrounds = roomPrefs.virtualBackgroundPreferences.enabled;
 		}
 
 		// Apply participant permissions (these can restrict enabled features)
 		if (participantPerms) {
 			// Only restrict if the feature is already enabled
+			if (features.showRecordings) {
+				// features.showRecordings = !!recordingRole;
+				features.canRecordRoom = participantPerms.openvidu.canRecord;
+			}
 			if (features.showChat) {
 				features.showChat = participantPerms.openvidu.canChat;
-			}
-			if (features.showRecording) {
-				features.showRecording = participantPerms.openvidu.canRecord;
 			}
 			if (features.showBackgrounds) {
 				features.showBackgrounds = participantPerms.openvidu.canChangeVirtualBackground;
 			}
-			if (features.showScreenShare) {
-				features.showScreenShare = participantPerms.openvidu.canPublishScreen;
-			}
 
-			// Check if the participant can publish media
-			const canPublish = participantPerms.livekit.canPublish ?? true;
-			features.videoEnabled = canPublish;
-			features.audioEnabled = canPublish;
-			features.showMicrophone = canPublish;
-			features.showCamera = canPublish;
+			// Media features
+			const canPublish = participantPerms.livekit.canPublish;
+			const canPublishSources = participantPerms.livekit.canPublishSources ?? [];
+			features.videoEnabled = canPublish || canPublishSources.includes(TrackSource.CAMERA);
+			features.audioEnabled = canPublish || canPublishSources.includes(TrackSource.MICROPHONE);
+			features.showMicrophone = features.audioEnabled;
+			features.showCamera = features.videoEnabled;
+			features.showScreenShare = canPublish || canPublishSources.includes(TrackSource.SCREEN_SHARE);
 		}
 
 		// Apply role-based configurations
