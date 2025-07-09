@@ -79,23 +79,14 @@ export class ParticipantService {
 	protected generateModeratorPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
-				roomCreate: true,
 				roomJoin: true,
-				roomList: true,
-				roomRecord: true,
-				roomAdmin: true,
 				room: roomId,
-				ingressAdmin: true,
 				canPublish: true,
 				canSubscribe: true,
 				canPublishData: true,
-				canUpdateOwnMetadata: true,
-				hidden: false,
-				recorder: false,
-				agent: false
+				canUpdateOwnMetadata: true
 			},
 			openvidu: {
-				canPublishScreen: true,
 				canRecord: true,
 				canChat: true,
 				canChangeVirtualBackground: true
@@ -106,23 +97,14 @@ export class ParticipantService {
 	protected generatePublisherPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
-				roomCreate: false,
 				roomJoin: true,
-				roomList: true,
-				roomRecord: false,
-				roomAdmin: false,
 				room: roomId,
-				ingressAdmin: false,
 				canPublish: true,
 				canSubscribe: true,
 				canPublishData: true,
-				canUpdateOwnMetadata: true,
-				hidden: false,
-				recorder: false,
-				agent: false
+				canUpdateOwnMetadata: true
 			},
 			openvidu: {
-				canPublishScreen: true,
 				canRecord: false,
 				canChat: true,
 				canChangeVirtualBackground: true

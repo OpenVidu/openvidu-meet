@@ -15,41 +15,16 @@ properties:
             livekit:
                 type: object
                 properties:
-                    roomCreate:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant can create a room.
-                        example: true
                     roomJoin:
                         type: boolean
                         description: >
                             Indicates whether the participant can join a room.
-                        example: true
-                    roomList:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant can list available rooms.
-                        example: true
-                    roomRecord:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant can record a room.
-                        example: true
-                    roomAdmin:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant has administrative privileges in the room.
                         example: true
                     room:
                         type: string
                         description: >
                             The ID of the room associated with the participant.
                         example: roomId
-                    ingressAdmin:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant can manage ingress settings.
-                        example: true
                     canPublish:
                         type: boolean
                         description: >
@@ -70,29 +45,9 @@ properties:
                         description: >
                             Indicates whether the participant can update their own metadata.
                         example: true
-                    hidden:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant is hidden in the room.
-                        example: false
-                    recorder:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant is a recorder in the room.
-                        example: false
-                    agent:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant is an agent in the room.
-                        example: false
             openvidu:
                 type: object
                 properties:
-                    canPublishScreen:
-                        type: boolean
-                        description: >
-                            Indicates whether the participant can publish screen sharing in the room.
-                        example: true
                     canRecord:
                         type: boolean
                         description: >

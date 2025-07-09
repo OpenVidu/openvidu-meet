@@ -6,6 +6,7 @@ import {
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomPreferences,
+	ParticipantPermissions,
 	ParticipantRole
 } from '../../src/typings/ce';
 
@@ -477,28 +478,19 @@ export const expectValidRoomRoleAndPermissionsResponse = (
 	});
 };
 
-const getPermissions = (roomId: string, role: ParticipantRole) => {
+const getPermissions = (roomId: string, role: ParticipantRole): ParticipantPermissions => {
 	switch (role) {
 		case ParticipantRole.MODERATOR:
 			return {
 				livekit: {
-					roomCreate: true,
 					roomJoin: true,
-					roomList: true,
-					roomRecord: true,
-					roomAdmin: true,
 					room: roomId,
-					ingressAdmin: true,
 					canPublish: true,
 					canSubscribe: true,
 					canPublishData: true,
-					canUpdateOwnMetadata: true,
-					hidden: false,
-					recorder: false,
-					agent: false
+					canUpdateOwnMetadata: true
 				},
 				openvidu: {
-					canPublishScreen: true,
 					canRecord: true,
 					canChat: true,
 					canChangeVirtualBackground: true
@@ -507,23 +499,14 @@ const getPermissions = (roomId: string, role: ParticipantRole) => {
 		case ParticipantRole.PUBLISHER:
 			return {
 				livekit: {
-					roomCreate: false,
 					roomJoin: true,
-					roomList: true,
-					roomRecord: false,
-					roomAdmin: false,
 					room: roomId,
-					ingressAdmin: false,
 					canPublish: true,
 					canSubscribe: true,
 					canPublishData: true,
-					canUpdateOwnMetadata: true,
-					hidden: false,
-					recorder: false,
-					agent: false
+					canUpdateOwnMetadata: true
 				},
 				openvidu: {
-					canPublishScreen: true,
 					canRecord: false,
 					canChat: true,
 					canChangeVirtualBackground: true
