@@ -12,9 +12,12 @@
             - participantTokenCookie: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
+            - $ref: '../../components/parameters/internal/x-participant-role.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-end-meeting.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -36,9 +39,12 @@
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/participant-name.yaml'
+            - $ref: '../../components/parameters/internal/x-participant-role.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-delete-participant.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':

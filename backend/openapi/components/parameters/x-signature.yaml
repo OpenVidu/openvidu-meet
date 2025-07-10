@@ -1,9 +1,9 @@
 name: x-signature
 in: header
 description: >
-  HMAC-SHA256 signature of the request body, created using your webhook secret.
+    HMAC-SHA256 signature of the request body, created using your webhook secret.
 
-  Use this to verify the webhook came from OpenVidu Meet and wasn't tampered with.
+    Use this to verify the webhook came from OpenVidu Meet and wasn't tampered with.
 required: true
 schema:
-  type: string
+    type: string

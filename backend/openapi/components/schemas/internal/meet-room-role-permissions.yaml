@@ -3,7 +3,7 @@ properties:
     role:
         type: string
         enum: ['moderator', 'publisher']
-        description: >
+        description: |
             A role that a participant can have in a room.
             The role determines the permissions of the participant in the room.
             - `moderator`: Can manage the room and its participants.
