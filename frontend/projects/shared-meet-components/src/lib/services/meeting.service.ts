@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpService } from '@lib/services';
+import { HttpService, ParticipantTokenService } from '@lib/services';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
@@ -12,7 +12,8 @@ export class MeetingService {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected httpService: HttpService
+		protected httpService: HttpService,
+		protected participantService: ParticipantTokenService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - MeetingService');
 	}
@@ -25,7 +26,8 @@ export class MeetingService {
 	 */
 	async endMeeting(roomId: string): Promise<any> {
 		const path = `${this.MEETINGS_API}/${roomId}`;
-		return this.httpService.deleteRequest(path);
+		const headers = this.participantService.getParticipantRoleHeader();
+		return this.httpService.deleteRequest(path, headers);
 	}
 
 	/**
@@ -37,7 +39,8 @@ export class MeetingService {
 	 */
 	async kickParticipant(roomId: string, participantId: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
-		await this.httpService.deleteRequest(path);
+		const headers = this.participantService.getParticipantRoleHeader();
+		await this.httpService.deleteRequest(path, headers);
 		this.log.d(`Participant '${participantId}' kicked from room ${roomId}`);
 	}
 }

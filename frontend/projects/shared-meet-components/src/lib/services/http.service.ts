@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 
@@ -13,20 +13,27 @@ export class HttpService {
 
 	constructor(protected http: HttpClient) {}
 
-	async getRequest<T>(path: string): Promise<T> {
-		return lastValueFrom(this.http.get<T>(path));
+	async getRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.get<T>(path, options));
 	}
 
-	async postRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.post<T>(path, body));
+	async postRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.post<T>(path, body, options));
 	}
 
-	async putRequest<T>(path: string, body: any = {}): Promise<T> {
-		return lastValueFrom(this.http.put<T>(path, body));
+	async putRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.put<T>(path, body, options));
 	}
 
-	async deleteRequest<T>(path: string): Promise<T> {
-		return lastValueFrom(this.http.delete<T>(path, { observe: 'response' })).then((response) => ({
+	async deleteRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
+		const options = {
+			observe: 'response' as const,
+			...(headers ? { headers: new HttpHeaders(headers) } : {})
+		};
+		return lastValueFrom(this.http.delete<T>(path, options)).then((response) => ({
 			...(response.body as T),
 			statusCode: response.status
 		}));

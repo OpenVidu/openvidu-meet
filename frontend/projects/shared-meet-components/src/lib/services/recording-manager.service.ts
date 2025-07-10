@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { HttpService } from '@lib/services';
+import { HttpService, ParticipantTokenService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { ActionService, LoggerService } from 'openvidu-components-angular';
@@ -23,6 +23,7 @@ export class RecordingManagerService {
 	constructor(
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
+		protected participantService: ParticipantTokenService,
 		private actionService: ActionService,
 		protected dialog: MatDialog
 	) {
@@ -37,7 +38,8 @@ export class RecordingManagerService {
 	 */
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		try {
-			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId });
+			const headers = this.participantService.getParticipantRoleHeader();
+			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId }, headers);
 		} catch (error) {
 			console.error('Error starting recording:', error);
 			throw error;
@@ -57,7 +59,8 @@ export class RecordingManagerService {
 
 		try {
 			const path = `${this.INTERNAL_RECORDINGS_API}/${recordingId}/stop`;
-			return this.httpService.postRequest(path);
+			const headers = this.participantService.getParticipantRoleHeader();
+			return this.httpService.postRequest(path, {}, headers);
 		} catch (error) {
 			console.error('Error stopping recording:', error);
 			throw error;

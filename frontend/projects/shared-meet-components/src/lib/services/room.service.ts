@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, HttpService, SessionStorageService } from '@lib/services';
+import {
+	FeatureConfigurationService,
+	HttpService,
+	ParticipantTokenService,
+	SessionStorageService
+} from '@lib/services';
 import {
 	MeetRoom,
 	MeetRoomFilters,
@@ -26,6 +31,7 @@ export class RoomService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
+		protected participantService: ParticipantTokenService,
 		protected featureConfService: FeatureConfigurationService,
 		protected sessionStorageService: SessionStorageService
 	) {
@@ -102,7 +108,8 @@ export class RoomService {
 	 */
 	async getRoom(roomId: string): Promise<MeetRoom> {
 		let path = `${this.ROOMS_API}/${roomId}`;
-		return this.httpService.getRequest(path);
+		const headers = this.participantService.getParticipantRoleHeader();
+		return this.httpService.getRequest(path, headers);
 	}
 
 	/**
@@ -148,7 +155,8 @@ export class RoomService {
 
 		try {
 			const path = `${this.INTERNAL_ROOMS_API}/${roomId}/preferences`;
-			const preferences = await this.httpService.getRequest<MeetRoomPreferences>(path);
+			const headers = this.participantService.getParticipantRoleHeader();
+			const preferences = await this.httpService.getRequest<MeetRoomPreferences>(path, headers);
 
 			if (!preferences) {
 				this.log.w('Room preferences not found for roomId:', roomId);

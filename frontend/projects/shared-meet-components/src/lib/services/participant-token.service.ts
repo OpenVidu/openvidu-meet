@@ -70,12 +70,15 @@ export class ParticipantTokenService {
 	protected updateParticipantTokenInfo(token: string): void {
 		try {
 			const decodedToken = getValidDecodedToken(token);
+			const roleAndPermissions = decodedToken.metadata.roles?.find(
+				(r: { role: ParticipantRole; permissions: ParticipantPermissions }) => r.role === this.participantRole
+			);
 			this.currentTokenInfo = {
 				token: token,
-				role: decodedToken.metadata.role,
+				role: roleAndPermissions.role,
 				permissions: {
 					livekit: decodedToken.video,
-					openvidu: decodedToken.metadata.permissions
+					openvidu: roleAndPermissions.permissions
 				}
 			};
 			this.participantRole = this.currentTokenInfo.role;
@@ -107,5 +110,9 @@ export class ParticipantTokenService {
 
 	getParticipantPermissions(): ParticipantPermissions | undefined {
 		return this.currentTokenInfo?.permissions;
+	}
+
+	getParticipantRoleHeader(): Record<string, string> {
+		return { 'x-participant-role': this.getParticipantRole() };
 	}
 }
