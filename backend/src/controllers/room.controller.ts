@@ -172,8 +172,8 @@ export const getRoomRolesAndPermissions = async (req: Request, res: Response) =>
 	}
 
 	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);
-	const moderatorPermissions = participantService.getParticipantPermissions(ParticipantRole.MODERATOR, roomId);
-	const publisherPermissions = participantService.getParticipantPermissions(ParticipantRole.PUBLISHER, roomId);
+	const moderatorPermissions = participantService.getParticipantPermissions(roomId, ParticipantRole.MODERATOR);
+	const publisherPermissions = participantService.getParticipantPermissions(roomId, ParticipantRole.PUBLISHER);
 
 	const rolesAndPermissions = [
 		{
@@ -199,7 +199,7 @@ export const getRoomRoleAndPermissions = async (req: Request, res: Response) => 
 		logger.verbose(`Getting room role and associated permissions for room '${roomId}' and secret '${secret}'`);
 
 		const role = await roomService.getRoomRoleBySecret(roomId, secret);
-		const permissions = participantService.getParticipantPermissions(role, roomId);
+		const permissions = participantService.getParticipantPermissions(roomId, role);
 		const roleAndPermissions: MeetRoomRoleAndPermissions = {
 			role,
 			permissions

@@ -1,4 +1,11 @@
-import { ParticipantOptions, ParticipantPermissions, ParticipantRole, RecordingPermissions, User } from '@typings-ce';
+import {
+	LiveKitPermissions,
+	OpenViduMeetPermissions,
+	ParticipantOptions,
+	ParticipantRole,
+	RecordingPermissions,
+	User
+} from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
 import {
@@ -11,6 +18,7 @@ import {
 	MEET_REFRESH_TOKEN_EXPIRATION
 } from '../environment.js';
 import { LoggerService } from './index.js';
+import { jwtDecode } from 'jwt-decode';
 
 @injectable()
 export class TokenService {
@@ -40,8 +48,8 @@ export class TokenService {
 
 	async generateParticipantToken(
 		participantOptions: ParticipantOptions,
-		permissions: ParticipantPermissions,
-		role: ParticipantRole
+		lkPermissions: LiveKitPermissions,
+		roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[]
 	): Promise<string> {
 		const { roomId, participantName } = participantOptions;
 		this.logger.info(`Generating token for ${participantName} in room ${roomId}`);
@@ -52,11 +60,10 @@ export class TokenService {
 			ttl: MEET_PARTICIPANT_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				livekitUrl: LIVEKIT_URL,
-				role,
-				permissions: permissions.openvidu
+				roles
 			})
 		};
-		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
+		return await this.generateJwtToken(tokenOptions, lkPermissions as VideoGrant);
 	}
 
 	async generateRecordingToken(
@@ -91,5 +98,18 @@ export class TokenService {
 	async verifyToken(token: string): Promise<ClaimGrants> {
 		const verifyer = new TokenVerifier(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
 		return await verifyer.verify(token);
+	}
+
+	/**
+	 * Decodes a JWT and returns its ClaimGrants, even if expired.
+	 */
+	getClaimsIgnoringExpiration(token: string): ClaimGrants {
+		try {
+			const decoded = jwtDecode<ClaimGrants>(token);
+			return decoded;
+		} catch (error) {
+			this.logger.error('Failed to decode JWT:', error);
+			throw error;
+		}
 	}
 }

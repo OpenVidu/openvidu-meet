@@ -230,6 +230,18 @@ export const errorParticipantTokenStillValid = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant Error', 'Participant token is still valid', 409);
 };
 
+export const errorParticipantTokenNotPresent = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Participant', 'No participant token provided', 400);
+};
+
+export const errorInvalidParticipantToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Participant', 'Invalid participant token', 400);
+};
+
+export const errorInvalidParticipantRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Participant', 'No valid participant role provided', 400);
+};
+
 // Handlers
 
 export const handleError = (res: Response, error: OpenViduMeetError | unknown, operationDescription: string) => {
