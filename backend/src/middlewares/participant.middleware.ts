@@ -56,15 +56,14 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 export const withModeratorPermissions = async (req: Request, res: Response, next: NextFunction) => {
 	const { roomId } = req.params;
 	const payload = req.session?.tokenClaims;
+	const role = req.session?.participantRole;
 
-	if (!payload) {
+	if (!payload || !role) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
 
 	const sameRoom = payload.video?.room === roomId;
-	const metadata = JSON.parse(payload.metadata || '{}');
-	const role = metadata.role as ParticipantRole;
 
 	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
 		const error = errorInsufficientPermissions();

@@ -1,4 +1,4 @@
-import { User, UserRole } from '@typings-ce';
+import { OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@typings-ce';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
@@ -8,6 +8,7 @@ import INTERNAL_CONFIG from '../config/internal-config.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
+	errorInvalidParticipantRole,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorUnauthorized,
@@ -108,9 +109,10 @@ const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 	}
 
 	const tokenService = container.get(TokenService);
+	let payload: ClaimGrants;
 
 	try {
-		const payload = await tokenService.verifyToken(token);
+		payload = await tokenService.verifyToken(token);
 		const user = await getAuthenticatedUserOrAnonymous(req);
 
 		req.session = req.session || {};
@@ -118,6 +120,31 @@ const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 		req.session.user = user;
 	} catch (error) {
 		throw errorWithControl(errorInvalidToken(), true);
+	}
+
+	// If the token is a participant token, set the participant role in the session
+	if (cookieName === INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME) {
+		const participantRole = req.headers[INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER];
+		const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.PUBLISHER];
+
+		// Ensure the participant role is provided and valid
+		// This is required to distinguish roles when multiple are present in the token
+		if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
+			throw errorWithControl(errorInvalidParticipantRole(), true);
+		}
+
+		// Check that the specified role is present in the token claims
+		const metadata = JSON.parse(payload.metadata || '{}');
+		const roles = metadata.roles || [];
+		const hasRole = roles.some(
+			(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === participantRole
+		);
+
+		if (!hasRole) {
+			throw errorWithControl(errorInsufficientPermissions(), true);
+		}
+
+		req.session.participantRole = participantRole as ParticipantRole;
 	}
 };
 

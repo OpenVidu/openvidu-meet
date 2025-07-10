@@ -13,6 +13,7 @@ const INTERNAL_CONFIG = {
 
 	// Headers for API requests
 	API_KEY_HEADER: 'x-api-key',
+	PARTICIPANT_ROLE_HEADER: 'x-participant-role',
 
 	// Authentication usernames
 	ANONYMOUS_USER: 'anonymous',

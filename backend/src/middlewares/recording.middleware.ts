@@ -1,4 +1,4 @@
-import { MeetRoom, OpenViduMeetPermissions, RecordingPermissions, UserRole } from '@typings-ce';
+import { MeetRoom, OpenViduMeetPermissions, ParticipantRole, RecordingPermissions, UserRole } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
@@ -42,15 +42,18 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 export const withCanRecordPermission = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = extractRoomIdFromRequest(req);
 	const payload = req.session?.tokenClaims;
+	const role = req.session?.participantRole;
 
-	if (!payload) {
+	if (!payload || !role) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
 
 	const sameRoom = payload.video?.room === roomId;
 	const metadata = JSON.parse(payload.metadata || '{}');
-	const permissions = metadata.permissions as OpenViduMeetPermissions | undefined;
+	const permissions = metadata.roles?.find(
+		(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === role
+	)?.permissions as OpenViduMeetPermissions | undefined;
 	const canRecord = permissions?.canRecord;
 
 	if (!sameRoom || !canRecord) {

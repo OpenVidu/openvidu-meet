@@ -21,6 +21,7 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
 export const configureRoomAuthorization = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 	const payload = req.session?.tokenClaims;
+	const role = req.session?.participantRole;
 
 	// If there is no token, the user is admin or it is invoked using the API key
 	// In this case, the user is allowed to access the resource
@@ -29,16 +30,10 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 	}
 
 	const sameRoom = payload.video?.room === roomId;
-	const metadata = JSON.parse(payload.metadata || '{}');
-	const role = metadata.role as ParticipantRole;
 
-	if (!sameRoom) {
-		const error = errorInsufficientPermissions();
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	// If the user is not a moderator, it is not allowed to access the resource
-	if (role !== ParticipantRole.MODERATOR) {
+	// If the user does not belong to the requested room,
+	// or the user is not a moderator, access is denied
+	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -96,7 +91,8 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 	if (authModeToAccessRoom === AuthMode.NONE) {
 		authValidators.push(allowAnonymous);
 	} else {
-		const isModeratorsOnlyMode = authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
+		const isModeratorsOnlyMode =
+			authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
 		const isAllUsersMode = authModeToAccessRoom === AuthMode.ALL_USERS;
 
 		if (isModeratorsOnlyMode || isAllUsersMode) {
