@@ -32,12 +32,6 @@ export const {
 	MEET_ADMIN_SECRET = 'admin',
 	MEET_COOKIE_SECURE = 'false',
 
-	// Token expiration times
-	MEET_ACCESS_TOKEN_EXPIRATION = '2h',
-	MEET_REFRESH_TOKEN_EXPIRATION = '1d',
-	MEET_PARTICIPANT_TOKEN_EXPIRATION = '2h',
-	MEET_RECORDING_TOKEN_EXPIRATION = '2h',
-
 	/**
 	 * Webhook configuration
 	 *
@@ -115,8 +109,6 @@ export const logEnvVars = () => {
 	console.log('MEET API KEY: ', credential('****' + MEET_API_KEY.slice(-3)));
 	console.log('MEET ADMIN USER: ', credential('****' + MEET_ADMIN_USER.slice(-3)));
 	console.log('MEET ADMIN PASSWORD: ', credential('****' + MEET_ADMIN_SECRET.slice(-3)));
-	console.log('MEET ACCESS TOKEN EXPIRATION: ', text(MEET_ACCESS_TOKEN_EXPIRATION));
-	console.log('MEET REFRESH TOKEN EXPIRATION: ', text(MEET_REFRESH_TOKEN_EXPIRATION));
 	console.log('MEET PREFERENCES STORAGE:', text(MEET_PREFERENCES_STORAGE_MODE));
 	console.log('MEET_WEBHOOK_ENABLED:', text(MEET_WEBHOOK_ENABLED));
 

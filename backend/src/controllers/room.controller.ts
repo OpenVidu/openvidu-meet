@@ -2,7 +2,6 @@ import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, Participa
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { MEET_RECORDING_TOKEN_EXPIRATION } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
@@ -149,7 +148,7 @@ export const generateRecordingToken = async (req: Request, res: Response) => {
 		res.cookie(
 			INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME,
 			token,
-			getCookieOptions('/', MEET_RECORDING_TOKEN_EXPIRATION)
+			getCookieOptions('/', INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION)
 		);
 		return res.status(200).json({ token });
 	} catch (error) {

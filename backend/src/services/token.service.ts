@@ -7,18 +7,11 @@ import {
 	User
 } from '@typings-ce';
 import { inject, injectable } from 'inversify';
-import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
-import {
-	LIVEKIT_API_KEY,
-	LIVEKIT_API_SECRET,
-	LIVEKIT_URL,
-	MEET_ACCESS_TOKEN_EXPIRATION,
-	MEET_PARTICIPANT_TOKEN_EXPIRATION,
-	MEET_RECORDING_TOKEN_EXPIRATION,
-	MEET_REFRESH_TOKEN_EXPIRATION
-} from '../environment.js';
-import { LoggerService } from './index.js';
 import { jwtDecode } from 'jwt-decode';
+import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
+import INTERNAL_CONFIG from '../config/internal-config.js';
+import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } from '../environment.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class TokenService {
@@ -27,7 +20,7 @@ export class TokenService {
 	async generateAccessToken(user: User): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.username,
-			ttl: MEET_ACCESS_TOKEN_EXPIRATION,
+			ttl: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				roles: user.roles
 			})
@@ -38,7 +31,7 @@ export class TokenService {
 	async generateRefreshToken(user: User): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.username,
-			ttl: MEET_REFRESH_TOKEN_EXPIRATION,
+			ttl: INTERNAL_CONFIG.REFRESH_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				roles: user.roles
 			})
@@ -57,7 +50,7 @@ export class TokenService {
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantName,
 			name: participantName,
-			ttl: MEET_PARTICIPANT_TOKEN_EXPIRATION,
+			ttl: INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				livekitUrl: LIVEKIT_URL,
 				roles
@@ -73,7 +66,7 @@ export class TokenService {
 	): Promise<string> {
 		this.logger.info(`Generating recording token for room ${roomId}`);
 		const tokenOptions: AccessTokenOptions = {
-			ttl: MEET_RECORDING_TOKEN_EXPIRATION,
+			ttl: INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				role,
 				recordingPermissions: permissions

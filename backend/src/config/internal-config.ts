@@ -11,6 +11,12 @@ const INTERNAL_CONFIG = {
 	PARTICIPANT_TOKEN_COOKIE_NAME: 'OvMeetParticipantToken',
 	RECORDING_TOKEN_COOKIE_NAME: 'OvMeetRecordingToken',
 
+	// Token expiration times
+	ACCESS_TOKEN_EXPIRATION: '2h',
+	REFRESH_TOKEN_EXPIRATION: '1d',
+	PARTICIPANT_TOKEN_EXPIRATION: '2h',
+	RECORDING_TOKEN_EXPIRATION: '2h',
+
 	// Headers for API requests
 	API_KEY_HEADER: 'x-api-key',
 	PARTICIPANT_ROLE_HEADER: 'x-participant-role',
