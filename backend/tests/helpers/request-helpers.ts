@@ -21,6 +21,7 @@ import {
 	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomOptions,
+	ParticipantRole,
 	WebhookPreferences
 } from '../../src/typings/ce/index.js';
 
@@ -233,12 +234,13 @@ export const getRoom = async (roomId: string, fields?: string) => {
 		.query({ fields });
 };
 
-export const getRoomPreferences = async (roomId: string, cookie: string) => {
+export const getRoomPreferences = async (roomId: string, cookie: string, role: ParticipantRole) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
 		.set('Cookie', cookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, role)
 		.send();
 };
 
@@ -357,7 +359,7 @@ export const getRoomRoleBySecret = async (roomId: string, secret: string) => {
 	return response;
 };
 
-export const generateParticipantToken = async (participantOptions: any) => {
+export const generateParticipantToken = async (participantOptions: any, cookie?: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -366,6 +368,7 @@ export const generateParticipantToken = async (participantOptions: any) => {
 	// Generate the participant token
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token`)
+		.set('Cookie', cookie || '')
 		.send(participantOptions);
 	return response;
 };
@@ -376,14 +379,18 @@ export const generateParticipantToken = async (participantOptions: any) => {
 export const generateParticipantTokenCookie = async (
 	roomId: string,
 	participantName: string,
-	secret: string
+	secret: string,
+	cookie?: string
 ): Promise<string> => {
 	// Generate the participant token
-	const response = await generateParticipantToken({
-		roomId,
-		participantName,
-		secret
-	});
+	const response = await generateParticipantToken(
+		{
+			roomId,
+			participantName,
+			secret
+		},
+		cookie
+	);
 	expect(response.status).toBe(200);
 
 	// Return the participant token cookie
@@ -394,7 +401,7 @@ export const generateParticipantTokenCookie = async (
 	return participantTokenCookie;
 };
 
-export const refreshParticipantToken = async (participantOptions: any) => {
+export const refreshParticipantToken = async (participantOptions: any, cookie: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -402,6 +409,7 @@ export const refreshParticipantToken = async (participantOptions: any) => {
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token/refresh`)
+		.set('Cookie', cookie)
 		.send(participantOptions);
 	return response;
 };
@@ -496,6 +504,7 @@ export const deleteParticipant = async (roomId: string, participantName: string,
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantName}`)
 		.set('Cookie', moderatorCookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	return response;
 };
@@ -506,6 +515,7 @@ export const endMeeting = async (roomId: string, moderatorCookie: string) => {
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
 		.set('Cookie', moderatorCookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	await sleep('1s');
 	return response;
@@ -547,6 +557,7 @@ export const startRecording = async (roomId: string, moderatorCookie = '') => {
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`)
 		.set('Cookie', moderatorCookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send({
 			roomId
 		});
@@ -558,6 +569,7 @@ export const stopRecording = async (recordingId: string, moderatorCookie = '') =
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
 		.set('Cookie', moderatorCookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	await sleep('2.5s');
 

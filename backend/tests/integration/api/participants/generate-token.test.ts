@@ -5,6 +5,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	generateParticipantToken,
+	generateParticipantTokenCookie,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -50,6 +51,30 @@ describe('Participant API Tests', () => {
 				roomData.room.roomId,
 				participantName,
 				ParticipantRole.PUBLISHER
+			);
+		});
+
+		it(`should generate a participant token with both publisher and moderator permissions
+			 when using the publisher secret after having a moderator token`, async () => {
+			const moderatorCookie = await generateParticipantTokenCookie(
+				roomData.room.roomId,
+				`${participantName}_MODERATOR`,
+				roomData.moderatorSecret
+			);
+			const publisherResponse = await generateParticipantToken(
+				{
+					roomId: roomData.room.roomId,
+					participantName: `${participantName}_PUBLISHER`,
+					secret: roomData.publisherSecret
+				},
+				moderatorCookie
+			);
+			expectValidParticipantTokenResponse(
+				publisherResponse,
+				roomData.room.roomId,
+				`${participantName}_PUBLISHER`,
+				ParticipantRole.PUBLISHER,
+				[ParticipantRole.MODERATOR]
 			);
 		});
 

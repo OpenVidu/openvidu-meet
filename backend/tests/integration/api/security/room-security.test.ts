@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { AuthMode, MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { AuthMode, MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import {
 	changeSecurityPreferences,
 	createRoom,
@@ -127,7 +127,8 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
 
@@ -136,14 +137,16 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -227,7 +230,7 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should fai when user is authenticated as admin', async () => {
+		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
 				.set('Cookie', adminCookie);
@@ -242,7 +245,8 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
 
@@ -251,14 +255,16 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
 		it('should succeed when participant is publisher', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(200);
 		});
 
@@ -267,7 +273,8 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', newRoomData.publisherCookie);
+				.set('Cookie', newRoomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});

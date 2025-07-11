@@ -1,5 +1,7 @@
 import { expect } from '@jest/globals';
+import { container } from '../../src/config/dependency-injector.config';
 import INTERNAL_CONFIG from '../../src/config/internal-config';
+import { TokenService } from '../../src/services';
 import {
 	MeetRecordingAccess,
 	MeetRecordingInfo,
@@ -521,7 +523,8 @@ export const expectValidParticipantTokenResponse = (
 	response: any,
 	roomId: string,
 	participantName: string,
-	participantRole: ParticipantRole
+	participantRole: ParticipantRole,
+	otherRoles: ParticipantRole[] = []
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
@@ -530,13 +533,24 @@ export const expectValidParticipantTokenResponse = (
 	const decodedToken = decodeJWTToken(token);
 
 	const permissions = getPermissions(roomId, participantRole);
+	const rolesAndPermissions = otherRoles.map((role) => ({
+		role,
+		permissions: getPermissions(roomId, role).openvidu
+	}));
+
+	if (!rolesAndPermissions.some((r) => r.role === participantRole)) {
+		rolesAndPermissions.push({
+			role: participantRole,
+			permissions: permissions.openvidu
+		});
+	}
 
 	expect(decodedToken).toHaveProperty('sub', participantName);
 	expect(decodedToken).toHaveProperty('video', permissions.livekit);
 	expect(decodedToken).toHaveProperty('metadata');
-	const metadata = JSON.parse(decodedToken.metadata);
-	expect(metadata).toHaveProperty('role', participantRole);
-	expect(metadata).toHaveProperty('permissions', permissions.openvidu);
+	const metadata = JSON.parse(decodedToken.metadata || '{}');
+	expect(metadata).toHaveProperty('roles');
+	expect(metadata.roles).toEqual(expect.arrayContaining(rolesAndPermissions));
 
 	// Check that the token is included in a cookie
 	expect(response.headers['set-cookie']).toBeDefined();
@@ -568,7 +582,7 @@ export const expectValidRecordingTokenResponse = (
 		room: roomId
 	});
 	expect(decodedToken).toHaveProperty('metadata');
-	const metadata = JSON.parse(decodedToken.metadata);
+	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('role', participantRole);
 	expect(metadata).toHaveProperty('recordingPermissions', {
 		canRetrieveRecordings,
@@ -589,13 +603,6 @@ export const expectValidRecordingTokenResponse = (
 };
 
 const decodeJWTToken = (token: string) => {
-	const base64Url = token.split('.')[1];
-	const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-	const jsonPayload = decodeURIComponent(
-		atob(base64)
-			.split('')
-			.map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-			.join('')
-	);
-	return JSON.parse(jsonPayload);
+	const tokenService = container.get(TokenService);
+	return tokenService.getClaimsIgnoringExpiration(token);
 };

@@ -8,6 +8,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	loginUser,
+	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -141,39 +142,56 @@ describe('Participant API Security Tests', () => {
 		let roomData: RoomData;
 
 		beforeAll(async () => {
+			// Set short expiration for testing
+			const initialTokenExpiration = INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION;
+			INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION = '1s';
+
 			roomData = await setupSingleRoom(true);
+			await sleep('2s'); // Ensure the token is expired
+
+			// Restore original expiration after setup
+			INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION = initialTokenExpiration;
 		});
 
 		it('should succeed when no authentication is required and participant is publisher', async () => {
 			await changeSecurityPreferences(AuthMode.NONE);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.publisherCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.publisherSecret
+				});
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
 			await changeSecurityPreferences(AuthMode.NONE);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.moderatorCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.moderatorSecret
+				});
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
 			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.publisherCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.publisherSecret
+				});
 			expect(response.status).toBe(200);
 		});
 
@@ -182,7 +200,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', adminCookie)
+				.set('Cookie', [adminCookie, roomData.moderatorCookie])
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -194,11 +212,14 @@ describe('Participant API Security Tests', () => {
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.moderatorCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.moderatorSecret
+				});
 			expect(response.status).toBe(401);
 		});
 
@@ -207,7 +228,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', adminCookie)
+				.set('Cookie', [adminCookie, roomData.publisherCookie])
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -219,11 +240,14 @@ describe('Participant API Security Tests', () => {
 		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.publisherCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.publisherSecret
+				});
 			expect(response.status).toBe(401);
 		});
 
@@ -232,7 +256,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', adminCookie)
+				.set('Cookie', [adminCookie, roomData.moderatorCookie])
 				.send({
 					roomId: roomData.room.roomId,
 					participantName: PARTICIPANT_NAME,
@@ -244,11 +268,14 @@ describe('Participant API Security Tests', () => {
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token/refresh`).send({
-				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', roomData.moderatorCookie)
+				.send({
+					roomId: roomData.room.roomId,
+					participantName: PARTICIPANT_NAME,
+					secret: roomData.moderatorSecret
+				});
 			expect(response.status).toBe(401);
 		});
 	});

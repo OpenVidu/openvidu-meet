@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
@@ -63,7 +63,8 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(201);
 
 			// Stop recording to clean up
@@ -78,7 +79,8 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
@@ -86,7 +88,8 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -119,7 +122,8 @@ describe('Recording API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(202);
 		});
 
@@ -128,14 +132,16 @@ describe('Recording API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});

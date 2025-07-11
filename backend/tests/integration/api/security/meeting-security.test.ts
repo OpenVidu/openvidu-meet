@@ -3,6 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_API_KEY } from '../../../../src/environment.js';
+import { ParticipantRole } from '../../../../src/typings/ce';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
@@ -50,7 +51,8 @@ describe('Meeting API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
 
@@ -59,14 +61,16 @@ describe('Meeting API Security Tests', () => {
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -91,7 +95,8 @@ describe('Meeting API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', roomData.moderatorCookie);
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
 
@@ -100,14 +105,16 @@ describe('Meeting API Security Tests', () => {
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', newRoomData.moderatorCookie);
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', roomData.publisherCookie);
+				.set('Cookie', roomData.publisherCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
 			expect(response.status).toBe(403);
 		});
 	});
