@@ -105,13 +105,17 @@ describe('Recording API Security Tests', () => {
 			await stopAllRecordings(roomData.moderatorCookie);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when request includes API key', async () => {
+			const fakeRecordingId = roomData.recordingId; //'roomId--EG_xxx--uid';
 			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
+				.post(`${INTERNAL_RECORDINGS_PATH}/${fakeRecordingId}/stop`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+
 			expect(response.status).toBe(401);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
@@ -127,6 +131,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(202);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when participant is moderator of a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
@@ -137,6 +142,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when participant is publisher', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
@@ -327,6 +333,8 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
+
 		it('should fail when recording access is admin-moderator-publisher and participant is publisher', async () => {
 			await updateRecordingAccessPreferencesInRoom(
 				roomData.room.roomId,
@@ -340,6 +348,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
 			await updateRecordingAccessPreferencesInRoom(
 				roomData.room.roomId,
@@ -353,6 +362,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when recording access is admin-moderator and participant is publisher', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
@@ -399,6 +409,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when recording access is admin-moderator-publisher and participant is publisher', async () => {
 			await updateRecordingAccessPreferencesInRoom(
 				roomData.room.roomId,
@@ -427,6 +438,7 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(204);
 		});
 
+		//! FIXME: Tecnically this test does not need start a recording for checking the fail case
 		it('should fail when recording access is admin-moderator and participant is publisher', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 			const recordingCookie = await generateRecordingTokenCookie(roomData.room.roomId, roomData.publisherSecret);
