@@ -20,9 +20,12 @@ export class MutexService {
 
 	/**
 	 * Acquires a lock for the specified resource.
+	 * This method uses the Redlock library to acquire a distributed lock on a resource identified by the key.
+	 * The request will return null if the lock cannot be acquired.
+	 *
 	 * @param key The resource to acquire a lock for.
 	 * @param ttl The time-to-live (TTL) for the lock in milliseconds. Defaults to the TTL value of the MutexService.
-	 * @returns A Promise that resolves to the acquired Lock object.
+	 * @returns A Promise that resolves to the acquired Lock object. If the lock cannot be acquired, it resolves to null.
 	 */
 	async acquire(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
 		const registryKey = MeetLock.getRegistryLock(key);

@@ -9,10 +9,16 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 	try {
 		const lkWebhookService = container.get(LivekitWebhookService);
 
-		const webhookEvent: WebhookEvent = await lkWebhookService.getEventFromWebhook(
+		const webhookEvent: WebhookEvent | undefined = await lkWebhookService.getEventFromWebhook(
 			req.body,
 			req.get('Authorization')!
 		);
+
+		if (!webhookEvent) {
+			logger.debug(`Webhook processing skipped: May another instance is processing it`);
+			return res.status(200).send();
+		}
+
 		const { event: eventType, egressInfo, room, participant } = webhookEvent;
 
 		const belongsToOpenViduMeet = await lkWebhookService.webhookEventBelongsToOpenViduMeet(webhookEvent);

@@ -1,3 +1,4 @@
+import { WebhookEvent } from 'livekit-server-sdk';
 import { RedisLockName, RedisLockPrefix } from '../models/redis.model.js';
 
 export class MeetLock {
@@ -35,5 +36,13 @@ export class MeetLock {
 
 	static getGlobalPreferencesLock(): string {
 		return `${RedisLockPrefix.BASE}${RedisLockName.GLOBAL_PREFERENCES}`;
+	}
+
+	static getWebhookLock(webhookEvent: WebhookEvent) {
+		if (!webhookEvent || !webhookEvent.event) {
+			throw new Error('event must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK}_${webhookEvent.event}_${webhookEvent.id}`;
 	}
 }

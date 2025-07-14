@@ -2,7 +2,7 @@ import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
-import { MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
+import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
 	LiveKitService,
@@ -15,6 +15,7 @@ import {
 	DistributedEventService
 } from './index.js';
 import { FrontendEventService } from './frontend-event.service.js';
+import ms from 'ms';
 
 @injectable()
 export class LivekitWebhookService {
@@ -39,9 +40,14 @@ export class LivekitWebhookService {
 	 * @param auth - The authentication token for verifying the webhook request.
 	 * @returns The WebhookEvent extracted from the request body.
 	 */
-	async getEventFromWebhook(body: string, auth?: string): Promise<WebhookEvent> {
+	async getEventFromWebhook(body: string, auth?: string): Promise<WebhookEvent | undefined> {
 		try {
-			return await this.webhookReceiver.receive(body, auth);
+			const webhookEvent = await this.webhookReceiver.receive(body, auth);
+			const lock = await this.mutexService.acquire(MeetLock.getWebhookLock(webhookEvent), ms('5s'));
+
+			if (!lock) return undefined;
+
+			return webhookEvent;
 		} catch (error) {
 			this.logger.error('Error receiving webhook event', error);
 			throw error;
