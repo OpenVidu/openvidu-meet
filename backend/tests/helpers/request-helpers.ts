@@ -686,7 +686,6 @@ export const stopAllRecordings = async (moderatorCookie: string) => {
 
 	// Check responses
 	results.forEach((response) => {
-		console.log(`Response for stopping recording: ${response.status}`, response.body);
 		expect(response.status).toBe(202);
 	});
 	await sleep('1s');
