@@ -19,6 +19,8 @@ import {
 	AuthMode,
 	AuthType,
 	MeetRecordingAccess,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomOptions,
 	ParticipantRole,
@@ -662,23 +664,31 @@ export const downloadRecordings = async (
 export const stopAllRecordings = async (moderatorCookie: string) => {
 	checkAppIsRunning();
 
-	const response = await getAllRecordings({ fields: 'recordingId' });
-	const recordingIds: string[] = response.body.recordings.map(
-		(recording: { recordingId: string }) => recording.recordingId
-	);
+	const response = await getAllRecordings();
+
+	const recordingIds: string[] = response.body.recordings
+		.filter((rec: MeetRecordingInfo) => rec.status === MeetRecordingStatus.ACTIVE)
+		.map((recording: { recordingId: string }) => recording.recordingId);
 
 	if (recordingIds.length === 0) {
 		return;
 	}
 
-	console.log(`Stopping ${recordingIds.length} recordings...`);
+	console.log(`Stopping ${recordingIds.length} recordings...`, recordingIds);
 	const tasks = recordingIds.map((recordingId: string) =>
 		request(app)
 			.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+			.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 			.set('Cookie', moderatorCookie)
 			.send()
 	);
-	await Promise.all(tasks);
+	const results = await Promise.all(tasks);
+
+	// Check responses
+	results.forEach((response) => {
+		console.log(`Response for stopping recording: ${response.status}`, response.body);
+		expect(response.status).toBe(202);
+	});
 	await sleep('1s');
 };
 
