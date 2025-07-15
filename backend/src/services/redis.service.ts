@@ -261,9 +261,6 @@ export class RedisService extends EventEmitter {
 		this.logger.verbose('Redis connections cleaned up');
 	}
 
-	async checkHealth() {
-		return (await this.redisPublisher.ping()) === 'PONG';
-	}
 
 	private loadRedisConfig(): RedisOptions {
 		// Check if openviduCall module is enabled. If not, exit the process
