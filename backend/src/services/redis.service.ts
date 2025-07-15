@@ -51,6 +51,12 @@ export class RedisService extends EventEmitter {
 		const onError = (error: Error) => {
 			this.logger.error('Redis Error', error);
 			this.emit('redisError', error);
+
+			// If Redis connection fails during startup, terminate the process
+			if (!this.isConnected) {
+				this.logger.error('Failed to connect to Redis during startup. Terminating process...');
+				process.exit(1);
+			}
 		};
 
 		const onDisconnect = () => {
