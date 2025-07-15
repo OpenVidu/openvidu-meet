@@ -30,7 +30,8 @@ export const joinRoom = (req: Request, res: Response) => {
             isModerator: participantRole === 'moderator',
             participantName,
             roomId,
-            showOnlyRecordings: showOnlyRecordings || false
+            showOnlyRecordings: showOnlyRecordings || false,
+            webcomponentSrc: process.env.WEBCOMPONENT_SRC
         });
     } catch (error) {
         console.error('Error joining room:', error);
