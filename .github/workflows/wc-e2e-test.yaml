@@ -16,10 +16,10 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
+      # - name: Setup OpenVidu Meet
+      #   uses: OpenVidu/actions/start-openvidu-meet@main
+      #   env:
+      #     MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -54,10 +54,10 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
+      # - name: Setup OpenVidu Meet
+      #   uses: OpenVidu/actions/start-openvidu-meet@main
+      #   env:
+      #     MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -92,10 +92,10 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
+      # - name: Setup OpenVidu Meet
+      #   uses: OpenVidu/actions/start-openvidu-meet@main
+      #   env:
+      #     MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -131,10 +131,10 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
+      # - name: Setup OpenVidu Meet
+      #   uses: OpenVidu/actions/start-openvidu-meet@main
+      #   env:
+      #     MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -169,10 +169,10 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_WEBHOOK_ENABLED: true
+      # - name: Setup OpenVidu Meet
+      #   uses: OpenVidu/actions/start-openvidu-meet@main
+      #   env:
+      #     MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
