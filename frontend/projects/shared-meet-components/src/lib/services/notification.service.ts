@@ -44,11 +44,10 @@ export class NotificationService {
 			panelClass: 'custom-snackbar'
 		});
 	}
-
 	showDialog(options: DialogOptions): void {
 		this.dialog.open(DialogComponent, {
 			data: options,
-			width: '400px',
+			width: '450px',
 			disableClose: true
 		});
 	}

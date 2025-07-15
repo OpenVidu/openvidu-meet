@@ -276,12 +276,30 @@ export class RoomsComponent implements OnInit {
 			}
 		};
 
+		const forceDeleteCallback = async () => {
+			try {
+				const response = await this.roomService.deleteRoom(roomId, true); // force = true
+
+				const currentRooms = this.rooms();
+				this.rooms.set(currentRooms.filter((r) => r.roomId !== roomId));
+				this.notificationService.showSnackbar('Room force deleted successfully');
+			} catch (error) {
+				this.notificationService.showAlert('Failed to force delete room');
+				this.log.e('Error force deleting room:', error);
+			}
+		};
+
 		this.notificationService.showDialog({
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			title: 'Delete Room',
 			message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
-			confirmCallback: deleteCallback
+			confirmCallback: deleteCallback,
+			showForceCheckbox: true,
+			forceCheckboxText: 'Force delete',
+			forceCheckboxDescription:
+				'This will immediately disconnect all active participants and delete the room without waiting for participants to leave',
+			forceConfirmCallback: forceDeleteCallback
 		});
 	}
 
@@ -339,13 +357,32 @@ export class RoomsComponent implements OnInit {
 			}
 		};
 
+		const bulkForceDeleteCallback = async () => {
+			try {
+				const roomIds = rooms.map((r) => r.roomId);
+				const response = await this.roomService.bulkDeleteRooms(roomIds, true); // force = true
+
+				const currentRooms = this.rooms();
+				this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));
+				this.notificationService.showSnackbar('All rooms force deleted successfully');
+			} catch (error) {
+				this.notificationService.showAlert('Failed to force delete rooms');
+				this.log.e('Error force deleting rooms:', error);
+			}
+		};
+
 		const count = rooms.length;
 		this.notificationService.showDialog({
 			confirmText: 'Delete all',
 			cancelText: 'Cancel',
 			title: 'Delete Rooms',
 			message: `Are you sure you want to delete <b>${count}</b> rooms?`,
-			confirmCallback: bulkDeleteCallback
+			confirmCallback: bulkDeleteCallback,
+			showForceCheckbox: true,
+			forceCheckboxText: 'Force delete',
+			forceCheckboxDescription:
+				'This will immediately disconnect all active participants and delete the room without waiting for participants to leave',
+			forceConfirmCallback: bulkForceDeleteCallback
 		});
 	}
 }

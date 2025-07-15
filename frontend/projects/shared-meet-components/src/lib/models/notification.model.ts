@@ -5,4 +5,9 @@ export interface DialogOptions {
 	cancelText?: string;
 	cancelCallback?: () => void;
 	confirmCallback?: () => void;
+	// Force delete options
+	showForceCheckbox?: boolean;
+	forceCheckboxText?: string;
+	forceCheckboxDescription?: string;
+	forceConfirmCallback?: () => void;
 }
