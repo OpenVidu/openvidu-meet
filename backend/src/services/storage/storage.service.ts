@@ -67,6 +67,36 @@ export class MeetStorageService<
 		this.keyBuilder = keyBuilder;
 	}
 
+	/**
+	 * Performs a health check on the storage system.
+	 * Verifies both service connectivity and container/bucket existence.
+	 * Terminates the process if storage is not accessible.
+	 */
+	async checkStartupHealth(): Promise<void> {
+		try {
+			this.logger.verbose('Performing storage health check...');
+
+			// Get the underlying storage service to perform health check
+			const isHealthy = await this.storageProvider.checkHealth();
+
+			if (!isHealthy.accessible) {
+				this.logger.error('Storage service is not accessible. Terminating process...');
+				process.exit(1);
+			}
+
+			if (!isHealthy.bucketExists && !isHealthy.containerExists) {
+				this.logger.error('Storage bucket/container does not exist. Terminating process...');
+				process.exit(1);
+			}
+
+			this.logger.verbose('Storage health check passed successfully');
+		} catch (error) {
+			this.logger.error('Storage health check failed:', error);
+			this.logger.error('Terminating process due to storage health check failure...');
+			process.exit(1);
+		}
+	}
+
 	// ==========================================
 	// GLOBAL PREFERENCES DOMAIN LOGIC
 	// ==========================================

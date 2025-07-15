@@ -287,4 +287,26 @@ export class ABSService {
 
 		return `${prefix}/${name}`;
 	}
+
+	/**
+	 * Health check for Azure Blob Storage service and container accessibility.
+	 * Verifies both service connectivity and container existence.
+	 */
+	async checkHealth(): Promise<{ accessible: boolean; containerExists: boolean }> {
+		try {
+			// Check if we can access the container by checking if it exists
+			const exists = await this.containerClient.exists();
+
+			if (exists) {
+				this.logger.verbose(`ABS health check: service accessible and container '${MEET_AZURE_CONTAINER_NAME}' exists`);
+				return { accessible: true, containerExists: true };
+			} else {
+				this.logger.error(`ABS container '${MEET_AZURE_CONTAINER_NAME}' does not exist`);
+				return { accessible: true, containerExists: false };
+			}
+		} catch (error: any) {
+			this.logger.error(`ABS health check failed: ${error.message}`);
+			return { accessible: false, containerExists: false };
+		}
+	}
 }

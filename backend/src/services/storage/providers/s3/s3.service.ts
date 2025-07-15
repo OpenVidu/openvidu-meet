@@ -234,6 +234,37 @@ export class S3Service {
 	}
 
 	/**
+	 * Health check for S3 service and bucket accessibility.
+	 * Verifies both service connectivity and bucket existence.
+	 */
+	async checkHealth(): Promise<{ accessible: boolean; bucketExists: boolean }> {
+		try {
+			// Check if we can access the S3 service by listing objects with a small limit
+			await this.run(
+				new ListObjectsV2Command({
+					Bucket: MEET_S3_BUCKET,
+					MaxKeys: 1
+				})
+			);
+
+			// If we reach here, both service and bucket are accessible
+			this.logger.verbose(`S3 health check: service accessible and bucket '${MEET_S3_BUCKET}' exists`);
+			return { accessible: true, bucketExists: true };
+		} catch (error: any) {
+			this.logger.error(`S3 health check failed: ${error.message}`);
+
+			// Check if it's a bucket-specific error
+			if (error.name === 'NoSuchBucket') {
+				this.logger.error(`S3 bucket '${MEET_S3_BUCKET}' does not exist`);
+				return { accessible: true, bucketExists: false };
+			}
+
+			// Service is not accessible
+			return { accessible: false, bucketExists: false };
+		}
+	}
+
+	/**
 	 * Constructs the full key for an S3 object by ensuring it includes the specified sub-bucket prefix.
 	 * If the provided name already starts with the prefix, it is returned as-is.
 	 * Otherwise, the prefix is prepended to the name.

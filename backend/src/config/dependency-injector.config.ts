@@ -90,5 +90,11 @@ const configureStorage = (storageMode: string) => {
 export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
-	await container.get(MeetStorageService).initializeGlobalPreferences();
+
+	// Perform comprehensive health checks before initializing other services
+	const storageService = container.get(MeetStorageService);
+	await storageService.checkStartupHealth();
+
+	// Initialize global preferences after health checks pass
+	await storageService.initializeGlobalPreferences();
 };

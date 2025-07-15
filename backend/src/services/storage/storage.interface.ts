@@ -93,6 +93,14 @@ export interface StorageProvider {
 	 * @returns A promise that resolves to a readable stream of the object content
 	 */
 	getObjectAsStream(key: string, range?: { start: number; end: number }): Promise<Readable>;
+
+	/**
+	 * Performs a health check on the storage provider.
+	 * Verifies both service connectivity and container/bucket existence.
+	 *
+	 * @returns A promise that resolves to an object indicating accessibility and container/bucket existence
+	 */
+	checkHealth(): Promise<{ accessible: boolean; bucketExists?: boolean; containerExists?: boolean }>;
 }
 
 /**

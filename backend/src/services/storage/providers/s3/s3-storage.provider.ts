@@ -137,4 +137,24 @@ export class S3StorageProvider implements StorageProvider {
 			throw error;
 		}
 	}
+
+	/**
+	 * Performs a health check on the S3 storage provider.
+	 */
+	async checkHealth(): Promise<{ accessible: boolean; bucketExists?: boolean; containerExists?: boolean }> {
+		try {
+			this.logger.debug('Performing S3 storage health check');
+			const healthResult = await this.s3Service.checkHealth();
+			return {
+				accessible: healthResult.accessible,
+				bucketExists: healthResult.bucketExists
+			};
+		} catch (error) {
+			this.logger.error(`S3 storage health check failed: ${error}`);
+			return {
+				accessible: false,
+				bucketExists: false
+			};
+		}
+	}
 }

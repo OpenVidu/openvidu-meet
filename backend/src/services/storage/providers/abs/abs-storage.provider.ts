@@ -148,4 +148,24 @@ export class ABSStorageProvider implements StorageProvider {
 			throw error;
 		}
 	}
+
+	/**
+	 * Performs a health check on the Azure Blob Storage provider.
+	 */
+	async checkHealth(): Promise<{ accessible: boolean; bucketExists?: boolean; containerExists?: boolean }> {
+		try {
+			this.logger.debug('Performing ABS storage health check');
+			const healthResult = await this.azureBlobService.checkHealth();
+			return {
+				accessible: healthResult.accessible,
+				containerExists: healthResult.containerExists
+			};
+		} catch (error) {
+			this.logger.error(`ABS storage health check failed: ${error}`);
+			return {
+				accessible: false,
+				containerExists: false
+			};
+		}
+	}
 }
