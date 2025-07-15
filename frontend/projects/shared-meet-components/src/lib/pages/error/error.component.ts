@@ -1,12 +1,15 @@
 import { Component, OnInit } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { ActivatedRoute } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { ErrorReason } from '@lib/models';
 
 @Component({
 	selector: 'ov-error',
 	standalone: true,
-	imports: [MatCardModule],
+	imports: [MatCardModule, MatIconModule, MatButtonModule],
 	templateUrl: './error.component.html',
 	styleUrl: './error.component.scss'
 })
@@ -14,7 +17,10 @@ export class ErrorComponent implements OnInit {
 	errorName = 'Error';
 	message = '';
 
-	constructor(private route: ActivatedRoute) {}
+	constructor(
+		private route: ActivatedRoute,
+		private location: Location
+	) {}
 
 	ngOnInit(): void {
 		this.route.queryParams.subscribe((params) => {
@@ -63,5 +69,9 @@ export class ErrorComponent implements OnInit {
 					break;
 			}
 		});
+	}
+
+	goBack(): void {
+		this.location.back();
 	}
 }

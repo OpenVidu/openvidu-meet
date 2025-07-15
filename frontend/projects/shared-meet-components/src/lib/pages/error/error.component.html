@@ -1,10 +1,31 @@
-<div class="container">
-	<mat-card class="card">
-		<mat-card-header>
-			<mat-card-title>{{ errorName }}</mat-card-title>
-		</mat-card-header>
-		<mat-card-content>
-			<p>{{ message }}</p>
-		</mat-card-content>
-	</mat-card>
+<div class="error-page">
+	<div class="error-container fade-in">
+		<div class="error-content">
+			<div class="error-icon-section">
+				<mat-icon class="error-main-icon">error_outline</mat-icon>
+			</div>
+
+			<div class="error-details">
+				<h1 class="error-title">{{ errorName }}</h1>
+				<p class="error-message">{{ message }}</p>
+			</div>
+
+			<div class="error-actions">
+				<button mat-flat-button color="primary" (click)="goBack()" class="action-button">
+					<mat-icon>arrow_back</mat-icon>
+					Go Back
+				</button>
+			</div>
+		</div>
+
+		<div class="error-illustration">
+			<div class="illustration-container">
+				<mat-icon class="illustration-icon">cloud_off</mat-icon>
+				<div class="illustration-text">
+					<span class="illustration-title">Oops!</span>
+					<span class="illustration-subtitle">Something went wrong</span>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
