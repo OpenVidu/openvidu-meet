@@ -171,7 +171,7 @@ export class OpenViduWebhookService {
 				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error sending webhook event ${data.event}: ${error}`);
+			this.logger.error(`Error sending webhook event ${data.event} to '${webhookPreferences.url}':`, error);
 			throw error;
 		}
 	}
