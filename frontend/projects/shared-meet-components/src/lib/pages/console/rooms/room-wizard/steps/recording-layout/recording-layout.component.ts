@@ -40,7 +40,7 @@ export class RecordingLayoutComponent implements OnDestroy {
 			imageUrl: './assets/layouts/speaker.png',
 			isPro: true,
 			disabled: true,
-			recommended: true
+			// recommended: true
 		},
 		{
 			id: 'single-speaker',

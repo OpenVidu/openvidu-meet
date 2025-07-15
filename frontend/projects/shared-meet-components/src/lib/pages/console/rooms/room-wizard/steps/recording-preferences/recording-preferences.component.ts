@@ -45,7 +45,7 @@ export class RecordingPreferencesComponent implements OnDestroy {
 			description:
 				'Enable recording capabilities for this room. Recordings can be started manually or automatically.',
 			icon: 'video_library',
-			recommended: true
+			// recommended: true
 		},
 		{
 			id: 'disabled',
