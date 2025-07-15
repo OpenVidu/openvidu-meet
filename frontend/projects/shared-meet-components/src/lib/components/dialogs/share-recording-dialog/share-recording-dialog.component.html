@@ -1,47 +1,108 @@
-<h2 mat-dialog-title>Share Recording</h2>
-<mat-dialog-content class="dialog-content">
-	@if (!recordingUrl) {
-		@if (erroMessage) {
-			<div class="error-text">
-				<mat-icon color="warn">error</mat-icon>
-				{{ erroMessage }}
+<div class="share-recording-dialog">
+	<h2 mat-dialog-title class="dialog-title">
+		<mat-icon class="title-icon ov-recording-icon">share</mat-icon>
+		Share Recording
+	</h2>
+
+	<mat-dialog-content class="dialog-content ov-theme-transition">
+		@if (!recordingUrl) {
+			<div class="content-section fade-in">
+				@if (erroMessage) {
+					<div class="error-message">
+						<mat-icon class="error-icon">error</mat-icon>
+						<span class="error-text">{{ erroMessage }}</span>
+					</div>
+				}
+
+				<div class="access-type-section">
+					<h3 class="section-label">Access Type</h3>
+					<mat-radio-group [(ngModel)]="accessType" class="access-options">
+						<mat-radio-button value="public" class="access-option">
+							<div class="option-content">
+								<mat-icon class="option-icon">public</mat-icon>
+								<div class="option-details">
+									<span class="option-title">Public Access</span>
+									<span class="option-description">Anyone with the link can view</span>
+								</div>
+							</div>
+						</mat-radio-button>
+						<mat-radio-button value="private" class="access-option">
+							<div class="option-content">
+								<mat-icon class="option-icon">lock</mat-icon>
+								<div class="option-details">
+									<span class="option-title">Private Access</span>
+									<span class="option-description">Only authenticated users can view</span>
+								</div>
+							</div>
+						</mat-radio-button>
+					</mat-radio-group>
+				</div>
+
+				<div class="generate-section">
+					@if (loading) {
+						<div class="loading-state">
+							<mat-spinner diameter="20"></mat-spinner>
+							<span class="loading-text">Generating secure link...</span>
+						</div>
+					} @else {
+						<button
+							mat-flat-button
+							color="primary"
+							(click)="getRecordingUrl()"
+							[disabled]="loading"
+							class="generate-button"
+						>
+							<mat-icon>link</mat-icon>
+							Generate Shareable Link
+						</button>
+					}
+				</div>
 			</div>
 		}
 
-		<mat-radio-group [(ngModel)]="accessType">
-			<mat-radio-button value="public">Public (anyone with the link)</mat-radio-button>
-			<mat-radio-button value="private">Private (authenticated users)</mat-radio-button>
-		</mat-radio-group>
+		@if (recordingUrl) {
+			<div class="url-section fade-in">
+				<h3 class="section-label">Shareable Link</h3>
+				<div class="url-container">
+					<mat-form-field appearance="outline" class="url-field">
+						<mat-label>Recording URL</mat-label>
+						<input matInput [value]="recordingUrl" readonly class="url-input" />
+						<mat-icon matPrefix class="url-prefix-icon">link</mat-icon>
+						<button
+							mat-icon-button
+							matSuffix
+							(click)="copyToClipboard()"
+							[matTooltip]="copied ? 'Copied!' : 'Copy to clipboard'"
+							matTooltipPosition="above"
+							class="copy-button"
+							[class.copied]="copied"
+						>
+							<mat-icon>{{ copied ? 'check' : 'content_copy' }}</mat-icon>
+						</button>
+					</mat-form-field>
+					@if (copied) {
+						<div class="copy-success-message fade-in">
+							<mat-icon>check_circle</mat-icon>
+							Link copied to clipboard!
+						</div>
+					}
+				</div>
 
-		<div class="generate-btn-container">
-			@if (loading) {
-				<mat-spinner diameter="24"></mat-spinner>
-			} @else {
-				<button mat-flat-button color="primary" (click)="getRecordingUrl()" [disabled]="loading">
-					Generate Link
-				</button>
-			}
-		</div>
-	}
+				<div class="url-actions">
+					<button mat-button class="back-button" (click)="goBack()">
+						<mat-icon>arrow_back</mat-icon>
+						<span>Go back</span>
+					</button>
 
-	@if (recordingUrl) {
-		<div class="recording-url-container">
-			<mat-form-field appearance="outline" class="url-field">
-				<mat-label>Shareable URL</mat-label>
-				<input matInput [value]="recordingUrl" readonly />
-				<button
-					mat-icon-button
-					matSuffix
-					(click)="copyToClipboard()"
-					[matTooltip]="copied ? 'Copied!' : 'Copy to clipboard'"
-					matTooltipPosition="above"
-				>
-					<mat-icon>{{ copied ? 'check' : 'content_copy' }}</mat-icon>
-				</button>
-			</mat-form-field>
-		</div>
-	}
-</mat-dialog-content>
-<mat-dialog-actions>
-	<button mat-button mat-dialog-close>Close</button>
-</mat-dialog-actions>
+				</div>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions class="dialog-actions">
+		<button mat-button mat-dialog-close class="close-button">
+			<mat-icon>close</mat-icon>
+			Close
+		</button>
+	</mat-dialog-actions>
+</div>

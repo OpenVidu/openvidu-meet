@@ -14,6 +14,10 @@
 .ov-flex-center {
 	@include ov-flex-center;
 }
+.ov-meet-dialog {
+	border-radius: var(--ov-meet-spacing-md);
+	background: var(--ov-meet-surface-color);
+}
 
 // Spacing classes
 .ov-mt-xs {

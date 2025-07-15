@@ -1,43 +1,292 @@
-.dialog-content {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	min-width: 100%;
-	overflow: hidden;
+@import '../../../../../../../src/assets/styles/design-tokens';
 
-	mat-radio-group {
+.share-recording-dialog {
+	@include ov-theme-transition;
+
+	.dialog-title {
+		@include ov-flex-center;
+		justify-content: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		margin: 0;
+		padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl);
+		font-size: var(--ov-meet-font-size-xl);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-text-primary);
+
+		.title-icon {
+			@include ov-icon(md);
+		}
+	}
+
+	.dialog-content {
+		@include ov-theme-transition;
+		padding: var(--ov-meet-spacing-xl);
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: var(--ov-meet-spacing-lg);
 
-		mat-radio-button {
-			color: var(--ov-text-surface-color);
+		@include ov-tablet-down {
+			min-width: 400px;
+			padding: var(--ov-meet-spacing-lg);
+		}
+
+		@include ov-mobile-down {
+			min-width: 320px;
+			padding: var(--ov-meet-spacing-md);
+		}
+
+		.content-section {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
+		}
+
+		.section-label {
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.error-message {
+			@include ov-flex-center;
+			justify-content: flex-start;
+			gap: var(--ov-meet-spacing-sm);
+			padding: var(--ov-meet-spacing-md);
+			background: rgba(var(--ov-meet-color-error), 0.1);
+			border: 1px solid var(--ov-meet-color-error);
+			border-radius: var(--ov-meet-radius-md);
+			color: var(--ov-meet-color-error);
+
+			.error-icon {
+				@include ov-icon(sm);
+			}
+
+			.error-text {
+				font-size: var(--ov-meet-font-size-sm);
+				font-weight: var(--ov-meet-font-weight-medium);
+			}
+		}
+
+		.access-type-section {
+			.access-options {
+				display: flex;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-sm);
+
+				.access-option {
+					@include ov-theme-transition;
+					border: 1px solid var(--ov-meet-border-color);
+					border-radius: var(--ov-meet-radius-sm);
+					padding: var(--ov-meet-spacing-md);
+					background: var(--ov-meet-surface-color);
+
+					&:hover {
+						background: var(--ov-meet-surface-hover);
+						border-color: var(--ov-meet-color-primary);
+					}
+
+					&.mat-mdc-radio-button-checked {
+						border-color: var(--ov-meet-color-primary);
+						background: rgba(var(--ov-meet-color-primary), 0.05);
+					}
+
+					.option-content {
+						@include ov-flex-center;
+						justify-content: flex-start;
+						gap: var(--ov-meet-spacing-md);
+						margin-left: var(--ov-meet-spacing-lg);
+
+						.option-icon {
+							@include ov-icon(md);
+							color: var(--ov-meet-text-secondary);
+						}
+
+						.option-details {
+							display: flex;
+							flex-direction: column;
+							gap: var(--ov-meet-spacing-xs);
+
+							.option-title {
+								font-size: var(--ov-meet-font-size-md);
+								font-weight: var(--ov-meet-font-weight-medium);
+								color: var(--ov-meet-text-primary);
+							}
+
+							.option-description {
+								font-size: var(--ov-meet-font-size-sm);
+								color: var(--ov-meet-text-secondary);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		.generate-section {
+			@include ov-flex-center;
+			justify-content: center;
+
+			.loading-state {
+				@include ov-flex-center;
+				gap: var(--ov-meet-spacing-sm);
+				color: var(--ov-meet-text-secondary);
+
+				.loading-text {
+					font-size: var(--ov-meet-font-size-sm);
+					font-weight: var(--ov-meet-font-weight-medium);
+				}
+			}
+
+			.generate-button {
+				@include ov-button-base;
+				@include ov-flex-center;
+				gap: var(--ov-meet-spacing-sm);
+
+				mat-icon {
+					@include ov-icon(sm);
+				}
+			}
+		}
+
+		.url-section {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-md);
+
+			.url-container {
+				position: relative;
+
+				.url-field {
+					width: 100%;
+
+					.mat-mdc-form-field-subscript-wrapper {
+						display: none;
+					}
+
+					.url-input {
+						font-family: 'Courier New', monospace;
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-text-primary);
+						padding-right: var(--ov-meet-spacing-xl);
+					}
+
+					.url-prefix-icon {
+						@include ov-icon(sm);
+						color: var(--ov-meet-text-secondary);
+						margin-right: var(--ov-meet-spacing-xs);
+					}
+
+					.copy-button {
+						@include ov-theme-transition;
+						color: var(--ov-meet-text-secondary);
+
+						&:hover {
+							color: var(--ov-meet-color-primary);
+							background: rgba(var(--ov-meet-color-primary), 0.1);
+						}
+
+						&.copied {
+							color: var(--ov-meet-color-success);
+							background: rgba(var(--ov-meet-color-success), 0.1);
+						}
+
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+				}
+
+				.copy-success-message {
+					@include ov-flex-center;
+					justify-content: center;
+					gap: var(--ov-meet-spacing-xs);
+					margin-top: var(--ov-meet-spacing-sm);
+					padding: var(--ov-meet-spacing-sm);
+					background: rgba(var(--ov-meet-color-success), 0.1);
+					border: 1px solid var(--ov-meet-color-success);
+					border-radius: var(--ov-meet-radius-sm);
+					color: var(--ov-meet-color-success);
+					font-size: var(--ov-meet-font-size-sm);
+					font-weight: var(--ov-meet-font-weight-medium);
+
+					mat-icon {
+						@include ov-icon(sm);
+					}
+				}
+			}
+
+			.url-actions {
+				@include ov-flex-center;
+				justify-content: center;
+				margin-top: var(--ov-meet-spacing-md);
+
+				.back-button {
+					@include ov-flex-center;
+					gap: var(--ov-meet-spacing-xs);
+					color: var(--ov-meet-text-secondary);
+
+					&:hover {
+						color: var(--ov-meet-text-primary);
+						background-color: var(--ov-meet-surface-hover);
+					}
+
+					mat-icon {
+						@include ov-icon(sm);
+					}
+				}
+			}
+		}
+	}
+
+	.dialog-actions {
+		@include ov-theme-transition;
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-lg);
+		border-top: 1px solid var(--ov-meet-border-color-light);
+		justify-content: flex-end;
+
+		.close-button {
+			@include ov-flex-center;
+			gap: var(--ov-meet-spacing-xs);
+			color: var(--ov-meet-text-primary);
+			background: var(--ov-meet-surface-hover);
+
+			mat-icon {
+				@include ov-icon(sm);
+			}
 		}
 	}
 }
 
-.error-text {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	color: var(--ov-error-color);
-	font-weight: 500;
-}
+// Responsive adjustments
+@include ov-mobile-down {
+	.share-recording-dialog {
+		.dialog-content {
+			min-width: 280px;
+			padding: var(--ov-meet-spacing-md);
 
-.generate-btn-container {
-	align-self: flex-start;
-}
+			.access-type-section .access-options .access-option {
+				padding: var(--ov-meet-spacing-sm);
 
-.recording-url-container {
-	width: 100%;
-	margin-top: 8px;
-}
+				.option-content {
+					gap: var(--ov-meet-spacing-sm);
 
-.url-field {
-	width: 100%;
+					.option-details {
+						.option-title {
+							font-size: var(--ov-meet-font-size-sm);
+						}
 
-	input {
-		font-size: 14px;
-		color: var(--ov-text-surface-color);
+						.option-description {
+							font-size: var(--ov-meet-font-size-xs);
+						}
+					}
+				}
+			}
+
+			.url-section .url-actions .back-button {
+				font-size: var(--ov-meet-font-size-sm);
+				padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			}
+		}
 	}
 }

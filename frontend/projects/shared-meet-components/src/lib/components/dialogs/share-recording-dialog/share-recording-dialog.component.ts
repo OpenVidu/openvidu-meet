@@ -82,4 +82,10 @@ export class ShareRecordingDialogComponent {
 			this.copied = false;
 		}, 2000);
 	}
+
+	goBack() {
+		this.recordingUrl = undefined;
+		this.copied = false;
+		this.erroMessage = undefined;
+	}
 }

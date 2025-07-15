@@ -263,11 +263,12 @@ export class RecordingManagerService {
 	 */
 	openShareRecordingDialog(recordingId: string, recordingUrl?: string) {
 		this.dialog.open(ShareRecordingDialogComponent, {
-			width: '400px',
+			width: '450px',
 			data: {
 				recordingId,
 				recordingUrl
-			}
+			},
+			panelClass: 'ov-meet-dialog'
 		});
 	}
 }
