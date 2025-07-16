@@ -310,6 +310,10 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		return this.canDeleteRecordings && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
 	}
 
+	isRecordingFailed(recording: MeetRecordingInfo): boolean {
+		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.ERROR);
+	}
+
 	// ===== UI HELPER METHODS =====
 
 	getStatusIcon(status: MeetRecordingStatus): string {

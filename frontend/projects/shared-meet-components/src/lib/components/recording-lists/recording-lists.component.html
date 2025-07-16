@@ -195,30 +195,42 @@
 							</button>
 						}
 
-						<!-- More Actions Menu -->
-						<button
-							mat-icon-button
-							[matMenuTriggerFor]="actionsMenu"
-							matTooltip="More Actions"
-							[disabled]="loading"
-						>
-							<mat-icon>more_vert</mat-icon>
-						</button>
-
-						<mat-menu #actionsMenu="matMenu">
-							<button mat-menu-item (click)="shareRecordingLink(recording)">
-								<mat-icon>share</mat-icon>
-								<span>Share link</span>
+						@if (isRecordingFailed(recording)) {
+							<button
+								class="delete-action"
+								mat-icon-button
+								matTooltip="Delete Recording"
+								(click)="deleteRecording(recording)"
+								[disabled]="loading"
+							>
+								<mat-icon>delete</mat-icon>
+							</button>
+						} @else {
+							<!-- More Actions Menu -->
+							<button
+								mat-icon-button
+								[matMenuTriggerFor]="actionsMenu"
+								matTooltip="More Actions"
+								[disabled]="loading"
+							>
+								<mat-icon>more_vert</mat-icon>
 							</button>
 
-							@if (canDeleteRecording(recording)) {
-								<mat-divider></mat-divider>
-								<button mat-menu-item (click)="deleteRecording(recording)" class="delete-action">
-									<mat-icon>delete</mat-icon>
-									<span>Delete recording</span>
+							<mat-menu #actionsMenu="matMenu">
+								<button mat-menu-item (click)="shareRecordingLink(recording)">
+									<mat-icon>share</mat-icon>
+									<span>Share link</span>
 								</button>
-							}
-						</mat-menu>
+
+								@if (canDeleteRecording(recording)) {
+									<mat-divider></mat-divider>
+									<button mat-menu-item (click)="deleteRecording(recording)" class="delete-action">
+										<mat-icon>delete</mat-icon>
+										<span>Delete recording</span>
+									</button>
+								}
+							</mat-menu>
+						}
 					</div>
 				</td>
 			</ng-container>
