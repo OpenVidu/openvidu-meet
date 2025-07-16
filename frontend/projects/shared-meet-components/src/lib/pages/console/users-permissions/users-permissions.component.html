@@ -110,8 +110,8 @@
 				</mat-card-content>
 				<mat-card-actions>
 					<button
-						mat-raised-button
-						color="primary"
+						mat-button
+						class="primary-button"
 						type="submit"
 						[disabled]="adminCredentialsForm.invalid"
 						(click)="onSaveAdminCredentials()"
@@ -153,7 +153,7 @@
 					</form>
 				</mat-card-content>
 				<mat-card-actions>
-					<button mat-raised-button color="primary" type="submit" (click)="onSaveAccessSettings()">
+					<button mat-button type="submit" (click)="onSaveAccessSettings()" class="primary-button">
 						Save configuration
 					</button>
 				</mat-card-actions>

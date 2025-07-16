@@ -360,7 +360,7 @@ export class RoomsComponent implements OnInit {
 		const bulkForceDeleteCallback = async () => {
 			try {
 				const roomIds = rooms.map((r) => r.roomId);
-				const response = await this.roomService.bulkDeleteRooms(roomIds, true); // force = true
+				const response = await this.roomService.bulkDeleteRooms(roomIds, true);
 
 				const currentRooms = this.rooms();
 				this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));

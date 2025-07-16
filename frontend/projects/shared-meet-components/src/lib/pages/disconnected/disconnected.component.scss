@@ -120,16 +120,12 @@
 		margin-top: var(--ov-meet-spacing-md);
 
 		.quick-action-button {
+			@include ov-button-base;
+			@include ov-theme-transition;
 			display: flex;
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);
 			color: var(--ov-meet-text-secondary);
-			@include ov-theme-transition;
-
-			// &:hover {
-			// 	color: var(--ov-meet-text-primary);
-			// 	background-color: var(--ov-meet-surface-hover);
-			// }
 		}
 	}
 }

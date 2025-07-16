@@ -19,6 +19,17 @@
 	background: var(--ov-meet-surface-color);
 }
 
+.primary-button {
+	@include ov-button-base;
+	background-color: var(--ov-meet-color-secondary);
+	color: var(--ov-meet-text-on-secondary) !important;
+
+	&.mat-mdc-button-disabled {
+		background-color: var(--ov-meet-color-secondary-light) !important;
+		color: var(--ov-meet-text-disabled);
+	}
+}
+
 // Spacing classes
 .ov-mt-xs {
 	margin-top: var(--ov-meet-spacing-xs);

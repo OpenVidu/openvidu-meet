@@ -79,7 +79,7 @@
 						<div class="no-api-key">
 							<h3>No API Key Generated</h3>
 							<p>Generate an API key to access OpenVidu Meet REST API endpoints.</p>
-							<button mat-raised-button class (click)="generateApiKey()">
+							<button mat-button class (click)="generateApiKey()" class="primary-button">
 								<mat-icon>vpn_key</mat-icon>
 								Generate API Key
 							</button>
@@ -179,10 +179,10 @@
 
 				<mat-card-actions>
 					<button
-						mat-raised-button
-						color="primary"
+						mat-button
 						(click)="saveWebhookConfig()"
 						[disabled]="webhookForm.invalid"
+						class="primary-button"
 					>
 						<mat-icon>save</mat-icon>
 						Save Configuration

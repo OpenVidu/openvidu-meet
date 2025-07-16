@@ -251,16 +251,6 @@
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-md);
 		align-items: center;
-
-		.create-room-btn,
-		.refresh-rooms-btn {
-			@include ov-button-base;
-
-			mat-icon {
-				@include ov-icon(md);
-				margin-right: var(--ov-meet-spacing-sm);
-			}
-		}
 	}
 }
 

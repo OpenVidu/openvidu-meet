@@ -52,9 +52,9 @@
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			<button mat-raised-button (click)="createRoom()" class="create-room-btn" id="create-room-btn">
+			<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
 				<mat-icon>add</mat-icon>
-				Create New Room
+				Create Room
 			</button>
 
 			@if (showFilters) {
@@ -325,7 +325,7 @@
 			<p>No rooms found. Create your first room to start hosting meetings and manage your video conferences.</p>
 
 			<div class="getting-started-actions">
-				<button mat-raised-button (click)="createRoom()" class="create-room-btn">
+				<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
 					<mat-icon>add</mat-icon>
 					Create Your First Room
 				</button>
