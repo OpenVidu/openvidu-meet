@@ -177,6 +177,8 @@ export class RecordingService {
 					// Everything is fine, the recording can be stopped.
 					break;
 				case EgressStatus.EGRESS_STARTING:
+					// Avoid pending egress after timeout, stop it immediately
+					await this.livekitService.stopEgress(egressId)
 					// The recording is still starting, it cannot be stopped yet.
 					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
 				default:
