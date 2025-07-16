@@ -7,7 +7,7 @@
 	align-items: center;
 	min-height: 90vh;
 	height: 100%;
-	background: var(--ov-background-color)
+	background: var(--ov-background-color);
 }
 
 .disconnect-content {
@@ -114,6 +114,24 @@
 			gap: var(--ov-meet-spacing-xs);
 		}
 	}
+
+	.quick-actions {
+		@include ov-flex-center;
+		margin-top: var(--ov-meet-spacing-md);
+
+		.quick-action-button {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			color: var(--ov-meet-text-secondary);
+			@include ov-theme-transition;
+
+			// &:hover {
+			// 	color: var(--ov-meet-text-primary);
+			// 	background-color: var(--ov-meet-surface-hover);
+			// }
+		}
+	}
 }
 
 .disconnect-content {
@@ -123,7 +141,6 @@
 .disconnect-icon-container {
 	animation: scaleIn 0.8s ease-out 0.2s both;
 }
-
 
 @media (prefers-contrast: high) {
 	.disconnect-footer {

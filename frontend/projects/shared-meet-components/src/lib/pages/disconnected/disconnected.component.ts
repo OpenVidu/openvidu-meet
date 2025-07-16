@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
+import { AuthService, NavigationService } from '@lib/services';
 
 @Component({
 	selector: 'ov-disconnected',
@@ -15,11 +16,24 @@ import { ActivatedRoute } from '@angular/router';
 export class DisconnectedComponent implements OnInit {
 	disconnectReason?: string;
 
-	constructor(private route: ActivatedRoute) {}
+	constructor(
+		private route: ActivatedRoute,
+		protected authService: AuthService,
+		protected navService: NavigationService
+	) {}
 
 	ngOnInit(): void {
 		// Get disconnect reason from query parameters
 		this.getDisconnectReasonFromQueryParams();
+	}
+
+	get isAdmin(): boolean {
+		return this.authService.isAdmin();
+	}
+
+	async goToConsole(): Promise<void> {
+		// Navigate to the admin console
+		await this.navService.redirectTo('/overview', false);
 	}
 
 	/**
