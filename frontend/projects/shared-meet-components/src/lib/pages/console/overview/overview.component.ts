@@ -5,12 +5,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '@lib/services';
-import { MeetRoom } from '@lib/typings/ce';
+import { MeetRecordingStatus, MeetRoom } from '@lib/typings/ce';
 
 interface OverviewStats {
 	totalRooms: number;
 	activeRooms: number;
 	totalRecordings: number;
+	playableRecordings: number;
 	hasData: boolean;
 	isLoading: boolean;
 }
@@ -27,6 +28,7 @@ export class OverviewComponent implements OnInit {
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
+		playableRecordings: 0,
 		hasData: false,
 		isLoading: true
 	};
@@ -57,6 +59,7 @@ export class OverviewComponent implements OnInit {
 				totalRooms: rooms.length,
 				activeRooms: rooms.filter((room: MeetRoom) => !room.markedForDeletion).length,
 				totalRecordings: recordings.length,
+				playableRecordings: recordings.filter((recording) => recording.status === MeetRecordingStatus.COMPLETE).length,
 				hasData: rooms.length > 0 || recordings.length > 0,
 				isLoading: false
 			};
@@ -65,6 +68,7 @@ export class OverviewComponent implements OnInit {
 				totalRooms: 0,
 				activeRooms: 0,
 				totalRecordings: 0,
+				playableRecordings: 0,
 				hasData: false,
 				isLoading: false
 			};
