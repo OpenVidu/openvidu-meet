@@ -3,8 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { ErrorReason } from '@lib/models';
+import { AuthService, NavigationService } from '@lib/services';
 
 @Component({
 	selector: 'ov-error',
@@ -19,7 +19,8 @@ export class ErrorComponent implements OnInit {
 
 	constructor(
 		private route: ActivatedRoute,
-		private location: Location
+		protected authService: AuthService,
+		protected navService: NavigationService
 	) {}
 
 	ngOnInit(): void {
@@ -71,7 +72,12 @@ export class ErrorComponent implements OnInit {
 		});
 	}
 
-	goBack(): void {
-		this.location.back();
+	get isAdmin(): boolean {
+		return this.authService.isAdmin();
+	}
+
+	async goToConsole(): Promise<void> {
+		// Navigate to the admin console
+		await this.navService.redirectTo('/overview', false);
 	}
 }

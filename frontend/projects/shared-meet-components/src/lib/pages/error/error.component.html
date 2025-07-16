@@ -11,10 +11,14 @@
 			</div>
 
 			<div class="error-actions">
-				<button mat-flat-button color="primary" (click)="goBack()" class="action-button">
-					<mat-icon>arrow_back</mat-icon>
-					Go Back
-				</button>
+				@if (isAdmin) {
+					<div class="fade-in-delayed-more">
+						<button mat-button (click)="goToConsole()">
+							<mat-icon>arrow_back</mat-icon>
+							<span>Back to Console</span>
+						</button>
+					</div>
+				}
 			</div>
 		</div>
 
