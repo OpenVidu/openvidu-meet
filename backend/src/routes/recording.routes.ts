@@ -87,7 +87,6 @@ internalRecordingRouter.post(
 	withValidStartRecordingRequest,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
-	//TODO: should reject if api key is provided
 	withCanRecordPermission,
 	recordingCtrl.startRecording
 );
@@ -96,7 +95,6 @@ internalRecordingRouter.post(
 	withValidRecordingId,
 	withRecordingEnabled,
 	withAuth(participantTokenValidator),
-	//TODO: should reject if api key is provided
 	withCanRecordPermission,
 	recordingCtrl.stopRecording
 );
