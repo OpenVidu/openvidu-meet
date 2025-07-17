@@ -90,7 +90,7 @@ export class TokenService {
 
 	async verifyToken(token: string): Promise<ClaimGrants> {
 		const verifyer = new TokenVerifier(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
-		return await verifyer.verify(token);
+		return await verifyer.verify(token, 0);
 	}
 
 	/**
