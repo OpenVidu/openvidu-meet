@@ -251,7 +251,11 @@ export class LiveKitService {
 			};
 			return await this.egressClient.listEgress(options);
 		} catch (error: any) {
-			if (error.message.includes('404')) {
+			if (
+				error.code === 'not_found' ||
+				error.status === 404 ||
+				(error.message && error.message.includes('egress does not exist'))
+			) {
 				return [];
 			}
 
