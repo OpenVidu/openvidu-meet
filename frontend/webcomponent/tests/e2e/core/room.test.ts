@@ -88,6 +88,8 @@ test.describe('Room Functionality Tests', () => {
 				return !!component?.shadowRoot?.querySelector('iframe');
 			});
 			expect(hasIframe).toBeTruthy();
+
+			await leaveRoom(page, 'moderator');
 		});
 	});
 
