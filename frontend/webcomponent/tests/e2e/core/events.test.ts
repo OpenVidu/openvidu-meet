@@ -57,17 +57,17 @@ test.describe('Web Component E2E Tests', () => {
 	});
 
 	test.describe('Event Handling', () => {
-		test('should successfully join as moderator and receive JOIN event', async ({ page }) => {
+		test('should successfully join as moderator and receive JOINED event', async ({ page }) => {
 			await joinRoomAs('moderator', participantName, page);
-			await page.waitForSelector('.event-JOIN');
-			const joinElements = await page.locator('.event-JOIN').all();
+			await page.waitForSelector('.event-JOINED');
+			const joinElements = await page.locator('.event-JOINED').all();
 			expect(joinElements.length).toBe(1);
 		});
 
-		test('should successfully join as publisher and receive JOIN event', async ({ page }) => {
+		test('should successfully join as publisher and receive JOINED event', async ({ page }) => {
 			await joinRoomAs('publisher', participantName, page);
-			await page.waitForSelector('.event-JOIN');
-			const joinElements = await page.locator('.event-JOIN').all();
+			await page.waitForSelector('.event-JOINED');
+			const joinElements = await page.locator('.event-JOINED').all();
 			expect(joinElements.length).toBe(1);
 		});
 
