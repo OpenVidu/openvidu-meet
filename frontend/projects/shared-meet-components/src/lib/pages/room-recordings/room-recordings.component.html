@@ -1,6 +1,12 @@
 <div class="ov-page-container">
 	<!-- Room Recordings Header -->
 	<div class="recordings-page-header fade-in">
+		<div class="quick-actions fade-in-delayed-more">
+			<button mat-button class="quick-action-button" (click)="goBackToRoom()">
+				<mat-icon>arrow_back</mat-icon>
+				<span>Back to Room</span>
+			</button>
+		</div>
 		<div class="recordings-header">
 			<mat-icon class="ov-recording-icon room-icon">video_library</mat-icon>
 			<div class="room-info">

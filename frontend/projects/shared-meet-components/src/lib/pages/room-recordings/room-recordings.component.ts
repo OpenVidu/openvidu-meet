@@ -5,7 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
-import { NavigationService, NotificationService, RecordingManagerService } from '@lib/services';
+import { NavigationService, NotificationService, RecordingManagerService, RoomService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
@@ -33,6 +33,7 @@ export class RoomRecordingsComponent implements OnInit {
 	constructor(
 		protected loggerService: LoggerService,
 		protected recordingService: RecordingManagerService,
+		protected roomService: RoomService,
 		protected notificationService: NotificationService,
 		protected navigationService: NavigationService,
 		protected route: ActivatedRoute
@@ -44,6 +45,16 @@ export class RoomRecordingsComponent implements OnInit {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
 		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
 		await this.loadRecordings();
+	}
+
+	async goBackToRoom() {
+		try {
+			await this.navigationService.navigateTo(`/room/${this.roomId}`, {
+				secret: this.roomService.getRoomSecret()
+			});
+		} catch (error) {
+			this.log.e('Error navigating back to room:', error);
+		}
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
