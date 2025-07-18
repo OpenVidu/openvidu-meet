@@ -89,11 +89,12 @@
 				</div>
 
 				<div class="url-actions">
-					<button mat-button class="back-button" (click)="goBack()">
-						<mat-icon>arrow_back</mat-icon>
-						<span>Go back</span>
-					</button>
-
+					@if (shouldShowGoBackButton) {
+						<button mat-button class="back-button" (click)="goBack()">
+							<mat-icon>arrow_back</mat-icon>
+							<span>Go back</span>
+						</button>
+					}
 				</div>
 			</div>
 		}

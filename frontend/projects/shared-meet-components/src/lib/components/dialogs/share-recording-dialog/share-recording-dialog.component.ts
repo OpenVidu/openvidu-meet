@@ -40,6 +40,7 @@ import { RecordingManagerService } from '@lib/services';
 export class ShareRecordingDialogComponent {
 	accessType: 'private' | 'public' = 'public';
 	recordingUrl?: string;
+	private initialRecordingUrl?: string;
 
 	loading = false;
 	erroMessage?: string;
@@ -51,6 +52,7 @@ export class ShareRecordingDialogComponent {
 		private clipboard: Clipboard
 	) {
 		this.recordingUrl = data.recordingUrl;
+		this.initialRecordingUrl = data.recordingUrl;
 	}
 
 	async getRecordingUrl() {
@@ -81,6 +83,10 @@ export class ShareRecordingDialogComponent {
 		setTimeout(() => {
 			this.copied = false;
 		}, 2000);
+	}
+
+	get shouldShowGoBackButton(): boolean {
+		return !this.initialRecordingUrl;
 	}
 
 	goBack() {
