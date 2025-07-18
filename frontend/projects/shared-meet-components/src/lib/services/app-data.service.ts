@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AppData, ApplicationMode, Edition } from '@lib/models';
+import { WebComponentManagerService } from '@lib/services';
 
 @Injectable({
 	providedIn: 'root'
@@ -11,9 +12,20 @@ export class AppDataService {
 		version: ''
 	};
 
-	setApplicationMode(mode: ApplicationMode): void {
-		console.log(`Starting application in ${mode} mode`);
-		this.appData.mode = mode;
+	constructor(protected wcManagerService: WebComponentManagerService) {
+		this.setApplicationMode();
+	}
+
+	private setApplicationMode(): void {
+		const isRequestedFromIframe = window.self !== window.top;
+		const appMode = isRequestedFromIframe ? ApplicationMode.EMBEDDED : ApplicationMode.STANDALONE;
+		this.appData.mode = appMode;
+		console.log(`Starting application in ${appMode} mode`);
+
+		if (this.isEmbeddedMode()) {
+			// Initialize the WebComponentManagerService only in embedded mode
+			this.wcManagerService.initialize();
+		}
 	}
 
 	isEmbeddedMode(): boolean {
