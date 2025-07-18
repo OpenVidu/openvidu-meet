@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnDestroy, OnInit, Signal } from '@angular/core';
+import { Component, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -27,6 +27,7 @@ import {
 	WebComponentManagerService
 } from '@lib/services';
 import {
+	LeftEventReason,
 	MeetRoom,
 	MeetRoomPreferences,
 	ParticipantRole,
@@ -71,12 +72,14 @@ import {
 		MatRippleModule
 	]
 })
-export class VideoRoomComponent implements OnInit, OnDestroy {
+export class VideoRoomComponent implements OnInit {
 	participantForm = new FormGroup({
 		name: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
-	showRoom = false;
 	showRecordingCard = false;
+
+	showBackButton = true;
+	backButtonText = 'Back';
 
 	room?: MeetRoom;
 	roomId = '';
@@ -85,7 +88,9 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
 
+	showRoom = false;
 	features: Signal<ApplicationFeatures>;
+	meetingEndedByMe = false;
 
 	constructor(
 		protected route: ActivatedRoute,
@@ -111,92 +116,27 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
 
+		await this.setBackButtonText();
 		await this.checkForRecordings();
 		await this.initializeParticipantName();
 	}
 
-	ngOnDestroy(): void {
-		this.wcManagerService.stopCommandsListener();
-	}
+	/**
+	 * Sets the back button text based on the application mode and user role
+	 */
+	private async setBackButtonText() {
+		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const redirection = this.navigationService.getLeaveRedirectURL();
+		const isAdmin = await this.authService.isAdmin();
 
-	onRoomCreated(room: Room) {
-		room.on(
-			RoomEvent.DataReceived,
-			(payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
-				const event = JSON.parse(new TextDecoder().decode(payload));
-				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
-					const roomPreferences: MeetRoomPreferences = event.preferences;
-					this.featureConfService.setRoomPreferences(roomPreferences);
-				}
-			}
-		);
-	}
-
-	get isAdmin(): boolean {
-		return this.authService.isAdmin();
-	}
-
-	get isEmbeddedMode(): boolean {
-		return this.appDataService.isEmbeddedMode();
-	}
-
-	async submitAccessRoom() {
-		const { valid, value } = this.participantForm;
-		if (!valid || !value.name?.trim()) {
-			// If the form is invalid, do not proceed
-			console.warn('Participant form is invalid. Cannot access room.');
+		if (isStandaloneMode && !redirection && !isAdmin) {
+			// If in standalone mode, no redirection URL and not an admin, hide the back button
+			this.showBackButton = false;
 			return;
 		}
 
-		this.participantName = value.name.trim();
-		this.participantTokenService.setParticipantName(this.participantName);
-
-		try {
-			await this.generateParticipantToken();
-			await this.replaceUrlQueryParams();
-			await this.roomService.loadPreferences(this.roomId);
-			this.showRoom = true;
-		} catch (error) {
-			console.error('Error accessing room:', error);
-		}
-	}
-
-	onTokenRequested() {
-		// Participant token must be set only when requested
-		this.participantToken = this.participantTokenService.getParticipantToken() || '';
-	}
-
-	async leaveMeeting() {
-		await this.openviduService.disconnectRoom();
-	}
-
-	async endMeeting() {
-		if (this.participantService.isModeratorParticipant()) {
-			const roomId = this.roomService.getRoomId();
-			await this.meetingService.endMeeting(roomId);
-		}
-	}
-
-	async forceDisconnectParticipant(participant: ParticipantModel) {
-		await this.meetingService.kickParticipant(this.roomId, participant.identity);
-	}
-
-	async copyModeratorLink() {
-		await this.loadRoomIfAbsent();
-		this.clipboard.copy(this.room!.moderatorRoomUrl);
-		this.notificationService.showSnackbar('Moderator link copied to clipboard');
-	}
-
-	async copyPublisherLink() {
-		await this.loadRoomIfAbsent();
-		this.clipboard.copy(this.room!.publisherRoomUrl);
-		this.notificationService.showSnackbar('Publisher link copied to clipboard');
-	}
-
-	private async loadRoomIfAbsent() {
-		if (!this.room) {
-			this.room = await this.roomService.getRoom(this.roomId);
-		}
+		this.showBackButton = true;
+		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Rooms' : 'Back';
 	}
 
 	/**
@@ -240,6 +180,58 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 
 		if (participantName) {
 			this.participantForm.get('name')?.setValue(participantName);
+		}
+	}
+
+	async goToRecordings() {
+		try {
+			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
+		} catch (error) {
+			console.error('Error navigating to recordings:', error);
+		}
+	}
+
+	/**
+	 * Handles the back button click event and navigates accordingly
+	 * If in embedded mode, it closes the WebComponentManagerService
+	 * If in standalone mode, it navigates to the redirect URL or to the rooms page
+	 */
+	async goBack() {
+		if (this.appDataService.isEmbeddedMode()) {
+			this.wcManagerService.close();
+			return;
+		}
+
+		// Standalone mode handling
+		const redirectTo = this.navigationService.getLeaveRedirectURL();
+		if (redirectTo) {
+			// Navigate to the specified redirect URL
+			await this.navigationService.redirectTo(redirectTo);
+			return;
+		}
+
+		// Navigate to rooms page
+		await this.navigationService.navigateTo('/rooms');
+	}
+
+	async submitAccessRoom() {
+		const { valid, value } = this.participantForm;
+		if (!valid || !value.name?.trim()) {
+			// If the form is invalid, do not proceed
+			console.warn('Participant form is invalid. Cannot access room.');
+			return;
+		}
+
+		this.participantName = value.name.trim();
+		this.participantTokenService.setParticipantName(this.participantName);
+
+		try {
+			await this.generateParticipantToken();
+			await this.replaceUrlQueryParams();
+			await this.roomService.loadPreferences(this.roomId);
+			this.showRoom = true;
+		} catch (error) {
+			console.error('Error accessing room:', error);
 		}
 	}
 
@@ -305,25 +297,27 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	async goToRecordings() {
-		try {
-			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
-		} catch (error) {
-			console.error('Error navigating to recordings:', error);
-		}
+	onTokenRequested() {
+		// Participant token must be set only when requested
+		this.participantToken = this.participantTokenService.getParticipantToken() || '';
 	}
 
-	async goBack() {
-		try {
-			await this.navigationService.navigateTo('rooms');
-		} catch (error) {
-			console.error('Error navigating back to rooms:', error);
-		}
+	onRoomCreated(room: Room) {
+		room.on(
+			RoomEvent.DataReceived,
+			(payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
+				const event = JSON.parse(new TextDecoder().decode(payload));
+				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
+					const roomPreferences: MeetRoomPreferences = event.preferences;
+					this.featureConfService.setRoomPreferences(roomPreferences);
+				}
+			}
+		);
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
 		const message: WebComponentOutboundEventMessage = {
-			event: WebComponentEvent.JOIN,
+			event: WebComponentEvent.JOINED,
 			payload: {
 				roomId: event.getProperties().room?.name || '',
 				participantName: event.name!
@@ -333,18 +327,19 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 	}
 
 	async onParticipantLeft(event: ParticipantLeftEvent) {
-		console.warn('Participant left the room. Redirecting to:');
-		const redirectURL = this.navigationService.getLeaveRedirectURL() || '/disconnected';
-		const isExternalURL = /^https?:\/\//.test(redirectURL);
-		const isRoomDeleted = event.reason === ParticipantLeftReason.ROOM_DELETED;
+		let leftReason = this.getReasonParamFromEvent(event.reason);
+		if (leftReason === LeftEventReason.MEETING_ENDED && this.meetingEndedByMe) {
+			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
+		}
 
+		// Send LEFT or MEETING_ENDED event to the parent component
 		let message: WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
-
-		if (isRoomDeleted) {
+		if (event.reason === ParticipantLeftReason.ROOM_DELETED) {
 			message = {
 				event: WebComponentEvent.MEETING_ENDED,
 				payload: {
-					roomId: event.roomName
+					roomId: event.roomName,
+					endedByMe: this.meetingEndedByMe
 				}
 			} as WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
 		} else {
@@ -353,7 +348,7 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 				payload: {
 					roomId: event.roomName,
 					participantName: event.participantName,
-					reason: event.reason
+					reason: leftReason
 				}
 			} as WebComponentOutboundEventMessage<WebComponentEvent.LEFT>;
 		}
@@ -364,39 +359,63 @@ export class VideoRoomComponent implements OnInit, OnDestroy {
 			this.sessionStorageService.removeModeratorSecret(event.roomName);
 		}
 
-		// Add disconnect reason as query parameter if redirecting to disconnect page
-		let finalRedirectURL = redirectURL;
-		if (!isExternalURL && (redirectURL === '/disconnected' || redirectURL.includes('/disconnected'))) {
-			const reasonParam = this.getReasonParamFromEvent(event.reason, isRoomDeleted);
-			const separator = redirectURL.includes('?') ? '&' : '?';
-			finalRedirectURL = `${redirectURL}${separator}reason=${encodeURIComponent(reasonParam)}`;
-		}
-
-		await this.navigationService.redirectTo(finalRedirectURL, isExternalURL);
+		// Navigate to the disconnected page with the reason
+		await this.navigationService.navigateTo('disconnected', { reason: leftReason });
 	}
 
 	/**
-	 * Maps ParticipantLeftReason to a query parameter value
+	 * Maps ParticipantLeftReason to LeftEventReason.
+	 * This method translates the technical reasons for a participant leaving the room
+	 * into user-friendly reasons that can be used in the UI or for logging purposes.
+	 * @param reason The technical reason for the participant leaving the room.
+	 * @returns The corresponding LeftEventReason.
 	 */
-	private getReasonParamFromEvent(reason: ParticipantLeftReason, isRoomDeleted: boolean): string {
-		if (isRoomDeleted) {
-			return 'roomDeleted';
-		}
+	private getReasonParamFromEvent(reason: ParticipantLeftReason): LeftEventReason {
+		const reasonMap: Record<ParticipantLeftReason, LeftEventReason> = {
+			[ParticipantLeftReason.LEAVE]: LeftEventReason.VOLUNTARY_LEAVE,
+			[ParticipantLeftReason.BROWSER_UNLOAD]: LeftEventReason.VOLUNTARY_LEAVE,
+			[ParticipantLeftReason.NETWORK_DISCONNECT]: LeftEventReason.NETWORK_DISCONNECT,
+			[ParticipantLeftReason.SIGNAL_CLOSE]: LeftEventReason.NETWORK_DISCONNECT,
+			[ParticipantLeftReason.SERVER_SHUTDOWN]: LeftEventReason.SERVER_SHUTDOWN,
+			[ParticipantLeftReason.PARTICIPANT_REMOVED]: LeftEventReason.PARTICIPANT_KICKED,
+			[ParticipantLeftReason.ROOM_DELETED]: LeftEventReason.MEETING_ENDED,
+			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.UNKNOWN,
+			[ParticipantLeftReason.OTHER]: LeftEventReason.UNKNOWN
+		};
+		return reasonMap[reason] ?? LeftEventReason.UNKNOWN;
+	}
 
-		switch (reason) {
-			default:
-			case ParticipantLeftReason.LEAVE:
-				return 'disconnect';
-			case ParticipantLeftReason.PARTICIPANT_REMOVED:
-				return 'forceDisconnectByUser';
-			case ParticipantLeftReason.SERVER_SHUTDOWN:
-				return 'sessionClosedByServer';
-			case ParticipantLeftReason.NETWORK_DISCONNECT:
-				return 'networkDisconnect';
-			case ParticipantLeftReason.SIGNAL_CLOSE:
-				return 'openviduDisconnect';
-			case ParticipantLeftReason.BROWSER_UNLOAD:
-				return 'browserClosed';
+	async leaveMeeting() {
+		await this.openviduService.disconnectRoom();
+	}
+
+	async endMeeting() {
+		if (this.participantService.isModeratorParticipant()) {
+			const roomId = this.roomService.getRoomId();
+			this.meetingEndedByMe = true;
+			await this.meetingService.endMeeting(roomId);
+		}
+	}
+
+	async forceDisconnectParticipant(participant: ParticipantModel) {
+		await this.meetingService.kickParticipant(this.roomId, participant.identity);
+	}
+
+	async copyModeratorLink() {
+		await this.loadRoomIfAbsent();
+		this.clipboard.copy(this.room!.moderatorRoomUrl);
+		this.notificationService.showSnackbar('Moderator link copied to clipboard');
+	}
+
+	async copyPublisherLink() {
+		await this.loadRoomIfAbsent();
+		this.clipboard.copy(this.room!.publisherRoomUrl);
+		this.notificationService.showSnackbar('Publisher link copied to clipboard');
+	}
+
+	private async loadRoomIfAbsent() {
+		if (!this.room) {
+			this.room = await this.roomService.getRoom(this.roomId);
 		}
 	}
 

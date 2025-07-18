@@ -95,11 +95,11 @@
 			</div>
 
 			<!-- Quick Actions -->
-			@if (isAdmin && !isEmbeddedMode) {
+			@if (showBackButton) {
 				<div class="quick-actions fade-in-delayed-more">
 					<button mat-button class="quick-action-button" (click)="goBack()">
 						<mat-icon>arrow_back</mat-icon>
-						<span>Back to Rooms</span>
+						<span>{{ backButtonText }}</span>
 					</button>
 				</div>
 			}
