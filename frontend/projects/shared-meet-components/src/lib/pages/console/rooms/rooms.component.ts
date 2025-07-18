@@ -278,7 +278,7 @@ export class RoomsComponent implements OnInit {
 
 		const forceDeleteCallback = async () => {
 			try {
-				const response = await this.roomService.deleteRoom(roomId, true); // force = true
+				await this.roomService.deleteRoom(roomId, true);
 
 				const currentRooms = this.rooms();
 				this.rooms.set(currentRooms.filter((r) => r.roomId !== roomId));
@@ -360,7 +360,7 @@ export class RoomsComponent implements OnInit {
 		const bulkForceDeleteCallback = async () => {
 			try {
 				const roomIds = rooms.map((r) => r.roomId);
-				const response = await this.roomService.bulkDeleteRooms(roomIds, true);
+				await this.roomService.bulkDeleteRooms(roomIds, true);
 
 				const currentRooms = this.rooms();
 				this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));
@@ -381,7 +381,7 @@ export class RoomsComponent implements OnInit {
 			showForceCheckbox: true,
 			forceCheckboxText: 'Force delete',
 			forceCheckboxDescription:
-				'This will immediately disconnect all active participants and delete the room without waiting for participants to leave',
+				'This will immediately disconnect all active participants and delete all rooms without waiting for participants to leave',
 			forceConfirmCallback: bulkForceDeleteCallback
 		});
 	}
