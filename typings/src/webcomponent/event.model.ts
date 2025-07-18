@@ -11,7 +11,7 @@ export enum WebComponentEvent {
     /**
      * Event emitted when the local participant joins the room.
      */
-    JOIN = 'JOIN',
+    JOINED = 'JOINED',
     /**
      * Event emitted when the local participant leaves the room.
      */
@@ -19,7 +19,24 @@ export enum WebComponentEvent {
     /**
      * Event emitted when a moderator ends the meeting.
      */
-    MEETING_ENDED = 'MEETING_ENDED'
+    MEETING_ENDED = 'MEETING_ENDED',
+    /**
+     * Event emitted when the application is closed.
+     */
+    CLOSED = 'CLOSED'
+}
+
+/**
+ * Reason for emitting the LEFT event in OpenVidu Meet.
+ */
+export enum LeftEventReason {
+    VOLUNTARY_LEAVE = 'voluntary_leave', // The participant left the meeting voluntarily
+    NETWORK_DISCONNECT = 'network_disconnect', // The participant was disconnected due to network issues
+    SERVER_SHUTDOWN = 'server_shutdown', // The server was shut down
+    PARTICIPANT_KICKED = 'participant_kicked', // The participant was removed from the meeting by a moderator
+    MEETING_ENDED = 'meeting_ended', // The meeting was ended by a moderator or the room was deleted
+    MEETING_ENDED_BY_SELF = 'meeting_ended_by_self', // The local participant ended the meeting
+    UNKNOWN = 'unknown' // An unknown reason for leaving the meeting
 }
 
 /**
@@ -33,17 +50,18 @@ export interface WebComponentEventPayloads {
      * @private
      */
     [WebComponentEvent.READY]: {};
-    [WebComponentEvent.JOIN]: {
+    [WebComponentEvent.JOINED]: {
         roomId: string;
         participantName: string;
     };
     [WebComponentEvent.LEFT]: {
         roomId: string;
         participantName: string;
-        reason: string;
+        reason: LeftEventReason;
     };
     [WebComponentEvent.MEETING_ENDED]: {
         roomId: string;
+        endedByMe: boolean; // Indicates if the meeting was ended by the local participant
     };
 }
 
