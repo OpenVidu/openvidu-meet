@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AppDataService, MeetingService, ParticipantTokenService, RoomService } from '@lib/services';
+import { MeetingService, ParticipantTokenService, RoomService } from '@lib/services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -17,14 +17,15 @@ import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 	providedIn: 'root'
 })
 export class WebComponentManagerService {
+	protected isInitialized = false;
+
 	protected parentDomain: string = '';
-	protected isListenerStarted = false;
 	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
+
 	protected log;
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected appDataService: AppDataService,
 		protected participantService: ParticipantTokenService,
 		protected openviduService: OpenViduService,
 		protected roomService: RoomService,
@@ -34,13 +35,14 @@ export class WebComponentManagerService {
 		this.boundHandleMessage = this.handleMessage.bind(this);
 	}
 
-	startCommandsListener(): void {
-		if (this.isListenerStarted) return;
+	initialize() {
+		if (this.isInitialized) return;
 
-		this.isListenerStarted = true;
-		// Listen for messages from the iframe
-		window.addEventListener('message', this.boundHandleMessage);
-		// Send ready message to parent
+		this.log.d('Initializing service...');
+		this.isInitialized = true;
+		this.startCommandsListener();
+
+		// Send READY event to parent
 		this.sendMessageToParent(
 			{
 				event: WebComponentEvent.READY,
@@ -48,18 +50,36 @@ export class WebComponentManagerService {
 			},
 			'*'
 		);
+	}
+
+	close() {
+		if (!this.isInitialized) return;
+
+		this.log.d('Closing service...');
+		this.stopCommandsListener();
+
+		// Send CLOSED event to parent
+		this.sendMessageToParent({
+			event: WebComponentEvent.CLOSED,
+			payload: {}
+		});
+		this.isInitialized = false;
+	}
+
+	protected startCommandsListener() {
+		// Listen for messages from the iframe
+		window.addEventListener('message', this.boundHandleMessage);
 		this.log.d('Started commands listener');
 	}
 
-	stopCommandsListener(): void {
-		if (!this.isListenerStarted) return;
-		this.isListenerStarted = false;
+	protected stopCommandsListener() {
 		window.removeEventListener('message', this.boundHandleMessage);
 		this.log.d('Stopped commands listener');
 	}
 
 	sendMessageToParent(event: WebComponentOutboundEventMessage, targetOrigin: string = this.parentDomain) {
-		if (!this.appDataService.isEmbeddedMode()) return;
+		if (!this.isInitialized) return;
+
 		this.log.d('Sending message to parent:', event);
 		window.parent.postMessage(event, targetOrigin);
 	}
@@ -85,9 +105,9 @@ export class WebComponentManagerService {
 			return;
 		}
 
-		// Check if the room is connected before processing command
+		// Check if participant is connected to room before processing command
 		if (!this.openviduService.isRoomConnected()) {
-			this.log.w('Received command but room is not connected');
+			this.log.w('Received command but participant is not connected to the room');
 			return;
 		}
 
