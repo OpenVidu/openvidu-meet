@@ -11,11 +11,11 @@
 			</div>
 
 			<div class="error-actions">
-				@if (isAdmin) {
+				@if (showBackButton) {
 					<div class="fade-in-delayed-more">
-						<button mat-button (click)="goToConsole()">
+						<button mat-button (click)="goBack()">
 							<mat-icon>arrow_back</mat-icon>
-							<span>Back to Console</span>
+							<span>{{ backButtonText }}</span>
 						</button>
 					</div>
 				}

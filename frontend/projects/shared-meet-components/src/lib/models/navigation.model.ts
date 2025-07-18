@@ -1,4 +1,4 @@
-export const enum ErrorReason {
+export enum ErrorReason {
 	MISSING_ROOM_SECRET = 'missing-room-secret',
 	MISSING_RECORDING_SECRET = 'missing-recording-secret',
 	INVALID_ROOM_SECRET = 'invalid-room-secret',
