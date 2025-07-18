@@ -194,9 +194,9 @@ const listenWebComponentEvents = () => {
         return;
     }
 
-    meet.on('JOIN', (event: CustomEvent<any>) => {
-        console.log('JOIN event received:', event);
-        addEventToLog('JOIN', JSON.stringify(event));
+    meet.on('JOINED', (event: CustomEvent<any>) => {
+        console.log('JOINED event received:', event);
+        addEventToLog('JOINED', JSON.stringify(event));
     });
     meet.on('LEFT', (event: CustomEvent<any>) => {
         console.log('LEFT event received:', event);
@@ -205,6 +205,13 @@ const listenWebComponentEvents = () => {
     meet.on('MEETING_ENDED', (event: CustomEvent<any>) => {
         console.log('MEETING_ENDED event received:', event);
         addEventToLog('MEETING_ENDED', JSON.stringify(event));
+    });
+    meet.on('CLOSED', (event: CustomEvent<any>) => {
+        console.log('CLOSED event received:', event);
+        addEventToLog('CLOSED', JSON.stringify(event));
+
+        // Redirect to home page
+        // window.location.href = '/';
     });
 };
 
