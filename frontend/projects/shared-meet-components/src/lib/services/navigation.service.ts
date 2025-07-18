@@ -2,35 +2,60 @@ import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { ErrorReason } from '@lib/models';
+import { SessionStorageService } from '@lib/services';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class NavigationService {
-	protected leaveRedirectUrl: string = '';
+	protected leaveRedirectUrl?: string;
 
 	constructor(
 		private router: Router,
-		private location: Location
+		private location: Location,
+		private sessionStorageService: SessionStorageService
 	) {}
 
 	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
 		this.leaveRedirectUrl = leaveRedirectUrl;
+		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
 	}
 
-	getLeaveRedirectURL(): string {
+	getLeaveRedirectURL(): string | undefined {
+		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
+		if (!this.leaveRedirectUrl && storedRedirectUrl) {
+			this.leaveRedirectUrl = storedRedirectUrl;
+		}
+
 		return this.leaveRedirectUrl;
+	}
+
+	/**
+	 * Navigates to a specific route
+	 *
+	 * @param route - The route to navigate to
+	 * @param queryParams - Optional query parameters to include in the navigation
+	 * @param replaceUrl - If true, replaces the current URL in the browser history
+	 */
+	async navigateTo(route: string, queryParams?: Params, replaceUrl: boolean = false): Promise<void> {
+		try {
+			await this.router.navigate([route], {
+				queryParams,
+				replaceUrl
+			});
+		} catch (error) {
+			console.error('Error navigating to route:', error);
+		}
 	}
 
 	/**
 	 * Redirects to internal or external URLs
 	 *
 	 * @param url - The URL to redirect to
-	 * @param isExternal - If true, treats the URL as an external link; otherwise,
-	 * treats it as an internal route
 	 */
-	async redirectTo(url: string, isExternal = false): Promise<void> {
-		if (isExternal) {
+	async redirectTo(url: string): Promise<void> {
+		const isExternalURL = /^https?:\/\//.test(url);
+		if (isExternalURL) {
 			console.log('Redirecting to external URL:', url);
 			window.location.href = url;
 		} else {
@@ -43,6 +68,17 @@ export class NavigationService {
 				console.error('Error navigating to internal route:', error);
 			}
 		}
+	}
+
+	/**
+	 * Creates a URL tree for redirecting to a specific route
+	 *
+	 * @param route - The route to redirect to
+	 * @param queryParams - Optional query parameters to include in the URL
+	 * @returns A UrlTree representing the redirection
+	 */
+	createRedirectionTo(route: string, queryParams?: Params): UrlTree {
+		return this.router.createUrlTree([route], { queryParams });
 	}
 
 	/**
@@ -86,35 +122,6 @@ export class NavigationService {
 		}
 
 		return urlTree;
-	}
-
-	/**
-	 * Creates a URL tree for redirecting to a specific route
-	 *
-	 * @param route - The route to redirect to
-	 * @param queryParams - Optional query parameters to include in the URL
-	 * @returns A UrlTree representing the redirection
-	 */
-	createRedirectionTo(route: string, queryParams?: Params): UrlTree {
-		return this.router.createUrlTree([route], { queryParams });
-	}
-
-	/**
-	 * Navigates to a specific route
-	 *
-	 * @param route - The route to navigate to
-	 * @param queryParams - Optional query parameters to include in the navigation
-	 * @param replaceUrl - If true, replaces the current URL in the browser history
-	 */
-	async navigateTo(route: string, queryParams?: Params, replaceUrl: boolean = false): Promise<void> {
-		try {
-			await this.router.navigate([route], {
-				queryParams,
-				replaceUrl
-			});
-		} catch (error) {
-			console.error('Error navigating to route:', error);
-		}
 	}
 
 	/**

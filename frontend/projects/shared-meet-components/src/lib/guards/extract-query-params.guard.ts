@@ -9,6 +9,10 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const participantService = inject(ParticipantTokenService);
 	const { roomId, participantName, secret, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
 
+	if (isValidUrl(leaveRedirectUrl)) {
+		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
+	}
+
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
@@ -19,10 +23,6 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	if (participantName) {
 		participantService.setParticipantName(participantName);
-	}
-
-	if (isValidUrl(leaveRedirectUrl)) {
-		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
 	}
 
 	if (showOnlyRecordings === 'true') {

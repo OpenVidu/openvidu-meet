@@ -40,6 +40,24 @@ export class SessionStorageService {
 	}
 
 	/**
+	 * Stores a redirect URL to be used after leaving OpenVidu Meet.
+	 *
+	 * @param redirectUrl The URL to redirect to.
+	 */
+	public setRedirectUrl(redirectUrl: string): void {
+		this.set('redirect_url', redirectUrl);
+	}
+
+	/**
+	 * Retrieves the redirect URL stored in sessionStorage.
+	 *
+	 * @returns The redirect URL or null if not found.
+	 */
+	public getRedirectUrl(): string | null {
+		return this.get<string>('redirect_url') ?? null;
+	}
+
+	/**
 	 * Clears all data stored in sessionStorage.
 	 */
 	public clear(): void {
