@@ -67,8 +67,9 @@ export class AuthService {
 		return this.user?.roles;
 	}
 
-	isAdmin(): boolean {
-		return this.user?.roles.includes(UserRole.ADMIN) || false;
+	async isAdmin(): Promise<boolean> {
+		const roles = await this.getUserRoles();
+		return roles ? roles.includes(UserRole.ADMIN) : false;
 	}
 
 	private async getAuthenticatedUser(force = false) {
