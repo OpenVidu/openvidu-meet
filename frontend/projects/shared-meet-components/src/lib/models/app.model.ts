@@ -10,6 +10,6 @@ export enum ApplicationMode {
 }
 
 export enum Edition {
-	CE = 'ce',
-	PRO = 'pro'
+	CE = 'CE',
+	PRO = 'PRO'
 }

@@ -37,7 +37,7 @@ export class ConsoleNavComponent {
 	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
 
 	constructor(private appDataService: AppDataService) {
-		this.version = this.appDataService.getVersion();
+		this.version = `${this.appDataService.getVersion()} (${this.appDataService.getEdition()})`;
 	}
 
 	async toggleSideMenu() {
