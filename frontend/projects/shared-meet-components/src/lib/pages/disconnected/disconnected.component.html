@@ -9,19 +9,19 @@
 		</div>
 
 		<div class="disconnect-message">
-			<h1 id="disconnect-title" class="disconnect-title">Meeting Ended</h1>
+			<h1 id="disconnect-title" class="disconnect-title">{{ disconnectedTitle }}</h1>
 			<p class="disconnect-subtitle">
-				{{ disconnectReason || 'You have successfully left the video conference' }}
+				{{ disconnectReason }}
 			</p>
 		</div>
 
 		<div class="disconnect-footer">
 			<p class="footer-text">Thank you for using OpenVidu Meet</p>
-			@if (isAdmin) {
+			@if (showBackButton) {
 				<div class="quick-actions fade-in-delayed-more">
-					<button mat-button class="quick-action-button" (click)="goToConsole()">
+					<button mat-button class="quick-action-button" (click)="goBack()">
 						<mat-icon>arrow_back</mat-icon>
-						<span>Back to Console</span>
+						<span>{{ backButtonText }}</span>
 					</button>
 				</div>
 			}

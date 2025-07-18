@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { AuthService, NavigationService } from '@lib/services';
+import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '@lib/services';
+import { LeftEventReason } from '@lib/typings/ce';
 
 @Component({
 	selector: 'ov-disconnected',
@@ -14,54 +15,116 @@ import { AuthService, NavigationService } from '@lib/services';
 	styleUrl: './disconnected.component.scss'
 })
 export class DisconnectedComponent implements OnInit {
-	disconnectReason?: string;
+	disconnectedTitle = 'You Left the Meeting';
+	disconnectReason = 'You have successfully left the meeting';
+
+	showBackButton = true;
+	backButtonText = 'Back';
 
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
-		protected navService: NavigationService
+		protected navService: NavigationService,
+		protected appDataService: AppDataService,
+		protected wcManagerService: WebComponentManagerService
 	) {}
 
-	ngOnInit(): void {
-		// Get disconnect reason from query parameters
-		this.getDisconnectReasonFromQueryParams();
-	}
-
-	get isAdmin(): boolean {
-		return this.authService.isAdmin();
-	}
-
-	async goToConsole(): Promise<void> {
-		// Navigate to the admin console
-		await this.navService.redirectTo('/overview', false);
+	ngOnInit() {
+		this.setDisconnectReason();
+		this.setBackButtonText();
 	}
 
 	/**
 	 * Retrieves the disconnect reason from URL query parameters
 	 */
-	private getDisconnectReasonFromQueryParams(): void {
+	private setDisconnectReason() {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
-			// Map technical reasons to user-friendly messages
-			this.disconnectReason = this.mapReasonToUserMessage(reason);
+			const { title, message } = this.mapReasonToTitleAndMessage(reason);
+			this.disconnectedTitle = title;
+			this.disconnectReason = message;
 		}
 	}
 
 	/**
-	 * Maps technical disconnect reasons to user-friendly messages
+	 * Maps technical disconnect reasons to user-friendly titles and messages
 	 */
-	private mapReasonToUserMessage(reason: string): string {
-		const reasonMap: { [key: string]: string } = {
-			disconnect: 'You have successfully disconnected from the meeting',
-			forceDisconnectByUser: 'You were removed from the meeting by meeting host',
-			forceDisconnectByServer: 'Your connection was terminated by the server',
-			sessionClosedByServer: 'The meeting was ended by the host',
-			networkDisconnect: 'Connection lost due to network connectivity issues',
-			openviduDisconnect: 'The meeting ended due to technical difficulties',
-			roomDeleted: 'The meeting room has been deleted',
-			browserClosed: 'The meeting ended when your browser was closed'
+	private mapReasonToTitleAndMessage(reason: string): { title: string; message: string } {
+		const reasonMap: { [key in LeftEventReason]: { title: string; message: string } } = {
+			[LeftEventReason.VOLUNTARY_LEAVE]: {
+				title: 'You Left the Meeting',
+				message: 'You have successfully left the meeting'
+			},
+			[LeftEventReason.PARTICIPANT_KICKED]: {
+				title: 'Kicked from Meeting',
+				message: 'You were kicked from the meeting by a moderator'
+			},
+			[LeftEventReason.MEETING_ENDED]: {
+				title: 'Meeting Ended',
+				message: 'The meeting was ended by a moderator'
+			},
+			[LeftEventReason.MEETING_ENDED_BY_SELF]: {
+				title: 'Meeting Ended',
+				message: 'You have successfully ended the meeting'
+			},
+			[LeftEventReason.NETWORK_DISCONNECT]: {
+				title: 'Disconnected from Meeting',
+				message: 'Connection lost due to network connectivity issues'
+			},
+			[LeftEventReason.SERVER_SHUTDOWN]: {
+				title: 'Disconnected from Meeting',
+				message: 'Connection lost due to server shutdown'
+			},
+			[LeftEventReason.UNKNOWN]: {
+				title: 'Disconnected from Meeting',
+				message: 'Some unexpected error occurred, please try again later'
+			}
 		};
 
-		return reasonMap[reason] || reasonMap['disconnect'];
+		const normalizedReason = Object.values(LeftEventReason).find((enumValue) => enumValue === reason) as
+			| LeftEventReason
+			| undefined;
+		return reasonMap[normalizedReason ?? LeftEventReason.UNKNOWN];
+	}
+
+	/**
+	 * Sets the back button text based on the application mode and user role
+	 */
+	private async setBackButtonText() {
+		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const redirection = this.navService.getLeaveRedirectURL();
+		const isAdmin = await this.authService.isAdmin();
+
+		if (isStandaloneMode && !redirection && !isAdmin) {
+			// If in standalone mode, no redirection URL and not an admin, hide the back button
+			this.showBackButton = false;
+			return;
+		}
+
+		this.showBackButton = true;
+		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Back';
+	}
+
+	/**
+	 * Handles the back button click event and navigates accordingly
+	 * If in embedded mode, it closes the WebComponentManagerService
+	 * If in standalone mode, it navigates to the redirect URL or to the admin console
+	 */
+	async goBack() {
+		if (this.appDataService.isEmbeddedMode()) {
+			this.wcManagerService.close();
+			return;
+		}
+
+		// Standalone mode handling
+		const redirectTo = this.navService.getLeaveRedirectURL();
+		if (redirectTo) {
+			// Navigate to the specified redirect URL
+			await this.navService.redirectTo(redirectTo);
+			return;
+		}
+
+		// Navigate to the admin console
+		await this.navService.navigateTo('/overview', undefined, true);
 	}
 }
