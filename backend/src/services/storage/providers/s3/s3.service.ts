@@ -34,13 +34,18 @@ export class S3Service {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		const config: S3ClientConfig = {
 			region: MEET_AWS_REGION,
-			credentials: {
-				accessKeyId: MEET_S3_ACCESS_KEY,
-				secretAccessKey: MEET_S3_SECRET_KEY
-			},
 			endpoint: MEET_S3_SERVICE_ENDPOINT,
 			forcePathStyle: MEET_S3_WITH_PATH_STYLE_ACCESS === 'true'
 		};
+
+		// Configure credentials only if both access key and secret key are provided
+		// This allow IAM Role usage without hardcoding credentials
+		if (MEET_S3_ACCESS_KEY && MEET_S3_SECRET_KEY) {
+			config.credentials = {
+				accessKeyId: MEET_S3_ACCESS_KEY,
+				secretAccessKey: MEET_S3_SECRET_KEY
+			};
+		}
 
 		this.s3 = new S3Client(config);
 		this.logger.debug('S3 Client initialized');
