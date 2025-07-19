@@ -37,7 +37,7 @@ test.describe('Web Component E2E Tests', () => {
 			});
 			subscribedToAppErrors = true;
 		}
-		
+
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
 		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 	});
@@ -91,19 +91,15 @@ test.describe('Web Component E2E Tests', () => {
 			expect(leftElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive MEETING_ENDED event when using end meeting command', async ({
+		test('should successfully join to room and receive LEFT event when using end meeting command', async ({
 			page
 		}) => {
 			await joinRoomAs('moderator', participantName, page);
 
 			await page.click('#end-meeting-btn');
-			await page.waitForSelector('.event-MEETING_ENDED');
-			const meetingEndedElements = await page.locator('.event-MEETING_ENDED').all();
+			await page.waitForSelector('.event-LEFT');
+			const meetingEndedElements = await page.locator('.event-LEFT').all();
 			expect(meetingEndedElements.length).toBe(1);
-
-			// Check LEFT event does not exist
-			const leftEventElements = await page.locator('.event-LEFT').all();
-			expect(leftEventElements.length).toBe(0);
 		});
 	});
 });

@@ -17,10 +17,6 @@ export enum WebComponentEvent {
      */
     LEFT = 'LEFT',
     /**
-     * Event emitted when a moderator ends the meeting.
-     */
-    MEETING_ENDED = 'MEETING_ENDED',
-    /**
      * Event emitted when the application is closed.
      */
     CLOSED = 'CLOSED'
@@ -58,10 +54,6 @@ export interface WebComponentEventPayloads {
         roomId: string;
         participantName: string;
         reason: LeftEventReason;
-    };
-    [WebComponentEvent.MEETING_ENDED]: {
-        roomId: string;
-        endedByMe: boolean; // Indicates if the meeting was ended by the local participant
     };
 }
 

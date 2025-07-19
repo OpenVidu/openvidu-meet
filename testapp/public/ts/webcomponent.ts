@@ -202,10 +202,6 @@ const listenWebComponentEvents = () => {
         console.log('LEFT event received:', event);
         addEventToLog('LEFT', JSON.stringify(event));
     });
-    meet.on('MEETING_ENDED', (event: CustomEvent<any>) => {
-        console.log('MEETING_ENDED event received:', event);
-        addEventToLog('MEETING_ENDED', JSON.stringify(event));
-    });
     meet.on('CLOSED', (event: CustomEvent<any>) => {
         console.log('CLOSED event received:', event);
         addEventToLog('CLOSED', JSON.stringify(event));

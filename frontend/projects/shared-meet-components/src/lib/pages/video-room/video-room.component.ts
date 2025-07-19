@@ -332,29 +332,18 @@ export class VideoRoomComponent implements OnInit {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		// Send LEFT or MEETING_ENDED event to the parent component
-		let message: WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED | WebComponentEvent.LEFT>;
-		if (event.reason === ParticipantLeftReason.ROOM_DELETED) {
-			message = {
-				event: WebComponentEvent.MEETING_ENDED,
-				payload: {
-					roomId: event.roomName,
-					endedByMe: this.meetingEndedByMe
-				}
-			} as WebComponentOutboundEventMessage<WebComponentEvent.MEETING_ENDED>;
-		} else {
-			message = {
-				event: WebComponentEvent.LEFT,
-				payload: {
-					roomId: event.roomName,
-					participantName: event.participantName,
-					reason: leftReason
-				}
-			} as WebComponentOutboundEventMessage<WebComponentEvent.LEFT>;
-		}
-
+		// Send LEFT event to the parent component
+		const message: WebComponentOutboundEventMessage<WebComponentEvent.LEFT> = {
+			event: WebComponentEvent.LEFT,
+			payload: {
+				roomId: event.roomName,
+				participantName: event.participantName,
+				reason: leftReason
+			}
+		};
 		this.wcManagerService.sendMessageToParent(message);
 
+		// Remove the moderator secret from session storage if the participant left for a reason other than browser unload
 		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
 			this.sessionStorageService.removeModeratorSecret(event.roomName);
 		}
