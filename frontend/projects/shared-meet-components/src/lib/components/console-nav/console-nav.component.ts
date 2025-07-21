@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output, Signal, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ConsoleNavLink } from '@lib/models';
-import { AppDataService } from '@lib/services';
+import { AppDataService, ThemeService } from '@lib/services';
 
 @Component({
 	selector: 'ov-console-nav',
@@ -33,11 +33,17 @@ export class ConsoleNavComponent {
 	isSideMenuCollapsed = false;
 	version = '';
 
+	isDarkMode: Signal<boolean>;
+
 	@Input() navLinks: ConsoleNavLink[] = [];
 	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
 
-	constructor(private appDataService: AppDataService) {
+	constructor(
+		private appDataService: AppDataService,
+		private themeService: ThemeService
+	) {
 		this.version = `${this.appDataService.getVersion()} (${this.appDataService.getEdition()})`;
+		this.isDarkMode = this.themeService.isDark;
 	}
 
 	async toggleSideMenu() {
@@ -48,5 +54,9 @@ export class ConsoleNavComponent {
 			this.isSideMenuCollapsed = !this.isSideMenuCollapsed;
 			await this.sidenav.open();
 		}
+	}
+
+	toggleTheme() {
+		this.themeService.toggleTheme();
 	}
 }

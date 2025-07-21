@@ -35,20 +35,20 @@ export class ThemeService {
 	}
 
 	/**
-	 * Changes the current theme
-	 */
-	public setTheme(theme: Theme): void {
-		this._currentTheme.set(theme);
-		this.applyThemeToDocument(theme);
-		this.saveThemePreference(theme);
-	}
-
-	/**
 	 * Toggles between light and dark theme
 	 */
 	public toggleTheme(): void {
 		const newTheme: Theme = this._currentTheme() === 'light' ? 'dark' : 'light';
 		this.setTheme(newTheme);
+	}
+
+	/**
+	 * Changes the current theme
+	 */
+	private setTheme(theme: Theme): void {
+		this._currentTheme.set(theme);
+		this.applyThemeToDocument(theme);
+		this.saveThemePreference(theme);
 	}
 
 	/**
@@ -126,12 +126,5 @@ export class ThemeService {
 
 		const systemTheme = this.getSystemPreference();
 		this.setTheme(systemTheme);
-	}
-
-	/**
-	 * Gets the theme value as string for use in templates
-	 */
-	public getThemeValue(): Theme {
-		return this._currentTheme();
 	}
 }

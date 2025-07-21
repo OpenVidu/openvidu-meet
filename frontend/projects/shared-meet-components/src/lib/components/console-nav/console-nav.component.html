@@ -11,7 +11,16 @@
 		<mat-icon>account_circle</mat-icon>
 	</button> -->
 
-	<button mat-icon-button (click)="onLogoutClicked.emit()" aria-label="Logout" id="logout-btn">
+	<button
+		mat-icon-button
+		(click)="toggleTheme()"
+		[matTooltip]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+		aria-label="Toggle theme mode"
+		id="theme-toggle-btn"
+	>
+		<mat-icon>{{ isDarkMode() ? 'wb_sunny' : 'nights_stay' }}</mat-icon>
+	</button>
+	<button mat-icon-button (click)="onLogoutClicked.emit()" matTooltip="Logout" aria-label="Logout" id="logout-btn">
 		<mat-icon>logout</mat-icon>
 	</button>
 </mat-toolbar>

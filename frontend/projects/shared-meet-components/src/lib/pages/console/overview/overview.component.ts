@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { NavigationService, RecordingManagerService, RoomService, ThemeService } from '@lib/services';
+import { NavigationService, RecordingManagerService, RoomService } from '@lib/services';
 import { MeetRecordingStatus, MeetRoom } from '@lib/typings/ce';
 
 interface OverviewStats {
@@ -36,8 +36,7 @@ export class OverviewComponent implements OnInit {
 	constructor(
 		private roomService: RoomService,
 		private recordingService: RecordingManagerService,
-		private navigationService: NavigationService,
-		private themeService: ThemeService
+		private navigationService: NavigationService
 	) {}
 
 	async ngOnInit() {
@@ -59,7 +58,8 @@ export class OverviewComponent implements OnInit {
 				totalRooms: rooms.length,
 				activeRooms: rooms.filter((room: MeetRoom) => !room.markedForDeletion).length,
 				totalRecordings: recordings.length,
-				playableRecordings: recordings.filter((recording) => recording.status === MeetRecordingStatus.COMPLETE).length,
+				playableRecordings: recordings.filter((recording) => recording.status === MeetRecordingStatus.COMPLETE)
+					.length,
 				hasData: rooms.length > 0 || recordings.length > 0,
 				isLoading: false
 			};
