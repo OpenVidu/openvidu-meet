@@ -42,7 +42,7 @@ export class ConsoleNavComponent {
 		private appDataService: AppDataService,
 		private themeService: ThemeService
 	) {
-		this.version = `${this.appDataService.getVersion()} (${this.appDataService.getEdition()})`;
+		this.version = `v${this.appDataService.getVersion()} (${this.appDataService.getEdition()})`;
 		this.isDarkMode = this.themeService.isDark;
 	}
 
