@@ -118,6 +118,7 @@
 		[toolbarScreenshareButton]="features().showScreenShare"
 		[toolbarLeaveButton]="!features().canModerateRoom"
 		[toolbarRecordingButton]="features().canRecordRoom"
+		[toolbarViewRecordingsButton]="features().showRecordings"
 		[toolbarBroadcastingButton]="false"
 		[toolbarChatPanelButton]="features().showChat"
 		[toolbarBackgroundEffectsButton]="features().showBackgrounds"
@@ -126,7 +127,6 @@
 		[toolbarFullscreenButton]="features().showFullscreen"
 		[toolbarActivitiesPanelButton]="features().showRecordings"
 		[activitiesPanelRecordingActivity]="features().showRecordings"
-		[toolbarViewRecordingsButton]="true"
 		[recordingActivityReadOnly]="!features().canRecordRoom"
 		[recordingActivityShowControls]="{
 			play: false,

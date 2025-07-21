@@ -348,16 +348,6 @@ export class VideoRoomComponent implements OnInit {
 		await this.navigationService.navigateTo('disconnected', { reason: leftReason });
 	}
 
-	async onViewRecordingsClicked(recordingId?: any) {
-		if (recordingId) {
-			const privateAccess = true;
-			const { url } = await this.recordingService.generateRecordingUrl(recordingId, privateAccess);
-			window.open(url, '_blank');
-		} else {
-			window.open(`/room/${this.roomId}/recordings`, '_blank');
-		}
-	}
-
 	/**
 	 * Maps ParticipantLeftReason to LeftEventReason.
 	 * This method translates the technical reasons for a participant leaving the room
@@ -427,6 +417,16 @@ export class VideoRoomComponent implements OnInit {
 			await this.recManagerService.stopRecording(event.recordingId);
 		} catch (error) {
 			console.error(error);
+		}
+	}
+
+	async onViewRecordingsClicked(recordingId?: any) {
+		if (recordingId) {
+			const privateAccess = await this.authService.isUserAuthenticated();
+			const { url } = await this.recordingService.generateRecordingUrl(recordingId, privateAccess);
+			window.open(url, '_blank');
+		} else {
+			window.open(`/room/${this.roomId}/recordings?secret=${this.roomSecret}`, '_blank');
 		}
 	}
 }
