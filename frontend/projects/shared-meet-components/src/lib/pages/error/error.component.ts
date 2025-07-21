@@ -113,7 +113,7 @@ export class ErrorComponent implements OnInit {
 		}
 
 		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Back';
+		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Accept';
 	}
 
 	/**
