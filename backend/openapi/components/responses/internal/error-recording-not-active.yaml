@@ -1,4 +1,4 @@
-description: Conflict — The recording is in `STARTING` state or already stopped
+description: Conflict — The recording is starting or already stopped
 content:
     application/json:
         schema:

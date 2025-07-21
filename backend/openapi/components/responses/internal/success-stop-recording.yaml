@@ -4,7 +4,7 @@ headers:
         description: The URL to retrieve the recording details
         schema:
             type: string
-            example: 'https://openvidu.example.com/meet/api/v1/recordings/room-123--EG_XYZ--XX445'
+            example: 'https://openvidu.example.com/api/v1/recordings/room-123--EG_XYZ--XX445'
 content:
     application/json:
         schema:

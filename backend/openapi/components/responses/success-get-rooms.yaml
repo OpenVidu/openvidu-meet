@@ -27,8 +27,8 @@ content:
                                   enabled: false
                               virtualBackgroundPreferences:
                                   enabled: true
-                          moderatorURL: 'http://localhost:6080/room/room-123/?secret=123456'
-                          publisherURL: 'http://localhost:6080/room/room-123/?secret=654321'
+                          moderatorURL: 'http://localhost:6080/room/room-123?secret=123456'
+                          publisherURL: 'http://localhost:6080/room/room-123?secret=654321'
                         - roomId: 'room-456'
                           roomIdPrefix: 'room'
                           creationDate: 1620001000000
@@ -40,8 +40,8 @@ content:
                                   enabled: true
                               virtualBackgroundPreferences:
                                   enabled: false
-                          moderatorURL: 'http://localhost:6080/room/room-456/?secret=789012'
-                          publisherURL: 'http://localhost:6080/room/room-456/?secret=210987'
+                          moderatorURL: 'http://localhost:6080/room/room-456?secret=789012'
+                          publisherURL: 'http://localhost:6080/room/room-456?secret=210987'
                     pagination:
                         isTruncated: false
                         maxItems: 10
@@ -90,10 +90,10 @@ content:
                 summary: Response containing only moderator and publisher URLs
                 value:
                     rooms:
-                        - moderatorURL: 'http://localhost:6080/room/room-123/?secret=123456'
-                          publisherURL: 'http://localhost:6080/room/room-123/?secret=654321'
-                        - moderatorURL: 'http://localhost:6080/room/room-456/?secret=789012'
-                          publisherURL: 'http://localhost:6080/room/room-456/?secret=210987'
+                        - moderatorURL: 'http://localhost:6080/room/room-123?secret=123456'
+                          publisherURL: 'http://localhost:6080/room/room-123?secret=654321'
+                        - moderatorURL: 'http://localhost:6080/room/room-456?secret=789012'
+                          publisherURL: 'http://localhost:6080/room/room-456?secret=210987'
                     pagination:
                         isTruncated: false
                         maxItems: 10

@@ -1,11 +1,14 @@
 name: Range
 in: header
 required: false
-description: >
-    This endpoint accepts a `Range` header to specify the byte range of the recording file to be streamed.
-    The format of the `Range` header should be `bytes=start-end`, where `start` is required and `end` is optional.
-    For example,
-      - `bytes=0-1023` to request the first 1024 bytes of the file.
-      - `bytes=1000-` to request from byte 1000 to the end of the file.
+description: |
+    This endpoint supports the `Range` header to request a specific byte range of the recording file.  
+    Use the format `bytes=start-end`, where `start` is the starting byte (required) and `end` is the ending byte (optional).
+
+    Examples:
+      - `bytes=0-1023`: Requests bytes 0 through 1023 (first 1024 bytes).
+      - `bytes=1000-`: Requests from byte 1000 to the end of the file.
+
+    This allows efficient partial downloads and resume capabilities for large files.
 schema:
     type: string

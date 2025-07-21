@@ -45,7 +45,7 @@
         operationId: testWebhookUrl
         summary: Test webhook URL
         description: >
-            Tests the provided webhook URL to ensure it is reachable and valid.
+            Tests the provided webhook URL to ensure it is valid and reachable.
         tags:
             - Internal API - Global Preferences
         requestBody:

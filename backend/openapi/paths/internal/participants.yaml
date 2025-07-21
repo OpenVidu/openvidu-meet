@@ -1,7 +1,7 @@
 /participants/token:
     post:
         operationId: generateParticipantToken
-        summary: Generate a token for a participant
+        summary: Generate token for participant
         description: >
             Generates a token for a participant to join an OpenVidu Meet room.
         tags:
@@ -30,7 +30,7 @@
 /participants/token/refresh:
     post:
         operationId: refreshParticipantToken
-        summary: Refresh a token for a participant
+        summary: Refresh token for participant
         description: >
             Refresh a token for a participant in an OpenVidu Meet room.
         tags:

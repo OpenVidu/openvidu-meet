@@ -1,5 +1,5 @@
 description: >
-    All specified rooms were marked error for deletion (due to active participants)
+    All specified rooms were marked for deletion (due to active participants)
     and will be removed once all participants leave.
 content:
     application/json:

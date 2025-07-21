@@ -16,7 +16,9 @@ AuthenticationPreferences:
                         - single-user
                     default: single-user
                     example: single-user
-                    description: The authentication method to use.
+                    description: |
+                        Specifies the authentication method used to access the application.
+                        - `single-user`: Only one user account exists, which has administrative privileges and is used for all access.
         authModeToAccessRoom:
             type: string
             enum:
@@ -25,4 +27,8 @@ AuthenticationPreferences:
                 - all_users
             default: none
             example: none
-            description: The authentication mode to access a room.
+            description: |
+                Specifies who is required to authenticate before accessing a room:
+                - `none`: No authentication required.
+                - `moderators_only`: Only moderators need to authenticate.
+                - `all_users`: All users must authenticate.

@@ -9,4 +9,4 @@ headers:
         schema:
             type: string
             format: uri
-        example: https://your-api.com/meet/api/v1/rooms/room-id-123
+        example: https://your-api.com/api/v1/rooms/room-123

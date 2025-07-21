@@ -1,4 +1,4 @@
-description: Security preferences 
+description: New security preferences
 required: true
 content:
     application/json:

@@ -4,4 +4,4 @@ required: true
 description: The unique identifier of the room.
 schema:
     type: string
-    example: 'room-123'
+example: 'room-123'

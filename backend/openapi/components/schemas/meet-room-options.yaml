@@ -3,15 +3,14 @@ properties:
     autoDeletionDate:
         type: [number, 'null']
         example: 1900000000000
-        description: >
-            The date and time when the room will be deleted (must be one hour in the future or more) represented in milliseconds since the Unix epoch.
+        description: |
+            The timestamp (in milliseconds since the Unix epoch) specifying when the room will be automatically deleted.
+            This must be at least one hour in the future.
 
-            After this date, the room will be automatically deleted and no new participants can join.
+            After this time, the room is closed to new participants and scheduled for deletion. 
+            It will be removed after the last participant leaves (graceful deletion).
 
-            If this value is set and the date has already passed, the room is marked for deletion but will only be removed after the last
-            participant leaves ("graceful deletion").
-
-            If this value is not defined, the room will exist indefinitely until manually deleted.
+            If not set, the room remains active until manually deleted.
     roomIdPrefix:
         type: string
         example: 'room'

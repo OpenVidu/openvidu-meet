@@ -8,5 +8,6 @@ properties:
         type: array
         items:
             type: string
+            enum: ['admin', 'user']
         example: ['admin', 'user']
         description: A list of roles assigned to the authenticated user.

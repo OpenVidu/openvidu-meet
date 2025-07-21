@@ -3,9 +3,8 @@ in: query
 required: true
 description: >
     A comma-separated list of recording IDs.
-    <br>
-    Each recording ID should be in the format 'roomId--egressId--uid'
+    Each recording ID must follow the format: `{roomId}--{egressId}--{uid}`.
 
 schema:
     type: string
-    example: 'room-123--EG_XYZ--XX445,room-123--EG_ZYX--XX446'
+example: 'room-123--EG_XYZ--XX445,room-123--EG_ZYX--XX446'

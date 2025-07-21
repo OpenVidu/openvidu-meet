@@ -106,9 +106,10 @@
     get:
         operationId: getRoomRoleAndPermissions
         summary: Get room role and permissions
-        description: >
+        description: |
             Retrieves the role and associated permissions that a participant will have in a specified OpenVidu Meet room
             when using the URL thant contains the given secret value.
+
             This endpoint is useful for checking the participant's role and permissions before joining the room.
         tags:
             - Internal API - Rooms

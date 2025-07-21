@@ -1,7 +1,7 @@
 recordingStarted:
     post:
         summary: Recording started
-        description: >
+        description: |
             This webhook is triggered when a recording starts.
 
             > The recording can be in the `STARTING` status for a few seconds before it becomes `ACTIVE`.
@@ -31,7 +31,7 @@ recordingStarted:
                                           - properties:
                                                 status:
                                                     type: string
-                                                    enum: [STARTING]
+                                                    enum: [STARTING, ACTIVE]
                                                     description: The status of the recording.
                                                     example: STARTING
         responses:
@@ -41,7 +41,7 @@ recordingStarted:
 recordingUpdated:
     post:
         summary: Recording updated
-        description: >
+        description: |
             This webhook is triggered when a recording update occurs.
 
             > This update can be due to a change in the recording status (e.g., from `STARTING` to `ACTIVE`).
@@ -81,10 +81,11 @@ recordingUpdated:
 recordingEnded:
     post:
         summary: Recording ended
-        description: >
+        description: |
             This webhook is triggered when a recording ends.
 
-            > The recording can end due to various reasons, such as the user stopping the recording or the recording reaching its maximum duration.
+            > The recording can end due to various reasons, such as the user stopping the recording
+            > or the recording reaching its maximum duration.
         operationId: recordingEndedWebhook
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
@@ -112,7 +113,7 @@ recordingEnded:
                                           - properties:
                                                 status:
                                                     type: string
-                                                    enum: [COMPLETE, FAILED, ABORTED, LIMITED_REACHED]
+                                                    enum: [COMPLETE, FAILED, ABORTED, LIMIT_REACHED]
                                                     description: The status of the recording.
                                                     example: COMPLETE
                                                 endDate:

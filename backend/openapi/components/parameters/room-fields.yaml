@@ -1,9 +1,9 @@
 name: fields
 in: query
 description: >
-    The fields to retrieve from the room.
-    Comma-separated list of fields to include in the response.
+    Specifies which fields to include in the response for the room resource.
+    Provide a comma-separated list of field names.
 required: false
 schema:
     type: string
-    example: 'roomId,moderatorRoomUrl'
+example: 'roomId,moderatorRoomUrl'

@@ -1,4 +1,4 @@
-description: Recording details
+description: Room to record
 required: true
 content:
     application/json:

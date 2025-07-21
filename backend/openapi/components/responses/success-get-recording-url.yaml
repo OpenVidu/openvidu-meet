@@ -1,4 +1,4 @@
-description: Successfully retrieved the recording URL.
+description: Successfully retrieved the recording URL
 content:
     application/json:
         schema:
@@ -7,5 +7,5 @@ content:
                 url:
                     type: string
                     format: uri
-                    description: URL to access the recording media.
-                    example: https://example.com/meet/api/v1/recordings/room-123--EG_XYZ--XX445/media?secret=abc123
+                    description: URL to access the recording.
+                    example: https://example.com/recording/room-123--EG_XYZ--XX445?secret=abc123

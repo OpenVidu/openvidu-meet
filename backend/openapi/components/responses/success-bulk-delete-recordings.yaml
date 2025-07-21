@@ -36,14 +36,14 @@ content:
                         - recordingId: 'room-123--EG_XYZ--XX447'
                           error: 'Recording not found'
                         - recordingId: 'room-123--EG_XYZ--XX448'
-                          error: 'Access denied for deletion'
+                          error: 'Recording in progress'
 
             no_deletion_performed:
                 summary: No recordings were deleted
                 value:
                     deleted: []
                     notDeleted:
-                        - recordingId: 'room-123--EG_XYZ--XX445'
+                        - recordingId: 'room-123--EG_XYZ--XX447'
                           error: 'Recording not found'
-                        - recordingId: 'room-123--EG_ZYX--XX446'
-                          error: 'Recording not found'
+                        - recordingId: 'room-123--EG_ZYX--XX448'
+                          error: 'Recording in progress'

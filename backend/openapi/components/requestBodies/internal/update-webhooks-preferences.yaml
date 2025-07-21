@@ -1,4 +1,4 @@
-description: Webhooks preferences 
+description: New webhooks preferences 
 required: true
 content:
     application/json:

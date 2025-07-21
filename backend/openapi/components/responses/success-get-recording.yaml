@@ -1,4 +1,4 @@
-description: Successfully retrieved the recording.
+description: Successfully retrieved the recording
 content:
     application/json:
         schema:

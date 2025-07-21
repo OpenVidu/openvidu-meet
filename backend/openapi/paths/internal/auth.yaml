@@ -27,28 +27,11 @@
             - Internal API - Authentication
         responses:
             '200':
-                description: Successfully logged out
-                headers:
-                    Set-Cookie:
-                        schema:
-                            type: string
-                            example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
-                    Set-Cookie-Refresh:
-                        schema:
-                            type: string
-                            example: 'OvMeetRefreshToken=; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
-                content:
-                    application/json:
-                        schema:
-                            type: object
-                            properties:
-                                message:
-                                    type: string
-                                    example: 'Logout successful'
+                $ref: '../../components/responses/internal/success-user-logout.yaml'
 /auth/refresh:
     post:
         operationId: refreshAccessToken
-        summary: Refresh the access token
+        summary: Refresh access token
         description: >
             Refreshes the access token using the refresh token.
             The new access token is returned in a cookie.
@@ -68,10 +51,11 @@
     post:
         operationId: createApiKey
         summary: Create a new API key
-        description: >
-            Creates a new API key. Only one API key can be created in the system.
-            If an API key already exists, it will be replaced with the new one.
-            The API key is returned in the response.
+        description: |
+            Creates a new API key, returning it in the response.
+
+            > **Note:** Only one API key can be created in the system.
+            > If an API key already exists, it will be replaced with the new one.
         tags:
             - Internal API - Authentication
         security:
@@ -84,8 +68,11 @@
     get:
         operationId: getApiKeys
         summary: Get API keys
-        description: >
+        description: |
             Retrieves the existing API keys.
+
+            > **Note:** Only one API key can exist in the system.
+            > If no API key exists, an empty array will be returned.
         tags:
             - Internal API - Authentication
         security:
@@ -106,9 +93,6 @@
             - accessTokenCookie: []
         responses:
             '204':
-                description: Successfully deleted the API key
+                description: Successfully deleted the API key. No content is returned.
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
-
-
-

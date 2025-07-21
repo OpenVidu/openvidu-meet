@@ -1,4 +1,4 @@
-description: Room creation details
+description: Room creation options
 required: true
 content:
     application/json:

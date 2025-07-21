@@ -15,7 +15,9 @@ content:
                     type: array
                     items:
                         type: string
-                    description: List of rooms that were marked for deletion but not actually deleted. The rooms will be deleted when all participants leave the room.
+                    description: >-
+                        List of rooms that were marked for deletion but not actually deleted.
+                        These rooms will be deleted when all participants leave.
         example:
             deleted:
                 - 'room-123'

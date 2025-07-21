@@ -6,5 +6,6 @@ properties:
         description: Indicates whether webhooks are enabled or disabled.
     url:
         type: string
+        format: uri
         example: 'https://example.com/webhook'
         description: The URL to which webhooks will be sent. This is only mandatory if webhooks are enabled.

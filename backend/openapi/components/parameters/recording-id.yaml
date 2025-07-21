@@ -4,4 +4,4 @@ required: true
 description: The unique identifier of the recording.
 schema:
     type: string
-    example: 'room-123--EG_XYZ--XX445'
+example: 'room-123--EG_XYZ--XX445'

@@ -15,7 +15,7 @@ refreshTokenCookie:
     name: OvMeetRefreshToken
     in: cookie
     description: >
-        The JWT token to refresh the access token when it expires. This token is used to obtain a new access token.
+        The JWT token to refresh the access token when it expires..
 participantTokenCookie:
     type: apiKey
     name: OvMeetParticipantToken

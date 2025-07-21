@@ -1,4 +1,4 @@
-description: PRO Feature Error
+description: PRO feature
 content:
     application/json:
         schema:

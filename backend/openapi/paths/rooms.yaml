@@ -3,7 +3,7 @@
         operationId: createRoom
         summary: Create a room
         description: >
-            Creates a new OpenVidu Meet room with the specified expiration date.
+            Creates a new OpenVidu Meet room.
             The room will be available for participants to join using the generated URLs.
         tags:
             - OpenVidu Meet - Room
@@ -29,6 +29,7 @@
         summary: Get all rooms
         description: >
             Retrieves a paginated list of all rooms available in the system.
+            You can apply filters to narrow down the results based on specific criteria.
         tags:
             - OpenVidu Meet - Room
         security:
@@ -53,7 +54,7 @@
     delete:
         operationId: bulkDeleteRooms
         summary: Bulk delete rooms
-        description: >
+        description: |
             Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
 
             If a room has active participants, it will be marked for deletion
@@ -120,7 +121,7 @@
     delete:
         operationId: deleteRoom
         summary: Delete a room
-        description: >
+        description: |
             Deletes an OpenVidu Meet room with the specified room ID.
 
             If the room has active participants, it will be marked for deletion

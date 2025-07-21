@@ -4,4 +4,4 @@ required: true
 description: The name of the participant.
 schema:
     type: string
-    example: 'Alice'
+example: 'Alice'

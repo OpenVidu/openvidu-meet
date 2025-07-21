@@ -1,17 +1,17 @@
 type: object
 required:
-  - creationDate
-  - event
-  - data
+    - creationDate
+    - event
+    - data
 properties:
-  creationDate:
-    type: number
-    description: The date when the event was created (milliseconds since the Unix epoch).
-    example: 1620000000000
-  event:
-    type: string
-    description: Event type identifier.
-    example: webhookEvent
-  data:
-    type: object
-    description: The data associated with the event.
+    creationDate:
+        type: number
+        description: The date when the event was created (milliseconds since the Unix epoch).
+        example: 1620000000000
+    event:
+        type: string
+        description: Event type identifier.
+        example: webhookEvent
+    data:
+        type: object
+        description: The data associated with the event.

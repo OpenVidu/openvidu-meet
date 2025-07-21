@@ -5,5 +5,4 @@ description: >
     This will immediately disconnect all participants and remove the room.
 required: false
 schema:
-    type: string
-    example: 'true'
+    type: boolean

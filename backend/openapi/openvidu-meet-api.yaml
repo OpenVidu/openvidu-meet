@@ -26,8 +26,6 @@ paths:
 components:
     securitySchemes:
         $ref: './components/security.yaml'
-    # responses:
-    #     $ref: './components/responses.yaml'
     schemas:
         MeetRoom:
             $ref: components/schemas/meet-room.yaml

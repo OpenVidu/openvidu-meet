@@ -23,8 +23,7 @@ properties:
                     room:
                         type: string
                         description: >
-                            The ID of the room associated with the participant.
-                        example: roomId
+                            Unique identifier of the room to which the participant is assigned.
                     canPublish:
                         type: boolean
                         description: >
@@ -61,5 +60,5 @@ properties:
                     canChangeVirtualBackground:
                         type: boolean
                         description: >
-                            Indicates whether the participant can change virtual background in the room.
+                            Indicates whether the participant can change their own virtual background.
                         example: true

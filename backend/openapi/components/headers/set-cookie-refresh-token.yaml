@@ -3,4 +3,4 @@ description: >
     This cookie is used to refresh the access token when it expires.
 schema:
     type: string
-    example: 'OvMeetRefreshToken=token_123456; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'
+example: 'OvMeetRefreshToken=token_123456; Path=/meet/internal-api/v1/auth; HttpOnly; SameSite=Strict'

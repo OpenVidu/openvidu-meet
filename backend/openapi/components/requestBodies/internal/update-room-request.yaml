@@ -1,4 +1,4 @@
-description: Room update details
+description: New room preferences
 content:
     application/json:
         schema:

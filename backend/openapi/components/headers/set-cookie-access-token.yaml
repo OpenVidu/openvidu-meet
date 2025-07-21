@@ -3,4 +3,4 @@ description: >
     This cookie is used to authenticate the user in subsequent requests.
 schema:
     type: string
-    example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'
+example: 'OvMeetAccessToken=token_123456; Path=/; HttpOnly; SameSite=Strict'

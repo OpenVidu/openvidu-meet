@@ -1,4 +1,4 @@
-description: Unprocessable Entity — Invalid request body
+description: Unprocessable Entity — Invalid request
 content:
     application/json:
         schema:

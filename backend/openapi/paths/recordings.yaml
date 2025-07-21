@@ -2,12 +2,12 @@
     get:
         operationId: getRecordings
         summary: Get all recordings
-        description: >
+        description: |
             Retrieves a paginated list of all recordings available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 
             > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
-            the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
+            > the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -15,27 +15,7 @@
             - accessTokenCookie: []
             - recordingTokenCookie: []
         parameters:
-            # - name: status
-            #   in: query
-            #   required: false
-            #   description: |
-            #       Filter recordings by their status.
-
-            #       Possible values:
-            #       - `STARTING`
-            #       - `ACTIVE`
-            #       - `ENDING`
-            #       - `COMPLETE`
-            #       - `FAILED`
-            #       - `ABORTED`
-            #       - `LIMITED_REACHED`
-
-            #       You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
-            #       If not specified, recordings with any status will be returned.
-
-            #       > ⚠️ **Note:** Using this filter may impact performance for large datasets.
-            #   schema:
-            #       type: string
+            # - $ref: '../components/parameters/recording-status.yaml'
             - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/room-id-query.yaml'
             - $ref: '../components/parameters/max-items.yaml'
@@ -55,12 +35,12 @@
     delete:
         operationId: bulkDeleteRecordings
         summary: Bulk delete recordings
-        description: >
+        description: |
             Deletes multiple recordings at once with the specified recording IDs.
 
             > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
-            all specified recordings must belong to the same room included in the token.
-            If a recording does not belong to that room, it will not be deleted.
+            > all specified recordings must belong to the same room included in the token.
+            > If a recording does not belong to that room, it will not be deleted.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -89,13 +69,13 @@
     get:
         operationId: downloadRecordings
         summary: Download recordings
-        description: >
+        description: |
             Downloads multiple recordings as a ZIP file with the specified recording IDs.
             The ZIP file will contain all recordings in MP4 format.
 
             > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
-            all specified recordings must belong to the same room included in the token.
-            If a recording does not belong to that room, it will not be included in the ZIP file.
+            > all specified recordings must belong to the same room included in the token.
+            > If a recording does not belong to that room, it will not be included in the ZIP file.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -145,6 +125,7 @@
             - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
+            - $ref: '../components/parameters/recording-secret.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-recording.yaml'
@@ -163,9 +144,11 @@
     delete:
         operationId: deleteRecording
         summary: Delete a recording
-        description: >
-            Deletes a recording with the specified recording.
-            The recording will only be deleted if it exists and is not in progress (i.e., not in a state such as `ACTIVE`, `STARTING`, or `ENDING`).
+        description: |
+            Deletes a recording with the specified recording ID.
+
+            > ⚠️ **Note:** The recording will only be deleted if it exists and is not in progress
+            > (i.e., not in a state such as `ACTIVE`, `STARTING`, or `ENDING`).
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -193,9 +176,10 @@
     get:
         operationId: getRecordingMedia
         summary: Get recording media
-        description: >
+        description: |
             Retrieves the media of a recording with the specified recording ID.
             The media is returned in a binary format suitable for video playback.
+
             This endpoint supports range requests, allowing partial content retrieval
             for video playback without downloading the entire file.
         tags:
@@ -210,7 +194,7 @@
             - $ref: '../components/parameters/recording-range.yaml'
         responses:
             '200':
-                description: Successfully streaming the full recording
+                description: Successfully retrieved the full recording media
                 headers:
                     Accept-Ranges:
                         $ref: '../components/headers/accept-ranges.yaml'
@@ -224,7 +208,7 @@
                             type: string
                             format: binary
             '206':
-                description: Partial content streaming based on byte range
+                description: Successfully retrieved a partial range of the recording media
                 headers:
                     Accept-Ranges:
                         $ref: '../components/headers/accept-ranges.yaml'
@@ -256,8 +240,8 @@
                         schema:
                             $ref: '../components/schemas/error.yaml'
                         example:
-                            code: 416
-                            message: 'Requested range not satisfiable'
+                            error: Recording Error
+                            message: 'Recording "room-123--EG_XYZ--XX445" range not satisfiable. File size: 123456789'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':
@@ -266,9 +250,10 @@
     get:
         operationId: getRecordingUrl
         summary: Get recording URL
-        description: >
+        description: |
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
+
             It can be configured to be accessible by anyone (public access) or restricted to authenticated users only, 
             depending on the `privateAccess` query parameter.
         tags:
