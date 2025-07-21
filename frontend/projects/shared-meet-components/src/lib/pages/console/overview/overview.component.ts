@@ -48,8 +48,8 @@ export class OverviewComponent implements OnInit {
 			this.stats.isLoading = true;
 
 			const [roomsResp, recordingsResp] = await Promise.all([
-				this.roomService.listRooms(),
-				this.recordingService.listRecordings()
+				this.roomService.listRooms({ maxItems: 100 }),
+				this.recordingService.listRecordings({ maxItems: 100 })
 			]);
 			const rooms = roomsResp.rooms;
 			const recordings = recordingsResp.recordings;
