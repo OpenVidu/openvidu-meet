@@ -107,7 +107,8 @@ export class VideoRoomComponent implements OnInit {
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService,
 		protected clipboard: Clipboard,
-		protected notificationService: NotificationService
+		protected notificationService: NotificationService,
+		protected recordingService: RecordingManagerService
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -243,13 +244,13 @@ export class VideoRoomComponent implements OnInit {
 	 */
 	private async generateParticipantToken() {
 		try {
-			const { /*token,*/ role } = await this.participantTokenService.generateToken({
+			const { token, role } = await this.participantTokenService.generateToken({
 				roomId: this.roomId,
 				participantName: this.participantName,
 				secret: this.roomSecret
 			});
 			// The components library needs the token to be set in the 'onTokenRequested' method
-			// this.participantToken = token;
+			this.participantToken = token;
 			this.participantRole = role;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);
@@ -295,11 +296,6 @@ export class VideoRoomComponent implements OnInit {
 			secret: secretQueryParam,
 			'participant-name': this.participantName
 		});
-	}
-
-	onTokenRequested() {
-		// Participant token must be set only when requested
-		this.participantToken = this.participantTokenService.getParticipantToken() || '';
 	}
 
 	onRoomCreated(room: Room) {
@@ -350,6 +346,16 @@ export class VideoRoomComponent implements OnInit {
 
 		// Navigate to the disconnected page with the reason
 		await this.navigationService.navigateTo('disconnected', { reason: leftReason });
+	}
+
+	async onViewRecordingsClicked(recordingId?: any) {
+		if (recordingId) {
+			const privateAccess = true;
+			const { url } = await this.recordingService.generateRecordingUrl(recordingId, privateAccess);
+			window.open(url, '_blank');
+		} else {
+			window.open(`/room/${this.roomId}/recordings`, '_blank');
+		}
 	}
 
 	/**
