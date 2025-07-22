@@ -14,6 +14,7 @@ BUILD_FRONTEND=false
 BUILD_BACKEND=false
 BUILD_WEBCOMPONENT=false
 BUILD_TESTAPP=false
+BUILD_WC_DOC=false
 
 # Function to display help
 show_help() {
@@ -25,12 +26,14 @@ show_help() {
   echo "  --backend       Build backend"
   echo "  --webcomponent  Build webcomponent"
   echo "  --testapp       Build testapp"
+  echo "  --wc-doc        Generate webcomponent documentation"
   echo "  --all           Build all artifacts (default)"
   echo "  --help          Show this help"
   echo
   echo "If no arguments are provided, all artifacts will be built."
   echo
   echo -e "${YELLOW}Example:${NC} ./prepare.sh --frontend --backend"
+  echo -e "${YELLOW}Example:${NC} ./prepare.sh --wc-doc"
 }
 
 # If no arguments, build everything
@@ -59,6 +62,9 @@ else
         ;;
       --testapp)
         BUILD_TESTAPP=true
+        ;;
+      --wc-doc)
+        BUILD_WC_DOC=true
         ;;
       --all)
         BUILD_TYPINGS=true
@@ -123,6 +129,21 @@ if [ "$BUILD_TESTAPP" = true ]; then
   npm install
   npm run build
   cd ..
+fi
+
+# Generate webcomponent documentation if selected
+if [ "$BUILD_WC_DOC" = true ]; then
+  echo -e "${GREEN}Generating webcomponent documentation...${NC}"
+  node scripts/generate-webcomponent-docs.js docs
+
+  # Copy the generated documentation to the openvidu.io directory
+  echo -e "${GREEN}Copying webcomponent documentation to openvidu.io...${NC}"
+
+  cp docs/webcomponent-events.md ../openvidu.io/shared/meet/webcomponent-events.md
+  cp docs/webcomponent-commands.md ../openvidu.io/shared/meet/webcomponent-commands.md
+  cp docs/webcomponent-attributes.md ../openvidu.io/shared/meet/webcomponent-attributes.md
+
+  echo -e "${GREEN}Webcomponent documentation generated successfully!${NC}"
 fi
 
 echo -e "${BLUE}Preparation completed!${NC}"

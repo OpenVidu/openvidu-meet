@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { ErrorReason } from '@lib/models';
 import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '@lib/services';
+import { WebComponentProperty } from '@lib/typings/ce/webcomponent/properties.model';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
@@ -52,12 +53,12 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 	return true;
 };
 
-const extractParams = (route: ActivatedRouteSnapshot) => ({
-	roomId: route.params['room-id'],
-	participantName: route.queryParams['participant-name'],
-	secret: route.queryParams['secret'],
-	leaveRedirectUrl: route.queryParams['leave-redirect-url'],
-	showOnlyRecordings: route.queryParams['show-only-recordings']
+const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
+	roomId: params['room-id'],
+	participantName: queryParams[WebComponentProperty.PARTICIPANT_NAME],
+	secret: queryParams['secret'],
+	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL],
+	showOnlyRecordings: queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] || 'false'
 });
 
 const isValidUrl = (url: string) => {

@@ -2,6 +2,7 @@ import { CommandsManager } from './CommandsManager';
 import { EventsManager } from './EventsManager';
 import { WebComponentEvent } from '../typings/ce/event.model';
 import styles from '../assets/css/styles.css';
+import { WebComponentProperty } from '../typings/ce/properties.model';
 
 /**
  * The `OpenViduMeet` web component provides an interface for embedding an OpenVidu Meet room within a web page.
@@ -134,9 +135,12 @@ export class OpenViduMeet extends HTMLElement {
 	}
 
 	private updateIframeSrc() {
-		const baseUrl = this.getAttribute('room-url') || this.getAttribute('recording-url');
+		const baseUrl =
+			this.getAttribute(WebComponentProperty.ROOM_URL) || this.getAttribute(WebComponentProperty.RECORDING_URL);
 		if (!baseUrl) {
-			console.error('The "room-url" or "recording-url" attribute is required.');
+			console.error(
+				`The "${WebComponentProperty.ROOM_URL}" or "${WebComponentProperty.RECORDING_URL}" attribute is required.`
+			);
 			return;
 		}
 
@@ -147,7 +151,7 @@ export class OpenViduMeet extends HTMLElement {
 
 		// Update query params
 		Array.from(this.attributes).forEach((attr) => {
-			if (attr.name !== 'room-url' && attr.name !== 'recording-url') {
+			if (attr.name !== WebComponentProperty.ROOM_URL && attr.name !== WebComponentProperty.RECORDING_URL) {
 				url.searchParams.set(attr.name, attr.value);
 			}
 		});

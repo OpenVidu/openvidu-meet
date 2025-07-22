@@ -10,7 +10,7 @@ export enum WebComponentCommand {
     INITIALIZE = 'INITIALIZE',
     /**
      * Ends the current meeting for all participants.
-     * This command is only available for the moderator.
+     * @moderator
      */
     END_MEETING = 'END_MEETING',
     /**
@@ -19,7 +19,7 @@ export enum WebComponentCommand {
     LEAVE_ROOM = 'LEAVE_ROOM',
     /**
      * Kicks a participant from the meeting.
-     * This command is only available for the moderator.
+     * @moderator
      */
     KICK_PARTICIPANT = 'KICK_PARTICIPANT'
 }
