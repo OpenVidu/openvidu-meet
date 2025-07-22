@@ -178,6 +178,7 @@
 								matTooltip="Play Recording"
 								(click)="playRecording(recording)"
 								[disabled]="loading"
+								id="play-recording-btn-{{ recording.id }}"
 							>
 								<mat-icon>play_arrow</mat-icon>
 							</button>
@@ -190,6 +191,7 @@
 								matTooltip="Download Recording"
 								(click)="downloadRecording(recording)"
 								[disabled]="loading"
+								id="download-recording-btn-{{ recording.id }}"
 							>
 								<mat-icon>download</mat-icon>
 							</button>
@@ -202,6 +204,7 @@
 								matTooltip="Delete Recording"
 								(click)="deleteRecording(recording)"
 								[disabled]="loading"
+								id="delete-recording-btn-{{ recording.id }}"
 							>
 								<mat-icon>delete</mat-icon>
 							</button>
@@ -212,19 +215,20 @@
 								[matMenuTriggerFor]="actionsMenu"
 								matTooltip="More Actions"
 								[disabled]="loading"
+								id="more-actions-btn-{{ recording.id }}"
 							>
 								<mat-icon>more_vert</mat-icon>
 							</button>
 
 							<mat-menu #actionsMenu="matMenu">
-								<button mat-menu-item (click)="shareRecordingLink(recording)">
+								<button mat-menu-item (click)="shareRecordingLink(recording)" id="share-recording-link-{{ recording.id }}">
 									<mat-icon>share</mat-icon>
 									<span>Share link</span>
 								</button>
 
 								@if (canDeleteRecording(recording)) {
 									<mat-divider></mat-divider>
-									<button mat-menu-item (click)="deleteRecording(recording)" class="delete-action">
+									<button mat-menu-item (click)="deleteRecording(recording)" class="delete-action" id="delete-recording-btn-{{ recording.id }}">
 										<mat-icon>delete</mat-icon>
 										<span>Delete recording</span>
 									</button>
