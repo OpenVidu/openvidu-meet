@@ -61,9 +61,4 @@ frontend/webcomponent/test-results/.last-run.json
 frontend/webcomponent/test_localstorage_state.json
 
 **test-results/**
-frontend/webcomponent/src/typings/ce/command.model.d.ts
-frontend/webcomponent/src/typings/ce/command.model.ts
-frontend/webcomponent/src/typings/ce/event.model.d.ts
-frontend/webcomponent/src/typings/ce/event.model.ts
-frontend/webcomponent/src/typings/ce/message.type.d.ts
-frontend/webcomponent/src/typings/ce/message.type.ts
+frontend/webcomponent/src/typings/
