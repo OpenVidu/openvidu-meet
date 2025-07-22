@@ -217,8 +217,9 @@ const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<User> => {
 
 // Limit login attempts to avoid brute force attacks
 const loginLimiter = rateLimit({
-	windowMs: ms('15m'),
+	windowMs: ms('5m'),
 	limit: 5,
+	skipSuccessfulRequests: true,
 	message: 'Too many login attempts, please try again later'
 });
 
