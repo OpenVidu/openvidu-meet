@@ -5,7 +5,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   e2e-room-functionality-test:
     name: E2E Room Functionality Tests
     runs-on: ov-actions-runner
@@ -33,9 +32,6 @@ jobs:
           MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
-        env:
-          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
-          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -46,7 +42,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -86,10 +81,6 @@ jobs:
           MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
-        env:
-          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
-          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
-
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -100,7 +91,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -140,9 +130,6 @@ jobs:
           MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
-        env:
-          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
-          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -153,7 +140,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -194,9 +180,6 @@ jobs:
           MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
-        env:
-          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
-          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -207,7 +190,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -247,9 +229,6 @@ jobs:
           MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
-        env:
-          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
-          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           docker ps -a
@@ -261,7 +240,6 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -276,7 +254,6 @@ jobs:
         run: |
           docker logs openvidu &> openvidu-server.logs
           docker logs egress &> egress.logs
-
       - name: Upload OpenVidu Local Deployment logs
         if: always()
         uses: actions/upload-artifact@v4
