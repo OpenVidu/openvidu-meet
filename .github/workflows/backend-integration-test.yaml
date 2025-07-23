@@ -1,7 +1,11 @@
 name: Backend Integration Tests
 on:
   push:
+    paths:
+      - 'backend/src/**'
   pull_request:
+    paths:
+      - 'backend/src/**'
   workflow_dispatch:
     inputs:
       use-aws:
