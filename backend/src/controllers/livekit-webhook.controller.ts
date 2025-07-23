@@ -29,6 +29,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 		}
 
 		logger.info(`Webhook received: ${eventType}`);
+		logger.debug(`Webhook event object: ${JSON.stringify(webhookEvent, null, 2)}`);
 
 		switch (eventType) {
 			case 'egress_started':
