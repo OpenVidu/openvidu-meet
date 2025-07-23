@@ -1,13 +1,17 @@
 @import '../../../../../../src/assets/styles/design-tokens';
 
-// === ROOM RECORDINGS PAGE LAYOUT ===
+.ov-page-container {
+	height: 100vh;
+	overflow: auto;
+}
 
 .recordings-page-header {
 	@include ov-container;
 	@include ov-page-content;
+	gap: 0;
+	padding-bottom: 0;
 	padding-top: var(--ov-meet-spacing-xxl);
 	background: var(--ov-meet-background-color);
-	gap: var(--ov-meet-spacing-xxl);
 }
 
 // Room Header
@@ -45,9 +49,9 @@
 	@include ov-container;
 	@include ov-page-content;
 	margin-top: var(--ov-meet-spacing-xl);
+	flex: 1;
+	padding-bottom: var(--ov-meet-spacing-xl); // Add bottom padding for better UX
 }
-
-// === LOADING STATE ===
 
 .recordings-loading-container {
 	@include ov-container;
@@ -126,6 +130,10 @@
 @include ov-mobile-down {
 	.recordings-page-header {
 		padding: var(--ov-meet-spacing-md);
+	}
+
+	.recordings-content {
+		margin-top: var(--ov-meet-spacing-md);
 	}
 
 	.loading-card {
