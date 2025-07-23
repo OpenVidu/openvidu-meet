@@ -3,6 +3,7 @@ import { Server as IOServer } from 'socket.io';
 import { ParticipantRole } from '../../../typings/src/participant';
 // @ts-ignore
 import { MeetWebhookEvent } from '../../../typings/src/webhook.model';
+import { configService } from '../services/configService';
 
 interface JoinRoomRequest {
     participantRole: ParticipantRole;
@@ -31,7 +32,7 @@ export const joinRoom = (req: Request, res: Response) => {
             participantName,
             roomId,
             showOnlyRecordings: showOnlyRecordings || false,
-            webcomponentSrc: process.env.WEBCOMPONENT_SRC
+            webcomponentSrc: configService.meetWebhookSrc
         });
     } catch (error) {
         console.error('Error joining room:', error);

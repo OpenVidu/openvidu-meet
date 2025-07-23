@@ -51,4 +51,5 @@ server.listen(PORT, () => {
     console.log('OpenVidu Meet Configuration:');
     console.log(`Meet API URL: ${configService.meetApiUrl}`);
     console.log(`Meet API key: ${configService.meetApiKey}`);
+    console.log(`Meet Webcomponent Source: ${configService.meetWebhookSrc}`);
 });
