@@ -16,12 +16,26 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      # - name: Setup OpenVidu Meet
-      #   uses: OpenVidu/actions/start-openvidu-meet@main
-      #   env:
-      #     MEET_WEBHOOK_ENABLED: true
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        env:
+          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
+          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -32,7 +46,7 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:9080
+          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,12 +69,27 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      # - name: Setup OpenVidu Meet
-      #   uses: OpenVidu/actions/start-openvidu-meet@main
-      #   env:
-      #     MEET_WEBHOOK_ENABLED: true
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        env:
+          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
+          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
+
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -71,7 +100,7 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:9080
+          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -94,12 +123,26 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      # - name: Setup OpenVidu Meet
-      #   uses: OpenVidu/actions/start-openvidu-meet@main
-      #   env:
-      #     MEET_WEBHOOK_ENABLED: true
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        env:
+          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
+          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -110,7 +153,7 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:9080
+          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -134,12 +177,26 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      # - name: Setup OpenVidu Meet
-      #   uses: OpenVidu/actions/start-openvidu-meet@main
-      #   env:
-      #     MEET_WEBHOOK_ENABLED: true
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        env:
+          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
+          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -150,7 +207,7 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:9080
+          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -173,12 +230,26 @@ jobs:
           node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
-      # - name: Setup OpenVidu Meet
-      #   uses: OpenVidu/actions/start-openvidu-meet@main
-      #   env:
-      #     MEET_WEBHOOK_ENABLED: true
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+      - name: Setup OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@main
+        env:
+          MEET_WEBHOOK_ENABLED: true
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        env:
+          OPENVIDU_MEET_URL: http://localhost:6080/api/v1
+          WEBCOMPONENT_SRC: http://localhost:6080/v1/openvidu-meet.js
       - name: Run tests
         run: |
           docker ps -a
@@ -190,7 +261,7 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-          MEET_API_URL: http://localhost:9080
+          MEET_API_URL: http://localhost:6080
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
