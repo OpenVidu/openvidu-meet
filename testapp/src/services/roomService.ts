@@ -8,9 +8,17 @@ export async function getAllRooms(): Promise<{
     rooms: MeetRoom[];
 }> {
     const url = `${configService.meetApiUrl}/rooms`;
-    return get<{ pagination: any; rooms: MeetRoom[] }>(url, {
-        headers: { 'x-api-key': configService.meetApiKey }
-    });
+    console.log(`Fetching all rooms from: ${url}`);
+    try {
+        const result = await get<{ pagination: any; rooms: MeetRoom[] }>(url, {
+            headers: { 'x-api-key': configService.meetApiKey }
+        });
+        console.log(`Successfully fetched ${result.rooms.length} rooms`);
+        return result;
+    } catch (error) {
+        console.error('Error fetching all rooms:', error);
+        throw error;
+    }
 }
 
 export async function createRoom(roomData: MeetRoomOptions): Promise<MeetRoom> {
@@ -23,23 +31,48 @@ export async function createRoom(roomData: MeetRoomOptions): Promise<MeetRoom> {
         roomData.autoDeletionDate = new Date(roomData.autoDeletionDate).getTime();
     }
 
-    console.log('Creating room with options:', roomData);
-    return post<MeetRoom>(url, {
-        headers: { 'x-api-key': configService.meetApiKey },
-        body: roomData
-    });
+    console.log('Creating room with options:', JSON.stringify(roomData, null, 2));
+    console.log(`Making POST request to: ${url}`);
+    try {
+        const result = await post<MeetRoom>(url, {
+            headers: { 'x-api-key': configService.meetApiKey },
+            body: roomData
+        });
+        console.log('Room created successfully:', JSON.stringify(result, null, 2));
+        return result;
+    } catch (error) {
+        console.error('Error creating room:', error);
+        console.error('Room data that failed:', JSON.stringify(roomData, null, 2));
+        throw error;
+    }
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {
     const url = `${configService.meetApiUrl}/rooms/${roomId}`;
-    await del<void>(url, {
-        headers: { 'x-api-key': configService.meetApiKey }
-    });
+    console.log(`Deleting room ${roomId} from: ${url}`);
+    try {
+        await del<void>(url, {
+            headers: { 'x-api-key': configService.meetApiKey }
+        });
+        console.log(`Room ${roomId} deleted successfully`);
+    } catch (error) {
+        console.error(`Error deleting room ${roomId}:`, error);
+        throw error;
+    }
 }
 
 export async function deleteAllRooms(roomIds: string[]): Promise<void> {
     const url = `${configService.meetApiUrl}/rooms?roomIds=${roomIds.join(',')}`;
-    await del<void>(url, {
-        headers: { 'x-api-key': configService.meetApiKey }
-    });
+    console.log(`Deleting ${roomIds.length} rooms from: ${url}`);
+    console.log('Room IDs to delete:', roomIds);
+    try {
+        await del<void>(url, {
+            headers: { 'x-api-key': configService.meetApiKey }
+        });
+        console.log(`Successfully deleted ${roomIds.length} rooms`);
+    } catch (error) {
+        console.error(`Error deleting ${roomIds.length} rooms:`, error);
+        console.error('Room IDs that failed:', roomIds);
+        throw error;
+    }
 }

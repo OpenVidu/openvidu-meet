@@ -140,6 +140,20 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Collect TestApp logs
+        if: always()
+        run: |
+          echo "=== Collecting TestApp logs ==="
+          if [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found, copying..."
+            cp testapp/testapp.log testapp-logs-webhooks.log
+          else
+            echo "TestApp log file not found at testapp/testapp.log"
+            echo "Looking for log files..."
+            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "Creating empty log file for artifact upload"
+            echo "TestApp log file not found during CI run" > testapp-logs-webhooks.log
+          fi
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -147,6 +161,13 @@ jobs:
           name: test-videos-webhooks-functionality
           path: |
             frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testapp-logs-webhooks-functionality
+          path: testapp-logs-webhooks.log
           retention-days: 2
       - name: Clean up
         if: always()
@@ -190,6 +211,20 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Collect TestApp logs
+        if: always()
+        run: |
+          echo "=== Collecting TestApp logs ==="
+          if [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found, copying..."
+            cp testapp/testapp.log testapp-logs-ui-features.log
+          else
+            echo "TestApp log file not found at testapp/testapp.log"
+            echo "Looking for log files..."
+            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "Creating empty log file for artifact upload"
+            echo "TestApp log file not found during CI run" > testapp-logs-ui-features.log
+          fi
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
@@ -197,6 +232,13 @@ jobs:
           name: test-videos-ui-features
           path: |
             frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testapp-logs-ui-features
+          path: testapp-logs-ui-features.log
           retention-days: 2
       - name: Clean up
         if: always()
@@ -240,6 +282,20 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: Collect TestApp logs
+        if: always()
+        run: |
+          echo "=== Collecting TestApp logs ==="
+          if [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found, copying..."
+            cp testapp/testapp.log testapp-logs-recording-access.log
+          else
+            echo "TestApp log file not found at testapp/testapp.log"
+            echo "Looking for log files..."
+            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "Creating empty log file for artifact upload"
+            echo "TestApp log file not found during CI run" > testapp-logs-recording-access.log
+          fi
       - name: Dump TestApp logs on failure
         if: failure()
         run: |
@@ -255,6 +311,13 @@ jobs:
           name: test-videos-recording-access
           path: |
             frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testapp-logs-recording-access
+          path: testapp-logs-recording-access.log
           retention-days: 2
       - name: Dump OpenVidu Local Deployment logs
         if: always()

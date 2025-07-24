@@ -18,19 +18,38 @@ async function request<T>(method: string, url: string, options: RequestOptions =
         body: options.body ? JSON.stringify(options.body) : undefined
     };
 
-    const response = await fetch(fullUrl, fetchOptions);
-    if (!response.ok) {
+    console.log(`Making ${method} request to: ${fullUrl}`);
+    console.log('Request headers:', fetchOptions.headers);
+
+    try {
+        const response = await fetch(fullUrl, fetchOptions);
+
+        console.log(`Response status: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error(`HTTP Error ${response.status}:`, text);
+            throw new Error(`HTTP ${response.status} (${response.statusText}): ${text || 'No response body'}`);
+        }
+
+        // Handle empty responses (e.g., for DELETE requests)
         const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-    }
+        if (!text) {
+            console.log('Empty response received');
+            return {} as T;
+        }
 
-    // Handle empty responses (e.g., for DELETE requests)
-    const text = await response.text();
-    if (!text) {
-        return {} as T;
-    }
+        console.log('Response received successfully');
+        return JSON.parse(text) as T;
+    } catch (error) {
+        console.error(`Request failed for ${method} ${fullUrl}:`, error);
 
-    return JSON.parse(text) as T;
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            throw new Error(`Network error: Unable to connect to ${fullUrl}. Check if the service is running.`);
+        }
+
+        throw error;
+    }
 }
 
 export function get<T>(url: string, options?: Omit<RequestOptions, 'body'>): Promise<T> {
