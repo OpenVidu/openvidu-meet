@@ -240,13 +240,14 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: List test results directory
-        if: always()
+      - name: Dump TestApp logs on failure
+        if: failure()
         run: |
-          echo "Listing test-results directory:"
-          ls -la frontend/webcomponent/test-results/ || echo "test-results directory not found"
-          echo "Finding all .webm files:"
-          find frontend/webcomponent/ -name "*.webm" -type f || echo "No .webm files found"
+          echo "=== TestApp logs ==="
+          docker logs testapp || echo "TestApp container logs not available"
+
+          echo "=== OpenVidu Meet Backend logs ==="
+          docker logs openvidu-meet || echo "OpenVidu Meet container logs not available"
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
