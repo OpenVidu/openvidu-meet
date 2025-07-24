@@ -85,6 +85,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() canDeleteRecordings = false;
 	@Input() showFilters = false;
 	@Input() showSelection = true;
+	@Input() showRoomInfo = true;
 	@Input() loading = false;
 
 	// Host binding for styling when recordings are selected
@@ -184,8 +185,11 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		if (this.showSelection) {
 			this.displayedColumns.push('select');
 		}
+		if (this.showRoomInfo) {
+			this.displayedColumns.push('roomId');
+		}
 
-		this.displayedColumns.push('roomId', 'status', 'startDate', 'duration', 'size', 'actions');
+		this.displayedColumns.push('status', 'startDate', 'duration', 'size', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====
