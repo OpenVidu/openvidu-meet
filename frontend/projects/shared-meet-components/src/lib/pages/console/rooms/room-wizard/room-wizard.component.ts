@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
-import { SpinnerComponent, StepIndicatorComponent, WizardNavComponent } from '@lib/components';
+import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
 import { MeetRoomOptions } from '@lib/typings/ce';
@@ -22,7 +22,6 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 		CommonModule,
 		StepIndicatorComponent,
 		WizardNavComponent,
-		SpinnerComponent,
 		MatButtonModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
