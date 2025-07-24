@@ -195,15 +195,14 @@ export class VideoRoomComponent implements OnInit {
 	/**
 	 * Handles the back button click event and navigates accordingly
 	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If in standalone mode, it navigates to the redirect URL or to the rooms page
+	 * If the redirect URL is set, it navigates to that URL
+	 * If in standalone mode without a redirect URL, it navigates to the rooms page
 	 */
 	async goBack() {
 		if (this.appDataService.isEmbeddedMode()) {
 			this.wcManagerService.close();
-			return;
 		}
 
-		// Standalone mode handling
 		const redirectTo = this.navigationService.getLeaveRedirectURL();
 		if (redirectTo) {
 			// Navigate to the specified redirect URL
@@ -211,8 +210,10 @@ export class VideoRoomComponent implements OnInit {
 			return;
 		}
 
-		// Navigate to rooms page
-		await this.navigationService.navigateTo('/rooms');
+		if (this.appDataService.isStandaloneMode()) {
+			// Navigate to rooms page
+			await this.navigationService.navigateTo('/rooms');
+		}
 	}
 
 	async submitAccessRoom() {

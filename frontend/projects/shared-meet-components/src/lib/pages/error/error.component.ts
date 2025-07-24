@@ -119,15 +119,14 @@ export class ErrorComponent implements OnInit {
 	/**
 	 * Handles the back button click event and navigates accordingly
 	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If in standalone mode, it navigates to the redirect URL or to the admin console
+	 * If the redirect URL is set, it navigates to that URL
+	 * If in standalone mode without a redirect URL, it navigates to the admin console
 	 */
 	async goBack() {
 		if (this.appDataService.isEmbeddedMode()) {
 			this.wcManagerService.close();
-			return;
 		}
 
-		// Standalone mode handling
 		const redirectTo = this.navService.getLeaveRedirectURL();
 		if (redirectTo) {
 			// Navigate to the specified redirect URL
@@ -135,7 +134,9 @@ export class ErrorComponent implements OnInit {
 			return;
 		}
 
-		// Navigate to the admin console
-		await this.navService.navigateTo('/overview', undefined, true);
+		if (this.appDataService.isStandaloneMode()) {
+			// Navigate to the admin console
+			await this.navService.navigateTo('/overview', undefined, true);
+		}
 	}
 }

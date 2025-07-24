@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { ErrorReason } from '@lib/models';
-import { SessionStorageService } from '@lib/services';
+import { AppDataService, SessionStorageService } from '@lib/services';
 
 @Injectable({
 	providedIn: 'root'
@@ -13,7 +13,8 @@ export class NavigationService {
 	constructor(
 		private router: Router,
 		private location: Location,
-		private sessionStorageService: SessionStorageService
+		private sessionStorageService: SessionStorageService,
+		private appDataService: AppDataService
 	) {}
 
 	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
@@ -57,7 +58,13 @@ export class NavigationService {
 		const isExternalURL = /^https?:\/\//.test(url);
 		if (isExternalURL) {
 			console.log('Redirecting to external URL:', url);
-			window.location.href = url;
+
+			if (this.appDataService.isEmbeddedMode()) {
+				// Change the top window location if in embedded mode
+				window.top!.location.href = url;
+			} else {
+				window.location.href = url;
+			}
 		} else {
 			console.log('Redirecting to internal route:', url);
 
