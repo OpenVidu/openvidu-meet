@@ -46,9 +46,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-videos-room-functionality
           path: |
-            frontend/webcomponent/test-results/*/*.webm
+            frontend/webcomponent/test-results/
           retention-days: 2
       - name: Clean up
         if: always()
@@ -95,9 +95,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-videos-events-functionality
           path: |
-            frontend/webcomponent/test-results/*/*.webm
+            frontend/webcomponent/test-results/
           retention-days: 2
       - name: Clean up
         if: always()
@@ -144,9 +144,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-videos-webhooks-functionality
           path: |
-            frontend/webcomponent/test-results/*/*.webm
+            frontend/webcomponent/test-results/
           retention-days: 2
       - name: Clean up
         if: always()
@@ -194,9 +194,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-videos-ui-features
           path: |
-            frontend/webcomponent/test-results/*/*.webm
+            frontend/webcomponent/test-results/
           retention-days: 2
       - name: Clean up
         if: always()
@@ -240,13 +240,20 @@ jobs:
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+      - name: List test results directory
+        if: always()
+        run: |
+          echo "Listing test-results directory:"
+          ls -la frontend/webcomponent/test-results/ || echo "test-results directory not found"
+          echo "Finding all .webm files:"
+          find frontend/webcomponent/ -name "*.webm" -type f || echo "No .webm files found"
       - name: Upload failed test videos
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos
+          name: test-videos-recording-access
           path: |
-            frontend/webcomponent/test-results/*/*.webm
+            frontend/webcomponent/test-results/
           retention-days: 2
       - name: Dump OpenVidu Local Deployment logs
         if: always()
