@@ -18,21 +18,45 @@
 
 		<main class="wizard-content">
 			<section class="step-content ov-surface">
-				@switch (currentStep()?.id) {
-					@case ('basic') {
-						<ov-room-wizard-basic-info></ov-room-wizard-basic-info>
-					}
-					@case ('recording') {
-						<ov-recording-preferences></ov-recording-preferences>
-					}
-					@case ('recordingTrigger') {
-						<ov-recording-trigger></ov-recording-trigger>
-					}
-					@case ('recordingLayout') {
-						<ov-recording-layout></ov-recording-layout>
-					}
-					@case ('preferences') {
-						<ov-room-preferences></ov-room-preferences>
+				@if (isCreatingRoom()) {
+					<!-- Room Creation Loading State -->
+					<div class="room-creation-loading">
+						<div class="loading-content">
+							<div class="loading-header">
+								<div class="loading-title">
+									<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
+									<h2>{{ editMode ? 'Updating Room' : 'Creating Room' }}</h2>
+								</div>
+								<p class="loading-subtitle">
+									{{
+										editMode
+											? 'Please wait while we update your room settings...'
+											: 'Please wait while we set up your video room...'
+									}}
+								</p>
+							</div>
+							<div class="loading-spinner-container">
+								<mat-spinner diameter="48"></mat-spinner>
+							</div>
+						</div>
+					</div>
+				} @else {
+					@switch (currentStep()?.id) {
+						@case ('basic') {
+							<ov-room-wizard-basic-info></ov-room-wizard-basic-info>
+						}
+						@case ('recording') {
+							<ov-recording-preferences></ov-recording-preferences>
+						}
+						@case ('recordingTrigger') {
+							<ov-recording-trigger></ov-recording-trigger>
+						}
+						@case ('recordingLayout') {
+							<ov-recording-layout></ov-recording-layout>
+						}
+						@case ('preferences') {
+							<ov-room-preferences></ov-room-preferences>
+						}
 					}
 				}
 			</section>

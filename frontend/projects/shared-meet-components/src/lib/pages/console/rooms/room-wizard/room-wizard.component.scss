@@ -77,6 +77,65 @@
 	}
 }
 
+// Room Creation Loading State
+.room-creation-loading {
+	@include ov-flex-center;
+	flex-direction: column;
+	height: 100%;
+	min-height: 400px;
+	text-align: center;
+	padding: var(--ov-meet-spacing-xl);
+
+	.loading-content {
+		@include ov-flex-center;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xl);
+		width: 100%;
+
+		.loading-header {
+			margin-bottom: var(--ov-meet-spacing-lg);
+
+			.loading-title {
+				@include ov-flex-center;
+				gap: var(--ov-meet-spacing-md);
+				margin-bottom: var(--ov-meet-spacing-md);
+
+				.loading-icon {
+					@include ov-icon(xl);
+					animation: pulse 2s ease-in-out infinite;
+				}
+
+				h2 {
+					margin: 0;
+					font-size: var(--ov-meet-font-size-xl);
+					font-weight: var(--ov-meet-font-weight-medium);
+					color: var(--ov-meet-text-primary);
+				}
+			}
+
+			.loading-subtitle {
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				margin: 0;
+				animation: fadeIn 1s ease-out 0.5s both;
+			}
+		}
+
+		.loading-spinner-container {
+			mat-spinner {
+				margin: 0 auto;
+
+				::ng-deep {
+					.mdc-circular-progress__determinate-circle,
+					.mdc-circular-progress__indeterminate-circle-graphic {
+						stroke: var(--ov-meet-color-primary);
+					}
+				}
+			}
+		}
+	}
+}
+
 // Responsive design using the system mixins
 @include ov-tablet-down {
 	.wizard-container {
@@ -88,6 +147,20 @@
 
 		h2 {
 			font-size: var(--ov-meet-font-size-xl);
+		}
+	}
+
+	.room-creation-loading {
+		padding: var(--ov-meet-spacing-lg);
+
+		.loading-content {
+			.loading-header {
+				.loading-title {
+					h2 {
+						font-size: var(--ov-meet-font-size-lg);
+					}
+				}
+			}
 		}
 	}
 }

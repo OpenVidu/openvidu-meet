@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, OnInit, Signal } from '@angular/core';
+import { Component, computed, OnInit, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
-import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
+import { SpinnerComponent, StepIndicatorComponent, WizardNavComponent } from '@lib/components';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
 import { MeetRoomOptions } from '@lib/typings/ce';
@@ -21,8 +22,10 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 		CommonModule,
 		StepIndicatorComponent,
 		WizardNavComponent,
+		SpinnerComponent,
 		MatButtonModule,
 		MatIconModule,
+		MatProgressSpinnerModule,
 		MatSlideToggleModule,
 		RoomWizardBasicInfoComponent,
 		RecordingPreferencesComponent,
@@ -37,6 +40,7 @@ export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;
 	roomId?: string;
 	existingRoomData?: MeetRoomOptions;
+	isCreatingRoom = signal(false);
 
 	steps: Signal<WizardStep[]>;
 	currentStep: Signal<WizardStep | undefined>;
@@ -114,21 +118,27 @@ export class RoomWizardComponent implements OnInit {
 		const roomOptions = this.wizardService.roomOptions();
 		console.log('Wizard completed with data:', roomOptions);
 
+		// Activate loading state
+		this.isCreatingRoom.set(true);
+
 		try {
 			if (this.editMode && this.roomId && roomOptions.preferences) {
 				await this.roomService.updateRoom(this.roomId, roomOptions.preferences);
+				await this.navigationService.navigateTo('rooms', undefined, true);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
-				await this.roomService.createRoom(roomOptions);
-				this.notificationService.showSnackbar('Room created successfully');
+				const { moderatorRoomUrl } = await this.roomService.createRoom(roomOptions);
+				await this.navigationService.redirectTo(moderatorRoomUrl);
 			}
-
-			await this.navigationService.navigateTo('rooms', undefined, true);
 		} catch (error) {
 			const errorMessage = `Failed to ${this.editMode ? 'update' : 'create'} room`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
+		} finally {
+			this.wizardService.resetWizard();
+			// Deactivate loading state
+			this.isCreatingRoom.set(false);
 		}
 	}
 }
