@@ -259,7 +259,8 @@ export class RoomWizardStateService {
 	private updateStepsVisibility(): void {
 		const currentSteps = this._steps();
 		const currentOptions = this._roomOptions();
-		const recordingEnabled = currentOptions.preferences?.recordingPreferences.enabled ?? false;
+		// TODO: Uncomment when recording preferences are implemented
+		const recordingEnabled = false; // currentOptions.preferences?.recordingPreferences.enabled ?? false;
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
