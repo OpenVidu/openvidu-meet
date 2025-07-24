@@ -7,7 +7,7 @@ export type Theme = 'light' | 'dark';
 	providedIn: 'root'
 })
 export class ThemeService {
-	private readonly THEME_KEY = 'ov-theme-preference';
+	private readonly THEME_KEY = 'ov-meet-theme';
 	private readonly _currentTheme = signal<Theme>('light');
 
 	// Computed signals for reactivity
@@ -15,9 +15,7 @@ export class ThemeService {
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
 	public readonly isLight = computed(() => this._currentTheme() === 'light');
 
-	constructor(@Inject(DOCUMENT) private document: Document) {
-		this.initializeTheme();
-	}
+	constructor(@Inject(DOCUMENT) private document: Document) {}
 
 	/**
 	 * Initializes the theme based on:
@@ -25,7 +23,7 @@ export class ThemeService {
 	 * 2. System preference (prefers-color-scheme)
 	 * 3. Light theme as default
 	 */
-	private initializeTheme(): void {
+	initializeTheme(): void {
 		const savedTheme = this.getSavedTheme();
 		const systemPreference = this.getSystemPreference();
 		const initialTheme = savedTheme || systemPreference || 'light';

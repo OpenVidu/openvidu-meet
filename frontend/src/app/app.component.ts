@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppDataService, ThemeService } from '@lib/services';
+import { AppDataService } from '@lib/services';
 import packageInfo from '../../package.json';
 
 @Component({
@@ -11,10 +11,7 @@ import packageInfo from '../../package.json';
 	imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
-	constructor(
-		private appDataService: AppDataService,
-		private themeService: ThemeService
-	) {}
+	constructor(private appDataService: AppDataService) {}
 
 	ngOnInit() {
 		this.appDataService.setVersion(packageInfo.version);

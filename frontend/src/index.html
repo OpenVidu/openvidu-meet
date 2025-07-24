@@ -10,6 +10,16 @@
 		<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+		<script>
+			// Apply the saved theme on initial load to prevent flickering
+			(function () {
+				const savedTheme = localStorage.getItem('ov-meet-theme') || 'light';
+				if (savedTheme === 'dark') {
+					document.documentElement.setAttribute('data-theme', 'dark');
+				}
+			})();
+		</script>
 	</head>
 	<body class="mat-typography" id="body">
 		<app-root></app-root>
