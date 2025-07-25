@@ -258,6 +258,16 @@
 			></tr>
 		</table>
 	</div>
+
+	<!-- Load More Section -->
+	@if (showLoadMore) {
+		<div class="load-more-container" id="load-more-container">
+			<button mat-button class="load-more-btn" (click)="loadMoreRecordings()" [disabled]="loading" id="load-more-btn">
+				<mat-icon>expand_more</mat-icon>
+				<span>Load More Recordings</span>
+			</button>
+		</div>
+	}
 } @else {
 	<!-- Empty State -->
 	<div class="no-recordings-state">

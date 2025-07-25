@@ -94,6 +94,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	@Input() rooms: MeetRoom[] = [];
 	@Input() showFilters = false;
 	@Input() showSelection = true;
+	@Input() showLoadMore = false;
 	@Input() loading = false;
 
 	// Host binding for styling when rooms are selected
@@ -105,6 +106,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	// Output events
 	@Output() roomAction = new EventEmitter<RoomTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() loadMore = new EventEmitter<void>();
 	@Output() refresh = new EventEmitter<void>();
 
 	// Filter controls

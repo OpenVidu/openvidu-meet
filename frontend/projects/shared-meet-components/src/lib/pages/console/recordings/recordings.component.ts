@@ -110,9 +110,9 @@ export class RecordingsComponent implements OnInit {
 		}
 	}
 
-	async loadMoreRecordings() {
+	async loadMoreRecordings(filters?: { nameFilter: string; statusFilter: string }) {
 		if (!this.hasMoreRecordings || this.isLoading) return;
-		await this.loadRecordings();
+		await this.loadRecordings(filters);
 	}
 
 	async refreshRecordings(filters?: { nameFilter: string; statusFilter: string }) {

@@ -86,6 +86,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() showFilters = false;
 	@Input() showSelection = true;
 	@Input() showRoomInfo = true;
+	@Input() showLoadMore = false;
 	@Input() loading = false;
 
 	// Host binding for styling when recordings are selected
@@ -97,6 +98,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	// Output events
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() loadMore = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
 	@Output() refresh = new EventEmitter<void>();
 
 	// Filter controls
@@ -272,6 +274,12 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		if (selectedRecordings.length > 0) {
 			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDownload' });
 		}
+	}
+
+	loadMoreRecordings() {
+		const nameFilter = this.nameFilterControl.value || '';
+		const statusFilter = this.statusFilterControl.value || '';
+		this.loadMore.emit({ nameFilter, statusFilter });
 	}
 
 	// ===== FILTER METHODS =====

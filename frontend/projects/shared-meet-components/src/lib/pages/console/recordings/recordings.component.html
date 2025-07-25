@@ -32,9 +32,10 @@
 				[recordings]="recordings()"
 				[canDeleteRecordings]="true"
 				[loading]="isLoading"
-				[showFilters]="true"
 				[showSelection]="true"
+				[showLoadMore]="hasMoreRecordings"
 				(recordingAction)="onRecordingAction($event)"
+				(loadMore)="loadMoreRecordings($event)"
 				(refresh)="refreshRecordings()"
 				(filterChange)="refreshRecordings($event)"
 			>

@@ -35,7 +35,9 @@
 				[rooms]="rooms()"
 				[loading]="isLoading"
 				[showSelection]="true"
+				[showLoadMore]="hasMoreRooms"
 				(roomAction)="onRoomAction($event)"
+				(loadMore)="loadMoreRooms()"
 				(refresh)="refreshRooms()"
 			></ov-rooms-lists>
 		</div>
