@@ -122,8 +122,8 @@ export class RecordingsComponent implements OnInit {
 		await this.loadRecordings(filters);
 	}
 
-	private playRecording(recording: MeetRecordingInfo) {
-		this.recordingService.playRecording(recording.recordingId);
+	private async playRecording(recording: MeetRecordingInfo) {
+		await this.recordingService.playRecording(recording.recordingId);
 	}
 
 	private downloadRecording(recording: MeetRecordingInfo) {

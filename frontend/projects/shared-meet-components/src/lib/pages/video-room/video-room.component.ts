@@ -410,9 +410,7 @@ export class VideoRoomComponent implements OnInit {
 
 	async onViewRecordingsClicked(recordingId?: any) {
 		if (recordingId) {
-			const privateAccess = await this.authService.isUserAuthenticated();
-			const { url } = await this.recordingService.generateRecordingUrl(recordingId, privateAccess);
-			window.open(url, '_blank');
+			await this.recordingService.playRecording(recordingId);
 		} else {
 			window.open(`/room/${this.roomId}/recordings?secret=${this.roomSecret}`, '_blank');
 		}

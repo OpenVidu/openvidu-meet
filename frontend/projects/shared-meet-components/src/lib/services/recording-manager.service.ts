@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { HttpService, ParticipantTokenService } from '@lib/services';
+import { AuthService, HttpService, ParticipantTokenService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
-import { ActionService, LoggerService } from 'openvidu-components-angular';
+import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
 	providedIn: 'root'
@@ -24,7 +24,7 @@ export class RecordingManagerService {
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
 		protected participantService: ParticipantTokenService,
-		private actionService: ActionService,
+		protected authService: AuthService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -215,14 +215,14 @@ export class RecordingManagerService {
 	}
 
 	/**
-	 * Plays a recording by opening a dialog with the recording player
+	 * Plays a recording by generating a URL and opening it in a new tab
 	 *
 	 * @param recordingId - The ID of the recording to play
-	 * @param secret - Optional secret for accessing the recording
 	 */
-	playRecording(recordingId: string, secret?: string) {
-		const recordingUrl = this.getRecordingMediaUrl(recordingId, secret);
-		this.actionService.openRecordingPlayerDialog(recordingUrl);
+	async playRecording(recordingId: string) {
+		const privateAccess = await this.authService.isUserAuthenticated();
+		const { url } = await this.generateRecordingUrl(recordingId, privateAccess);
+		window.open(url, '_blank');
 	}
 
 	/**
