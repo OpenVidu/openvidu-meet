@@ -6,7 +6,7 @@ import {
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
 	extractRoomQueryParamsGuard,
-	removeModeratorSecretGuard,
+	removeRoomSecretGuard,
 	runGuardsSerially,
 	validateRecordingAccessGuard
 } from '@lib/guards';
@@ -35,7 +35,9 @@ export const baseRoutes: Routes = [
 	{
 		path: 'room/:room-id',
 		component: VideoRoomComponent,
-		canActivate: [runGuardsSerially(extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard)]
+		canActivate: [
+			runGuardsSerially(extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard, removeRoomSecretGuard)
+		]
 	},
 	{
 		path: 'room/:room-id/recordings',
@@ -45,7 +47,7 @@ export const baseRoutes: Routes = [
 				extractRecordingQueryParamsGuard,
 				checkParticipantRoleAndAuthGuard,
 				validateRecordingAccessGuard,
-				removeModeratorSecretGuard
+				removeRoomSecretGuard
 			)
 		]
 	},

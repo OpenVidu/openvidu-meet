@@ -46,10 +46,14 @@ export class RoomService {
 		return this.roomId;
 	}
 
-	setRoomSecret(secret: string) {
-		// If a secret is stored in session storage for the current room, use it instead of the provided secret
-		const storedSecret = this.sessionStorageService.getModeratorSecret(this.roomId);
-		this.roomSecret = storedSecret || secret;
+	setRoomSecret(secret?: string) {
+		// If no secret is provided, check session storage for the current room's secret
+		if (!secret) {
+			const storedSecret = this.sessionStorageService.getRoomSecret(this.roomId);
+			this.roomSecret = storedSecret || '';
+		} else {
+			this.roomSecret = secret;
+		}
 	}
 
 	getRoomSecret(): string {

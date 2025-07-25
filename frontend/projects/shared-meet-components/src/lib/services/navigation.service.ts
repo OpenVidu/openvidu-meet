@@ -148,17 +148,17 @@ export class NavigationService {
 	 * @param oldParams - The existing query parameters
 	 * @param newParams - The new query parameters to merge with the existing ones
 	 */
-	updateQueryParamsFromUrl(oldParams: Params, newParams: Params): void {
+	async updateQueryParamsFromUrl(oldParams: Params, newParams: Params): Promise<void> {
 		const queryParams = {
 			...oldParams,
 			...newParams
 		};
-		const urlTree = this.router.createUrlTree([], {
+
+		await this.router.navigate([], {
 			queryParams,
+			replaceUrl: true,
 			queryParamsHandling: 'merge'
 		});
-		const newUrl = this.router.serializeUrl(urlTree);
-		this.location.replaceState(newUrl);
 	}
 
 	/**
@@ -167,11 +167,14 @@ export class NavigationService {
 	 * @param queryParams - The current query parameters
 	 * @param param - The parameter to remove
 	 */
-	removeQueryParamFromUrl(queryParams: Params, param: string): void {
+	async removeQueryParamFromUrl(queryParams: Params, param: string): Promise<void> {
 		const updatedParams = { ...queryParams };
 		delete updatedParams[param];
-		const urlTree = this.router.createUrlTree([], { queryParams: updatedParams });
-		const newUrl = this.router.serializeUrl(urlTree);
-		this.location.replaceState(newUrl);
+
+		await this.router.navigate([], {
+			queryParams: updatedParams,
+			replaceUrl: true,
+			queryParamsHandling: 'replace'
+		});
 	}
 }

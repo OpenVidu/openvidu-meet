@@ -229,7 +229,7 @@ export class VideoRoomComponent implements OnInit {
 
 		try {
 			await this.generateParticipantToken();
-			await this.replaceUrlQueryParams();
+			await this.addParticipantNameToUrl();
 			await this.roomService.loadPreferences(this.roomId);
 			this.showRoom = true;
 		} catch (error) {
@@ -277,24 +277,11 @@ export class VideoRoomComponent implements OnInit {
 		}
 	}
 
-	private async replaceUrlQueryParams() {
-		let secretQueryParam = this.roomSecret;
-
-		// If participant is moderator, store the moderator secret in session storage
-		// and replace the secret in the URL with the publisher secret
-		if (this.participantRole === ParticipantRole.MODERATOR) {
-			try {
-				const { moderatorSecret, publisherSecret } = await this.roomService.getSecrets(this.roomId);
-				this.sessionStorageService.setModeratorSecret(this.roomId, moderatorSecret);
-				secretQueryParam = publisherSecret;
-			} catch (error) {
-				console.error('error', error);
-			}
-		}
-
-		// Replace secret and participant name in the URL query parameters
-		this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
-			secret: secretQueryParam,
+	/**
+	 * Add participant name as a query parameter to the URL
+	 */
+	private async addParticipantNameToUrl() {
+		await this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
 			'participant-name': this.participantName
 		});
 	}
@@ -302,7 +289,7 @@ export class VideoRoomComponent implements OnInit {
 	onRoomCreated(room: Room) {
 		room.on(
 			RoomEvent.DataReceived,
-			(payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
+			(payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				const event = JSON.parse(new TextDecoder().decode(payload));
 				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
 					const roomPreferences: MeetRoomPreferences = event.preferences;
@@ -342,7 +329,7 @@ export class VideoRoomComponent implements OnInit {
 
 		// Remove the moderator secret from session storage if the participant left for a reason other than browser unload
 		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
-			this.sessionStorageService.removeModeratorSecret(event.roomName);
+			this.sessionStorageService.removeRoomSecret(event.roomName);
 		}
 
 		// Navigate to the disconnected page with the reason

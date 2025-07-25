@@ -11,32 +11,32 @@ export class SessionStorageService {
 	constructor() {}
 
 	/**
-	 * Stores a moderator secret for a specific room.
+	 * Stores a secret associated with a participant role for a specific room.
 	 *
 	 * @param roomId The room ID.
-	 * @param secret The secret string.
+	 * @param secret The secret to store.
 	 */
-	public setModeratorSecret(roomId: string, secret: string): void {
-		this.set(`moderator_secret_${roomId}`, secret);
+	public setRoomSecret(roomId: string, secret: string): void {
+		this.set(`room_secret_${roomId}`, secret);
 	}
 
 	/**
-	 * Retrieves the moderator secret for a specific room.
+	 * Retrieves the room secret for a specific room.
 	 *
 	 * @param roomId The room ID.
 	 * @returns The stored secret or null if not found.
 	 */
-	public getModeratorSecret(roomId: string): string | null {
-		return this.get<string>(`moderator_secret_${roomId}`) ?? null;
+	public getRoomSecret(roomId: string): string | null {
+		return this.get<string>(`room_secret_${roomId}`) ?? null;
 	}
 
 	/**
-	 * Removes the moderator secret for a specific room.
+	 * Removes the room secret for a specific room.
 	 *
 	 * @param roomId The room ID.
 	 */
-	public removeModeratorSecret(roomId: string): void {
-		this.remove(`moderator_secret_${roomId}`);
+	public removeRoomSecret(roomId: string): void {
+		this.remove(`room_secret_${roomId}`);
 	}
 
 	/**
