@@ -5,10 +5,11 @@
 	padding: var(--ov-meet-spacing-md) 0 0 0;
 
 	.nav-buttons {
+		@include ov-container;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		@include ov-container;
+		padding: 0 0 var(--ov-meet-spacing-md) 0;
 
 		.spacer {
 			flex: 1;
