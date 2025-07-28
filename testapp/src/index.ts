@@ -13,8 +13,11 @@ import {
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
 
-// Setup log file for CI debugging
-const logStream = fs.createWriteStream(path.join(__dirname, '../../testapp.log'), { flags: 'a' });
+// Setup log file for CI debugging - always write to current working directory
+const logPath = path.join(process.cwd(), 'testapp.log');
+console.log(`Setting up log file at: ${logPath}`);
+console.log(`Current working directory: ${process.cwd()}`);
+const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
 // Override console methods to also write to log file
 const originalConsoleLog = console.log;

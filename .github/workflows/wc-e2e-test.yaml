@@ -144,15 +144,34 @@ jobs:
         if: always()
         run: |
           echo "=== Collecting TestApp logs ==="
-          if [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found, copying..."
+          echo "Current directory: $(pwd)"
+          echo "Looking for log files..."
+          find . -name "testapp.log" -type f 2>/dev/null | head -10
+
+          # Try multiple possible locations
+          if [ -f testapp.log ]; then
+            echo "TestApp log file found at ./testapp.log"
+            cp testapp.log testapp-logs-webhooks.log
+          elif [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/testapp.log"
             cp testapp/testapp.log testapp-logs-webhooks.log
+          elif [ -f testapp/dist/testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
+            cp testapp/dist/testapp/testapp.log testapp-logs-webhooks.log
+          elif [ -f testapp/dist/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp.log"
+            cp testapp/dist/testapp.log testapp-logs-webhooks.log
           else
-            echo "TestApp log file not found at testapp/testapp.log"
-            echo "Looking for log files..."
-            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "TestApp log file not found in any expected locations"
+            echo "Root directory contents:"
+            ls -la | head -10
+            echo "Testapp directory contents:"
+            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
+            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
             echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run" > testapp-logs-webhooks.log
+            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-webhooks.log
+            echo "Process information that might be helpful:"
+            ps aux | grep -i testapp || echo "No testapp processes found"
           fi
       - name: Upload failed test videos
         if: always()
@@ -215,15 +234,34 @@ jobs:
         if: always()
         run: |
           echo "=== Collecting TestApp logs ==="
-          if [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found, copying..."
+          echo "Current directory: $(pwd)"
+          echo "Looking for log files..."
+          find . -name "testapp.log" -type f 2>/dev/null | head -10
+
+          # Try multiple possible locations
+          if [ -f testapp.log ]; then
+            echo "TestApp log file found at ./testapp.log"
+            cp testapp.log testapp-logs-ui-features.log
+          elif [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/testapp.log"
             cp testapp/testapp.log testapp-logs-ui-features.log
+          elif [ -f testapp/dist/testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
+            cp testapp/dist/testapp/testapp.log testapp-logs-ui-features.log
+          elif [ -f testapp/dist/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp.log"
+            cp testapp/dist/testapp.log testapp-logs-ui-features.log
           else
-            echo "TestApp log file not found at testapp/testapp.log"
-            echo "Looking for log files..."
-            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "TestApp log file not found in any expected locations"
+            echo "Root directory contents:"
+            ls -la | head -10
+            echo "Testapp directory contents:"
+            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
+            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
             echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run" > testapp-logs-ui-features.log
+            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-ui-features.log
+            echo "Process information that might be helpful:"
+            ps aux | grep -i testapp || echo "No testapp processes found"
           fi
       - name: Upload failed test videos
         if: always()
@@ -286,15 +324,34 @@ jobs:
         if: always()
         run: |
           echo "=== Collecting TestApp logs ==="
-          if [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found, copying..."
+          echo "Current directory: $(pwd)"
+          echo "Looking for log files..."
+          find . -name "testapp.log" -type f 2>/dev/null | head -10
+
+          # Try multiple possible locations
+          if [ -f testapp.log ]; then
+            echo "TestApp log file found at ./testapp.log"
+            cp testapp.log testapp-logs-recording-access.log
+          elif [ -f testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/testapp.log"
             cp testapp/testapp.log testapp-logs-recording-access.log
+          elif [ -f testapp/dist/testapp/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
+            cp testapp/dist/testapp/testapp.log testapp-logs-recording-access.log
+          elif [ -f testapp/dist/testapp.log ]; then
+            echo "TestApp log file found at testapp/dist/testapp.log"
+            cp testapp/dist/testapp.log testapp-logs-recording-access.log
           else
-            echo "TestApp log file not found at testapp/testapp.log"
-            echo "Looking for log files..."
-            find . -name "testapp.log" -type f 2>/dev/null || echo "No testapp.log files found"
+            echo "TestApp log file not found in any expected locations"
+            echo "Root directory contents:"
+            ls -la | head -10
+            echo "Testapp directory contents:"
+            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
+            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
             echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run" > testapp-logs-recording-access.log
+            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-recording-access.log
+            echo "Process information that might be helpful:"
+            ps aux | grep -i testapp || echo "No testapp processes found"
           fi
       - name: Dump TestApp logs on failure
         if: failure()
