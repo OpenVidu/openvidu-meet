@@ -13,7 +13,7 @@ import { MeetRoomOptions } from '@lib/typings/ce';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-wizard-basic-info',
+	selector: 'ov-room-wizard-room-details',
 	standalone: true,
 	imports: [
 		ReactiveFormsModule,
@@ -26,11 +26,11 @@ import { Subject, takeUntil } from 'rxjs';
 		MatSelectModule,
 		MatTooltipModule
 	],
-	templateUrl: './basic-info.component.html',
-	styleUrl: './basic-info.component.scss'
+	templateUrl: './room-details.component.html',
+	styleUrl: './room-details.component.scss'
 })
-export class RoomWizardBasicInfoComponent implements OnDestroy {
-	basicInfoForm: FormGroup;
+export class RoomWizardRoomDetailsComponent implements OnDestroy {
+	roomDetailsForm: FormGroup;
 
 	// Arrays for time selection
 	hours = Array.from({ length: 24 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
@@ -40,9 +40,9 @@ export class RoomWizardBasicInfoComponent implements OnDestroy {
 
 	constructor(private wizardService: RoomWizardStateService) {
 		const currentStep = this.wizardService.currentStep();
-		this.basicInfoForm = currentStep!.formGroup;
+		this.roomDetailsForm = currentStep!.formGroup;
 
-		this.basicInfoForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.roomDetailsForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
 	}
@@ -71,7 +71,7 @@ export class RoomWizardBasicInfoComponent implements OnDestroy {
 		};
 
 		// Always save to wizard state (including when values are cleared)
-		this.wizardService.updateStepData('basic', stepData);
+		this.wizardService.updateStepData('roomDetails', stepData);
 	}
 
 	get minDate(): Date {
@@ -81,11 +81,11 @@ export class RoomWizardBasicInfoComponent implements OnDestroy {
 	}
 
 	get hasDateSelected(): boolean {
-		return !!this.basicInfoForm.get('autoDeletionDate')?.value;
+		return !!this.roomDetailsForm.get('autoDeletionDate')?.value;
 	}
 
 	getFormattedDateTime(): string {
-		const formValue = this.basicInfoForm.value;
+		const formValue = this.roomDetailsForm.value;
 		if (!formValue.autoDeletionDate) {
 			return '';
 		}
@@ -109,7 +109,7 @@ export class RoomWizardBasicInfoComponent implements OnDestroy {
 	}
 
 	clearDeletionDate() {
-		this.basicInfoForm.patchValue({
+		this.roomDetailsForm.patchValue({
 			autoDeletionDate: null,
 			autoDeletionHour: 23,
 			autoDeletionMinute: 59

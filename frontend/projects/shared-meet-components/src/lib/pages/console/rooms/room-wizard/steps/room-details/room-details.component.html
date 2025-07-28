@@ -1,25 +1,25 @@
-<div class="basic-info-step fade-in">
+<div class="room-details-step fade-in">
 	<!-- Header Section -->
 	<header class="step-header">
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Basic Information</h3>
+			<h3 class="step-title">Room Details</h3>
 			<p class="step-description">
-				Configure your room's basic settings including name prefix and automatic deletion date
+				Configure your room's details including name prefix and automatic deletion date
 			</p>
 		</div>
 	</header>
 
 	<!-- Form Section -->
 	<main class="step-content">
-		<form [formGroup]="basicInfoForm" class="basic-info-form">
+		<form [formGroup]="roomDetailsForm" class="room-details-form">
 			<!-- Room Prefix Field -->
 			<mat-form-field appearance="outline" class="form-field">
 				<mat-label>Room Name Prefix</mat-label>
 				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
 				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
-				@if (basicInfoForm.get('roomIdPrefix')?.hasError('maxlength')) {
+				@if (roomDetailsForm.get('roomIdPrefix')?.hasError('maxlength')) {
 					<mat-error> Room name prefix cannot exceed 50 characters </mat-error>
 				}
 			</mat-form-field>
@@ -42,7 +42,7 @@
 						matSuffix
 						mat-icon-button
 						type="button"
-						[disabled]="basicInfoForm.get('autoDeletionDate')?.disabled"
+						[disabled]="roomDetailsForm.get('autoDeletionDate')?.disabled"
 						(click)="clearDeletionDate()"
 						matTooltip="Clear date selection"
 						class="clear-date-button"
@@ -60,7 +60,7 @@
 			</mat-form-field>
 
 			<!-- Time Selection (only shown when date is selected) -->
-			@if (basicInfoForm.get('autoDeletionDate')?.value) {
+			@if (roomDetailsForm.get('autoDeletionDate')?.value) {
 				<div class="time-selection-container">
 					<div class="time-selection-row">
 						<mat-form-field appearance="outline" class="time-field">
@@ -89,7 +89,7 @@
 							<mat-icon matSuffix class="ov-settings-icon">access_time</mat-icon>
 						</mat-form-field>
 					</div>
-					@if (!basicInfoForm.hasError('minFutureDateTime')) {
+					@if (!roomDetailsForm.hasError('minFutureDateTime')) {
 						<div class="time-hint">
 							<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
 							<span>Room will be deleted at {{ getFormattedDateTime() }}</span>

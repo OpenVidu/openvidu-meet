@@ -1,6 +1,6 @@
 @import '../../../../../../../../../../src/assets/styles/design-tokens';
 
-.basic-info-step {
+.room-details-step {
 	@include ov-page-content;
 	@include ov-container;
 
@@ -41,7 +41,7 @@
 	.step-content {
 		// margin-bottom: var(--ov-meet-spacing-xl);
 
-		.basic-info-form {
+		.room-details-form {
 			@include ov-grid-responsive(280px);
 			gap: var(--ov-meet-spacing-lg);
 
@@ -144,7 +144,7 @@
 		}
 
 		.step-content {
-			.basic-info-form {
+			.room-details-form {
 				display: flex;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-md);
@@ -170,7 +170,7 @@
 
 	@include ov-tablet-down {
 		.step-content {
-			.basic-info-form {
+			.room-details-form {
 				grid-template-columns: 1fr;
 			}
 		}

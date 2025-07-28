@@ -14,6 +14,20 @@
 			</button>
 		}
 
+		@if (config.showBack) {
+			<!-- Back Button -->
+			<button
+				mat-stroked-button
+				class="back-btn"
+				id="wizard-back-btn"
+				(click)="onBack()"
+				[attr.aria-label]="'Go back'"
+			>
+				<mat-icon class="leading-icon">arrow_back</mat-icon>
+				{{ backButtonText }}
+			</button>
+		}
+
 		<div class="spacer"></div>
 
 		<!-- Navigation Group -->

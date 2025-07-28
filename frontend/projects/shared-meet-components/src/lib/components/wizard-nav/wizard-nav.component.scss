@@ -15,7 +15,7 @@
 			flex: 1;
 		}
 
-		.cancel-btn {
+		.cancel-btn, .back-btn {
 			margin-right: auto;
 		}
 
@@ -38,7 +38,7 @@
 				margin-right: 0;
 			}
 
-			&.cancel-btn {
+			&.cancel-btn, &.back-btn {
 				color: var(--ov-meet-text-secondary);
 				border-color: var(--ov-meet-border-color-strong);
 
@@ -127,7 +127,7 @@
 			flex-direction: column;
 			gap: var(--ov-meet-spacing-md);
 
-			.cancel-btn {
+			.cancel-btn, .back-btn {
 				margin-right: 0;
 				order: 3;
 				width: 100%;
@@ -171,7 +171,7 @@
 	}
 
 	&.loading {
-		button:not(.cancel-btn) {
+		button:not(.cancel-btn):not(.back-btn) {
 			pointer-events: none;
 			opacity: 0.7;
 

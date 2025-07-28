@@ -1,0 +1,174 @@
+@import '../../../../../../../../src/assets/styles/design-tokens';
+
+.room-basic-creation-page {
+	@include ov-page-content;
+	@include ov-container;
+
+	padding: var(--ov-meet-spacing-xl);
+	max-width: 600px;
+	margin: 0 auto;
+
+	.page-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-md);
+		margin-bottom: var(--ov-meet-spacing-xl);
+
+		.page-icon {
+			@include ov-icon(xxl);
+			color: var(--ov-meet-icon-rooms);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.page-title-group {
+			flex: 1;
+
+			.page-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xxl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.page-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-lg);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.page-content {
+		.room-basic-creation-form {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-xl);
+
+			.form-field {
+				width: 100%;
+
+				// Material form field customization using existing system
+				::ng-deep {
+					.mat-mdc-form-field-outline {
+						border-radius: var(--ov-meet-radius-sm);
+					}
+
+					.mat-mdc-form-field-label {
+						color: var(--ov-meet-text-secondary);
+					}
+
+					.mat-mdc-form-field-hint {
+						color: var(--ov-meet-text-hint);
+						font-size: var(--ov-meet-font-size-xs);
+					}
+
+					// Icon styling in form fields
+					.mat-mdc-form-field-icon-suffix {
+						mat-icon {
+							@include ov-icon(sm);
+						}
+					}
+				}
+			}
+
+			.action-buttons {
+				display: flex;
+				gap: var(--ov-meet-spacing-md);
+				justify-content: center;
+				align-items: center;
+				margin-top: var(--ov-meet-spacing-lg);
+
+				.create-button {
+					@include ov-button-base;
+					flex: 1;
+					max-width: 200px;
+					background-color: var(--ov-meet-color-success);
+					color: var(--ov-meet-text-on-primary);
+					box-shadow: var(--ov-meet-shadow-sm);
+
+					mat-icon {
+						@include ov-icon(sm);
+						margin-right: var(--ov-meet-spacing-xs);
+					}
+
+					span {
+						font-size: var(--ov-meet-font-size-md);
+						font-weight: var(--ov-meet-font-weight-medium);
+					}
+				}
+
+				.advanced-button {
+					@include ov-button-base;
+					flex: 1;
+					max-width: 200px;
+
+					mat-icon {
+						@include ov-icon(sm);
+						margin-right: var(--ov-meet-spacing-xs);
+					}
+
+					span {
+						font-size: var(--ov-meet-font-size-md);
+						font-weight: var(--ov-meet-font-weight-normal);
+					}
+				}
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-lg);
+
+		.page-header {
+			flex-direction: column;
+			text-align: center;
+			gap: var(--ov-meet-spacing-sm);
+
+			.page-icon {
+				align-self: center;
+				margin-top: 0;
+			}
+
+			.page-title-group {
+				.page-title {
+					font-size: var(--ov-meet-font-size-xl);
+				}
+
+				.page-description {
+					font-size: var(--ov-meet-font-size-md);
+				}
+			}
+		}
+
+		.page-content {
+			.room-basic-creation-form {
+				.action-buttons {
+					flex-direction: column;
+
+					.create-button,
+					.advanced-button {
+						max-width: none;
+						width: 100%;
+					}
+				}
+			}
+		}
+	}
+
+	@include ov-tablet-down {
+		.page-content {
+			.room-basic-creation-form {
+				.action-buttons {
+					flex-direction: column;
+
+					.create-button,
+					.advanced-button {
+						max-width: none;
+					}
+				}
+			}
+		}
+	}
+}

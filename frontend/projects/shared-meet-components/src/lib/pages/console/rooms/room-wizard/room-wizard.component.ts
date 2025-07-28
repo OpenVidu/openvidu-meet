@@ -9,11 +9,12 @@ import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
 import { MeetRoomOptions } from '@lib/typings/ce';
-import { RoomWizardBasicInfoComponent } from './steps/basic-info/basic-info.component';
+import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
 import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
+import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -26,7 +27,8 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MatSlideToggleModule,
-		RoomWizardBasicInfoComponent,
+		RoomBasicCreationComponent,
+		RoomWizardRoomDetailsComponent,
 		RecordingPreferencesComponent,
 		RecordingTriggerComponent,
 		RecordingLayoutComponent,
@@ -38,9 +40,9 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;
 	roomId?: string;
-	existingRoomData?: MeetRoomOptions;
+	existingRoomData?: MeetRoomOptions; // Edit mode
 	isCreatingRoom = signal(false);
-
+	isBasicCreation = signal(true);
 	steps: Signal<WizardStep[]>;
 	currentStep: Signal<WizardStep | undefined>;
 	currentStepIndex: Signal<number>;
@@ -89,6 +91,9 @@ export class RoomWizardComponent implements OnInit {
 		try {
 			const { roomIdPrefix, autoDeletionDate, preferences } = await this.roomService.getRoom(this.roomId);
 			this.existingRoomData = { roomIdPrefix, autoDeletionDate, preferences };
+			if (this.existingRoomData) {
+				this.isBasicCreation.set(false);
+			}
 		} catch (error) {
 			console.error('Error loading room data:', error);
 			// Navigate back to rooms list if room not found
@@ -96,8 +101,17 @@ export class RoomWizardComponent implements OnInit {
 		}
 	}
 
+	onOpenAdvancedMode() {
+		this.isBasicCreation.set(false);
+		this.wizardService.goToStep(0); // Reset to first step
+	}
+
 	onPrevious() {
 		this.wizardService.goToPreviousStep();
+	}
+
+	onBack() {
+		this.isBasicCreation.set(true);
 	}
 
 	onNext() {
@@ -111,6 +125,22 @@ export class RoomWizardComponent implements OnInit {
 	async onCancel() {
 		this.wizardService.resetWizard();
 		await this.navigationService.navigateTo('rooms', undefined, true);
+	}
+
+	async createRoom(roomIdPrefix?: string) {
+		try {
+			// Call the room service to create a new room
+			const { moderatorRoomUrl } = await this.roomService.createRoom({ roomIdPrefix });
+			await this.navigationService.redirectTo(moderatorRoomUrl);
+		} catch (error) {
+			const errorMessage = `Failed to create room ${roomIdPrefix}`;
+			this.notificationService.showSnackbar(errorMessage);
+			console.error(errorMessage, error);
+		} finally {
+			this.wizardService.resetWizard();
+			// Deactivate loading state
+			this.isCreatingRoom.set(false);
+		}
 	}
 
 	async onFinish() {

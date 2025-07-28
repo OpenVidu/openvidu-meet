@@ -5,6 +5,7 @@
 	@include ov-page-content;
 	min-height: 600px;
 	gap: 0;
+	padding-top: 0;
 }
 
 .wizard-header {
@@ -37,7 +38,30 @@
 }
 
 .wizard-footer {
-	margin-top: auto;
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	.basic-nav,
+	.wizard-nav {
+		width: 100%;
+		max-width: 650px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.basic-nav .wizard-navigation {
+		padding: var(--ov-meet-spacing-md) 0 0 0;
+	}
+	.cancel-button {
+		@include ov-button-base;
+		border-radius: var(--ov-meet-radius-sm);
+		min-width: 120px;
+		color: var(--ov-meet-text-secondary);
+		border-color: var(--ov-meet-border-color-strong);
+		&:hover {
+			background-color: var(--ov-meet-surface-hover);
+		}
+	}
 }
 
 .toggle-label {

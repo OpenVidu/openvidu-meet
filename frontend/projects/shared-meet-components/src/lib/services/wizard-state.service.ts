@@ -65,10 +65,10 @@ export class RoomWizardStateService {
 		// Define wizard steps
 		const baseSteps: WizardStep[] = [
 			{
-				id: 'basic',
+				id: 'roomDetails',
 				label: 'Room Details',
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
-				isActive: !editMode, // Start with basic step active in create mode
+				isActive: !editMode, // Start with roomDetails step active in create mode
 				isVisible: true,
 				formGroup: this.formBuilder.group(
 					{
@@ -174,7 +174,7 @@ export class RoomWizardStateService {
 		];
 
 		this._steps.set(baseSteps);
-		const initialStepIndex = editMode ? 1 : 0; // Skip basic step in edit mode
+		const initialStepIndex = editMode ? 1 : 0; // Skip roomDetails step in edit mode
 		this._currentStepIndex.set(initialStepIndex);
 
 		// Update step visibility after index is set
@@ -192,7 +192,7 @@ export class RoomWizardStateService {
 		let updatedOptions: MeetRoomOptions;
 
 		switch (stepId) {
-			case 'basic':
+			case 'roomDetails':
 				updatedOptions = {
 					...currentOptions
 				};
@@ -360,9 +360,10 @@ export class RoomWizardStateService {
 		return {
 			showPrevious: !isFirstStep,
 			showNext: !isLastStep,
-			showCancel: true,
+			showCancel: false,
+			showBack: true,
 			showFinish: isLastStep,
-			showSkipAndFinish: !isEditMode && isFirstStep,
+			showSkipAndFinish: false, // Skip and finish is not used in this wizard
 			disableFinish: isSomeStepInvalid,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
@@ -373,13 +374,13 @@ export class RoomWizardStateService {
 
 	/**
 	 * Checks if the wizard is in edit mode.
-	 * Edit mode is determined by whether the basic step is completed and its form is disabled.
+	 * Edit mode is determined by whether the roomDetails step is completed and its form is disabled.
 	 * @returns True if in edit mode, false otherwise
 	 */
 	private isEditMode(): boolean {
 		const visibleSteps = this._visibleSteps();
-		const basicStep = visibleSteps.find((step) => step.id === 'basic');
-		const isEditMode = !!basicStep && basicStep.isCompleted && basicStep.formGroup.disabled;
+		const roomDetailsStep = visibleSteps.find((step) => step.id === 'roomDetails');
+		const isEditMode = !!roomDetailsStep && roomDetailsStep.isCompleted && roomDetailsStep.formGroup.disabled;
 		return isEditMode;
 	}
 

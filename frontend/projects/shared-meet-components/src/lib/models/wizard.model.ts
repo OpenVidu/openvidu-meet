@@ -19,7 +19,10 @@ export interface WizardNavigationConfig {
 	// Button visibility flags
 	showPrevious: boolean;
 	showNext: boolean;
+	// Cancel button visibility
 	showCancel: boolean;
+	// Used for going back to the previous page
+	showBack: boolean;
 	showFinish: boolean;
 	showSkipAndFinish: boolean; // Used for quick create actions
 	disableFinish?: boolean;
@@ -36,6 +39,6 @@ export interface WizardNavigationConfig {
  * Event interface for wizard navigation actions
  */
 export interface WizardNavigationEvent {
-	action: 'next' | 'previous' | 'cancel' | 'finish';
+	action: 'next' | 'previous' | 'cancel' | 'finish' | 'back';
 	currentStepIndex?: number;
 }

@@ -17,7 +17,8 @@ export class WizardNavComponent {
 	@Input() config: WizardNavigationConfig = {
 		showPrevious: false,
 		showNext: true,
-		showCancel: true,
+		showCancel: false,
+		showBack: true,
 		showFinish: false,
 		showSkipAndFinish: false,
 		disableFinish: false,
@@ -26,6 +27,8 @@ export class WizardNavComponent {
 		cancelLabel: 'Cancel',
 		finishLabel: 'Finish'
 	};
+
+	@Input() backButtonText: string = 'Back';
 
 	/**
 	 * Current step identifier for context
@@ -38,6 +41,7 @@ export class WizardNavComponent {
 	@Output() previous = new EventEmitter<WizardNavigationEvent>();
 	@Output() next = new EventEmitter<WizardNavigationEvent>();
 	@Output() cancel = new EventEmitter<WizardNavigationEvent>();
+	@Output() back = new EventEmitter<WizardNavigationEvent>();
 	@Output() finish = new EventEmitter<WizardNavigationEvent>();
 
 	/**
@@ -75,6 +79,16 @@ export class WizardNavComponent {
 			currentStepIndex: this.currentStepId
 		};
 		this.cancel.emit(event);
+		this.navigate.emit(event);
+	}
+
+	onBack() {
+		if (!this.config.showBack) return;
+		const event: WizardNavigationEvent = {
+			action: 'back',
+			currentStepIndex: this.currentStepId
+		};
+		this.back.emit(event);
 		this.navigate.emit(event);
 	}
 

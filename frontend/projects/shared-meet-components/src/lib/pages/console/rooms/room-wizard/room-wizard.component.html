@@ -6,14 +6,16 @@
 					editMode ? 'Edit your room settings' : 'Create and configure your video room in a few simple steps'
 				}}
 			</p>
-			<ov-step-indicator
-				[steps]="steps()"
-				[currentStepIndex]="currentStepIndex()"
-				[allowNavigation]="true"
-				[editMode]="editMode"
-				(stepClick)="onStepClick($event)"
-			>
-			</ov-step-indicator>
+			@if (!isBasicCreation()) {
+				<ov-step-indicator
+					[steps]="steps()"
+					[currentStepIndex]="currentStepIndex()"
+					[allowNavigation]="true"
+					[editMode]="editMode"
+					(stepClick)="onStepClick($event)"
+				>
+				</ov-step-indicator>
+			}
 		</header>
 
 		<main class="wizard-content">
@@ -41,21 +43,30 @@
 						</div>
 					</div>
 				} @else {
-					@switch (currentStep()?.id) {
-						@case ('basic') {
-							<ov-room-wizard-basic-info></ov-room-wizard-basic-info>
-						}
-						@case ('recording') {
-							<ov-recording-preferences></ov-recording-preferences>
-						}
-						@case ('recordingTrigger') {
-							<ov-recording-trigger></ov-recording-trigger>
-						}
-						@case ('recordingLayout') {
-							<ov-recording-layout></ov-recording-layout>
-						}
-						@case ('preferences') {
-							<ov-room-preferences></ov-room-preferences>
+					@if (isBasicCreation()) {
+						<!-- Basic Room Creation -->
+						<ov-room-basic-creation
+							(createRoom)="createRoom($event)"
+							(openAdvancedMode)="onOpenAdvancedMode()"
+						></ov-room-basic-creation>
+					} @else {
+						<!-- Room Wizard Steps -->
+						@switch (currentStep()?.id) {
+							@case ('roomDetails') {
+								<ov-room-wizard-room-details></ov-room-wizard-room-details>
+							}
+							@case ('recording') {
+								<ov-recording-preferences></ov-recording-preferences>
+							}
+							@case ('recordingTrigger') {
+								<ov-recording-trigger></ov-recording-trigger>
+							}
+							@case ('recordingLayout') {
+								<ov-recording-layout></ov-recording-layout>
+							}
+							@case ('preferences') {
+								<ov-room-preferences></ov-room-preferences>
+							}
 						}
 					}
 				}
@@ -63,15 +74,29 @@
 		</main>
 
 		<footer class="wizard-footer">
-			<ov-wizard-nav
-				[config]="navigationConfig()"
-				[currentStepId]="currentStepIndex()"
-				(previous)="onPrevious()"
-				(next)="onNext()"
-				(cancel)="onCancel()"
-				(finish)="onFinish()"
-			>
-			</ov-wizard-nav>
+			@if (isBasicCreation()) {
+				<div class="basic-nav">
+					<nav class="wizard-navigation">
+						<button mat-stroked-button class="cancel-button" (click)="onCancel()">
+							<mat-icon>close</mat-icon>
+							<span>Cancel</span>
+						</button>
+					</nav>
+				</div>
+			} @else {
+				<ov-wizard-nav
+					class="wizard-nav"
+					[config]="navigationConfig()"
+					[currentStepId]="currentStepIndex()"
+					[backButtonText]="'Back to simple mode'"
+					(previous)="onPrevious()"
+					(next)="onNext()"
+					(cancel)="onCancel()"
+					(back)="onBack()"
+					(finish)="onFinish()"
+				>
+				</ov-wizard-nav>
+			}
 		</footer>
 	}
 </div>

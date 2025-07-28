@@ -1,0 +1,53 @@
+<div class="room-basic-creation-page fade-in">
+	<!-- Header Section -->
+	<header class="page-header">
+		<mat-icon class="ov-room-icon page-icon">video_chat</mat-icon>
+		<div class="page-title-group">
+			<h2 class="page-title">Create Room</h2>
+			<p class="page-description">
+				Create a new video room with optional name prefix. For advanced options, use the room wizard.
+			</p>
+		</div>
+	</header>
+
+	<!-- Form Section -->
+	<main class="page-content">
+		<form [formGroup]="roomCreationForm" class="room-basic-creation-form" (ngSubmit)="onCreateRoom()">
+			<!-- Room Prefix Field -->
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Room Name Prefix</mat-label>
+				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" />
+				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
+				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
+				@if (roomCreationForm.get('roomIdPrefix')?.hasError('maxlength')) {
+					<mat-error> Room name prefix cannot exceed 50 characters </mat-error>
+				}
+			</mat-form-field>
+
+			<!-- Action Buttons -->
+			<div class="action-buttons">
+				<button
+					mat-button
+					color="primary"
+					type="submit"
+					[disabled]="!isFormValid"
+					class="create-button"
+				>
+					<mat-icon>add</mat-icon>
+					<span>Create Room</span>
+				</button>
+
+				<button
+					mat-stroked-button
+					type="button"
+					(click)="onOpenAdvancedMode()"
+					class="advanced-button"
+					matTooltip="Open room wizard for advanced configuration"
+				>
+					<mat-icon>handyman</mat-icon>
+					<span>Advanced Setup</span>
+				</button>
+			</div>
+		</form>
+	</main>
+</div>
