@@ -51,9 +51,9 @@ import {
 } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'app-video-room',
-	templateUrl: './video-room.component.html',
-	styleUrls: ['./video-room.component.scss'],
+	selector: 'app-meeting',
+	templateUrl: './meeting.component.html',
+	styleUrls: ['./meeting.component.scss'],
 	standalone: true,
 	imports: [
 		OpenViduComponentsUiModule,
@@ -72,7 +72,7 @@ import {
 		MatRippleModule
 	]
 })
-export class VideoRoomComponent implements OnInit {
+export class MeetingComponent implements OnInit {
 	participantForm = new FormGroup({
 		name: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
@@ -88,7 +88,7 @@ export class VideoRoomComponent implements OnInit {
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
 
-	showRoom = false;
+	showMeeting = false;
 	features: Signal<ApplicationFeatures>;
 	meetingEndedByMe = false;
 
@@ -216,11 +216,11 @@ export class VideoRoomComponent implements OnInit {
 		}
 	}
 
-	async submitAccessRoom() {
+	async submitAccessMeeting() {
 		const { valid, value } = this.participantForm;
 		if (!valid || !value.name?.trim()) {
 			// If the form is invalid, do not proceed
-			console.warn('Participant form is invalid. Cannot access room.');
+			console.warn('Participant form is invalid. Cannot access meeting.');
 			return;
 		}
 
@@ -231,14 +231,14 @@ export class VideoRoomComponent implements OnInit {
 			await this.generateParticipantToken();
 			await this.addParticipantNameToUrl();
 			await this.roomService.loadPreferences(this.roomId);
-			this.showRoom = true;
+			this.showMeeting = true;
 		} catch (error) {
-			console.error('Error accessing room:', error);
+			console.error('Error accessing meeting:', error);
 		}
 	}
 
 	/**
-	 * Generates a participant token for joining a video room.
+	 * Generates a participant token for joining a meeting.
 	 *
 	 * @throws When participant already exists in the room (status 409)
 	 * @returns Promise that resolves when token is generated

@@ -1,0 +1,212 @@
+@if (showMeeting) {
+	<ov-videoconference
+		[token]="participantToken"
+		[participantName]="participantName"
+		[prejoin]="true"
+		[prejoinDisplayParticipantName]="false"
+		[videoEnabled]="features().videoEnabled"
+		[audioEnabled]="features().audioEnabled"
+		[toolbarCameraButton]="features().showCamera"
+		[toolbarMicrophoneButton]="features().showMicrophone"
+		[toolbarScreenshareButton]="features().showScreenShare"
+		[toolbarLeaveButton]="!features().canModerateRoom"
+		[toolbarRecordingButton]="features().canRecordRoom"
+		[toolbarViewRecordingsButton]="features().showRecordings"
+		[toolbarBroadcastingButton]="false"
+		[toolbarChatPanelButton]="features().showChat"
+		[toolbarBackgroundEffectsButton]="features().showBackgrounds"
+		[toolbarParticipantsPanelButton]="features().showParticipantList"
+		[toolbarSettingsButton]="features().showSettings"
+		[toolbarFullscreenButton]="features().showFullscreen"
+		[toolbarActivitiesPanelButton]="features().showRecordings"
+		[activitiesPanelRecordingActivity]="features().showRecordings"
+		[recordingActivityReadOnly]="!features().canRecordRoom"
+		[recordingActivityShowControls]="{
+			play: false,
+			download: false,
+			delete: false,
+			externalView: true
+		}"
+		[activitiesPanelBroadcastingActivity]="false"
+		[showDisconnectionDialog]="false"
+		(onRoomCreated)="onRoomCreated($event)"
+		(onParticipantConnected)="onParticipantConnected($event)"
+		(onParticipantLeft)="onParticipantLeft($event)"
+		(onRecordingStartRequested)="onRecordingStartRequested($event)"
+		(onRecordingStopRequested)="onRecordingStopRequested($event)"
+		(onViewRecordingsClicked)="onViewRecordingsClicked(undefined)"
+		(onViewRecordingClicked)="onViewRecordingsClicked($event)"
+	>
+		@if (features().canModerateRoom) {
+			<div *ovToolbarAdditionalButtons>
+				<!-- Copy Links Button -->
+				<button
+					id="copy-links-btn"
+					mat-icon-button
+					[matMenuTriggerFor]="linksMenu"
+					matTooltip="Copy meeting links"
+					[disableRipple]="true"
+					class="copy-links-btn"
+				>
+					<mat-icon>link</mat-icon>
+				</button>
+				<mat-menu #linksMenu="matMenu">
+					<button mat-menu-item (click)="copyModeratorLink()" id="copy-moderator-link">
+						<mat-icon>content_copy</mat-icon>
+						<span>Copy Moderator Link</span>
+					</button>
+					<button mat-menu-item (click)="copyPublisherLink()" id="copy-publisher-link">
+						<mat-icon>content_copy</mat-icon>
+						<span>Copy Publisher Link</span>
+					</button>
+				</mat-menu>
+
+				<!-- Leave Button -->
+				<button
+					id="leave-btn"
+					mat-icon-button
+					[matMenuTriggerFor]="leaveMenu"
+					matTooltip="Leave options"
+					[disableRipple]="true"
+					class="custom-leave-btn"
+				>
+					<mat-icon>call_end</mat-icon>
+				</button>
+				<mat-menu #leaveMenu="matMenu">
+					<button mat-menu-item (click)="leaveMeeting()" id="leave-option">
+						<mat-icon>logout</mat-icon>
+						<span>Leave meeting</span>
+					</button>
+					<mat-divider></mat-divider>
+					<button mat-menu-item (click)="endMeeting()" id="end-meeting-option">
+						<mat-icon>no_meeting_room</mat-icon>
+						<span>End meeting for all</span>
+					</button>
+				</mat-menu>
+			</div>
+
+			<!-- Participant Panel Item Elements -->
+			<div *ovParticipantPanelItemElements="let participant">
+				<!-- Kick participant -->
+				@if (!participant.isLocal) {
+					<button
+						mat-icon-button
+						(click)="forceDisconnectParticipant(participant)"
+						matTooltip="Disconnect participant"
+						class="force-disconnect-btn"
+					>
+						<mat-icon>call_end</mat-icon>
+					</button>
+				}
+			</div>
+		}
+	</ov-videoconference>
+} @else {
+	<!-- Move this logic to prejoin meeting page -->
+	<div class="ov-page-container">
+		<div class="room-access-container fade-in">
+			<!-- Header Section -->
+			<div class="room-header">
+				<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
+				<div class="room-info">
+					<h1 class="room-title">{{ roomId }}</h1>
+					<p class="room-subtitle">Choose how you want to proceed</p>
+				</div>
+			</div>
+
+			<!-- Action Cards Grid -->
+			<div class="action-cards-grid">
+				<!-- Join Room Card -->
+				<mat-card class="action-card primary-card fade-in">
+					<mat-card-header class="card-header">
+						<mat-icon class="ov-room-icon card-icon">meeting_room</mat-icon>
+						<div class="card-title-group">
+							<mat-card-title>Join Meeting</mat-card-title>
+							<mat-card-subtitle>Enter the room and start connecting</mat-card-subtitle>
+						</div>
+					</mat-card-header>
+
+					<mat-card-content class="card-content">
+						<form [formGroup]="participantForm" (ngSubmit)="submitAccessMeeting()" class="join-form">
+							<mat-form-field appearance="outline" class="name-field">
+								<mat-label>Your display name</mat-label>
+								<input
+									id="participant-name-input"
+									matInput
+									placeholder="Enter your name"
+									formControlName="name"
+									required
+								/>
+								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
+								@if (participantForm.get('name')?.hasError('minlength')) {
+									<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
+								}
+								@if (participantForm.get('name')?.hasError('required')) {
+									<mat-error> The name is <strong>required</strong> </mat-error>
+								}
+								@if (participantForm.get('name')?.hasError('participantExists')) {
+									<mat-error>
+										The name is already taken. <strong> Please choose another name </strong>
+									</mat-error>
+								}
+							</mat-form-field>
+
+							<button
+								mat-raised-button
+								color="primary"
+								id="participant-name-submit"
+								type="submit"
+								class="join-button"
+								[disabled]="participantForm.invalid"
+							>
+								<span>Join Meeting</span>
+							</button>
+						</form>
+					</mat-card-content>
+				</mat-card>
+
+				<!-- View Recordings Card -->
+				@if (showRecordingCard) {
+					<mat-card class="action-card secondary-card fade-in-delayed">
+						<mat-card-header class="card-header">
+							<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
+							<div class="card-title-group">
+								<mat-card-title>View Recordings</mat-card-title>
+								<mat-card-subtitle>Browse and manage past recordings</mat-card-subtitle>
+							</div>
+						</mat-card-header>
+
+						<mat-card-content class="card-content">
+							<div class="recordings-info">
+								<p class="recordings-description">
+									Access previously recorded meetings from this room. You can watch, download, or
+									manage existing recordings.
+								</p>
+							</div>
+
+							<button
+								id="view-recordings-btn"
+								mat-stroked-button
+								color="accent"
+								(click)="goToRecordings()"
+								class="recordings-button"
+							>
+								<span>Browse Recordings</span>
+							</button>
+						</mat-card-content>
+					</mat-card>
+				}
+			</div>
+
+			<!-- Quick Actions -->
+			@if (showBackButton) {
+				<div class="quick-actions fade-in-delayed-more">
+					<button mat-button class="quick-action-button" (click)="goBack()">
+						<mat-icon>arrow_back</mat-icon>
+						<span>{{ backButtonText }}</span>
+					</button>
+				</div>
+			}
+		</div>
+	</div>
+}

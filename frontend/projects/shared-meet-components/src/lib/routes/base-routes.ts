@@ -13,7 +13,7 @@ import {
 import {
 	ConsoleComponent,
 	DevelopersSettingsComponent,
-	DisconnectedComponent,
+	EndMeetingComponent,
 	ErrorComponent,
 	LoginComponent,
 	OverviewComponent,
@@ -22,7 +22,7 @@ import {
 	RoomsComponent,
 	RoomWizardComponent,
 	UsersPermissionsComponent,
-	VideoRoomComponent,
+	MeetingComponent,
 	ViewRecordingComponent
 } from '@lib/pages';
 
@@ -34,7 +34,7 @@ export const baseRoutes: Routes = [
 	},
 	{
 		path: 'room/:room-id',
-		component: VideoRoomComponent,
+		component: MeetingComponent,
 		canActivate: [
 			runGuardsSerially(extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard, removeRoomSecretGuard)
 		]
@@ -56,7 +56,7 @@ export const baseRoutes: Routes = [
 		component: ViewRecordingComponent,
 		canActivate: [checkRecordingAuthGuard]
 	},
-	{ path: 'disconnected', component: DisconnectedComponent },
+	{ path: 'disconnected', component: EndMeetingComponent },
 	{ path: 'error', component: ErrorComponent },
 	{
 		path: '',
