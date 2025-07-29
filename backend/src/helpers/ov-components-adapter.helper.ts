@@ -60,7 +60,8 @@ export class OpenViduComponentsAdapterHelper {
 			endedAt: info.endDate,
 			duration: info.duration,
 			size: info.size,
-			location: undefined
+			location: undefined,
+			error: info.error,
 		};
 	}
 

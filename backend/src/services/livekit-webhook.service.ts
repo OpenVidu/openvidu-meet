@@ -235,10 +235,7 @@ export class LivekitWebhookService {
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
 
 			// Common tasks for all webhook types
-			const commonTasks = [
-				this.storageService.saveRecordingMetadata(recordingInfo),
-				this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
-			];
+			const commonTasks = [this.storageService.saveRecordingMetadata(recordingInfo)];
 
 			const specificTasks: Promise<unknown>[] = [];
 
@@ -264,9 +261,16 @@ export class LivekitWebhookService {
 						);
 					}
 
+					specificTasks.push(
+						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+					);
+
 					break;
 				case 'ended':
-					specificTasks.push(this.recordingService.releaseRecordingLockIfNoEgress(roomId));
+					specificTasks.push(
+						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
+						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+					);
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
 					break;
 			}

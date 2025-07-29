@@ -24,6 +24,7 @@ import {
 } from '../models/index.js';
 import {
 	DistributedEventService,
+	FrontendEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
@@ -43,6 +44,7 @@ export class RecordingService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		// Register the recording garbage collector task
@@ -70,6 +72,14 @@ export class RecordingService {
 
 			await this.validateRoomForStartRecording(roomId);
 
+			// Manually send the recording signal to OpenVidu Components for avoiding missing event if timeout occurs
+			// and the egress_started webhook is not received.
+			await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+				recordingId: '',
+				roomId,
+				status: MeetRecordingStatus.STARTING
+			});
+
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				timeoutId = setTimeout(() => {
 					if (isOperationCompleted) return;
@@ -78,7 +88,7 @@ export class RecordingService {
 
 					//Clean up the event listener and timeout
 					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
-					this.handleRecordingLockTimeout(recordingId, roomId).catch(() => {});
+					this.handleRecordingTimeout(recordingId, roomId).catch(() => {});
 					reject(errorRecordingStartTimeout(roomId));
 				}, ms(INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT));
 			});
@@ -178,7 +188,7 @@ export class RecordingService {
 					break;
 				case EgressStatus.EGRESS_STARTING:
 					// Avoid pending egress after timeout, stop it immediately
-					await this.livekitService.stopEgress(egressId)
+					await this.livekitService.stopEgress(egressId);
 					// The recording is still starting, it cannot be stopped yet.
 					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
 				default:
@@ -545,13 +555,23 @@ export class RecordingService {
 	}
 
 	/**
-	 * Callback function to release the active recording lock after a timeout.
-	 * This function is scheduled by the recording cleanup timer when a recording is started.
+	 * Handles the timeout event for a recording session in a specific room.
 	 *
-	 * @param recordingId
-	 * @param roomId
+	 * This method is triggered when a recording cleanup timer fires, indicating that a recording
+	 * has either failed to start or has not been stopped within the expected timeframe.
+	 * It attempts to update the recording status to `FAILED` and stop the recording if necessary.
+	 *
+	 * If the recording is already stopped, not found, or cannot be stopped because it is still starting,
+	 * the method logs the appropriate message and determines whether to release the active recording lock.
+	 *
+	 * Regardless of the outcome, if the lock should be released, it attempts to release the recording lock
+	 * for the room to allow further recordings.
+	 *
+	 * @param recordingId - The unique identifier of the recording session.
+	 * @param roomId - The unique identifier of the room associated with the recording.
+	 * @returns A promise that resolves when the timeout handling is complete.
 	 */
-	protected async handleRecordingLockTimeout(recordingId: string, roomId: string) {
+	protected async handleRecordingTimeout(recordingId: string, roomId: string) {
 		this.logger.debug(`Recording cleanup timer triggered for room '${roomId}'.`);
 
 		let shouldReleaseLock = false;
@@ -562,6 +582,16 @@ export class RecordingService {
 					`Timeout triggered but recordingId is empty for room '${roomId}'. Recording likely failed to start.`
 				);
 				shouldReleaseLock = true;
+				const recordingInfo: MeetRecordingInfo = {
+					recordingId,
+					roomId,
+					status: MeetRecordingStatus.FAILED,
+					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 4 CPUs for each room.`
+				};
+
+				// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
+				// because of the egress_ended or egress_failed webhook is not received.
+				await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo);
 			} else {
 				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
 				await this.stopRecording(recordingId);
