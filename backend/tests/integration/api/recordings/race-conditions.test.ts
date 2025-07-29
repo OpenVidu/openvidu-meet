@@ -62,7 +62,7 @@ describe('Recording API Race Conditions Tests', () => {
 				throw new Error('Failed to start room composite');
 			});
 		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
-		const handleRecordingLockTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingLockTimeout');
+		const handleRecordingLockTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
 		const releaseLockSpy = jest.spyOn(recordingService as any, 'releaseRecordingLockIfNoEgress');
 
 		try {
@@ -115,7 +115,7 @@ describe('Recording API Race Conditions Tests', () => {
 			});
 
 		// Mock the handleRecordingLockTimeout method to prevent actual timeout handling
-		const handleTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingLockTimeout');
+		const handleTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
 		// Mock the releaseRecordingLockIfNoEgress method to prevent actual lock release
 		const releaseLockSpy = jest.spyOn(recordingService as any, 'releaseRecordingLockIfNoEgress');
 		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
