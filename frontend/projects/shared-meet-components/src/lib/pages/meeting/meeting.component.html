@@ -27,6 +27,9 @@
 			delete: false,
 			externalView: true
 		}"
+		[recordingActivityStartStopRecordingButton]="features().canRecordRoom"
+		[recordingActivityViewRecordingsButton]="features().showRecordings"
+		[recordingActivityShowRecordingsList]="false"
 		[activitiesPanelBroadcastingActivity]="false"
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"
