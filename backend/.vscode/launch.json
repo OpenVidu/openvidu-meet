@@ -1,0 +1,62 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Jest Test",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            "args": [
+                "--config",
+                "jest.config.mjs",
+                "--runInBand",
+                "--no-cache",
+                "${file}"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/node_modules/.bin/jest.cmd"
+            },
+            "runtimeArgs": [
+                "--experimental-vm-modules"
+            ],
+            "env": {
+                "NODE_ENV": "test"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug Current Jest Test",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            "args": [
+                "--config",
+                "jest.config.mjs",
+                "--runInBand",
+                "--testNamePattern",
+                "${input:testName}",
+                "${relativeFile}"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "runtimeArgs": [
+                "--experimental-vm-modules"
+            ],
+            "env": {
+                "NODE_ENV": "test"
+            },
+            "cwd": "${workspaceFolder}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "description": "Test name pattern (optional)",
+            "default": "",
+            "type": "promptString"
+        }
+    ]
+}
