@@ -194,24 +194,24 @@ describe('Room API Security Tests', () => {
 			roomId = room.roomId;
 		});
 
-		it('should fail when request includes API key', async () => {
+		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
+				.put(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
 				.send(roomPreferences);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${INTERNAL_ROOMS_PATH}/${roomId}`)
+				.put(`${ROOMS_PATH}/${roomId}`)
 				.set('Cookie', adminCookie)
 				.send(roomPreferences);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${INTERNAL_ROOMS_PATH}/${roomId}`).send(roomPreferences);
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}`).send(roomPreferences);
 			expect(response.status).toBe(401);
 		});
 	});

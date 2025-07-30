@@ -50,6 +50,14 @@ roomRouter.get(
 	configureRoomAuthorization,
 	roomCtrl.getRoom
 );
+
+roomRouter.put(
+	'/:roomId',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomId,
+	withValidRoomPreferences,
+	roomCtrl.updateRoomPreferences
+);
 roomRouter.delete(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
@@ -62,13 +70,6 @@ export const internalRoomRouter = Router();
 internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRoomRouter.use(bodyParser.json());
 
-internalRoomRouter.put(
-	'/:roomId',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
-	withValidRoomId,
-	withValidRoomPreferences,
-	roomCtrl.updateRoomPreferences
-);
 internalRoomRouter.get(
 	'/:roomId/preferences',
 	withAuth(participantTokenValidator),

@@ -251,7 +251,7 @@ export const updateRoomPreferences = async (roomId: string, preferences: any) =>
 
 	const adminCookie = await loginUser();
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}`)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
 		.set('Cookie', adminCookie)
 		.send(preferences);
 };
