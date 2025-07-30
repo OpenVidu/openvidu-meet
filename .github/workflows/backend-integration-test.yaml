@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - 'backend/src/**'
+      - 'backend/package.json'
+      - 'backend/package-lock.json'
+      - 'backend/tests/**'
   pull_request:
     paths:
       - 'backend/src/**'
