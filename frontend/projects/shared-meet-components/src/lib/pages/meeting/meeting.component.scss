@@ -195,6 +195,57 @@
 	margin-top: auto;
 }
 
+// Room URL Badge
+.room-url-badge {
+	margin: var(--ov-meet-spacing-sm) auto;
+	.room-url-badge-title {
+		text-align: center;
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-light);
+		color: var(--ov-meet-text-primary);
+		margin-bottom: var(--ov-meet-spacing-sm);
+	}
+	.room-url-badge-container {
+		@include ov-flex-center;
+		gap: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		background-color: var(--ov-meet-surface-color);
+		border: 1px solid var(--ov-meet-border-color-light);
+		border-radius: var(--ov-meet-radius-lg);
+		max-width: fit-content;
+		@include ov-theme-transition;
+
+		&:hover {
+			background-color: var(--ov-meet-surface-hover);
+			border-color: var(--ov-meet-border-color);
+		}
+
+		.room-url-text {
+			font-family: var(--ov-meet-font-family-mono, 'Roboto Mono', monospace);
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+			font-weight: var(--ov-meet-font-weight-medium);
+			letter-spacing: 0.025em;
+			user-select: all;
+			cursor: text;
+		}
+
+		.copy-url-btn {
+			@include ov-button-base;
+			width: 32px;
+			height: 32px;
+			min-width: 32px;
+			padding: 0;
+			color: var(--ov-meet-text-hint);
+			@include ov-theme-transition;
+
+			.mat-icon {
+				@include ov-icon(sm);
+			}
+		}
+	}
+}
+
 // Quick Actions - Footer actions
 .quick-actions {
 	@include ov-flex-center;
@@ -244,6 +295,21 @@
 
 		.card-content {
 			padding: var(--ov-meet-spacing-md);
+		}
+	}
+
+	.room-url-badge-container {
+		margin: var(--ov-meet-spacing-md) auto;
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+
+		.room-url-text {
+			font-size: var(--ov-meet-font-size-xs);
+		}
+
+		.copy-url-btn {
+			width: 28px;
+			height: 28px;
+			min-width: 28px;
 		}
 	}
 }

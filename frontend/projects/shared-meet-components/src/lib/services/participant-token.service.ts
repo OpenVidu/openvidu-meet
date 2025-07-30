@@ -98,6 +98,7 @@ export class ParticipantTokenService {
 
 	setParticipantRole(participantRole: ParticipantRole): void {
 		this.participantRole = participantRole;
+		this.featureConfService.setParticipantRole(this.participantRole);
 	}
 
 	getParticipantRole(): ParticipantRole {

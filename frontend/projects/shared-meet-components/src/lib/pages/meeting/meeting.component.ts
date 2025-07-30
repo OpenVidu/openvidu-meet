@@ -122,6 +122,10 @@ export class MeetingComponent implements OnInit {
 		await this.initializeParticipantName();
 	}
 
+	get hostname(): string {
+		return window.location.origin.replace('http://', '').replace('https://', '');
+	}
+
 	/**
 	 * Sets the back button text based on the application mode and user role
 	 */
