@@ -28,14 +28,13 @@ export class OpenViduComponentsAdapterHelper {
 		return { payload, options };
 	}
 
-	static generateRoomStatusSignal(recordingEgress: EgressInfo[], participantSid?: string) {
-		const isRecordingActive = recordingEgress.some((egress) => egress.status === EgressStatus.EGRESS_ACTIVE);
+	static generateRoomStatusSignal(recordingInfo: MeetRecordingInfo[], participantSid?: string) {
+		const isRecordingActive = recordingInfo.some((rec) => rec.status === MeetRecordingStatus.ACTIVE);
 		const payload = {
 			isRecordingStarted: isRecordingActive,
-			recordingList: recordingEgress.map((egress) => {
-				const recInfo = RecordingHelper.toRecordingInfo(egress);
-				return OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(recInfo);
-			})
+			recordingList: recordingInfo.map((rec) =>
+				OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(rec)
+			)
 		};
 
 		const options = {
@@ -61,7 +60,7 @@ export class OpenViduComponentsAdapterHelper {
 			duration: info.duration,
 			size: info.size,
 			location: undefined,
-			error: info.error,
+			error: info.error
 		};
 	}
 

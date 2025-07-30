@@ -41,15 +41,17 @@ export class FrontendEventService {
 	 * with the room status to OpenVidu Components. If recording is not started,
 	 * it skips sending the signal.
 	 */
-	async sendRoomStatusSignalToOpenViduComponents(roomId: string, participantSid: string) {
+	async sendRoomStatusSignalToOpenViduComponents(
+		roomId: string,
+		participantSid: string,
+		recordingInfo: MeetRecordingInfo[]
+	) {
 		this.logger.debug(`Sending room status signal for room ${roomId} to OpenVidu Components.`);
 
 		try {
-			const recordingEgress = await this.livekitService.getRecordingsEgress(roomId);
-
 			// Construct the payload and signal options
 			const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
-				recordingEgress,
+				recordingInfo,
 				participantSid
 			);
 

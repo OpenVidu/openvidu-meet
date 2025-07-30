@@ -147,7 +147,12 @@ export class LivekitWebhookService {
 		if (this.livekitService.isEgressParticipant(participant)) return;
 
 		try {
-			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(room.name, participant.sid);
+			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
+			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(
+				room.name,
+				participant.sid,
+				recordings
+			);
 		} catch (error) {
 			this.logger.error('Error sending room status signal on participant join:', error);
 		}
