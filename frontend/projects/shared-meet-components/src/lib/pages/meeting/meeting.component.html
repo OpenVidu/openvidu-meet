@@ -44,25 +44,14 @@
 			<div *ovToolbarAdditionalButtons>
 				<!-- Copy Links Button -->
 				<button
-					id="copy-links-btn"
+					id="copy-publisher-link"
 					mat-icon-button
-					[matMenuTriggerFor]="linksMenu"
-					matTooltip="Copy meeting links"
+					(click)="copyPublisherLink()"
 					[disableRipple]="true"
-					class="copy-links-btn"
+					matTooltip="Copy the meeting link"
 				>
 					<mat-icon>link</mat-icon>
 				</button>
-				<mat-menu #linksMenu="matMenu">
-					<button mat-menu-item (click)="copyModeratorLink()" id="copy-moderator-link">
-						<mat-icon>content_copy</mat-icon>
-						<span>Copy Moderator Link</span>
-					</button>
-					<button mat-menu-item (click)="copyPublisherLink()" id="copy-publisher-link">
-						<mat-icon>content_copy</mat-icon>
-						<span>Copy Publisher Link</span>
-					</button>
-				</mat-menu>
 
 				<!-- Leave Button -->
 				<button
