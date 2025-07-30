@@ -4,7 +4,6 @@
 .room-access-container {
 	@include ov-container;
 	@include ov-page-content;
-	min-height: 100vh;
 	padding-top: var(--ov-meet-spacing-xxl);
 	background: var(--ov-meet-background-color);
 	gap: 0;

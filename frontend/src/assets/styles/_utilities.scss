@@ -1004,6 +1004,8 @@
 // === PAGE STRUCTURE UTILITIES ===
 
 .ov-page-container {
+	height: 100%;
+	overflow: auto;
 	button {
 		@include ov-button-base;
 	}
