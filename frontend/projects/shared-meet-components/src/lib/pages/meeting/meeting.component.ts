@@ -395,8 +395,14 @@ export class MeetingComponent implements OnInit {
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
 		try {
 			await this.recManagerService.startRecording(event.roomName);
-		} catch (error) {
-			console.error(error);
+		} catch (error: unknown) {
+			if ((error as any).status === 503) {
+				console.error(
+					"No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, a recording uses 4 CPUs for each room."
+				);
+			} else {
+				console.error(error);
+			}
 		}
 	}
 
