@@ -44,12 +44,14 @@ import {
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
+	ParticipantService,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent,
 	RemoteParticipant,
 	Room,
 	RoomEvent
 } from 'openvidu-components-angular';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
 	selector: 'app-meeting',
@@ -89,10 +91,13 @@ export class MeetingComponent implements OnInit {
 	participantName = '';
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
+	remoteParticipants: ParticipantModel[] = [];
 
 	showMeeting = false;
 	features: Signal<ApplicationFeatures>;
 	meetingEndedByMe = false;
+
+	private destroy$ = new Subject<void>();
 
 	constructor(
 		protected route: ActivatedRoute,
@@ -104,6 +109,7 @@ export class MeetingComponent implements OnInit {
 		protected meetingService: MeetingService,
 		protected openviduService: OpenViduService,
 		protected participantService: ParticipantTokenService,
+		protected componentParticipantService: ParticipantService,
 		protected appDataService: AppDataService,
 		protected wcManagerService: WebComponentManagerService,
 		protected sessionStorageService: SessionStorageService,
@@ -126,6 +132,11 @@ export class MeetingComponent implements OnInit {
 		await this.setBackButtonText();
 		await this.checkForRecordings();
 		await this.initializeParticipantName();
+	}
+
+	ngOnDestroy() {
+		this.destroy$.next();
+		this.destroy$.complete();
 	}
 
 	/**
@@ -238,6 +249,12 @@ export class MeetingComponent implements OnInit {
 			await this.addParticipantNameToUrl();
 			await this.roomService.loadPreferences(this.roomId);
 			this.showMeeting = true;
+			// Subscribe to remote participants updates for showing/hiding the share meeting link component
+			this.componentParticipantService.remoteParticipants$
+				.pipe(takeUntil(this.destroy$))
+				.subscribe((participants) => {
+					this.remoteParticipants = participants;
+				});
 		} catch (error) {
 			console.error('Error accessing meeting:', error);
 		}

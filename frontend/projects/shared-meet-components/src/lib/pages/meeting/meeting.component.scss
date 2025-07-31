@@ -218,6 +218,14 @@
 	padding: 10px;
 }
 
+.main-share-meeting-link-container {
+	background-color: var(--ov-meet-surface-color);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--ov-meet-radius-md);
+}
+
 // Responsive adjustments
 @include ov-mobile-down {
 	.room-access-container {

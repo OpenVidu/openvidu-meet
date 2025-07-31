@@ -100,6 +100,21 @@
 					></ov-share-meeting-link>
 				</div>
 			</div>
+
+			<ng-container *ovLayoutAdditionalElements>
+				@if (remoteParticipants.length === 0) {
+					<div class="main-share-meeting-link-container fade-in-delayed-more">
+						<ov-share-meeting-link
+							[title]="'Start collaborating'"
+							[subtitle]="'Share this link to bring others into the meeting'"
+							[titleSize]="'xl'"
+							[titleWeight]="'bold'"
+							[meetingUrl]="hostname + '/' + roomId"
+							(copyClicked)="copyPublisherLink()"
+						></ov-share-meeting-link>
+					</div>
+				}
+			</ng-container>
 		}
 	</ov-videoconference>
 } @else {

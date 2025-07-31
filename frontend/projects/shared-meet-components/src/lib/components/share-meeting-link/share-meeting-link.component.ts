@@ -1,6 +1,4 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
-import { Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -12,6 +10,11 @@ import { MatIconModule } from '@angular/material/icon';
 	styleUrl: './share-meeting-link.component.scss'
 })
 export class ShareMeetingLinkComponent {
-	@Input() meetingUrl!: string;
-	@Output() copyClicked = new EventEmitter<void>();
+	   @Input() meetingUrl!: string;
+	   @Input() title: string = 'Invite others with this meeting link';
+	   @Input() titleSize: 'sm' | 'md' | 'lg' | 'xl' = 'sm';
+	   @Input() titleWeight: 'light' | 'semibold' | 'bold' | 'normal' = 'normal';
+	   @Input() subtitle?: string;
+	   @Input() additionalInfo?: string;
+	   @Output() copyClicked = new EventEmitter<void>();
 }

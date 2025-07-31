@@ -1,5 +1,13 @@
-<div class="meeting-url-badge fade-in-delayed-more">
-	<div class="meeting-url-badge-title">Invite others with this meeting link</div>
+<div class="meeting-url-badge">
+	@if (title) {
+		<div class="meeting-url-badge-title" [class]="[titleSize, titleWeight]">{{ title }}</div>
+	}
+
+	@if (subtitle) {
+		<div class="meeting-url-badge-subtitle">
+			{{ subtitle }}
+		</div>
+	}
 
 	<div class="meeting-url-badge-container" (click)="copyClicked.emit()">
 		<span class="meeting-url-text">{{ meetingUrl }}</span>
@@ -7,4 +15,8 @@
 			<mat-icon>content_copy</mat-icon>
 		</button>
 	</div>
+
+	@if (additionalInfo) {
+		<div class="meeting-url-badge-additional-info">{{ additionalInfo }}</div>
+	}
 </div>

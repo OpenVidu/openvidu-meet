@@ -6,8 +6,41 @@
 		text-align: center;
 		font-size: var(--ov-meet-font-size-sm);
 		font-weight: var(--ov-meet-font-weight-light);
-		color: var(--ov-meet-text-primary);
+		color: var(--ov-meet-text-on-surface);
 		margin-bottom: var(--ov-meet-spacing-sm);
+
+		&.sm {
+			font-size: var(--ov-meet-font-size-sm);
+		}
+		&.md {
+			font-size: var(--ov-meet-font-size-md);
+		}
+		&.lg {
+			font-size: var(--ov-meet-font-size-lg);
+		}
+		&.xl {
+			font-size: var(--ov-meet-font-size-xl);
+		}
+
+		&.light {
+			font-weight: var(--ov-meet-font-weight-light);
+		}
+		&.semibold {
+			font-weight: var(--ov-meet-font-weight-semibold);
+		}
+		&.bold {
+			font-weight: var(--ov-meet-font-weight-bold);
+		}
+		&.normal {
+			font-weight: var(--ov-meet-font-weight-normal);
+		}
+	}
+
+	.meeting-url-badge-subtitle{
+		text-align: center;
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-on-surface);
+		margin: var(--ov-meet-spacing-sm);
 	}
 	.meeting-url-badge-container {
 		@include ov-flex-center;
@@ -29,7 +62,7 @@
 		.meeting-url-text {
 			font-family: var(--ov-meet-font-family-mono, 'Roboto Mono', monospace);
 			font-size: var(--ov-meet-font-size-sm);
-			color: var(--ov-meet-text-secondary);
+			color: var(--ov-meet-text-on-surface);
 			font-weight: var(--ov-meet-font-weight-medium);
 			letter-spacing: 0.025em;
 			user-select: none;
