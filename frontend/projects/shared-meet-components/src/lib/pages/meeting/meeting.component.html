@@ -91,6 +91,15 @@
 					</button>
 				}
 			</div>
+
+			<div *ovParticipantPanelAfterLocalParticipant>
+				<div class="share-meeting-link-container">
+					<ov-share-meeting-link
+						[meetingUrl]="hostname + '/' + roomId"
+						(copyClicked)="copyPublisherLink()"
+					></ov-share-meeting-link>
+				</div>
+			</div>
 		}
 	</ov-videoconference>
 } @else {
