@@ -2,7 +2,8 @@
 
 #dashboard-container,
 mat-sidenav-container {
-	@extend .ov-nav-container;
+	height: 100%;
+	background-color: var(--ov-meet-background-color);
 }
 
 .page-content {

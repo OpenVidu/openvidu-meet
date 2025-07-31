@@ -491,13 +491,9 @@
 
 // === NAVIGATION UTILITIES ===
 // For console navigation and sidebar components
-
-.ov-nav-container {
-	height: 100%;
-
-	mat-sidenav-container {
-		height: 100%;
-	}
+.meet-toolbar {
+	@include ov-theme-transition;
+	background-color: var(--ov-meet-surface-color);
 }
 
 .ov-nav-toolbar {
@@ -638,6 +634,7 @@
 
 // Toolbar Responsive Patterns
 .ov-data-toolbar {
+	background-color: var(--ov-meet-background-color) !important;
 	@include ov-tablet-down {
 		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		gap: var(--ov-meet-spacing-sm);
@@ -706,6 +703,7 @@
 }
 
 .ov-data-table {
+	background-color: rgba(var(--ov-meet-surface-color), 0.8);
 	@include ov-tablet-down {
 		.mat-mdc-header-cell,
 		.mat-mdc-cell {

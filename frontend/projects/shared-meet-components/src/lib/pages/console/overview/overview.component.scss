@@ -73,6 +73,7 @@
 
 // Dashboard State Styles
 .dashboard-content {
+	padding: 5px;
 	.quick-actions {
 		@include ov-flex-center;
 		gap: var(--ov-meet-spacing-md);
