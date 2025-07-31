@@ -212,26 +212,6 @@ export class RoomService {
 		this.roomPreferences = preferences;
 	}
 
-	/**
-	 * Retrieves the moderator and publisher secrets for a specified room.
-	 *
-	 * This method fetches room information and extracts the secret parameters
-	 * from the moderator and publisher room URLs.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 * @returns A promise that resolves to an object containing both secrets
-	 * @returns moderatorSecret - The secret parameter extracted from the moderator room URL
-	 * @returns publisherSecret - The secret parameter extracted from the publisher room URL
-	 */
-	async getSecrets(roomId: string): Promise<{ moderatorSecret: string; publisherSecret: string }> {
-		const { moderatorRoomUrl, publisherRoomUrl } = await this.getRoom(roomId);
-
-		const publisherUrl = new URL(publisherRoomUrl);
-		const publisherSecret = publisherUrl.searchParams.get('secret') || '';
-		const moderatorUrl = new URL(moderatorRoomUrl);
-		const moderatorSecret = moderatorUrl.searchParams.get('secret') || '';
-		return { publisherSecret, moderatorSecret };
-	}
 
 	/**
 	 * Retrieves the role and permissions for a specified room and secret.
