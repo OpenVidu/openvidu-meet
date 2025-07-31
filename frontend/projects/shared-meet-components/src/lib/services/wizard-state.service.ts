@@ -360,8 +360,8 @@ export class RoomWizardStateService {
 		return {
 			showPrevious: !isFirstStep,
 			showNext: !isLastStep,
-			showCancel: false,
-			showBack: true,
+			showCancel: isEditMode,
+			showBack: !isEditMode,
 			showFinish: isLastStep,
 			showSkipAndFinish: false, // Skip and finish is not used in this wizard
 			disableFinish: isSomeStepInvalid,
