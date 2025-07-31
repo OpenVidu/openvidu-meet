@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
+import { ShareMeetingLinkComponent } from '@lib/components/share-meeting-link/share-meeting-link.component';
 import { ErrorReason } from '@lib/models';
 import {
 	AppDataService,
@@ -69,7 +70,8 @@ import {
 		MatMenuModule,
 		MatDividerModule,
 		MatTooltipModule,
-		MatRippleModule
+		MatRippleModule,
+		ShareMeetingLinkComponent
 	]
 })
 export class MeetingComponent implements OnInit {
@@ -113,6 +115,10 @@ export class MeetingComponent implements OnInit {
 		this.features = this.featureConfService.features;
 	}
 
+	get hostname(): string {
+		return window.location.origin.replace('http://', '').replace('https://', '');
+	}
+
 	async ngOnInit() {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
@@ -120,10 +126,6 @@ export class MeetingComponent implements OnInit {
 		await this.setBackButtonText();
 		await this.checkForRecordings();
 		await this.initializeParticipantName();
-	}
-
-	get hostname(): string {
-		return window.location.origin.replace('http://', '').replace('https://', '');
 	}
 
 	/**

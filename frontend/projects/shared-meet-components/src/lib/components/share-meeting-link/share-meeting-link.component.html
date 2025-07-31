@@ -1,0 +1,10 @@
+<div class="meeting-url-badge fade-in-delayed-more">
+	<div class="meeting-url-badge-title">Invite others with this meeting link</div>
+
+	<div class="meeting-url-badge-container" (click)="copyClicked.emit()">
+		<span class="meeting-url-text">{{ meetingUrl }}</span>
+		<button matIconButton class="copy-url-btn" matTooltip="Copy meeting link">
+			<mat-icon>content_copy</mat-icon>
+		</button>
+	</div>
+</div>
