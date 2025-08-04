@@ -207,7 +207,7 @@ export class RoomService {
 	 */
 	async updateRoom(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
 		this.log.d('Saving room preferences', preferences);
-		const path = `${this.INTERNAL_ROOMS_API}/${roomId}`;
+		const path = `${this.ROOMS_API}/${roomId}`;
 		await this.httpService.putRequest(path, preferences);
 		this.roomPreferences = preferences;
 	}
