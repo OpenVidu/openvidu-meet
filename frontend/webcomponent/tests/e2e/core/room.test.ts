@@ -37,6 +37,7 @@ test.describe('Room Functionality Tests', () => {
 		await tempPage.waitForSelector('.create-room');
 		await tempPage.fill('#room-id-prefix', testRoomPrefix);
 		await tempPage.click('.create-room-btn');
+		await tempPage.waitForTimeout(1000);
 		await tempPage.waitForSelector(`#${testRoomPrefix}`);
 
 		await tempPage.close();
