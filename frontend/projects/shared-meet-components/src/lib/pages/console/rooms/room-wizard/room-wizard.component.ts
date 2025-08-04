@@ -164,6 +164,7 @@ export class RoomWizardComponent implements OnInit {
 			const errorMessage = `Failed to ${this.editMode ? 'update' : 'create'} room`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
+			await this.navigationService.navigateTo('rooms', undefined, true);
 		} finally {
 			this.wizardService.resetWizard();
 			// Deactivate loading state
