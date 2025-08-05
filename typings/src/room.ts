@@ -2,8 +2,8 @@ import { ParticipantPermissions, ParticipantRole } from './participant.js';
 import { MeetRoomPreferences } from './room-preferences.js';
 
 interface BaseRoomOptions {
+    roomName?: string;
     autoDeletionDate?: number;
-    roomIdPrefix?: string;
     preferences?: MeetRoomPreferences;
     // maxParticipants?: number | null;
 }
@@ -18,6 +18,7 @@ export type MeetRoomOptions = BaseRoomOptions;
  */
 export interface MeetRoom extends BaseRoomOptions {
     roomId: string;
+    roomName: string;
     creationDate: number;
     moderatorRoomUrl: string;
     publisherRoomUrl: string;
