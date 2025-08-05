@@ -11,7 +11,7 @@ import { LoggerService } from 'openvidu-components-angular';
 export class ParticipantTokenService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
 
-	protected participantName: string = '';
+	protected participantName?: string;
 	protected participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
 	protected currentTokenInfo?: ParticipantTokenInfo;
 
@@ -29,7 +29,7 @@ export class ParticipantTokenService {
 		this.participantName = participantName;
 	}
 
-	getParticipantName(): string {
+	getParticipantName(): string | undefined {
 		return this.participantName;
 	}
 

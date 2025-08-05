@@ -8,7 +8,8 @@ import {
 	extractRoomQueryParamsGuard,
 	removeRoomSecretGuard,
 	runGuardsSerially,
-	validateRecordingAccessGuard
+	validateRecordingAccessGuard,
+	validateRoomAccessGuard
 } from '@lib/guards';
 import {
 	ConsoleComponent,
@@ -16,13 +17,13 @@ import {
 	EndMeetingComponent,
 	ErrorComponent,
 	LoginComponent,
+	MeetingComponent,
 	OverviewComponent,
 	RecordingsComponent,
 	RoomRecordingsComponent,
 	RoomsComponent,
 	RoomWizardComponent,
 	UsersPermissionsComponent,
-	MeetingComponent,
 	ViewRecordingComponent
 } from '@lib/pages';
 
@@ -36,7 +37,12 @@ export const baseRoutes: Routes = [
 		path: 'room/:room-id',
 		component: MeetingComponent,
 		canActivate: [
-			runGuardsSerially(extractRoomQueryParamsGuard, checkParticipantRoleAndAuthGuard, removeRoomSecretGuard)
+			runGuardsSerially(
+				extractRoomQueryParamsGuard,
+				checkParticipantRoleAndAuthGuard,
+				validateRoomAccessGuard,
+				removeRoomSecretGuard
+			)
 		]
 	},
 	{
