@@ -15,13 +15,11 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  *
  * - If there is no token in the session, the user is granted access (admin or API key).
  * - If the user does not belong to the requested room, access is denied.
- * - If the user is not a moderator, access is denied.
- * - If the user is a moderator and belongs to the room, access is granted.
+ * - Otherwise, the user is allowed to access the room.
  */
 export const configureRoomAuthorization = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 	const payload = req.session?.tokenClaims;
-	const role = req.session?.participantRole;
 
 	// If there is no token, the user is admin or it is invoked using the API key
 	// In this case, the user is allowed to access the resource
@@ -31,9 +29,8 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
 
 	const sameRoom = payload.video?.room === roomId;
 
-	// If the user does not belong to the requested room,
-	// or the user is not a moderator, access is denied
-	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
+	// If the user does not belong to the requested room, access is denied
+	if (!sameRoom) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}

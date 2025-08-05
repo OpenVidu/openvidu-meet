@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import {
 	expectSuccessRoomResponse,
 	expectValidationError,
@@ -8,6 +8,7 @@ import {
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
@@ -94,6 +95,25 @@ describe('Room API Tests', () => {
 			const response = await getRoom(createdRoom.roomId);
 
 			expectSuccessRoomResponse(response, 'deletion-date', validAutoDeletionDate);
+		});
+
+		it('should retrieve a room without moderatorRoomUrl when participant is publisher', async () => {
+			const roomData = await setupSingleRoom();
+			const response = await getRoom(
+				roomData.room.roomId,
+				undefined,
+				roomData.publisherCookie,
+				ParticipantRole.PUBLISHER
+			);
+			expect(response.status).toBe(200);
+			expect(response.body.moderatorRoomUrl).toBeUndefined();
+		});
+
+		it('should return 404 for a non-existent room', async () => {
+			const fakeRoomId = 'non-existent-room-id';
+			const response = await getRoom(fakeRoomId);
+			expect(response.status).toBe(404);
+			expect(response.body.message).toBe(`Room '${fakeRoomId}' does not exist`);
 		});
 	});
 

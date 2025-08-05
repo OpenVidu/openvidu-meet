@@ -94,6 +94,33 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 // Configure token validator for participant access
 export const participantTokenValidator = async (req: Request) => {
 	await validateTokenAndSetSession(req, INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME);
+
+	// Check if the participant role is provided in the request headers
+	// This is required to distinguish roles when multiple are present in the token
+	const participantRole = req.headers[INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER];
+	const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.PUBLISHER];
+
+	if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
+		throw errorWithControl(errorInvalidParticipantRole(), true);
+	}
+
+	if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
+		throw errorWithControl(errorInvalidParticipantRole(), true);
+	}
+
+	// Check that the specified role is present in the token claims
+	const metadata = JSON.parse(req.session?.tokenClaims?.metadata || '{}');
+	const roles = metadata.roles || [];
+	const hasRole = roles.some(
+		(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === participantRole
+	);
+
+	if (!hasRole) {
+		throw errorWithControl(errorInsufficientPermissions(), true);
+	}
+
+	// Set the participant role in the session
+	req.session!.participantRole = participantRole as ParticipantRole;
 };
 
 // Configure token validator for recording access
@@ -120,31 +147,6 @@ const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
 		req.session.user = user;
 	} catch (error) {
 		throw errorWithControl(errorInvalidToken(), true);
-	}
-
-	// If the token is a participant token, set the participant role in the session
-	if (cookieName === INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME) {
-		const participantRole = req.headers[INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER];
-		const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.PUBLISHER];
-
-		// Ensure the participant role is provided and valid
-		// This is required to distinguish roles when multiple are present in the token
-		if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
-			throw errorWithControl(errorInvalidParticipantRole(), true);
-		}
-
-		// Check that the specified role is present in the token claims
-		const metadata = JSON.parse(payload.metadata || '{}');
-		const roles = metadata.roles || [];
-		const hasRole = roles.some(
-			(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === participantRole
-		);
-
-		if (!hasRole) {
-			throw errorWithControl(errorInsufficientPermissions(), true);
-		}
-
-		req.session.participantRole = participantRole as ParticipantRole;
 	}
 };
 

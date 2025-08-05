@@ -142,12 +142,12 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should succeed when participant is publisher', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
 				.set('Cookie', roomData.publisherCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
-			expect(response.status).toBe(403);
+			expect(response.status).toBe(200);
 		});
 	});
 

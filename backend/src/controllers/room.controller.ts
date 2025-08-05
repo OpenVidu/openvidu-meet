@@ -44,12 +44,13 @@ export const getRoom = async (req: Request, res: Response) => {
 
 	const { roomId } = req.params;
 	const fields = req.query.fields as string | undefined;
+	const role = req.session?.participantRole;
 
 	try {
 		logger.verbose(`Getting room '${roomId}'`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId, fields);
+		const room = await roomService.getMeetRoom(roomId, fields, role);
 
 		return res.status(200).json(room);
 	} catch (error) {

@@ -185,7 +185,7 @@ export class RoomService {
 	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
-	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, fields?: string, participantRole?: ParticipantRole): Promise<MeetRoom> {
 		const meetRoom = await this.storageService.getMeetRoom(roomId);
 
 		if (!meetRoom) {
@@ -193,7 +193,14 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		return UtilsHelper.filterObjectFields(meetRoom, fields) as MeetRoom;
+		const filteredRoom = UtilsHelper.filterObjectFields(meetRoom, fields);
+
+		// Remove moderatorRoomUrl if the participant is a publisher to prevent access to moderator links
+		if (participantRole === ParticipantRole.PUBLISHER) {
+			delete filteredRoom.moderatorRoomUrl;
+		}
+
+		return filteredRoom as MeetRoom;
 	}
 
 	/**
