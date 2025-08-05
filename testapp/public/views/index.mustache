@@ -50,7 +50,7 @@
 					<ul class="list-group">
 						{{#rooms}}
 						<li
-							id="{{ roomIdPrefix }}"
+							id="{{ roomId }}"
 							class="list-group-item d-flex justify-content-between align-items-center"
 						>
 							<span>{{ roomId }}</span>
@@ -159,13 +159,11 @@
 					<!-- Basic Information -->
 					<div class="form-section">
 						<div class="mb-3">
-							<label for="room-id-prefix" class="form-label"
-								>Room Prefix *</label
-							>
+							<label for="room-name" class="form-label">Room Name *</label>
 							<input
 								type="text"
-								name="roomIdPrefix"
-								id="room-id-prefix"
+								name="roomName"
+								id="room-name"
 								class="form-control"
 								placeholder="e.g. Team meeting"
 								required
@@ -173,9 +171,7 @@
 						</div>
 
 						<div class="mb-3">
-							<label for="expiration-date" class="form-label"
-								>Expiration Date</label
-							>
+							<label for="expiration-date" class="form-label">Expiration Date</label>
 							<input
 								type="date"
 								name="autoDeletionDate"

@@ -20,22 +20,16 @@ let subscribedToAppErrors = false;
 let recordingCreated = false;
 
 test.describe('Recording Access Tests', () => {
-	const testRoomPrefix = 'recording-access-test';
-	let participantName: string;
 	let roomId: string;
+	let participantName: string;
 	let adminCookie: string;
 
 	test.beforeAll(async () => {
+		// Login as admin to get authentication cookie
 		adminCookie = await loginAsAdmin();
-		// Ensure the test room is created before running tests
-		roomId = await createTestRoom(testRoomPrefix, {
-			chatPreferences: { enabled: true },
-			recordingPreferences: {
-				enabled: true,
-				allowAccessTo: MeetRecordingAccess.ADMIN
-			},
-			virtualBackgroundPreferences: { enabled: true }
-		});
+
+		// Create a test room before all tests
+		roomId = await createTestRoom('test-room');
 	});
 
 	test.beforeEach(async ({ browser, page }) => {
@@ -53,7 +47,7 @@ test.describe('Recording Access Tests', () => {
 		if (!recordingCreated) {
 			const tempContext = await browser.newContext();
 			const tempPage = await tempContext.newPage();
-			await prepareForJoiningRoom(tempPage, MEET_TESTAPP_URL, testRoomPrefix);
+			await prepareForJoiningRoom(tempPage, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, tempPage);
 
 			await startStopRecording(tempPage, 'start');
@@ -92,7 +86,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('moderator', page);
 
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
@@ -113,7 +107,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('publisher', page);
 
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
@@ -134,7 +128,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
@@ -155,7 +149,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('publisher', page);
 
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
@@ -176,7 +170,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
@@ -197,7 +191,7 @@ test.describe('Recording Access Tests', () => {
 		);
 
 		await page.goto(MEET_TESTAPP_URL);
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('publisher', page);
 
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });

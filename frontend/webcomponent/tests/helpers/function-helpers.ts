@@ -100,7 +100,7 @@ const getDefaultRoomPreferences = (): MeetRoomPreferences => ({
 
 // Helper function to create a room for testing
 export const createTestRoom = async (
-	roomIdPrefix: string,
+	roomName: string,
 	preferences: MeetRoomPreferences = getDefaultRoomPreferences()
 ) => {
 	const response = await fetch(`${MEET_API_URL}/api/v1/rooms`, {
@@ -110,7 +110,7 @@ export const createTestRoom = async (
 			'x-api-key': MEET_API_KEY
 		},
 		body: JSON.stringify({
-			roomIdPrefix,
+			roomName,
 			autoDeletionDate: new Date(Date.now() + 61 * 60 * 1000).getTime(), // 1 hour from now
 			preferences
 		})
@@ -128,7 +128,7 @@ export const createTestRoom = async (
 
 // Helper function to update room preferences via REST API
 export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
-	const response = await fetch(`${MEET_API_URL}/internal-api/v1/rooms/${roomId}`, {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
@@ -216,10 +216,10 @@ export const startStopRecording = async (page: Page, action: 'start' | 'stop') =
 	}
 };
 
-export const prepareForJoiningRoom = async (page: Page, url: string, roomPrefix: string) => {
+export const prepareForJoiningRoom = async (page: Page, url: string, roomId: string) => {
 	await page.goto(url);
 	await page.waitForSelector('.rooms-container');
-	await page.waitForSelector(`#${roomPrefix}`);
+	await page.waitForSelector(`#${roomId}`);
 	await page.click('.dropdown-button');
 	await page.waitForSelector('#join-as-moderator');
 	await page.waitForSelector('#join-as-publisher');

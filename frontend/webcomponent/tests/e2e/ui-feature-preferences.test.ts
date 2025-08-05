@@ -22,9 +22,8 @@ import {
 let subscribedToAppErrors = false;
 
 test.describe('UI Feature Preferences Tests', () => {
-	const testRoomPrefix = 'ui-feature-testing-room';
-	let participantName: string;
 	let roomId: string;
+	let participantName: string;
 	let adminCookie: string;
 
 	// ==========================================
@@ -34,6 +33,9 @@ test.describe('UI Feature Preferences Tests', () => {
 	test.beforeAll(async () => {
 		// Login as admin to get authentication cookie
 		adminCookie = await loginAsAdmin();
+
+		// Create a test room before all tests
+		roomId = await createTestRoom('test-room');
 	});
 
 	test.beforeEach(async ({ page }) => {
@@ -71,17 +73,21 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 
 		test('should show chat button when chat is enabled', async ({ page }) => {
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that chat button is visible
@@ -91,17 +97,21 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should hide chat button when chat is disabled', async ({ page }) => {
 			// Disable chat via API
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: false },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: false },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that chat button is not visible
@@ -116,17 +126,21 @@ test.describe('UI Feature Preferences Tests', () => {
 
 	test.describe('Recording Feature', () => {
 		test('should show recording button for moderators', async ({ page }) => {
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, page);
 
 			await openMoreOptionsMenu(page);
@@ -146,17 +160,21 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 
 		test('should not show recording button for publisher', async ({ page }) => {
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Check that recording button is not visible for publisher
@@ -167,17 +185,21 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
 			// Disable recording via API
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: false,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, page);
 
 			// Check that recording button is not visible
@@ -204,17 +226,21 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Click more options to reveal virtual background button
@@ -229,17 +255,21 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should hide virtual background button when disabled', async ({ page }) => {
 			// Disable virtual backgrounds via API
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: false }
 				},
-				virtualBackgroundPreferences: { enabled: false }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			// Click more options to reveal virtual background button
@@ -254,17 +284,21 @@ test.describe('UI Feature Preferences Tests', () => {
 			page
 		}) => {
 			// Ensure virtual backgrounds are enabled
-			roomId = await createTestRoom(testRoomPrefix, {
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			await updateRoomPreferences(
+				roomId,
+				{
+					chatPreferences: { enabled: true },
+					recordingPreferences: {
+						enabled: true,
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					},
+					virtualBackgroundPreferences: { enabled: true }
 				},
-				virtualBackgroundPreferences: { enabled: true }
-			});
+				adminCookie
+			);
 
-			await page.reload();
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await page.goto(MEET_TESTAPP_URL);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 
 			await applyVirtualBackground(page, '2');
@@ -288,7 +322,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await leaveRoom(page);
 			await page.reload();
 
-			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('publisher', participantName, page);
 			await page.waitForTimeout(2000);
 

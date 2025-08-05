@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../../config.js';
 import {
+	createTestRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	joinRoomAs,
@@ -11,21 +12,12 @@ import {
 let subscribedToAppErrors = false;
 
 test.describe('Web Component E2E Tests', () => {
-	const testRoomPrefix = 'test-room';
+	let roomId: string;
 	let participantName: string;
 
-	test.beforeAll(async ({ browser }) => {
+	test.beforeAll(async () => {
 		// Create a test room before all tests
-		const tempContext = await browser.newContext();
-		const tempPage = await tempContext.newPage();
-		await tempPage.goto(MEET_TESTAPP_URL);
-		await tempPage.waitForSelector('.create-room');
-		await tempPage.fill('#room-id-prefix', testRoomPrefix);
-		await tempPage.click('.create-room-btn');
-		await tempPage.waitForSelector(`#${testRoomPrefix}`);
-
-		await tempPage.close();
-		await tempContext.close();
+		roomId = await createTestRoom('test-room');
 	});
 
 	test.beforeEach(async ({ page }) => {
@@ -38,7 +30,7 @@ test.describe('Web Component E2E Tests', () => {
 			subscribedToAppErrors = true;
 		}
 
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, testRoomPrefix);
+		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
 	});
 

@@ -34,13 +34,13 @@ export const getHome = async (_req: Request, res: Response) => {
 export const postCreateRoom = async (req: Request, res: Response) => {
     try {
         console.log('Creating room with body:', JSON.stringify(req.body, null, 2));
-        const { roomIdPrefix, autoDeletionDate } = req.body;
+        const { roomName, autoDeletionDate } = req.body;
         const preferences = processFormPreferences(req.body);
 
         console.log('Processed preferences:', JSON.stringify(preferences, null, 2));
-        console.log('Room creation parameters:', { roomIdPrefix, autoDeletionDate });
+        console.log('Room creation parameters:', { roomName, autoDeletionDate });
 
-        const result = await createRoom({ roomIdPrefix, autoDeletionDate, preferences });
+        const result = await createRoom({ roomName, autoDeletionDate, preferences });
         console.log('Room created successfully:', result);
         res.redirect('/');
     } catch (error) {
