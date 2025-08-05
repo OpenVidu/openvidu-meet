@@ -5,7 +5,7 @@
 		<div class="page-title-group">
 			<h2 class="page-title">Create Room</h2>
 			<p class="page-description">
-				Create a new video room with optional name prefix. For advanced options, use the room wizard.
+				Create a new room by just providing a name. For advanced options, use the room wizard.
 			</p>
 		</div>
 	</header>
@@ -13,14 +13,14 @@
 	<!-- Form Section -->
 	<main class="page-content">
 		<form [formGroup]="roomCreationForm" class="room-basic-creation-form" (ngSubmit)="onCreateRoom()">
-			<!-- Room Prefix Field -->
+			<!-- Room Field -->
 			<mat-form-field appearance="outline" class="form-field">
-				<mat-label>Room Name Prefix</mat-label>
-				<input matInput formControlName="roomIdPrefix" placeholder="e.g. demo-room" />
+				<mat-label>Room Name</mat-label>
+				<input matInput formControlName="roomName" placeholder="e.g. Demo Room" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
-				<mat-hint>Optional prefix for room names. Leave empty for default naming.</mat-hint>
-				@if (roomCreationForm.get('roomIdPrefix')?.hasError('maxlength')) {
-					<mat-error> Room name prefix cannot exceed 50 characters </mat-error>
+				<mat-hint>Enter a custom room name, or leave blank to use the default name "Room".</mat-hint>
+				@if (roomCreationForm.get('roomName')?.hasError('maxlength')) {
+					<mat-error>Room name cannot exceed 50 characters</mat-error>
 				}
 			</mat-form-field>
 

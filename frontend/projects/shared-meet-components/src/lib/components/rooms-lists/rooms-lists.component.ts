@@ -119,7 +119,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomId', 'status', 'creationDate', 'autoDeletion', 'actions'];
+	displayedColumns: string[] = ['select', 'roomName', 'status', 'creationDate', 'autoDeletion', 'actions'];
 
 	// Status options
 	statusOptions = [
@@ -171,7 +171,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 			this.displayedColumns.push('select');
 		}
 
-		this.displayedColumns.push('roomId', 'status', 'creationDate', 'autoDeletion', 'actions');
+		this.displayedColumns.push('roomName', 'status', 'creationDate', 'autoDeletion', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====

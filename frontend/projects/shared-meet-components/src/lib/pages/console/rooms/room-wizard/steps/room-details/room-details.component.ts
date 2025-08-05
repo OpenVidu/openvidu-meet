@@ -66,7 +66,7 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		}
 
 		const stepData: Partial<MeetRoomOptions> = {
-			roomIdPrefix: formValue.roomIdPrefix,
+			roomName: formValue.roomName,
 			autoDeletionDate: autoDeletionDateTime
 		};
 

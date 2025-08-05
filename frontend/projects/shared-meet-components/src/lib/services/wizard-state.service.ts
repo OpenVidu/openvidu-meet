@@ -72,8 +72,8 @@ export class RoomWizardStateService {
 				isVisible: true,
 				formGroup: this.formBuilder.group(
 					{
-						roomIdPrefix: [
-							{ value: initialRoomOptions.roomIdPrefix || '', disabled: editMode },
+						roomName: [
+							{ value: initialRoomOptions.roomName || 'Room', disabled: editMode },
 							editMode ? [] : [Validators.maxLength(50)]
 						],
 						autoDeletionDate: [
@@ -198,8 +198,8 @@ export class RoomWizardStateService {
 				};
 
 				// Only update fields that are explicitly provided
-				if ('roomIdPrefix' in stepData) {
-					updatedOptions.roomIdPrefix = stepData.roomIdPrefix;
+				if ('roomName' in stepData) {
+					updatedOptions.roomName = stepData.roomName;
 				}
 				if ('autoDeletionDate' in stepData) {
 					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;

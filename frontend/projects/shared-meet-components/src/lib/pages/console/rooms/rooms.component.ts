@@ -163,7 +163,7 @@ export class RoomsComponent implements OnInit {
 	// 		const searchStr = filter.toLowerCase();
 	// 		return (
 	// 			data.roomId.toLowerCase().includes(searchStr) ||
-	// 			data.roomIdPrefix?.toLowerCase().includes(searchStr) ||
+	// 			data.roomName.toLowerCase().includes(searchStr) ||
 	// 			false ||
 	// 			(data.markedForDeletion ? 'inactive' : 'active').includes(searchStr)
 	// 		);

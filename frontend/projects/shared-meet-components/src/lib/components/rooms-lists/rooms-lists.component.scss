@@ -114,8 +114,12 @@
 .room-info {
 	@extend .ov-info-display;
 
-	.room-id {
+	.room-name {
 		@extend .primary-text;
+	}
+
+	.room-id {
+		@extend .secondary-text, .monospace-text;
 	}
 }
 

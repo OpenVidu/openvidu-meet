@@ -20,7 +20,6 @@ import { LoggerService } from 'openvidu-components-angular';
 export class RoomService {
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
 	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
-	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 
 	protected roomId: string = '';
 	protected roomSecret: string = '';
@@ -211,7 +210,6 @@ export class RoomService {
 		await this.httpService.putRequest(path, preferences);
 		this.roomPreferences = preferences;
 	}
-
 
 	/**
 	 * Retrieves the role and permissions for a specified room and secret.

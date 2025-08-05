@@ -19,6 +19,7 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
+	roomName = '';
 	canDeleteRecordings = false;
 
 	isLoading = false;
@@ -43,6 +44,9 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
+		const parts = this.roomId.split('-');
+		this.roomName = parts.slice(0, -1).join('-');
+
 		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
 		await this.loadRecordings();
 	}

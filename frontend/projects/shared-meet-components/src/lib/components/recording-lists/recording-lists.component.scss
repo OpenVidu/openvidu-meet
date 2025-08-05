@@ -87,13 +87,17 @@
 .room-info {
 	@extend .ov-info-display;
 
-	.room-id {
+	.room-name {
 		@extend .primary-text;
 	}
 
-	.filename {
+	.room-id {
 		@extend .secondary-text, .monospace-text;
 	}
+
+	// .filename {
+	// 	@extend .secondary-text, .monospace-text;
+	// }
 }
 
 // Status badge

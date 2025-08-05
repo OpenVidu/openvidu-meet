@@ -111,7 +111,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomId', 'status', 'startDate', 'duration', 'size', 'actions'];
+	displayedColumns: string[] = ['select', 'roomInfo', 'status', 'startDate', 'duration', 'size', 'actions'];
 
 	// Status options using enum values
 	statusOptions = [
@@ -188,7 +188,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 			this.displayedColumns.push('select');
 		}
 		if (this.showRoomInfo) {
-			this.displayedColumns.push('roomId');
+			this.displayedColumns.push('roomInfo');
 		}
 
 		this.displayedColumns.push('status', 'startDate', 'duration', 'size', 'actions');

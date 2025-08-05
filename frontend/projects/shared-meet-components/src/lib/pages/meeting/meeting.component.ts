@@ -121,6 +121,10 @@ export class MeetingComponent implements OnInit {
 		this.features = this.featureConfService.features;
 	}
 
+	get roomName(): string {
+		return this.room?.roomName || 'Room';
+	}
+
 	get hostname(): string {
 		return window.location.origin.replace('http://', '').replace('https://', '');
 	}
@@ -128,6 +132,7 @@ export class MeetingComponent implements OnInit {
 	async ngOnInit() {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
+		this.room = await this.roomService.getRoom(this.roomId);
 
 		await this.setBackButtonText();
 		await this.checkForRecordings();
@@ -270,10 +275,9 @@ export class MeetingComponent implements OnInit {
 		try {
 			const { token, role } = await this.participantTokenService.generateToken({
 				roomId: this.roomId,
-				participantName: this.participantName,
-				secret: this.roomSecret
+				secret: this.roomSecret,
+				participantName: this.participantName
 			});
-			// The components library needs the token to be set in the 'onTokenRequested' method
 			this.participantToken = token;
 			this.participantRole = role;
 		} catch (error: any) {
@@ -398,21 +402,13 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async copyModeratorLink() {
-		await this.loadRoomIfAbsent();
 		this.clipboard.copy(this.room!.moderatorRoomUrl);
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
 	async copyPublisherLink() {
-		await this.loadRoomIfAbsent();
 		this.clipboard.copy(this.room!.publisherRoomUrl);
 		this.notificationService.showSnackbar('Publisher link copied to clipboard');
-	}
-
-	private async loadRoomIfAbsent() {
-		if (!this.room) {
-			this.room = await this.roomService.getRoom(this.roomId);
-		}
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {

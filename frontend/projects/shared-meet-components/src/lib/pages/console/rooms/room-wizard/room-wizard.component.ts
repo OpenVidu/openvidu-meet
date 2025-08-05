@@ -89,8 +89,8 @@ export class RoomWizardComponent implements OnInit {
 		if (!this.roomId) return;
 
 		try {
-			const { roomIdPrefix, autoDeletionDate, preferences } = await this.roomService.getRoom(this.roomId);
-			this.existingRoomData = { roomIdPrefix, autoDeletionDate, preferences };
+			const { roomName, autoDeletionDate, preferences } = await this.roomService.getRoom(this.roomId);
+			this.existingRoomData = { roomName, autoDeletionDate, preferences };
 			if (this.existingRoomData) {
 				this.isBasicCreation.set(false);
 			}
@@ -127,13 +127,13 @@ export class RoomWizardComponent implements OnInit {
 		await this.navigationService.navigateTo('rooms', undefined, true);
 	}
 
-	async createRoom(roomIdPrefix?: string) {
+	async createRoom(roomName?: string) {
 		try {
 			// Call the room service to create a new room
-			const { moderatorRoomUrl } = await this.roomService.createRoom({ roomIdPrefix });
+			const { moderatorRoomUrl } = await this.roomService.createRoom({ roomName });
 			await this.navigationService.redirectTo(moderatorRoomUrl);
 		} catch (error) {
-			const errorMessage = `Failed to create room ${roomIdPrefix}`;
+			const errorMessage = `Failed to create room ${roomName}`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
 		} finally {

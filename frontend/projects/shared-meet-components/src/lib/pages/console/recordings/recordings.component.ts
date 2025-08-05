@@ -80,7 +80,7 @@ export class RecordingsComponent implements OnInit {
 				nextPageToken: this.nextPageToken
 			};
 
-			// Apply room name filter if provided
+			// Apply room ID filter if provided
 			if (filters?.nameFilter) {
 				recordingFilters.roomId = filters.nameFilter;
 			}
