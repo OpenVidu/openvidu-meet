@@ -22,7 +22,7 @@ describe('Room API Tests', () => {
 	describe('Get Room Tests', () => {
 		it('should successfully retrieve a room by its ID', async () => {
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			expectValidRoom(createdRoom, 'test-room');
@@ -33,7 +33,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve a room with custom preferences', async () => {
 			const payload = {
-				roomIdPrefix: 'custom-prefs',
+				roomName: 'custom-prefs',
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
@@ -55,22 +55,22 @@ describe('Room API Tests', () => {
 		it('should retrieve only specified fields when using fields parameter', async () => {
 			// Create a room
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'field-filtered'
+				roomName: 'field-filtered'
 			});
 
 			// Get the room with field filtering
-			const response = await getRoom(createdRoom.roomId, 'roomId,roomIdPrefix');
+			const response = await getRoom(createdRoom.roomId, 'roomId,roomName');
 
 			// Verify that only the requested fields are returned
 			expect(response.status).toBe(200);
 
-			expectValidRoomWithFields(response.body, ['roomId', 'roomIdPrefix']);
+			expectValidRoomWithFields(response.body, ['roomId', 'roomName']);
 		});
 
 		it('should handle roomId with characters that need sanitization', async () => {
 			// Create a room
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			const dirtyRoomId = ' ' + createdRoom.roomId + ' '; // Add spaces that should be trimmed
@@ -86,7 +86,7 @@ describe('Room API Tests', () => {
 
 			// Create a room with autoDeletionDate
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'deletion-date',
+				roomName: 'deletion-date',
 				autoDeletionDate: validAutoDeletionDate
 			});
 

@@ -14,6 +14,25 @@ import INTERNAL_CONFIG from '../../config/internal-config.js';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 /**
+ * Sanitizes a room name by removing invalid characters and normalizing format.
+ *
+ * @param val The string to sanitize
+ * @returns A sanitized string safe for use as a room name
+ */
+const sanitizeRoomName = (val: string): string => {
+	return val
+		.trim() // Remove leading/trailing spaces
+		.replace(/[^a-zA-Z0-9_-\s]/g, '') // Allow alphanumeric, underscores, hyphens and spaces
+		.replace(/\s+/g, ' ') // Replace multiple consecutive spaces with a single space
+		.replace(/-+/g, '-') // Replace multiple consecutive hyphens with a single hyphen
+		.replace(/_+/g, '_') // Replace multiple consecutive underscores with a single underscore
+		.replace(/-+$/, '') // Remove trailing hyphens
+		.replace(/_+$/, '') // Remove trailing underscores
+		.replace(/^-+/, '') // Remove leading hyphens
+		.replace(/^_+/, ''); // Remove leading underscores
+};
+
+/**
  * Sanitizes an identifier by removing/replacing invalid characters
  * and normalizing format.
  *
@@ -21,19 +40,7 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
  * @returns A sanitized string safe for use as an identifier
  */
 const sanitizeRoomId = (val: string): string => {
-	let transformed = val
-		.trim() // Remove leading/trailing spaces
-		.replace(/\s+/g, '') // Remove all spaces
-		.replace(/[^a-zA-Z0-9_-]/g, '') // Allow alphanumeric, underscores and hyphens
-		.replace(/-+/g, '-') // Replace multiple consecutive hyphens
-		.replace(/-+$/, ''); // Remove trailing hyphens
-
-	// Remove leading hyphens
-	if (transformed.startsWith('-')) {
-		transformed = transformed.substring(1);
-	}
-
-	return transformed;
+	return sanitizeRoomName(val).replace(/\s+/g, ''); // Remove all spaces
 };
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
@@ -94,6 +101,12 @@ const RoomPreferencesSchema: z.ZodType<MeetRoomPreferences> = z.object({
 });
 
 const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
+	roomName: z
+		.string()
+		.max(50, 'roomName cannot exceed 50 characters')
+		.transform(sanitizeRoomName)
+		.optional()
+		.default('Room'),
 	autoDeletionDate: z
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
@@ -102,12 +115,6 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
 		)
 		.optional(),
-	roomIdPrefix: z
-		.string()
-		.max(50, 'roomIdPrefix cannot exceed 50 characters')
-		.transform(sanitizeRoomId)
-		.optional()
-		.default(''),
 	preferences: RoomPreferencesSchema.optional().default({
 		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER },
 		chatPreferences: { enabled: true },
@@ -185,6 +192,7 @@ export const withValidRoomOptions = (req: Request, res: Response, next: NextFunc
 		return rejectUnprocessableRequest(res, error);
 	}
 
+	console.log('VALID ROOM OPTIONS', data);
 	req.body = data;
 	next();
 };

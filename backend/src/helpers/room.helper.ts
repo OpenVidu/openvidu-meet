@@ -14,10 +14,10 @@ export class MeetRoomHelper {
 	 */
 	static toOpenViduOptions(room: MeetRoom): MeetRoomOptions {
 		return {
+			roomName: room.roomName,
 			autoDeletionDate: room.autoDeletionDate,
-			// maxParticipants: room.maxParticipants,
-			preferences: room.preferences,
-			roomIdPrefix: room.roomIdPrefix
+			preferences: room.preferences
+			// maxParticipants: room.maxParticipants
 		};
 	}
 

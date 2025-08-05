@@ -8,7 +8,7 @@ content:
                 summary: Full room details response
                 value:
                     roomId: 'room-123'
-                    roomIdPrefix: 'room'
+                    roomName: 'room'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     preferences:
@@ -26,11 +26,11 @@ content:
                 value:
                     roomId: 'room-123'
 
-            fields=roomId,roomIdPrefix,creationDate,autoDeletionDate,preferences:
-                summary: Room details with roomId, roomIdPrefix, creationDate, autoDeletionDate, and preferences
+            fields=roomId,roomName,creationDate,autoDeletionDate,preferences:
+                summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and preferences
                 value:
                     roomId: 'room-123'
-                    roomIdPrefix: 'room'
+                    roomName: 'room'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     preferences:

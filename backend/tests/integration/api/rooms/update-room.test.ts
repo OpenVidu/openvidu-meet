@@ -32,7 +32,7 @@ describe('Room API Tests', () => {
 		it('should successfully update room preferences', async () => {
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'update-test',
+				roomName: 'update-test',
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
@@ -81,7 +81,7 @@ describe('Room API Tests', () => {
 		it('should allow partial preference updates', async () => {
 			// Create a room first with all preferences enabled
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'partial-update',
+				roomName: 'partial-update',
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
@@ -118,7 +118,7 @@ describe('Room API Tests', () => {
 	describe('Update Room Validation failures', () => {
 		it('should fail when preferences have incorrect structure', async () => {
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'validation-test'
+				roomName: 'validation-test'
 			});
 
 			// Invalid preferences (missing required fields)
@@ -139,7 +139,7 @@ describe('Room API Tests', () => {
 
 		it('should fail when preferences have incorrect types', async () => {
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'type-test'
+				roomName: 'type-test'
 			});
 
 			// Invalid preferences (wrong types)
@@ -161,7 +161,7 @@ describe('Room API Tests', () => {
 
 		it('should fail when preferences are missing required properties', async () => {
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'missing-props'
+				roomName: 'missing-props'
 			});
 
 			const emptyPreferences = {};
@@ -174,7 +174,7 @@ describe('Room API Tests', () => {
 
 		it('should fail when recording is enabled but allowAccessTo is missing', async () => {
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'missing-access'
+				roomName: 'missing-access'
 			});
 			const invalidPreferences = {
 				recordingPreferences: {

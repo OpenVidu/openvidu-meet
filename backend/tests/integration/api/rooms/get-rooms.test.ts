@@ -30,7 +30,7 @@ describe('Room API Tests', () => {
 
 		it('should return a list of rooms', async () => {
 			await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			const response = await getRooms();
@@ -41,7 +41,7 @@ describe('Room API Tests', () => {
 
 		it('should return a list of rooms applying fields filter', async () => {
 			await createRoom({
-				roomIdPrefix: 'test-room',
+				roomName: 'test-room',
 				autoDeletionDate: validAutoDeletionDate
 			});
 
@@ -56,7 +56,7 @@ describe('Room API Tests', () => {
 		it('should return a list of rooms with pagination', async () => {
 			const promises = [0, 1, 2, 3, 4, 5].map((i) => {
 				return createRoom({
-					roomIdPrefix: `test-room-${i}`,
+					roomName: `test-room-${i}`,
 					autoDeletionDate: validAutoDeletionDate
 				});
 			});

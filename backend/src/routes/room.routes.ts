@@ -50,7 +50,6 @@ roomRouter.get(
 	configureRoomAuthorization,
 	roomCtrl.getRoom
 );
-
 roomRouter.put(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),

@@ -86,12 +86,12 @@ export const expectSuccessRoomsResponse = (
 
 export const expectSuccessRoomResponse = (
 	response: any,
-	idPrefix: string,
+	roomName: string,
 	autoDeletionDate?: number,
 	preferences?: MeetRoomPreferences
 ) => {
 	expect(response.status).toBe(200);
-	expectValidRoom(response.body, idPrefix, autoDeletionDate, preferences);
+	expectValidRoom(response.body, roomName, autoDeletionDate, preferences);
 };
 
 export const expectSuccessRoomPreferencesResponse = (response: any, preferences: MeetRoomPreferences) => {
@@ -102,7 +102,7 @@ export const expectSuccessRoomPreferencesResponse = (response: any, preferences:
 
 export const expectValidRoom = (
 	room: MeetRoom,
-	idPrefix: string,
+	name: string,
 	autoDeletionDate?: number,
 	preferences?: MeetRoomPreferences,
 	markedForDeletion?: boolean
@@ -110,10 +110,10 @@ export const expectValidRoom = (
 	expect(room).toBeDefined();
 
 	expect(room.roomId).toBeDefined();
-	expect(room.roomIdPrefix).toBeDefined();
-	expect(room.roomIdPrefix).toBe(idPrefix);
+	expect(room.roomName).toBeDefined();
+	expect(room.roomName).toBe(name);
 	expect(room.roomId).not.toBe('');
-	expect(room.roomId).toContain(room.roomIdPrefix);
+	expect(room.roomId).toContain(room.roomName.replace(/\s+/g, '')); // Ensure roomId contains the name without spaces
 	expect(room.creationDate).toBeDefined();
 
 	if (autoDeletionDate !== undefined) {

@@ -36,7 +36,7 @@ describe('Room API Tests', () => {
 		it('should default to force=false when force parameter is invalid', async () => {
 			// Create a room first
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 			const response = await deleteRoom(roomId, { force: 'not-a-boolean' });
 
@@ -49,7 +49,7 @@ describe('Room API Tests', () => {
 		it('should mark room for deletion when participants exist and force parameter is invalid', async () => {
 			// Create a room first
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			await joinFakeParticipant(roomId, 'test-participant');
@@ -70,7 +70,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should delete an empty room completely (204)', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-room' });
+			const { roomId } = await createRoom({ roomName: 'test-room' });
 
 			const response = await deleteRoom(roomId);
 
@@ -84,7 +84,7 @@ describe('Room API Tests', () => {
 		it('should sanitize roomId with spaces and special characters before deletion', async () => {
 			// Create a room first
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'test-mixed'
+				roomName: 'test-mixed'
 			});
 
 			// Add some spaces and special chars to the valid roomId
@@ -101,7 +101,7 @@ describe('Room API Tests', () => {
 
 		it('should handle explicit force=true for room with no participants', async () => {
 			const createdRoom = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			const response = await deleteRoom(createdRoom.roomId, { force: true });
@@ -116,7 +116,7 @@ describe('Room API Tests', () => {
 		it('should mark room for deletion (202) when participants exist and force=false', async () => {
 			const autoDeletionDate = Date.now() + ms('5h');
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'test-room',
+				roomName: 'test-room',
 				autoDeletionDate
 			});
 
@@ -133,7 +133,7 @@ describe('Room API Tests', () => {
 		it('should delete a room marked for deletion when the webhook room_finished is received', async () => {
 			const autoDeletionDate = Date.now() + ms('5h');
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'test-room',
+				roomName: 'test-room',
 				autoDeletionDate
 			});
 
@@ -166,7 +166,7 @@ describe('Room API Tests', () => {
 
 		it('should force delete (204) room with active participants when force=true', async () => {
 			const { roomId } = await createRoom({
-				roomIdPrefix: 'test-room'
+				roomName: 'test-room'
 			});
 
 			await joinFakeParticipant(roomId, 'test-participant');
@@ -182,7 +182,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should successfully delete a room already marked for deletion', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-marked' });
+			const { roomId } = await createRoom({ roomName: 'test-marked' });
 
 			// First mark it for deletion
 			await joinFakeParticipant(roomId, 'test-participant');
@@ -195,7 +195,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should handle repeated deletion of the same room gracefully', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-idempotent' });
+			const { roomId } = await createRoom({ roomName: 'test-idempotent' });
 
 			// Delete first time
 			const response1 = await deleteRoom(roomId);

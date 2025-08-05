@@ -35,7 +35,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve custom room preferences', async () => {
 			const payload = {
-				roomIdPrefix: 'custom-prefs',
+				roomName: 'custom-prefs',
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
@@ -46,7 +46,7 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const roomData = await setupSingleRoom(false, payload.roomIdPrefix, payload.preferences);
+			const roomData = await setupSingleRoom(false, payload.roomName, payload.preferences);
 			const roomId = roomData.room.roomId;
 			const cookie = roomData.moderatorCookie;
 

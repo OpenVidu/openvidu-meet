@@ -17,7 +17,7 @@ content:
                 value:
                     rooms:
                         - roomId: 'room-123'
-                          roomIdPrefix: 'room'
+                          roomName: 'room'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           preferences:
@@ -30,7 +30,7 @@ content:
                           moderatorURL: 'http://localhost:6080/room/room-123?secret=123456'
                           publisherURL: 'http://localhost:6080/room/room-123?secret=654321'
                         - roomId: 'room-456'
-                          roomIdPrefix: 'room'
+                          roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           preferences:
@@ -55,12 +55,12 @@ content:
                         isTruncated: false
                         maxItems: 10
 
-            fields=roomId,roomIdPrefix,creationDate,autoDeletionDate,preferences:
+            fields=roomId,roomName,creationDate,autoDeletionDate,preferences:
                 summary: Room details including preferences but no URLs
                 value:
                     rooms:
                         - roomId: 'room-123'
-                          roomIdPrefix: 'room'
+                          roomName: 'room'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           preferences:
@@ -71,7 +71,7 @@ content:
                               virtualBackgroundPreferences:
                                   enabled: true
                         - roomId: 'room-456'
-                          roomIdPrefix: 'room'
+                          roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           preferences:

@@ -31,7 +31,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should delete room (204) with invalid force parameter when no participants exist', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-invalid-force' });
+			const { roomId } = await createRoom({ roomName: 'test-invalid-force' });
 
 			const response = await bulkDeleteRooms([roomId]);
 
@@ -41,7 +41,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should mark room for deletion (202) with invalid force parameter when participants exist', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-invalid-force' });
+			const { roomId } = await createRoom({ roomName: 'test-invalid-force' });
 
 			await joinFakeParticipant(roomId, 'test-participant-1');
 
@@ -53,7 +53,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should delete room (204) with force=true parameter when no participants exist', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-force' });
+			const { roomId } = await createRoom({ roomName: 'test-force' });
 
 			const response = await bulkDeleteRooms([roomId], true);
 
@@ -63,7 +63,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should delete room (204) with force=true parameter when participants exist', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-force' });
+			const { roomId } = await createRoom({ roomName: 'test-force' });
 
 			await joinFakeParticipant(roomId, 'test-participant-1');
 
@@ -75,7 +75,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should successfully delete the room requesting the same roomId multiple times', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-duplicate' });
+			const { roomId } = await createRoom({ roomName: 'test-duplicate' });
 
 			const response = await bulkDeleteRooms([roomId, roomId, roomId], true);
 
@@ -84,7 +84,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should successfully delete valid roomIds while ignoring invalid ones', async () => {
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-invalid-force' });
+			const { roomId } = await createRoom({ roomName: 'test-invalid-force' });
 
 			const response = await bulkDeleteRooms([roomId, '!!@##$']);
 
@@ -95,8 +95,8 @@ describe('Room API Tests', () => {
 		it('should successfully delete multiple rooms with valid roomIds', async () => {
 			// Create test rooms
 			const [room1, room2] = await Promise.all([
-				createRoom({ roomIdPrefix: 'test-bulk-1' }),
-				createRoom({ roomIdPrefix: 'test-bulk-2' })
+				createRoom({ roomName: 'test-bulk-1' }),
+				createRoom({ roomName: 'test-bulk-2' })
 			]);
 
 			// Delete both rooms
@@ -117,8 +117,8 @@ describe('Room API Tests', () => {
 		it('should successfully marked for deletion multiple rooms with valid roomIds', async () => {
 			// Create test rooms
 			const [room1, room2] = await Promise.all([
-				createRoom({ roomIdPrefix: 'test-bulk-1' }),
-				createRoom({ roomIdPrefix: 'test-bulk-2' })
+				createRoom({ roomName: 'test-bulk-1' }),
+				createRoom({ roomName: 'test-bulk-2' })
 			]);
 
 			await Promise.all([
@@ -147,7 +147,7 @@ describe('Room API Tests', () => {
 
 		it('should sanitize roomIds before deleting', async () => {
 			// Create a test room
-			const { roomId } = await createRoom({ roomIdPrefix: 'test-sanitize' });
+			const { roomId } = await createRoom({ roomName: 'test-sanitize' });
 
 			const response = await bulkDeleteRooms([roomId + '!!@##$']);
 			expect(response.status).toBe(204);
@@ -160,8 +160,8 @@ describe('Room API Tests', () => {
 		it('should delete rooms when force=true and participants exist', async () => {
 			// Create test rooms
 			const [room1, room2] = await Promise.all([
-				createRoom({ roomIdPrefix: 'test-bulk-1' }),
-				createRoom({ roomIdPrefix: 'test-bulk-2' })
+				createRoom({ roomName: 'test-bulk-1' }),
+				createRoom({ roomName: 'test-bulk-2' })
 			]);
 
 			// Join a participant to the rooms
@@ -188,8 +188,8 @@ describe('Room API Tests', () => {
 
 		it('should return mixed results (200) when some rooms are deleted and others marked for deletion', async () => {
 			// Create rooms
-			const room1 = await createRoom({ roomIdPrefix: 'empty-room' });
-			const room2 = await createRoom({ roomIdPrefix: 'occupied-room' });
+			const room1 = await createRoom({ roomName: 'empty-room' });
+			const room2 = await createRoom({ roomName: 'occupied-room' });
 
 			// Add participant to only one room
 			await joinFakeParticipant(room2.roomId, 'test-participant');
@@ -214,7 +214,7 @@ describe('Room API Tests', () => {
 		it('should handle a large number of room IDs', async () => {
 			// Create 20+ rooms and test deletion
 			const rooms = await Promise.all(
-				Array.from({ length: 20 }, (_, i) => createRoom({ roomIdPrefix: `bulk-${i}` }))
+				Array.from({ length: 20 }, (_, i) => createRoom({ roomName: `bulk-${i}` }))
 			);
 
 			const response = await bulkDeleteRooms(rooms.map((r) => r.roomId));
@@ -230,7 +230,7 @@ describe('Room API Tests', () => {
 		it('should handle a large number of room IDs with mixed valid and invalid IDs', async () => {
 			// Create 20+ rooms and test deletion
 			const rooms = await Promise.all(
-				Array.from({ length: 20 }, (_, i) => createRoom({ roomIdPrefix: `bulk-${i}` }))
+				Array.from({ length: 20 }, (_, i) => createRoom({ roomName: `bulk-${i}` }))
 			);
 
 			await joinFakeParticipant(rooms[0].roomId, 'test-participant-1');

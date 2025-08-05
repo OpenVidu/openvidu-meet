@@ -31,7 +31,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should delete a room with a past auto-deletion date if no participant is present', async () => {
 		const createdRoom = await createRoom({
-			roomIdPrefix: 'test-gc',
+			roomName: 'test-gc',
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
@@ -50,7 +50,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should mark room for deletion but not delete when expiration date has passed and participants exist', async () => {
 		const createdRoom = await createRoom({
-			roomIdPrefix: 'test-gc-participants',
+			roomName: 'test-gc-participants',
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
@@ -66,7 +66,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should not touch a room with a future auto-deletion date', async () => {
 		const createdRoom = await createRoom({
-			roomIdPrefix: 'test-gc-future',
+			roomName: 'test-gc-future',
 			autoDeletionDate: Date.now() + ms('1h')
 		});
 
@@ -79,7 +79,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should delete a room after the last participant leaves when it was marked for deletion', async () => {
 		const { roomId } = await createRoom({
-			roomIdPrefix: 'test-gc-lifecycle',
+			roomName: 'test-gc-lifecycle',
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 
@@ -118,7 +118,7 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should never delete a room without an auto-deletion date', async () => {
 		const createdRoom = await createRoom({
-			roomIdPrefix: 'test-gc-no-date'
+			roomName: 'test-gc-no-date'
 		});
 
 		await runRoomGarbageCollector();
@@ -135,16 +135,16 @@ describe('Room Garbage Collector Tests', () => {
 
 	it('should handle multiple expired rooms in one batch', async () => {
 		const rooms = await Promise.all([
-			createRoom({ roomIdPrefix: 'test-gc-multi-1', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-2', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-3', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-4', autoDeletionDate: Date.now() + ms('1h') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-5', autoDeletionDate: Date.now() + ms('1h') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-6', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-7', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-8', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-9', autoDeletionDate: Date.now() + ms('1s') }),
-			createRoom({ roomIdPrefix: 'test-gc-multi-10', autoDeletionDate: Date.now() + ms('1s') })
+			createRoom({ roomName: 'test-gc-multi-1', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-2', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-3', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-4', autoDeletionDate: Date.now() + ms('1h') }),
+			createRoom({ roomName: 'test-gc-multi-5', autoDeletionDate: Date.now() + ms('1h') }),
+			createRoom({ roomName: 'test-gc-multi-6', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-7', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-8', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-9', autoDeletionDate: Date.now() + ms('1s') }),
+			createRoom({ roomName: 'test-gc-multi-10', autoDeletionDate: Date.now() + ms('1s') })
 		]);
 
 		// Make sure all rooms are expired

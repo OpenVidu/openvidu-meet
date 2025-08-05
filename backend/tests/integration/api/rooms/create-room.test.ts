@@ -27,23 +27,23 @@ describe('Room API Tests', () => {
 	describe('Room Creation Tests', () => {
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
 			const room = await createRoom({
-				roomIdPrefix: '   Test Room   '
+				roomName: '   Test Room   '
 			});
-			expectValidRoom(room, 'TestRoom');
+			expectValidRoom(room, 'Test Room');
 		});
 
 		it('Should create a room with a valid autoDeletionDate', async () => {
 			const room = await createRoom({
 				autoDeletionDate: validAutoDeletionDate,
-				roomIdPrefix: '   .,-------}{¡$#<+My Room *123  '
+				roomName: '   .,-------}{¡$#<+My Room *123  '
 			});
 
-			expectValidRoom(room, 'MyRoom123', validAutoDeletionDate);
+			expectValidRoom(room, 'My Room 123', validAutoDeletionDate);
 		});
 
 		it('Should create a room when sending full valid payload', async () => {
 			const payload = {
-				roomIdPrefix: ' =Example Room&/ ',
+				roomName: ' =Example Room&/ ',
 				autoDeletionDate: validAutoDeletionDate,
 				preferences: {
 					recordingPreferences: {
@@ -57,7 +57,7 @@ describe('Room API Tests', () => {
 
 			const room = await createRoom(payload);
 
-			expectValidRoom(room, 'ExampleRoom', validAutoDeletionDate, payload.preferences);
+			expectValidRoom(room, 'Example Room', validAutoDeletionDate, payload.preferences);
 		});
 	});
 
@@ -65,7 +65,7 @@ describe('Room API Tests', () => {
 		it('should fail when autoDeletionDate is negative', async () => {
 			const payload = {
 				autoDeletionDate: -5000,
-				roomIdPrefix: 'TestRoom'
+				roomName: 'TestRoom'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -78,7 +78,7 @@ describe('Room API Tests', () => {
 		it('should fail when autoDeletionDate is less than 1 hour in the future', async () => {
 			const payload = {
 				autoDeletionDate: Date.now() + ms('30m'),
-				roomIdPrefix: 'TestRoom'
+				roomName: 'TestRoom'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -92,7 +92,7 @@ describe('Room API Tests', () => {
 		it('should fail when autoDeletionDate is not a number (string provided)', async () => {
 			const payload = {
 				autoDeletionDate: 'not-a-number',
-				roomIdPrefix: 'TestRoom'
+				roomName: 'TestRoom'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -103,7 +103,7 @@ describe('Room API Tests', () => {
 		it('should fail when autoDeletionDate is a boolean', async () => {
 			const payload = {
 				autoDeletionDate: true,
-				roomIdPrefix: 'TestRoom'
+				roomName: 'TestRoom'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -114,7 +114,7 @@ describe('Room API Tests', () => {
 		it('should fail when autoDeletionDate is omitted but provided as null', async () => {
 			const payload = {
 				autoDeletionDate: null,
-				roomIdPrefix: 'TestRoom'
+				roomName: 'TestRoom'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -122,9 +122,9 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
 
-		it('should fail when roomIdPrefix is not a string (number provided)', async () => {
+		it('should fail when roomName is not a string (number provided)', async () => {
 			const payload = {
-				roomIdPrefix: 12345,
+				roomName: 12345,
 				autoDeletionDate: validAutoDeletionDate
 			};
 
@@ -133,9 +133,9 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
 
-		it('should fail when roomIdPrefix is a boolean', async () => {
+		it('should fail when roomName is a boolean', async () => {
 			const payload = {
-				roomIdPrefix: false,
+				roomName: false,
 				autoDeletionDate: validAutoDeletionDate
 			};
 
@@ -146,7 +146,7 @@ describe('Room API Tests', () => {
 
 		it('should fail when preferences is not an object (string provided)', async () => {
 			const payload = {
-				roomIdPrefix: 'TestRoom',
+				roomName: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
 				preferences: 'invalid-preferences'
 			};
@@ -160,7 +160,7 @@ describe('Room API Tests', () => {
 			// Assuming preferences expects each sub-property to be an object with a boolean "enabled",
 			// here we deliberately use an invalid structure.
 			const payload = {
-				roomIdPrefix: 'TestRoom',
+				roomName: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
 				preferences: {
 					recordingPreferences: {
@@ -183,23 +183,23 @@ describe('Room API Tests', () => {
 				.post(ROOMS_PATH)
 				.set('Cookie', adminCookie)
 				.set('Content-Type', 'application/json')
-				.send('{"roomIdPrefix": "TestRoom",') // invalid JSON syntax
+				.send('{"roomName": "TestRoom",') // invalid JSON syntax
 				.expect(400);
 
 			expect(response.body.error).toContain('Bad Request');
 			expect(response.body.message).toContain('Malformed body');
 		});
 
-		it('should fail when roomIdPrefix is too long', async () => {
+		it('should fail when roomName is too long', async () => {
 			const longRoomId = 'a'.repeat(51);
 			const payload = {
-				roomIdPrefix: longRoomId,
+				roomName: longRoomId,
 				autoDeletionDate: validAutoDeletionDate
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
 
-			expect(JSON.stringify(response.body.details)).toContain('roomIdPrefix cannot exceed 50 characters');
+			expect(JSON.stringify(response.body.details)).toContain('roomName cannot exceed 50 characters');
 		});
 	});
 });

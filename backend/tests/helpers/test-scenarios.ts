@@ -34,15 +34,17 @@ export interface TestContext {
  * Creates a single room with optional participant.
  *
  * @param withParticipant Whether to join a fake participant in the room.
+ * @param roomName        Name of the room to create.
+ * @param preferences     Optional room preferences.
  * @returns               Room data including secrets and cookies.
  */
 export const setupSingleRoom = async (
 	withParticipant = false,
-	roomPrefix = 'TEST_ROOM',
+	roomName = 'TEST_ROOM',
 	preferences?: MeetRoomPreferences
 ): Promise<RoomData> => {
 	const room = await createRoom({
-		roomIdPrefix: roomPrefix,
+		roomName,
 		preferences
 	});
 
