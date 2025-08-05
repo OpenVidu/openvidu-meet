@@ -227,13 +227,18 @@ export const getRooms = async (query: Record<string, any> = {}) => {
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string) => {
+export const getRoom = async (roomId: string, fields?: string, cookie?: string, role?: ParticipantRole) => {
 	checkAppIsRunning();
 
-	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
-		.query({ fields });
+	const req = request(app).get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`).query({ fields });
+
+	if (cookie && role) {
+		req.set('Cookie', cookie).set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, role);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+	}
+
+	return await req;
 };
 
 export const getRoomPreferences = async (roomId: string, cookie: string, role: ParticipantRole) => {
@@ -380,16 +385,16 @@ export const generateParticipantToken = async (participantOptions: any, cookie?:
  */
 export const generateParticipantTokenCookie = async (
 	roomId: string,
-	participantName: string,
 	secret: string,
+	participantName: string,
 	cookie?: string
 ): Promise<string> => {
 	// Generate the participant token
 	const response = await generateParticipantToken(
 		{
 			roomId,
-			participantName,
-			secret
+			secret,
+			participantName
 		},
 		cookie
 	);

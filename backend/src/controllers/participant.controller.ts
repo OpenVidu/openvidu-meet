@@ -40,9 +40,13 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Generating participant token for room '${roomId}'`);
-		await roomService.createLivekitRoom(roomId);
-		const token = await participantService.generateOrRefreshParticipantToken(participantOptions, currentRoles);
 
+		// If participantName is provided, create the Livekit room if it doesn't exist
+		if (participantOptions.participantName) {
+			await roomService.createLivekitRoom(roomId);
+		}
+
+		const token = await participantService.generateOrRefreshParticipantToken(participantOptions, currentRoles);
 		res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
 		return res.status(200).json({ token });
 	} catch (error) {

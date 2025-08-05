@@ -6,8 +6,8 @@ import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 
 const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
-	participantName: z.string().nonempty('Participant name is required'),
-	secret: z.string().nonempty('Secret is required')
+	secret: z.string().nonempty('Secret is required'),
+	participantName: z.string().optional()
 });
 
 export const validateParticipantTokenRequest = (req: Request, res: Response, next: NextFunction) => {

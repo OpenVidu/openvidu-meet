@@ -40,16 +40,16 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName
 				},
 				roomData.moderatorCookie
 			);
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				participantName,
-				ParticipantRole.MODERATOR
+				ParticipantRole.MODERATOR,
+				participantName
 			);
 		});
 
@@ -57,16 +57,16 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName
 				},
 				roomData.publisherCookie
 			);
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				participantName,
-				ParticipantRole.PUBLISHER
+				ParticipantRole.PUBLISHER,
+				participantName
 			);
 		});
 
@@ -74,8 +74,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName,
-					secret: 'invalid_secret'
+					secret: 'invalid_secret',
+					participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -86,8 +86,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName
 				},
 				''
 			);
@@ -100,8 +100,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: newRoomData.room.roomId,
-					participantName,
-					secret: newRoomData.moderatorSecret
+					secret: newRoomData.moderatorSecret,
+					participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -112,8 +112,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: 'non_existent_room',
-					participantName,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -125,8 +125,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: newRoomData.room.roomId,
-					participantName,
-					secret: newRoomData.moderatorSecret
+					secret: newRoomData.moderatorSecret,
+					participantName
 				},
 				newRoomData.moderatorCookie
 			);
@@ -139,23 +139,12 @@ describe('Participant API Tests', () => {
 		it('should fail when roomId is not provided', async () => {
 			const response = await refreshParticipantToken(
 				{
-					participantName,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName
 				},
 				roomData.moderatorCookie
 			);
 			expectValidationError(response, 'roomId', 'Required');
-		});
-
-		it('should fail when participantName is not provided', async () => {
-			const response = await refreshParticipantToken(
-				{
-					roomId: roomData.room.roomId,
-					secret: roomData.moderatorSecret
-				},
-				roomData.moderatorCookie
-			);
-			expectValidationError(response, 'participantName', 'Required');
 		});
 
 		it('should fail when secret is not provided', async () => {
@@ -169,24 +158,12 @@ describe('Participant API Tests', () => {
 			expectValidationError(response, 'secret', 'Required');
 		});
 
-		it('should fail when participantName is empty', async () => {
-			const response = await refreshParticipantToken(
-				{
-					roomId: roomData.room.roomId,
-					participantName: '',
-					secret: roomData.moderatorSecret
-				},
-				roomData.moderatorCookie
-			);
-			expectValidationError(response, 'participantName', 'Participant name is required');
-		});
-
 		it('should fail when secret is empty', async () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName,
-					secret: ''
+					secret: '',
+					participantName
 				},
 				roomData.moderatorCookie
 			);

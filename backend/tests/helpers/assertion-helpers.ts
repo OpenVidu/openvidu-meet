@@ -480,12 +480,12 @@ export const expectValidRoomRoleAndPermissionsResponse = (
 	});
 };
 
-const getPermissions = (roomId: string, role: ParticipantRole): ParticipantPermissions => {
+const getPermissions = (roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions => {
 	switch (role) {
 		case ParticipantRole.MODERATOR:
 			return {
 				livekit: {
-					roomJoin: true,
+					roomJoin: addJoinPermission,
 					room: roomId,
 					canPublish: true,
 					canSubscribe: true,
@@ -501,7 +501,7 @@ const getPermissions = (roomId: string, role: ParticipantRole): ParticipantPermi
 		case ParticipantRole.PUBLISHER:
 			return {
 				livekit: {
-					roomJoin: true,
+					roomJoin: addJoinPermission,
 					room: roomId,
 					canPublish: true,
 					canSubscribe: true,
@@ -522,8 +522,8 @@ const getPermissions = (roomId: string, role: ParticipantRole): ParticipantPermi
 export const expectValidParticipantTokenResponse = (
 	response: any,
 	roomId: string,
-	participantName: string,
 	participantRole: ParticipantRole,
+	participantName?: string,
 	otherRoles: ParticipantRole[] = []
 ) => {
 	expect(response.status).toBe(200);
@@ -532,10 +532,10 @@ export const expectValidParticipantTokenResponse = (
 	const token = response.body.token;
 	const decodedToken = decodeJWTToken(token);
 
-	const permissions = getPermissions(roomId, participantRole);
+	const permissions = getPermissions(roomId, participantRole, !!participantName);
 	const rolesAndPermissions = otherRoles.map((role) => ({
 		role,
-		permissions: getPermissions(roomId, role).openvidu
+		permissions: getPermissions(roomId, role, !!participantName).openvidu
 	}));
 
 	if (!rolesAndPermissions.some((r) => r.role === participantRole)) {
@@ -545,7 +545,12 @@ export const expectValidParticipantTokenResponse = (
 		});
 	}
 
-	expect(decodedToken).toHaveProperty('sub', participantName);
+	if (participantName) {
+		expect(decodedToken).toHaveProperty('sub', participantName);
+	} else {
+		expect(decodedToken).not.toHaveProperty('sub');
+	}
+
 	expect(decodedToken).toHaveProperty('video', permissions.livekit);
 	expect(decodedToken).toHaveProperty('metadata');
 	const metadata = JSON.parse(decodedToken.metadata || '{}');

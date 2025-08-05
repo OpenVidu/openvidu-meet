@@ -20,17 +20,19 @@ export class ParticipantService {
 	): Promise<string> {
 		const { roomId, participantName, secret } = participantOptions;
 
-		// Check if participant with same participantName exists in the room
-		const participantExists = await this.participantExists(roomId, participantName);
+		if (participantName) {
+			// Check if participant with same participantName exists in the room
+			const participantExists = await this.participantExists(roomId, participantName);
 
-		if (!refresh && participantExists) {
-			this.logger.verbose(`Participant '${participantName}' already exists in room '${roomId}'`);
-			throw errorParticipantAlreadyExists(participantName, roomId);
-		}
+			if (!refresh && participantExists) {
+				this.logger.verbose(`Participant '${participantName}' already exists in room '${roomId}'`);
+				throw errorParticipantAlreadyExists(participantName, roomId);
+			}
 
-		if (refresh && !participantExists) {
-			this.logger.verbose(`Participant '${participantName}' does not exist in room '${roomId}'`);
-			throw errorParticipantNotFound(participantName, roomId);
+			if (refresh && !participantExists) {
+				this.logger.verbose(`Participant '${participantName}' does not exist in room '${roomId}'`);
+				throw errorParticipantNotFound(participantName, roomId);
+			}
 		}
 
 		const role = await this.roomService.getRoomRoleBySecret(roomId, secret);
@@ -44,7 +46,8 @@ export class ParticipantService {
 		role: ParticipantRole,
 		currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[]
 	): Promise<string> {
-		const permissions = this.getParticipantPermissions(participantOptions.roomId, role);
+		const { roomId, participantName } = participantOptions;
+		const permissions = this.getParticipantPermissions(roomId, role, !!participantName);
 
 		if (!currentRoles.some((r) => r.role === role)) {
 			currentRoles.push({ role, permissions: permissions.openvidu });
@@ -75,21 +78,21 @@ export class ParticipantService {
 		return this.livekitService.deleteParticipant(participantName, roomId);
 	}
 
-	getParticipantPermissions(roomId: string, role: ParticipantRole): ParticipantPermissions {
+	getParticipantPermissions(roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions {
 		switch (role) {
 			case ParticipantRole.MODERATOR:
-				return this.generateModeratorPermissions(roomId);
+				return this.generateModeratorPermissions(roomId, addJoinPermission);
 			case ParticipantRole.PUBLISHER:
-				return this.generatePublisherPermissions(roomId);
+				return this.generatePublisherPermissions(roomId, addJoinPermission);
 			default:
 				throw new Error(`Role ${role} not supported`);
 		}
 	}
 
-	protected generateModeratorPermissions(roomId: string): ParticipantPermissions {
+	protected generateModeratorPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
 		return {
 			livekit: {
-				roomJoin: true,
+				roomJoin: addJoinPermission,
 				room: roomId,
 				canPublish: true,
 				canSubscribe: true,
@@ -104,10 +107,10 @@ export class ParticipantService {
 		};
 	}
 
-	protected generatePublisherPermissions(roomId: string): ParticipantPermissions {
+	protected generatePublisherPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
 		return {
 			livekit: {
-				roomJoin: true,
+				roomJoin: addJoinPermission,
 				room: roomId,
 				canPublish: true,
 				canSubscribe: true,

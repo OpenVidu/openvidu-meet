@@ -43,8 +43,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
+				secret: roomData.publisherSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -54,8 +54,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -65,8 +65,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
+				secret: roomData.publisherSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -76,8 +76,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -87,8 +87,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(401);
 		});
@@ -98,8 +98,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
+				secret: roomData.publisherSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -109,8 +109,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.publisherSecret
+				secret: roomData.publisherSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(401);
 		});
@@ -120,8 +120,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
@@ -131,8 +131,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				participantName: PARTICIPANT_NAME,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(401);
 		});
@@ -161,8 +161,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.publisherCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -175,8 +175,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.moderatorCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -189,8 +189,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.publisherCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -203,8 +203,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', [adminCookie, roomData.moderatorCookie])
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -217,8 +217,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.moderatorCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});
@@ -231,8 +231,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', [adminCookie, roomData.publisherCookie])
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -245,8 +245,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.publisherCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});
@@ -259,8 +259,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', [adminCookie, roomData.moderatorCookie])
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -273,8 +273,8 @@ describe('Participant API Security Tests', () => {
 				.set('Cookie', roomData.moderatorCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					participantName: PARTICIPANT_NAME,
-					secret: roomData.moderatorSecret
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});

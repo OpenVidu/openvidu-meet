@@ -51,8 +51,8 @@ export const setupSingleRoom = async (
 	// Extract the room secrets and generate participant tokens, saved as cookies
 	const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 	const [moderatorCookie, publisherCookie] = await Promise.all([
-		generateParticipantTokenCookie(room.roomId, 'MODERATOR', moderatorSecret),
-		generateParticipantTokenCookie(room.roomId, 'PUBLISHER', publisherSecret)
+		generateParticipantTokenCookie(room.roomId, moderatorSecret, 'MODERATOR'),
+		generateParticipantTokenCookie(room.roomId, publisherSecret, 'PUBLISHER')
 	]);
 
 	// Join participant if needed

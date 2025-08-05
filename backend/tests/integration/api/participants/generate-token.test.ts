@@ -26,31 +26,39 @@ describe('Participant API Tests', () => {
 	});
 
 	describe('Generate Participant Token Tests', () => {
+		it('should generate a participant token without join permissions when not specifying participant name', async () => {
+			const response = await generateParticipantToken({
+				roomId: roomData.room.roomId,
+				secret: roomData.moderatorSecret
+			});
+			expectValidParticipantTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR);
+		});
+
 		it('should generate a participant token with moderator permissions when using the moderator secret', async () => {
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				participantName,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName
 			});
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				participantName,
-				ParticipantRole.MODERATOR
+				ParticipantRole.MODERATOR,
+				participantName
 			);
 		});
 
 		it('should generate a participant token with publisher permissions when using the publisher secret', async () => {
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				participantName,
-				secret: roomData.publisherSecret
+				secret: roomData.publisherSecret,
+				participantName
 			});
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				participantName,
-				ParticipantRole.PUBLISHER
+				ParticipantRole.PUBLISHER,
+				participantName
 			);
 		});
 
@@ -58,22 +66,22 @@ describe('Participant API Tests', () => {
 			 when using the publisher secret after having a moderator token`, async () => {
 			const moderatorCookie = await generateParticipantTokenCookie(
 				roomData.room.roomId,
-				`${participantName}_MODERATOR`,
-				roomData.moderatorSecret
+				roomData.moderatorSecret,
+				`${participantName}_MODERATOR`
 			);
 			const publisherResponse = await generateParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName: `${participantName}_PUBLISHER`,
-					secret: roomData.publisherSecret
+					secret: roomData.publisherSecret,
+					participantName: `${participantName}_PUBLISHER`
 				},
 				moderatorCookie
 			);
 			expectValidParticipantTokenResponse(
 				publisherResponse,
 				roomData.room.roomId,
-				`${participantName}_PUBLISHER`,
 				ParticipantRole.PUBLISHER,
+				`${participantName}_PUBLISHER`,
 				[ParticipantRole.MODERATOR]
 			);
 		});
@@ -82,8 +90,8 @@ describe('Participant API Tests', () => {
 			roomData = await setupSingleRoom(true);
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				participantName,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName
 			});
 			expect(response.status).toBe(409);
 
@@ -94,8 +102,8 @@ describe('Participant API Tests', () => {
 		it('should fail with 404 when room does not exist', async () => {
 			const response = await generateParticipantToken({
 				roomId: 'non_existent_room',
-				participantName,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName
 			});
 			expect(response.status).toBe(404);
 		});
@@ -103,8 +111,8 @@ describe('Participant API Tests', () => {
 		it('should fail with 400 when secret is invalid', async () => {
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				participantName,
-				secret: 'invalid_secret'
+				secret: 'invalid_secret',
+				participantName
 			});
 			expect(response.status).toBe(400);
 		});
@@ -113,18 +121,10 @@ describe('Participant API Tests', () => {
 	describe('Generate Participant Token Validation Tests', () => {
 		it('should fail when roomId is not provided', async () => {
 			const response = await generateParticipantToken({
-				participantName,
-				secret: roomData.moderatorSecret
+				secret: roomData.moderatorSecret,
+				participantName
 			});
 			expectValidationError(response, 'roomId', 'Required');
-		});
-
-		it('should fail when participantName is not provided', async () => {
-			const response = await generateParticipantToken({
-				roomId: roomData.room.roomId,
-				secret: roomData.moderatorSecret
-			});
-			expectValidationError(response, 'participantName', 'Required');
 		});
 
 		it('should fail when secret is not provided', async () => {
@@ -135,20 +135,11 @@ describe('Participant API Tests', () => {
 			expectValidationError(response, 'secret', 'Required');
 		});
 
-		it('should fail when participantName is empty', async () => {
-			const response = await generateParticipantToken({
-				roomId: roomData.room.roomId,
-				participantName: '',
-				secret: roomData.moderatorSecret
-			});
-			expectValidationError(response, 'participantName', 'Participant name is required');
-		});
-
 		it('should fail when secret is empty', async () => {
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				participantName,
-				secret: ''
+				secret: '',
+				participantName
 			});
 			expectValidationError(response, 'secret', 'Secret is required');
 		});

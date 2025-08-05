@@ -1,18 +1,17 @@
 type: object
 required:
     - roomId
-    - participantName
     - secret
 properties:
     roomId:
         type: string
         description: The unique identifier of the room where the participant will join.
         example: 'room-123'
-    participantName:
-        type: string
-        description: The name of the participant.
-        example: 'Alice'
     secret:
         type: string
         description: The secret token from the room Url
         example: 'abc123456'
+    participantName:
+        type: string
+        description: The name of the participant.
+        example: 'Alice'

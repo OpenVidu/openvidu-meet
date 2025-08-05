@@ -45,7 +45,7 @@ export class TokenService {
 		roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[]
 	): Promise<string> {
 		const { roomId, participantName } = participantOptions;
-		this.logger.info(`Generating token for ${participantName} in room ${roomId}`);
+		this.logger.info(`Generating token for room '${roomId}'`);
 
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantName,
