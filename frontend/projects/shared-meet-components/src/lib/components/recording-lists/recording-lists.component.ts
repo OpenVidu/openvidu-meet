@@ -25,6 +25,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
+import { formatBytes, formatDurationToHMS } from '@lib/utils';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 export interface RecordingTableAction {
@@ -365,29 +366,11 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		return 'var(--ov-meet-text-secondary)';
 	}
 
-	formatFileSize(bytes: number | undefined): string {
-		if (!bytes || bytes === 0) return '-';
-
-		const k = 1024;
-		const sizes = ['B', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-		return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+	formatDuration(duration?: number): string {
+		return formatDurationToHMS(duration);
 	}
 
-	formatDuration(duration: number | undefined): string {
-		if (!duration || duration === 0) return '-';
-
-		const hours = Math.floor(duration / 3600);
-		const minutes = Math.floor((duration % 3600) / 60);
-		const seconds = Math.floor(duration % 60);
-
-		if (hours > 0) {
-			return `${hours}h ${minutes}m ${seconds}s`;
-		} else if (minutes > 0) {
-			return `${minutes}m ${seconds}s`;
-		} else {
-			return `${seconds}s`;
-		}
+	formatFileSize(bytes?: number): string {
+		return formatBytes(bytes);
 	}
 }
