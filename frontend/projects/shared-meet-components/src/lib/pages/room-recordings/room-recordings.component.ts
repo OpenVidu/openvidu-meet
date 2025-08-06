@@ -44,11 +44,16 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
-		const parts = this.roomId.split('-');
-		this.roomName = parts.slice(0, -1).join('-');
-
 		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
 		await this.loadRecordings();
+
+		// Set room name based on recordings or roomId
+		if (this.recordings()) {
+			this.roomName = this.recordings()[0].roomName;
+		} else {
+			const parts = this.roomId.split('-');
+			this.roomName = parts.slice(0, -1).join('-');
+		}
 	}
 
 	async goBackToRoom() {
