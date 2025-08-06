@@ -278,7 +278,7 @@ export class MeetStorageService<
 	/**
 	 * Archives room metadata by storing essential room information in both cache and persistent storage.
 	 *
-	 * This method retrieves the room data, extracts key metadata (moderator/publisher URLs and
+	 * This method retrieves the room data, extracts key metadata (moderator/speaker URLs and
 	 * recording preferences), and saves it to an archived location for future reference.
 	 *
 	 * If `updateOnlyIfExists` is true, it will only save the archived metadata if it already exists,
@@ -311,7 +311,7 @@ export class MeetStorageService<
 
 		const archivedRoom: Partial<MRoom> = {
 			moderatorRoomUrl: room.moderatorRoomUrl,
-			publisherRoomUrl: room.publisherRoomUrl,
+			speakerRoomUrl: room.speakerRoomUrl,
 			preferences: {
 				recordingPreferences: room.preferences?.recordingPreferences
 			}

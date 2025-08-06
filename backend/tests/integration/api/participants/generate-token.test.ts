@@ -48,40 +48,40 @@ describe('Participant API Tests', () => {
 			);
 		});
 
-		it('should generate a participant token with publisher permissions when using the publisher secret', async () => {
+		it('should generate a participant token with speaker permissions when using the speaker secret', async () => {
 			const response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
-				secret: roomData.publisherSecret,
+				secret: roomData.speakerSecret,
 				participantName
 			});
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				ParticipantRole.PUBLISHER,
+				ParticipantRole.SPEAKER,
 				participantName
 			);
 		});
 
-		it(`should generate a participant token with both publisher and moderator permissions
-			 when using the publisher secret after having a moderator token`, async () => {
+		it(`should generate a participant token with both speaker and moderator permissions
+			 when using the speaker secret after having a moderator token`, async () => {
 			const moderatorCookie = await generateParticipantTokenCookie(
 				roomData.room.roomId,
 				roomData.moderatorSecret,
 				`${participantName}_MODERATOR`
 			);
-			const publisherResponse = await generateParticipantToken(
+			const speakerResponse = await generateParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
-					participantName: `${participantName}_PUBLISHER`
+					secret: roomData.speakerSecret,
+					participantName: `${participantName}_SPEAKER`
 				},
 				moderatorCookie
 			);
 			expectValidParticipantTokenResponse(
-				publisherResponse,
+				speakerResponse,
 				roomData.room.roomId,
-				ParticipantRole.PUBLISHER,
-				`${participantName}_PUBLISHER`,
+				ParticipantRole.SPEAKER,
+				`${participantName}_SPEAKER`,
 				[ParticipantRole.MODERATOR]
 			);
 		});

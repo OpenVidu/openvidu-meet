@@ -38,7 +38,7 @@ describe('Room API Tests', () => {
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: false }
@@ -97,13 +97,13 @@ describe('Room API Tests', () => {
 			expectSuccessRoomResponse(response, 'deletion-date', validAutoDeletionDate);
 		});
 
-		it('should retrieve a room without moderatorRoomUrl when participant is publisher', async () => {
+		it('should retrieve a room without moderatorRoomUrl when participant is speaker', async () => {
 			const roomData = await setupSingleRoom();
 			const response = await getRoom(
 				roomData.room.roomId,
 				undefined,
-				roomData.publisherCookie,
-				ParticipantRole.PUBLISHER
+				roomData.speakerCookie,
+				ParticipantRole.SPEAKER
 			);
 			expect(response.status).toBe(200);
 			expect(response.body.moderatorRoomUrl).toBeUndefined();

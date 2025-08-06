@@ -84,12 +84,12 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set('Cookie', roomData.publisherCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
+				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -138,11 +138,11 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set('Cookie', roomData.publisherCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
+				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -169,24 +169,24 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app).get(RECORDINGS_PATH).set('Cookie', recordingCookie);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -197,11 +197,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app).get(RECORDINGS_PATH).set('Cookie', recordingCookie);
@@ -233,14 +233,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -249,10 +249,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -265,11 +265,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -362,14 +362,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(404);
 			});
 
-			it('should fail when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -378,10 +378,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -394,11 +394,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(404);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -449,14 +449,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -466,10 +466,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -483,11 +483,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -527,14 +527,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -543,10 +543,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -559,11 +559,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -651,14 +651,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -667,10 +667,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -683,11 +683,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -727,14 +727,14 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is publisher', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)
@@ -744,10 +744,10 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin-moderator-publisher and participant is moderator', async () => {
+			it('should succeed when recording access is admin-moderator-speaker and participant is moderator', async () => {
 				await updateRecordingAccessPreferencesInRoom(
 					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
@@ -761,11 +761,11 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin-moderator and participant is publisher', async () => {
+			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
 				await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 				const recordingCookie = await generateRecordingTokenCookie(
 					roomData.room.roomId,
-					roomData.publisherSecret
+					roomData.speakerSecret
 				);
 
 				const response = await request(app)

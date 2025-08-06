@@ -21,7 +21,7 @@ export interface MeetRoom extends BaseRoomOptions {
     roomName: string;
     creationDate: number;
     moderatorRoomUrl: string;
-    publisherRoomUrl: string;
+    speakerRoomUrl: string;
     markedForDeletion?: boolean;
 }
 

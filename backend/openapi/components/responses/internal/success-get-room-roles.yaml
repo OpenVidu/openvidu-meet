@@ -19,7 +19,7 @@ content:
                       canRecord: true
                       canChat: true
                       canChangeVirtualBackground: true
-            - role: 'publisher'
+            - role: 'speaker'
               permissions:
                   livekit:
                       roomJoin: true

@@ -131,7 +131,7 @@ export const expectValidRoom = (
 		expect(room.preferences).toEqual({
 			recordingPreferences: {
 				enabled: true,
-				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
 			chatPreferences: { enabled: true },
 			virtualBackgroundPreferences: { enabled: true }
@@ -139,9 +139,9 @@ export const expectValidRoom = (
 	}
 
 	expect(room.moderatorRoomUrl).toBeDefined();
-	expect(room.publisherRoomUrl).toBeDefined();
+	expect(room.speakerRoomUrl).toBeDefined();
 	expect(room.moderatorRoomUrl).toContain(room.roomId);
-	expect(room.publisherRoomUrl).toContain(room.roomId);
+	expect(room.speakerRoomUrl).toContain(room.roomId);
 
 	if (markedForDeletion !== undefined) {
 		expect(room.autoDeletionDate).toBeDefined();
@@ -473,8 +473,8 @@ export const expectValidRoomRolesAndPermissionsResponse = (response: any, roomId
 				permissions: getPermissions(roomId, ParticipantRole.MODERATOR)
 			},
 			{
-				role: ParticipantRole.PUBLISHER,
-				permissions: getPermissions(roomId, ParticipantRole.PUBLISHER)
+				role: ParticipantRole.SPEAKER,
+				permissions: getPermissions(roomId, ParticipantRole.SPEAKER)
 			}
 		])
 	);
@@ -510,7 +510,7 @@ const getPermissions = (roomId: string, role: ParticipantRole, addJoinPermission
 					canChangeVirtualBackground: true
 				}
 			};
-		case ParticipantRole.PUBLISHER:
+		case ParticipantRole.SPEAKER:
 			return {
 				livekit: {
 					roomJoin: addJoinPermission,

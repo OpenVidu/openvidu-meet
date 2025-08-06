@@ -52,7 +52,7 @@ export class ErrorComponent implements OnInit {
 		const reasonMap: { [key in ErrorReason]: { title: string; message: string } } = {
 			[ErrorReason.MISSING_ROOM_SECRET]: {
 				title: 'Missing secret',
-				message: 'You need to provide a secret to join the room as a moderator or publisher'
+				message: 'You need to provide a secret to join the room as a moderator or speaker'
 			},
 			[ErrorReason.MISSING_RECORDING_SECRET]: {
 				title: 'Missing secret',
@@ -60,7 +60,7 @@ export class ErrorComponent implements OnInit {
 			},
 			[ErrorReason.INVALID_ROOM_SECRET]: {
 				title: 'Invalid secret',
-				message: 'The secret provided to join the room is neither valid for moderators nor publishers'
+				message: 'The secret provided to join the room is neither valid for moderators nor speakers'
 			},
 			[ErrorReason.INVALID_RECORDING_SECRET]: {
 				title: 'Invalid secret',

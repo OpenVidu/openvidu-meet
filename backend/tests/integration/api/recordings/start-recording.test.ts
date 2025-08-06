@@ -72,7 +72,7 @@ describe('Recording API Tests', () => {
 			const archivedRoom = await storageService.getArchivedRoomMetadata(room.roomId);
 			expect(archivedRoom).toBeDefined();
 			expect(archivedRoom?.moderatorRoomUrl).toBeDefined();
-			expect(archivedRoom?.publisherRoomUrl).toBeDefined();
+			expect(archivedRoom?.speakerRoomUrl).toBeDefined();
 			expect(archivedRoom?.preferences).toBeDefined();
 
 			const secretsResponse = await stopRecording(recordingId, moderatorCookie);

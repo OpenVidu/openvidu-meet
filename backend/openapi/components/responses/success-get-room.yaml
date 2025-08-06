@@ -18,8 +18,8 @@ content:
                             enabled: false
                         virtualBackgroundPreferences:
                             enabled: true
-                    moderatorURL: 'http://localhost:6080/room/room-123?secret=123456'
-                    publisherURL: 'http://localhost:6080/room/room-123?secret=654321'
+                    moderatorRoomURL: 'http://localhost:6080/room/room-123?secret=123456'
+                    speakerRoomURL: 'http://localhost:6080/room/room-123?secret=654321'
 
             fields=roomId:
                 summary: Response with only the roomId
@@ -41,8 +41,8 @@ content:
                         virtualBackgroundPreferences:
                             enabled: true
 
-            fields=moderatorURL,publisherURL:
-                summary: Response containing only moderator and publisher URLs
+            fields=moderatorRoomURL,speakerRoomURL:
+                summary: Response containing only moderator and speaker URLs
                 value:
-                    moderatorURL: 'http://localhost:6080/room/room-123?secret=123456'
-                    publisherURL: 'http://localhost:6080/room/room-123?secret=654321'
+                    moderatorRoomURL: 'http://localhost:6080/room/room-123?secret=123456'
+                    speakerRoomURL: 'http://localhost:6080/room/room-123?secret=654321'

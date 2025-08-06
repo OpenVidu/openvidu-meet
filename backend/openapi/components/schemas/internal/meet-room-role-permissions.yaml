@@ -2,12 +2,12 @@ type: object
 properties:
     role:
         type: string
-        enum: ['moderator', 'publisher']
+        enum: ['moderator', 'speaker']
         description: |
             A role that a participant can have in a room.
             The role determines the permissions of the participant in the room.
             - `moderator`: Can manage the room and its participants.
-            - `publisher`: Can publish media streams to the room.
+            - `speaker`: Can publish media streams to the room.
         example: 'moderator'
     permissions:
         type: object

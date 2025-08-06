@@ -44,7 +44,7 @@ export class RecordingPreferencesComponent implements OnDestroy {
 			title: 'Allow Recording',
 			description:
 				'Enable recording capabilities for this room. Recordings can be started manually or automatically.',
-			icon: 'video_library',
+			icon: 'video_library'
 			// recommended: true
 		},
 		{
@@ -64,8 +64,8 @@ export class RecordingPreferencesComponent implements OnDestroy {
 			label: 'Admin and Moderators'
 		},
 		{
-			value: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER,
-			label: 'Admin, Moderators and Publishers'
+			value: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER,
+			label: 'Admin, Moderators and Speakers'
 		}
 	];
 

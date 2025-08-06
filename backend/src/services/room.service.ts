@@ -81,7 +81,7 @@ export class RoomService {
 			autoDeletionDate,
 			preferences,
 			moderatorRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
-			publisherRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
+			speakerRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
 		};
 
 		await this.storageService.saveMeetRoom(meetRoom);
@@ -195,8 +195,8 @@ export class RoomService {
 
 		const filteredRoom = UtilsHelper.filterObjectFields(meetRoom, fields);
 
-		// Remove moderatorRoomUrl if the participant is a publisher to prevent access to moderator links
-		if (participantRole === ParticipantRole.PUBLISHER) {
+		// Remove moderatorRoomUrl if the participant is a speaker to prevent access to moderator links
+		if (participantRole === ParticipantRole.SPEAKER) {
 			delete filteredRoom.moderatorRoomUrl;
 		}
 
@@ -244,12 +244,12 @@ export class RoomService {
 	}
 
 	/**
-	 * Validates a secret against a room's moderator and publisher secrets and returns the corresponding role.
+	 * Validates a secret against a room's moderator and speaker secrets and returns the corresponding role.
 	 *
 	 * @param roomId - The unique identifier of the room to check
-	 * @param secret - The secret to validate against the room's moderator and publisher secrets
-	 * @returns A promise that resolves to the participant role (MODERATOR or PUBLISHER) if the secret is valid
-	 * @throws Error if the moderator or publisher secrets cannot be extracted from their URLs
+	 * @param secret - The secret to validate against the room's moderator and speaker secrets
+	 * @returns A promise that resolves to the participant role (MODERATOR or SPEAKER) if the secret is valid
+	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
 	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
@@ -258,13 +258,13 @@ export class RoomService {
 	}
 
 	getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
-		const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
 			case moderatorSecret:
 				return ParticipantRole.MODERATOR;
-			case publisherSecret:
-				return ParticipantRole.PUBLISHER;
+			case speakerSecret:
+				return ParticipantRole.SPEAKER;
 			default:
 				throw errorInvalidRoomSecret(room.roomId, secret);
 		}
@@ -299,11 +299,11 @@ export class RoomService {
 
 		/* A participant can retrieve recordings if
 			- they can delete recordings
-			- they are a publisher and the recording access includes publishers
+			- they are a speaker and the recording access includes speakers
 		*/
 		const canRetrieveRecordings =
 			canDeleteRecordings ||
-			(role === ParticipantRole.PUBLISHER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER);
+			(role === ParticipantRole.SPEAKER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
 
 		return {
 			canRetrieveRecordings,

@@ -26,7 +26,10 @@ export const getHome = async (_req: Request, res: Response) => {
             apiUrl: process.env.MEET_API_URL || 'http://localhost:6080/api/v1',
             apiKey: process.env.MEET_API_KEY || 'meet-api-key'
         });
-        res.status(500).send('Internal Server Error - Failed to fetch rooms: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        res.status(500).send(
+            'Internal Server Error - Failed to fetch rooms: ' +
+                (error instanceof Error ? error.message : 'Unknown error')
+        );
         return;
     }
 };
@@ -50,7 +53,10 @@ export const postCreateRoom = async (req: Request, res: Response) => {
             stack: error instanceof Error ? error.stack : 'No stack trace',
             requestBody: req.body
         });
-        res.status(500).send('Internal Server Error - Failed to create room: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        res.status(500).send(
+            'Internal Server Error - Failed to create room: ' +
+                (error instanceof Error ? error.message : 'Unknown error')
+        );
         return;
     }
 };
@@ -77,7 +83,10 @@ export const deleteRoomCtrl = async (req: Request, res: Response) => {
             stack: error instanceof Error ? error.stack : 'No stack trace',
             requestBody: req.body
         });
-        res.status(500).send('Internal Server Error - Failed to delete room: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        res.status(500).send(
+            'Internal Server Error - Failed to delete room: ' +
+                (error instanceof Error ? error.message : 'Unknown error')
+        );
         return;
     }
 };
@@ -105,7 +114,10 @@ export const deleteAllRoomsCtrl = async (_req: Request, res: Response) => {
             message: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : 'No stack trace'
         });
-        res.status(500).send('Internal Server Error - Failed to delete all rooms: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        res.status(500).send(
+            'Internal Server Error - Failed to delete all rooms: ' +
+                (error instanceof Error ? error.message : 'Unknown error')
+        );
         return;
     }
 };
@@ -133,7 +145,10 @@ export const deleteAllRecordingsCtrl = async (_req: Request, res: Response) => {
             message: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : 'No stack trace'
         });
-        res.status(500).send('Internal Server Error - Failed to delete all recordings: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        res.status(500).send(
+            'Internal Server Error - Failed to delete all recordings: ' +
+                (error instanceof Error ? error.message : 'Unknown error')
+        );
         return;
     }
 };
@@ -150,7 +165,7 @@ const processFormPreferences = (body: any): any => {
             enabled: body['preferences.recordingPreferences.enabled'] === 'on',
             // Only include allowAccessTo if recording is enabled
             ...(body['preferences.recordingPreferences.enabled'] === 'on' && {
-                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin-moderator-publisher'
+                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin-moderator-speaker'
             })
         },
         virtualBackgroundPreferences: {

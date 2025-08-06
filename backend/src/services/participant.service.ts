@@ -82,8 +82,8 @@ export class ParticipantService {
 		switch (role) {
 			case ParticipantRole.MODERATOR:
 				return this.generateModeratorPermissions(roomId, addJoinPermission);
-			case ParticipantRole.PUBLISHER:
-				return this.generatePublisherPermissions(roomId, addJoinPermission);
+			case ParticipantRole.SPEAKER:
+				return this.generateSpeakerPermissions(roomId, addJoinPermission);
 			default:
 				throw new Error(`Role ${role} not supported`);
 		}
@@ -107,7 +107,7 @@ export class ParticipantService {
 		};
 	}
 
-	protected generatePublisherPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
+	protected generateSpeakerPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
 		return {
 			livekit: {
 				roomJoin: addJoinPermission,

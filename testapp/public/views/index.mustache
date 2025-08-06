@@ -91,21 +91,21 @@
 											<input
 												type="hidden"
 												name="roomUrl"
-												value="{{ publisherRoomUrl }}"
+												value="{{ speakerRoomUrl }}"
 											/>
 											<input
 												type="hidden"
 												name="participantRole"
-												value="publisher"
+												value="speaker"
 											/>
 											<input type="hidden" name="roomId" value="{{ roomId }}" />
 
 											<button
 												type="submit"
-												id="join-as-publisher"
+												id="join-as-speaker"
 												class="dropdown-item"
 											>
-												Publisher
+												Speaker
 											</button>
 										</form>
 									</li>
@@ -271,8 +271,8 @@
 												<option value="admin-moderator">
 													Admin & Moderator
 												</option>
-												<option value="admin-moderator-publisher" selected>
-													Admin, Moderator & Publisher
+												<option value="admin-moderator-speaker" selected>
+													Admin, Moderator & Speaker
 												</option>
 											</select>
 										</div>

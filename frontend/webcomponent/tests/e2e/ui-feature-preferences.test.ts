@@ -79,7 +79,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -88,7 +88,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Check that chat button is visible
 			const chatButton = await waitForElementInIframe(page, '#chat-panel-btn', { state: 'visible' });
@@ -103,7 +103,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: false },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -112,7 +112,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Check that chat button is not visible
 			const chatButton = await waitForElementInIframe(page, '#chat-panel-btn', { state: 'hidden' });
@@ -132,7 +132,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -159,14 +159,14 @@ test.describe('UI Feature Preferences Tests', () => {
 			await leaveRoom(page, 'moderator');
 		});
 
-		test('should not show recording button for publisher', async ({ page }) => {
+		test('should not show recording button for speaker', async ({ page }) => {
 			await updateRoomPreferences(
 				roomId,
 				{
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -175,9 +175,9 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
-			// Check that recording button is not visible for publisher
+			// Check that recording button is not visible for speaker
 			const recordingButton = await waitForElementInIframe(page, '#recording-btn', { state: 'hidden' });
 			await expect(recordingButton).toBeHidden();
 			await leaveRoom(page);
@@ -191,7 +191,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: false,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -232,7 +232,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -241,7 +241,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Click more options to reveal virtual background button
 			await openMoreOptionsMenu(page);
@@ -261,7 +261,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: false }
 				},
@@ -270,7 +270,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Click more options to reveal virtual background button
 			await openMoreOptionsMenu(page);
@@ -290,7 +290,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: true }
 				},
@@ -299,7 +299,7 @@ test.describe('UI Feature Preferences Tests', () => {
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			await applyVirtualBackground(page, '2');
 			await waitForVirtualBackgroundToApply(page);
@@ -311,7 +311,7 @@ test.describe('UI Feature Preferences Tests', () => {
 					chatPreferences: { enabled: true },
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					virtualBackgroundPreferences: { enabled: false }
 				},
@@ -323,7 +323,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await page.reload();
 
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 			await page.waitForTimeout(2000);
 
 			const isVBApplied = await isVirtualBackgroundApplied(page);

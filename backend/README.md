@@ -57,50 +57,52 @@ openvidu-appdata/
 ### Directory Descriptions
 
 #### **Global Preferences** (`global-preferences.json`)
+
 Contains system-wide settings and configurations for the OpenVidu Meet application, such as default recording settings, UI preferences, and feature toggles.
 
 #### **Users** (`users/`)
+
 Stores user account information in individual JSON files. Each file is named using the username (e.g., `admin.json`) and contains user-specific data including authentication details, permissions, and preferences.
 
 #### **Rooms** (`rooms/`)
+
 Contains room configuration and metadata. Each room is stored in its own directory named after the room ID, containing:
+
 - `room-123.json`: Room configuration, settings, and metadata
 
 #### **Recordings** (`recordings/`)
+
 The recordings directory is organized into several subdirectories to manage different aspects of recorded content:
 
 - **Recording Files** (`room-123/`): Contains the actual video files with naming convention `room-123--{uid}.mp4`
 
 - **Metadata** (`.metadata/room-123/{egressId}/{uid}.json`): Stores recording metadata including:
-  - Recording duration and timestamps
-  - Participant information
-  - Quality settings and technical specifications
-  - File size and format details
+    - Recording duration and timestamps
+    - Participant information
+    - Quality settings and technical specifications
+    - File size and format details
 
 - **Secrets** (`.secrets/room-123/{egressId}/{uid}.json`): Contains sensitive recording-related data such as:
-  - Encryption keys
-  - Access tokens
-  - Security credentials
+    - Encryption keys
+    - Access tokens
+    - Security credentials
 
 - **Room Metadata** (`.room_metadata/room-123/room_metadata.json`): Stores room-level information for recordings including:
-  - Room name and description
-  - Recording session details
-  - Participant list and roles
+    - Room name and description
+    - Recording session details
+    - Participant list and roles
 
 ### Recording Identifier Format
 
 Recordings use a composite identifier format: `recordingId: room-123--{egressId}--{uid}`
 
 Where:
+
 - `room-123`: The room identifier
 - `{egressId}`: LiveKit egress process identifier
 - `{uid}`: Unique recording session identifier
 
 This naming convention ensures uniqueness and provides traceability between the recording file, its metadata, and the originating room session.
-
-
-
-
 
 ## Recordings
 
@@ -111,7 +113,6 @@ The recording feature is based on the following key concepts:
 
 2. **Lock lifetime**:
    The lock has not lifetime. It is not automatically released after a certain period. Instead, it remains active until the recording is manually stopped and an `egress_ended` webhook is received, or when the room meeting ends. This design choice allows for flexibility in managing recordings, as the lock can be held for an extended duration if needed. However, it also means that care must be taken to ensure that the lock is released appropriately to avoid blocking future recording attempts. (see **Failure handling** below).
-
 
 ```mermaid
 flowchart TD
@@ -165,4 +166,3 @@ graph TD;
     M -->|No more rooms| N[Process completed]
 
 ```
-

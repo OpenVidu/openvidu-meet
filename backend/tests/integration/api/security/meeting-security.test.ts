@@ -66,11 +66,11 @@ describe('Meeting API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.publisherCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
+				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -110,11 +110,11 @@ describe('Meeting API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should fail when participant is publisher', async () => {
+		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
-				.set('Cookie', roomData.publisherCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.PUBLISHER);
+				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
 	});

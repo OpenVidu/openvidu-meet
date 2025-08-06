@@ -12,7 +12,7 @@ export class ParticipantTokenService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
 
 	protected participantName?: string;
-	protected participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
+	protected participantRole: ParticipantRole = ParticipantRole.SPEAKER;
 	protected currentTokenInfo?: ParticipantTokenInfo;
 
 	protected log;

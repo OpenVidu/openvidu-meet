@@ -67,7 +67,7 @@ const validForceQueryParam = () =>
 const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
 	MeetRecordingAccess.ADMIN,
 	MeetRecordingAccess.ADMIN_MODERATOR,
-	MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+	MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 ]);
 
 const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z
@@ -116,7 +116,7 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		)
 		.optional(),
 	preferences: RoomPreferencesSchema.optional().default({
-		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER },
+		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
 		chatPreferences: { enabled: true },
 		virtualBackgroundPreferences: { enabled: true }
 	})

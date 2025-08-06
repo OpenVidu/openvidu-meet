@@ -63,7 +63,7 @@ describe('Recordings API Tests', () => {
 			const roomId = roomData.room.roomId;
 
 			// Generate a recording token for the room
-			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.publisherSecret);
+			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.speakerSecret);
 
 			// Create a new room and start a recording
 			roomData = await setupSingleRoomWithRecording(true);

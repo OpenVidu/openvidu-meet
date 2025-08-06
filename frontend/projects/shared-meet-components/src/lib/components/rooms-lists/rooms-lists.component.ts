@@ -34,7 +34,7 @@ export interface RoomTableAction {
 		| 'open'
 		| 'edit'
 		| 'copyModeratorLink'
-		| 'copyPublisherLink'
+		| 'copySpeakerLink'
 		| 'viewRecordings'
 		| 'delete'
 		| 'bulkDelete';
@@ -242,8 +242,8 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		this.roomAction.emit({ rooms: [room], action: 'copyModeratorLink' });
 	}
 
-	copyPublisherLink(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'copyPublisherLink' });
+	copySpeakerLink(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'copySpeakerLink' });
 	}
 
 	viewRecordings(room: MeetRoom) {

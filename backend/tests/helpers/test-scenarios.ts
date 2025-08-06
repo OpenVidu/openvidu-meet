@@ -19,8 +19,8 @@ export interface RoomData {
 	room: MeetRoom;
 	moderatorSecret: string;
 	moderatorCookie: string;
-	publisherSecret: string;
-	publisherCookie: string;
+	speakerSecret: string;
+	speakerCookie: string;
 	recordingId?: string;
 }
 
@@ -49,10 +49,10 @@ export const setupSingleRoom = async (
 	});
 
 	// Extract the room secrets and generate participant tokens, saved as cookies
-	const { moderatorSecret, publisherSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-	const [moderatorCookie, publisherCookie] = await Promise.all([
+	const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+	const [moderatorCookie, speakerCookie] = await Promise.all([
 		generateParticipantTokenCookie(room.roomId, moderatorSecret, 'MODERATOR'),
-		generateParticipantTokenCookie(room.roomId, publisherSecret, 'PUBLISHER')
+		generateParticipantTokenCookie(room.roomId, speakerSecret, 'SPEAKER')
 	]);
 
 	// Join participant if needed
@@ -64,8 +64,8 @@ export const setupSingleRoom = async (
 		room,
 		moderatorSecret,
 		moderatorCookie,
-		publisherSecret,
-		publisherCookie
+		speakerSecret,
+		speakerCookie
 	};
 };
 

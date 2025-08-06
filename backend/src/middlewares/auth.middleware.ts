@@ -98,7 +98,7 @@ export const participantTokenValidator = async (req: Request) => {
 	// Check if the participant role is provided in the request headers
 	// This is required to distinguish roles when multiple are present in the token
 	const participantRole = req.headers[INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER];
-	const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.PUBLISHER];
+	const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.SPEAKER];
 
 	if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
 		throw errorWithControl(errorInvalidParticipantRole(), true);

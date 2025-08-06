@@ -56,8 +56,8 @@ test.describe('Web Component E2E Tests', () => {
 			expect(joinElements.length).toBe(1);
 		});
 
-		test('should successfully join as publisher and receive JOINED event', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+		test('should successfully join as speaker and receive JOINED event', async ({ page }) => {
+			await joinRoomAs('speaker', participantName, page);
 			await page.waitForSelector('.event-JOINED');
 			const joinElements = await page.locator('.event-JOINED').all();
 			expect(joinElements.length).toBe(1);

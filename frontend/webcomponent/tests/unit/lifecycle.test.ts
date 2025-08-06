@@ -113,9 +113,7 @@ describe('OpenViduMeet Event Handling', () => {
 		// Set attributes
 		const roomUrl = 'https://example.com/room/testRoom-123?secret=123456';
 		component.setAttribute('room-url', roomUrl);
-		component.setAttribute('user', 'testUser');
-		component.setAttribute('role', 'publisher');
-		component.setAttribute('token', 'test-token');
+		component.setAttribute('participant-name', 'testUser');
 
 		// Trigger update
 		(component as any).updateIframeSrc();
@@ -125,8 +123,6 @@ describe('OpenViduMeet Event Handling', () => {
 		const src = iframe?.src;
 
 		expect(src).toContain(roomUrl);
-		expect(src).toContain('user=testUser');
-		expect(src).toContain('role=publisher');
-		expect(src).toContain('token=test-token');
+		expect(src).toContain('participant-name=testUser');
 	});
 });

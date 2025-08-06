@@ -32,5 +32,5 @@ export interface ParticipantPermissions {
  */
 export const enum ParticipantRole {
     MODERATOR = 'moderator',
-    PUBLISHER = 'publisher'
+    SPEAKER = 'speaker'
 }

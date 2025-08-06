@@ -91,7 +91,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Basic Room Features', () => {
 		test('should show the toolbar and media buttons', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 			await waitForElementInIframe(page, '#toolbar');
 
 			// Check media buttons are present
@@ -102,8 +102,8 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
-			// First participant (publisher) joins
-			await joinRoomAs('publisher', participantName, page);
+			// First participant (speaker) joins
+			await joinRoomAs('speaker', participantName, page);
 
 			// Check local video element
 			const localVideo = await waitForElementInIframe(page, '.OV_stream.local');
@@ -132,7 +132,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Screen Sharing', () => {
 		test('should be able to share and stop screen sharing', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			await waitForElementInIframe(page, '#toolbar');
 
@@ -169,7 +169,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('UI Panels and Components', () => {
 		test('should show and interact with chat panel', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Open chat panel
 			await waitForElementInIframe(page, '#chat-panel-btn');
@@ -205,7 +205,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show participants panel', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Open participants panel
 			await waitForElementInIframe(page, '#participants-panel-btn');
@@ -219,7 +219,7 @@ test.describe('Room Functionality Tests', () => {
 		});
 
 		test('should show settings panel', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			await openMoreOptionsMenu(page);
 
@@ -240,7 +240,7 @@ test.describe('Room Functionality Tests', () => {
 
 	test.describe('Advanced Features', () => {
 		test('should apply virtual background and detect visual changes', async ({ page }) => {
-			await joinRoomAs('publisher', participantName, page);
+			await joinRoomAs('speaker', participantName, page);
 
 			// Wait for video element to be ready
 			await waitForElementInIframe(page, '.OV_video-element');

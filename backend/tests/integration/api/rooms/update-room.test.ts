@@ -36,7 +36,7 @@ describe('Room API Tests', () => {
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: true }
@@ -85,7 +85,7 @@ describe('Room API Tests', () => {
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: true }
@@ -96,7 +96,7 @@ describe('Room API Tests', () => {
 			const partialPreferences = {
 				recordingPreferences: {
 					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chatPreferences: { enabled: true },
 				virtualBackgroundPreferences: { enabled: true }
@@ -146,7 +146,7 @@ describe('Room API Tests', () => {
 			const invalidPreferences = {
 				recordingPreferences: {
 					enabled: 'true', // String instead of boolean
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
@@ -212,7 +212,7 @@ describe('Room API Tests', () => {
 			const preferences = {
 				recordingPreferences: {
 					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }

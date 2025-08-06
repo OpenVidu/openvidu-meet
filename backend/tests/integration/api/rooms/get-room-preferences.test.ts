@@ -8,7 +8,7 @@ describe('Room API Tests', () => {
 	const DEFAULT_PREFERENCES = {
 		recordingPreferences: {
 			enabled: true,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		},
 		chatPreferences: { enabled: true },
 		virtualBackgroundPreferences: { enabled: true }
@@ -39,7 +39,7 @@ describe('Room API Tests', () => {
 				preferences: {
 					recordingPreferences: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chatPreferences: { enabled: true },
 					virtualBackgroundPreferences: { enabled: false }

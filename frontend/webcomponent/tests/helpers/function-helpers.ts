@@ -92,7 +92,7 @@ export async function interactWithElementInIframe(
 const getDefaultRoomPreferences = (): MeetRoomPreferences => ({
 	recordingPreferences: {
 		enabled: true,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
 	chatPreferences: { enabled: true },
 	virtualBackgroundPreferences: { enabled: true }
@@ -222,10 +222,10 @@ export const prepareForJoiningRoom = async (page: Page, url: string, roomId: str
 	await page.waitForSelector(`#${roomId}`);
 	await page.click('.dropdown-button');
 	await page.waitForSelector('#join-as-moderator');
-	await page.waitForSelector('#join-as-publisher');
+	await page.waitForSelector('#join-as-speaker');
 };
 
-export const joinRoomAs = async (role: 'moderator' | 'publisher', pName: string, page: Page) => {
+export const joinRoomAs = async (role: 'moderator' | 'speaker', pName: string, page: Page) => {
 	await page.click('#join-as-' + role);
 	const component = page.locator('openvidu-meet');
 	await expect(component).toBeVisible();
@@ -244,13 +244,13 @@ export const joinRoomAs = async (role: 'moderator' | 'publisher', pName: string,
 	await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
 };
 
-export const accessRoomAs = async (role: 'moderator' | 'publisher', page: Page) => {
+export const accessRoomAs = async (role: 'moderator' | 'speaker', page: Page) => {
 	await page.click('#join-as-' + role);
 	const component = page.locator('openvidu-meet');
 	await expect(component).toBeVisible();
 };
 
-export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Page) => {
+export const viewRecordingsAs = async (role: 'moderator' | 'speaker', page: Page) => {
 	await page.click('#join-as-' + role);
 	const component = page.locator('openvidu-meet');
 	await expect(component).toBeVisible();
@@ -258,7 +258,7 @@ export const viewRecordingsAs = async (role: 'moderator' | 'publisher', page: Pa
 	await interactWithElementInIframe(page, '#view-recordings-btn', { action: 'click' });
 };
 
-export const leaveRoom = async (page: Page, role: 'moderator' | 'publisher' = 'publisher') => {
+export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker') => {
 	const button = await waitForElementInIframe(page, '#leave-btn');
 	await button.click();
 

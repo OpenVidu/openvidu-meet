@@ -11,12 +11,7 @@
 		<div class="toolbar-left" id="toolbar-left">
 			<mat-form-field class="search-field" appearance="outline" id="search-field">
 				<mat-label>Search rooms</mat-label>
-				<input
-					matInput
-					[formControl]="nameFilterControl"
-					placeholder="Search by room name"
-					id="search-input"
-				/>
+				<input matInput [formControl]="nameFilterControl" placeholder="Search by room name" id="search-input" />
 				<mat-icon matSuffix>search</mat-icon>
 			</mat-form-field>
 		</div>
@@ -285,11 +280,11 @@
 								</button>
 								<button
 									mat-menu-item
-									(click)="copyPublisherLink(room)"
-									id="copy-publisher-link-btn-{{ room.roomId }}"
+									(click)="copySpeakerLink(room)"
+									id="copy-speaker-link-btn-{{ room.roomId }}"
 								>
 									<mat-icon>content_copy</mat-icon>
-									<span>Copy Publisher Link</span>
+									<span>Copy Speaker Link</span>
 								</button>
 
 								<mat-divider id="actions-divider-{{ room.roomId }}"></mat-divider>

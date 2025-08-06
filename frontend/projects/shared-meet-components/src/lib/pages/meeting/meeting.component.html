@@ -44,9 +44,9 @@
 			<div *ovToolbarAdditionalButtons>
 				<!-- Copy Links Button -->
 				<button
-					id="copy-publisher-link"
+					id="copy-speaker-link"
 					mat-icon-button
-					(click)="copyPublisherLink()"
+					(click)="copySpeakerLink()"
 					[disableRipple]="true"
 					matTooltip="Copy the meeting link"
 				>
@@ -96,7 +96,7 @@
 				<div class="share-meeting-link-container">
 					<ov-share-meeting-link
 						[meetingUrl]="hostname + '/' + roomId"
-						(copyClicked)="copyPublisherLink()"
+						(copyClicked)="copySpeakerLink()"
 					></ov-share-meeting-link>
 				</div>
 			</div>
@@ -110,7 +110,7 @@
 							[titleSize]="'xl'"
 							[titleWeight]="'bold'"
 							[meetingUrl]="hostname + '/' + roomId"
-							(copyClicked)="copyPublisherLink()"
+							(copyClicked)="copySpeakerLink()"
 						></ov-share-meeting-link>
 					</div>
 				}
@@ -218,7 +218,7 @@
 			@if (features().canModerateRoom) {
 				<ov-share-meeting-link
 					[meetingUrl]="hostname + '/' + roomId"
-					(copyClicked)="copyPublisherLink()"
+					(copyClicked)="copySpeakerLink()"
 				></ov-share-meeting-link>
 			}
 

@@ -90,7 +90,7 @@ export class MeetingComponent implements OnInit {
 	roomSecret = '';
 	participantName = '';
 	participantToken = '';
-	participantRole: ParticipantRole = ParticipantRole.PUBLISHER;
+	participantRole: ParticipantRole = ParticipantRole.SPEAKER;
 	remoteParticipants: ParticipantModel[] = [];
 
 	showMeeting = false;
@@ -406,9 +406,9 @@ export class MeetingComponent implements OnInit {
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	async copyPublisherLink() {
-		this.clipboard.copy(this.room!.publisherRoomUrl);
-		this.notificationService.showSnackbar('Publisher link copied to clipboard');
+	async copySpeakerLink() {
+		this.clipboard.copy(this.room!.speakerRoomUrl);
+		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {

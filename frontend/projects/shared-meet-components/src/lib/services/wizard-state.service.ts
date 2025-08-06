@@ -7,7 +7,7 @@ import { MeetRecordingAccess, MeetRoomOptions, MeetRoomPreferences } from '@lib/
 const DEFAULT_PREFERENCES: MeetRoomPreferences = {
 	recordingPreferences: {
 		enabled: true,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
 	chatPreferences: { enabled: true },
 	virtualBackgroundPreferences: { enabled: true }

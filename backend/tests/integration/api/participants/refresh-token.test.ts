@@ -53,19 +53,19 @@ describe('Participant API Tests', () => {
 			);
 		});
 
-		it('should refresh participant token with publisher permissions when using the publisher secret', async () => {
+		it('should refresh participant token with speaker permissions when using the speaker secret', async () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
+					secret: roomData.speakerSecret,
 					participantName
 				},
-				roomData.publisherCookie
+				roomData.speakerCookie
 			);
 			expectValidParticipantTokenResponse(
 				response,
 				roomData.room.roomId,
-				ParticipantRole.PUBLISHER,
+				ParticipantRole.SPEAKER,
 				participantName
 			);
 		});

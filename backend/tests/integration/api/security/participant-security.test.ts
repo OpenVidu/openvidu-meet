@@ -38,12 +38,12 @@ describe('Participant API Security Tests', () => {
 			roomData = await setupSingleRoom();
 		});
 
-		it('should succeed when no authentication is required and participant is publisher', async () => {
+		it('should succeed when no authentication is required and participant is speaker', async () => {
 			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				secret: roomData.publisherSecret,
+				secret: roomData.speakerSecret,
 				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
@@ -60,12 +60,12 @@ describe('Participant API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
+		it('should succeed when authentication is required for moderator and participant is speaker', async () => {
 			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				secret: roomData.publisherSecret,
+				secret: roomData.speakerSecret,
 				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
@@ -93,23 +93,23 @@ describe('Participant API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
+		it('should succeed when authentication is required for all users, participant is speaker and authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
-				secret: roomData.publisherSecret,
+				secret: roomData.speakerSecret,
 				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
+		it('should fail when authentication is required for all users and participant is speaker but not authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).send({
 				roomId: roomData.room.roomId,
-				secret: roomData.publisherSecret,
+				secret: roomData.speakerSecret,
 				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(401);
@@ -153,15 +153,15 @@ describe('Participant API Security Tests', () => {
 			INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION = initialTokenExpiration;
 		});
 
-		it('should succeed when no authentication is required and participant is publisher', async () => {
+		it('should succeed when no authentication is required and participant is speaker', async () => {
 			await changeSecurityPreferences(AuthMode.NONE);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.publisherCookie)
+				.set('Cookie', roomData.speakerCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
+					secret: roomData.speakerSecret,
 					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
@@ -181,15 +181,15 @@ describe('Participant API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when authentication is required for moderator and participant is publisher', async () => {
+		it('should succeed when authentication is required for moderator and participant is speaker', async () => {
 			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.publisherCookie)
+				.set('Cookie', roomData.speakerCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
+					secret: roomData.speakerSecret,
 					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
@@ -223,29 +223,29 @@ describe('Participant API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when authentication is required for all users, participant is publisher and authenticated', async () => {
+		it('should succeed when authentication is required for all users, participant is speaker and authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', [adminCookie, roomData.publisherCookie])
+				.set('Cookie', [adminCookie, roomData.speakerCookie])
 				.send({
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
+					secret: roomData.speakerSecret,
 					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when authentication is required for all users and participant is publisher but not authenticated', async () => {
+		it('should fail when authentication is required for all users and participant is speaker but not authenticated', async () => {
 			await changeSecurityPreferences(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.publisherCookie)
+				.set('Cookie', roomData.speakerCookie)
 				.send({
 					roomId: roomData.room.roomId,
-					secret: roomData.publisherSecret,
+					secret: roomData.speakerSecret,
 					participantName: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);

@@ -86,8 +86,8 @@ export class RoomsComponent implements OnInit {
 			case 'copyModeratorLink':
 				this.copyModeratorLink(action.rooms[0]);
 				break;
-			case 'copyPublisherLink':
-				this.copyPublisherLink(action.rooms[0]);
+			case 'copySpeakerLink':
+				this.copySpeakerLink(action.rooms[0]);
 				break;
 			case 'viewRecordings':
 				await this.viewRecordings(action.rooms[0]);
@@ -236,9 +236,9 @@ export class RoomsComponent implements OnInit {
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	private copyPublisherLink(room: MeetRoom) {
-		this.clipboard.copy(room.publisherRoomUrl);
-		this.notificationService.showSnackbar('Publisher link copied to clipboard');
+	private copySpeakerLink(room: MeetRoom) {
+		this.clipboard.copy(room.speakerRoomUrl);
+		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 
 	private async viewRecordings(room: MeetRoom) {

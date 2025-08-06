@@ -42,9 +42,9 @@ describe('Room API Tests', () => {
 			expectValidRoomRoleAndPermissionsResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR);
 		});
 
-		it('should retrieve publisher role and associated permissions for a room with a valid publisher secret', async () => {
-			const response = await getRoomRoleBySecret(roomData.room.roomId, roomData.publisherSecret);
-			expectValidRoomRoleAndPermissionsResponse(response, roomData.room.roomId, ParticipantRole.PUBLISHER);
+		it('should retrieve speaker role and associated permissions for a room with a valid speaker secret', async () => {
+			const response = await getRoomRoleBySecret(roomData.room.roomId, roomData.speakerSecret);
+			expectValidRoomRoleAndPermissionsResponse(response, roomData.room.roomId, ParticipantRole.SPEAKER);
 		});
 
 		it('should return a 404 error if the room does not exist', async () => {

@@ -92,7 +92,7 @@ test.describe('Recording Access Tests', () => {
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
-	test('should publisher not be able to access recording when access level is set to admin', async ({ page }) => {
+	test('should speaker not be able to access recording when access level is set to admin', async ({ page }) => {
 		await updateRoomPreferences(
 			roomId,
 			{
@@ -108,7 +108,7 @@ test.describe('Recording Access Tests', () => {
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-		await accessRoomAs('publisher', page);
+		await accessRoomAs('speaker', page);
 
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
@@ -134,7 +134,7 @@ test.describe('Recording Access Tests', () => {
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
 
-	test('should publisher not be able to access recording when access level is set to moderator', async ({ page }) => {
+	test('should speaker not be able to access recording when access level is set to moderator', async ({ page }) => {
 		await updateRoomPreferences(
 			roomId,
 			{
@@ -150,12 +150,12 @@ test.describe('Recording Access Tests', () => {
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-		await accessRoomAs('publisher', page);
+		await accessRoomAs('speaker', page);
 
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
-	test('should allow moderators to access recording when access level is set to publisher', async ({ page }) => {
+	test('should allow moderators to access recording when access level is set to speaker', async ({ page }) => {
 		await updateRoomPreferences(
 			roomId,
 			{
@@ -176,14 +176,14 @@ test.describe('Recording Access Tests', () => {
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
 
-	test('should allow publisher to access recording when access level is set to publisher', async ({ page }) => {
+	test('should allow speaker to access recording when access level is set to speaker', async ({ page }) => {
 		await updateRoomPreferences(
 			roomId,
 			{
 				chatPreferences: { enabled: true },
 				recordingPreferences: {
 					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_PUBLISHER
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				virtualBackgroundPreferences: { enabled: true }
 			},
@@ -192,7 +192,7 @@ test.describe('Recording Access Tests', () => {
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-		await viewRecordingsAs('publisher', page);
+		await viewRecordingsAs('speaker', page);
 
 		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
 	});
