@@ -21,10 +21,6 @@
 						<mat-icon>refresh</mat-icon>
 						<span>Try Again</span>
 					</button>
-					<button mat-button (click)="goBack()">
-						<mat-icon>arrow_back</mat-icon>
-						<span>Go Back</span>
-					</button>
 				</div>
 			</div>
 		</div>
@@ -38,11 +34,6 @@
 			<!-- Header Section -->
 			<div class="recording-header">
 				<div class="header-content">
-					<div class="header-actions">
-						<button mat-icon-button (click)="goBack()" matTooltip="Go back" class="back-btn">
-							<mat-icon>arrow_back</mat-icon>
-						</button>
-					</div>
 					<div class="header-info">
 						<div class="recording-info">
 							<h1 class="recording-title">{{ recording.roomName }}</h1>
@@ -64,18 +55,20 @@
 							</div>
 						</div>
 						<!-- Actions Section -->
-						@if (recordingUrl && !videoError) {
+						@if (!videoError) {
 							<div class="actions-section">
 								<div class="primary-actions">
-									<button
-										mat-button
-										(click)="downloadRecording()"
-										matTooltip="Download recording"
-										class="action-btn primary-button"
-									>
-										<mat-icon>download</mat-icon>
-										<span>Download</span>
-									</button>
+									@if (recordingUrl) {
+										<button
+											mat-button
+											(click)="downloadRecording()"
+											matTooltip="Download recording"
+											class="action-btn primary-button"
+										>
+											<mat-icon>download</mat-icon>
+											<span>Download</span>
+										</button>
+									}
 
 									<button
 										mat-raised-button
@@ -89,15 +82,6 @@
 									</button>
 								</div>
 							</div>
-
-							<!-- Share Link Component -->
-							<!-- <ov-share-meeting-link
-					[meetingUrl]="recordingUrl"
-					title="Share this recording"
-					titleSize="md"
-					subtitle="Anyone with this link can view the recording"
-					(copyClicked)="copyRecordingLink()"
-				></ov-share-meeting-link> -->
 						}
 					</div>
 				</div>
@@ -108,16 +92,14 @@
 				@if (recordingUrl && !videoError) {
 					<div class="video-container">
 						<video
-							#videoPlayer
+							[src]="recordingUrl"
 							controls
 							controlsList="nodownload"
 							playsinline
 							class="video-player"
 							(loadeddata)="onVideoLoaded()"
 							(error)="onVideoError()"
-						>
-							<source [src]="recordingUrl" type="video/mp4" />
-						</video>
+						></video>
 
 						@if (!isVideoLoaded) {
 							<div class="video-loading-overlay">

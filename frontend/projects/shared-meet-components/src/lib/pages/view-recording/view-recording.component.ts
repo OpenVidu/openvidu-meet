@@ -1,16 +1,15 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RecordingManagerService } from '@lib/services';
+import { NotificationService, RecordingManagerService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
-import { ActionService } from 'openvidu-components-angular';
-import { ShareMeetingLinkComponent } from '@lib/components/share-meeting-link/share-meeting-link.component';
+import { formatDurationToTime } from '@lib/utils';
 
 @Component({
 	selector: 'ov-view-recording',
@@ -24,11 +23,10 @@ import { ShareMeetingLinkComponent } from '@lib/components/share-meeting-link/sh
 		DatePipe,
 		MatProgressSpinnerModule,
 		MatTooltipModule,
-		MatSnackBarModule,
-		ShareMeetingLinkComponent
+		MatSnackBarModule
 	]
 })
-export class ViewRecordingComponent implements OnInit, OnDestroy {
+export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
 	videoError = false;
@@ -38,20 +36,17 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 
 	constructor(
 		protected recordingService: RecordingManagerService,
-		protected actionService: ActionService,
+		protected notificationService: NotificationService,
 		protected route: ActivatedRoute,
-		protected router: Router,
-		private snackBar: MatSnackBar
+		protected router: Router
 	) {}
 
 	async ngOnInit() {
 		await this.loadRecording();
 	}
 
-	ngOnDestroy() {}
-
 	private async loadRecording() {
-		const recordingId = this.route.snapshot.paramMap.get('recording-id');
+		const recordingId = this.route.snapshot.params['recording-id'];
 		const secret = this.route.snapshot.queryParams['secret'];
 
 		if (!recordingId) {
@@ -66,7 +61,6 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
 				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, secret);
 			}
-			console.warn('Recording loaded:', this.recordingUrl);
 		} catch (error) {
 			console.error('Error fetching recording:', error);
 			this.hasError = true;
@@ -75,24 +69,24 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	onVideoLoaded = () => {
+	onVideoLoaded() {
 		this.isVideoLoaded = true;
 		this.videoError = false;
-	};
+	}
 
-	onVideoError = () => {
+	onVideoError() {
+		console.error('Error loading video');
 		this.videoError = true;
 		this.isVideoLoaded = false;
-	};
+	}
 
 	downloadRecording() {
 		if (!this.recording || !this.recordingUrl) {
-			this.snackBar.open('Recording is not available for download', 'Close', { duration: 3000 });
+			this.notificationService.showSnackbar('Recording is not available for download');
 			return;
 		}
 
 		this.recordingService.downloadRecording(this.recording);
-		this.snackBar.open('Download started', 'Close', { duration: 2000 });
 	}
 
 	openShareDialog() {
@@ -100,28 +94,11 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		this.recordingService.openShareRecordingDialog(this.recording!.recordingId, url);
 	}
 
-	// copyRecordingLink() {
-	// 	const url = window.location.href;
-	// 	navigator.clipboard.writeText(url).then(() => {
-	// 		this.snackBar.open('Link copied to clipboard', 'Close', { duration: 2000 });
-	// 	}).catch(() => {
-	// 		this.snackBar.open('Failed to copy link', 'Close', { duration: 3000 });
-	// 	});
-	// }
-
-	goBack() {
-		if (window.history.length > 1) {
-			window.history.back();
-		} else {
-			this.router.navigate(['/']);
-		}
-	}
-
-	retryLoad() {
+	async retryLoad() {
 		this.isLoading = true;
 		this.hasError = false;
 		this.videoError = false;
-		this.loadRecording();
+		await this.loadRecording();
 	}
 
 	getStatusIcon(): string {
@@ -156,9 +133,7 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	formatDuration(durationSeconds: number): string {
-		const minutes = Math.floor(durationSeconds / 60);
-		const seconds = Math.floor(durationSeconds % 60);
-		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	formatDuration(duration: number): string {
+		return formatDurationToTime(duration);
 	}
 }

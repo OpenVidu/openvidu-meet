@@ -163,27 +163,6 @@
 			}
 		}
 	}
-
-	.header-actions {
-		display: flex;
-		gap: var(--ov-meet-spacing-sm);
-
-		@include ov-tablet-down {
-			justify-content: flex-end;
-		}
-
-		.back-btn {
-			@include ov-button-base;
-			@include ov-theme-transition;
-			color: var(--ov-meet-text-secondary);
-			padding: 0;
-
-			&:hover {
-				color: var(--ov-meet-text-primary);
-				background-color: var(--ov-meet-surface-hover);
-			}
-		}
-	}
 }
 
 // === VIDEO SECTION ===
