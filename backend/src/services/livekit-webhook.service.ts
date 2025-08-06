@@ -234,7 +234,7 @@ export class LivekitWebhookService {
 		this.logger.debug(`Processing recording_${webhookAction} webhook for egress: ${egressInfo.egressId}.`);
 
 		try {
-			const recordingInfo: MeetRecordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
+			const recordingInfo: MeetRecordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 			const { roomId, recordingId, status } = recordingInfo;
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);

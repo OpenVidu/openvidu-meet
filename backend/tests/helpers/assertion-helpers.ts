@@ -154,13 +154,16 @@ export const expectValidRecording = (
 	recording: MeetRecordingInfo,
 	recordingId: string,
 	roomId: string,
+	roomName: string,
 	status: MeetRecordingStatus
 ) => {
 	expect(recording).toBeDefined();
 	expect(recording.recordingId).toBeDefined();
 	expect(recording.roomId).toBeDefined();
+	expect(recording.roomName).toBeDefined();
 	expect(recording.recordingId).toBe(recordingId);
 	expect(recording.roomId).toBe(roomId);
+	expect(recording.roomName).toBe(roomName);
 	expect(recording.startDate).toBeDefined();
 	expect(recording.status).toBeDefined();
 	expect(recording.status).toBe(status);
@@ -329,7 +332,7 @@ export const expectSuccessRecordingMediaResponse = (
 	}
 };
 
-export const expectValidStartRecordingResponse = (response: any, roomId: string) => {
+export const expectValidStartRecordingResponse = (response: any, roomId: string, roomName: string) => {
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('recordingId');
 
@@ -340,6 +343,7 @@ export const expectValidStartRecordingResponse = (response: any, roomId: string)
 
 	expect(recordingId).toContain(roomId);
 	expect(response.body).toHaveProperty('roomId', roomId);
+	expect(response.body).toHaveProperty('roomName', roomName);
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('status', 'ACTIVE');
 	expect(response.body).toHaveProperty('filename');
@@ -348,12 +352,18 @@ export const expectValidStartRecordingResponse = (response: any, roomId: string)
 	expect(response.body).not.toHaveProperty('size');
 };
 
-export const expectValidStopRecordingResponse = (response: any, recordingId: string, roomId: string) => {
+export const expectValidStopRecordingResponse = (
+	response: any,
+	recordingId: string,
+	roomId: string,
+	roomName: string
+) => {
 	expect(response.status).toBe(202);
 	expect(response.body).toBeDefined();
 	expect(response.body).toHaveProperty('recordingId', recordingId);
 	expect([MeetRecordingStatus.COMPLETE, MeetRecordingStatus.ENDING]).toContain(response.body.status);
 	expect(response.body).toHaveProperty('roomId', roomId);
+	expect(response.body).toHaveProperty('roomName', roomName);
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('duration', expect.any(Number));
@@ -365,6 +375,7 @@ export const expectValidGetRecordingResponse = (
 	response: any,
 	recordingId: string,
 	roomId: string,
+	roomName: string,
 	status?: MeetRecordingStatus,
 	maxSecDuration?: number
 ) => {
@@ -372,7 +383,7 @@ export const expectValidGetRecordingResponse = (
 	expect(response.body).toBeDefined();
 	const body = response.body;
 
-	expect(body).toMatchObject({ recordingId, roomId });
+	expect(body).toMatchObject({ recordingId, roomId, roomName });
 
 	const isRecFinished =
 		status &&
@@ -384,6 +395,7 @@ export const expectValidGetRecordingResponse = (
 		expect.objectContaining({
 			recordingId: expect.stringMatching(new RegExp(`^${recordingId}$`)),
 			roomId: expect.stringMatching(new RegExp(`^${roomId}$`)),
+			roomName: expect.stringMatching(new RegExp(`^${roomName}$`)),
 			...(isRecFinished ? { status: expect.any(String) } : {}),
 			...(isRecFinished ? { duration: expect.any(Number) } : {}),
 			...(isRecFinished ? { startDate: expect.any(Number) } : {}),

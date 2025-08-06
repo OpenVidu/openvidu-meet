@@ -18,6 +18,7 @@ export const enum MeetRecordingStatus {
 export interface MeetRecordingInfo {
     recordingId: string;
     roomId: string;
+    roomName: string;
     // outputMode: MeetRecordingOutputMode;
     status: MeetRecordingStatus;
     filename?: string;

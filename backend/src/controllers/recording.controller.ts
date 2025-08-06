@@ -141,7 +141,6 @@ export const deleteRecording = async (req: Request, res: Response) => {
 	logger.info(`Deleting recording '${recordingId}'`);
 
 	try {
-		// TODO: Check role to determine if the request is from an admin or a participant
 		await recordingService.deleteRecording(recordingId);
 		return res.status(204).send();
 	} catch (error) {

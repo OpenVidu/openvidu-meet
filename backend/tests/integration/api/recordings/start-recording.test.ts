@@ -51,16 +51,16 @@ describe('Recording API Tests', () => {
 		it('should return 201 with proper response and location header when recording starts successfully', async () => {
 			const response = await startRecording(room.roomId, moderatorCookie);
 			const recordingId = response.body.recordingId;
-			expectValidStartRecordingResponse(response, room.roomId);
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 
 			const stopResponse = await stopRecording(recordingId, moderatorCookie);
-			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 
 		it('should secrets and archived room files be created when recording starts', async () => {
 			const response = await startRecording(room.roomId, moderatorCookie);
 			const recordingId = response.body.recordingId;
-			expectValidStartRecordingResponse(response, room.roomId);
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 
 			const storageService = container.get(MeetStorageService);
 
@@ -76,24 +76,24 @@ describe('Recording API Tests', () => {
 			expect(archivedRoom?.preferences).toBeDefined();
 
 			const secretsResponse = await stopRecording(recordingId, moderatorCookie);
-			expectValidStopRecordingResponse(secretsResponse, recordingId, room.roomId);
+			expectValidStopRecordingResponse(secretsResponse, recordingId, room.roomId, room.roomName);
 		});
 
 		it('should successfully start recording, stop it, and start again (sequential operations)', async () => {
 			const firstStartResponse = await startRecording(room.roomId, moderatorCookie);
 			const firstRecordingId = firstStartResponse.body.recordingId;
 
-			expectValidStartRecordingResponse(firstStartResponse, room.roomId);
+			expectValidStartRecordingResponse(firstStartResponse, room.roomId, room.roomName);
 
 			const firstStopResponse = await stopRecording(firstRecordingId, moderatorCookie);
-			expectValidStopRecordingResponse(firstStopResponse, firstRecordingId, room.roomId);
+			expectValidStopRecordingResponse(firstStopResponse, firstRecordingId, room.roomId, room.roomName);
 
 			const secondStartResponse = await startRecording(room.roomId, moderatorCookie);
-			expectValidStartRecordingResponse(secondStartResponse, room.roomId);
+			expectValidStartRecordingResponse(secondStartResponse, room.roomId, room.roomName);
 			const secondRecordingId = secondStartResponse.body.recordingId;
 
 			const secondStopResponse = await stopRecording(secondRecordingId, moderatorCookie);
-			expectValidStopRecordingResponse(secondStopResponse, secondRecordingId, room.roomId);
+			expectValidStopRecordingResponse(secondStopResponse, secondRecordingId, room.roomId, room.roomName);
 		});
 
 		it('should handle simultaneous recordings in different rooms correctly', async () => {
@@ -105,8 +105,8 @@ describe('Recording API Tests', () => {
 			const firstResponse = await startRecording(roomDataA.room.roomId, roomDataA.moderatorCookie);
 			const secondResponse = await startRecording(roomDataB.room.roomId, roomDataB.moderatorCookie);
 
-			expectValidStartRecordingResponse(firstResponse, roomDataA.room.roomId);
-			expectValidStartRecordingResponse(secondResponse, roomDataB.room.roomId);
+			expectValidStartRecordingResponse(firstResponse, roomDataA.room.roomId, roomDataA.room.roomName);
+			expectValidStartRecordingResponse(secondResponse, roomDataB.room.roomId, roomDataB.room.roomName);
 
 			const firstRecordingId = firstResponse.body.recordingId;
 			const secondRecordingId = secondResponse.body.recordingId;
@@ -115,8 +115,18 @@ describe('Recording API Tests', () => {
 				stopRecording(firstRecordingId, roomDataA.moderatorCookie),
 				stopRecording(secondRecordingId, roomDataB.moderatorCookie)
 			]);
-			expectValidStopRecordingResponse(firstStopResponse, firstRecordingId, roomDataA.room.roomId);
-			expectValidStopRecordingResponse(secondStopResponse, secondRecordingId, roomDataB.room.roomId);
+			expectValidStopRecordingResponse(
+				firstStopResponse,
+				firstRecordingId,
+				roomDataA.room.roomId,
+				roomDataA.room.roomName
+			);
+			expectValidStopRecordingResponse(
+				secondStopResponse,
+				secondRecordingId,
+				roomDataB.room.roomId,
+				roomDataB.room.roomName
+			);
 		});
 	});
 
@@ -180,13 +190,13 @@ describe('Recording API Tests', () => {
 			await joinFakeParticipant(room.roomId, 'fakeParticipantId');
 			const firstResponse = await startRecording(room.roomId, moderatorCookie);
 			const recordingId = firstResponse.body.recordingId;
-			expectValidStartRecordingResponse(firstResponse, room.roomId);
+			expectValidStartRecordingResponse(firstResponse, room.roomId, room.roomName);
 
 			const secondResponse = await startRecording(room!.roomId, moderatorCookie);
 			expect(secondResponse.status).toBe(409);
 			expect(secondResponse.body.message).toContain('already');
 			const stopResponse = await stopRecording(recordingId, moderatorCookie);
-			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 
 		it('should return 503 when recording start times out', async () => {

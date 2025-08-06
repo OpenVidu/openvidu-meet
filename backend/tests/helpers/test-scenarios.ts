@@ -110,7 +110,7 @@ export const setupSingleRoomWithRecording = async (
 ): Promise<RoomData> => {
 	const roomData = await setupSingleRoom(true, 'TEST_ROOM');
 	const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
-	expectValidStartRecordingResponse(response, roomData.room.roomId);
+	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	roomData.recordingId = response.body.recordingId;
 
 	// Wait for the configured delay before stopping the recording
@@ -155,7 +155,7 @@ export const setupMultiRecordingsTestContext = async (
 
 		// Send start recording request
 		const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
-		expectValidStartRecordingResponse(response, roomData.room.roomId);
+		expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 
 		// Store the recordingId in context
 		roomData.recordingId = response.body.recordingId;

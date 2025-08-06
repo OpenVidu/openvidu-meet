@@ -1,6 +1,5 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
-import { EgressInfo, EgressStatus, SendDataOptions } from 'livekit-server-sdk';
-import { RecordingHelper } from './recording.helper.js';
+import { SendDataOptions } from 'livekit-server-sdk';
 
 const enum OpenViduComponentsDataTopic {
 	CHAT = 'chat',

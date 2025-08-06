@@ -112,6 +112,7 @@ describe('Recordings API Tests', () => {
 					recording,
 					associatedRoom!.recordingId!,
 					associatedRoom!.room.roomId,
+					associatedRoom!.room.roomName,
 					MeetRecordingStatus.COMPLETE
 				);
 			});
@@ -127,6 +128,7 @@ describe('Recordings API Tests', () => {
 					recording,
 					associatedRoom!.recordingId!,
 					associatedRoom!.room.roomId,
+					associatedRoom!.room.roomName,
 					MeetRecordingStatus.COMPLETE
 				);
 			});

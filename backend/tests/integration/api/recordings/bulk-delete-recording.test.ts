@@ -191,7 +191,7 @@ describe('Recording API Tests', () => {
 			expect(roomMetadata!.publisherRoomUrl).toContain(room.roomId);
 
 			const response = await startRecording(room.roomId, moderatorCookie);
-			expectValidStartRecordingResponse(response, room.roomId);
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 			const secondRecordingId = response.body.recordingId;
 
 			await stopRecording(secondRecordingId, moderatorCookie);
@@ -207,6 +207,7 @@ describe('Recording API Tests', () => {
 			// 	secondRecordingResponse,
 			// 	secondRecordingId,
 			// 	room.roomId,
+			// 	room.roomName,
 			// 	MeetRecordingStatus.COMPLETE,
 			// 	3
 			// );

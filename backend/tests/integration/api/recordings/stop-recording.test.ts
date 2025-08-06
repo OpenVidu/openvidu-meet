@@ -39,7 +39,7 @@ describe('Recording API Tests', () => {
 
 		it('should stop an active recording and return 202', async () => {
 			const response = await stopRecording(recordingId, moderatorCookie);
-			expectValidStopRecordingResponse(response, recordingId, room.roomId);
+			expectValidStopRecordingResponse(response, recordingId, room.roomId, room.roomName);
 		});
 
 		it('should stop multiple recordings in parallel', async () => {
@@ -51,9 +51,19 @@ describe('Recording API Tests', () => {
 			const recordingIdA = responseA.body.recordingId;
 			const recordingIdB = responseB.body.recordingId;
 			const stopResponseA = await stopRecording(recordingIdA, roomDataA?.moderatorCookie);
-			expectValidStopRecordingResponse(stopResponseA, recordingIdA, roomDataA!.room.roomId);
+			expectValidStopRecordingResponse(
+				stopResponseA,
+				recordingIdA,
+				roomDataA!.room.roomId,
+				roomDataA!.room.roomName
+			);
 			const stopResponseB = await stopRecording(recordingIdB, roomDataB?.moderatorCookie);
-			expectValidStopRecordingResponse(stopResponseB, recordingIdB, roomDataB!.room.roomId);
+			expectValidStopRecordingResponse(
+				stopResponseB,
+				recordingIdB,
+				roomDataB!.room.roomId,
+				roomDataB!.room.roomName
+			);
 		});
 
 		describe('Stop Recording Validation failures', () => {

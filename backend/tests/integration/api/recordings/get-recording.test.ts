@@ -35,7 +35,14 @@ describe('Recording API Tests', () => {
 		it('should return 200 when recording exists', async () => {
 			const response = await getRecording(recordingId);
 
-			expectValidGetRecordingResponse(response, recordingId, room.roomId, MeetRecordingStatus.COMPLETE, 1);
+			expectValidGetRecordingResponse(
+				response,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				MeetRecordingStatus.COMPLETE,
+				1
+			);
 		});
 
 		it('should get an ACTIVE recording status', async () => {
@@ -47,7 +54,13 @@ describe('Recording API Tests', () => {
 			} = contextAux.getRoomByIndex(0)!;
 			const response = await getRecording(recordingIdAux);
 
-			expectValidGetRecordingResponse(response, recordingIdAux, roomAux.roomId, MeetRecordingStatus.ACTIVE);
+			expectValidGetRecordingResponse(
+				response,
+				recordingIdAux,
+				roomAux.roomId,
+				roomAux.roomName,
+				MeetRecordingStatus.ACTIVE
+			);
 
 			await stopAllRecordings(moderatorCookieAux);
 		});

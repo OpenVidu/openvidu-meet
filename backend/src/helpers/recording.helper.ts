@@ -2,13 +2,15 @@ import { EgressStatus } from '@livekit/protocol';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
 import { EgressInfo } from 'livekit-server-sdk';
 import { uid as secureUid } from 'uid/secure';
+import { container } from '../config/index.js';
+import { RoomService } from '../services/index.js';
 
 export class RecordingHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
 	}
 
-	static toRecordingInfo(egressInfo: EgressInfo): MeetRecordingInfo {
+	static async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
 		const status = RecordingHelper.extractOpenViduStatus(egressInfo.status);
 		const size = RecordingHelper.extractSize(egressInfo);
 		// const outputMode = RecordingHelper.extractOutputMode(egressInfo);
@@ -17,10 +19,15 @@ export class RecordingHelper {
 		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
 		const filename = RecordingHelper.extractFilename(egressInfo);
 		const uid = RecordingHelper.extractUidFromFilename(filename);
-		const { egressId, roomName, errorCode, error, details } = egressInfo;
+		const { egressId, roomName: roomId, errorCode, error, details } = egressInfo;
+
+		const roomService = container.get(RoomService);
+		const { roomName } = await roomService.getMeetRoom(roomId);
+
 		return {
-			recordingId: `${roomName}--${egressId}--${uid}`,
-			roomId: roomName,
+			recordingId: `${roomId}--${egressId}--${uid}`,
+			roomId,
+			roomName,
 			// outputMode,
 			status,
 			filename,
@@ -185,7 +192,6 @@ export class RecordingHelper {
 		const size = Number(egressInfo.fileResults?.[0]?.size ?? 0);
 		return size !== 0 ? size : undefined;
 	}
-
 
 	/**
 	 * Builds the secrets for public and private access to recordings.

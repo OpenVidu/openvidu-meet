@@ -77,6 +77,7 @@ export class RecordingService {
 			await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
 				recordingId: '',
 				roomId,
+				roomName: roomId,
 				status: MeetRecordingStatus.STARTING
 			});
 
@@ -121,7 +122,7 @@ export class RecordingService {
 						throw errorRecordingStartTimeout(roomId);
 					}
 
-					const recordingInfo = RecordingHelper.toRecordingInfo(egressInfo);
+					const recordingInfo = await RecordingHelper.toRecordingInfo(egressInfo);
 					recordingId = recordingInfo.recordingId;
 
 					// If the recording is already active, we can resolve the promise immediately.
@@ -199,7 +200,7 @@ export class RecordingService {
 			const egressInfo = await this.livekitService.stopEgress(egressId);
 
 			this.logger.info(`Recording stopped successfully for room '${roomId}'.`);
-			return RecordingHelper.toRecordingInfo(egressInfo);
+			return await RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
 			this.logger.error(`Error stopping recording '${recordingId}': ${error}`);
 			throw error;
@@ -585,6 +586,7 @@ export class RecordingService {
 				const recordingInfo: MeetRecordingInfo = {
 					recordingId,
 					roomId,
+					roomName: roomId,
 					status: MeetRecordingStatus.FAILED,
 					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 4 CPUs for each room.`
 				};

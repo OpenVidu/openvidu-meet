@@ -70,7 +70,7 @@ describe('Recording API Security Tests', () => {
 			// Stop recording to clean up
 			const recordingId = response.body.recordingId;
 			const stopResponse = await stopRecording(recordingId, roomData.moderatorCookie);
-			expectValidStopRecordingResponse(stopResponse, recordingId, roomData.room.roomId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, roomData.room.roomId, roomData.room.roomName);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {

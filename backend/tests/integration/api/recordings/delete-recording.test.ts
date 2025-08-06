@@ -79,7 +79,7 @@ describe('Recording API Tests', () => {
 			// Generate a new recording
 			const response = await startRecording(room.roomId, moderatorCookie);
 			console.log('Start recording response:', response.body);
-			expectValidStartRecordingResponse(response, room.roomId);
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 			const secondRecordingId = response.body.recordingId;
 			await stopRecording(secondRecordingId, moderatorCookie);
 
