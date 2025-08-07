@@ -114,9 +114,9 @@ export class ParticipantService {
 
 			await this.livekitService.updateParticipantMetadata(roomId, participantName, JSON.stringify(metadata));
 
-			const { publisherSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(meetRoom);
+			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(meetRoom);
 
-			const secret = newRole === ParticipantRole.MODERATOR ? moderatorSecret : publisherSecret;
+			const secret = newRole === ParticipantRole.MODERATOR ? moderatorSecret : speakerSecret;
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(roomId, participantName, newRole, secret);
 		} catch (error) {
 			this.logger.error('Error changing participant role:', error);
@@ -133,7 +133,7 @@ export class ParticipantService {
 		}
 	}
 
-	protected generateModeratorPermissions(roomId: string): ParticipantPermissions {
+	protected generateModeratorPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
 		return {
 			livekit: {
 				roomJoin: addJoinPermission,
