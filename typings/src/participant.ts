@@ -34,3 +34,9 @@ export const enum ParticipantRole {
     MODERATOR = 'moderator',
     SPEAKER = 'speaker'
 }
+
+export interface MeetTokenMetadata {
+	livekitUrl: string;
+	roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[]; // Array of roles with their permissions
+	selectedRole: ParticipantRole;
+}
