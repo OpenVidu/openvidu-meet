@@ -106,7 +106,7 @@ export const withValidParticipantRole = async (req: Request, res: Response, next
 	}
 
 	// Validate the role against the ParticipantRole enum
-	const isRoleValid = role === ParticipantRole.MODERATOR || role === ParticipantRole.PUBLISHER;
+	const isRoleValid = role === ParticipantRole.MODERATOR || role === ParticipantRole.SPEAKER;
 
 	if (!isRoleValid) {
 		const error = errorInvalidParticipantRole();
