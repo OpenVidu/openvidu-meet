@@ -77,21 +77,6 @@
 				</mat-menu>
 			</div>
 
-			<!-- Participant Panel Item Elements -->
-			<div *ovParticipantPanelItemElements="let participant">
-				<!-- Kick participant -->
-				@if (!participant.isLocal) {
-					<button
-						mat-icon-button
-						(click)="forceDisconnectParticipant(participant)"
-						matTooltip="Disconnect participant"
-						class="force-disconnect-btn"
-					>
-						<mat-icon>call_end</mat-icon>
-					</button>
-				}
-			</div>
-
 			<div *ovParticipantPanelAfterLocalParticipant>
 				<div class="share-meeting-link-container">
 					<ov-share-meeting-link
@@ -116,6 +101,78 @@
 				}
 			</ng-container>
 		}
+
+		<ng-container *ovParticipantPanelItem="let participant">
+			<!-- If Meet participant is moderator -->
+			@if (features().canModerateRoom) {
+				<div class="participant-item-container">
+					<!-- Local participant -->
+					@if (participant.isLocal) {
+						<ov-participant-panel-item [participant]="participant">
+							<ng-container *ovParticipantPanelParticipantBadge>
+								<span class="moderator-badge">
+									<mat-icon matTooltip="Moderator" class="material-symbols-outlined"
+										>shield_person</mat-icon
+									>
+								</span>
+							</ng-container>
+						</ov-participant-panel-item>
+					} @else {
+						<!-- Remote participant -->
+
+						<ov-participant-panel-item [participant]="participant">
+							@if (participant.isModerator()) {
+								<ng-container *ovParticipantPanelParticipantBadge>
+									<span class="moderator-badge">
+										<mat-icon matTooltip="Moderator" class="material-symbols-outlined"
+											>shield_person</mat-icon
+										>
+									</span>
+								</ng-container>
+							}
+							<div *ovParticipantPanelItemElements>
+								<!-- Button to make moderator if not -->
+								@if (!participant.isModerator()) {
+									<button
+										mat-icon-button
+										(click)="makeModerator(participant)"
+										matTooltip="Make participant moderator"
+										class="make-moderator-btn"
+									>
+										<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+									</button>
+								}
+								<!-- Button to kick participant -->
+								<button
+									mat-icon-button
+									(click)="forceDisconnectParticipant(participant)"
+									matTooltip="Kick participant"
+									class="force-disconnect-btn"
+								>
+									<mat-icon>call_end</mat-icon>
+								</button>
+							</div>
+						</ov-participant-panel-item>
+					}
+				</div>
+			}
+			<!-- If I can't moderate the room -->
+			@else {
+				<div class="participant-item-container">
+					<ov-participant-panel-item [participant]="participant">
+						@if (participant.isModerator()) {
+							<ng-container *ovParticipantPanelParticipantBadge>
+								<span class="moderator-badge">
+									<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
+										shield_person
+									</mat-icon>
+								</span>
+							</ng-container>
+						}
+					</ov-participant-panel-item>
+				</div>
+			}
+		</ng-container>
 	</ov-videoconference>
 } @else {
 	<!-- Move this logic to prejoin meeting page -->

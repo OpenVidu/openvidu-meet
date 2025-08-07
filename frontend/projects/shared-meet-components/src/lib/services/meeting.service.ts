@@ -43,4 +43,23 @@ export class MeetingService {
 		await this.httpService.deleteRequest(path, headers);
 		this.log.d(`Participant '${participantId}' kicked from room ${roomId}`);
 	}
+
+	/**
+	 * Changes the role of a participant in a meeting.
+	 *
+	 * @param roomId - The unique identifier of the meeting room
+	 * @param participantId - The unique identifier of the participant whose role is to be changed
+	 * @param newRole - The new role to be assigned to the participant
+	 */
+	async changeParticipantRole(
+		roomId: string,
+		participantId: string,
+		newRole: string
+	): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
+		const headers = this.participantService.getParticipantRoleHeader();
+		const body = { role: newRole };
+		await this.httpService.patchRequest(path, body, headers);
+		this.log.d(`Changed role of participant '${participantId}' to '${newRole}' in room ${roomId}`);
+	}
 }

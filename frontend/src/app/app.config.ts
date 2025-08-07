@@ -6,11 +6,13 @@ import { provideRouter } from '@angular/router';
 import { routes } from '@app/app.routes';
 import { environment } from '@environment/environment';
 import { httpInterceptor } from '@lib/interceptors/index';
+import { CustomParticipantModel } from '@lib/models/custom-participant.model';
 import { ThemeService } from '@lib/services/theme.service';
-import { OpenViduComponentsConfig, OpenViduComponentsModule } from 'openvidu-components-angular';
+import { OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
-	production: environment.production
+	production: environment.production,
+	participantFactory: (props: ParticipantProperties) => new CustomParticipantModel(props)
 };
 
 export const appConfig: ApplicationConfig = {

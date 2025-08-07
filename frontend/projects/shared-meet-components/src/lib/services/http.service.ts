@@ -38,4 +38,9 @@ export class HttpService {
 			statusCode: response.status
 		}));
 	}
+
+	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.patch<T>(path, body, options));
+	}
 }

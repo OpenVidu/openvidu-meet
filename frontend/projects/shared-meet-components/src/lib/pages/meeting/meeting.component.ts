@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ShareMeetingLinkComponent } from '@lib/components/share-meeting-link/share-meeting-link.component';
 import { ErrorReason } from '@lib/models';
+import { CustomParticipantModel } from '@lib/models/custom-participant.model';
 import {
 	AppDataService,
 	ApplicationFeatures,
@@ -35,7 +36,7 @@ import {
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
 } from '@lib/typings/ce';
-import { MeetSignalType } from '@lib/typings/ce/event.model';
+import { MeetParticipantRoleUpdatedPayload, MeetSignalType } from '@lib/typings/ce/event.model';
 import {
 	ApiDirectiveModule,
 	DataPacket_Kind,
@@ -91,7 +92,8 @@ export class MeetingComponent implements OnInit {
 	participantName = '';
 	participantToken = '';
 	participantRole: ParticipantRole = ParticipantRole.SPEAKER;
-	remoteParticipants: ParticipantModel[] = [];
+	localParticipant?: CustomParticipantModel;
+	remoteParticipants: CustomParticipantModel[] = [];
 
 	showMeeting = false;
 	features: Signal<ApplicationFeatures>;
@@ -258,7 +260,12 @@ export class MeetingComponent implements OnInit {
 			this.componentParticipantService.remoteParticipants$
 				.pipe(takeUntil(this.destroy$))
 				.subscribe((participants) => {
-					this.remoteParticipants = participants;
+					this.remoteParticipants = participants as CustomParticipantModel[];
+				});
+			this.componentParticipantService.localParticipant$
+				.pipe(takeUntil(this.destroy$))
+				.subscribe((participant) => {
+					this.localParticipant = participant as CustomParticipantModel;
 				});
 		} catch (error) {
 			console.error('Error accessing meeting:', error);
@@ -321,6 +328,19 @@ export class MeetingComponent implements OnInit {
 				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
 					const roomPreferences: MeetRoomPreferences = event.preferences;
 					this.featureConfService.setRoomPreferences(roomPreferences);
+				} else if (topic === MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED) {
+					const { participantName, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
+
+					if (participantName === this.localParticipant!.name) {
+						this.localParticipant!.meetRole = newRole;
+					} else {
+						const participant = this.remoteParticipants.find((p) => p.name === participantName);
+						if (participant) {
+							participant.meetRole = newRole;
+						}
+					}
+
+					// !Request for new token with the new role
 				}
 			}
 		);
@@ -397,8 +417,17 @@ export class MeetingComponent implements OnInit {
 		}
 	}
 
-	async forceDisconnectParticipant(participant: ParticipantModel) {
-		await this.meetingService.kickParticipant(this.roomId, participant.identity);
+	async forceDisconnectParticipant(participant: CustomParticipantModel) {
+		if (this.participantService.isModeratorParticipant()) {
+			await this.meetingService.kickParticipant(this.roomId, participant.identity);
+		}
+	}
+
+	async makeModerator(participant: CustomParticipantModel) {
+		if (this.participantService.isModeratorParticipant()) {
+			const newRole = ParticipantRole.MODERATOR;
+			await this.meetingService.changeParticipantRole(this.roomId, participant.identity, newRole);
+		}
 	}
 
 	async copyModeratorLink() {
