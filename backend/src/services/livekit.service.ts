@@ -184,6 +184,29 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Updates the metadata of a participant in a LiveKit room.
+	 *
+	 * @param roomName - The name of the room where the participant is located
+	 * @param participantName - The name of the participant whose metadata will be updated
+	 * @param metadata - The new metadata to set for the participant
+	 * @returns A Promise that resolves when the metadata has been successfully updated
+	 * @throws An internal error if there is an issue updating the metadata
+	 */
+	async updateParticipantMetadata(
+		roomName: string,
+		participantName: string,
+		metadata: string
+	): Promise<void> {
+		try {
+			await this.roomClient.updateParticipant(roomName, participantName, metadata);
+			this.logger.verbose(`Updated metadata for participant ${participantName} in room ${roomName}`);
+		} catch (error) {
+			this.logger.error(`Error updating metadata for participant ${participantName} in room ${roomName}: ${error}`);
+			throw internalError(`updating metadata for participant '${participantName}' in room '${roomName}'`);
+		}
+	}
+
 	async deleteParticipant(participantName: string, roomName: string): Promise<void> {
 		const participantExists = await this.participantExists(roomName, participantName);
 

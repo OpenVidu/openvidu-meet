@@ -12,6 +12,27 @@ const enum OpenViduComponentsDataTopic {
 	ROOM_STATUS = 'roomStatus'
 }
 
+interface RecordingSignalPayload {
+	id: string;
+	roomName: string;
+	roomId: string;
+	status: string;
+	filename?: string;
+	startedAt?: number;
+	endedAt?: number;
+	duration?: number;
+	size?: number;
+	location?: string;
+	error?: string;
+}
+
+interface RoomStatusSignalPayload {
+	isRecordingStarted: boolean;
+	recordingList: RecordingSignalPayload[];
+}
+
+export type OpenViduComponentsSignalPayload = RecordingSignalPayload | RoomStatusSignalPayload;
+
 export class OpenViduComponentsAdapterHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
@@ -29,7 +50,7 @@ export class OpenViduComponentsAdapterHelper {
 
 	static generateRoomStatusSignal(recordingInfo: MeetRecordingInfo[], participantSid?: string) {
 		const isRecordingActive = recordingInfo.some((rec) => rec.status === MeetRecordingStatus.ACTIVE);
-		const payload = {
+		const payload: RoomStatusSignalPayload = {
 			isRecordingStarted: isRecordingActive,
 			recordingList: recordingInfo.map((rec) =>
 				OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(rec)
@@ -46,7 +67,7 @@ export class OpenViduComponentsAdapterHelper {
 		};
 	}
 
-	private static parseRecordingInfoToOpenViduComponents(info: MeetRecordingInfo) {
+	private static parseRecordingInfoToOpenViduComponents(info: MeetRecordingInfo): RecordingSignalPayload {
 		return {
 			id: info.recordingId,
 			roomName: info.roomId,

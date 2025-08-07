@@ -1,9 +1,14 @@
-import { MeetRoom, MeetRecordingInfo } from '@typings-ce';
+import { MeetRoom, MeetRecordingInfo, ParticipantRole } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { SendDataOptions } from 'livekit-server-sdk';
-import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
+import { OpenViduComponentsAdapterHelper, OpenViduComponentsSignalPayload } from '../helpers/index.js';
 import { LiveKitService, LoggerService } from './index.js';
-import { MeetSignalType } from '../typings/ce/event.model.js';
+import {
+	MeetParticipantRoleUpdatedPayload,
+	MeetRoomPreferencesUpdatedPayload,
+	MeetSignalPayload,
+	MeetSignalType
+} from '../typings/ce/event.model.js';
 
 /**
  * Service responsible for all communication with the frontend
@@ -68,9 +73,10 @@ export class FrontendEventService {
 		this.logger.debug(`Sending room preferences updated signal for room ${roomId}`);
 
 		try {
-			const payload = {
+			const payload: MeetRoomPreferencesUpdatedPayload = {
 				roomId,
-				preferences: updatedRoom.preferences
+				preferences: updatedRoom.preferences!,
+				timestamp: Date.now()
 			};
 
 			const options: SendDataOptions = {
@@ -83,13 +89,37 @@ export class FrontendEventService {
 		}
 	}
 
+	async sendParticipantRoleUpdatedSignal(
+		roomId: string,
+		participantName: string,
+		newRole: ParticipantRole,
+		secret: string
+	): Promise<void> {
+		this.logger.debug(
+			`Sending participant role updated signal for participant ${participantName} in room ${roomId}`
+		);
+		const payload: MeetParticipantRoleUpdatedPayload = {
+			participantName,
+			roomId,
+			newRole,
+			secret,
+			timestamp: Date.now()
+		};
+
+		const options: SendDataOptions = {
+			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
+		};
+
+		await this.sendSignal(roomId, payload, options);
+	}
+
 	/**
 	 * Generic method to send signals to the frontend
 	 */
 
 	protected async sendSignal(
 		roomId: string,
-		rawData: Record<string, unknown>,
+		rawData: MeetSignalPayload | OpenViduComponentsSignalPayload,
 		options: SendDataOptions
 	): Promise<void> {
 		this.logger.verbose(`Notifying participants in room ${roomId}: "${options.topic}".`);

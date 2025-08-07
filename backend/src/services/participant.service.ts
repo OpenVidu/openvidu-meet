@@ -1,8 +1,15 @@
-import { OpenViduMeetPermissions, ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@typings-ce';
+import {
+	MeetTokenMetadata,
+	OpenViduMeetPermissions,
+	ParticipantOptions,
+	ParticipantPermissions,
+	ParticipantRole
+} from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/error.model.js';
-import { LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
+import { FrontendEventService, LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 
 @injectable()
 export class ParticipantService {
@@ -10,6 +17,7 @@ export class ParticipantService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(TokenService) protected tokenService: TokenService
 	) {}
 
@@ -53,7 +61,7 @@ export class ParticipantService {
 			currentRoles.push({ role, permissions: permissions.openvidu });
 		}
 
-		return this.tokenService.generateParticipantToken(participantOptions, permissions.livekit, currentRoles);
+		return this.tokenService.generateParticipantToken(participantOptions, permissions.livekit, currentRoles, role);
 	}
 
 	async getParticipant(roomId: string, participantName: string): Promise<ParticipantInfo | null> {
@@ -89,7 +97,43 @@ export class ParticipantService {
 		}
 	}
 
-	protected generateModeratorPermissions(roomId: string, addJoinPermission = true): ParticipantPermissions {
+	async changeParticipantRole(roomId: string, participantName: string, newRole: ParticipantRole): Promise<void> {
+		try {
+			const meetRoom = await this.roomService.getMeetRoom(roomId);
+
+			const participant = await this.getParticipant(roomId, participantName);
+
+			const metadata: MeetTokenMetadata = this.parseMetadata(participant!.metadata);
+
+			if (!metadata || typeof metadata !== 'object') {
+				throw new Error(`Invalid metadata for participant ${participantName}`);
+			}
+
+			// TODO: Should we update the roles array as well?
+			metadata.selectedRole = newRole;
+
+			await this.livekitService.updateParticipantMetadata(roomId, participantName, JSON.stringify(metadata));
+
+			const { publisherSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(meetRoom);
+
+			const secret = newRole === ParticipantRole.MODERATOR ? moderatorSecret : publisherSecret;
+			await this.frontendEventService.sendParticipantRoleUpdatedSignal(roomId, participantName, newRole, secret);
+		} catch (error) {
+			this.logger.error('Error changing participant role:', error);
+			throw error;
+		}
+	}
+
+	protected parseMetadata(metadata: string): MeetTokenMetadata {
+		try {
+			return JSON.parse(metadata);
+		} catch (error) {
+			this.logger.error('Failed to parse participant metadata:', error);
+			throw new Error('Invalid participant metadata format');
+		}
+	}
+
+	protected generateModeratorPermissions(roomId: string): ParticipantPermissions {
 		return {
 			livekit: {
 				roomJoin: addJoinPermission,

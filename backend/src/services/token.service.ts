@@ -1,5 +1,6 @@
 import {
 	LiveKitPermissions,
+	MeetTokenMetadata,
 	OpenViduMeetPermissions,
 	ParticipantOptions,
 	ParticipantRole,
@@ -42,19 +43,22 @@ export class TokenService {
 	async generateParticipantToken(
 		participantOptions: ParticipantOptions,
 		lkPermissions: LiveKitPermissions,
-		roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[]
+		roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[],
+		selectedRole: ParticipantRole
 	): Promise<string> {
 		const { roomId, participantName } = participantOptions;
 		this.logger.info(`Generating token for room '${roomId}'`);
 
+		const metadata: MeetTokenMetadata = {
+			livekitUrl: LIVEKIT_URL,
+			roles,
+			selectedRole
+		};
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantName,
 			name: participantName,
 			ttl: INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION,
-			metadata: JSON.stringify({
-				livekitUrl: LIVEKIT_URL,
-				roles
-			})
+			metadata: JSON.stringify(metadata)
 		};
 		return await this.generateJwtToken(tokenOptions, lkPermissions as VideoGrant);
 	}

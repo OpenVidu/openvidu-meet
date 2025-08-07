@@ -1,7 +1,12 @@
 import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
-import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidParticipantRole,
+	handleError,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
 import { MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
@@ -86,6 +91,25 @@ export const checkParticipantFromSameRoom = async (req: Request, res: Response, 
 
 	if (!sameRoom) {
 		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	return next();
+};
+
+export const withValidParticipantRole = async (req: Request, res: Response, next: NextFunction) => {
+	const { role } = req.body;
+
+	if (!role) {
+		const error = errorInvalidParticipantRole();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	// Validate the role against the ParticipantRole enum
+	const isRoleValid = role === ParticipantRole.MODERATOR || role === ParticipantRole.PUBLISHER;
+
+	if (!isRoleValid) {
+		const error = errorInvalidParticipantRole();
 		return rejectRequestFromMeetError(res, error);
 	}
 
