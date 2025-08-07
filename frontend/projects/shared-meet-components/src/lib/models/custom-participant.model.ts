@@ -33,7 +33,7 @@ const extractParticipantRole = (metadata: any): ParticipantRole => {
 		console.warn('Failed to parse participant metadata:', e);
 	}
 	if (!parsedMetadata || typeof parsedMetadata !== 'object') {
-		return ParticipantRole.PUBLISHER;
+		return ParticipantRole.SPEAKER;
 	}
-	return parsedMetadata.selectedRole || ParticipantRole.PUBLISHER;
+	return parsedMetadata.selectedRole || ParticipantRole.SPEAKER;
 };
