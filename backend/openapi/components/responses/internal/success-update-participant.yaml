@@ -1,0 +1,9 @@
+description: Successfully updated participant
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Participant "123" role updated to "moderator"'

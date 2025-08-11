@@ -30,5 +30,5 @@ internalMeetingRouter.patch(
 	withModeratorPermissions,
 	withValidRoomId,
 	withValidParticipantRole,
-	participantCtrl.changeParticipantRole
+	participantCtrl.updateParticipant
 );

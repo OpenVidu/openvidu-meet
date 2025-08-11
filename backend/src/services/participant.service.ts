@@ -97,7 +97,7 @@ export class ParticipantService {
 		}
 	}
 
-	async changeParticipantRole(roomId: string, participantName: string, newRole: ParticipantRole): Promise<void> {
+	async updateParticipantRole(roomId: string, participantName: string, newRole: ParticipantRole): Promise<void> {
 		try {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 

@@ -133,7 +133,7 @@ export const deleteParticipant = async (req: Request, res: Response) => {
 	}
 };
 
-export const changeParticipantRole = async (req: Request, res: Response) => {
+export const updateParticipant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const participantService = container.get(ParticipantService);
 	const { roomId, participantName } = req.params;
@@ -141,7 +141,7 @@ export const changeParticipantRole = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Changing role of participant '${participantName}' in room '${roomId}' to '${role}'`);
-		await participantService.changeParticipantRole(roomId, participantName, role);
+		await participantService.updateParticipantRole(roomId, participantName, role);
 		res.status(200).json({ message: `Participant '${participantName}' role updated to ${role}` });
 	} catch (error) {
 		handleError(res, error, `changing role for participant '${participantName}' in room '${roomId}'`);

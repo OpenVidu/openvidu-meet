@@ -53,3 +53,42 @@
                 $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+    patch:
+        operationId: updateParticipant
+        summary: Update participant in a meeting
+        description: >
+            Updates the properties of a participant in the current meeting in an OpenVidu Meet room.
+            This can be used to change the participant role.
+        tags:
+            - Internal API - Meetings
+        security:
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../../components/parameters/room-id-path.yaml'
+            - $ref: '../../components/parameters/internal/participant-name.yaml'
+            # - $ref: '../../components/parameters/internal/x-participant-role.yaml'
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            role:
+                                type: string
+                                enum: [MODERATOR, SPEAKER]
+                                description: The new role for the participant.
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-update-participant.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-participant-role.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
