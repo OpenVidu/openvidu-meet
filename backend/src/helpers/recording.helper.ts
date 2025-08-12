@@ -18,14 +18,14 @@ export class RecordingHelper {
 		const startDateMs = RecordingHelper.extractStartDate(egressInfo);
 		const endDateMs = RecordingHelper.extractEndDate(egressInfo);
 		const filename = RecordingHelper.extractFilename(egressInfo);
-		const uid = RecordingHelper.extractUidFromFilename(filename);
-		const { egressId, roomName: roomId, errorCode, error, details } = egressInfo;
+		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
+		const { roomName: roomId, errorCode, error, details } = egressInfo;
 
 		const roomService = container.get(RoomService);
 		const { roomName } = await roomService.getMeetRoom(roomId);
 
 		return {
-			recordingId: `${roomId}--${egressId}--${uid}`,
+			recordingId,
 			roomId,
 			roomName,
 			// outputMode,
@@ -132,6 +132,13 @@ export class RecordingHelper {
 		return uidWithExtension.split('.')[0];
 	}
 
+	static extractRecordingIdFromEgress(egressInfo: EgressInfo): string {
+		const { roomName: meetRoomId, egressId } = egressInfo;
+		const filename = RecordingHelper.extractFilename(egressInfo);
+		const uid = RecordingHelper.extractUidFromFilename(filename);
+		return `${meetRoomId}--${egressId}--${uid}`;
+	}
+
 	/**
 	 * Extracts the room name, egressId, and UID from the given recordingId.
 	 * @param recordingId ${roomId}--${egressId}--${uid}
@@ -179,6 +186,11 @@ export class RecordingHelper {
 		const { startedAt, updatedAt } = egressInfo;
 		const createdAt = startedAt && Number(startedAt) !== 0 ? startedAt : (updatedAt ?? 0);
 		return this.toMilliseconds(Number(createdAt));
+	}
+
+	static extractUpdatedDate(egressInfo: EgressInfo): number | undefined {
+		const updatedAt = egressInfo.updatedAt;
+		return updatedAt ? this.toMilliseconds(Number(updatedAt)) : undefined;
 	}
 
 	/**

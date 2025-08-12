@@ -33,11 +33,14 @@ const INTERNAL_CONFIG = {
 	S3_USERS_PREFIX: 'users',
 	S3_API_KEYS_PREFIX: 'api_keys',
 
-	// Garbage collection and recording lock intervals
+	// Garbage collection and recording intervals
 	ROOM_GC_INTERVAL: '1h' as StringValue, // e.g. garbage collector interval for rooms
 	RECORDING_LOCK_TTL: '6h' as StringValue, // TTL for recording lock in Redis
 	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording start
 	RECORDING_LOCK_GC_INTERVAL: '30m' as StringValue, // Garbage collection interval for recording locks
+	RECORDING_ORPHANED_LOCK_GRACE_PERIOD: '1m' as StringValue, // Grace period for orphaned recording locks
+	RECORDING_STALE_CLEANUP_INTERVAL: '15m' as StringValue, // Cleanup interval for stale recordings
+	RECORDING_STALE_AFTER: '5m' as StringValue, // Maximum allowed time since the last recording update before marking as stale
 
 	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
 	// Additional intervals

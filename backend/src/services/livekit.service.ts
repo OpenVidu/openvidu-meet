@@ -193,16 +193,14 @@ export class LiveKitService {
 	 * @returns A Promise that resolves when the metadata has been successfully updated
 	 * @throws An internal error if there is an issue updating the metadata
 	 */
-	async updateParticipantMetadata(
-		roomName: string,
-		participantName: string,
-		metadata: string
-	): Promise<void> {
+	async updateParticipantMetadata(roomName: string, participantName: string, metadata: string): Promise<void> {
 		try {
 			await this.roomClient.updateParticipant(roomName, participantName, metadata);
 			this.logger.verbose(`Updated metadata for participant ${participantName} in room ${roomName}`);
 		} catch (error) {
-			this.logger.error(`Error updating metadata for participant ${participantName} in room ${roomName}: ${error}`);
+			this.logger.error(
+				`Error updating metadata for participant ${participantName} in room ${roomName}: ${error}`
+			);
 			throw internalError(`updating metadata for participant '${participantName}' in room '${roomName}'`);
 		}
 	}
@@ -351,12 +349,9 @@ export class LiveKitService {
 	 */
 	async getInProgressRecordingsEgress(roomName?: string): Promise<EgressInfo[]> {
 		try {
-			const egressArray = await this.getEgress(roomName);
-			return egressArray.filter((egress) => {
-				if (!RecordingHelper.isRecordingEgress(egress)) {
-					return false;
-				}
+			const egressArray = await this.getRecordingsEgress(roomName);
 
+			return egressArray.filter((egress) => {
 				// Check if recording is in any "in-progress" state
 				return [EgressStatus.EGRESS_STARTING, EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_ENDING].includes(
 					egress.status

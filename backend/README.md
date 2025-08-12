@@ -166,3 +166,44 @@ graph TD;
     M -->|No more rooms| N[Process completed]
 
 ```
+
+5. **Stale recordings cleanup**:
+   To handle recordings that become stale due to network issues, LiveKit or Egress crashes, or other unexpected situations, a separate cleanup process runs every 15 minutes to identify and abort recordings that haven't been updated within a configured threshold (5 minutes by default).
+
+```mermaid
+graph TD;
+    A[Initiate stale recordings cleanup] --> B[Get all in-progress recordings from LiveKit]
+    B -->|Error| C[Log error and exit]
+    B -->|No recordings found| D[Log and exit]
+    B -->|Recordings found| E[Process recordings in batches of 10]
+
+    E --> F[For each recording in batch]
+    F --> G[Extract recording ID and updatedAt]
+    G --> H[Get recording status from storage]
+
+    H -->|Recording already ABORTED| I[Mark as already processed]
+    H -->|Recording active| J[Check if updatedAt exists]
+
+    J -->|No updatedAt timestamp| K[Keep as fresh - log warning]
+    J -->|Has updatedAt| L[Calculate if stale]
+
+    L -->|Still fresh| M[Log as fresh]
+    L -->|Is stale| N[Abort stale recording]
+
+    N --> O[Update status to ABORTED in storage]
+    N --> P[Stop egress in LiveKit]
+    O --> Q[Log successful abort]
+    P --> Q
+
+    I --> R[Continue to next recording]
+    K --> R
+    M --> R
+    Q --> R
+
+    R -->|More recordings in batch| F
+    R -->|Batch complete| S[Process next batch]
+    S -->|More batches| E
+    S -->|All batches processed| T[Log completion metrics]
+    T --> U[Process completed]
+
+```
