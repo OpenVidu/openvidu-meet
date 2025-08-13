@@ -52,7 +52,6 @@ describe('Room API Tests', () => {
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
-
 			const updateResponse = await updateRoomPreferences(createdRoom.roomId, updatedPreferences);
 
 			// Verify a method of frontend event service is called
@@ -60,7 +59,8 @@ describe('Room API Tests', () => {
 				createdRoom.roomId,
 				{
 					roomId: createdRoom.roomId,
-					preferences: updatedPreferences
+					preferences: updatedPreferences,
+					timestamp: expect.any(Number)
 				},
 				{
 					topic: MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED
@@ -101,7 +101,6 @@ describe('Room API Tests', () => {
 				chatPreferences: { enabled: true },
 				virtualBackgroundPreferences: { enabled: true }
 			};
-
 			const updateResponse = await updateRoomPreferences(createdRoom.roomId, partialPreferences);
 
 			// Verify update response
@@ -129,7 +128,6 @@ describe('Room API Tests', () => {
 				// Missing chatPreferences
 				virtualBackgroundPreferences: { enabled: false }
 			};
-
 			const response = await updateRoomPreferences(roomId, invalidPreferences);
 
 			expect(response.status).toBe(422);
@@ -151,7 +149,6 @@ describe('Room API Tests', () => {
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
-
 			const response = await updateRoomPreferences(createdRoom.roomId, invalidPreferences);
 
 			expect(response.status).toBe(422);
@@ -165,7 +162,6 @@ describe('Room API Tests', () => {
 			});
 
 			const emptyPreferences = {};
-
 			const response = await updateRoomPreferences(createdRoom.roomId, emptyPreferences);
 
 			expect(response.status).toBe(422);
@@ -176,6 +172,7 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({
 				roomName: 'missing-access'
 			});
+
 			const invalidPreferences = {
 				recordingPreferences: {
 					enabled: true // Missing allowAccessTo
@@ -184,6 +181,7 @@ describe('Room API Tests', () => {
 				virtualBackgroundPreferences: { enabled: false }
 			};
 			const response = await updateRoomPreferences(createdRoom.roomId, invalidPreferences);
+
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recordingPreferences.allowAccessTo');
@@ -199,7 +197,6 @@ describe('Room API Tests', () => {
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
-
 			const response = await updateRoomPreferences(invalidRoomId, preferences);
 
 			expect(response.status).toBe(422);
@@ -217,7 +214,6 @@ describe('Room API Tests', () => {
 				chatPreferences: { enabled: false },
 				virtualBackgroundPreferences: { enabled: false }
 			};
-
 			const response = await updateRoomPreferences(nonExistentRoomId, preferences);
 
 			expect(response.status).toBe(404);
