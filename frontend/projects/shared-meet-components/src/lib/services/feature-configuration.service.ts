@@ -9,8 +9,8 @@ export interface ApplicationFeatures {
 	// Media Features
 	videoEnabled: boolean;
 	audioEnabled: boolean;
-	showMicrophone: boolean;
 	showCamera: boolean;
+	showMicrophone: boolean;
 	showScreenShare: boolean;
 
 	// UI Features
@@ -32,8 +32,8 @@ export interface ApplicationFeatures {
 const DEFAULT_FEATURES: ApplicationFeatures = {
 	videoEnabled: true,
 	audioEnabled: true,
-	showMicrophone: true,
 	showCamera: true,
+	showMicrophone: true,
 	showScreenShare: true,
 
 	showRecordings: true,
@@ -139,8 +139,8 @@ export class FeatureConfigurationService {
 			const canPublishSources = participantPerms.livekit.canPublishSources ?? [];
 			features.videoEnabled = canPublish || canPublishSources.includes(TrackSource.CAMERA);
 			features.audioEnabled = canPublish || canPublishSources.includes(TrackSource.MICROPHONE);
-			features.showMicrophone = features.audioEnabled;
 			features.showCamera = features.videoEnabled;
+			features.showMicrophone = features.audioEnabled;
 			features.showScreenShare = canPublish || canPublishSources.includes(TrackSource.SCREEN_SHARE);
 		}
 

@@ -94,7 +94,6 @@ export class MeetingComponent implements OnInit {
 	roomSecret = '';
 	participantName = '';
 	participantToken = '';
-	participantRole: ParticipantRole = ParticipantRole.SPEAKER;
 	localParticipant?: CustomParticipantModel;
 	remoteParticipants: CustomParticipantModel[] = [];
 
@@ -283,13 +282,11 @@ export class MeetingComponent implements OnInit {
 	 */
 	private async generateParticipantToken() {
 		try {
-			const { token, role } = await this.participantTokenService.generateToken({
+			this.participantToken = await this.participantTokenService.generateToken({
 				roomId: this.roomId,
 				secret: this.roomSecret,
 				participantName: this.participantName
 			});
-			this.participantToken = token;
-			this.participantRole = role;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);
 			switch (error.status) {

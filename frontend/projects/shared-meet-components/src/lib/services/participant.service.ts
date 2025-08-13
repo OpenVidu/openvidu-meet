@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ParticipantTokenInfo } from '@lib/models';
 import { FeatureConfigurationService, HttpService } from '@lib/services';
 import { MeetTokenMetadata, ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
@@ -12,8 +11,8 @@ export class ParticipantService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
 
 	protected participantName?: string;
-	protected participantRole: ParticipantRole = ParticipantRole.SPEAKER;
-	protected currentTokenInfo?: ParticipantTokenInfo;
+	protected role: ParticipantRole = ParticipantRole.SPEAKER;
+	protected permissions?: ParticipantPermissions;
 
 	protected log;
 
@@ -37,28 +36,28 @@ export class ParticipantService {
 	 * Generates a participant token and extracts role/permissions
 	 *
 	 * @param participantOptions - The options for the participant, including room ID, participant name, and secret
-	 * @return A promise that resolves to an object containing the token, role, and permissions
+	 * @return A promise that resolves to the participant token
 	 */
-	async generateToken(participantOptions: ParticipantOptions): Promise<ParticipantTokenInfo> {
+	async generateToken(participantOptions: ParticipantOptions): Promise<string> {
 		const path = `${this.PARTICIPANTS_API}/token`;
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, participantOptions);
 
 		this.updateParticipantTokenInfo(token);
-		return this.currentTokenInfo!;
+		return token;
 	}
 
 	/**
 	 * Refreshes the participant token using the provided options.
 	 *
 	 * @param participantOptions - The options for the participant, including room ID, participant name, and secret
-	 * @return A promise that resolves to an object containing the new token, role, and permissions
+	 * @return A promise that resolves to the refreshed participant token
 	 */
-	async refreshParticipantToken(participantOptions: ParticipantOptions): Promise<ParticipantTokenInfo> {
+	async refreshParticipantToken(participantOptions: ParticipantOptions): Promise<string> {
 		const path = `${this.PARTICIPANTS_API}/token/refresh`;
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, participantOptions);
 
 		this.updateParticipantTokenInfo(token);
-		return this.currentTokenInfo!;
+		return token;
 	}
 
 	/**
@@ -71,38 +70,31 @@ export class ParticipantService {
 		try {
 			const decodedToken = getValidDecodedToken(token);
 			const metadata = decodedToken.metadata as MeetTokenMetadata;
-			const role = metadata.selectedRole;
-			const permissions = metadata.roles.find((r) => r.role === role)!.permissions;
-			this.currentTokenInfo = {
-				token: token,
-				role: role,
-				permissions: {
-					livekit: decodedToken.video,
-					openvidu: permissions
-				}
+
+			this.role = metadata.selectedRole;
+			const openviduPermissions = metadata.roles.find((r) => r.role === this.role)!.permissions;
+			this.permissions = {
+				livekit: decodedToken.video,
+				openvidu: openviduPermissions
 			};
-			this.participantRole = this.currentTokenInfo.role;
+			console.warn('PARTICIPANT PERMISSIONS', this.permissions);
 
 			// Update feature configuration
-			this.featureConfService.setParticipantRole(this.currentTokenInfo.role);
-			this.featureConfService.setParticipantPermissions(this.currentTokenInfo.permissions);
+			this.featureConfService.setParticipantRole(this.role);
+			this.featureConfService.setParticipantPermissions(this.permissions);
 		} catch (error) {
 			this.log.e('Error setting participant token and associated data', error);
 			throw new Error('Error setting participant token');
 		}
 	}
 
-	getParticipantToken(): string | undefined {
-		return this.currentTokenInfo?.token;
-	}
-
 	setParticipantRole(participantRole: ParticipantRole): void {
-		this.participantRole = participantRole;
-		this.featureConfService.setParticipantRole(this.participantRole);
+		this.role = participantRole;
+		this.featureConfService.setParticipantRole(this.role);
 	}
 
 	getParticipantRole(): ParticipantRole {
-		return this.participantRole;
+		return this.role;
 	}
 
 	isModeratorParticipant(): boolean {
@@ -110,7 +102,7 @@ export class ParticipantService {
 	}
 
 	getParticipantPermissions(): ParticipantPermissions | undefined {
-		return this.currentTokenInfo?.permissions;
+		return this.permissions;
 	}
 
 	getParticipantRoleHeader(): Record<string, string> {
