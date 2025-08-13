@@ -6,4 +6,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Participant "123" role updated to "moderator"'
+                    example: 'Participant "Alice" role updated to "moderator"'

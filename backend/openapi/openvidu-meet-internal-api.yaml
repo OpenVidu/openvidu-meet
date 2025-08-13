@@ -46,8 +46,8 @@ paths:
         $ref: './paths/internal/participants.yaml#/~1participants~1token~1refresh'
     /meetings/{roomId}:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
-    /meetings/{roomId}/participants/{participantName}:
-        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantName}'
+    /meetings/{roomId}/participants/{participantIdentity}:
+        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
 
 components:
     securitySchemes:

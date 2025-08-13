@@ -1,0 +1,12 @@
+description: Update participant role
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                role:
+                    type: string
+                    enum: ['moderator', 'speaker']
+                    description: The new role to assign to the participant.
+                    example: 'moderator'

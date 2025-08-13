@@ -1,0 +1,7 @@
+name: participantIdentity
+in: path
+required: true
+description: The identity of the participant.
+schema:
+    type: string
+example: 'Alice'
