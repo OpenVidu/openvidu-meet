@@ -6,7 +6,7 @@ import {
 	GlobalPreferencesService,
 	NavigationService,
 	ParticipantService,
-	RecordingManagerService,
+	RecordingService,
 	RoomService
 } from '@lib/services';
 import { AuthMode, ParticipantRole } from '@lib/typings/ce';
@@ -107,7 +107,7 @@ export const checkRecordingAuthGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	const recordingService = inject(RecordingManagerService);
+	const recordingService = inject(RecordingService);
 	const navigationService = inject(NavigationService);
 
 	const recordingId = route.params['recording-id'];

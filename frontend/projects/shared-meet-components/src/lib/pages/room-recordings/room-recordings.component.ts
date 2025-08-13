@@ -5,7 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
-import { NavigationService, NotificationService, RecordingManagerService, RoomService } from '@lib/services';
+import { NavigationService, NotificationService, RecordingService, RoomService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
@@ -33,7 +33,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected recordingService: RecordingManagerService,
+		protected recordingService: RecordingService,
 		protected roomService: RoomService,
 		protected notificationService: NotificationService,
 		protected navigationService: NavigationService,

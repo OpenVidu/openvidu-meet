@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RecordingManagerService } from '@lib/services';
+import { RecordingService } from '@lib/services';
 
 @Component({
 	selector: 'ov-share-recording-dialog',
@@ -48,7 +48,7 @@ export class ShareRecordingDialogComponent {
 
 	constructor(
 		@Inject(MAT_DIALOG_DATA) public data: { recordingId: string; recordingUrl?: string },
-		private recordingService: RecordingManagerService,
+		private recordingService: RecordingService,
 		private clipboard: Clipboard
 	) {
 		this.recordingUrl = data.recordingUrl;

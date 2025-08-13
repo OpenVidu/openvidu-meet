@@ -9,7 +9,7 @@ import { LoggerService } from 'openvidu-components-angular';
 @Injectable({
 	providedIn: 'root'
 })
-export class RecordingManagerService {
+export class RecordingService {
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
 	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 

@@ -6,7 +6,7 @@ export * from './room.service';
 export * from './participant.service';
 export * from './meeting.service';
 export * from './feature-configuration.service';
-export * from './recording-manager.service';
+export * from './recording.service';
 export * from './webcomponent-manager.service';
 export * from './navigation.service';
 export * from './notification.service';

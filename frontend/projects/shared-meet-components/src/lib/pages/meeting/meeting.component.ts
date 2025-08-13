@@ -23,7 +23,7 @@ import {
 	NavigationService,
 	NotificationService,
 	ParticipantService,
-	RecordingManagerService,
+	RecordingService,
 	RoomService,
 	SessionStorageService,
 	WebComponentManagerService
@@ -106,8 +106,7 @@ export class MeetingComponent implements OnInit {
 	constructor(
 		protected route: ActivatedRoute,
 		protected navigationService: NavigationService,
-		protected participantTokenService: ParticipantService,
-		protected recManagerService: RecordingManagerService,
+		protected recordingService: RecordingService,
 		protected authService: AuthService,
 		protected roomService: RoomService,
 		protected meetingService: MeetingService,
@@ -119,8 +118,7 @@ export class MeetingComponent implements OnInit {
 		protected sessionStorageService: SessionStorageService,
 		protected featureConfService: FeatureConfigurationService,
 		protected clipboard: Clipboard,
-		protected notificationService: NotificationService,
-		protected recordingService: RecordingManagerService
+		protected notificationService: NotificationService
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -177,8 +175,8 @@ export class MeetingComponent implements OnInit {
 	 */
 	private async checkForRecordings() {
 		try {
-			await this.recManagerService.generateRecordingToken(this.roomId, this.roomSecret);
-			const { recordings } = await this.recManagerService.listRecordings({
+			await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
+			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
 				roomId: this.roomId,
 				fields: 'recordingId'
@@ -201,7 +199,7 @@ export class MeetingComponent implements OnInit {
 	 */
 	private async initializeParticipantName() {
 		// Apply participant name from ParticipantTokenService if set, otherwise use authenticated username
-		const currentParticipantName = this.participantTokenService.getParticipantName();
+		const currentParticipantName = this.participantService.getParticipantName();
 		const username = await this.authService.getUsername();
 		const participantName = currentParticipantName || username;
 
@@ -251,7 +249,7 @@ export class MeetingComponent implements OnInit {
 		}
 
 		this.participantName = value.name.trim();
-		this.participantTokenService.setParticipantName(this.participantName);
+		this.participantService.setParticipantName(this.participantName);
 
 		try {
 			await this.generateParticipantToken();
@@ -282,7 +280,7 @@ export class MeetingComponent implements OnInit {
 	 */
 	private async generateParticipantToken() {
 		try {
-			this.participantToken = await this.participantTokenService.generateToken({
+			this.participantToken = await this.participantService.generateToken({
 				roomId: this.roomId,
 				secret: this.roomSecret,
 				participantName: this.participantName
@@ -465,11 +463,13 @@ export class MeetingComponent implements OnInit {
 
 	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
 		try {
-			await this.recManagerService.startRecording(event.roomName);
+			await this.recordingService.startRecording(event.roomName);
 		} catch (error: unknown) {
 			if ((error as any).status === 503) {
 				console.error(
-					"No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, a recording uses 4 CPUs for each room."
+					`No egress service was able to register a request.
+Check your CPU usage or if there's any Media Node with enough CPU.
+Remember that by default, a recording uses 4 CPUs for each room.`
 				);
 			} else {
 				console.error(error);
@@ -479,7 +479,7 @@ export class MeetingComponent implements OnInit {
 
 	async onRecordingStopRequested(event: RecordingStopRequestedEvent) {
 		try {
-			await this.recManagerService.stopRecording(event.recordingId);
+			await this.recordingService.stopRecording(event.recordingId);
 		} catch (error) {
 			console.error(error);
 		}

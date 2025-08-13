@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { NavigationService, RecordingManagerService, RoomService } from '@lib/services';
+import { NavigationService, RecordingService, RoomService } from '@lib/services';
 import { MeetRecordingStatus, MeetRoom } from '@lib/typings/ce';
 
 interface OverviewStats {
@@ -35,7 +35,7 @@ export class OverviewComponent implements OnInit {
 
 	constructor(
 		private roomService: RoomService,
-		private recordingService: RecordingManagerService,
+		private recordingService: RecordingService,
 		private navigationService: NavigationService
 	) {}
 

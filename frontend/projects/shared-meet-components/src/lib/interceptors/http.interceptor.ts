@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, ParticipantService, RecordingManagerService, RoomService } from '@lib/services';
+import { AuthService, ParticipantService, RecordingService, RoomService } from '@lib/services';
 import { catchError, from, Observable, switchMap } from 'rxjs';
 
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
@@ -9,7 +9,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	const authService: AuthService = inject(AuthService);
 	const roomService = inject(RoomService);
 	const participantTokenService = inject(ParticipantService);
-	const recordingService = inject(RecordingManagerService);
+	const recordingService = inject(RecordingService);
 
 	const pageUrl = router.getCurrentNavigation()?.finalUrl?.toString() || router.url;
 	const requestUrl = req.url;

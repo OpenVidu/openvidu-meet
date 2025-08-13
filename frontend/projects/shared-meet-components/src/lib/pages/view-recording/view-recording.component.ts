@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NotificationService, RecordingManagerService } from '@lib/services';
+import { NotificationService, RecordingService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatDurationToTime } from '@lib/utils';
 
@@ -35,7 +35,7 @@ export class ViewRecordingComponent implements OnInit {
 	isVideoLoaded = false;
 
 	constructor(
-		protected recordingService: RecordingManagerService,
+		protected recordingService: RecordingService,
 		protected notificationService: NotificationService,
 		protected route: ActivatedRoute,
 		protected router: Router

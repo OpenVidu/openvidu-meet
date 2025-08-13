@@ -3,7 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
-import { NotificationService, RecordingManagerService } from '@lib/services';
+import { NotificationService, RecordingService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
@@ -27,7 +27,7 @@ export class RecordingsComponent implements OnInit {
 
 	constructor(
 		protected loggerService: LoggerService,
-		private recordingService: RecordingManagerService,
+		private recordingService: RecordingService,
 		private notificationService: NotificationService,
 		protected route: ActivatedRoute
 	) {
