@@ -42,7 +42,7 @@
 	>
 		@if (features().canModerateRoom) {
 			<div *ovToolbarAdditionalButtons>
-				<!-- Copy Links Button -->
+				<!-- Copy Link Button -->
 				<button
 					id="copy-speaker-link"
 					mat-icon-button
@@ -80,7 +80,7 @@
 			<div *ovParticipantPanelAfterLocalParticipant>
 				<div class="share-meeting-link-container">
 					<ov-share-meeting-link
-						[meetingUrl]="hostname + '/' + roomId"
+						[meetingUrl]="hostname + '/room/' + roomId"
 						(copyClicked)="copySpeakerLink()"
 					></ov-share-meeting-link>
 				</div>
@@ -94,7 +94,7 @@
 							[subtitle]="'Share this link to bring others into the meeting'"
 							[titleSize]="'xl'"
 							[titleWeight]="'bold'"
-							[meetingUrl]="hostname + '/' + roomId"
+							[meetingUrl]="hostname + '/room/' + roomId"
 							(copyClicked)="copySpeakerLink()"
 						></ov-share-meeting-link>
 					</div>
@@ -119,7 +119,6 @@
 						</ov-participant-panel-item>
 					} @else {
 						<!-- Remote participant -->
-
 						<ov-participant-panel-item [participant]="participant">
 							@if (participant.isModerator()) {
 								<ng-container *ovParticipantPanelParticipantBadge>
@@ -145,7 +144,7 @@
 								<!-- Button to kick participant -->
 								<button
 									mat-icon-button
-									(click)="forceDisconnectParticipant(participant)"
+									(click)="kickParticipant(participant)"
 									matTooltip="Kick participant"
 									class="force-disconnect-btn"
 								>
@@ -155,9 +154,8 @@
 						</ov-participant-panel-item>
 					}
 				</div>
-			}
-			<!-- If I can't moderate the room -->
-			@else {
+			} @else {
+				<!-- If I can't moderate the room -->
 				<div class="participant-item-container">
 					<ov-participant-panel-item [participant]="participant">
 						@if (participant.isModerator()) {
@@ -274,7 +272,7 @@
 			<!-- Room URL Badge -->
 			@if (features().canModerateRoom) {
 				<ov-share-meeting-link
-					[meetingUrl]="hostname + '/' + roomId"
+					[meetingUrl]="hostname + '/room/' + roomId"
 					(copyClicked)="copySpeakerLink()"
 				></ov-share-meeting-link>
 			}

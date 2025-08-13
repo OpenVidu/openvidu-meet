@@ -34,28 +34,28 @@ export class MeetingService {
 	 * Kicks a participant from a meeting.
 	 *
 	 * @param roomId - The unique identifier of the meeting room
-	 * @param participantId - The unique identifier of the participant to be kicked
+	 * @param participantIdentity - The identity of the participant to be kicked
 	 * @returns A promise that resolves when the participant has been kicked
 	 */
-	async kickParticipant(roomId: string, participantId: string): Promise<void> {
-		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
+	async kickParticipant(roomId: string, participantIdentity: string): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		await this.httpService.deleteRequest(path, headers);
-		this.log.d(`Participant '${participantId}' kicked from room ${roomId}`);
+		this.log.d(`Participant '${participantIdentity}' kicked from room ${roomId}`);
 	}
 
 	/**
 	 * Changes the role of a participant in a meeting.
 	 *
 	 * @param roomId - The unique identifier of the meeting room
-	 * @param participantId - The unique identifier of the participant whose role is to be changed
+	 * @param participantIdentity - The identity of the participant whose role is to be changed
 	 * @param newRole - The new role to be assigned to the participant
 	 */
-	async changeParticipantRole(roomId: string, participantId: string, newRole: string): Promise<void> {
-		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
+	async changeParticipantRole(roomId: string, participantIdentity: string, newRole: string): Promise<void> {
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		const body = { role: newRole };
 		await this.httpService.patchRequest(path, body, headers);
-		this.log.d(`Changed role of participant '${participantId}' to '${newRole}' in room ${roomId}`);
+		this.log.d(`Changed role of participant '${participantIdentity}' to '${newRole}' in room '${roomId}'`);
 	}
 }

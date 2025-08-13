@@ -105,20 +105,20 @@ export class MeetingComponent implements OnInit {
 
 	constructor(
 		protected route: ActivatedRoute,
-		protected navigationService: NavigationService,
-		protected recordingService: RecordingService,
-		protected authService: AuthService,
 		protected roomService: RoomService,
 		protected meetingService: MeetingService,
-		protected openviduService: OpenViduService,
 		protected participantService: ParticipantService,
-		protected componentParticipantService: ComponentParticipantService,
-		protected appDataService: AppDataService,
-		protected wcManagerService: WebComponentManagerService,
-		protected sessionStorageService: SessionStorageService,
+		protected recordingService: RecordingService,
 		protected featureConfService: FeatureConfigurationService,
-		protected clipboard: Clipboard,
-		protected notificationService: NotificationService
+		protected authService: AuthService,
+		protected appDataService: AppDataService,
+		protected sessionStorageService: SessionStorageService,
+		protected wcManagerService: WebComponentManagerService,
+		protected openviduService: OpenViduService,
+		protected componentParticipantService: ComponentParticipantService,
+		protected navigationService: NavigationService,
+		protected notificationService: NotificationService,
+		protected clipboard: Clipboard
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -256,7 +256,8 @@ export class MeetingComponent implements OnInit {
 			await this.addParticipantNameToUrl();
 			await this.roomService.loadRoomPreferences(this.roomId);
 			this.showMeeting = true;
-			// Subscribe to remote participants updates for showing/hiding the share meeting link component
+
+			// Subscribe to remote participants updates
 			this.componentParticipantService.remoteParticipants$
 				.pipe(takeUntil(this.destroy$))
 				.subscribe((participants) => {
@@ -349,7 +350,7 @@ export class MeetingComponent implements OnInit {
 								});
 
 								this.localParticipant!.meetRole = newRole;
-								this.notificationService.showSnackbar(`You have been assigned the role of ${newRole}.`);
+								this.notificationService.showSnackbar(`You have been assigned the role of ${newRole}`);
 							} catch (error) {
 								console.error('Error refreshing participant token to update role:', error);
 							}
@@ -431,23 +432,41 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async endMeeting() {
-		if (this.participantService.isModeratorParticipant()) {
-			const roomId = this.roomService.getRoomId();
-			this.meetingEndedByMe = true;
-			await this.meetingService.endMeeting(roomId);
+		if (!this.participantService.isModeratorParticipant()) return;
+
+		this.meetingEndedByMe = true;
+
+		try {
+			await this.meetingService.endMeeting(this.roomId);
+		} catch (error) {
+			console.error('Error ending meeting:', error);
+			this.notificationService.showSnackbar('Failed to end meeting');
 		}
 	}
 
-	async forceDisconnectParticipant(participant: CustomParticipantModel) {
-		if (this.participantService.isModeratorParticipant()) {
+	async kickParticipant(participant: CustomParticipantModel) {
+		if (!this.participantService.isModeratorParticipant()) return;
+
+		try {
 			await this.meetingService.kickParticipant(this.roomId, participant.identity);
+		} catch (error) {
+			console.error('Error kicking participant:', error);
+			this.notificationService.showSnackbar('Failed to kick participant');
 		}
 	}
 
 	async makeModerator(participant: CustomParticipantModel) {
-		if (this.participantService.isModeratorParticipant()) {
-			const newRole = ParticipantRole.MODERATOR;
-			await this.meetingService.changeParticipantRole(this.roomId, participant.identity, newRole);
+		if (!this.participantService.isModeratorParticipant()) return;
+
+		try {
+			await this.meetingService.changeParticipantRole(
+				this.roomId,
+				participant.identity,
+				ParticipantRole.MODERATOR
+			);
+		} catch (error) {
+			console.error('Error making participant moderator:', error);
+			this.notificationService.showSnackbar('Failed to make participant moderator');
 		}
 	}
 
