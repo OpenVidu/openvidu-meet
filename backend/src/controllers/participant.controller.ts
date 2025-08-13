@@ -5,7 +5,6 @@ import INTERNAL_CONFIG from '../config/internal-config.js';
 import {
 	errorInvalidParticipantToken,
 	errorParticipantTokenNotPresent,
-	errorParticipantTokenStillValid,
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
@@ -57,29 +56,17 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 export const refreshParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
-	// Check if there is a previous token and if it is expired
+	// Check if there is a previous token
 	const previousToken = req.cookies[INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME];
 
-	// If there is no previous token, we cannot refresh it
 	if (!previousToken) {
 		logger.verbose('No previous participant token found. Cannot refresh.');
 		const error = errorParticipantTokenNotPresent();
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const tokenService = container.get(TokenService);
-
-	// If the previous token is still valid, we do not need to refresh it
-	try {
-		await tokenService.verifyToken(previousToken);
-		logger.verbose('Previous participant token is valid. No need to refresh');
-		const error = errorParticipantTokenStillValid();
-		return rejectRequestFromMeetError(res, error);
-	} catch (error) {
-		// Previous token is expired, we can proceed to refresh it
-	}
-
 	// Extract roles from the previous token
+	const tokenService = container.get(TokenService);
 	const participantService = container.get(ParticipantService);
 	let currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[] = [];
 

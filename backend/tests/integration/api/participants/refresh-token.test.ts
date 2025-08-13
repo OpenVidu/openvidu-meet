@@ -119,20 +119,6 @@ describe('Participant API Tests', () => {
 			);
 			expect(response.status).toBe(404);
 		});
-
-		it('should fail with 409 when participant token is still valid', async () => {
-			const newRoomData = await setupSingleRoom(true);
-			const response = await refreshParticipantToken(
-				{
-					roomId: newRoomData.room.roomId,
-					secret: newRoomData.moderatorSecret,
-					participantName
-				},
-				newRoomData.moderatorCookie
-			);
-			expect(response.status).toBe(409);
-			expect(response.body.message).toBe('Participant token is still valid');
-		});
 	});
 
 	describe('Refresh Participant Token Validation Tests', () => {

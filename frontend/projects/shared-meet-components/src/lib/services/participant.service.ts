@@ -77,7 +77,6 @@ export class ParticipantService {
 				livekit: decodedToken.video,
 				openvidu: openviduPermissions
 			};
-			console.warn('PARTICIPANT PERMISSIONS', this.permissions);
 
 			// Update feature configuration
 			this.featureConfService.setParticipantRole(this.role);

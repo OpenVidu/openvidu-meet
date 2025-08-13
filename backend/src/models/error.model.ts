@@ -230,10 +230,6 @@ export const errorParticipantAlreadyExists = (participantIdentity: string, roomI
 	);
 };
 
-export const errorParticipantTokenStillValid = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', 'Participant token is still valid', 409);
-};
-
 export const errorParticipantTokenNotPresent = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant', 'No participant token provided', 400);
 };

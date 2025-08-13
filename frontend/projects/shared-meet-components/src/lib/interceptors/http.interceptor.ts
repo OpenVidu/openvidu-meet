@@ -56,13 +56,6 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 			}),
 			catchError((error: HttpErrorResponse) => {
 				if (error.url?.includes('/token/refresh')) {
-					if (error.status === 409) {
-						console.log('Participant token is still valid');
-						// This means that the unauthorized error was due to an expired access token
-						// Refresh the access token and try again
-						return refreshAccessToken(firstError);
-					}
-
 					console.error('Error refreshing participant token');
 					throw firstError;
 				}
