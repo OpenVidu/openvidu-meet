@@ -492,7 +492,7 @@ export const expectValidRoomRoleAndPermissionsResponse = (
 	});
 };
 
-const getPermissions = (roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions => {
+export const getPermissions = (roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions => {
 	switch (role) {
 		case ParticipantRole.MODERATOR:
 			return {
@@ -568,6 +568,7 @@ export const expectValidParticipantTokenResponse = (
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('roles');
 	expect(metadata.roles).toEqual(expect.arrayContaining(rolesAndPermissions));
+	expect(metadata).toHaveProperty('selectedRole', participantRole);
 
 	// Check that the token is included in a cookie
 	expect(response.headers['set-cookie']).toBeDefined();

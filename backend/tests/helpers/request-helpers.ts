@@ -425,15 +425,14 @@ export const refreshParticipantToken = async (participantOptions: any, cookie: s
  * Adds a fake participant to a LiveKit room for testing purposes.
  *
  * @param roomId The ID of the room to join
- * @param participantName The name for the fake participant
+ * @param participantIdentity The identity for the fake participant
  */
-export const joinFakeParticipant = async (roomId: string, participantName: string) => {
-	await ensureLivekitCliInstalled();
+export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
 	const process = spawn('lk', [
 		'room',
 		'join',
 		'--identity',
-		participantName,
+		participantIdentity,
 		'--publish-demo',
 		roomId,
 		'--api-key',
@@ -443,7 +442,34 @@ export const joinFakeParticipant = async (roomId: string, participantName: strin
 	]);
 
 	// Store the process to be able to terminate it later
-	fakeParticipantsProcesses.set(`${roomId}-${participantName}`, process);
+	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
+	await sleep('1s');
+};
+
+/**
+ * Updates the metadata for a participant in a LiveKit room.
+ *
+ * @param roomId The ID of the room
+ * @param participantIdentity The identity of the participant
+ * @param metadata The metadata to update
+ */
+export const updateParticipantMetadata = async (roomId: string, participantIdentity: string, metadata: any) => {
+	await ensureLivekitCliInstalled();
+	spawn('lk', [
+		'room',
+		'participants',
+		'update',
+		'--room',
+		roomId,
+		'--identity',
+		participantIdentity,
+		'--metadata',
+		JSON.stringify(metadata),
+		'--api-key',
+		LIVEKIT_API_KEY,
+		'--api-secret',
+		LIVEKIT_API_SECRET
+	]);
 	await sleep('1s');
 };
 
@@ -496,20 +522,36 @@ const ensureLivekitCliInstalled = async (): Promise<void> => {
 };
 
 export const disconnectFakeParticipants = async () => {
-	fakeParticipantsProcesses.forEach((process, participantName) => {
+	fakeParticipantsProcesses.forEach((process, participant) => {
 		process.kill();
-		console.log(`Stopped process for participant ${participantName}`);
+		console.log(`Stopped process for participant '${participant}'`);
 	});
 
 	fakeParticipantsProcesses.clear();
 	await sleep('1s');
 };
 
-export const deleteParticipant = async (roomId: string, participantName: string, moderatorCookie: string) => {
+export const updateParticipant = async (
+	roomId: string,
+	participantIdentity: string,
+	newRole: ParticipantRole,
+	moderatorCookie: string
+) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantName}`)
+		.patch(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
+		.set('Cookie', moderatorCookie)
+		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
+		.send({ role: newRole });
+	return response;
+};
+
+export const deleteParticipant = async (roomId: string, participantIdentity: string, moderatorCookie: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
 		.set('Cookie', moderatorCookie)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
