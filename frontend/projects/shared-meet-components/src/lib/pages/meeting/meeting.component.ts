@@ -84,6 +84,8 @@ export class MeetingComponent implements OnInit {
 	participantForm = new FormGroup({
 		name: new FormControl('', [Validators.required, Validators.minLength(4)])
 	});
+
+	hasRecordings = false;
 	showRecordingCard = false;
 
 	showBackButton = true;
@@ -175,13 +177,23 @@ export class MeetingComponent implements OnInit {
 	 */
 	private async checkForRecordings() {
 		try {
-			await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
+			const { canRetrieveRecordings } = await this.recordingService.generateRecordingToken(
+				this.roomId,
+				this.roomSecret
+			);
+
+			if (!canRetrieveRecordings) {
+				this.showRecordingCard = false;
+				return;
+			}
+
 			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
 				roomId: this.roomId,
 				fields: 'recordingId'
 			});
-			this.showRecordingCard = recordings.length > 0;
+			this.hasRecordings = recordings.length > 0;
+			this.showRecordingCard = this.hasRecordings;
 		} catch (error) {
 			console.error('Error checking for recordings:', error);
 			this.showRecordingCard = false;
@@ -326,10 +338,34 @@ export class MeetingComponent implements OnInit {
 				const event = JSON.parse(new TextDecoder().decode(payload));
 
 				switch (topic) {
+					case 'recordingStopped': {
+						// If a 'recordingStopped' event is received and there was no previous recordings,
+						// update the hasRecordings flag and refresh the recording token
+						if (this.hasRecordings) return;
+
+						this.hasRecordings = true;
+
+						try {
+							await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
+						} catch (error) {
+							console.error('Error refreshing recording token:', error);
+						}
+
+						break;
+					}
 					case MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED: {
 						// Update room preferences
 						const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
 						this.featureConfService.setRoomPreferences(preferences);
+
+						// Refresh recording token if recording is enabled
+						if (preferences.recordingPreferences.enabled) {
+							try {
+								await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
+							} catch (error) {
+								console.error('Error refreshing recording token:', error);
+							}
+						}
 						break;
 					}
 					case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED: {
@@ -504,11 +540,7 @@ Remember that by default, a recording uses 4 CPUs for each room.`
 		}
 	}
 
-	async onViewRecordingsClicked(recordingId?: any) {
-		if (recordingId) {
-			await this.recordingService.playRecording(recordingId);
-		} else {
-			window.open(`/room/${this.roomId}/recordings?secret=${this.roomSecret}`, '_blank');
-		}
+	async onViewRecordingsClicked() {
+		window.open(`/room/${this.roomId}/recordings?secret=${this.roomSecret}`, '_blank');
 	}
 }

@@ -11,16 +11,15 @@
 		[toolbarScreenshareButton]="features().showScreenShare"
 		[toolbarLeaveButton]="!features().canModerateRoom"
 		[toolbarRecordingButton]="features().canRecordRoom"
-		[toolbarViewRecordingsButton]="features().showRecordings"
+		[toolbarViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings"
 		[toolbarBroadcastingButton]="false"
 		[toolbarChatPanelButton]="features().showChat"
 		[toolbarBackgroundEffectsButton]="features().showBackgrounds"
 		[toolbarParticipantsPanelButton]="features().showParticipantList"
 		[toolbarSettingsButton]="features().showSettings"
 		[toolbarFullscreenButton]="features().showFullscreen"
-		[toolbarActivitiesPanelButton]="features().showRecordings"
-		[activitiesPanelRecordingActivity]="features().showRecordings"
-		[recordingActivityReadOnly]="!features().canRecordRoom"
+		[toolbarActivitiesPanelButton]="features().showRecordingPanel"
+		[activitiesPanelRecordingActivity]="features().showRecordingPanel"
 		[recordingActivityShowControls]="{
 			play: false,
 			download: false,
@@ -28,7 +27,7 @@
 			externalView: true
 		}"
 		[recordingActivityStartStopRecordingButton]="features().canRecordRoom"
-		[recordingActivityViewRecordingsButton]="features().showRecordings"
+		[recordingActivityViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings"
 		[recordingActivityShowRecordingsList]="false"
 		[activitiesPanelBroadcastingActivity]="false"
 		[showDisconnectionDialog]="false"
@@ -37,8 +36,7 @@
 		(onParticipantLeft)="onParticipantLeft($event)"
 		(onRecordingStartRequested)="onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
-		(onViewRecordingsClicked)="onViewRecordingsClicked(undefined)"
-		(onViewRecordingClicked)="onViewRecordingsClicked($event)"
+		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
 		@if (features().canModerateRoom) {
 			<div *ovToolbarAdditionalButtons>

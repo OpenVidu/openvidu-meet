@@ -1,5 +1,11 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { MeetRoomPreferences, ParticipantPermissions, ParticipantRole, TrackSource } from '@lib/typings/ce';
+import {
+	MeetRoomPreferences,
+	ParticipantPermissions,
+	ParticipantRole,
+	RecordingPermissions,
+	TrackSource
+} from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
 /**
@@ -14,7 +20,7 @@ export interface ApplicationFeatures {
 	showScreenShare: boolean;
 
 	// UI Features
-	showRecordings: boolean;
+	showRecordingPanel: boolean;
 	showChat: boolean;
 	showBackgrounds: boolean;
 	showParticipantList: boolean;
@@ -24,6 +30,7 @@ export interface ApplicationFeatures {
 	// Permissions
 	canModerateRoom: boolean;
 	canRecordRoom: boolean;
+	canRetrieveRecordings: boolean;
 }
 
 /**
@@ -36,7 +43,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showMicrophone: true,
 	showScreenShare: true,
 
-	showRecordings: true,
+	showRecordingPanel: true,
 	showChat: true,
 	showBackgrounds: true,
 	showParticipantList: true,
@@ -44,7 +51,8 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showFullscreen: true,
 
 	canModerateRoom: false,
-	canRecordRoom: false
+	canRecordRoom: false,
+	canRetrieveRecordings: false
 };
 
 /**
@@ -61,10 +69,16 @@ export class FeatureConfigurationService {
 	protected roomPreferences = signal<MeetRoomPreferences | undefined>(undefined);
 	protected participantPermissions = signal<ParticipantPermissions | undefined>(undefined);
 	protected participantRole = signal<ParticipantRole | undefined>(undefined);
+	protected recordingPermissions = signal<RecordingPermissions | undefined>(undefined);
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<ApplicationFeatures>(() =>
-		this.calculateFeatures(this.roomPreferences(), this.participantPermissions(), this.participantRole())
+		this.calculateFeatures(
+			this.roomPreferences(),
+			this.participantPermissions(),
+			this.participantRole(),
+			this.recordingPermissions()
+		)
 	);
 
 	constructor(protected loggerService: LoggerService) {
@@ -96,6 +110,14 @@ export class FeatureConfigurationService {
 	}
 
 	/**
+	 * Updates recording permissions
+	 */
+	setRecordingPermissions(permissions: RecordingPermissions): void {
+		this.log.d('Updating recording permissions', permissions);
+		this.recordingPermissions.set(permissions);
+	}
+
+	/**
 	 * Checks if a specific feature is enabled
 	 */
 	isFeatureEnabled(featureName: keyof ApplicationFeatures): boolean {
@@ -108,14 +130,15 @@ export class FeatureConfigurationService {
 	protected calculateFeatures(
 		roomPrefs?: MeetRoomPreferences,
 		participantPerms?: ParticipantPermissions,
-		role?: ParticipantRole
+		role?: ParticipantRole,
+		recordingPerms?: RecordingPermissions
 	): ApplicationFeatures {
 		// Start with default configuration
 		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
 
 		// Apply room configurations
 		if (roomPrefs) {
-			features.showRecordings = roomPrefs.recordingPreferences.enabled;
+			features.showRecordingPanel = roomPrefs.recordingPreferences.enabled;
 			features.showChat = roomPrefs.chatPreferences.enabled;
 			features.showBackgrounds = roomPrefs.virtualBackgroundPreferences.enabled;
 		}
@@ -123,8 +146,7 @@ export class FeatureConfigurationService {
 		// Apply participant permissions (these can restrict enabled features)
 		if (participantPerms) {
 			// Only restrict if the feature is already enabled
-			if (features.showRecordings) {
-				// features.showRecordings = !!recordingRole;
+			if (features.showRecordingPanel) {
 				features.canRecordRoom = participantPerms.openvidu.canRecord;
 			}
 			if (features.showChat) {
@@ -147,6 +169,11 @@ export class FeatureConfigurationService {
 		// Apply role-based configurations
 		if (role) {
 			features.canModerateRoom = role === ParticipantRole.MODERATOR;
+		}
+
+		// Apply recording permissions
+		if (recordingPerms) {
+			features.canRetrieveRecordings = recordingPerms.canRetrieveRecordings;
 		}
 
 		this.log.d('Calculated features', features);

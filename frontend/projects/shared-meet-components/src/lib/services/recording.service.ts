@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { AuthService, HttpService, ParticipantService } from '@lib/services';
+import { AuthService, FeatureConfigurationService, HttpService, ParticipantService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
@@ -25,6 +25,7 @@ export class RecordingService {
 		private httpService: HttpService,
 		protected participantService: ParticipantService,
 		protected authService: AuthService,
+		protected featureConfService: FeatureConfigurationService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -159,10 +160,18 @@ export class RecordingService {
 	 */
 	async generateRecordingToken(roomId: string, secret: string): Promise<RecordingPermissions> {
 		const path = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`;
-		const { token } = await this.httpService.postRequest<{ token: string }>(path, { secret });
 
-		this.setRecordingPermissionsFromToken(token);
-		return this.recordingPermissions;
+		try {
+			const { token } = await this.httpService.postRequest<{ token: string }>(path, { secret });
+			this.setRecordingPermissionsFromToken(token);
+			return this.recordingPermissions;
+		} catch (error) {
+			this.featureConfService.setRecordingPermissions({
+				canRetrieveRecordings: false,
+				canDeleteRecordings: false
+			});
+			throw error;
+		}
 	}
 
 	/**
@@ -174,6 +183,9 @@ export class RecordingService {
 		try {
 			const decodedToken = getValidDecodedToken(token);
 			this.recordingPermissions = decodedToken.metadata.recordingPermissions;
+
+			// Update feature configuration
+			this.featureConfService.setRecordingPermissions(this.recordingPermissions);
 		} catch (error) {
 			this.log.e('Error setting recording permissions from token', error);
 			throw new Error('Error setting recording permissions from token');
