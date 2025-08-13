@@ -323,23 +323,46 @@ export class MeetingComponent implements OnInit {
 	onRoomCreated(room: Room) {
 		room.on(
 			RoomEvent.DataReceived,
-			(payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
+			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				const event = JSON.parse(new TextDecoder().decode(payload));
 
-				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
-					const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
-					this.featureConfService.setRoomPreferences(preferences);
-				} else if (topic === MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED) {
-					const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
+				switch (topic) {
+					case MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED: {
+						// Update room preferences
+						const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
+						this.featureConfService.setRoomPreferences(preferences);
+						break;
+					}
+					case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED: {
+						// Update participant role
+						const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
 
-					if (participantIdentity === this.localParticipant!.name) {
-						this.localParticipant!.meetRole = newRole;
-						// TODO: Request for new token with the new role
-					} else {
-						const participant = this.remoteParticipants.find((p) => p.identity === participantIdentity);
-						if (participant) {
-							participant.meetRole = newRole;
+						if (participantIdentity === this.localParticipant!.name) {
+							if (!secret) return;
+
+							this.roomSecret = secret;
+							this.roomService.setRoomSecret(secret);
+
+							try {
+								await this.participantService.refreshParticipantToken({
+									roomId: this.roomId,
+									secret,
+									participantName: this.participantName
+								});
+
+								this.localParticipant!.meetRole = newRole;
+								this.notificationService.showSnackbar(`You have been assigned the role of ${newRole}.`);
+							} catch (error) {
+								console.error('Error refreshing participant token to update role:', error);
+							}
+						} else {
+							const participant = this.remoteParticipants.find((p) => p.identity === participantIdentity);
+							if (participant) {
+								participant.meetRole = newRole;
+							}
 						}
+
+						break;
 					}
 				}
 			}
