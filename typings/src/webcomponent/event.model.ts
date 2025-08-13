@@ -48,11 +48,11 @@ export interface WebComponentEventPayloads {
     [WebComponentEvent.READY]: {};
     [WebComponentEvent.JOINED]: {
         roomId: string;
-        participantName: string;
+        participantIdentity: string;
     };
     [WebComponentEvent.LEFT]: {
         roomId: string;
-        participantName: string;
+        participantIdentity: string;
         reason: LeftEventReason;
     };
 }
