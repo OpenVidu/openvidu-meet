@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { AuthService, HttpService, ParticipantTokenService } from '@lib/services';
+import { AuthService, HttpService, ParticipantService } from '@lib/services';
 import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
@@ -23,7 +23,7 @@ export class RecordingManagerService {
 	constructor(
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
-		protected participantService: ParticipantTokenService,
+		protected participantService: ParticipantService,
 		protected authService: AuthService,
 		protected dialog: MatDialog
 	) {

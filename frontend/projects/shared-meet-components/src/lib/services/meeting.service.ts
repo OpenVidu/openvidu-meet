@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpService, ParticipantTokenService } from '@lib/services';
+import { HttpService, ParticipantService } from '@lib/services';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
@@ -13,7 +13,7 @@ export class MeetingService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected participantService: ParticipantTokenService
+		protected participantService: ParticipantService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - MeetingService');
 	}
@@ -51,11 +51,7 @@ export class MeetingService {
 	 * @param participantId - The unique identifier of the participant whose role is to be changed
 	 * @param newRole - The new role to be assigned to the participant
 	 */
-	async changeParticipantRole(
-		roomId: string,
-		participantId: string,
-		newRole: string
-	): Promise<void> {
+	async changeParticipantRole(roomId: string, participantId: string, newRole: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantId}`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		const body = { role: newRole };

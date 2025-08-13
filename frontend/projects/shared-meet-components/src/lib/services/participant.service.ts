@@ -8,7 +8,7 @@ import { LoggerService } from 'openvidu-components-angular';
 @Injectable({
 	providedIn: 'root'
 })
-export class ParticipantTokenService {
+export class ParticipantService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
 
 	protected participantName?: string;

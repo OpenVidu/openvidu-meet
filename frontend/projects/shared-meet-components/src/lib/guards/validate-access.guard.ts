@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '@lib/models';
-import { NavigationService, ParticipantTokenService, RecordingManagerService, RoomService } from '@lib/services';
+import { NavigationService, ParticipantService, RecordingManagerService, RoomService } from '@lib/services';
 
 /**
  * Guard to validate the access to recordings of a room by generating a recording token.
@@ -53,7 +53,7 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 	_state: RouterStateSnapshot
 ) => {
 	const roomService = inject(RoomService);
-	const participantTokenService = inject(ParticipantTokenService);
+	const participantTokenService = inject(ParticipantService);
 	const navigationService = inject(NavigationService);
 
 	const roomId = roomService.getRoomId();

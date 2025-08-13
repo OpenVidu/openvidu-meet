@@ -5,7 +5,7 @@ import {
 	AuthService,
 	GlobalPreferencesService,
 	NavigationService,
-	ParticipantTokenService,
+	ParticipantService,
 	RecordingManagerService,
 	RoomService
 } from '@lib/services';
@@ -55,7 +55,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 	const authService = inject(AuthService);
 	const preferencesService = inject(GlobalPreferencesService);
 	const roomService = inject(RoomService);
-	const participantService = inject(ParticipantTokenService);
+	const participantService = inject(ParticipantService);
 
 	// Get the role that the participant will have in the room based on the room ID and secret
 	let participantRole: ParticipantRole;

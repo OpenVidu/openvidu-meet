@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { ErrorReason } from '@lib/models';
-import { NavigationService, ParticipantTokenService, RoomService, SessionStorageService } from '@lib/services';
+import { NavigationService, ParticipantService, RoomService, SessionStorageService } from '@lib/services';
 import { WebComponentProperty } from '@lib/typings/ce/webcomponent/properties.model';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const roomService = inject(RoomService);
-	const participantService = inject(ParticipantTokenService);
+	const participantService = inject(ParticipantService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, participantName, secret, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);

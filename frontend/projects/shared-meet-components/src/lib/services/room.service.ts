@@ -1,10 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-	FeatureConfigurationService,
-	HttpService,
-	ParticipantTokenService,
-	SessionStorageService
-} from '@lib/services';
+import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '@lib/services';
 import {
 	MeetRoom,
 	MeetRoomFilters,
@@ -30,7 +25,7 @@ export class RoomService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected participantService: ParticipantTokenService,
+		protected participantService: ParticipantService,
 		protected featureConfService: FeatureConfigurationService,
 		protected sessionStorageService: SessionStorageService
 	) {

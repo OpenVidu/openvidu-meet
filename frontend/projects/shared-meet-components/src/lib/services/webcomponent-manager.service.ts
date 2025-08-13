@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MeetingService, ParticipantTokenService, RoomService } from '@lib/services';
+import { MeetingService, ParticipantService, RoomService } from '@lib/services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -26,7 +26,7 @@ export class WebComponentManagerService {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected participantService: ParticipantTokenService,
+		protected participantService: ParticipantService,
 		protected openviduService: OpenViduService,
 		protected roomService: RoomService,
 		protected meetingService: MeetingService

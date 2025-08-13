@@ -3,7 +3,7 @@ export * from './http.service';
 export * from './auth.service';
 export * from './global-preferences.service';
 export * from './room.service';
-export * from './participant-token.service';
+export * from './participant.service';
 export * from './meeting.service';
 export * from './feature-configuration.service';
 export * from './recording-manager.service';
