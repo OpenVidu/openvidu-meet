@@ -4,6 +4,41 @@ import { ErrorReason } from '@lib/models';
 import { NavigationService, ParticipantService, RecordingService, RoomService } from '@lib/services';
 
 /**
+ * Guard to validate access to a room by generating a participant token.
+ */
+export const validateRoomAccessGuard: CanActivateFn = async (
+	_route: ActivatedRouteSnapshot,
+	_state: RouterStateSnapshot
+) => {
+	const roomService = inject(RoomService);
+	const participantTokenService = inject(ParticipantService);
+	const navigationService = inject(NavigationService);
+
+	const roomId = roomService.getRoomId();
+	const secret = roomService.getRoomSecret();
+
+	try {
+		await participantTokenService.generateToken({
+			roomId,
+			secret
+		});
+		return true;
+	} catch (error: any) {
+		console.error('Error generating participant token:', error);
+		switch (error.status) {
+			case 400:
+				// Invalid secret
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+			case 404:
+				// Room not found
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
+			default:
+				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
+		}
+	}
+};
+
+/**
  * Guard to validate the access to recordings of a room by generating a recording token.
  */
 export const validateRecordingAccessGuard: CanActivateFn = async (
@@ -39,41 +74,6 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 			case 404:
 				// There are no recordings in the room or the room does not exist
 				return navigationService.redirectToErrorPage(ErrorReason.NO_RECORDINGS);
-			default:
-				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
-		}
-	}
-};
-
-/**
- * Guard to validate access to a room by generating a participant token.
- */
-export const validateRoomAccessGuard: CanActivateFn = async (
-	_route: ActivatedRouteSnapshot,
-	_state: RouterStateSnapshot
-) => {
-	const roomService = inject(RoomService);
-	const participantTokenService = inject(ParticipantService);
-	const navigationService = inject(NavigationService);
-
-	const roomId = roomService.getRoomId();
-	const secret = roomService.getRoomSecret();
-
-	try {
-		await participantTokenService.generateToken({
-			roomId,
-			secret
-		});
-		return true;
-	} catch (error: any) {
-		console.error('Error generating participant token:', error);
-		switch (error.status) {
-			case 400:
-				// Invalid secret
-				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
-			case 404:
-				// Room not found
-				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
 			default:
 				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
