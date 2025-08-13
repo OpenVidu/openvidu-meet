@@ -11,7 +11,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
-const participantName = 'TEST_PARTICIPANT';
+const participantIdentity = 'TEST_PARTICIPANT';
 
 describe('Meetings API Tests', () => {
 	let livekitService: LiveKitService;
@@ -34,17 +34,17 @@ describe('Meetings API Tests', () => {
 
 		it('should remove participant from LiveKit room', async () => {
 			// Check if participant exists before deletion
-			const participant = await livekitService.getParticipant(roomData.room.roomId, participantName);
+			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
 			expect(participant).toBeDefined();
-			expect(participant.identity).toBe(participantName);
+			expect(participant.identity).toBe(participantIdentity);
 
 			// Delete the participant
-			const response = await deleteParticipant(roomData.room.roomId, participantName, roomData.moderatorCookie);
+			const response = await deleteParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorCookie);
 			expect(response.status).toBe(200);
 
 			// Check if the participant has been removed from LiveKit
 			try {
-				await livekitService.getParticipant(roomData.room.roomId, participantName);
+				await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
 			} catch (error) {
 				expect((error as OpenViduMeetError).statusCode).toBe(404);
 			}
@@ -65,7 +65,7 @@ describe('Meetings API Tests', () => {
 			let response = await deleteRoom(roomData.room.roomId, { force: true });
 			expect(response.status).toBe(204);
 
-			response = await deleteParticipant(roomData.room.roomId, participantName, roomData.moderatorCookie);
+			response = await deleteParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorCookie);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Room Error');
 		});

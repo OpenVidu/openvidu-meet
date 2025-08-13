@@ -31,7 +31,7 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 		try {
 			const claims = tokenService.getClaimsIgnoringExpiration(previousToken);
-			const metadata = JSON.parse(claims.metadata || '{}');
+			const metadata = participantService.parseMetadata(claims.metadata || '{}');
 			currentRoles = metadata.roles;
 		} catch (error) {
 			logger.verbose('Error extracting roles from previous token:', error);
@@ -80,11 +80,12 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 	}
 
 	// Extract roles from the previous token
+	const participantService = container.get(ParticipantService);
 	let currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[] = [];
 
 	try {
 		const claims = tokenService.getClaimsIgnoringExpiration(previousToken);
-		const metadata = JSON.parse(claims.metadata || '{}');
+		const metadata = participantService.parseMetadata(claims.metadata || '{}');
 		currentRoles = metadata.roles;
 	} catch (err) {
 		logger.verbose('Error extracting roles from previous token:', err);
@@ -94,7 +95,6 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 
 	const participantOptions: ParticipantOptions = req.body;
 	const { roomId } = participantOptions;
-	const participantService = container.get(ParticipantService);
 
 	try {
 		logger.verbose(`Refreshing participant token for room '${roomId}'`);
@@ -111,11 +111,26 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 	}
 };
 
+export const updateParticipant = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const participantService = container.get(ParticipantService);
+	const { roomId, participantIdentity } = req.params;
+	const { role } = req.body;
+
+	try {
+		logger.verbose(`Changing role of participant '${participantIdentity}' in room '${roomId}' to '${role}'`);
+		await participantService.updateParticipantRole(roomId, participantIdentity, role);
+		res.status(200).json({ message: `Participant '${participantIdentity}' role updated to '${role}'` });
+	} catch (error) {
+		handleError(res, error, `changing role for participant '${participantIdentity}' in room '${roomId}'`);
+	}
+};
+
 export const deleteParticipant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const participantService = container.get(ParticipantService);
-	const { roomId, participantName } = req.params;
+	const { roomId, participantIdentity } = req.params;
 
 	// Check if the room exists
 	try {
@@ -125,25 +140,10 @@ export const deleteParticipant = async (req: Request, res: Response) => {
 	}
 
 	try {
-		logger.verbose(`Deleting participant '${participantName}' from room '${roomId}'`);
-		await participantService.deleteParticipant(roomId, participantName);
+		logger.verbose(`Deleting participant '${participantIdentity}' from room '${roomId}'`);
+		await participantService.deleteParticipant(roomId, participantIdentity);
 		res.status(200).json({ message: 'Participant deleted' });
 	} catch (error) {
-		handleError(res, error, `deleting participant '${participantName}' from room '${roomId}'`);
-	}
-};
-
-export const updateParticipant = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const participantService = container.get(ParticipantService);
-	const { roomId, participantName } = req.params;
-	const { role } = req.body;
-
-	try {
-		logger.verbose(`Changing role of participant '${participantName}' in room '${roomId}' to '${role}'`);
-		await participantService.updateParticipantRole(roomId, participantName, role);
-		res.status(200).json({ message: `Participant '${participantName}' role updated to ${role}` });
-	} catch (error) {
-		handleError(res, error, `changing role for participant '${participantName}' in room '${roomId}'`);
+		handleError(res, error, `deleting participant '${participantIdentity}' from room '${roomId}'`);
 	}
 };

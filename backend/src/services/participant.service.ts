@@ -7,9 +7,10 @@ import {
 } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
+import { validateMeetTokenMetadata } from '../middlewares/index.js';
 import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/error.model.js';
 import { FrontendEventService, LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
-import { MeetRoomHelper } from '../helpers/room.helper.js';
 
 @injectable()
 export class ParticipantService {
@@ -64,26 +65,26 @@ export class ParticipantService {
 		return this.tokenService.generateParticipantToken(participantOptions, permissions.livekit, currentRoles, role);
 	}
 
-	async getParticipant(roomId: string, participantName: string): Promise<ParticipantInfo | null> {
-		this.logger.verbose(`Fetching participant '${participantName}'`);
-		return this.livekitService.getParticipant(roomId, participantName);
+	async getParticipant(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
+		this.logger.verbose(`Fetching participant '${participantIdentity}'`);
+		return this.livekitService.getParticipant(roomId, participantIdentity);
 	}
 
-	async participantExists(roomId: string, participantName: string): Promise<boolean> {
-		this.logger.verbose(`Checking if participant '${participantName}' exists in room '${roomId}'`);
+	async participantExists(roomId: string, participantIdentity: string): Promise<boolean> {
+		this.logger.verbose(`Checking if participant '${participantIdentity}' exists in room '${roomId}'`);
 
 		try {
-			const participant = await this.getParticipant(roomId, participantName);
-			return participant !== null;
+			await this.getParticipant(roomId, participantIdentity);
+			return true;
 		} catch (error) {
 			return false;
 		}
 	}
 
-	async deleteParticipant(roomId: string, participantName: string): Promise<void> {
-		this.logger.verbose(`Deleting participant '${participantName}' from room '${roomId}'`);
+	async deleteParticipant(roomId: string, participantIdentity: string): Promise<void> {
+		this.logger.verbose(`Deleting participant '${participantIdentity}' from room '${roomId}'`);
 
-		return this.livekitService.deleteParticipant(participantName, roomId);
+		return this.livekitService.deleteParticipant(roomId, participantIdentity);
 	}
 
 	getParticipantPermissions(roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions {
@@ -97,36 +98,42 @@ export class ParticipantService {
 		}
 	}
 
-	async updateParticipantRole(roomId: string, participantName: string, newRole: ParticipantRole): Promise<void> {
+	async updateParticipantRole(roomId: string, participantIdentity: string, newRole: ParticipantRole): Promise<void> {
 		try {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
-			const participant = await this.getParticipant(roomId, participantName);
+			const participant = await this.getParticipant(roomId, participantIdentity);
+			const metadata: MeetTokenMetadata = this.parseMetadata(participant.metadata);
 
-			const metadata: MeetTokenMetadata = this.parseMetadata(participant!.metadata);
+			// Update selected role and roles array
+			metadata.selectedRole = newRole;
+			const currentRoles = metadata.roles;
 
-			if (!metadata || typeof metadata !== 'object') {
-				throw new Error(`Invalid metadata for participant ${participantName}`);
+			if (!currentRoles.some((r) => r.role === newRole)) {
+				const { openvidu } = this.getParticipantPermissions(roomId, newRole);
+				currentRoles.push({ role: newRole, permissions: openvidu });
 			}
 
-			// TODO: Should we update the roles array as well?
-			metadata.selectedRole = newRole;
-
-			await this.livekitService.updateParticipantMetadata(roomId, participantName, JSON.stringify(metadata));
+			await this.livekitService.updateParticipantMetadata(roomId, participantIdentity, JSON.stringify(metadata));
 
 			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(meetRoom);
-
 			const secret = newRole === ParticipantRole.MODERATOR ? moderatorSecret : speakerSecret;
-			await this.frontendEventService.sendParticipantRoleUpdatedSignal(roomId, participantName, newRole, secret);
+			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
+				roomId,
+				participantIdentity,
+				newRole,
+				secret
+			);
 		} catch (error) {
-			this.logger.error('Error changing participant role:', error);
+			this.logger.error('Error updating participant role:', error);
 			throw error;
 		}
 	}
 
-	protected parseMetadata(metadata: string): MeetTokenMetadata {
+	parseMetadata(metadata: string): MeetTokenMetadata {
 		try {
-			return JSON.parse(metadata);
+			const parsedMetadata = JSON.parse(metadata);
+			return validateMeetTokenMetadata(parsedMetadata);
 		} catch (error) {
 			this.logger.error('Failed to parse participant metadata:', error);
 			throw new Error('Invalid participant metadata format');

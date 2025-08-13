@@ -23,8 +23,8 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { LoggerService } from './index.js';
 import { chunkArray } from '../utils/array.utils.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class LiveKitService {
@@ -77,7 +77,7 @@ export class LiveKitService {
 	 */
 	async roomHasParticipants(roomName: string): Promise<boolean> {
 		try {
-			const participants = await this.roomClient.listParticipants(roomName);
+			const participants = await this.listRoomParticipants(roomName);
 			return participants.length > 0;
 		} catch (error) {
 			return false;
@@ -168,19 +168,34 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Lists all participants in a LiveKit room.
+	 *
+	 * @param roomName - The name of the room to list participants from
+	 * @returns A promise that resolves to an array of participant information
+	 */
+	async listRoomParticipants(roomName: string): Promise<ParticipantInfo[]> {
+		try {
+			return await this.roomClient.listParticipants(roomName);
+		} catch (error) {
+			this.logger.error(`Error listing participants for room '${roomName}': ${error}`);
+			throw internalError(`listing participants for room '${roomName}'`);
+		}
+	}
+
+	/**
 	 * Retrieves information about a specific participant in a LiveKit room.
 	 *
 	 * @param roomName - The name of the room where the participant is located
-	 * @param participantName - The name of the participant to retrieve
+	 * @param participantIdentity - The identity of the participant to retrieve
 	 * @returns A Promise that resolves to the participant's information
 	 * @throws An internal error if the participant cannot be found or another error occurs
 	 */
-	async getParticipant(roomName: string, participantName: string): Promise<ParticipantInfo> {
+	async getParticipant(roomName: string, participantIdentity: string): Promise<ParticipantInfo> {
 		try {
-			return await this.roomClient.getParticipant(roomName, participantName);
+			return await this.roomClient.getParticipant(roomName, participantIdentity);
 		} catch (error) {
-			this.logger.warn(`Participant ${participantName} not found in room ${roomName}: ${error}`);
-			throw errorParticipantNotFound(participantName, roomName);
+			this.logger.warn(`Participant ${participantIdentity} not found in room ${roomName}: ${error}`);
+			throw errorParticipantNotFound(participantIdentity, roomName);
 		}
 	}
 
@@ -188,31 +203,31 @@ export class LiveKitService {
 	 * Updates the metadata of a participant in a LiveKit room.
 	 *
 	 * @param roomName - The name of the room where the participant is located
-	 * @param participantName - The name of the participant whose metadata will be updated
+	 * @param participantIdentity - The identity of the participant whose metadata will be updated
 	 * @param metadata - The new metadata to set for the participant
 	 * @returns A Promise that resolves when the metadata has been successfully updated
 	 * @throws An internal error if there is an issue updating the metadata
 	 */
-	async updateParticipantMetadata(roomName: string, participantName: string, metadata: string): Promise<void> {
+	async updateParticipantMetadata(roomName: string, participantIdentity: string, metadata: string): Promise<void> {
 		try {
-			await this.roomClient.updateParticipant(roomName, participantName, metadata);
-			this.logger.verbose(`Updated metadata for participant ${participantName} in room ${roomName}`);
+			await this.roomClient.updateParticipant(roomName, participantIdentity, metadata);
+			this.logger.verbose(`Updated metadata for participant '${participantIdentity}' in room '${roomName}'`);
 		} catch (error) {
 			this.logger.error(
-				`Error updating metadata for participant ${participantName} in room ${roomName}: ${error}`
+				`Error updating metadata for participant '${participantIdentity}' in room '${roomName}': ${error}`
 			);
-			throw internalError(`updating metadata for participant '${participantName}' in room '${roomName}'`);
+			throw internalError(`updating metadata for participant '${participantIdentity}' in room '${roomName}'`);
 		}
 	}
 
-	async deleteParticipant(participantName: string, roomName: string): Promise<void> {
-		const participantExists = await this.participantExists(roomName, participantName);
+	async deleteParticipant(roomName: string, participantIdentity: string): Promise<void> {
+		const participantExists = await this.participantExists(roomName, participantIdentity);
 
 		if (!participantExists) {
-			throw errorParticipantNotFound(participantName, roomName);
+			throw errorParticipantNotFound(participantIdentity, roomName);
 		}
 
-		await this.roomClient.removeParticipant(roomName, participantName);
+		await this.roomClient.removeParticipant(roomName, participantIdentity);
 	}
 
 	async sendData(roomName: string, rawData: Record<string, any>, options: SendDataOptions): Promise<void> {
@@ -369,10 +384,10 @@ export class LiveKitService {
 		return participant.identity.startsWith('EG_') && participant.permission?.recorder === true;
 	}
 
-	private async participantExists(roomName: string, participantName: string): Promise<boolean> {
+	private async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
 		try {
-			const participants: ParticipantInfo[] = await this.roomClient.listParticipants(roomName);
-			return participants.some((participant) => participant.identity === participantName);
+			const participants: ParticipantInfo[] = await this.listRoomParticipants(roomName);
+			return participants.some((participant) => participant.identity === participantIdentity);
 		} catch (error: any) {
 			this.logger.error(error);
 
