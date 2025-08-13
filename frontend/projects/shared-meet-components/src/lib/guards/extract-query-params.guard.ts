@@ -10,14 +10,14 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const participantService = inject(ParticipantService);
 	const sessionStorageService = inject(SessionStorageService);
 
-	const { roomId, participantName, secret, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
-	const storedSecret = sessionStorageService.getRoomSecret(roomId);
+	const { roomId, secret: querySecret, participantName, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
+	const secret = querySecret || sessionStorageService.getRoomSecret(roomId);
 
 	if (isValidUrl(leaveRedirectUrl)) {
 		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
 	}
 
-	if (!secret && !storedSecret) {
+	if (!secret) {
 		// If no secret is provided, redirect to the error page
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
@@ -57,11 +57,11 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 };
 
 const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
-	roomId: params['room-id'],
-	participantName: queryParams[WebComponentProperty.PARTICIPANT_NAME],
-	secret: queryParams['secret'],
-	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL],
-	showOnlyRecordings: queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] || 'false'
+	roomId: params['room-id'] as string,
+	secret: queryParams['secret'] as string,
+	participantName: queryParams[WebComponentProperty.PARTICIPANT_NAME] as string,
+	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL] as string,
+	showOnlyRecordings: (queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] as string) || 'false'
 });
 
 const isValidUrl = (url: string) => {

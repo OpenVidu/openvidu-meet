@@ -39,9 +39,9 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRoomQueryParamsGuard,
+				removeRoomSecretGuard,
 				checkParticipantRoleAndAuthGuard,
-				validateRoomAccessGuard,
-				removeRoomSecretGuard
+				validateRoomAccessGuard
 			)
 		]
 	},
@@ -51,9 +51,9 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRecordingQueryParamsGuard,
+				removeRoomSecretGuard,
 				checkParticipantRoleAndAuthGuard,
-				validateRecordingAccessGuard,
-				removeRoomSecretGuard
+				validateRecordingAccessGuard
 			)
 		]
 	},

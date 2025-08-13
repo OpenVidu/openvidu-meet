@@ -39,14 +39,9 @@ export class RoomService {
 		return this.roomId;
 	}
 
-	setRoomSecret(secret?: string) {
-		// If no secret is provided, check session storage for the current room's secret
-		if (!secret) {
-			const storedSecret = this.sessionStorageService.getRoomSecret(this.roomId);
-			this.roomSecret = storedSecret || '';
-		} else {
-			this.roomSecret = secret;
-		}
+	setRoomSecret(secret: string) {
+		this.roomSecret = secret;
+		this.sessionStorageService.setRoomSecret(this.roomId, secret);
 	}
 
 	getRoomSecret(): string {
