@@ -89,28 +89,47 @@ export class FrontendEventService {
 		}
 	}
 
+	/**
+	 * Sends a signal to notify participants in a room about updated participant roles.
+	 */
 	async sendParticipantRoleUpdatedSignal(
 		roomId: string,
-		participantName: string,
+		participantIdentity: string,
 		newRole: ParticipantRole,
 		secret: string
 	): Promise<void> {
 		this.logger.debug(
-			`Sending participant role updated signal for participant ${participantName} in room ${roomId}`
+			`Sending participant role updated signal for participant '${participantIdentity}' in room '${roomId}'`
 		);
-		const payload: MeetParticipantRoleUpdatedPayload = {
-			participantName,
+
+		const basePayload: MeetParticipantRoleUpdatedPayload = {
 			roomId,
+			participantIdentity,
 			newRole,
-			secret,
 			timestamp: Date.now()
 		};
 
-		const options: SendDataOptions = {
+		const baseOptions: SendDataOptions = {
 			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
 		};
 
-		await this.sendSignal(roomId, payload, options);
+		// Send signal with secret to the participant whose role has been updated
+		await this.sendSignal(
+			roomId,
+			{ ...basePayload, secret },
+			{ ...baseOptions, destinationIdentities: [participantIdentity] }
+		);
+
+		// Broadcast the role update to all other participants without the secret
+		const participants = await this.livekitService.listRoomParticipants(roomId);
+		const otherParticipantIdentities = participants
+			.filter((p) => p.identity !== participantIdentity)
+			.map((p) => p.identity);
+
+		await this.sendSignal(roomId, basePayload, {
+			...baseOptions,
+			destinationIdentities: otherParticipantIdentities
+		});
 	}
 
 	/**
