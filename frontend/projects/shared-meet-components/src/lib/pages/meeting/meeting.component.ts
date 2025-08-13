@@ -36,7 +36,11 @@ import {
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
 } from '@lib/typings/ce';
-import { MeetParticipantRoleUpdatedPayload, MeetSignalType } from '@lib/typings/ce/event.model';
+import {
+	MeetParticipantRoleUpdatedPayload,
+	MeetRoomPreferencesUpdatedPayload,
+	MeetSignalType
+} from '@lib/typings/ce/event.model';
 import {
 	ApiDirectiveModule,
 	DataPacket_Kind,
@@ -325,33 +329,34 @@ export class MeetingComponent implements OnInit {
 			RoomEvent.DataReceived,
 			(payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				const event = JSON.parse(new TextDecoder().decode(payload));
-				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
-					const roomPreferences: MeetRoomPreferences = event.preferences;
-					this.featureConfService.setRoomPreferences(roomPreferences);
-				} else if (topic === MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED) {
-					const { participantName, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
 
-					if (participantName === this.localParticipant!.name) {
+				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
+					const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
+					this.featureConfService.setRoomPreferences(preferences);
+					// TODO: Update local state with new room preferences
+				} else if (topic === MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED) {
+					const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
+
+					if (participantIdentity === this.localParticipant!.name) {
 						this.localParticipant!.meetRole = newRole;
+						// TODO: Request for new token with the new role
 					} else {
-						const participant = this.remoteParticipants.find((p) => p.name === participantName);
+						const participant = this.remoteParticipants.find((p) => p.identity === participantIdentity);
 						if (participant) {
 							participant.meetRole = newRole;
 						}
 					}
-
-					// !Request for new token with the new role
 				}
 			}
 		);
 	}
 
 	onParticipantConnected(event: ParticipantModel) {
-		const message: WebComponentOutboundEventMessage = {
+		const message: WebComponentOutboundEventMessage<WebComponentEvent.JOINED> = {
 			event: WebComponentEvent.JOINED,
 			payload: {
 				roomId: event.getProperties().room?.name || '',
-				participantName: event.name!
+				participantIdentity: event.identity
 			}
 		};
 		this.wcManagerService.sendMessageToParent(message);
@@ -368,7 +373,7 @@ export class MeetingComponent implements OnInit {
 			event: WebComponentEvent.LEFT,
 			payload: {
 				roomId: event.roomName,
-				participantName: event.participantName,
+				participantIdentity: event.participantName,
 				reason: leftReason
 			}
 		};

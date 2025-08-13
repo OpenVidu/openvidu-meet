@@ -5,9 +5,9 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { routes } from '@app/app.routes';
 import { environment } from '@environment/environment';
-import { httpInterceptor } from '@lib/interceptors/index';
-import { CustomParticipantModel } from '@lib/models/custom-participant.model';
-import { ThemeService } from '@lib/services/theme.service';
+import { httpInterceptor } from '@lib/interceptors';
+import { CustomParticipantModel } from '@lib/models';
+import { ThemeService } from '@lib/services';
 import { OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {

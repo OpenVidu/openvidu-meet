@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ParticipantTokenInfo } from '@lib/models';
 import { FeatureConfigurationService, HttpService } from '@lib/services';
-import { ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
+import { MeetTokenMetadata, ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -70,15 +70,15 @@ export class ParticipantTokenService {
 	protected updateParticipantTokenInfo(token: string): void {
 		try {
 			const decodedToken = getValidDecodedToken(token);
-			const roleAndPermissions = decodedToken.metadata.roles?.find(
-				(r: { role: ParticipantRole; permissions: ParticipantPermissions }) => r.role === this.participantRole
-			);
+			const metadata = decodedToken.metadata as MeetTokenMetadata;
+			const role = metadata.selectedRole;
+			const permissions = metadata.roles.find((r) => r.role === role)!.permissions;
 			this.currentTokenInfo = {
 				token: token,
-				role: roleAndPermissions.role,
+				role: role,
 				permissions: {
 					livekit: decodedToken.video,
-					openvidu: roleAndPermissions.permissions
+					openvidu: permissions
 				}
 			};
 			this.participantRole = this.currentTokenInfo.role;
