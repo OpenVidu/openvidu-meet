@@ -5,7 +5,9 @@ import {
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
-	MeetVirtualBackgroundPreferences
+	MeetVirtualBackgroundPreferences,
+	ParticipantRole,
+	RecordingPermissions
 } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
@@ -185,6 +187,16 @@ const RecordingTokenRequestSchema = z.object({
 	secret: z.string().nonempty('Secret is required')
 });
 
+const RecordingPermissionsSchema: z.ZodType<RecordingPermissions> = z.object({
+	canRetrieveRecordings: z.boolean(),
+	canDeleteRecordings: z.boolean()
+});
+
+const RecordingTokenMetadataSchema = z.object({
+	role: z.enum([ParticipantRole.MODERATOR, ParticipantRole.SPEAKER]),
+	recordingPermissions: RecordingPermissionsSchema
+});
+
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);
 
@@ -192,7 +204,6 @@ export const withValidRoomOptions = (req: Request, res: Response, next: NextFunc
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	console.log('VALID ROOM OPTIONS', data);
 	req.body = data;
 	next();
 };
@@ -274,4 +285,14 @@ export const withValidRoomSecret = (req: Request, res: Response, next: NextFunct
 
 	req.body = data;
 	next();
+};
+
+export const validateRecordingTokenMetadata = (metadata: unknown) => {
+	const { success, error, data } = RecordingTokenMetadataSchema.safeParse(metadata);
+
+	if (!success) {
+		throw new Error(`Invalid metadata: ${error.message}`);
+	}
+
+	return data;
 };

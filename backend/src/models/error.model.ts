@@ -166,6 +166,10 @@ export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetErro
 	);
 };
 
+export const errorInvalidRecordingToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording', 'Invalid recording token', 400);
+};
+
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
 	return (
 		error instanceof OpenViduMeetError &&
@@ -210,18 +214,18 @@ export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenVidu
 
 // Participant errors
 
-export const errorParticipantNotFound = (participantName: string, roomId: string): OpenViduMeetError => {
+export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Participant Error',
-		`Participant '${participantName}' not found in room '${roomId}'`,
+		`Participant '${participantIdentity}' not found in room '${roomId}'`,
 		404
 	);
 };
 
-export const errorParticipantAlreadyExists = (participantName: string, roomId: string): OpenViduMeetError => {
+export const errorParticipantAlreadyExists = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Participant Error',
-		`Participant '${participantName}' already exists in room '${roomId}'`,
+		`Participant '${participantIdentity}' already exists in room '${roomId}'`,
 		409
 	);
 };

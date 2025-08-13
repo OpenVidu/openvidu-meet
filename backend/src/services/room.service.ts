@@ -31,6 +31,7 @@ import {
 	TokenService,
 	FrontendEventService
 } from './index.js';
+import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -309,6 +310,16 @@ export class RoomService {
 			canRetrieveRecordings,
 			canDeleteRecordings
 		};
+	}
+
+	parseRecordingTokenMetadata(metadata: string) {
+		try {
+			const parsedMetadata = JSON.parse(metadata);
+			return validateRecordingTokenMetadata(parsedMetadata);
+		} catch (error) {
+			this.logger.error('Failed to parse recording token metadata:', error);
+			throw new Error('Invalid recording token metadata format');
+		}
 	}
 
 	/**

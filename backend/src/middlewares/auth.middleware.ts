@@ -1,4 +1,4 @@
-import { OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@typings-ce';
+import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@typings-ce';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
@@ -9,6 +9,8 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
 	errorInvalidParticipantRole,
+	errorInvalidParticipantToken,
+	errorInvalidRecordingToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorUnauthorized,
@@ -16,7 +18,14 @@ import {
 	OpenViduMeetError,
 	rejectRequestFromMeetError
 } from '../models/index.js';
-import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
+import {
+	AuthService,
+	LoggerService,
+	ParticipantService,
+	RoomService,
+	TokenService,
+	UserService
+} from '../services/index.js';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -104,13 +113,19 @@ export const participantTokenValidator = async (req: Request) => {
 		throw errorWithControl(errorInvalidParticipantRole(), true);
 	}
 
-	if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
-		throw errorWithControl(errorInvalidParticipantRole(), true);
+	// Check that the specified role is present in the token claims
+	let metadata: MeetTokenMetadata;
+
+	try {
+		const participantService = container.get(ParticipantService);
+		metadata = participantService.parseMetadata(req.session?.tokenClaims?.metadata || '{}');
+	} catch (error) {
+		const logger = container.get(LoggerService);
+		logger.error('Invalid participant token:', error);
+		throw errorWithControl(errorInvalidParticipantToken(), true);
 	}
 
-	// Check that the specified role is present in the token claims
-	const metadata = JSON.parse(req.session?.tokenClaims?.metadata || '{}');
-	const roles = metadata.roles || [];
+	const roles = metadata.roles;
 	const hasRole = roles.some(
 		(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === participantRole
 	);
@@ -126,6 +141,16 @@ export const participantTokenValidator = async (req: Request) => {
 // Configure token validator for recording access
 export const recordingTokenValidator = async (req: Request) => {
 	await validateTokenAndSetSession(req, INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME);
+
+	// Validate the recording token metadata
+	try {
+		const roomService = container.get(RoomService);
+		roomService.parseRecordingTokenMetadata(req.session?.tokenClaims?.metadata || '{}');
+	} catch (error) {
+		const logger = container.get(LoggerService);
+		logger.error('Invalid recording token:', error);
+		throw errorWithControl(errorInvalidRecordingToken(), true);
+	}
 };
 
 const validateTokenAndSetSession = async (req: Request, cookieName: string) => {

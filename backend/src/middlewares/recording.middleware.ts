@@ -1,4 +1,4 @@
-import { MeetRoom, OpenViduMeetPermissions, ParticipantRole, RecordingPermissions, UserRole } from '@typings-ce';
+import { MeetRoom, UserRole } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
@@ -10,7 +10,7 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { LoggerService, MeetStorageService, RoomService } from '../services/index.js';
+import { LoggerService, MeetStorageService, ParticipantService, RoomService } from '../services/index.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
@@ -49,11 +49,11 @@ export const withCanRecordPermission = async (req: Request, res: Response, next:
 		return rejectRequestFromMeetError(res, error);
 	}
 
+	const participantService = container.get(ParticipantService);
+	const metadata = participantService.parseMetadata(payload.metadata || '{}');
+
 	const sameRoom = payload.video?.room === roomId;
-	const metadata = JSON.parse(payload.metadata || '{}');
-	const permissions = metadata.roles?.find(
-		(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === role
-	)?.permissions as OpenViduMeetPermissions | undefined;
+	const permissions = metadata.roles.find((r) => r.role === role)?.permissions;
 	const canRecord = permissions?.canRecord;
 
 	if (!sameRoom || !canRecord) {
@@ -80,10 +80,11 @@ export const withCanRetrieveRecordingsPermission = async (req: Request, res: Res
 		return next();
 	}
 
+	const roomService = container.get(RoomService);
+	const metadata = roomService.parseRecordingTokenMetadata(payload.metadata || '{}');
+
 	const sameRoom = roomId ? payload.video?.room === roomId : true;
-	const metadata = JSON.parse(payload.metadata || '{}');
-	const permissions = metadata.recordingPermissions as RecordingPermissions | undefined;
-	const canRetrieveRecordings = permissions?.canRetrieveRecordings;
+	const canRetrieveRecordings = metadata.recordingPermissions.canRetrieveRecordings;
 
 	if (!sameRoom || !canRetrieveRecordings) {
 		const error = errorInsufficientPermissions();
@@ -103,10 +104,11 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
 		return next();
 	}
 
+	const roomService = container.get(RoomService);
+	const metadata = roomService.parseRecordingTokenMetadata(payload.metadata || '{}');
+
 	const sameRoom = roomId ? payload.video?.room === roomId : true;
-	const metadata = JSON.parse(payload.metadata || '{}');
-	const permissions = metadata.recordingPermissions as RecordingPermissions | undefined;
-	const canDeleteRecordings = permissions?.canDeleteRecordings;
+	const canDeleteRecordings = metadata.recordingPermissions.canDeleteRecordings;
 
 	if (!sameRoom || !canDeleteRecordings) {
 		const error = errorInsufficientPermissions();
