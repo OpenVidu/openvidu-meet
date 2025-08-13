@@ -18,7 +18,6 @@ export class RoomService {
 
 	protected roomId: string = '';
 	protected roomSecret: string = '';
-	protected roomPreferences?: MeetRoomPreferences;
 
 	protected log;
 
@@ -169,24 +168,16 @@ export class RoomService {
 	}
 
 	/**
-	 * Loads the room preferences, either from cache or by fetching from the server.
+	 * Loads the room preferences and updates the feature configuration service.
 	 *
 	 * @param roomId - The unique identifier of the room
-	 * @param forceUpdate - Whether to force an update from the server
-	 * @returns A promise that resolves to the MeetRoomPreferences object
 	 */
-	async loadPreferences(roomId: string, forceUpdate: boolean = false): Promise<MeetRoomPreferences> {
-		if (this.roomPreferences && !forceUpdate) {
-			this.log.d('Returning cached room preferences');
-			return this.roomPreferences;
-		}
-
+	async loadRoomPreferences(roomId: string): Promise<void> {
 		this.log.d('Fetching room preferences from server');
 		try {
-			this.roomPreferences = await this.getRoomPreferences(roomId);
-			this.featureConfService.setRoomPreferences(this.roomPreferences);
-			console.log('Room preferences loaded:', this.roomPreferences);
-			return this.roomPreferences;
+			const preferences = await this.getRoomPreferences(roomId);
+			this.featureConfService.setRoomPreferences(preferences);
+			console.log('Room preferences loaded:', preferences);
 		} catch (error) {
 			this.log.e('Error loading room preferences', error);
 			throw new Error('Failed to load room preferences');
@@ -194,8 +185,9 @@ export class RoomService {
 	}
 
 	/**
-	 * Saves the room preferences.
+	 * Saves new room preferences.
 	 *
+	 * @param roomId - The unique identifier of the room
 	 * @param preferences - The room preferences to be saved.
 	 * @returns A promise that resolves when the preferences have been saved.
 	 */
@@ -203,7 +195,6 @@ export class RoomService {
 		this.log.d('Saving room preferences', preferences);
 		const path = `${this.ROOMS_API}/${roomId}`;
 		await this.httpService.putRequest(path, preferences);
-		this.roomPreferences = preferences;
 	}
 
 	/**

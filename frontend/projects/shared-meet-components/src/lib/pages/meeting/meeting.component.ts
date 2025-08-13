@@ -257,7 +257,7 @@ export class MeetingComponent implements OnInit {
 		try {
 			await this.generateParticipantToken();
 			await this.addParticipantNameToUrl();
-			await this.roomService.loadPreferences(this.roomId);
+			await this.roomService.loadRoomPreferences(this.roomId);
 			this.showMeeting = true;
 			// Subscribe to remote participants updates for showing/hiding the share meeting link component
 			this.componentParticipantService.remoteParticipants$
@@ -332,7 +332,6 @@ export class MeetingComponent implements OnInit {
 				if (topic === MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED) {
 					const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
 					this.featureConfService.setRoomPreferences(preferences);
-					// TODO: Update local state with new room preferences
 				} else if (topic === MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED) {
 					const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
 
