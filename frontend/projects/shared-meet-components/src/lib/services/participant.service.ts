@@ -9,6 +9,7 @@ import { LoggerService } from 'openvidu-components-angular';
 })
 export class ParticipantService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
+	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
 
 	protected participantName?: string;
 	protected participantIdentity?: string;
@@ -27,10 +28,11 @@ export class ParticipantService {
 
 	setParticipantName(participantName: string): void {
 		this.participantName = participantName;
+		localStorage.setItem(this.PARTICIPANT_NAME_KEY, participantName);
 	}
 
 	getParticipantName(): string | undefined {
-		return this.participantName;
+		return this.participantName || localStorage.getItem(this.PARTICIPANT_NAME_KEY) || undefined;
 	}
 
 	getParticipantIdentity(): string | undefined {
