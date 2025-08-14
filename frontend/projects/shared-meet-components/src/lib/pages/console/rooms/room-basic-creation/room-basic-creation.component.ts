@@ -1,10 +1,12 @@
-import { Component, EventEmitter, OnDestroy, Output } from '@angular/core';
+import { Component, effect, EventEmitter, OnDestroy, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RoomWizardStateService } from '@lib/services';
+import { MeetRoomOptions } from '@lib/typings/ce';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -25,15 +27,22 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	@Output() createRoom = new EventEmitter<string | undefined>();
 	@Output() openAdvancedMode = new EventEmitter<void>();
 
-	roomCreationForm = new FormGroup({
+	roomDetailsForm = new FormGroup({
 		roomName: new FormControl('Room', [Validators.maxLength(50)])
 	});
 
 	private destroy$ = new Subject<void>();
 
-	constructor() {
-		this.roomCreationForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-			// Optional: Save form data to local storage or service if needed
+	constructor(private wizardService: RoomWizardStateService) {
+		effect(() => {
+			const steps = this.wizardService.steps();
+			if (steps.length !== 0) {
+				this.roomDetailsForm = steps[0].formGroup;
+
+				this.roomDetailsForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+					this.saveFormData(value);
+				});
+			}
 		});
 	}
 
@@ -42,9 +51,16 @@ export class RoomBasicCreationComponent implements OnDestroy {
 		this.destroy$.complete();
 	}
 
+	private saveFormData(formValue: any) {
+		const stepData: Partial<MeetRoomOptions> = {
+			roomName: formValue.roomName
+		};
+		this.wizardService.updateStepData('roomDetails', stepData);
+	}
+
 	onCreateRoom() {
-		if (this.roomCreationForm.valid) {
-			const formValue = this.roomCreationForm.value;
+		if (this.roomDetailsForm.valid) {
+			const formValue = this.roomDetailsForm.value;
 			this.createRoom.emit(formValue.roomName || undefined);
 		}
 	}
@@ -54,6 +70,6 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	}
 
 	get isFormValid(): boolean {
-		return this.roomCreationForm.valid && !this.roomCreationForm.pending;
+		return this.roomDetailsForm.valid && !this.roomDetailsForm.pending;
 	}
 }

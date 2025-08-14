@@ -12,14 +12,14 @@
 
 	<!-- Form Section -->
 	<main class="page-content">
-		<form [formGroup]="roomCreationForm" class="room-basic-creation-form" (ngSubmit)="onCreateRoom()">
+		<form [formGroup]="roomDetailsForm" class="room-basic-creation-form" (ngSubmit)="onCreateRoom()">
 			<!-- Room Field -->
 			<mat-form-field appearance="outline" class="form-field">
 				<mat-label>Room Name</mat-label>
 				<input matInput formControlName="roomName" placeholder="e.g. Demo Room" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
 				<mat-hint>Enter a custom room name, or leave blank to use the default name "Room".</mat-hint>
-				@if (roomCreationForm.get('roomName')?.hasError('maxlength')) {
+				@if (roomDetailsForm.get('roomName')?.hasError('maxlength')) {
 					<mat-error>Room name cannot exceed 50 characters</mat-error>
 				}
 			</mat-form-field>

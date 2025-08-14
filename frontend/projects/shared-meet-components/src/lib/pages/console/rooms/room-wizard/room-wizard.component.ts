@@ -9,12 +9,12 @@ import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
 import { MeetRoomOptions } from '@lib/typings/ce';
-import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
+import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
+import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
-import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 
 @Component({
 	selector: 'ov-room-wizard',
