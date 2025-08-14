@@ -42,10 +42,10 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 	const roomService = inject(RoomService);
 	const sessionStorageService = inject(SessionStorageService);
 
-	const { roomId, secret } = extractParams(route);
-	const storedSecret = sessionStorageService.getRoomSecret(roomId);
+	const { roomId, secret: querySecret } = extractParams(route);
+	const secret = querySecret || sessionStorageService.getRoomSecret(roomId);
 
-	if (!secret && !storedSecret) {
+	if (!secret) {
 		// If no secret is provided, redirect to the error page
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
