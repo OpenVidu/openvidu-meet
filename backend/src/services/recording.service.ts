@@ -719,20 +719,36 @@ export class RecordingService {
 		const lockKey = `${lockPrefix}${roomId}`;
 		const gracePeriodMs = ms(INTERNAL_CONFIG.RECORDING_ORPHANED_LOCK_GRACE_PERIOD);
 
+		const safeLockRelease = async (lockKey: string) => {
+			const stillExists = await this.mutexService.lockExists(lockKey);
+
+			if (stillExists) {
+				await this.mutexService.release(lockKey);
+			}
+		};
+
 		try {
-			// Verify if the lock still exists before proceeding to check the room
-			const [lockExists, lockCreatedAt] = await Promise.all([
-				this.mutexService.lockExists(lockKey),
-				this.mutexService.getLockCreatedAt(lockKey)
-			]);
+			// Verify if the lock still exists
+			const lockExists = await this.mutexService.lockExists(lockKey);
 
 			if (!lockExists) {
 				this.logger.debug(`Lock for room ${roomId} no longer exists, skipping cleanup`);
 				return;
 			}
 
+			// Get the lock creation timestamp
+			const lockCreatedAt = await this.mutexService.getLockCreatedAt(lockKey);
+
+			if (lockCreatedAt == null) {
+				this.logger.warn(
+					`Lock for room ${roomId} reported as existing but has no creation date. Treating as orphaned.`
+				);
+				await safeLockRelease(lockKey);
+				return;
+			}
+
 			// Verify if the lock is too recent
-			const lockAge = Date.now() - (lockCreatedAt || Date.now());
+			const lockAge = Date.now() - lockCreatedAt;
 
 			if (lockAge < gracePeriodMs) {
 				this.logger.debug(
@@ -747,22 +763,27 @@ export class RecordingService {
 			]);
 
 			if (lkRoomExists) {
-				this.logger.debug(`Room ${roomId} exists, checking recordings`);
-			} else {
-				this.logger.debug(`Room ${roomId} no longer exists, checking for in-progress recordings`);
+				const lkRoom = await this.livekitService.getRoom(roomId);
+				const hasPublishers = lkRoom.numPublishers > 0;
+
+				if (hasPublishers) {
+					this.logger.debug(`Room ${roomId} exists, checking recordings`);
+					const hasInProgressRecordings = inProgressRecordings.length > 0;
+
+					if (hasInProgressRecordings) {
+						this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
+						return;
+					}
+
+					// No in-progress recordings, releasing orphaned lock
+					this.logger.info(`Room ${roomId} has no in-progress recordings, releasing orphaned lock`);
+					await safeLockRelease(lockKey);
+					return;
+				}
 			}
 
-			// Verify if in-progress recordings exist
-			const hasInProgressRecordings = inProgressRecordings.length > 0;
-
-			if (hasInProgressRecordings) {
-				this.logger.debug(`Room ${roomId} has in-progress recordings, keeping lock`);
-				return;
-			}
-
-			// No in-progress recordings, releasing orphaned lock
-			this.logger.info(`Room ${roomId} has no in-progress recordings, releasing orphaned lock`);
-			await this.mutexService.release(lockKey);
+			this.logger.debug(`Room ${roomId} no longer exists or has no publishers, releasing orphaned lock`);
+			await safeLockRelease(lockKey);
 		} catch (error) {
 			this.logger.error(`Error processing orphan lock for room ${roomId}:`, error);
 			throw error;

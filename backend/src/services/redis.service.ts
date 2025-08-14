@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
 import ms from 'ms';
-import { Redlock } from "@sesamecare-oss/redlock";
+import { Redlock } from '@sesamecare-oss/redlock';
 import {
 	checkModuleEnabled,
 	REDIS_DB,
@@ -176,8 +176,12 @@ export class RedisService extends EventEmitter {
 	 * @returns {Promise<boolean>} - A promise that resolves to `true` if the key exists, otherwise `false`.
 	 */
 	async exists(key: string): Promise<boolean> {
-		const result = await this.get(key);
-		return !!result;
+		try {
+			const result = await this.get(key);
+			return !!result;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	get(key: string, hashKey?: string): Promise<string | null> {
@@ -261,7 +265,6 @@ export class RedisService extends EventEmitter {
 		this.logger.verbose('Redis connections cleaned up');
 	}
 
-
 	private loadRedisConfig(): RedisOptions {
 		// Check if openviduCall module is enabled. If not, exit the process
 		checkModuleEnabled();
@@ -292,7 +295,7 @@ export class RedisService extends EventEmitter {
 				password: REDIS_PASSWORD,
 				name: REDIS_SENTINEL_MASTER_NAME,
 				db: Number(REDIS_DB),
-				maxRetriesPerRequest: null, // Infinite retries
+				maxRetriesPerRequest: null // Infinite retries
 			};
 		} else {
 			this.logger.verbose('Using Redis standalone');
@@ -302,7 +305,7 @@ export class RedisService extends EventEmitter {
 				username: REDIS_USERNAME,
 				password: REDIS_PASSWORD,
 				db: Number(REDIS_DB),
-				maxRetriesPerRequest: null, // Infinite retries
+				maxRetriesPerRequest: null // Infinite retries
 			};
 		}
 	}
