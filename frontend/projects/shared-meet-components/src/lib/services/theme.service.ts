@@ -7,7 +7,7 @@ export type Theme = 'light' | 'dark';
 	providedIn: 'root'
 })
 export class ThemeService {
-	private readonly THEME_KEY = 'ov-meet-theme';
+	private readonly THEME_KEY = 'ovMeet-theme';
 	private readonly _currentTheme = signal<Theme>('light');
 
 	// Computed signals for reactivity
