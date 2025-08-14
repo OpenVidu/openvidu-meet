@@ -265,6 +265,7 @@ export class MeetingComponent implements OnInit {
 
 		try {
 			await this.generateParticipantToken();
+			await this.addParticipantNameToUrl();
 			await this.roomService.loadRoomPreferences(this.roomId);
 			this.showMeeting = true;
 
@@ -319,6 +320,15 @@ export class MeetingComponent implements OnInit {
 
 			throw new Error('Error generating participant token');
 		}
+	}
+
+	/**
+	 * Add participant name as a query parameter to the URL
+	 */
+	private async addParticipantNameToUrl() {
+		await this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
+			'participant-name': this.participantName
+		});
 	}
 
 	onRoomCreated(room: Room) {
