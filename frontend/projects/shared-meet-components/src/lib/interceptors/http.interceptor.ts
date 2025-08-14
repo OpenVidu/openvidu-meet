@@ -48,8 +48,11 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		const roomId = roomService.getRoomId();
 		const secret = roomService.getRoomSecret();
 		const participantName = participantTokenService.getParticipantName();
+		const participantIdentity = participantTokenService.getParticipantIdentity();
 
-		return from(participantTokenService.refreshParticipantToken({ roomId, secret, participantName })).pipe(
+		return from(
+			participantTokenService.refreshParticipantToken({ roomId, secret, participantName, participantIdentity })
+		).pipe(
 			switchMap(() => {
 				console.log('Participant token refreshed');
 				return next(req);

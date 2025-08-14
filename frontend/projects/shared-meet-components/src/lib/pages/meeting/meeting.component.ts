@@ -372,7 +372,7 @@ export class MeetingComponent implements OnInit {
 						// Update participant role
 						const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
 
-						if (participantIdentity === this.localParticipant!.name) {
+						if (participantIdentity === this.localParticipant!.identity) {
 							if (!secret) return;
 
 							this.roomSecret = secret;
@@ -382,7 +382,8 @@ export class MeetingComponent implements OnInit {
 								await this.participantService.refreshParticipantToken({
 									roomId: this.roomId,
 									secret,
-									participantName: this.participantName
+									participantName: this.participantName,
+									participantIdentity
 								});
 
 								this.localParticipant!.meetRole = newRole;

@@ -11,6 +11,7 @@ export class ParticipantService {
 	protected readonly PARTICIPANTS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/participants`;
 
 	protected participantName?: string;
+	protected participantIdentity?: string;
 	protected role: ParticipantRole = ParticipantRole.SPEAKER;
 	protected permissions?: ParticipantPermissions;
 
@@ -30,6 +31,10 @@ export class ParticipantService {
 
 	getParticipantName(): string | undefined {
 		return this.participantName;
+	}
+
+	getParticipantIdentity(): string | undefined {
+		return this.participantIdentity;
 	}
 
 	/**
@@ -71,6 +76,7 @@ export class ParticipantService {
 			const decodedToken = getValidDecodedToken(token);
 			const metadata = decodedToken.metadata as MeetTokenMetadata;
 
+			this.participantIdentity = decodedToken.sub;
 			this.role = metadata.selectedRole;
 			const openviduPermissions = metadata.roles.find((r) => r.role === this.role)!.permissions;
 			this.permissions = {
