@@ -862,6 +862,7 @@ export class RecordingService {
 	 */
 	protected async evaluateAndAbortStaleRecording(egressInfo: EgressInfo): Promise<boolean> {
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
+		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 		const updatedAt = RecordingHelper.extractUpdatedDate(egressInfo);
 		const staleAfterMs = ms(INTERNAL_CONFIG.RECORDING_STALE_AFTER);
 
@@ -878,17 +879,29 @@ export class RecordingService {
 				return false;
 			}
 
+			const lkRoomExists = await this.livekitService.roomExists(roomId);
+			const ageIsStale = updatedAt < Date.now() - staleAfterMs;
+			let isRecordingStale = false;
+
+			if (ageIsStale) {
+				if (!lkRoomExists) {
+					isRecordingStale = true; // There is no room and updated before stale time -> stale
+				} else {
+					const lkRoom = await this.livekitService.getRoom(roomId);
+					isRecordingStale = lkRoom.numPublishers === 0; // No publishers in the room and updated before stale time -> stale
+				}
+			}
+
 			// Check if recording has not been updated recently
-			const isStale = updatedAt < Date.now() - staleAfterMs;
 
 			this.logger.debug(`Recording ${recordingId} last updated at ${new Date(updatedAt).toISOString()}`);
 
-			if (!isStale) {
+			if (!isRecordingStale) {
 				this.logger.debug(`Recording ${recordingId} is still fresh`);
 				return false;
 			}
 
-			this.logger.warn(`Recording ${recordingId} is stale, aborting...`);
+			this.logger.warn(`Room ${roomId} does not exist and recording ${recordingId} is stale, aborting...`);
 
 			// Abort the recording
 			const { egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
