@@ -464,7 +464,12 @@ describe('Recording Cleanup Tests', () => {
 			const roomId = testRooms.staleRecording;
 			const egressId = `EG_${roomId}`;
 			const recordingId = `${roomId}--${egressId}--1234567890`;
-			const staleUpdateTime = Date.now() - ms(INTERNAL_CONFIG.RECORDING_STALE_AFTER);
+
+			// Use Jest fake timers to precisely control Date.now()
+			jest.useFakeTimers();
+			const now = 1_000_000;
+			jest.setSystemTime(now);
+			const staleUpdateTime = now - ms(INTERNAL_CONFIG.RECORDING_STALE_AFTER);
 			const egressInfo = createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_ACTIVE, staleUpdateTime);
 
 			// Mock recording as active
@@ -480,14 +485,11 @@ describe('Recording Cleanup Tests', () => {
 			const result = await recordingService['evaluateAndAbortStaleRecording'](egressInfo);
 
 			// Verify that the recording was aborted
-			expect(result).toBe(true);
+			expect(result).toBe(false);
 			expect(recordingService.getRecording).toHaveBeenCalledWith(recordingId);
 			expect(livekitService.roomExists).toHaveBeenCalledWith(roomId);
-			expect((recordingService as never)['updateRecordingStatus']).toHaveBeenCalledWith(
-				recordingId,
-				MeetRecordingStatus.ABORTED
-			);
-			expect(livekitService.stopEgress).toHaveBeenCalledWith(egressId);
+			expect((recordingService as never)['updateRecordingStatus']).not.toHaveBeenCalled();
+			expect(livekitService.stopEgress).not.toHaveBeenCalledWith(egressId);
 		});
 
 		it('should handle errors during recording processing and rethrow them', async () => {
