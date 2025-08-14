@@ -9,7 +9,11 @@ import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateMeetTokenMetadata } from '../middlewares/index.js';
-import { errorParticipantAlreadyExists, errorParticipantNotFound } from '../models/error.model.js';
+import {
+	errorParticipantAlreadyExists,
+	errorParticipantIdentityNotProvided,
+	errorParticipantNotFound
+} from '../models/error.model.js';
 import { FrontendEventService, LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
 
 @injectable()
@@ -27,20 +31,29 @@ export class ParticipantService {
 		currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[],
 		refresh = false
 	): Promise<string> {
-		const { roomId, participantName, secret } = participantOptions;
+		const { roomId, secret, participantName, participantIdentity } = participantOptions;
 
 		if (participantName) {
-			// Check if participant with same participantName exists in the room
-			const participantExists = await this.participantExists(roomId, participantName);
+			if (!refresh) {
+				// Check if participant with same participantName exists in the room
+				const participantExists = await this.participantExists(roomId, participantName, 'name');
 
-			if (!refresh && participantExists) {
-				this.logger.verbose(`Participant '${participantName}' already exists in room '${roomId}'`);
-				throw errorParticipantAlreadyExists(participantName, roomId);
-			}
+				if (participantExists) {
+					this.logger.verbose(`Participant '${participantName}' already exists in room '${roomId}'`);
+					throw errorParticipantAlreadyExists(participantName, roomId);
+				}
+			} else {
+				if (!participantIdentity) {
+					throw errorParticipantIdentityNotProvided();
+				}
 
-			if (refresh && !participantExists) {
-				this.logger.verbose(`Participant '${participantName}' does not exist in room '${roomId}'`);
-				throw errorParticipantNotFound(participantName, roomId);
+				// Check if participant with same participantIdentity exists in the room
+				const participantExists = await this.participantExists(roomId, participantIdentity, 'identity');
+
+				if (!participantExists) {
+					this.logger.verbose(`Participant '${participantName}' does not exist in room '${roomId}'`);
+					throw errorParticipantNotFound(participantName, roomId);
+				}
 			}
 		}
 
@@ -70,15 +83,13 @@ export class ParticipantService {
 		return this.livekitService.getParticipant(roomId, participantIdentity);
 	}
 
-	async participantExists(roomId: string, participantIdentity: string): Promise<boolean> {
-		this.logger.verbose(`Checking if participant '${participantIdentity}' exists in room '${roomId}'`);
-
-		try {
-			await this.getParticipant(roomId, participantIdentity);
-			return true;
-		} catch (error) {
-			return false;
-		}
+	async participantExists(
+		roomId: string,
+		participantNameOrIdentity: string,
+		participantField: 'name' | 'identity' = 'identity'
+	): Promise<boolean> {
+		this.logger.verbose(`Checking if participant '${participantNameOrIdentity}' exists in room '${roomId}'`);
+		return this.livekitService.participantExists(roomId, participantNameOrIdentity, participantField);
 	}
 
 	async deleteParticipant(roomId: string, participantIdentity: string): Promise<void> {

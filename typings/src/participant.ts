@@ -17,6 +17,10 @@ export interface ParticipantOptions {
      * The name of the participant.
      */
     participantName?: string;
+    /**
+     * The identity of the participant.
+     */
+    participantIdentity?: string;
 }
 
 /**

@@ -13,6 +13,7 @@ import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } from '../environment.js';
 import { LoggerService } from './index.js';
+import { uid } from 'uid';
 
 @injectable()
 export class TokenService {
@@ -47,7 +48,17 @@ export class TokenService {
 		selectedRole: ParticipantRole
 	): Promise<string> {
 		const { roomId, participantName } = participantOptions;
-		this.logger.info(`Generating token for room '${roomId}'`);
+		this.logger.info(
+			`Generating token for room '${roomId}'` + (participantName ? ` and participant '${participantName}'` : '')
+		);
+
+		let { participantIdentity } = participantOptions;
+
+		if (participantName && !participantIdentity) {
+			// Generate participant identity based on name and unique ID
+			const identityPrefix = participantName.replace(/\s+/g, ''); // Remove all spaces
+			participantIdentity = `${identityPrefix}-${uid(5)}`;
+		}
 
 		const metadata: MeetTokenMetadata = {
 			livekitUrl: LIVEKIT_URL,
@@ -55,7 +66,7 @@ export class TokenService {
 			selectedRole
 		};
 		const tokenOptions: AccessTokenOptions = {
-			identity: participantName,
+			identity: participantIdentity,
 			name: participantName,
 			ttl: INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(metadata)

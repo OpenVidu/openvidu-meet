@@ -7,7 +7,8 @@ import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
 const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
 	secret: z.string().nonempty('Secret is required'),
-	participantName: z.string().optional()
+	participantName: z.string().optional(),
+	participantIdentity: z.string().optional()
 });
 
 const UpdateParticipantRequestSchema = z.object({

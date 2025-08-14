@@ -242,6 +242,10 @@ export const errorInvalidParticipantRole = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant', 'No valid participant role provided', 400);
 };
 
+export const errorParticipantIdentityNotProvided = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Participant', 'No participant identity provided', 400);
+};
+
 // Handlers
 
 export const handleError = (res: Response, error: OpenViduMeetError | unknown, operationDescription: string) => {
