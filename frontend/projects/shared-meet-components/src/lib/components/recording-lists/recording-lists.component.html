@@ -9,11 +9,13 @@
 	<mat-toolbar class="recordings-toolbar">
 		<!-- Left Section: Search -->
 		<div class="toolbar-left">
-			<mat-form-field class="search-field" appearance="outline">
-				<mat-label>Search recordings</mat-label>
-				<input matInput [formControl]="nameFilterControl" placeholder="Search by room name" />
-				<mat-icon matSuffix>search</mat-icon>
-			</mat-form-field>
+			@if (showSearchBox) {
+				<mat-form-field class="search-field" appearance="outline">
+					<mat-label>Search recordings</mat-label>
+					<input matInput [formControl]="nameFilterControl" placeholder="Search by room name" />
+					<mat-icon matSuffix>search</mat-icon>
+				</mat-form-field>
+			}
 		</div>
 
 		<!-- Center Section: Bulk Actions (visible when items selected) -->

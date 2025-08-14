@@ -84,6 +84,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	// Input properties
 	@Input() recordings: MeetRecordingInfo[] = [];
 	@Input() canDeleteRecordings = false;
+	@Input() showSearchBox = true;
 	@Input() showFilters = false;
 	@Input() showSelection = true;
 	@Input() showRoomInfo = true;
