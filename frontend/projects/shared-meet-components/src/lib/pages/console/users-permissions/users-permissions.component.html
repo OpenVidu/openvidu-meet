@@ -153,7 +153,13 @@
 					</form>
 				</mat-card-content>
 				<mat-card-actions>
-					<button mat-button type="submit" (click)="onSaveAccessSettings()" class="primary-button">
+					<button
+						mat-button
+						type="submit"
+						(click)="onSaveAccessSettings()"
+						[disabled]="!hasAccessSettingsChanges()"
+						class="primary-button"
+					>
 						Save configuration
 					</button>
 				</mat-card-actions>

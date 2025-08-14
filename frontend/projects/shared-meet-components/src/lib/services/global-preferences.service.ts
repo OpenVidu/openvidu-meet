@@ -65,7 +65,14 @@ export class GlobalPreferencesService {
 	async saveWebhookPreferences(preferences: WebhookPreferences) {
 		const path = `${this.PREFERENCES_API}/webhooks`;
 		await this.httpService.putRequest<WebhookPreferences>(path, preferences);
-		this.webhookPreferences = preferences;
+
+		// Only update fields that are explicitly provided
+		if (this.webhookPreferences) {
+			this.webhookPreferences.enabled = preferences.enabled;
+			if (preferences.url) {
+				this.webhookPreferences.url = preferences.url;
+			}
+		}
 	}
 
 	async testWebhookUrl(url: string): Promise<void> {

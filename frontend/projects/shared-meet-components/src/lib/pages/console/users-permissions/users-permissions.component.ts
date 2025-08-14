@@ -32,6 +32,7 @@ import { AuthMode } from '@lib/typings/ce';
 })
 export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(true);
+	hasAccessSettingsChanges = signal(false);
 
 	adminCredentialsForm = new FormGroup({
 		adminUsername: new FormControl({ value: '', disabled: true }, [Validators.required]),
@@ -48,11 +49,18 @@ export class UsersPermissionsComponent implements OnInit {
 		{ value: AuthMode.ALL_USERS, label: 'Everyone' }
 	];
 
+	private initialAccessSettingsFormValue: any = null;
+
 	constructor(
 		private preferencesService: GlobalPreferencesService,
 		private authService: AuthService,
 		private notificationService: NotificationService
-	) {}
+	) {
+		// Track form changes
+		this.accessSettingsForm.valueChanges.subscribe(() => {
+			this.checkForAccessSettingsChanges();
+		});
+	}
 
 	async ngOnInit() {
 		this.isLoading.set(true);
@@ -76,10 +84,24 @@ export class UsersPermissionsComponent implements OnInit {
 		try {
 			const authMode = await this.preferencesService.getAuthModeToAccessRoom();
 			this.accessSettingsForm.get('authModeToAccessRoom')?.setValue(authMode);
+
+			// Store initial values after loading
+			this.initialAccessSettingsFormValue = this.accessSettingsForm.value;
+			this.hasAccessSettingsChanges.set(false);
 		} catch (error) {
 			console.error('Error loading security preferences:', error);
 			this.notificationService.showSnackbar('Failed to load security preferences');
 		}
+	}
+
+	private checkForAccessSettingsChanges() {
+		if (!this.initialAccessSettingsFormValue) {
+			return;
+		}
+
+		const currentValue = this.accessSettingsForm.value;
+		const hasChanges = JSON.stringify(currentValue) !== JSON.stringify(this.initialAccessSettingsFormValue);
+		this.hasAccessSettingsChanges.set(hasChanges);
 	}
 
 	async onSaveAdminCredentials() {
@@ -112,6 +134,10 @@ export class UsersPermissionsComponent implements OnInit {
 
 			await this.preferencesService.saveSecurityPreferences(securityPrefs);
 			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
+
+			// Update initial values after successful save
+			this.initialAccessSettingsFormValue = this.accessSettingsForm.value;
+			this.hasAccessSettingsChanges.set(false);
 		} catch (error) {
 			console.error('Error saving access permissions:', error);
 			this.notificationService.showSnackbar('Failed to save Access & Permissions settings');

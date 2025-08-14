@@ -181,7 +181,7 @@
 					<button
 						mat-button
 						(click)="saveWebhookConfig()"
-						[disabled]="webhookForm.invalid"
+						[disabled]="webhookForm.invalid || !hasWebhookChanges()"
 						class="primary-button"
 					>
 						<mat-icon>save</mat-icon>

@@ -31,6 +31,7 @@ import { MeetApiKey } from '@lib/typings/ce';
 })
 export class DevelopersSettingsComponent implements OnInit {
 	isLoading = signal(true);
+	hasWebhookChanges = signal(false);
 
 	apiKeyData = signal<MeetApiKey | undefined>(undefined);
 	showApiKey = signal(false);
@@ -46,6 +47,8 @@ export class DevelopersSettingsComponent implements OnInit {
 		// recordingFinished: [true]
 	});
 
+	private initialWebhookFormValue: any = null;
+
 	constructor(
 		protected authService: AuthService,
 		protected preferencesService: GlobalPreferencesService,
@@ -60,6 +63,11 @@ export class DevelopersSettingsComponent implements OnInit {
 			} else {
 				this.webhookForm.get('url')?.disable();
 			}
+		});
+
+		// Track form changes
+		this.webhookForm.valueChanges.subscribe(() => {
+			this.checkForWebhookChanges();
 		});
 	}
 
@@ -143,10 +151,24 @@ export class DevelopersSettingsComponent implements OnInit {
 				// recordingStarted: webhookPreferences.events.recordingStarted,
 				// recordingFinished: webhookPreferences.events.recordingFinished
 			});
+
+			// Store initial values after loading
+			this.initialWebhookFormValue = this.webhookForm.getRawValue();
+			this.hasWebhookChanges.set(false);
 		} catch (error) {
 			console.error('Error loading webhook configuration:', error);
 			this.notificationService.showSnackbar('Failed to load webhook configuration');
 		}
+	}
+
+	private checkForWebhookChanges() {
+		if (!this.initialWebhookFormValue) {
+			return;
+		}
+
+		const currentValue = this.webhookForm.getRawValue();
+		const hasChanges = JSON.stringify(currentValue) !== JSON.stringify(this.initialWebhookFormValue);
+		this.hasWebhookChanges.set(hasChanges);
 	}
 
 	async saveWebhookConfig() {
@@ -169,6 +191,10 @@ export class DevelopersSettingsComponent implements OnInit {
 		try {
 			await this.preferencesService.saveWebhookPreferences(webhookPreferences);
 			this.notificationService.showSnackbar('Webhook configuration saved successfully');
+
+			// Update initial values after successful save
+			this.initialWebhookFormValue = this.webhookForm.getRawValue();
+			this.hasWebhookChanges.set(false);
 		} catch (error) {
 			console.error('Error saving webhook configuration:', error);
 			this.notificationService.showSnackbar('Failed to save webhook configuration');
