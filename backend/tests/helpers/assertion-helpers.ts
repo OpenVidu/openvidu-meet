@@ -492,7 +492,11 @@ export const expectValidRoomRoleAndPermissionsResponse = (
 	});
 };
 
-export const getPermissions = (roomId: string, role: ParticipantRole, addJoinPermission = true): ParticipantPermissions => {
+export const getPermissions = (
+	roomId: string,
+	role: ParticipantRole,
+	addJoinPermission = true
+): ParticipantPermissions => {
 	switch (role) {
 		case ParticipantRole.MODERATOR:
 			return {
@@ -536,6 +540,7 @@ export const expectValidParticipantTokenResponse = (
 	roomId: string,
 	participantRole: ParticipantRole,
 	participantName?: string,
+	participantIdentity?: string,
 	otherRoles: ParticipantRole[] = []
 ) => {
 	expect(response.status).toBe(200);
@@ -558,8 +563,16 @@ export const expectValidParticipantTokenResponse = (
 	}
 
 	if (participantName) {
-		expect(decodedToken).toHaveProperty('sub', participantName);
+		expect(decodedToken).toHaveProperty('name', participantName);
+		expect(decodedToken).toHaveProperty('sub');
+
+		if (participantIdentity) {
+			expect(decodedToken.sub).toBe(participantIdentity);
+		} else {
+			expect(decodedToken.sub).toContain(participantName.replace(/\s+/g, '')); // Ensure sub contains the name without spaces
+		}
 	} else {
+		expect(decodedToken).not.toHaveProperty('name');
 		expect(decodedToken).not.toHaveProperty('sub');
 	}
 

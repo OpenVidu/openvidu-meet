@@ -82,6 +82,7 @@ describe('Participant API Tests', () => {
 				roomData.room.roomId,
 				ParticipantRole.SPEAKER,
 				`${participantName}_SPEAKER`,
+				undefined,
 				[ParticipantRole.MODERATOR]
 			);
 		});

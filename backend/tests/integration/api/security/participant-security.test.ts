@@ -162,7 +162,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -176,7 +177,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -190,7 +192,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -204,7 +207,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -218,7 +222,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});
@@ -232,7 +237,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -246,7 +252,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});
@@ -260,7 +267,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(200);
 		});
@@ -274,7 +282,8 @@ describe('Participant API Security Tests', () => {
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName: PARTICIPANT_NAME
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
 				});
 			expect(response.status).toBe(401);
 		});

@@ -41,7 +41,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -49,6 +50,7 @@ describe('Participant API Tests', () => {
 				response,
 				roomData.room.roomId,
 				ParticipantRole.MODERATOR,
+				participantName,
 				participantName
 			);
 		});
@@ -58,7 +60,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.speakerCookie
 			);
@@ -66,6 +69,7 @@ describe('Participant API Tests', () => {
 				response,
 				roomData.room.roomId,
 				ParticipantRole.SPEAKER,
+				participantName,
 				participantName
 			);
 		});
@@ -75,7 +79,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					secret: 'invalid_secret',
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -87,12 +92,25 @@ describe('Participant API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				''
 			);
 			expect(response.status).toBe(400);
 			expect(response.body.message).toBe('No participant token provided');
+		});
+
+		it('should fail with 400 when participantIdentity is not provided', async () => {
+			const response = await refreshParticipantToken(
+				{
+					roomId: roomData.room.roomId,
+					secret: 'invalid_secret',
+					participantName
+				},
+				roomData.moderatorCookie
+			);
+			expect(response.status).toBe(400);
 		});
 
 		it('should fail with 404 when participant does not exist in the room', async () => {
@@ -101,7 +119,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: newRoomData.room.roomId,
 					secret: newRoomData.moderatorSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -113,7 +132,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: 'non_existent_room',
 					secret: roomData.moderatorSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -126,7 +146,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					secret: roomData.moderatorSecret,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -137,7 +158,8 @@ describe('Participant API Tests', () => {
 			const response = await refreshParticipantToken(
 				{
 					roomId: roomData.room.roomId,
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
@@ -149,7 +171,8 @@ describe('Participant API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					secret: '',
-					participantName
+					participantName,
+					participantIdentity: participantName
 				},
 				roomData.moderatorCookie
 			);
