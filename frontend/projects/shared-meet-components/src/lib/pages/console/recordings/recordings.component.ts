@@ -22,6 +22,11 @@ export class RecordingsComponent implements OnInit {
 	showInitialLoader = false;
 	isLoading = false;
 
+	initialFilters = {
+		nameFilter: '',
+		statusFilter: ''
+	};
+
 	// Pagination
 	hasMoreRecordings = false;
 	private nextPageToken?: string;
@@ -45,7 +50,8 @@ export class RecordingsComponent implements OnInit {
 
 		if (roomId) {
 			// If a specific room ID is provided, filter recordings by that room
-			await this.loadRecordings({ nameFilter: roomId, statusFilter: '' });
+			this.initialFilters.nameFilter = roomId;
+			await this.loadRecordings(this.initialFilters);
 		} else {
 			// Load all recordings if no room ID is specified
 			await this.loadRecordings();

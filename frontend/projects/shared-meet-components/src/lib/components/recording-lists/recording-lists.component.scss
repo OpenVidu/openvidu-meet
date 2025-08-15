@@ -10,6 +10,10 @@
 		::ng-deep .refresh-btn {
 			padding: var(--ov-meet-spacing-sm);
 		}
+
+		::ng-deep .clear-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
 	}
 }
 
@@ -150,6 +154,10 @@
 		@extend .action-buttons;
 
 		.refresh-recordings-btn {
+			@extend .refresh-btn;
+		}
+
+		.clear-filters-btn {
 			@extend .refresh-btn;
 		}
 	}

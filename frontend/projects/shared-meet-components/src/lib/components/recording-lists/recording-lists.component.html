@@ -1,10 +1,18 @@
-<!-- Loading Spinner -->
-@if (loading) {
-	<div class="loading-container">
-		<mat-spinner diameter="40"></mat-spinner>
-		<span>Loading recordings...</span>
+@if (!loading && recordings.length === 0 && !showEmptyFilterMessage) {
+	<!-- Empty State -->
+	<div class="no-recordings-state">
+		<div class="empty-content">
+			<h3>No recordings yet</h3>
+			<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
+			<div class="getting-started-actions">
+				<button mat-button (click)="refresh.emit()" class="refresh-recordings-btn primary-button">
+					<mat-icon>refresh</mat-icon>
+					Refresh Recordings
+				</button>
+			</div>
+		</div>
 	</div>
-} @else if (recordings.length > 0) {
+} @else {
 	<!-- Recordings Toolbar -->
 	<mat-toolbar class="recordings-toolbar">
 		<!-- Left Section: Search -->
@@ -52,14 +60,26 @@
 
 		<!-- Right Section: Filters -->
 		<div class="toolbar-right">
+			@if (hasActiveFilters()) {
+				<button
+					mat-icon-button
+					class="clear-btn"
+					(click)="clearFilters()"
+					[disabled]="loading"
+					matTooltip="Clear all filters"
+				>
+					<mat-icon>filter_alt_off</mat-icon>
+				</button>
+			}
+
 			<button
 				mat-icon-button
 				class="refresh-btn"
-				(click)="refresh.emit()"
+				(click)="refreshRecordings()"
 				[disabled]="loading"
 				matTooltip="Refresh recordings"
 			>
-				<mat-icon> refresh </mat-icon>
+				<mat-icon>refresh</mat-icon>
 			</button>
 
 			@if (showFilters) {
@@ -84,222 +104,220 @@
 		</div>
 	</mat-toolbar>
 
-	<div class="table-container">
-		<table mat-table [dataSource]="recordings" class="recordings-table">
-			<!-- Selection Column -->
-			@if (showSelection) {
-				<ng-container matColumnDef="select">
-					<th mat-header-cell *matHeaderCellDef>
-						<mat-checkbox
-							[checked]="allSelected()"
-							[indeterminate]="someSelected()"
-							(change)="toggleAllSelection()"
-							[disabled]="loading"
-						>
-						</mat-checkbox>
-					</th>
-					<td mat-cell *matCellDef="let recording">
-						@if (canSelectRecording(recording)) {
-							<mat-checkbox
-								[checked]="isRecordingSelected(recording)"
-								(change)="toggleRecordingSelection(recording)"
-								[disabled]="loading"
-							>
-							</mat-checkbox>
-						}
-					</td>
-				</ng-container>
-			}
-
-			<!-- Room Info Column -->
-			@if (showRoomInfo) {
-				<ng-container matColumnDef="roomInfo">
-					<th mat-header-cell *matHeaderCellDef class="room-header">Room</th>
-					<td mat-cell *matCellDef="let recording" class="room-cell">
-						<div class="room-info">
-							<span class="room-name">{{ recording.roomName }}</span>
-							<span class="room-id">{{ recording.roomId }}</span>
-							<!-- @if (recording.filename) {
-								<span class="filename">{{ recording.filename }}</span>
-							} -->
-						</div>
-					</td>
-				</ng-container>
-			}
-
-			<!-- Status Column -->
-			<ng-container matColumnDef="status">
-				<th mat-header-cell *matHeaderCellDef>Status</th>
-				<td mat-cell *matCellDef="let recording">
-					<div class="status-badge" [style.color]="getStatusColor(recording.status)">
-						<mat-icon [style.color]="getStatusColor(recording.status)">
-							{{ getStatusIcon(recording.status) }}
-						</mat-icon>
-						<span class="status-label">{{ getStatusLabel(recording.status) }}</span>
-					</div>
-				</td>
-			</ng-container>
-
-			<!-- Start Date Column -->
-			<ng-container matColumnDef="startDate">
-				<th mat-header-cell *matHeaderCellDef>Start Date</th>
-				<td mat-cell *matCellDef="let recording">
-					@if (recording.startDate) {
-						<div class="date-info">
-							<span class="date">{{ recording.startDate | date: 'mediumDate' }}</span>
-							<span class="time">{{ recording.startDate | date: 'shortTime' }}</span>
-						</div>
-					} @else {
-						<span class="no-data">-</span>
-					}
-				</td>
-			</ng-container>
-
-			<!-- Duration Column -->
-			<ng-container matColumnDef="duration">
-				<th mat-header-cell *matHeaderCellDef>Duration</th>
-				<td mat-cell *matCellDef="let recording">
-					<span>{{ formatDuration(recording.duration) }}</span>
-				</td>
-			</ng-container>
-
-			<!-- Size Column -->
-			<ng-container matColumnDef="size">
-				<th mat-header-cell *matHeaderCellDef>Size</th>
-				<td mat-cell *matCellDef="let recording">
-					<span>{{ formatFileSize(recording.size) }}</span>
-				</td>
-			</ng-container>
-
-			<!-- Actions Column -->
-			<ng-container matColumnDef="actions">
-				<th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
-				<td mat-cell *matCellDef="let recording" class="actions-cell">
-					<div class="action-buttons">
-						<!-- Play Button -->
-						@if (canPlayRecording(recording)) {
-							<button
-								mat-icon-button
-								matTooltip="Play Recording"
-								(click)="playRecording(recording)"
-								[disabled]="loading"
-								id="play-recording-btn-{{ recording.recordingId }}"
-							>
-								<mat-icon>play_arrow</mat-icon>
-							</button>
-						}
-
-						<!-- Download Button -->
-						@if (canDownloadRecording(recording)) {
-							<button
-								mat-icon-button
-								matTooltip="Download Recording"
-								(click)="downloadRecording(recording)"
-								[disabled]="loading"
-								id="download-recording-btn-{{ recording.recordingId }}"
-							>
-								<mat-icon>download</mat-icon>
-							</button>
-						}
-
-						@if (isRecordingFailed(recording)) {
-							<button
-								class="delete-action"
-								mat-icon-button
-								matTooltip="Delete Recording"
-								(click)="deleteRecording(recording)"
-								[disabled]="loading"
-								id="delete-recording-btn-{{ recording.recordingId }}"
-							>
-								<mat-icon>delete</mat-icon>
-							</button>
-						} @else {
-							<!-- More Actions Menu -->
-							<button
-								mat-icon-button
-								[matMenuTriggerFor]="actionsMenu"
-								matTooltip="More Actions"
-								[disabled]="loading"
-								id="more-actions-btn-{{ recording.recordingId }}"
-							>
-								<mat-icon>more_vert</mat-icon>
-							</button>
-
-							<mat-menu #actionsMenu="matMenu">
-								<button
-									mat-menu-item
-									(click)="shareRecordingLink(recording)"
-									id="share-recording-link-{{ recording.recordingId }}"
-								>
-									<mat-icon>share</mat-icon>
-									<span>Share link</span>
-								</button>
-
-								@if (canDeleteRecording(recording)) {
-									<mat-divider></mat-divider>
-									<button
-										mat-menu-item
-										(click)="deleteRecording(recording)"
-										class="delete-action"
-										id="delete-recording-btn-{{ recording.recordingId }}"
-									>
-										<mat-icon>delete</mat-icon>
-										<span>Delete recording</span>
-									</button>
-								}
-							</mat-menu>
-						}
-					</div>
-				</td>
-			</ng-container>
-
-			<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-			<tr
-				mat-row
-				*matRowDef="let row; columns: displayedColumns"
-				[class.selected-row]="isRecordingSelected(row)"
-			></tr>
-		</table>
-	</div>
-
-	<!-- Load More Section -->
-	@if (showLoadMore) {
-		<div class="load-more-container" id="load-more-container">
-			<button
-				mat-button
-				class="load-more-btn"
-				(click)="loadMoreRecordings()"
-				[disabled]="loading"
-				id="load-more-btn"
-			>
-				<mat-icon>expand_more</mat-icon>
-				<span>Load More Recordings</span>
-			</button>
+	<!-- Loading Spinner -->
+	@if (loading) {
+		<div class="loading-container">
+			<mat-spinner diameter="40"></mat-spinner>
+			<span>Loading recordings...</span>
 		</div>
-	}
-} @else {
-	<!-- Empty State -->
-	<div class="no-recordings-state">
-		<div class="empty-content">
-			<h3>No recordings yet</h3>
-			<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
-			<div class="getting-started-actions">
-				<button mat-button (click)="refresh.emit()" class="refresh-recordings-btn primary-button">
-					<mat-icon>refresh</mat-icon>
-					Refresh Recordings
-				</button>
-			</div>
-			<!-- TODO: Show this when no recordings match the filters
-			@if (hasActiveFilters()) {
-				<h3>No recordings match your search criteria</h3>
+	} @else if (recordings.length === 0 && showEmptyFilterMessage) {
+		<!-- No recordings match the current filters -->
+		<div class="no-recordings-state">
+			<div class="empty-content">
+				<h3>No recordings match your search criteria and/or filters</h3>
 				<p>Try adjusting or clearing your filters to see more recordings.</p>
 				<div class="getting-started-actions">
-					<button mat-raised-button color="primary" (click)="clearFilters()" class="clear-filters-btn">
+					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
 						<mat-icon>filter_alt_off</mat-icon>
 						Clear Filters
 					</button>
 				</div>
-			} -->
+			</div>
 		</div>
-	</div>
+	} @else {
+		<!-- Recordings Table -->
+		<div class="table-container">
+			<table mat-table [dataSource]="recordings" class="recordings-table">
+				<!-- Selection Column -->
+				@if (showSelection) {
+					<ng-container matColumnDef="select">
+						<th mat-header-cell *matHeaderCellDef>
+							<mat-checkbox
+								[checked]="allSelected()"
+								[indeterminate]="someSelected()"
+								(change)="toggleAllSelection()"
+								[disabled]="loading"
+							>
+							</mat-checkbox>
+						</th>
+						<td mat-cell *matCellDef="let recording">
+							@if (canSelectRecording(recording)) {
+								<mat-checkbox
+									[checked]="isRecordingSelected(recording)"
+									(change)="toggleRecordingSelection(recording)"
+									[disabled]="loading"
+								>
+								</mat-checkbox>
+							}
+						</td>
+					</ng-container>
+				}
+
+				<!-- Room Info Column -->
+				@if (showRoomInfo) {
+					<ng-container matColumnDef="roomInfo">
+						<th mat-header-cell *matHeaderCellDef class="room-header">Room</th>
+						<td mat-cell *matCellDef="let recording" class="room-cell">
+							<div class="room-info">
+								<span class="room-name">{{ recording.roomName }}</span>
+								<span class="room-id">{{ recording.roomId }}</span>
+								<!-- @if (recording.filename) {
+								<span class="filename">{{ recording.filename }}</span>
+							} -->
+							</div>
+						</td>
+					</ng-container>
+				}
+
+				<!-- Status Column -->
+				<ng-container matColumnDef="status">
+					<th mat-header-cell *matHeaderCellDef>Status</th>
+					<td mat-cell *matCellDef="let recording">
+						<div class="status-badge" [style.color]="getStatusColor(recording.status)">
+							<mat-icon [style.color]="getStatusColor(recording.status)">
+								{{ getStatusIcon(recording.status) }}
+							</mat-icon>
+							<span class="status-label">{{ getStatusLabel(recording.status) }}</span>
+						</div>
+					</td>
+				</ng-container>
+
+				<!-- Start Date Column -->
+				<ng-container matColumnDef="startDate">
+					<th mat-header-cell *matHeaderCellDef>Start Date</th>
+					<td mat-cell *matCellDef="let recording">
+						@if (recording.startDate) {
+							<div class="date-info">
+								<span class="date">{{ recording.startDate | date: 'mediumDate' }}</span>
+								<span class="time">{{ recording.startDate | date: 'shortTime' }}</span>
+							</div>
+						} @else {
+							<span class="no-data">-</span>
+						}
+					</td>
+				</ng-container>
+
+				<!-- Duration Column -->
+				<ng-container matColumnDef="duration">
+					<th mat-header-cell *matHeaderCellDef>Duration</th>
+					<td mat-cell *matCellDef="let recording">
+						<span>{{ formatDuration(recording.duration) }}</span>
+					</td>
+				</ng-container>
+
+				<!-- Size Column -->
+				<ng-container matColumnDef="size">
+					<th mat-header-cell *matHeaderCellDef>Size</th>
+					<td mat-cell *matCellDef="let recording">
+						<span>{{ formatFileSize(recording.size) }}</span>
+					</td>
+				</ng-container>
+
+				<!-- Actions Column -->
+				<ng-container matColumnDef="actions">
+					<th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+					<td mat-cell *matCellDef="let recording" class="actions-cell">
+						<div class="action-buttons">
+							<!-- Play Button -->
+							@if (canPlayRecording(recording)) {
+								<button
+									mat-icon-button
+									matTooltip="Play Recording"
+									(click)="playRecording(recording)"
+									[disabled]="loading"
+									id="play-recording-btn-{{ recording.recordingId }}"
+								>
+									<mat-icon>play_arrow</mat-icon>
+								</button>
+							}
+
+							<!-- Download Button -->
+							@if (canDownloadRecording(recording)) {
+								<button
+									mat-icon-button
+									matTooltip="Download Recording"
+									(click)="downloadRecording(recording)"
+									[disabled]="loading"
+									id="download-recording-btn-{{ recording.recordingId }}"
+								>
+									<mat-icon>download</mat-icon>
+								</button>
+							}
+
+							@if (isRecordingFailed(recording)) {
+								<button
+									class="delete-action"
+									mat-icon-button
+									matTooltip="Delete Recording"
+									(click)="deleteRecording(recording)"
+									[disabled]="loading"
+									id="delete-recording-btn-{{ recording.recordingId }}"
+								>
+									<mat-icon>delete</mat-icon>
+								</button>
+							} @else {
+								<!-- More Actions Menu -->
+								<button
+									mat-icon-button
+									[matMenuTriggerFor]="actionsMenu"
+									matTooltip="More Actions"
+									[disabled]="loading"
+									id="more-actions-btn-{{ recording.recordingId }}"
+								>
+									<mat-icon>more_vert</mat-icon>
+								</button>
+
+								<mat-menu #actionsMenu="matMenu">
+									<button
+										mat-menu-item
+										(click)="shareRecordingLink(recording)"
+										id="share-recording-link-{{ recording.recordingId }}"
+									>
+										<mat-icon>share</mat-icon>
+										<span>Share link</span>
+									</button>
+
+									@if (canDeleteRecording(recording)) {
+										<mat-divider></mat-divider>
+										<button
+											mat-menu-item
+											(click)="deleteRecording(recording)"
+											class="delete-action"
+											id="delete-recording-btn-{{ recording.recordingId }}"
+										>
+											<mat-icon>delete</mat-icon>
+											<span>Delete recording</span>
+										</button>
+									}
+								</mat-menu>
+							}
+						</div>
+					</td>
+				</ng-container>
+
+				<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+				<tr
+					mat-row
+					*matRowDef="let row; columns: displayedColumns"
+					[class.selected-row]="isRecordingSelected(row)"
+				></tr>
+			</table>
+		</div>
+
+		<!-- Load More Section -->
+		@if (showLoadMore) {
+			<div class="load-more-container" id="load-more-container">
+				<button
+					mat-button
+					class="load-more-btn"
+					(click)="loadMoreRecordings()"
+					[disabled]="loading"
+					id="load-more-btn"
+				>
+					<mat-icon>expand_more</mat-icon>
+					<span>Load More Recordings</span>
+				</button>
+			</div>
+		}
+	}
 }

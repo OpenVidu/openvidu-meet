@@ -90,6 +90,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() showRoomInfo = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
+	@Input() initialFilters: { nameFilter: string; statusFilter: string } = { nameFilter: '', statusFilter: '' };
 
 	// Host binding for styling when recordings are selected
 	@HostBinding('class.has-selections')
@@ -106,6 +107,8 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	// Filter controls
 	nameFilterControl = new FormControl('');
 	statusFilterControl = new FormControl('');
+
+	showEmptyFilterMessage = false; // Show message when no recordings match filters
 
 	// Selection state
 	selectedRecordings = signal<Set<string>>(new Set());
@@ -156,16 +159,28 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 
 	ngOnChanges(changes: SimpleChanges) {
 		if (changes['recordings']) {
+			// Update selected recordings based on current recordings
 			const validIds = new Set(this.recordings.map((r) => r.recordingId));
 			const filteredSelection = new Set([...this.selectedRecordings()].filter((id) => validIds.has(id)));
 			this.selectedRecordings.set(filteredSelection);
 			this.updateSelectionState();
+
+			// Show message when no recordings match filters
+			if (this.recordings.length === 0 && this.hasActiveFilters()) {
+				this.showEmptyFilterMessage = true;
+			} else {
+				this.showEmptyFilterMessage = false;
+			}
 		}
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
+		// Set up initial filter values
+		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
+		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
+
 		// Set up name filter with debounce
 		this.nameFilterControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
 			this.filterChange.emit({
