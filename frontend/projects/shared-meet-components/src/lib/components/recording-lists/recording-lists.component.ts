@@ -101,7 +101,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
 	@Output() loadMore = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() refresh = new EventEmitter<void>();
+	@Output() refresh = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
@@ -282,6 +282,12 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		const nameFilter = this.nameFilterControl.value || '';
 		const statusFilter = this.statusFilterControl.value || '';
 		this.loadMore.emit({ nameFilter, statusFilter });
+	}
+
+	refreshRecordings() {
+		const nameFilter = this.nameFilterControl.value || '';
+		const statusFilter = this.statusFilterControl.value || '';
+		this.refresh.emit({ nameFilter, statusFilter });
 	}
 
 	// ===== FILTER METHODS =====

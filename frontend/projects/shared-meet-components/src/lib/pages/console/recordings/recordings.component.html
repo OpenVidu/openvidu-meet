@@ -1,24 +1,25 @@
-@if (isLoading) {
-	@if (showLoadingSpinner) {
-		<!-- Enhanced Loading State with delay -->
-		<div class="ov-page-loading">
-			<div class="loading-content">
-				<div class="loading-header">
-					<div class="loading-title">
-						<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
-						<h1>Loading Recordings</h1>
-					</div>
-					<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+<!-- Loading State -->
+@if (isInitializing && showInitialLoader) {
+	<div class="ov-page-loading">
+		<div class="loading-content">
+			<div class="loading-header">
+				<div class="loading-title">
+					<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
+					<h1>Loading Recordings</h1>
 				</div>
+				<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+			</div>
 
-				<div class="loading-spinner-container">
-					<mat-spinner diameter="48"></mat-spinner>
-				</div>
+			<div class="loading-spinner-container">
+				<mat-spinner diameter="48"></mat-spinner>
 			</div>
 		</div>
-	}
-} @else {
+	</div>
+}
+
+@if (!isInitializing) {
 	<div class="ov-page-container ov-mb-xxl">
+		<!-- Recordings Header -->
 		<div class="page-header">
 			<div class="title">
 				<mat-icon class="ov-recording-icon">video_library</mat-icon>
@@ -27,6 +28,7 @@
 			<p class="subtitle">Manage all your meeting recordings, play, download, and share them with others.</p>
 		</div>
 
+		<!-- Content -->
 		<div class="page-content">
 			<ov-recording-lists
 				[recordings]="recordings()"
@@ -38,7 +40,7 @@
 				[showLoadMore]="hasMoreRecordings"
 				(recordingAction)="onRecordingAction($event)"
 				(loadMore)="loadMoreRecordings($event)"
-				(refresh)="refreshRecordings()"
+				(refresh)="refreshRecordings($event)"
 				(filterChange)="refreshRecordings($event)"
 			>
 			</ov-recording-lists>

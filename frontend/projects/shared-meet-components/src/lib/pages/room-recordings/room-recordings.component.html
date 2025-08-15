@@ -21,7 +21,7 @@
 	</div>
 
 	<!-- Loading State -->
-	@if (isLoading && showLoadingSpinner) {
+	@if (isInitializing && showInitialLoader) {
 		<div class="recordings-loading-container fade-in">
 			<div class="loading-card">
 				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
@@ -35,7 +35,7 @@
 	}
 
 	<!-- Content -->
-	@if (!isLoading || recordings().length > 0) {
+	@if (!isInitializing) {
 		<div class="recordings-content fade-in-delayed">
 			<div class="section-content">
 				<ov-recording-lists
@@ -46,7 +46,9 @@
 					[showFilters]="false"
 					[showSelection]="true"
 					[showRoomInfo]="false"
+					[showLoadMore]="hasMoreRecordings"
 					(recordingAction)="onRecordingAction($event)"
+					(loadMore)="loadMoreRecordings()"
 					(refresh)="refreshRecordings()"
 					class="recordings-list"
 				>

@@ -22,8 +22,10 @@ export class RoomRecordingsComponent implements OnInit {
 	roomName = '';
 	canDeleteRecordings = false;
 
+	// Loading state
+	isInitializing = true;
+	showInitialLoader = false;
 	isLoading = false;
-	showLoadingSpinner = false;
 
 	// Pagination
 	hasMoreRecordings = false;
@@ -45,7 +47,17 @@ export class RoomRecordingsComponent implements OnInit {
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
 		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
+
+		// Load recordings
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader = true;
+		}, 200);
+
 		await this.loadRecordings();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader = false;
+		this.isInitializing = false;
 
 		// Set room name based on recordings or roomId
 		if (this.recordings()) {
@@ -89,17 +101,16 @@ export class RoomRecordingsComponent implements OnInit {
 		}
 	}
 
-	private async loadRecordings(statusFilter?: string) {
-		this.isLoading = true;
-		const delaySpinner = setTimeout(() => {
-			this.showLoadingSpinner = true;
+	private async loadRecordings(statusFilter?: string, refresh = false) {
+		const delayLoader = setTimeout(() => {
+			this.isLoading = true;
 		}, 200);
 
 		try {
 			const recordingFilters: MeetRecordingFilters = {
 				roomId: this.roomId,
 				maxItems: 50,
-				nextPageToken: this.nextPageToken
+				nextPageToken: !refresh ? this.nextPageToken : undefined
 			};
 
 			const response = await this.recordingService.listRecordings(recordingFilters);
@@ -110,9 +121,14 @@ export class RoomRecordingsComponent implements OnInit {
 				filteredRecordings = response.recordings.filter((r) => r.status === statusFilter);
 			}
 
-			// Update recordings list
-			const currentRecordings = this.recordings();
-			this.recordings.set([...currentRecordings, ...filteredRecordings]);
+			if (!refresh) {
+				// Update recordings list
+				const currentRecordings = this.recordings();
+				this.recordings.set([...currentRecordings, ...filteredRecordings]);
+			} else {
+				// Replace recordings list
+				this.recordings.set(filteredRecordings);
+			}
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
@@ -121,9 +137,8 @@ export class RoomRecordingsComponent implements OnInit {
 			this.notificationService.showAlert('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
+			clearTimeout(delayLoader);
 			this.isLoading = false;
-			clearTimeout(delaySpinner);
-			this.showLoadingSpinner = false;
 		}
 	}
 
@@ -133,10 +148,7 @@ export class RoomRecordingsComponent implements OnInit {
 	}
 
 	async refreshRecordings() {
-		this.recordings.set([]);
-		this.nextPageToken = undefined;
-		this.hasMoreRecordings = false;
-		await this.loadRecordings();
+		await this.loadRecordings(undefined, true);
 	}
 
 	private async playRecording(recording: MeetRecordingInfo) {

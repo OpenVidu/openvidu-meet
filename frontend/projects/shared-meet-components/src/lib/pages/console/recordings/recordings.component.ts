@@ -16,8 +16,11 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 })
 export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
+
+	// Loading state
+	isInitializing = true;
+	showInitialLoader = false;
 	isLoading = false;
-	showLoadingSpinner = false;
 
 	// Pagination
 	hasMoreRecordings = false;
@@ -36,6 +39,10 @@ export class RecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		const roomId = this.route.snapshot.queryParamMap.get('room-id');
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader = true;
+		}, 200);
+
 		if (roomId) {
 			// If a specific room ID is provided, filter recordings by that room
 			await this.loadRecordings({ nameFilter: roomId, statusFilter: '' });
@@ -43,6 +50,10 @@ export class RecordingsComponent implements OnInit {
 			// Load all recordings if no room ID is specified
 			await this.loadRecordings();
 		}
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader = false;
+		this.isInitializing = false;
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
@@ -68,16 +79,15 @@ export class RecordingsComponent implements OnInit {
 		}
 	}
 
-	private async loadRecordings(filters?: { nameFilter: string; statusFilter: string }) {
-		this.isLoading = true;
-		const delaySpinner = setTimeout(() => {
-			this.showLoadingSpinner = true;
+	private async loadRecordings(filters?: { nameFilter: string; statusFilter: string }, refresh = false) {
+		const delayLoader = setTimeout(() => {
+			this.isLoading = true;
 		}, 200);
 
 		try {
 			const recordingFilters: MeetRecordingFilters = {
 				maxItems: 50,
-				nextPageToken: this.nextPageToken
+				nextPageToken: !refresh ? this.nextPageToken : undefined
 			};
 
 			// Apply room ID filter if provided
@@ -93,9 +103,14 @@ export class RecordingsComponent implements OnInit {
 				filteredRecordings = response.recordings.filter((r) => r.status === filters.statusFilter);
 			}
 
-			// Update recordings list
-			const currentRecordings = this.recordings();
-			this.recordings.set([...currentRecordings, ...filteredRecordings]);
+			if (!refresh) {
+				// Update recordings list
+				const currentRecordings = this.recordings();
+				this.recordings.set([...currentRecordings, ...filteredRecordings]);
+			} else {
+				// Replace recordings list
+				this.recordings.set(filteredRecordings);
+			}
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
@@ -104,9 +119,8 @@ export class RecordingsComponent implements OnInit {
 			this.notificationService.showAlert('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
+			clearTimeout(delayLoader);
 			this.isLoading = false;
-			clearTimeout(delaySpinner);
-			this.showLoadingSpinner = false;
 		}
 	}
 
@@ -116,10 +130,7 @@ export class RecordingsComponent implements OnInit {
 	}
 
 	async refreshRecordings(filters?: { nameFilter: string; statusFilter: string }) {
-		this.recordings.set([]);
-		this.nextPageToken = undefined;
-		this.hasMoreRecordings = false;
-		await this.loadRecordings(filters);
+		await this.loadRecordings(filters, true);
 	}
 
 	private async playRecording(recording: MeetRecordingInfo) {
