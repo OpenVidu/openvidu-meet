@@ -4,6 +4,12 @@
 .recordings-toolbar {
 	@extend .ov-data-toolbar;
 
+	.toolbar-left {
+		::ng-deep .search-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
 

@@ -181,20 +181,17 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
 		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
 
-		// Set up name filter with debounce
-		this.nameFilterControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
-			this.filterChange.emit({
-				nameFilter: value || '',
-				statusFilter: this.statusFilterControl.value || ''
-			});
+		// Set up name filter change detection
+		this.nameFilterControl.valueChanges.subscribe((value) => {
+			// Emit filter change if value is empty
+			if (!value) {
+				this.emitFilterChange();
+			}
 		});
 
-		// Set up status filter
-		this.statusFilterControl.valueChanges.subscribe((value) => {
-			this.filterChange.emit({
-				nameFilter: this.nameFilterControl.value || '',
-				statusFilter: value || ''
-			});
+		// Set up status filter change detection
+		this.statusFilterControl.valueChanges.subscribe(() => {
+			this.emitFilterChange();
 		});
 	}
 
@@ -306,6 +303,17 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	}
 
 	// ===== FILTER METHODS =====
+
+	triggerSearch() {
+		this.emitFilterChange();
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit({
+			nameFilter: this.nameFilterControl.value || '',
+			statusFilter: this.statusFilterControl.value || ''
+		});
+	}
 
 	hasActiveFilters(): boolean {
 		return !!(this.nameFilterControl.value || this.statusFilterControl.value);

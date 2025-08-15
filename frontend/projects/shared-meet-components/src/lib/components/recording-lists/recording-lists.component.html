@@ -20,8 +20,22 @@
 			@if (showSearchBox) {
 				<mat-form-field class="search-field" appearance="outline">
 					<mat-label>Search recordings</mat-label>
-					<input matInput [formControl]="nameFilterControl" placeholder="Search by room name" />
-					<mat-icon matSuffix>search</mat-icon>
+					<input
+						matInput
+						[formControl]="nameFilterControl"
+						placeholder="Search by room name or room ID"
+						(keydown.enter)="triggerSearch()"
+					/>
+					<button
+						mat-icon-button
+						matSuffix
+						class="search-btn"
+						(click)="triggerSearch()"
+						[disabled]="loading || !nameFilterControl.value"
+						matTooltip="Search"
+					>
+						<mat-icon>search</mat-icon>
+					</button>
 				</mat-form-field>
 			}
 		</div>
