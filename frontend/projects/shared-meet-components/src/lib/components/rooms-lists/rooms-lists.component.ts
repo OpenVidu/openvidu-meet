@@ -92,10 +92,12 @@ export interface RoomTableAction {
 export class RoomsListsComponent implements OnInit, OnChanges {
 	// Input properties
 	@Input() rooms: MeetRoom[] = [];
+	@Input() showSearchBox = true;
 	@Input() showFilters = false;
 	@Input() showSelection = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
+	@Input() initialFilters: { nameFilter: string; statusFilter: string } = { nameFilter: '', statusFilter: '' };
 
 	// Host binding for styling when rooms are selected
 	@HostBinding('class.has-selections')
@@ -106,12 +108,14 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	// Output events
 	@Output() roomAction = new EventEmitter<RoomTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() loadMore = new EventEmitter<void>();
-	@Output() refresh = new EventEmitter<void>();
+	@Output() loadMore = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() refresh = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
 	statusFilterControl = new FormControl('');
+
+	showEmptyFilterMessage = false; // Show message when no rooms match filters
 
 	// Selection state
 	selectedRooms = signal<Set<string>>(new Set());
@@ -137,30 +141,39 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 
 	ngOnChanges(changes: SimpleChanges) {
 		if (changes['rooms']) {
+			// Update selected rooms based on current rooms
 			const validIds = new Set(this.rooms.map((r) => r.roomId));
 			const filteredSelection = new Set([...this.selectedRooms()].filter((id) => validIds.has(id)));
 			this.selectedRooms.set(filteredSelection);
 			this.updateSelectionState();
+
+			// Show message when no rooms match filters
+			if (this.rooms.length === 0 && this.hasActiveFilters()) {
+				this.showEmptyFilterMessage = true;
+			} else {
+				this.showEmptyFilterMessage = false;
+			}
 		}
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Set up name filter with debounce
-		this.nameFilterControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe((value) => {
-			this.filterChange.emit({
-				nameFilter: value || '',
-				statusFilter: this.statusFilterControl.value || ''
-			});
+		// Set up initial filter values
+		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
+		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
+
+		// Set up name filter change detection
+		this.nameFilterControl.valueChanges.subscribe((value) => {
+			// Emit filter change if value is empty
+			if (!value) {
+				this.emitFilterChange();
+			}
 		});
 
-		// Set up status filter
-		this.statusFilterControl.valueChanges.subscribe((value) => {
-			this.filterChange.emit({
-				nameFilter: this.nameFilterControl.value || '',
-				statusFilter: value || ''
-			});
+		// Set up status filter change detection
+		this.statusFilterControl.valueChanges.subscribe(() => {
+			this.emitFilterChange();
 		});
 	}
 
@@ -261,7 +274,30 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		}
 	}
 
+	loadMoreRooms() {
+		const nameFilter = this.nameFilterControl.value || '';
+		const statusFilter = this.statusFilterControl.value || '';
+		this.loadMore.emit({ nameFilter, statusFilter });
+	}
+
+	refreshRooms() {
+		const nameFilter = this.nameFilterControl.value || '';
+		const statusFilter = this.statusFilterControl.value || '';
+		this.refresh.emit({ nameFilter, statusFilter });
+	}
+
 	// ===== FILTER METHODS =====
+
+	triggerSearch() {
+		this.emitFilterChange();
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit({
+			nameFilter: this.nameFilterControl.value || '',
+			statusFilter: this.statusFilterControl.value || ''
+		});
+	}
 
 	hasActiveFilters(): boolean {
 		return !!(this.nameFilterControl.value || this.statusFilterControl.value);

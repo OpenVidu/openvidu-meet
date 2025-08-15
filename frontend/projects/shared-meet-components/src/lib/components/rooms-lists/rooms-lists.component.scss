@@ -4,10 +4,20 @@
 .rooms-toolbar {
 	@extend .ov-data-toolbar;
 
+	.toolbar-left {
+		::ng-deep .search-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
 
 		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+
+		::ng-deep .clear-btn {
 			padding: var(--ov-meet-spacing-sm);
 		}
 	}
@@ -251,10 +261,15 @@
 	}
 
 	.getting-started-actions {
-		display: flex;
-		flex-direction: column;
-		gap: var(--ov-meet-spacing-md);
-		align-items: center;
+		@extend .action-buttons;
+
+		.create-room-btn {
+			@extend .refresh-btn;
+		}
+
+		.clear-filters-btn {
+			@extend .refresh-btn;
+		}
 	}
 }
 

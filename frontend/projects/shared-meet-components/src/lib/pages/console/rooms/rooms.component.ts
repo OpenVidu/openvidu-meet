@@ -49,8 +49,16 @@ export class RoomsComponent implements OnInit {
 	// searchTerm = '';
 
 	rooms = signal<MeetRoom[]>([]);
+
+	// Loading state
+	isInitializing = true;
+	showInitialLoader = false;
 	isLoading = false;
-	showLoadingSpinner = false;
+
+	initialFilters = {
+		nameFilter: '',
+		statusFilter: ''
+	};
 
 	// Pagination
 	hasMoreRooms = false;
@@ -69,7 +77,15 @@ export class RoomsComponent implements OnInit {
 	}
 
 	async ngOnInit() {
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader = true;
+		}, 200);
+
 		await this.loadRooms();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader = false;
+		this.isInitializing = false;
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -101,24 +117,34 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private async loadRooms() {
-		this.isLoading = true;
-		const delaySpinner = setTimeout(() => {
-			this.showLoadingSpinner = true;
+	private async loadRooms(filters?: { nameFilter: string; statusFilter: string }, refresh = false) {
+		const delayLoader = setTimeout(() => {
+			this.isLoading = true;
 		}, 200);
 
 		try {
 			const roomFilters: MeetRoomFilters = {
 				maxItems: 50,
-				nextPageToken: this.nextPageToken
+				nextPageToken: !refresh ? this.nextPageToken : undefined
 			};
+
+			// Apply room ID filter if provided
+			// if (filters?.nameFilter) {
+			// 	roomFilters.roomName = filters.nameFilter;
+			// }
+
 			const response = await this.roomService.listRooms(roomFilters);
 
-			// TODO: Filter rooms
+			// TODO: Filter rooms by status
 
-			// Update rooms list
-			const currentRooms = this.rooms();
-			this.rooms.set([...currentRooms, ...response.rooms]);
+			if (!refresh) {
+				// Update rooms list
+				const currentRooms = this.rooms();
+				this.rooms.set([...currentRooms, ...response.rooms]);
+			} else {
+				// Replace rooms list
+				this.rooms.set(response.rooms);
+			}
 
 			// TODO: Sort rooms
 			// this.dataSource.data = this.rooms();
@@ -131,9 +157,8 @@ export class RoomsComponent implements OnInit {
 			this.notificationService.showAlert('Error loading rooms');
 			this.log.e('Error loading rooms:', error);
 		} finally {
+			clearTimeout(delayLoader);
 			this.isLoading = false;
-			clearTimeout(delaySpinner);
-			this.showLoadingSpinner = false;
 		}
 	}
 
@@ -188,16 +213,13 @@ export class RoomsComponent implements OnInit {
 	// 	}
 	// }
 
-	async loadMoreRooms() {
+	async loadMoreRooms(filters?: { nameFilter: string; statusFilter: string }) {
 		if (!this.hasMoreRooms || this.isLoading) return;
-		await this.loadRooms();
+		await this.loadRooms(filters);
 	}
 
-	async refreshRooms() {
-		this.rooms.set([]);
-		this.nextPageToken = undefined;
-		this.hasMoreRooms = false;
-		await this.loadRooms();
+	async refreshRooms(filters?: { nameFilter: string; statusFilter: string }) {
+		await this.loadRooms(filters, true);
 	}
 
 	private async createRoom() {

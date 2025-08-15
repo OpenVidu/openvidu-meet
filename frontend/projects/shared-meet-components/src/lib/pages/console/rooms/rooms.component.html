@@ -1,27 +1,28 @@
-@if (isLoading) {
-	@if (showLoadingSpinner) {
-		<!-- Enhanced Loading State with delay -->
-		<div class="ov-page-loading">
-			<div class="loading-content">
-				<div class="loading-header">
-					<div class="loading-title">
-						<mat-icon class="ov-room-icon loading-icon"> video_chat </mat-icon>
-						<h1>Loading Rooms</h1>
-					</div>
-					<p class="loading-subtitle">Please wait while we fetch your rooms...</p>
+<!-- Loading State -->
+@if (isInitializing && showInitialLoader) {
+	<div class="ov-page-loading">
+		<div class="loading-content">
+			<div class="loading-header">
+				<div class="loading-title">
+					<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
+					<h1>Loading Rooms</h1>
 				</div>
+				<p class="loading-subtitle">Please wait while we fetch your rooms...</p>
+			</div>
 
-				<div class="loading-spinner-container">
-					<mat-spinner diameter="48"></mat-spinner>
-				</div>
+			<div class="loading-spinner-container">
+				<mat-spinner diameter="48"></mat-spinner>
 			</div>
 		</div>
-	}
-} @else {
+	</div>
+}
+
+@if (!isInitializing) {
 	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
+		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
 			<div class="title" id="rooms-title">
-				<mat-icon class="ov-room-icon" id="rooms-icon"> video_chat </mat-icon>
+				<mat-icon class="ov-room-icon" id="rooms-icon">video_chat</mat-icon>
 				<h1 id="rooms-heading">Rooms</h1>
 			</div>
 			<p class="subtitle" id="rooms-subtitle">
@@ -29,16 +30,21 @@
 			</p>
 		</div>
 
+		<!-- Content -->
 		<div class="page-content" id="rooms-content">
 			<ov-rooms-lists
 				id="rooms-list"
 				[rooms]="rooms()"
 				[loading]="isLoading"
+				[showSearchBox]="true"
+				[showFilters]="false"
 				[showSelection]="true"
 				[showLoadMore]="hasMoreRooms"
+				[initialFilters]="initialFilters"
 				(roomAction)="onRoomAction($event)"
-				(loadMore)="loadMoreRooms()"
-				(refresh)="refreshRooms()"
+				(loadMore)="loadMoreRooms($event)"
+				(refresh)="refreshRooms($event)"
+				(filterChange)="refreshRooms($event)"
 			></ov-rooms-lists>
 		</div>
 	</div>
