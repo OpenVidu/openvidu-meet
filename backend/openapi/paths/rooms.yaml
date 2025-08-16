@@ -36,6 +36,7 @@
             - apiKeyInHeader: []
             - accessTokenCookie: []
         parameters:
+            - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'

@@ -1,0 +1,8 @@
+name: roomName
+in: query
+required: false
+description: >
+    The name of the room.
+schema:
+    type: string
+example: 'room'
