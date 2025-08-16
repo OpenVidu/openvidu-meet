@@ -129,9 +129,9 @@ export class RoomsComponent implements OnInit {
 			};
 
 			// Apply room ID filter if provided
-			// if (filters?.nameFilter) {
-			// 	roomFilters.roomName = filters.nameFilter;
-			// }
+			if (filters?.nameFilter) {
+				roomFilters.roomName = filters.nameFilter;
+			}
 
 			const response = await this.roomService.listRooms(roomFilters);
 

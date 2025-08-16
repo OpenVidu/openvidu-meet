@@ -82,6 +82,9 @@ export class RoomService {
 			if (filters.nextPageToken) {
 				queryParams.set('nextPageToken', filters.nextPageToken);
 			}
+			if (filters.roomName) {
+				queryParams.set('roomName', filters.roomName);
+			}
 			if (filters.fields) {
 				queryParams.set('fields', filters.fields);
 			}
