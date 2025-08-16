@@ -122,8 +122,10 @@ export interface StorageKeyBuilder {
 
 	/**
 	 * Builds the key for all meeting rooms.
+	 *
+	 * @param roomName - Optional name of the meeting room to filter by
 	 */
-	buildAllMeetRoomsKey(): string;
+	buildAllMeetRoomsKey(roomName?: string): string;
 
 	/**
 	 * Builds the key for archived room metadata.

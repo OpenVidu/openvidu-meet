@@ -142,6 +142,7 @@ const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
+	roomName: z.string().transform(sanitizeRoomName).optional(),
 	fields: z.string().optional()
 });
 

@@ -33,5 +33,6 @@ export interface MeetRoomRoleAndPermissions {
 export type MeetRoomFilters = {
     maxItems?: number;
     nextPageToken?: string;
+    roomName?: string;
     fields?: string;
 };

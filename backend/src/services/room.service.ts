@@ -165,12 +165,13 @@ export class RoomService {
 	 * @returns A Promise that resolves to an array of {@link MeetRoom} objects.
 	 * @throws If there was an error retrieving the rooms.
 	 */
-	async getAllMeetRooms({ maxItems, nextPageToken, fields }: MeetRoomFilters): Promise<{
+	async getAllMeetRooms(filters: MeetRoomFilters): Promise<{
 		rooms: MeetRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const response = await this.storageService.getMeetRooms(maxItems, nextPageToken);
+		const { maxItems, nextPageToken, roomName, fields } = filters;
+		const response = await this.storageService.getMeetRooms(roomName, maxItems, nextPageToken);
 
 		if (fields) {
 			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));

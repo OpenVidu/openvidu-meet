@@ -203,6 +203,7 @@ export class MeetStorageService<
 	 * @throws Error if the storage operation fails or encounters an unexpected error
 	 */
 	async getMeetRooms(
+		roomName?: string,
 		maxItems?: number,
 		nextPageToken?: string
 	): Promise<{
@@ -211,9 +212,9 @@ export class MeetStorageService<
 		nextPageToken?: string;
 	}> {
 		try {
-			const allRoomsKey = this.keyBuilder.buildAllMeetRoomsKey();
+			const searchKey = this.keyBuilder.buildAllMeetRoomsKey(roomName);
 			const { Contents, IsTruncated, NextContinuationToken } = await this.storageProvider.listObjects(
-				allRoomsKey,
+				searchKey,
 				maxItems,
 				nextPageToken
 			);

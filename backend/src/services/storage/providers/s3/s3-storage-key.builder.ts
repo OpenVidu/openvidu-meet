@@ -11,8 +11,9 @@ export class S3KeyBuilder implements StorageKeyBuilder {
 		return `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}/${roomId}/${roomId}.json`;
 	}
 
-	buildAllMeetRoomsKey(): string {
-		return `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}`;
+	buildAllMeetRoomsKey(roomName?: string): string {
+		const roomSegment = roomName ? `/${roomName}` : '';
+		return `${INTERNAL_CONFIG.S3_ROOMS_PREFIX}${roomSegment}`;
 	}
 
 	buildArchivedMeetRoomKey(roomId: string): string {

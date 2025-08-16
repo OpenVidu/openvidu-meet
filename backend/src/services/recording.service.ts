@@ -398,7 +398,6 @@ export class RecordingService {
 	}> {
 		try {
 			const { maxItems, nextPageToken, roomId, fields } = filters;
-
 			const response = await this.storageService.getAllRecordings(roomId, maxItems, nextPageToken);
 
 			// Apply field filtering if specified
