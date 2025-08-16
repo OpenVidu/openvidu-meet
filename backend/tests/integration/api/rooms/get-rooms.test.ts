@@ -45,12 +45,27 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			});
 
-			const response = await getRooms({ fields: 'roomId,createdAt' });
+			const response = await getRooms({ fields: 'roomId,creationDate' });
 			const { rooms } = response.body;
 
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
-			expectValidRoomWithFields(rooms[0], ['roomId']);
+			expectValidRoomWithFields(rooms[0], ['roomId', 'creationDate']);
+		});
+
+		it('should return a list of rooms applying roomName filter', async () => {
+			await createRoom({
+				roomName: 'test-room'
+			});
+			await createRoom({
+				roomName: 'other-room'
+			});
+
+			const response = await getRooms({ roomName: 'test-room' });
+			const { rooms } = response.body;
+
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+			expectValidRoom(rooms[0], 'test-room');
 		});
 
 		it('should return a list of rooms with pagination', async () => {
