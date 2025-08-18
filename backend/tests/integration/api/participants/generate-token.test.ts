@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
@@ -17,10 +17,14 @@ describe('Participant API Tests', () => {
 
 	beforeAll(async () => {
 		startTestServer();
+	});
+
+	beforeEach(async () => {
 		roomData = await setupSingleRoom();
 	});
 
-	afterAll(async () => {
+	// Force to cleanup participant name reservations after each test
+	afterEach(async () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
 	});
@@ -87,14 +91,35 @@ describe('Participant API Tests', () => {
 			);
 		});
 
-		it('should fail with 409 when participant already exists in the room', async () => {
+		it('should success when participant already exists in the room', async () => {
 			roomData = await setupSingleRoom(true);
-			const response = await generateParticipantToken({
+			let response = await generateParticipantToken({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName
 			});
-			expect(response.status).toBe(409);
+
+			// First participant using API. LK CLI participants can reuse the same name.
+			expectValidParticipantTokenResponse(
+				response,
+				roomData.room.roomId,
+				ParticipantRole.MODERATOR,
+				participantName
+			);
+
+			response = await generateParticipantToken({
+				roomId: roomData.room.roomId,
+				secret: roomData.moderatorSecret,
+				participantName
+			});
+
+			// Second participant using API, the participant name should be unique
+			expectValidParticipantTokenResponse(
+				response,
+				roomData.room.roomId,
+				ParticipantRole.MODERATOR,
+				participantName + '_1'
+			);
 
 			// Recreate the room without the participant
 			roomData = await setupSingleRoom();

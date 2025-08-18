@@ -44,6 +44,9 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 			case 'participant_joined':
 				await lkWebhookService.handleParticipantJoined(room!, participant!);
 				break;
+			case 'participant_left':
+				await lkWebhookService.handleParticipantLeft(room!, participant!);
+				break;
 			case 'room_started':
 				await lkWebhookService.handleRoomStarted(room!);
 				break;

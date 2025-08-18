@@ -10,11 +10,17 @@ import { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateMeetTokenMetadata } from '../middlewares/index.js';
 import {
-	errorParticipantAlreadyExists,
 	errorParticipantIdentityNotProvided,
 	errorParticipantNotFound
 } from '../models/error.model.js';
-import { FrontendEventService, LiveKitService, LoggerService, RoomService, TokenService } from './index.js';
+import {
+	FrontendEventService,
+	LiveKitService,
+	LoggerService,
+	ParticipantNameService,
+	RoomService,
+	TokenService
+} from './index.js';
 
 @injectable()
 export class ParticipantService {
@@ -23,7 +29,8 @@ export class ParticipantService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
-		@inject(TokenService) protected tokenService: TokenService
+		@inject(TokenService) protected tokenService: TokenService,
+		@inject(ParticipantNameService) protected participantNameService: ParticipantNameService
 	) {}
 
 	async generateOrRefreshParticipantToken(
@@ -32,34 +39,49 @@ export class ParticipantService {
 		refresh = false
 	): Promise<string> {
 		const { roomId, secret, participantName, participantIdentity } = participantOptions;
+		let finalParticipantName = participantName;
+		let finalParticipantOptions: ParticipantOptions = participantOptions;
 
 		if (participantName) {
-			if (!refresh) {
-				// Check if participant with same participantName exists in the room
-				const participantExists = await this.participantExists(roomId, participantName, 'name');
-
-				if (participantExists) {
-					this.logger.verbose(`Participant '${participantName}' already exists in room '${roomId}'`);
-					throw errorParticipantAlreadyExists(participantName, roomId);
-				}
-			} else {
+			if (refresh) {
 				if (!participantIdentity) {
 					throw errorParticipantIdentityNotProvided();
 				}
 
+				this.logger.verbose(`Refreshing participant token for '${participantIdentity}' in room '${roomId}'`);
 				// Check if participant with same participantIdentity exists in the room
 				const participantExists = await this.participantExists(roomId, participantIdentity, 'identity');
 
 				if (!participantExists) {
-					this.logger.verbose(`Participant '${participantName}' does not exist in room '${roomId}'`);
-					throw errorParticipantNotFound(participantName, roomId);
+					this.logger.verbose(`Participant '${participantIdentity}' does not exist in room '${roomId}'`);
+					throw errorParticipantNotFound(participantIdentity, roomId);
 				}
+			} else {
+				this.logger.verbose(`Generating participant token for '${participantName}' in room '${roomId}'`);
+
+				try {
+					// Reserve a unique name for the participant
+					finalParticipantName = await this.participantNameService.reserveUniqueName(roomId, participantName);
+					this.logger.verbose(`Reserved unique name '${finalParticipantName}' for room '${roomId}'`);
+				} catch (error) {
+					this.logger.error(
+						`Failed to reserve unique name '${participantName}' for room '${roomId}':`,
+						error
+					);
+					throw error;
+				}
+
+				// Update participantOptions with the final participant name
+				finalParticipantOptions = {
+					...participantOptions,
+					participantName: finalParticipantName
+				};
 			}
 		}
 
 		const role = await this.roomService.getRoomRoleBySecret(roomId, secret);
-		const token = await this.generateParticipantToken(participantOptions, role, currentRoles);
-		this.logger.verbose(`Participant token generated for room '${roomId}'`);
+		const token = await this.generateParticipantToken(finalParticipantOptions, role, currentRoles);
+		this.logger.verbose(`Participant token generated for room '${roomId}' with name '${finalParticipantName}'`);
 		return token;
 	}
 
@@ -185,5 +207,42 @@ export class ParticipantService {
 				canChangeVirtualBackground: true
 			}
 		};
+	}
+
+	/**
+	 * Releases a participant's reserved name when they disconnect.
+	 * This should be called when a participant leaves the room to free up the name.
+	 *
+	 * @param roomId - The room identifier
+	 * @param participantName - The participant name to release
+	 */
+	async releaseParticipantName(roomId: string, participantName: string): Promise<void> {
+		try {
+			await this.participantNameService.releaseName(roomId, participantName);
+			this.logger.verbose(`Released participant name '${participantName}' for room '${roomId}'`);
+		} catch (error) {
+			this.logger.warn(`Error releasing participant name '${participantName}' for room '${roomId}':`, error);
+		}
+	}
+
+	/**
+	 * Gets all currently reserved participant names in a room.
+	 * Useful for debugging and monitoring.
+	 *
+	 * @param roomId - The room identifier
+	 * @returns Promise<string[]> - Array of reserved participant names
+	 */
+	async getReservedNames(roomId: string): Promise<string[]> {
+		return await this.participantNameService.getReservedNames(roomId);
+	}
+
+	/**
+	 * Cleans up expired participant name reservations for a room.
+	 * This can be called during room cleanup or periodically.
+	 *
+	 * @param roomId - The room identifier
+	 */
+	async cleanupParticipantNames(roomId: string): Promise<void> {
+		await this.participantNameService.cleanupExpiredReservations(roomId);
 	}
 }

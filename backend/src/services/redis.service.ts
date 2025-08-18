@@ -206,18 +206,26 @@ export class RedisService extends EventEmitter {
 	 * @returns {Promise<string>} - A promise that resolves to 'OK' if the operation is successful.
 	 * @throws {Error} - Throws an error if the value type is invalid or if there is an issue setting the value in Redis.
 	 */
-	async set(key: string, value: any, withTTL = true): Promise<string> {
+	async set(key: string, value: string | number | boolean | object, withTTL = true): Promise<string> {
 		try {
 			const valueType = typeof value;
 
-			if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
+			if (valueType === 'string' || valueType === 'number') {
 				if (withTTL) {
-					await this.redisPublisher.set(key, value, 'EX', this.DEFAULT_TTL);
+					await this.redisPublisher.set(key, value.toString(), 'EX', this.DEFAULT_TTL);
 				} else {
-					await this.redisPublisher.set(key, value);
+					await this.redisPublisher.set(key, value.toString());
+				}
+			} else if (valueType === 'boolean') {
+				const stringValue = value.toString();
+
+				if (withTTL) {
+					await this.redisPublisher.set(key, stringValue, 'EX', this.DEFAULT_TTL);
+				} else {
+					await this.redisPublisher.set(key, stringValue);
 				}
 			} else if (valueType === 'object') {
-				await this.redisPublisher.hmset(key, value);
+				await this.redisPublisher.hmset(key, value as Record<string, string | number>);
 
 				if (withTTL) await this.redisPublisher.expire(key, this.DEFAULT_TTL);
 			} else {
@@ -247,6 +255,81 @@ export class RedisService extends EventEmitter {
 			return this.redisPublisher.del(keys);
 		} catch (error) {
 			throw internalError(`deleting key from Redis`);
+		}
+	}
+
+	/**
+	 * Atomically sets a value only if the key doesn't exist (SET with NX option).
+	 *
+	 * @param {string} key - The key to set
+	 * @param {string} value - The value to set
+	 * @param {number} [ttlSeconds] - Optional TTL in seconds
+	 * @returns {Promise<boolean>} - True if the key was set, false if it already existed
+	 */
+	async setIfNotExists(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
+		try {
+			let result: string | null;
+
+			if (ttlSeconds) {
+				result = await this.redisPublisher.set(key, value, 'EX', ttlSeconds, 'NX');
+			} else {
+				result = (await this.redisPublisher.setnx(key, value)) ? 'OK' : null;
+			}
+
+			return result === 'OK';
+		} catch (error) {
+			this.logger.error('Error setting value with NX option in Redis', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Sets an expiration time on an existing key.
+	 *
+	 * @param {string} key - The key to set expiration on
+	 * @param {number} ttlSeconds - TTL in seconds
+	 * @returns {Promise<boolean>} - True if expiration was set successfully
+	 */
+	async setExpiration(key: string, ttlSeconds: number): Promise<boolean> {
+		try {
+			const result = await this.redisPublisher.expire(key, ttlSeconds);
+			return result === 1;
+		} catch (error) {
+			this.logger.error('Error setting expiration in Redis', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Removes and returns the member with the lowest score from a sorted set.
+	 *
+	 * @param {string} key - The key of the sorted set
+	 * @param {number} count - Number of members to pop (default: 1)
+	 * @returns {Promise<string[]>} - Array of popped members
+	 */
+	async popMinFromSortedSet(key: string, count = 1): Promise<string[]> {
+		try {
+			return await this.redisPublisher.zpopmin(key, count);
+		} catch (error) {
+			this.logger.error('Error popping min from sorted set in Redis', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Adds one or more members to a sorted set.
+	 *
+	 * @param {string} key - The key of the sorted set
+	 * @param {number} score - The score for the member
+	 * @param {string} member - The member to add
+	 * @returns {Promise<number>} - Number of elements added
+	 */
+	async addToSortedSet(key: string, score: number, member: string): Promise<number> {
+		try {
+			return await this.redisPublisher.zadd(key, score, member);
+		} catch (error) {
+			this.logger.error('Error adding to sorted set in Redis', error);
+			throw error;
 		}
 	}
 

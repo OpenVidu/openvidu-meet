@@ -10,6 +10,7 @@ import {
 	MeetStorageService,
 	MutexService,
 	OpenViduWebhookService,
+	ParticipantService,
 	RecordingService,
 	RoomService,
 	DistributedEventService
@@ -29,6 +30,7 @@ export class LivekitWebhookService {
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
+		@inject(ParticipantService) protected participantService: ParticipantService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
@@ -159,6 +161,25 @@ export class LivekitWebhookService {
 	}
 
 	/**
+	 * Handles the 'participant_left' event by releasing the participant's reserved name
+	 * to make it available for other participants.
+	 * @param room - Information about the room where the participant left.
+	 * @param participant - Information about the participant who left.
+	 */
+	async handleParticipantLeft(room: Room, participant: ParticipantInfo) {
+		// Skip if the participant is an egress participant
+		if (this.livekitService.isEgressParticipant(participant)) return;
+
+		try {
+			// Release the participant's reserved name
+			await this.participantService.releaseParticipantName(room.name, participant.name);
+			this.logger.verbose(`Released name for participant '${participant.name}' in room '${room.name}'`);
+		} catch (error) {
+			this.logger.error('Error releasing participant name on participant left:', error);
+		}
+	}
+
+	/**
 	 * Handles a room started event from LiveKit.
 	 *
 	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
@@ -210,7 +231,10 @@ export class LivekitWebhookService {
 				tasks.push(this.roomService.bulkDeleteRooms([roomName], true));
 			}
 
-			tasks.push(this.recordingService.releaseRecordingLockIfNoEgress(roomName));
+			tasks.push(
+				this.participantService.cleanupParticipantNames(roomName),
+				this.recordingService.releaseRecordingLockIfNoEgress(roomName)
+			);
 			await Promise.all(tasks);
 		} catch (error) {
 			this.logger.error(`Error handling room finished event: ${error}`);

@@ -10,6 +10,11 @@ export const enum RedisKeyName {
 	ARCHIVED_ROOM = `${RedisKeyPrefix.BASE}archived_room:`,
 	USER = `${RedisKeyPrefix.BASE}user:`,
 	API_KEYS = `${RedisKeyPrefix.BASE}api_keys:`,
+	//Tracks all currently reserved participant names per room (with TTL for auto-expiration).
+	ROOM_PARTICIPANTS = `${RedisKeyPrefix.BASE}room_participants:`,
+	// Stores released numeric suffixes (per base name) in a sorted set, so that freed numbers
+	// can be reused efficiently instead of always incrementing to the next highest number.
+	PARTICIPANT_NAME_POOL = `${RedisKeyPrefix.BASE}participant_pool:`
 }
 
 export const enum RedisLockPrefix {
