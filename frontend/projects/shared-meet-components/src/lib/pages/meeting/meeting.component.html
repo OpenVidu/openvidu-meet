@@ -1,7 +1,6 @@
 @if (showMeeting) {
 	<ov-videoconference
 		[token]="participantToken"
-
 		[prejoin]="true"
 		[prejoinDisplayParticipantName]="false"
 		[videoEnabled]="features().videoEnabled"
@@ -39,9 +38,9 @@
 		(onRecordingStopRequested)="onRecordingStopRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
-		@if (features().canModerateRoom) {
-			<div *ovToolbarAdditionalButtons>
-				<!-- Copy Link Button -->
+		<ng-container *ovToolbarAdditionalButtons>
+			<!-- Copy Link Button -->
+			@if (features().canModerateRoom) {
 				<button
 					id="copy-speaker-link"
 					mat-icon-button
@@ -74,32 +73,34 @@
 						<span>End meeting for all</span>
 					</button>
 				</mat-menu>
-			</div>
+			}
+		</ng-container>
 
-			<div *ovParticipantPanelAfterLocalParticipant>
+		<ng-container *ovParticipantPanelAfterLocalParticipant>
+			@if (features().canModerateRoom) {
 				<div class="share-meeting-link-container">
 					<ov-share-meeting-link
 						[meetingUrl]="hostname + '/room/' + roomId"
 						(copyClicked)="copySpeakerLink()"
 					></ov-share-meeting-link>
 				</div>
-			</div>
+			}
+		</ng-container>
 
-			<ng-container *ovLayoutAdditionalElements>
-				@if (remoteParticipants.length === 0) {
-					<div class="main-share-meeting-link-container fade-in-delayed-more">
-						<ov-share-meeting-link
-							[title]="'Start collaborating'"
-							[subtitle]="'Share this link to bring others into the meeting'"
-							[titleSize]="'xl'"
-							[titleWeight]="'bold'"
-							[meetingUrl]="hostname + '/room/' + roomId"
-							(copyClicked)="copySpeakerLink()"
-						></ov-share-meeting-link>
-					</div>
-				}
-			</ng-container>
-		}
+		<ng-container *ovLayoutAdditionalElements>
+			@if (features().canModerateRoom && remoteParticipants.length === 0) {
+				<div class="main-share-meeting-link-container fade-in-delayed-more">
+					<ov-share-meeting-link
+						[title]="'Start collaborating'"
+						[subtitle]="'Share this link to bring others into the meeting'"
+						[titleSize]="'xl'"
+						[titleWeight]="'bold'"
+						[meetingUrl]="hostname + '/room/' + roomId"
+						(copyClicked)="copySpeakerLink()"
+					></ov-share-meeting-link>
+				</div>
+			}
+		</ng-container>
 
 		<ng-container *ovParticipantPanelItem="let participant">
 			<!-- If Meet participant is moderator -->
@@ -130,25 +131,52 @@
 							}
 							<div *ovParticipantPanelItemElements>
 								<!-- Button to make moderator if not -->
-								@if (!participant.isModerator()) {
+								@if (localParticipant!.isOriginalModerator()) {
+									@if (participant.isModerator() && !participant.isOriginalModerator()) {
+										<button
+											mat-icon-button
+											(click)="unmakeModerator(participant)"
+											matTooltip="Remove participant moderator"
+											class="remove-moderator-btn"
+										>
+											<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
+										</button>
+									} @else {
+										@if (!participant.isModerator()) {
+											<button
+												mat-icon-button
+												(click)="makeModerator(participant)"
+												matTooltip="Make participant moderator"
+												class="make-moderator-btn"
+											>
+												<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+											</button>
+										}
+									}
+								} @else {
+									@if (!participant.isModerator()) {
+										<button
+											mat-icon-button
+											(click)="makeModerator(participant)"
+											matTooltip="Make participant moderator"
+											class="make-moderator-btn"
+										>
+											<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+										</button>
+									}
+								}
+
+								<!-- Button to kick participant -->
+								@if (!participant.isOriginalModerator()) {
 									<button
 										mat-icon-button
-										(click)="makeModerator(participant)"
-										matTooltip="Make participant moderator"
-										class="make-moderator-btn"
+										(click)="kickParticipant(participant)"
+										matTooltip="Kick participant"
+										class="force-disconnect-btn"
 									>
-										<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+										<mat-icon>call_end</mat-icon>
 									</button>
 								}
-								<!-- Button to kick participant -->
-								<button
-									mat-icon-button
-									(click)="kickParticipant(participant)"
-									matTooltip="Kick participant"
-									class="force-disconnect-btn"
-								>
-									<mat-icon>call_end</mat-icon>
-								</button>
 							</div>
 						</ov-participant-panel-item>
 					}
@@ -172,7 +200,7 @@
 		</ng-container>
 	</ov-videoconference>
 } @else {
-	<!-- Move this logic to prejoin meeting page -->
+	<!-- Move this logic to lobby meeting page -->
 	<div class="ov-page-container">
 		<div class="room-access-container fade-in">
 			<!-- Header Section -->

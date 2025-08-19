@@ -492,6 +492,10 @@ export class MeetingComponent implements OnInit {
 		}
 	}
 
+	/**
+	 * Makes a participant as moderator.
+	 * @param participant The participant to make as moderator.
+	 */
 	async makeModerator(participant: CustomParticipantModel) {
 		if (!this.participantService.isModeratorParticipant()) return;
 
@@ -504,6 +508,25 @@ export class MeetingComponent implements OnInit {
 		} catch (error) {
 			console.error('Error making participant moderator:', error);
 			this.notificationService.showSnackbar('Failed to make participant moderator');
+		}
+	}
+
+	/**
+	 * Unmakes a participant as moderator.
+	 * @param participant The participant to unmake as moderator.
+	 */
+	async unmakeModerator(participant: CustomParticipantModel) {
+		if (!this.participantService.isModeratorParticipant()) return;
+
+		try {
+			await this.meetingService.changeParticipantRole(
+				this.roomId,
+				participant.identity,
+				ParticipantRole.SPEAKER
+			);
+		} catch (error) {
+			console.error('Error unmaking participant moderator:', error);
+			this.notificationService.showSnackbar('Failed to unmake participant moderator');
 		}
 	}
 
