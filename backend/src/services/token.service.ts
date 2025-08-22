@@ -55,9 +55,7 @@ export class TokenService {
 		let { participantIdentity } = participantOptions;
 
 		if (participantName && !participantIdentity) {
-			// Generate participant identity based on name and unique ID
-			const identityPrefix = participantName.replace(/\s+/g, ''); // Remove all spaces
-			participantIdentity = `${identityPrefix}-${uid(8)}`;
+			participantIdentity = participantName;
 		}
 
 		const metadata: MeetTokenMetadata = {

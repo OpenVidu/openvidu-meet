@@ -9,10 +9,7 @@ import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateMeetTokenMetadata } from '../middlewares/index.js';
-import {
-	errorParticipantIdentityNotProvided,
-	errorParticipantNotFound
-} from '../models/error.model.js';
+import { errorParticipantIdentityNotProvided, errorParticipantNotFound } from '../models/error.model.js';
 import {
 	FrontendEventService,
 	LiveKitService,
@@ -81,7 +78,10 @@ export class ParticipantService {
 
 		const role = await this.roomService.getRoomRoleBySecret(roomId, secret);
 		const token = await this.generateParticipantToken(finalParticipantOptions, role, currentRoles);
-		this.logger.verbose(`Participant token generated for room '${roomId}' with name '${finalParticipantName}'`);
+		this.logger.verbose(
+			`Participant token generated for room '${roomId}'` +
+				(finalParticipantName ? ` with name '${finalParticipantName}'` : '')
+		);
 		return token;
 	}
 
