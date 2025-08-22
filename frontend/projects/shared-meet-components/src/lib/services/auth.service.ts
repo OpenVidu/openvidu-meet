@@ -86,9 +86,9 @@ export class AuthService {
 		}
 	}
 
-	async changePassword(newPassword: string): Promise<any> {
+	async changePassword(currentPassword: string, newPassword: string): Promise<any> {
 		const path = `${this.USERS_API}/change-password`;
-		return this.httpService.postRequest(path, { newPassword });
+		return this.httpService.postRequest(path, { currentPassword, newPassword });
 	}
 
 	async generateApiKey(): Promise<MeetApiKey> {

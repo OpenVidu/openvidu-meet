@@ -1,5 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+	AbstractControl,
+	FormControl,
+	FormGroup,
+	ReactiveFormsModule,
+	ValidationErrors,
+	Validators
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -8,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProFeatureBadgeComponent } from '@lib/components';
 import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
@@ -22,6 +30,7 @@ import { AuthMode } from '@lib/typings/ce';
 		MatInputModule,
 		MatFormFieldModule,
 		MatSelectModule,
+		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatDividerModule,
 		ReactiveFormsModule,
@@ -32,11 +41,16 @@ import { AuthMode } from '@lib/typings/ce';
 })
 export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(true);
-	hasAccessSettingsChanges = signal(false);
+
+	showCurrentPassword = signal(false);
+	showNewPassword = signal(false);
+	showConfirmPassword = signal(false);
 
 	adminCredentialsForm = new FormGroup({
-		adminUsername: new FormControl({ value: '', disabled: true }, [Validators.required]),
-		adminPassword: new FormControl('', [Validators.required, Validators.minLength(4)])
+		username: new FormControl({ value: '', disabled: true }, [Validators.required]),
+		currentPassword: new FormControl('', [Validators.required]),
+		newPassword: new FormControl('', [Validators.required, Validators.minLength(5)]),
+		confirmPassword: new FormControl('', [Validators.required])
 	});
 	accessSettingsForm = new FormGroup({
 		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required])
@@ -49,6 +63,7 @@ export class UsersPermissionsComponent implements OnInit {
 		{ value: AuthMode.ALL_USERS, label: 'Everyone' }
 	];
 
+	hasAccessSettingsChanges = signal(false);
 	private initialAccessSettingsFormValue: any = null;
 
 	constructor(
@@ -60,6 +75,22 @@ export class UsersPermissionsComponent implements OnInit {
 		this.accessSettingsForm.valueChanges.subscribe(() => {
 			this.checkForAccessSettingsChanges();
 		});
+
+		// Revalidate new password when current password changes
+		this.adminCredentialsForm.get('currentPassword')?.valueChanges.subscribe(() => {
+			const newPasswordControl = this.adminCredentialsForm.get('newPassword');
+			if (newPasswordControl?.value) {
+				newPasswordControl.updateValueAndValidity();
+			}
+		});
+
+		// Revalidate confirm password when new password changes
+		this.adminCredentialsForm.get('newPassword')?.valueChanges.subscribe(() => {
+			const confirmPasswordControl = this.adminCredentialsForm.get('confirmPassword');
+			if (confirmPasswordControl?.value) {
+				confirmPasswordControl.updateValueAndValidity();
+			}
+		});
 	}
 
 	async ngOnInit() {
@@ -67,6 +98,12 @@ export class UsersPermissionsComponent implements OnInit {
 		await this.loadAdminUsername();
 		await this.loadAccessSettings();
 		this.isLoading.set(false);
+
+		// Add custom validator for new password to prevent same password
+		this.adminCredentialsForm.get('newPassword')?.addValidators(this.newPasswordValidator.bind(this));
+
+		// Add custom validator for confirm password
+		this.adminCredentialsForm.get('confirmPassword')?.addValidators(this.confirmPasswordValidator.bind(this));
 	}
 
 	private async loadAdminUsername() {
@@ -77,7 +114,7 @@ export class UsersPermissionsComponent implements OnInit {
 			return;
 		}
 
-		this.adminCredentialsForm.get('adminUsername')?.setValue(username);
+		this.adminCredentialsForm.get('username')?.setValue(username);
 	}
 
 	private async loadAccessSettings() {
@@ -92,6 +129,28 @@ export class UsersPermissionsComponent implements OnInit {
 			console.error('Error loading security preferences:', error);
 			this.notificationService.showSnackbar('Failed to load security preferences');
 		}
+	}
+
+	private newPasswordValidator(control: AbstractControl): ValidationErrors | null {
+		const currentPassword = this.adminCredentialsForm?.get('currentPassword')?.value;
+		const newPassword = control.value;
+
+		if (!currentPassword || !newPassword) {
+			return null;
+		}
+
+		return currentPassword === newPassword ? { samePassword: true } : null;
+	}
+
+	private confirmPasswordValidator(control: AbstractControl): ValidationErrors | null {
+		const newPassword = this.adminCredentialsForm?.get('newPassword')?.value;
+		const confirmPassword = control.value;
+
+		if (!newPassword || !confirmPassword) {
+			return null;
+		}
+
+		return newPassword === confirmPassword ? null : { passwordMismatch: true };
 	}
 
 	private checkForAccessSettingsChanges() {
@@ -109,12 +168,24 @@ export class UsersPermissionsComponent implements OnInit {
 			return;
 		}
 
-		const formData = this.adminCredentialsForm.value;
-		const adminPassword = formData.adminPassword!;
+		const { username, currentPassword, newPassword } = this.adminCredentialsForm.value;
 
 		try {
-			await this.authService.changePassword(adminPassword);
+			await this.authService.changePassword(currentPassword!, newPassword!);
 			this.notificationService.showSnackbar('Admin credentials updated successfully');
+
+			// Reset the form
+			this.adminCredentialsForm.reset({
+				username: username,
+				currentPassword: '',
+				newPassword: '',
+				confirmPassword: ''
+			});
+
+			// Hide all password fields
+			this.showCurrentPassword.set(false);
+			this.showNewPassword.set(false);
+			this.showConfirmPassword.set(false);
 		} catch (error) {
 			console.error('Error saving admin credentials:', error);
 			this.notificationService.showSnackbar('Failed to save admin credentials');
@@ -145,20 +216,50 @@ export class UsersPermissionsComponent implements OnInit {
 	}
 
 	// Utility methods for form validation
-	getAdminPasswordError(): string {
-		const control = this.adminCredentialsForm.get('adminPassword')!;
-		if (!control.touched || !control.errors) {
-			return '';
+
+	getCurrentPasswordError(): string | null {
+		const control = this.adminCredentialsForm.get('currentPassword');
+
+		if (control?.errors && control.touched) {
+			if (control.errors['required']) {
+				return 'Current password is required';
+			}
 		}
 
-		const errors = control.errors;
-		if (errors['required']) {
-			return 'Admin password is required';
-		}
-		if (errors['minlength']) {
-			return `Admin password must be at least ${errors['minlength'].requiredLength} characters`;
+		return null;
+	}
+
+	getNewPasswordError(): string | null {
+		const control = this.adminCredentialsForm.get('newPassword');
+
+		if (control?.errors && control.touched) {
+			const errors = control.errors;
+			if (errors['required']) {
+				return 'New password is required';
+			}
+			if (errors['minlength']) {
+				return `Password must be at least ${errors['minlength'].requiredLength} characters long`;
+			}
+			if (errors['samePassword']) {
+				return 'New password must be different from current password';
+			}
 		}
 
-		return '';
+		return null;
+	}
+
+	getConfirmPasswordError(): string | null {
+		const control = this.adminCredentialsForm.get('confirmPassword');
+
+		if (control?.touched && control?.errors) {
+			if (control.errors['required']) {
+				return 'Please confirm your password';
+			}
+			if (control.errors['passwordMismatch']) {
+				return 'Passwords do not match';
+			}
+		}
+
+		return null;
 	}
 }

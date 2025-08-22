@@ -30,6 +30,10 @@
 		::ng-deep .mat-mdc-form-field {
 			width: 100%;
 		}
+
+		::ng-deep .input-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
 	}
 
 	.username-field {
