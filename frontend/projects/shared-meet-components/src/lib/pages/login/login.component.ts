@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService, NavigationService } from '@lib/services';
 
@@ -20,6 +21,7 @@ import { AuthService, NavigationService } from '@lib/services';
 		FormsModule,
 		MatCardModule,
 		MatIconModule,
+		MatTooltipModule,
 		RouterModule
 	],
 	templateUrl: './login.component.html',
@@ -27,10 +29,13 @@ import { AuthService, NavigationService } from '@lib/services';
 })
 export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({
-		username: new FormControl('', [Validators.required, Validators.minLength(4)]),
-		password: new FormControl('', [Validators.required, Validators.minLength(4)])
+		username: new FormControl('', [Validators.required]),
+		password: new FormControl('', [Validators.required])
 	});
+
+	showPassword = false;
 	loginErrorMessage: string | undefined;
+
 	redirectTo = ''; // By default, redirect to home page
 
 	constructor(

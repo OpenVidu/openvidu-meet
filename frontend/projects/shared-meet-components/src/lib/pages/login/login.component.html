@@ -6,18 +6,40 @@
 			<form [formGroup]="loginForm" (ngSubmit)="login()" id="login-form">
 				<mat-form-field class="form-input" appearance="fill">
 					<mat-label>Username</mat-label>
-					<input matInput formControlName="username" required id="username-input" />
+					<input matInput formControlName="username" placeholder="Enter your username" id="username-input" />
 					<mat-icon matPrefix>person</mat-icon>
 				</mat-form-field>
 
 				<mat-form-field class="form-input" appearance="fill">
 					<mat-label>Password</mat-label>
-					<input matInput type="password" formControlName="password" required id="password-input" />
+					<input
+						matInput
+						[type]="showPassword ? 'text' : 'password'"
+						formControlName="password"
+						placeholder="Enter your password"
+						id="password-input"
+					/>
 					<mat-icon matPrefix>lock</mat-icon>
+					<button
+						mat-icon-button
+						matSuffix
+						type="button"
+						class="input-btn"
+						(click)="showPassword = !showPassword"
+						matTooltip="{{ showPassword ? 'Hide password' : 'Show password' }}"
+					>
+						<mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+					</button>
 				</mat-form-field>
 
 				<div class="login-button">
-					<button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid" id="login-button">
+					<button
+						mat-raised-button
+						color="primary"
+						type="submit"
+						[disabled]="loginForm.invalid"
+						id="login-button"
+					>
 						Login
 					</button>
 				</div>
