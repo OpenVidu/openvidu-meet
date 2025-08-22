@@ -24,11 +24,11 @@ export const changePassword = async (req: Request, res: Response) => {
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const { newPassword } = req.body as { newPassword: string };
+	const { currentPassword, newPassword } = req.body as { currentPassword: string; newPassword: string };
 
 	try {
 		const userService = container.get(UserService);
-		await userService.changePassword(user.username, newPassword);
+		await userService.changePassword(user.username, currentPassword, newPassword);
 		return res.status(200).json({ message: 'Password changed successfully' });
 	} catch (error) {
 		handleError(res, error, 'changing password');

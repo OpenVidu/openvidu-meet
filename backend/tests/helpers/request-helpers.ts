@@ -190,13 +190,13 @@ export const getProfile = async (cookie: string) => {
 		.send();
 };
 
-export const changePassword = async (newPassword: string, cookie: string) => {
+export const changePassword = async (currentPassword: string, newPassword: string, cookie: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`)
 		.set('Cookie', cookie)
-		.send({ newPassword });
+		.send({ currentPassword, newPassword });
 };
 
 export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {

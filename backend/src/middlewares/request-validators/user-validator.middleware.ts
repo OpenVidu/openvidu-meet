@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 const ChangePasswordRequestSchema = z.object({
-	newPassword: z.string().min(4, 'New password must be at least 4 characters long')
+	currentPassword: z.string(),
+	newPassword: z.string().min(5, 'New password must be at least 5 characters long')
 });
 
 export const validateChangePasswordRequest = (req: Request, res: Response, next: NextFunction) => {

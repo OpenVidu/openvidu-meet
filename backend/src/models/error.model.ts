@@ -72,6 +72,10 @@ export const errorInvalidCredentials = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Login Error', 'Invalid username or password', 404);
 };
 
+export const errorInvalidPassword = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Change Password Error', 'Invalid current password', 400);
+};
+
 export const errorUnauthorized = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authentication Error', 'Unauthorized', 401);
 };

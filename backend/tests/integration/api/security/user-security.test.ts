@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
@@ -34,6 +34,7 @@ describe('User API Security Tests', () => {
 
 	describe('Change Password Tests', () => {
 		const changePasswordRequest = {
+			currentPassword: MEET_ADMIN_SECRET,
 			newPassword: 'newpassword123'
 		};
 
@@ -43,17 +44,15 @@ describe('User API Security Tests', () => {
 			adminCookie = await loginUser();
 		});
 
-		afterEach(async () => {
-			// Reset password
-			await changePassword(MEET_ADMIN_SECRET, adminCookie);
-		});
-
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.post(`${USERS_PATH}/change-password`)
 				.set('Cookie', adminCookie)
 				.send(changePasswordRequest);
 			expect(response.status).toBe(200);
+
+			// Reset password
+			await changePassword(changePasswordRequest.newPassword, MEET_ADMIN_SECRET, adminCookie);
 		});
 
 		it('should fail when user is not authenticated', async () => {

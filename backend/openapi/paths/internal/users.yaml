@@ -28,6 +28,8 @@
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-change-password.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-password.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '422':
