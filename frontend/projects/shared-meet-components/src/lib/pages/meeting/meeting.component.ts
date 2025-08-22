@@ -376,7 +376,7 @@ export class MeetingComponent implements OnInit {
 							if (!secret) return;
 
 							this.roomSecret = secret;
-							this.roomService.setRoomSecret(secret);
+							this.roomService.setRoomSecret(secret, false);
 
 							try {
 								await this.participantService.refreshParticipantToken({
