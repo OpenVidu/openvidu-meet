@@ -439,7 +439,7 @@ export class MeetingComponent implements OnInit {
 		}
 
 		// Navigate to the disconnected page with the reason
-		await this.navigationService.navigateTo('disconnected', { reason: leftReason });
+		await this.navigationService.navigateTo('disconnected', { reason: leftReason }, true);
 	}
 
 	/**

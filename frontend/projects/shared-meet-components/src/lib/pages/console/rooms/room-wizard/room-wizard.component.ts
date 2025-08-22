@@ -129,9 +129,12 @@ export class RoomWizardComponent implements OnInit {
 
 	async createRoom(roomName?: string) {
 		try {
-			// Call the room service to create a new room
 			const { moderatorUrl } = await this.roomService.createRoom({ roomName });
-			await this.navigationService.redirectTo(moderatorUrl);
+
+			// Extract the path and query parameters from the moderator URL and navigate to it
+			const url = new URL(moderatorUrl);
+			const pathWithParams = url.pathname + url.search + url.hash;
+			await this.navigationService.redirectTo(pathWithParams);
 		} catch (error) {
 			const errorMessage = `Failed to create room ${roomName}`;
 			this.notificationService.showSnackbar(errorMessage);
@@ -158,7 +161,11 @@ export class RoomWizardComponent implements OnInit {
 			} else {
 				// Create new room
 				const { moderatorUrl } = await this.roomService.createRoom(roomOptions);
-				await this.navigationService.redirectTo(moderatorUrl);
+
+				// Extract the path and query parameters from the moderator URL and navigate to it
+				const url = new URL(moderatorUrl);
+				const pathWithParams = url.pathname + url.search + url.hash;
+				await this.navigationService.redirectTo(pathWithParams);
 			}
 		} catch (error) {
 			const errorMessage = `Failed to ${this.editMode ? 'update' : 'create'} room`;
