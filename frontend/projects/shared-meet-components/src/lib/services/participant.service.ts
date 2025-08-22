@@ -78,7 +78,11 @@ export class ParticipantService {
 			const decodedToken = getValidDecodedToken(token);
 			const metadata = decodedToken.metadata as MeetTokenMetadata;
 
-			this.participantIdentity = decodedToken.sub;
+			if (decodedToken.sub && decodedToken.name) {
+				this.setParticipantName(decodedToken.name);
+				this.participantIdentity = decodedToken.sub;
+			}
+
 			this.role = metadata.selectedRole;
 			const openviduPermissions = metadata.roles.find((r) => r.role === this.role)!.permissions;
 			this.permissions = {

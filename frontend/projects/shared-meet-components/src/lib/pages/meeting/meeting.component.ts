@@ -261,7 +261,6 @@ export class MeetingComponent implements OnInit {
 		}
 
 		this.participantName = value.name.trim();
-		this.participantService.setParticipantName(this.participantName);
 
 		try {
 			await this.generateParticipantToken();
@@ -298,6 +297,7 @@ export class MeetingComponent implements OnInit {
 				secret: this.roomSecret,
 				participantName: this.participantName
 			});
+			this.participantName = this.participantService.getParticipantName()!;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);
 			switch (error.status) {
@@ -308,11 +308,6 @@ export class MeetingComponent implements OnInit {
 				case 404:
 					// Room not found
 					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM, true);
-					break;
-				case 409:
-					// Participant already exists.
-					// Show the error message in participant name input form
-					this.participantForm.get('name')?.setErrors({ participantExists: true });
 					break;
 				default:
 					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);

@@ -136,7 +136,7 @@
 										<button
 											mat-icon-button
 											(click)="unmakeModerator(participant)"
-											matTooltip="Remove participant moderator"
+											matTooltip="Unmake participant moderator"
 											class="remove-moderator-btn"
 										>
 											<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
@@ -241,11 +241,6 @@
 								}
 								@if (participantForm.get('name')?.hasError('required')) {
 									<mat-error> The name is <strong>required</strong> </mat-error>
-								}
-								@if (participantForm.get('name')?.hasError('participantExists')) {
-									<mat-error>
-										The name is already taken. <strong> Please choose another name </strong>
-									</mat-error>
 								}
 							</mat-form-field>
 
