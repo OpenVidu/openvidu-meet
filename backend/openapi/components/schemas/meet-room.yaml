@@ -39,13 +39,13 @@ properties:
     #     description: >
     #         The maximum number of participants allowed in the room. If the number of participants exceeds
     #         this limit, new participants will not be allowed to join.
-    moderatorRoomURL:
+    moderatorUrl:
         type: string
         example: 'http://localhost:6080/room/room-123?secret=123456'
         description: >
             The URL for the moderator participants to join the room. The moderator role has special permissions to manage the
             room and participants.
-    speakerRoomURL:
+    speakerUrl:
         type: string
         example: 'http://localhost:6080/room/room-123?secret=654321'
         description: >

@@ -20,8 +20,8 @@ export interface MeetRoom extends BaseRoomOptions {
     roomId: string;
     roomName: string;
     creationDate: number;
-    moderatorRoomUrl: string;
-    speakerRoomUrl: string;
+    moderatorUrl: string;
+    speakerUrl: string;
     markedForDeletion?: boolean;
 }
 

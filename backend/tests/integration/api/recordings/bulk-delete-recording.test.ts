@@ -181,14 +181,14 @@ describe('Recording API Tests', () => {
 			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 
 			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
+			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
 			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 
 			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
+			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
 			const response = await startRecording(room.roomId, moderatorCookie);
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);

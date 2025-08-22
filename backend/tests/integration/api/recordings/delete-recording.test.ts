@@ -73,8 +73,8 @@ describe('Recording API Tests', () => {
 			// Check that the room metadata exists after starting the first recording
 			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
+			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
 			// Generate a new recording
 			const response = await startRecording(room.roomId, moderatorCookie);
@@ -90,8 +90,8 @@ describe('Recording API Tests', () => {
 			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 
 			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorRoomUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerRoomUrl).toContain(room.roomId);
+			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
+			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
 			// Delete the second recording
 			deleteResponse = await deleteRecording(secondRecordingId!);

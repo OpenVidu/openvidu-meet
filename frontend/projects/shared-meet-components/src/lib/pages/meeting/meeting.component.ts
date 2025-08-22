@@ -519,11 +519,7 @@ export class MeetingComponent implements OnInit {
 		if (!this.participantService.isModeratorParticipant()) return;
 
 		try {
-			await this.meetingService.changeParticipantRole(
-				this.roomId,
-				participant.identity,
-				ParticipantRole.SPEAKER
-			);
+			await this.meetingService.changeParticipantRole(this.roomId, participant.identity, ParticipantRole.SPEAKER);
 		} catch (error) {
 			console.error('Error unmaking participant moderator:', error);
 			this.notificationService.showSnackbar('Failed to unmake participant moderator');
@@ -531,12 +527,12 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async copyModeratorLink() {
-		this.clipboard.copy(this.room!.moderatorRoomUrl);
+		this.clipboard.copy(this.room!.moderatorUrl);
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
 	async copySpeakerLink() {
-		this.clipboard.copy(this.room!.speakerRoomUrl);
+		this.clipboard.copy(this.room!.speakerUrl);
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 

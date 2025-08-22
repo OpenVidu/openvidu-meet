@@ -6,4 +6,4 @@ description: >
 required: false
 schema:
     type: string
-example: 'roomId,moderatorRoomUrl'
+example: 'roomId,moderatorUrl'

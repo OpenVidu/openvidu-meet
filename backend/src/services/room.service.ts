@@ -81,8 +81,8 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			preferences,
-			moderatorRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
-			speakerRoomUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
+			moderatorUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
+			speakerUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
 		};
 
 		await this.storageService.saveMeetRoom(meetRoom);
@@ -197,9 +197,9 @@ export class RoomService {
 
 		const filteredRoom = UtilsHelper.filterObjectFields(meetRoom, fields);
 
-		// Remove moderatorRoomUrl if the participant is a speaker to prevent access to moderator links
+		// Remove moderatorUrl if the participant is a speaker to prevent access to moderator links
 		if (participantRole === ParticipantRole.SPEAKER) {
-			delete filteredRoom.moderatorRoomUrl;
+			delete filteredRoom.moderatorUrl;
 		}
 
 		return filteredRoom as MeetRoom;

@@ -27,18 +27,18 @@ export class MeetRoomHelper {
 	 * This method parses the 'secret' query parameter from both speaker and moderator
 	 * room URLs associated with the meeting room.
 	 *
-	 * @param room - The MeetRoom object containing speakerRoomUrl and moderatorRoomUrl properties
+	 * @param room - The MeetRoom object containing speakerUrl and moderatorUrl properties
 	 * @returns An object containing the extracted secrets with the following properties:
 	 *   - speakerSecret: The secret extracted from the speaker room URL
 	 *   - moderatorSecret: The secret extracted from the moderator room URL
 	 */
 	static extractSecretsFromRoom(room: MeetRoom): { speakerSecret: string; moderatorSecret: string } {
-		const { speakerRoomUrl, moderatorRoomUrl } = room;
+		const { speakerUrl, moderatorUrl } = room;
 
-		const speakerUrl = new URL(speakerRoomUrl);
-		const speakerSecret = speakerUrl.searchParams.get('secret') || '';
-		const moderatorUrl = new URL(moderatorRoomUrl);
-		const moderatorSecret = moderatorUrl.searchParams.get('secret') || '';
+		const parsedSpeakerUrl = new URL(speakerUrl);
+		const speakerSecret = parsedSpeakerUrl.searchParams.get('secret') || '';
+		const parsedModeratorUrl = new URL(moderatorUrl);
+		const moderatorSecret = parsedModeratorUrl.searchParams.get('secret') || '';
 		return { speakerSecret, moderatorSecret };
 	}
 

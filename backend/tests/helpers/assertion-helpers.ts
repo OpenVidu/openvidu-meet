@@ -138,10 +138,10 @@ export const expectValidRoom = (
 		});
 	}
 
-	expect(room.moderatorRoomUrl).toBeDefined();
-	expect(room.speakerRoomUrl).toBeDefined();
-	expect(room.moderatorRoomUrl).toContain(room.roomId);
-	expect(room.speakerRoomUrl).toContain(room.roomId);
+	expect(room.moderatorUrl).toBeDefined();
+	expect(room.speakerUrl).toBeDefined();
+	expect(room.moderatorUrl).toContain(room.roomId);
+	expect(room.speakerUrl).toContain(room.roomId);
 
 	if (markedForDeletion !== undefined) {
 		expect(room.autoDeletionDate).toBeDefined();

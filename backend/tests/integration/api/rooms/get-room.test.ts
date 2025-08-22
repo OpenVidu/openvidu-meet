@@ -97,7 +97,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomResponse(response, 'deletion-date', validAutoDeletionDate);
 		});
 
-		it('should retrieve a room without moderatorRoomUrl when participant is speaker', async () => {
+		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
 			const roomData = await setupSingleRoom();
 			const response = await getRoom(
 				roomData.room.roomId,
@@ -106,7 +106,7 @@ describe('Room API Tests', () => {
 				ParticipantRole.SPEAKER
 			);
 			expect(response.status).toBe(200);
-			expect(response.body.moderatorRoomUrl).toBeUndefined();
+			expect(response.body.moderatorUrl).toBeUndefined();
 		});
 
 		it('should return 404 for a non-existent room', async () => {

@@ -311,8 +311,8 @@ export class MeetStorageService<
 		}
 
 		const archivedRoom: Partial<MRoom> = {
-			moderatorRoomUrl: room.moderatorRoomUrl,
-			speakerRoomUrl: room.speakerRoomUrl,
+			moderatorUrl: room.moderatorUrl,
+			speakerUrl: room.speakerUrl,
 			preferences: {
 				recordingPreferences: room.preferences?.recordingPreferences
 			}
