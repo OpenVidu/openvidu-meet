@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, signal } from '@angular/core';
 import {
 	AbstractControl,
@@ -76,8 +77,17 @@ export class UsersPermissionsComponent implements OnInit {
 			this.checkForAccessSettingsChanges();
 		});
 
-		// Revalidate new password when current password changes
+		// Clear invalid password error when user starts typing
 		this.adminCredentialsForm.get('currentPassword')?.valueChanges.subscribe(() => {
+			const control = this.adminCredentialsForm.get('currentPassword');
+			if (control?.errors?.['invalidPassword']) {
+				// Remove only the invalidPassword error, keep others
+				const errors = { ...control.errors };
+				delete errors['invalidPassword'];
+				control.setErrors(Object.keys(errors).length > 0 ? errors : null);
+			}
+
+			// Revalidate new password when current password changes
 			const newPasswordControl = this.adminCredentialsForm.get('newPassword');
 			if (newPasswordControl?.value) {
 				newPasswordControl.updateValueAndValidity();
@@ -188,7 +198,17 @@ export class UsersPermissionsComponent implements OnInit {
 			this.showConfirmPassword.set(false);
 		} catch (error) {
 			console.error('Error saving admin credentials:', error);
-			this.notificationService.showSnackbar('Failed to save admin credentials');
+
+			if ((error as HttpErrorResponse).status === 400) {
+				// Set error on current password field
+				const currentPasswordControl = this.adminCredentialsForm.get('currentPassword');
+				currentPasswordControl?.setErrors({ invalidPassword: true });
+				currentPasswordControl?.markAsTouched();
+
+				this.notificationService.showSnackbar('Invalid current password');
+			} else {
+				this.notificationService.showSnackbar('Failed to save admin credentials');
+			}
 		}
 	}
 
@@ -223,6 +243,9 @@ export class UsersPermissionsComponent implements OnInit {
 		if (control?.errors && control.touched) {
 			if (control.errors['required']) {
 				return 'Current password is required';
+			}
+			if (control.errors['invalidPassword']) {
+				return 'Current password is incorrect';
 			}
 		}
 
