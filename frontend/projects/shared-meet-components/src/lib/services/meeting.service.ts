@@ -52,10 +52,10 @@ export class MeetingService {
 	 * @param newRole - The new role to be assigned to the participant
 	 */
 	async changeParticipantRole(roomId: string, participantIdentity: string, newRole: string): Promise<void> {
-		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}`;
+		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}/role`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		const body = { role: newRole };
-		await this.httpService.patchRequest(path, body, headers);
+		await this.httpService.putRequest(path, body, headers);
 		this.log.d(`Changed role of participant '${participantIdentity}' to '${newRole}' in room '${roomId}'`);
 	}
 }

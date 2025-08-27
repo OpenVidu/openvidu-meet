@@ -28,6 +28,11 @@ export class HttpService {
 		return lastValueFrom(this.http.put<T>(path, body, options));
 	}
 
+	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.patch<T>(path, body, options));
+	}
+
 	async deleteRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
 		const options = {
 			observe: 'response' as const,
@@ -37,10 +42,5 @@ export class HttpService {
 			...(response.body as T),
 			statusCode: response.status
 		}));
-	}
-
-	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
-		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.patch<T>(path, body, options));
 	}
 }
