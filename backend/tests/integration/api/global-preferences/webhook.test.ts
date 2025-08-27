@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { Request } from 'express';
-import { MEET_WEBHOOK_ENABLED, MEET_WEBHOOK_URL } from '../../../../src/environment.js';
+import { MEET_INITIAL_WEBHOOK_ENABLED, MEET_INITIAL_WEBHOOK_URL } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getWebbhookPreferences,
@@ -12,8 +12,8 @@ import { startWebhookServer, stopWebhookServer } from '../../../helpers/test-sce
 
 const restoreDefaultWebhookPreferences = async () => {
 	const defaultPreferences = {
-		enabled: MEET_WEBHOOK_ENABLED === 'true',
-		url: MEET_WEBHOOK_URL
+		enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
+		url: MEET_INITIAL_WEBHOOK_URL
 	};
 	await updateWebbhookPreferences(defaultPreferences);
 };
@@ -114,8 +114,8 @@ describe('Webhook Preferences API Tests', () => {
 
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
-				enabled: MEET_WEBHOOK_ENABLED === 'true',
-				url: MEET_WEBHOOK_URL
+				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
+				url: MEET_INITIAL_WEBHOOK_URL
 			});
 		});
 	});

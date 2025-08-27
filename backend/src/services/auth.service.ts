@@ -1,6 +1,6 @@
 import { User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
-import { MEET_API_KEY } from '../environment.js';
+import { MEET_INITIAL_API_KEY } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';
 import { MeetStorageService, UserService } from './index.js';
@@ -48,11 +48,11 @@ export class AuthService {
 			storedApiKeys = [];
 		}
 
-		if (storedApiKeys.length === 0 && !MEET_API_KEY) {
+		if (storedApiKeys.length === 0 && !MEET_INITIAL_API_KEY) {
 			throw errorApiKeyNotConfigured();
 		}
 
 		// Check if the provided API key matches any stored API key or the MEET_API_KEY
-		return storedApiKeys.some((key) => key.key === apiKey) || apiKey === MEET_API_KEY;
+		return storedApiKeys.some((key) => key.key === apiKey) || apiKey === MEET_INITIAL_API_KEY;
 	}
 }

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { MEET_API_KEY } from '../../../../src/environment.js';
+import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
@@ -47,7 +47,7 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 
@@ -108,7 +108,7 @@ describe('Recording API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 
 			expect(response.status).toBe(401);
 		});
@@ -160,7 +160,7 @@ describe('Recording API Security Tests', () => {
 			it('should succeed when request includes API key', async () => {
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 
@@ -224,7 +224,7 @@ describe('Recording API Security Tests', () => {
 			it('should succeed when request includes API key', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 
@@ -351,7 +351,7 @@ describe('Recording API Security Tests', () => {
 			it('should succeed when request includes API key', async () => {
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(404);
 			});
 
@@ -437,7 +437,7 @@ describe('Recording API Security Tests', () => {
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 
@@ -516,7 +516,7 @@ describe('Recording API Security Tests', () => {
 			it('should succeed when request includes API key', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 
@@ -640,7 +640,7 @@ describe('Recording API Security Tests', () => {
 			it('should succeed when request includes API key', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 
@@ -715,7 +715,7 @@ describe('Recording API Security Tests', () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 				expect(response.status).toBe(200);
 			});
 

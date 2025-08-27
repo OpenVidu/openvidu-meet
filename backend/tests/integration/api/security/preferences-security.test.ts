@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { MEET_API_KEY } from '../../../../src/environment.js';
-import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
+import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const PREFERENCES_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`;
 
@@ -26,7 +26,7 @@ describe('Global Preferences API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${PREFERENCES_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.send(webhookPreferences);
 			expect(response.status).toBe(401);
 		});
@@ -49,7 +49,7 @@ describe('Global Preferences API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${PREFERENCES_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 
@@ -77,7 +77,7 @@ describe('Global Preferences API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${PREFERENCES_PATH}/security`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.send(securityPreferences);
 			expect(response.status).toBe(401);
 		});
@@ -107,7 +107,7 @@ describe('Global Preferences API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${PREFERENCES_PATH}/appearance`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.send({});
 			expect(response.status).toBe(401);
 		});
@@ -130,7 +130,7 @@ describe('Global Preferences API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${PREFERENCES_PATH}/appearance`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 

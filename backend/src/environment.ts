@@ -21,26 +21,28 @@ export const {
 	MEET_LOG_LEVEL = 'info',
 	MEET_NAME_ID = 'openviduMeet',
 
-	// Authentication configuration
-	MEET_API_KEY = '',
-	MEET_ADMIN_USER = 'admin',
 	/**
+	 * Authentication configuration
+	 *
 	 * IMPORTANT:
-	 * - This variable is only used the first time the server starts, storing the value in the database.
-	 * - To change it after the initial start, use the OpenVidu Meet API instead of modifying this environment variable.
+	 * - These variables are only used the first time the server starts, storing their values in the database.
+	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
 	 */
-	MEET_ADMIN_SECRET = 'admin',
+	MEET_INITIAL_ADMIN_USER = 'admin',
+	MEET_INITIAL_ADMIN_PASSWORD = 'admin',
+	MEET_INITIAL_API_KEY = '',
+
 	MEET_COOKIE_SECURE = 'false',
 
 	/**
 	 * Webhook configuration
 	 *
 	 * IMPORTANT:
-	 * - These variables are only used the first time the server starts, storing the values in the database.
+	 * - These variables are only used the first time the server starts, storing their values in the database.
 	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
 	 */
-	MEET_WEBHOOK_ENABLED = 'false',
-	MEET_WEBHOOK_URL = 'http://localhost:5080/webhook',
+	MEET_INITIAL_WEBHOOK_ENABLED = 'false',
+	MEET_INITIAL_WEBHOOK_URL = 'http://localhost:5080/webhook',
 
 	// LiveKit configuration
 	LIVEKIT_URL = 'ws://localhost:7880',
@@ -106,14 +108,14 @@ export const logEnvVars = () => {
 	console.log('SERVICE NAME ID: ', text(MEET_NAME_ID));
 	console.log('CORS ORIGIN:', text(SERVER_CORS_ORIGIN));
 	console.log('MEET LOG LEVEL: ', text(MEET_LOG_LEVEL));
-	console.log('MEET API KEY: ', credential('****' + MEET_API_KEY.slice(-3)));
-	console.log('MEET ADMIN USER: ', credential('****' + MEET_ADMIN_USER.slice(-3)));
-	console.log('MEET ADMIN PASSWORD: ', credential('****' + MEET_ADMIN_SECRET.slice(-3)));
 	console.log('MEET PREFERENCES STORAGE:', text(MEET_PREFERENCES_STORAGE_MODE));
-	console.log('MEET_WEBHOOK_ENABLED:', text(MEET_WEBHOOK_ENABLED));
+	console.log('MEET INITIAL ADMIN USER: ', credential('****' + MEET_INITIAL_ADMIN_USER.slice(-3)));
+	console.log('MEET INITIAL ADMIN PASSWORD: ', credential('****' + MEET_INITIAL_ADMIN_PASSWORD.slice(-3)));
+	console.log('MEET INITIAL API KEY: ', credential('****' + MEET_INITIAL_API_KEY.slice(-3)));
+	console.log('MEET INITIAL WEBHOOK ENABLED:', text(MEET_INITIAL_WEBHOOK_ENABLED));
 
-	if (MEET_WEBHOOK_ENABLED === 'true') {
-		console.log('MEET_WEBHOOK_URL:', text(MEET_WEBHOOK_URL));
+	if (MEET_INITIAL_WEBHOOK_ENABLED === 'true') {
+		console.log('MEET INITIAL WEBHOOK URL:', text(MEET_INITIAL_WEBHOOK_URL));
 	}
 
 	console.log('---------------------------------------------------------');

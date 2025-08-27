@@ -8,7 +8,7 @@ import {
 } from '@typings-ce';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
-import { MEET_API_KEY } from '../environment.js';
+import { MEET_INITIAL_API_KEY } from '../environment.js';
 import { AuthService, LoggerService, MeetStorageService } from './index.js';
 import { errorWebhookUrlUnreachable } from '../models/error.model.js';
 
@@ -222,8 +222,8 @@ export class OpenViduWebhookService {
 
 		if (apiKeys.length === 0) {
 			// If no API keys are configured, check if the MEET_API_KEY environment variable is set
-			if (MEET_API_KEY) {
-				return MEET_API_KEY;
+			if (MEET_INITIAL_API_KEY) {
+				return MEET_INITIAL_API_KEY;
 			}
 
 			throw new Error('There are no API keys configured yet. Please, create one to use webhooks.');

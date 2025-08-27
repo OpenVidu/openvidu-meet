@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { MEET_ADMIN_SECRET } from '../../../../src/environment.js';
+import { MEET_INITIAL_ADMIN_PASSWORD } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -14,12 +14,12 @@ describe('Users API Tests', () => {
 	describe('Change Password Tests', () => {
 		it('should successfully change password', async () => {
 			const newPassword = 'newpassword123';
-			const response = await changePassword(MEET_ADMIN_SECRET, newPassword, adminCookie);
+			const response = await changePassword(MEET_INITIAL_ADMIN_PASSWORD, newPassword, adminCookie);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message', 'Password changed successfully');
 
 			// Reset password
-			await changePassword(newPassword, MEET_ADMIN_SECRET, adminCookie);
+			await changePassword(newPassword, MEET_INITIAL_ADMIN_PASSWORD, adminCookie);
 		});
 
 		it('should fail when current password is incorrect', async () => {
@@ -29,7 +29,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should fail when new password is not 5 characters long', async () => {
-			const response = await changePassword(MEET_ADMIN_SECRET, '1234', adminCookie);
+			const response = await changePassword(MEET_INITIAL_ADMIN_PASSWORD, '1234', adminCookie);
 			expectValidationError(response, 'newPassword', 'New password must be at least 5 characters long');
 		});
 	});

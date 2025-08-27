@@ -12,11 +12,11 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
 import {
-	MEET_ADMIN_SECRET,
-	MEET_ADMIN_USER,
-	MEET_NAME_ID,
-	MEET_WEBHOOK_ENABLED,
-	MEET_WEBHOOK_URL
+	MEET_INITIAL_ADMIN_PASSWORD,
+	MEET_INITIAL_ADMIN_USER,
+	MEET_INITIAL_WEBHOOK_ENABLED,
+	MEET_INITIAL_WEBHOOK_URL,
+	MEET_NAME_ID
 } from '../../environment.js';
 import { MeetLock, PasswordHelper, RecordingHelper } from '../../helpers/index.js';
 import {
@@ -141,8 +141,8 @@ export class MeetStorageService<
 
 			// Save the default admin user
 			const admin = {
-				username: MEET_ADMIN_USER,
-				passwordHash: await PasswordHelper.hashPassword(MEET_ADMIN_SECRET),
+				username: MEET_INITIAL_ADMIN_USER,
+				passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
 				roles: [UserRole.ADMIN, UserRole.USER]
 			} as MUser;
 			await this.saveUser(admin);
@@ -885,8 +885,8 @@ export class MeetStorageService<
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {
-				enabled: MEET_WEBHOOK_ENABLED === 'true',
-				url: MEET_WEBHOOK_URL
+				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
+				url: MEET_INITIAL_WEBHOOK_URL
 			},
 			securityPreferences: {
 				authentication: {
