@@ -10,7 +10,6 @@ export class GlobalPreferencesService {
 	protected readonly PREFERENCES_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/preferences`;
 
 	protected securityPreferences?: SecurityPreferences;
-	protected webhookPreferences?: WebhookPreferences;
 
 	protected log;
 
@@ -21,8 +20,8 @@ export class GlobalPreferencesService {
 		this.log = this.loggerService.get('OpenVidu Meet - GlobalPreferencesService');
 	}
 
-	async getSecurityPreferences(): Promise<SecurityPreferences> {
-		if (this.securityPreferences) {
+	async getSecurityPreferences(forceRefresh = false): Promise<SecurityPreferences> {
+		if (this.securityPreferences && !forceRefresh) {
 			return this.securityPreferences;
 		}
 
@@ -48,14 +47,9 @@ export class GlobalPreferencesService {
 	}
 
 	async getWebhookPreferences(): Promise<WebhookPreferences> {
-		if (this.webhookPreferences) {
-			return this.webhookPreferences;
-		}
-
 		try {
 			const path = `${this.PREFERENCES_API}/webhooks`;
-			this.webhookPreferences = await this.httpService.getRequest<WebhookPreferences>(path);
-			return this.webhookPreferences;
+			return await this.httpService.getRequest<WebhookPreferences>(path);
 		} catch (error) {
 			this.log.e('Error fetching webhook preferences:', error);
 			throw error;
@@ -65,14 +59,6 @@ export class GlobalPreferencesService {
 	async saveWebhookPreferences(preferences: WebhookPreferences) {
 		const path = `${this.PREFERENCES_API}/webhooks`;
 		await this.httpService.putRequest<WebhookPreferences>(path, preferences);
-
-		// Only update fields that are explicitly provided
-		if (this.webhookPreferences) {
-			this.webhookPreferences.enabled = preferences.enabled;
-			if (preferences.url) {
-				this.webhookPreferences.url = preferences.url;
-			}
-		}
 	}
 
 	async testWebhookUrl(url: string): Promise<void> {
