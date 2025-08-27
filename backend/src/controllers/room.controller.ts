@@ -119,17 +119,32 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	}
 };
 
+export const getRoomPreferences = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { roomId } = req.params;
+
+	logger.verbose(`Getting room preferences for room '${roomId}'`);
+
+	try {
+		const { preferences } = await roomService.getMeetRoom(roomId);
+		return res.status(200).json(preferences);
+	} catch (error) {
+		handleError(res, error, `getting room preferences for room '${roomId}'`);
+	}
+};
+
 export const updateRoomPreferences = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const roomPreferences = req.body;
+	const { preferences } = req.body;
 	const { roomId } = req.params;
 
 	logger.verbose(`Updating room preferences for room '${roomId}'`);
 
 	try {
-		const room = await roomService.updateMeetRoomPreferences(roomId, roomPreferences);
-		return res.status(200).json(room);
+		await roomService.updateMeetRoomPreferences(roomId, preferences);
+		return res.status(200).json({ message: `Room preferences for room '${roomId}' updated successfully` });
 	} catch (error) {
 		handleError(res, error, `updating room preferences for room '${roomId}'`);
 	}
@@ -207,20 +222,5 @@ export const getRoomRoleAndPermissions = async (req: Request, res: Response) => 
 		return res.status(200).json(roleAndPermissions);
 	} catch (error) {
 		handleError(res, error, `getting room role and permissions for room '${roomId}' and secret '${secret}'`);
-	}
-};
-
-export const getRoomPreferences = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const roomService = container.get(RoomService);
-	const { roomId } = req.params;
-
-	logger.verbose(`Getting room preferences for room '${roomId}'`);
-
-	try {
-		const { preferences } = await roomService.getMeetRoom(roomId);
-		return res.status(200).json(preferences);
-	} catch (error) {
-		handleError(res, error, `getting room preferences for room '${roomId}'`);
 	}
 };

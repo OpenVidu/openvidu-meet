@@ -184,6 +184,10 @@ const BulkDeleteRoomsSchema = z.object({
 	force: validForceQueryParam()
 });
 
+const UpdateRoomPreferencesSchema = z.object({
+	preferences: RoomPreferencesSchema
+});
+
 const RecordingTokenRequestSchema = z.object({
 	secret: z.string().nonempty('Secret is required')
 });
@@ -224,7 +228,7 @@ export const withValidRoomFiltersRequest = (req: Request, res: Response, next: N
 };
 
 export const withValidRoomPreferences = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomPreferencesSchema.safeParse(req.body);
+	const { success, error, data } = UpdateRoomPreferencesSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

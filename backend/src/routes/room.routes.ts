@@ -5,7 +5,6 @@ import * as roomCtrl from '../controllers/room.controller.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
-	checkParticipantFromSameRoom,
 	configureRecordingTokenAuth,
 	configureRoomAuthorization,
 	participantTokenValidator,
@@ -50,18 +49,25 @@ roomRouter.get(
 	configureRoomAuthorization,
 	roomCtrl.getRoom
 );
-roomRouter.put(
-	'/:roomId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
-	withValidRoomId,
-	withValidRoomPreferences,
-	roomCtrl.updateRoomPreferences
-);
 roomRouter.delete(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	withValidRoomDeleteRequest,
 	roomCtrl.deleteRoom
+);
+roomRouter.get(
+	'/:roomId/preferences',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
+	withValidRoomId,
+	configureRoomAuthorization,
+	roomCtrl.getRoomPreferences
+);
+roomRouter.put(
+	'/:roomId/preferences',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomId,
+	withValidRoomPreferences,
+	roomCtrl.updateRoomPreferences
 );
 
 // Internal room routes
@@ -69,13 +75,6 @@ export const internalRoomRouter = Router();
 internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRoomRouter.use(bodyParser.json());
 
-internalRoomRouter.get(
-	'/:roomId/preferences',
-	withAuth(participantTokenValidator),
-	withValidRoomId,
-	checkParticipantFromSameRoom,
-	roomCtrl.getRoomPreferences
-);
 internalRoomRouter.post(
 	'/:roomId/recording-token',
 	configureRecordingTokenAuth,
