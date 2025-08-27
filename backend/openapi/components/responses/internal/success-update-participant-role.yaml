@@ -1,4 +1,4 @@
-description: Successfully updated participant
+description: Successfully updated participant role
 content:
     application/json:
         schema:
