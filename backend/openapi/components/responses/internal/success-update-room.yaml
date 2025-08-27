@@ -1,5 +1,0 @@
-description: Success response for updating a room
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/meet-room.yaml'

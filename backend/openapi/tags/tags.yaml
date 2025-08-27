@@ -1,4 +1,4 @@
-- name: OpenVidu Meet - Room
+- name: OpenVidu Meet - Rooms
   description: Operations related to managing OpenVidu Meet rooms
 - name: OpenVidu Meet - Recordings
   description: Operations related to managing OpenVidu Meet recordings

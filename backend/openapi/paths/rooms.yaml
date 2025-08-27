@@ -6,7 +6,7 @@
             Creates a new OpenVidu Meet room.
             The room will be available for participants to join using the generated URLs.
         tags:
-            - OpenVidu Meet - Room
+            - OpenVidu Meet - Rooms
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
@@ -23,7 +23,6 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-
     get:
         operationId: getRooms
         summary: Get all rooms
@@ -31,7 +30,7 @@
             Retrieves a paginated list of all rooms available in the system.
             You can apply filters to narrow down the results based on specific criteria.
         tags:
-            - OpenVidu Meet - Room
+            - OpenVidu Meet - Rooms
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
@@ -51,7 +50,6 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-
     delete:
         operationId: bulkDeleteRooms
         summary: Bulk delete rooms
@@ -64,7 +62,7 @@
             If the "force" parameter is set to true, all rooms will be deleted immediately
             regardless of active participants.
         tags:
-            - OpenVidu Meet - Room
+            - OpenVidu Meet - Rooms
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
@@ -95,7 +93,7 @@
         description: >
             Retrieves the details of an OpenVidu Meet room with the specified room ID.
         tags:
-            - OpenVidu Meet - Room
+            - OpenVidu Meet - Rooms
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
@@ -119,33 +117,6 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-    put:
-      operationId: updateRoom
-      summary: Update a room
-      description: >
-          Updates the preferences of an OpenVidu Meet room with the specified room ID.
-      tags:
-          - OpenVidu Meet - Room
-      security:
-          - accessTokenCookie: []
-      parameters:
-          - $ref: '../components/parameters/room-id-path.yaml'
-      requestBody:
-          $ref: '../components/requestBodies/internal/update-room-request.yaml'
-      responses:
-          '200':
-              $ref: '../components/responses/internal/success-update-room.yaml'
-          '401':
-              $ref: '../components/responses/unauthorized-error.yaml'
-          '403':
-              $ref: '../components/responses/forbidden-error.yaml'
-          '404':
-              $ref: '../components/responses/error-room-not-found.yaml'
-          '422':
-              $ref: '../components/responses/validation-error.yaml'
-          '500':
-              $ref: '../components/responses/internal-server-error.yaml'
-
     delete:
         operationId: deleteRoom
         summary: Delete a room
@@ -158,7 +129,7 @@
             If the "force" parameter is set to true, the room will be deleted immediately
             regardless of active participants.
         tags:
-            - OpenVidu Meet - Room
+            - OpenVidu Meet - Rooms
         security:
             - apiKeyInHeader: []
             - accessTokenCookie: []
@@ -170,6 +141,63 @@
                 $ref: '../components/responses/success-room-marked-for-deletion.yaml'
             '204':
                 description: Successfully deleted the OpenVidu Meet room. No content is returned.
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/preferences:
+    get:
+        operationId: getRoomPreferences
+        summary: Get room preferences
+        description: >
+            Retrieves the preferences of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+            - participantTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/internal/x-participant-role.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-room-preferences.yaml'
+            '400':
+                $ref: '../components/responses/internal/error-invalid-participant-role.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    put:
+        operationId: updateRoomPreferences
+        summary: Update room preferences
+        description: >
+            Updates the preferences of an OpenVidu Meet room with the specified room ID.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyInHeader: []
+            - accessTokenCookie: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-preferences-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-preferences.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

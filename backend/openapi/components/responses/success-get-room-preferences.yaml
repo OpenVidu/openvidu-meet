@@ -1,0 +1,5 @@
+description: Success response for retrieving the room preferences
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/meet-room-preferences.yaml#/MeetRoomPreferences'

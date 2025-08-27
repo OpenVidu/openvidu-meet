@@ -13,6 +13,8 @@ paths:
         $ref: './paths/rooms.yaml#/~1rooms'
     /rooms/{roomId}:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}'
+    /rooms/{roomId}/preferences:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1preferences'
     /recordings:
         $ref: './paths/recordings.yaml#/~1recordings'
     /recordings/download:
