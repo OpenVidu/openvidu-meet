@@ -67,6 +67,10 @@ export class MeetStorageService<
 		this.keyBuilder = keyBuilder;
 	}
 
+	// ==========================================
+	// INITIALIZATION LOGIC
+	// ==========================================
+
 	/**
 	 * Performs a health check on the storage system.
 	 * Verifies both service connectivity and container/bucket existence.
@@ -97,60 +101,45 @@ export class MeetStorageService<
 		}
 	}
 
-	// ==========================================
-	// GLOBAL PREFERENCES DOMAIN LOGIC
-	// ==========================================
-
 	/**
-	 * Initializes default preferences if not already initialized.
-	 * @returns {Promise<GPrefs>} Default global preferences.
+	 * Initializes the storage with default data and initial environment variables if not already initialized.
+	 * This includes global preferences, admin user and API key.
 	 */
-	async initializeGlobalPreferences(): Promise<void> {
+	async initializeStorage(): Promise<void> {
 		try {
 			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
-			const lock = await this.mutexService.acquire(MeetLock.getGlobalPreferencesLock(), ms('30s'));
+			const lock = await this.mutexService.acquire(MeetLock.getStorageInitializationLock(), ms('30s'));
 
 			if (!lock) {
 				this.logger.warn(
-					'Unable to acquire lock for global preferences initialization. May be already initialized by another instance.'
+					'Unable to acquire lock for storage initialization. May be already initialized by another instance.'
 				);
 				return;
 			}
 
-			this.logger.verbose('Initializing global preferences with default values');
-			const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
-			const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+			const isInitialized = await this.checkStorageInitialization();
 
-			const preferences = this.getDefaultPreferences();
-			this.logger.verbose('Initializing global preferences with default values');
-			const existing = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
-
-			if (!existing) {
-				await this.saveCacheAndStorage(redisKey, storageKey, preferences);
-				this.logger.info('Global preferences initialized with default values');
-			} else {
-				// Check if it's from a different project
-				const existingProjectId = (existing as GlobalPreferences)?.projectId;
-				const newProjectId = (preferences as GlobalPreferences)?.projectId;
-
-				if (existingProjectId !== newProjectId) {
-					this.logger.info('Different project detected, overwriting global preferences');
-					await this.saveCacheAndStorage(redisKey, storageKey, preferences);
-				}
+			if (isInitialized) {
+				this.logger.verbose('Storage already initialized for this project, skipping initialization');
+				return;
 			}
 
-			// Save the default admin user
-			const admin = {
-				username: MEET_INITIAL_ADMIN_USER,
-				passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
-				roles: [UserRole.ADMIN, UserRole.USER]
-			} as MUser;
-			await this.saveUser(admin);
+			this.logger.info('Storage not initialized or different project detected, proceeding with initialization');
+
+			await this.initializeGlobalPreferences();
+			await this.initializeAdminUser();
+			await this.initializeApiKey();
+
+			this.logger.info('Storage initialization completed successfully');
 		} catch (error) {
-			this.handleError(error, 'Error initializing default preferences');
-			throw internalError('Failed to initialize global preferences');
+			this.handleError(error, 'Error initializing storage with default data');
+			throw internalError('Failed to initialize storage');
 		}
 	}
+
+	// ==========================================
+	// GLOBAL PREFERENCES DOMAIN LOGIC
+	// ==========================================
 
 	async getGlobalPreferences(): Promise<GPrefs> {
 		const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
@@ -162,7 +151,6 @@ export class MeetStorageService<
 
 		// Build and save default preferences if not found in cache or storage
 		await this.initializeGlobalPreferences();
-
 		return this.getDefaultPreferences();
 	}
 
@@ -653,8 +641,158 @@ export class MeetStorageService<
 	// PRIVATE HELPER METHODS
 	// ==========================================
 
+	/**
+	 * Checks if storage is already initialized by verifying that global preferences exist
+	 * and belong to the current project.
+	 * @returns {Promise<boolean>} True if storage is already initialized for this project
+	 */
+	protected async checkStorageInitialization(): Promise<boolean> {
+		try {
+			const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
+			const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+
+			const existing = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
+
+			if (!existing) {
+				this.logger.verbose('No global preferences found, storage needs initialization');
+				return false;
+			}
+
+			// Check if it's from the same project
+			const existingProjectId = (existing as GlobalPreferences)?.projectId;
+			const currentProjectId = MEET_NAME_ID;
+
+			if (existingProjectId !== currentProjectId) {
+				this.logger.info(
+					`Different project detected: existing='${existingProjectId}', current='${currentProjectId}'. Re-initialization required.`
+				);
+				return false;
+			}
+
+			this.logger.verbose(`Storage already initialized for project '${currentProjectId}'`);
+			return true;
+		} catch (error) {
+			this.logger.warn('Error checking storage initialization status:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initializes default global preferences if not already present.
+	 */
+	protected async initializeGlobalPreferences(): Promise<void> {
+		const preferences = this.getDefaultPreferences();
+		await this.saveGlobalPreferences(preferences);
+		this.logger.info('Global preferences initialized with default values');
+	}
+
+	/**
+	 * Returns the default global preferences.
+	 * @returns {GPrefs}
+	 */
+	protected getDefaultPreferences(): GPrefs {
+		return {
+			projectId: MEET_NAME_ID,
+			webhooksPreferences: {
+				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
+				url: MEET_INITIAL_WEBHOOK_URL
+			},
+			securityPreferences: {
+				authentication: {
+					authMethod: {
+						type: AuthType.SINGLE_USER
+					},
+					authModeToAccessRoom: AuthMode.NONE
+				}
+			}
+		} as GPrefs;
+	}
+
+	/**
+	 * Initializes the default admin user
+	 */
+	protected async initializeAdminUser(): Promise<void> {
+		const admin = {
+			username: MEET_INITIAL_ADMIN_USER,
+			passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
+			roles: [UserRole.ADMIN, UserRole.USER]
+		} as MUser;
+
+		await this.saveUser(admin);
+		this.logger.info(`Admin user initialized with default credentials`);
+	}
+
+	/**
+	 * Initializes the API key if configured
+	 */
+	protected async initializeApiKey(): Promise<void> {
+		// Check if initial API key is configured
+		const initialApiKey = process.env.MEET_INITIAL_API_KEY;
+
+		if (!initialApiKey) {
+			this.logger.verbose('No initial API key configured, skipping API key initialization');
+			return;
+		}
+
+		const apiKeyData: MeetApiKey = PasswordHelper.generateApiKey(initialApiKey);
+		await this.saveApiKey(apiKeyData);
+		this.logger.info('API key initialized');
+	}
+
+	protected async getRecordingFileSize(key: string, recordingId: string): Promise<number> {
+		const { contentLength: fileSize } = await this.storageProvider.getObjectHeaders(key);
+
+		if (!fileSize) {
+			this.logger.warn(`Recording media not found for recording ${recordingId}`);
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		return fileSize;
+	}
+
+	protected validateAndAdjustRange(
+		range: { end: number; start: number } | undefined,
+		fileSize: number,
+		recordingId: string
+	): { start: number; end: number } | undefined {
+		if (!range) return undefined;
+
+		const { start, end: originalEnd } = range;
+
+		// Validate input values
+		if (isNaN(start) || isNaN(originalEnd) || start < 0) {
+			this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${originalEnd}`);
+			this.logger.warn(`Returning full stream for recording ${recordingId}`);
+			return undefined;
+		}
+
+		// Check if start is beyond file size
+		if (start >= fileSize) {
+			this.logger.error(
+				`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`
+			);
+			throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
+		}
+
+		// Adjust end to not exceed file bounds
+		const adjustedEnd = Math.min(originalEnd, fileSize - 1);
+
+		// Validate final range
+		if (start > adjustedEnd) {
+			this.logger.warn(
+				`Invalid range after adjustment: start=${start}, end=${adjustedEnd} for recording ${recordingId}`
+			);
+			return undefined;
+		}
+
+		this.logger.debug(
+			`Valid range for recording ${recordingId}: start=${start}, end=${adjustedEnd}, fileSize=${fileSize}`
+		);
+		return { start, end: adjustedEnd };
+	}
+
 	// ==========================================
-	// HYBRID CACHE METHODS (Redis + Storage)
+	// PRIVATE HYBRID CACHE METHODS (Redis + Storage)
 	// ==========================================
 
 	/**
@@ -875,80 +1013,6 @@ export class MeetStorageService<
 			this.logger.warn(`Failed to invalidate cache for key ${redisKey}: ${error}`);
 			// Don't throw - cache invalidation failure shouldn't break main flow
 		}
-	}
-
-	/**
-	 * Returns the default global preferences.
-	 * @returns {GPrefs}
-	 */
-	protected getDefaultPreferences(): GPrefs {
-		return {
-			projectId: MEET_NAME_ID,
-			webhooksPreferences: {
-				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
-				url: MEET_INITIAL_WEBHOOK_URL
-			},
-			securityPreferences: {
-				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.NONE
-				}
-			}
-		} as GPrefs;
-	}
-
-	protected async getRecordingFileSize(key: string, recordingId: string): Promise<number> {
-		const { contentLength: fileSize } = await this.storageProvider.getObjectHeaders(key);
-
-		if (!fileSize) {
-			this.logger.warn(`Recording media not found for recording ${recordingId}`);
-			throw errorRecordingNotFound(recordingId);
-		}
-
-		return fileSize;
-	}
-
-	protected validateAndAdjustRange(
-		range: { end: number; start: number } | undefined,
-		fileSize: number,
-		recordingId: string
-	): { start: number; end: number } | undefined {
-		if (!range) return undefined;
-
-		const { start, end: originalEnd } = range;
-
-		// Validate input values
-		if (isNaN(start) || isNaN(originalEnd) || start < 0) {
-			this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${originalEnd}`);
-			this.logger.warn(`Returning full stream for recording ${recordingId}`);
-			return undefined;
-		}
-
-		// Check if start is beyond file size
-		if (start >= fileSize) {
-			this.logger.error(
-				`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`
-			);
-			throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);
-		}
-
-		// Adjust end to not exceed file bounds
-		const adjustedEnd = Math.min(originalEnd, fileSize - 1);
-
-		// Validate final range
-		if (start > adjustedEnd) {
-			this.logger.warn(
-				`Invalid range after adjustment: start=${start}, end=${adjustedEnd} for recording ${recordingId}`
-			);
-			return undefined;
-		}
-
-		this.logger.debug(
-			`Valid range for recording ${recordingId}: start=${start}, end=${adjustedEnd}, fileSize=${fileSize}`
-		);
-		return { start, end: adjustedEnd };
 	}
 
 	protected handleError(error: unknown, context: string): void {

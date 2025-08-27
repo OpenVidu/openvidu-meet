@@ -34,8 +34,8 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.ROOM_GARBAGE_COLLECTOR}`;
 	}
 
-	static getGlobalPreferencesLock(): string {
-		return `${RedisLockPrefix.BASE}${RedisLockName.GLOBAL_PREFERENCES}`;
+	static getStorageInitializationLock(): string {
+		return `${RedisLockPrefix.BASE}${RedisLockName.STORAGE_INITIALIZATION}`;
 	}
 
 	static getWebhookLock(webhookEvent: WebhookEvent) {

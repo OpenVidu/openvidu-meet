@@ -14,7 +14,8 @@ export class PasswordHelper {
 	}
 
 	// Generate a secure API key using uid with a length of 32 characters
-	static generateApiKey(): MeetApiKey {
-		return { key: `ovmeet-${uid(32)}`, creationDate: new Date().getTime() };
+	// If a key is provided, it will be used instead of generating a new one
+	static generateApiKey(key?: string): MeetApiKey {
+		return { key: key || `ovmeet-${uid(32)}`, creationDate: new Date().getTime() };
 	}
 }

@@ -1,6 +1,5 @@
-import { User } from '@typings-ce';
+import { MeetApiKey, User } from '@typings-ce';
 import { inject, injectable } from 'inversify';
-import { MEET_INITIAL_API_KEY } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';
 import { MeetStorageService, UserService } from './index.js';
@@ -22,24 +21,23 @@ export class AuthService {
 		return user;
 	}
 
-	async createApiKey() {
+	async createApiKey(): Promise<MeetApiKey> {
 		const apiKey = PasswordHelper.generateApiKey();
 		await this.storageService.saveApiKey(apiKey);
 		return apiKey;
 	}
 
-	async getApiKeys() {
+	async getApiKeys(): Promise<MeetApiKey[]> {
 		const apiKeys = await this.storageService.getApiKeys();
 		return apiKeys;
 	}
 
 	async deleteApiKeys() {
 		await this.storageService.deleteApiKeys();
-		return { message: 'API keys deleted successfully' };
 	}
 
 	async validateApiKey(apiKey: string): Promise<boolean> {
-		let storedApiKeys: { key: string; creationDate: number }[];
+		let storedApiKeys: MeetApiKey[];
 
 		try {
 			storedApiKeys = await this.getApiKeys();
@@ -48,11 +46,11 @@ export class AuthService {
 			storedApiKeys = [];
 		}
 
-		if (storedApiKeys.length === 0 && !MEET_INITIAL_API_KEY) {
+		if (storedApiKeys.length === 0) {
 			throw errorApiKeyNotConfigured();
 		}
 
-		// Check if the provided API key matches any stored API key or the MEET_API_KEY
-		return storedApiKeys.some((key) => key.key === apiKey) || apiKey === MEET_INITIAL_API_KEY;
+		// Check if the provided API key matches any stored API key
+		return storedApiKeys.some((key) => key.key === apiKey);
 	}
 }

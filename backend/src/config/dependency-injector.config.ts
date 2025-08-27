@@ -97,6 +97,6 @@ export const initializeEagerServices = async () => {
 	const storageService = container.get(MeetStorageService);
 	await storageService.checkStartupHealth();
 
-	// Initialize global preferences after health checks pass
-	await storageService.initializeGlobalPreferences();
+	// Initialize storage after health checks pass
+	await storageService.initializeStorage();
 };

@@ -1,4 +1,5 @@
 import {
+	MeetApiKey,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetWebhookEvent,
@@ -8,9 +9,8 @@ import {
 } from '@typings-ce';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
-import { MEET_INITIAL_API_KEY } from '../environment.js';
-import { AuthService, LoggerService, MeetStorageService } from './index.js';
 import { errorWebhookUrlUnreachable } from '../models/error.model.js';
+import { AuthService, LoggerService, MeetStorageService } from './index.js';
 
 @injectable()
 export class OpenViduWebhookService {
@@ -218,14 +218,16 @@ export class OpenViduWebhookService {
 	}
 
 	protected async getApiKey(): Promise<string> {
-		const apiKeys = await this.authService.getApiKeys();
+		let apiKeys: MeetApiKey[];
+
+		try {
+			apiKeys = await this.authService.getApiKeys();
+		} catch (error) {
+			// If there is an error retrieving API keys, we assume they are not configured
+			apiKeys = [];
+		}
 
 		if (apiKeys.length === 0) {
-			// If no API keys are configured, check if the MEET_API_KEY environment variable is set
-			if (MEET_INITIAL_API_KEY) {
-				return MEET_INITIAL_API_KEY;
-			}
-
 			throw new Error('There are no API keys configured yet. Please, create one to use webhooks.');
 		}
 

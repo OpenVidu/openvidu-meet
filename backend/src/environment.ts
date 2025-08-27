@@ -42,7 +42,7 @@ export const {
 	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
 	 */
 	MEET_INITIAL_WEBHOOK_ENABLED = 'false',
-	MEET_INITIAL_WEBHOOK_URL = 'http://localhost:5080/webhook',
+	MEET_INITIAL_WEBHOOK_URL = '',
 
 	// LiveKit configuration
 	LIVEKIT_URL = 'ws://localhost:7880',
