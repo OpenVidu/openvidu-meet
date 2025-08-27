@@ -155,7 +155,7 @@ export class RoomWizardComponent implements OnInit {
 
 		try {
 			if (this.editMode && this.roomId && roomOptions.preferences) {
-				await this.roomService.updateRoom(this.roomId, roomOptions.preferences);
+				await this.roomService.updateRoomPreferences(this.roomId, roomOptions.preferences);
 				await this.navigationService.navigateTo('rooms', undefined, true);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {

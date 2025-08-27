@@ -151,15 +151,9 @@ export class RoomService {
 		this.log.d('Fetching room preferences for roomId:', roomId);
 
 		try {
-			const path = `${this.INTERNAL_ROOMS_API}/${roomId}/preferences`;
+			const path = `${this.ROOMS_API}/${roomId}/preferences`;
 			const headers = this.participantService.getParticipantRoleHeader();
 			const preferences = await this.httpService.getRequest<MeetRoomPreferences>(path, headers);
-
-			if (!preferences) {
-				this.log.w('Room preferences not found for roomId:', roomId);
-				throw new Error(`Preferences not found for roomId: ${roomId}`);
-			}
-
 			return preferences;
 		} catch (error) {
 			this.log.e('Error fetching room preferences', error);
@@ -173,7 +167,6 @@ export class RoomService {
 	 * @param roomId - The unique identifier of the room
 	 */
 	async loadRoomPreferences(roomId: string): Promise<void> {
-		this.log.d('Fetching room preferences from server');
 		try {
 			const preferences = await this.getRoomPreferences(roomId);
 			this.featureConfService.setRoomPreferences(preferences);
@@ -191,10 +184,10 @@ export class RoomService {
 	 * @param preferences - The room preferences to be saved.
 	 * @returns A promise that resolves when the preferences have been saved.
 	 */
-	async updateRoom(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
+	async updateRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
 		this.log.d('Saving room preferences', preferences);
-		const path = `${this.ROOMS_API}/${roomId}`;
-		await this.httpService.putRequest(path, preferences);
+		const path = `${this.ROOMS_API}/${roomId}/preferences`;
+		await this.httpService.putRequest(path, { preferences });
 	}
 
 	/**
