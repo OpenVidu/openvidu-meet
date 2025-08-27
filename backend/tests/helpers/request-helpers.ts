@@ -241,13 +241,13 @@ export const getRoom = async (roomId: string, fields?: string, cookie?: string, 
 	return await req;
 };
 
-export const getRoomPreferences = async (roomId: string, cookie: string, role: ParticipantRole) => {
+export const getRoomPreferences = async (roomId: string) => {
 	checkAppIsRunning();
 
+	const adminCookie = await loginUser();
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
-		.set('Cookie', cookie)
-		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, role)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
+		.set('Cookie', adminCookie)
 		.send();
 };
 
@@ -256,9 +256,9 @@ export const updateRoomPreferences = async (roomId: string, preferences: any) =>
 
 	const adminCookie = await loginUser();
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
 		.set('Cookie', adminCookie)
-		.send(preferences);
+		.send({ preferences });
 };
 
 export const updateRecordingAccessPreferencesInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
@@ -540,7 +540,7 @@ export const updateParticipant = async (
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.patch(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`)
 		.set('Cookie', moderatorCookie)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send({ role: newRole });

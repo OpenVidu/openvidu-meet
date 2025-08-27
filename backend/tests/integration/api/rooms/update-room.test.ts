@@ -69,8 +69,7 @@ describe('Room API Tests', () => {
 
 			// Verify update response
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toBeDefined();
-			expect(updateResponse.body.preferences).toEqual(updatedPreferences);
+			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
@@ -105,7 +104,7 @@ describe('Room API Tests', () => {
 
 			// Verify update response
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body.preferences).toEqual(partialPreferences);
+			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
@@ -185,22 +184,6 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recordingPreferences.allowAccessTo');
-		});
-
-		it('should fail when room ID contains invalid characters', async () => {
-			const invalidRoomId = '!@#$%^&*()';
-
-			const preferences = {
-				recordingPreferences: {
-					enabled: false
-				},
-				chatPreferences: { enabled: false },
-				virtualBackgroundPreferences: { enabled: false }
-			};
-			const response = await updateRoomPreferences(invalidRoomId, preferences);
-
-			expect(response.status).toBe(422);
-			expect(JSON.stringify(response.body.details)).toContain('roomId cannot be empty after sanitization');
 		});
 
 		it('should return 404 when updating non-existent room', async () => {

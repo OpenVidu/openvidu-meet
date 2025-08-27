@@ -97,7 +97,7 @@ describe('Meeting API Security Tests', () => {
 
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.patch(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.send({ role });
 			expect(response.status).toBe(401);
@@ -105,7 +105,7 @@ describe('Meeting API Security Tests', () => {
 
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.patch(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
 				.set('Cookie', adminCookie)
 				.send({ role });
 			expect(response.status).toBe(401);
@@ -113,7 +113,7 @@ describe('Meeting API Security Tests', () => {
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
-				.patch(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
 				.set('Cookie', roomData.moderatorCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 				.send({ role });
@@ -124,7 +124,7 @@ describe('Meeting API Security Tests', () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.patch(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
 				.set('Cookie', newRoomData.moderatorCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 				.send({ role });
@@ -133,7 +133,7 @@ describe('Meeting API Security Tests', () => {
 
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
-				.patch(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}`)
+				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
 				.set('Cookie', roomData.speakerCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER)
 				.send({ role });

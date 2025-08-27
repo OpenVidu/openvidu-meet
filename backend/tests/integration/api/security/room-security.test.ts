@@ -179,6 +179,69 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
+	describe('Get Room Preferences Tests', () => {
+		let roomData: RoomData;
+
+		beforeAll(async () => {
+			roomData = await setupSingleRoom();
+		});
+
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', adminCookie);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`);
+			expect(response.status).toBe(401);
+		});
+
+		it('should succeed when participant is moderator', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when participant is moderator of a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when participant is speaker', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when participant is speaker of a different room', async () => {
+			const newRoomData = await setupSingleRoom();
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.set('Cookie', newRoomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
+			expect(response.status).toBe(403);
+		});
+	});
+
 	describe('Update Room Preferences Tests', () => {
 		const roomPreferences = {
 			recordingPreferences: {
@@ -198,86 +261,25 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}`)
+				.put(`${ROOMS_PATH}/${roomId}/preferences`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-				.send(roomPreferences);
+				.send({ preferences: roomPreferences });
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}`)
+				.put(`${ROOMS_PATH}/${roomId}/preferences`)
 				.set('Cookie', adminCookie)
-				.send(roomPreferences);
+				.send({ preferences: roomPreferences });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${ROOMS_PATH}/${roomId}`).send(roomPreferences);
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/preferences`)
+				.send({ preferences: roomPreferences });
 			expect(response.status).toBe(401);
-		});
-	});
-
-	describe('Get Room Preferences Tests', () => {
-		let roomData: RoomData;
-
-		beforeAll(async () => {
-			roomData = await setupSingleRoom();
-		});
-
-		it('should fail when request includes API key', async () => {
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
-			expect(response.status).toBe(401);
-		});
-
-		it('should fail when user is authenticated as admin', async () => {
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', adminCookie);
-			expect(response.status).toBe(401);
-		});
-
-		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`);
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when participant is moderator', async () => {
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', roomData.moderatorCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when participant is moderator of a different room', async () => {
-			const newRoomData = await setupSingleRoom();
-
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', newRoomData.moderatorCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
-			expect(response.status).toBe(403);
-		});
-
-		it('should succeed when participant is speaker', async () => {
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', roomData.speakerCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when participant is speaker of a different room', async () => {
-			const newRoomData = await setupSingleRoom();
-
-			const response = await request(app)
-				.get(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/preferences`)
-				.set('Cookie', newRoomData.speakerCookie)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
-			expect(response.status).toBe(403);
 		});
 	});
 

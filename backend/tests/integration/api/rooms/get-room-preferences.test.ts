@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
-import { MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
 import { expectSuccessRoomPreferencesResponse } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getRoomPreferences, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -27,9 +27,8 @@ describe('Room API Tests', () => {
 		it('should successfully retrieve a room by its ID', async () => {
 			const roomData = await setupSingleRoom();
 			const roomId = roomData.room.roomId;
-			const cookie = roomData.moderatorCookie;
 
-			const response = await getRoomPreferences(roomId, cookie, ParticipantRole.MODERATOR);
+			const response = await getRoomPreferences(roomId);
 			expectSuccessRoomPreferencesResponse(response, DEFAULT_PREFERENCES);
 		});
 
@@ -48,9 +47,8 @@ describe('Room API Tests', () => {
 
 			const roomData = await setupSingleRoom(false, payload.roomName, payload.preferences);
 			const roomId = roomData.room.roomId;
-			const cookie = roomData.moderatorCookie;
 
-			const response = await getRoomPreferences(roomId, cookie, ParticipantRole.MODERATOR);
+			const response = await getRoomPreferences(roomId);
 			expectSuccessRoomPreferencesResponse(response, payload.preferences);
 		});
 	});
