@@ -98,7 +98,7 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 	}
 };
 
-export const updateParticipant = async (req: Request, res: Response) => {
+export const updateParticipantRole = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const participantService = container.get(ParticipantService);
 	const { roomId, participantIdentity } = req.params;

@@ -22,18 +22,18 @@ internalMeetingRouter.delete(
 	withModeratorPermissions,
 	meetingCtrl.endMeeting
 );
-internalMeetingRouter.patch(
-	'/:roomId/participants/:participantIdentity',
-	withAuth(participantTokenValidator),
-	withValidRoomId,
-	withModeratorPermissions,
-	validateUpdateParticipantRequest,
-	participantCtrl.updateParticipant
-);
 internalMeetingRouter.delete(
 	'/:roomId/participants/:participantIdentity',
 	withAuth(participantTokenValidator),
 	withValidRoomId,
 	withModeratorPermissions,
 	participantCtrl.deleteParticipant
+);
+internalMeetingRouter.put(
+	'/:roomId/participants/:participantIdentity/role',
+	withAuth(participantTokenValidator),
+	withValidRoomId,
+	withModeratorPermissions,
+	validateUpdateParticipantRequest,
+	participantCtrl.updateParticipantRole
 );
