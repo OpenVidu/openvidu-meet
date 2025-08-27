@@ -17,6 +17,7 @@ content:
                     recordings:
                         - recordingId: 'room-123--EG_XYZ--XX445'
                           roomId: 'room-123'
+                          roomName: 'room'
                           status: 'ACTIVE'
                           filename: 'room-123--XX445.mp4'
                           startDate: 1620000000000
@@ -26,6 +27,7 @@ content:
                           details: 'Stopped using API'
                         - recordingId: 'room-456--EG_ZYX--XX678'
                           roomId: 'room-456'
+                          roomName: 'room'
                           status: 'COMPLETE'
                           filename: 'room-456--XX678.mp4'
                           startDate: 1625000000000

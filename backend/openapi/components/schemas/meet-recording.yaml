@@ -8,6 +8,10 @@ properties:
         type: string
         example: 'room-123'
         description: The unique identifier of the room where the recording was made.
+    roomName:
+        type: string
+        example: 'room'
+        description: The name of the room where the recording was made.
     # outputMode:
     #   type: string
     #   example: 'COMPOSED'
