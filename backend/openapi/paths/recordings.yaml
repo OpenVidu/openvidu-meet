@@ -254,8 +254,8 @@
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
 
-            It can be configured to be accessible by anyone (public access) or restricted to authenticated users only, 
-            depending on the `privateAccess` query parameter.
+        # It can be configured to be accessible by anyone (public access) or restricted to authenticated users only, 
+        # depending on the `privateAccess` query parameter.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -264,7 +264,7 @@
             - recordingTokenCookie: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
-            - $ref: '../components/parameters/private-access.yaml'
+            # - $ref: '../components/parameters/private-access.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-recording-url.yaml'

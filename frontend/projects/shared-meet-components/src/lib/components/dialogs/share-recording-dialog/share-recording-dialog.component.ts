@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -37,7 +37,7 @@ import { RecordingService } from '@lib/services';
 	templateUrl: './share-recording-dialog.component.html',
 	styleUrl: './share-recording-dialog.component.scss'
 })
-export class ShareRecordingDialogComponent {
+export class ShareRecordingDialogComponent implements OnInit {
 	accessType: 'private' | 'public' = 'public';
 	recordingUrl?: string;
 	private initialRecordingUrl?: string;
@@ -53,6 +53,14 @@ export class ShareRecordingDialogComponent {
 	) {
 		this.recordingUrl = data.recordingUrl;
 		this.initialRecordingUrl = data.recordingUrl;
+	}
+
+	// TODO: Remove this when having multiple users
+	async ngOnInit() {
+		if (!this.initialRecordingUrl) {
+			await this.getRecordingUrl();
+			this.initialRecordingUrl = this.recordingUrl;
+		}
 	}
 
 	async getRecordingUrl() {
