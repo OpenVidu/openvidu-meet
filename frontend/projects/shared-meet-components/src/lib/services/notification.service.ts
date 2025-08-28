@@ -44,6 +44,7 @@ export class NotificationService {
 			panelClass: 'custom-snackbar'
 		});
 	}
+
 	showDialog(options: DialogOptions): void {
 		this.dialog.open(DialogComponent, {
 			data: options,
@@ -53,13 +54,13 @@ export class NotificationService {
 	}
 
 	showAlert(message: string): void {
-		// this.dialog.open(AlertDialogComponent, {
-		// 	data: {
-		// 		message,
-		// 		confirmText: 'OK'
-		// 	},
-		// 	width: '300px',
-		// 	disableClose: true
-		// });
+		this.dialog.open(DialogComponent, {
+			data: {
+				message,
+				confirmText: 'OK'
+			},
+			width: '300px',
+			disableClose: true
+		});
 	}
 }

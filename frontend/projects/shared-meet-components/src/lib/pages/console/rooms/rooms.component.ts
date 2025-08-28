@@ -154,7 +154,7 @@ export class RoomsComponent implements OnInit {
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRooms = response.pagination.isTruncated;
 		} catch (error) {
-			this.notificationService.showAlert('Error loading rooms');
+			this.notificationService.showSnackbar('Error loading rooms');
 			this.log.e('Error loading rooms:', error);
 		} finally {
 			clearTimeout(delayLoader);
@@ -226,7 +226,7 @@ export class RoomsComponent implements OnInit {
 		try {
 			await this.navigationService.navigateTo('rooms/new');
 		} catch (error) {
-			this.notificationService.showAlert('Error creating room');
+			this.notificationService.showSnackbar('Error creating room');
 			this.log.e('Error creating room:', error);
 			return;
 		}
@@ -237,18 +237,10 @@ export class RoomsComponent implements OnInit {
 	}
 
 	private async editRoomPreferences(room: MeetRoom) {
-		// Check if room is marked for deletion
-		if (room.markedForDeletion) {
-			this.notificationService.showAlert(
-				'Room preferences cannot be modified. This room is marked for deletion.'
-			);
-			return;
-		}
-
 		try {
 			await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
 		} catch (error) {
-			this.notificationService.showAlert('Error navigating to room preferences');
+			this.notificationService.showSnackbar('Error navigating to room preferences');
 			this.log.e('Error navigating to room preferences:', error);
 		}
 	}
@@ -268,7 +260,7 @@ export class RoomsComponent implements OnInit {
 		try {
 			await this.navigationService.navigateTo('recordings', { 'room-id': room.roomId });
 		} catch (error) {
-			this.notificationService.showAlert('Error navigating to recordings');
+			this.notificationService.showSnackbar('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);
 		}
 	}
@@ -293,7 +285,7 @@ export class RoomsComponent implements OnInit {
 				// this.dataSource.data = this.rooms();
 				this.notificationService.showSnackbar('Room deleted successfully');
 			} catch (error) {
-				this.notificationService.showAlert('Failed to delete room');
+				this.notificationService.showSnackbar('Failed to delete room');
 				this.log.e('Error deleting room:', error);
 			}
 		};
@@ -306,7 +298,7 @@ export class RoomsComponent implements OnInit {
 				this.rooms.set(currentRooms.filter((r) => r.roomId !== roomId));
 				this.notificationService.showSnackbar('Room force deleted successfully');
 			} catch (error) {
-				this.notificationService.showAlert('Failed to force delete room');
+				this.notificationService.showSnackbar('Failed to force delete room');
 				this.log.e('Error force deleting room:', error);
 			}
 		};
@@ -374,7 +366,7 @@ export class RoomsComponent implements OnInit {
 						break;
 				}
 			} catch (error) {
-				this.notificationService.showAlert('Failed to delete rooms');
+				this.notificationService.showSnackbar('Failed to delete rooms');
 				this.log.e('Error deleting rooms:', error);
 			}
 		};
@@ -388,7 +380,7 @@ export class RoomsComponent implements OnInit {
 				this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));
 				this.notificationService.showSnackbar('All rooms force deleted successfully');
 			} catch (error) {
-				this.notificationService.showAlert('Failed to force delete rooms');
+				this.notificationService.showSnackbar('Failed to force delete rooms');
 				this.log.e('Error force deleting rooms:', error);
 			}
 		};

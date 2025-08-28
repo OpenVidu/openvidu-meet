@@ -134,7 +134,7 @@ export class RoomRecordingsComponent implements OnInit {
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRecordings = response.pagination.isTruncated;
 		} catch (error) {
-			this.notificationService.showAlert('Failed to load recordings');
+			this.notificationService.showSnackbar('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
 			clearTimeout(delayLoader);
