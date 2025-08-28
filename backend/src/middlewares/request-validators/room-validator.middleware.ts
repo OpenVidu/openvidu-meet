@@ -2,6 +2,9 @@ import {
 	MeetChatPreferences,
 	MeetRecordingAccess,
 	MeetRecordingPreferences,
+	MeetRoomAutoDeletionPolicy,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
@@ -55,17 +58,6 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
-const validForceQueryParam = () =>
-	z
-		.preprocess((val) => {
-			if (typeof val === 'string') {
-				return val.toLowerCase() === 'true';
-			}
-
-			return val;
-		}, z.boolean())
-		.default(false);
-
 const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
 	MeetRecordingAccess.ADMIN,
 	MeetRecordingAccess.ADMIN_MODERATOR,
@@ -102,6 +94,23 @@ const RoomPreferencesSchema: z.ZodType<MeetRoomPreferences> = z.object({
 	virtualBackgroundPreferences: VirtualBackgroundPreferencesSchema
 });
 
+const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([
+	MeetRoomDeletionPolicyWithMeeting.FORCE,
+	MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+	MeetRoomDeletionPolicyWithMeeting.FAIL
+]);
+
+const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWithRecordings> = z.enum([
+	MeetRoomDeletionPolicyWithRecordings.FORCE,
+	MeetRoomDeletionPolicyWithRecordings.CLOSE,
+	MeetRoomDeletionPolicyWithRecordings.FAIL
+]);
+
+const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.object({
+	withMeeting: RoomDeletionPolicyWithMeetingSchema,
+	withRecordings: RoomDeletionPolicyWithRecordingsSchema
+});
+
 const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	roomName: z
 		.string()
@@ -117,6 +126,10 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
 		)
 		.optional(),
+	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional().default({
+		withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+	}),
 	preferences: RoomPreferencesSchema.optional().default({
 		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
 		chatPreferences: { enabled: true },
@@ -144,6 +157,11 @@ const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	nextPageToken: z.string().optional(),
 	roomName: z.string().transform(sanitizeRoomName).optional(),
 	fields: z.string().optional()
+});
+
+const DeleteRoomQueryParamsSchema = z.object({
+	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
+	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
 
 const BulkDeleteRoomsSchema = z.object({
@@ -181,7 +199,8 @@ const BulkDeleteRoomsSchema = z.object({
 			message: 'At least one valid roomId is required after sanitization'
 		})
 	),
-	force: validForceQueryParam()
+	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
+	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
 
 const UpdateRoomPreferencesSchema = z.object({
@@ -250,18 +269,6 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 	next();
 };
 
-export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = BulkDeleteRoomsSchema.safeParse(req.query);
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.query.roomIds = data.roomIds as any;
-	req.query.force = data.force ? 'true' : 'false';
-	next();
-};
-
 export const withValidRoomDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
 	const roomIdResult = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
@@ -271,13 +278,24 @@ export const withValidRoomDeleteRequest = (req: Request, res: Response, next: Ne
 
 	req.params.roomId = roomIdResult.data;
 
-	const forceResult = validForceQueryParam().safeParse(req.query.force);
+	const queryParamsResult = DeleteRoomQueryParamsSchema.safeParse(req.query);
 
-	if (!forceResult.success) {
-		return rejectUnprocessableRequest(res, forceResult.error);
+	if (!queryParamsResult.success) {
+		return rejectUnprocessableRequest(res, queryParamsResult.error);
 	}
 
-	req.query.force = forceResult.data ? 'true' : 'false';
+	req.query = queryParamsResult.data;
+	next();
+};
+
+export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = BulkDeleteRoomsSchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.query = data;
 	next();
 };
 

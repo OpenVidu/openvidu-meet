@@ -1,9 +1,11 @@
 import {
+	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
+	MeetRoomStatus,
 	ParticipantRole,
 	RecordingPermissions
 } from '@typings-ce';
@@ -15,6 +17,7 @@ import { uid } from 'uid/single';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
+import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
 	errorInvalidRoomSecret,
 	errorRoomMetadataNotFound,
@@ -23,15 +26,14 @@ import {
 } from '../models/error.model.js';
 import {
 	DistributedEventService,
+	FrontendEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
 	MeetStorageService,
 	TaskSchedulerService,
-	TokenService,
-	FrontendEventService
+	TokenService
 } from './index.js';
-import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -70,7 +72,7 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(baseUrl: string, roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { roomName, autoDeletionDate, preferences } = roomOptions;
+		const { roomName, autoDeletionDate, autoDeletionPolicy, preferences } = roomOptions;
 		const roomIdPrefix = roomName!.replace(/\s+/g, ''); // Remove all spaces
 		const roomId = `${roomIdPrefix}-${uid(15)}`; // Generate a unique room ID based on the room name
 
@@ -80,13 +82,15 @@ export class RoomService {
 			creationDate: Date.now(),
 			// maxParticipants,
 			autoDeletionDate,
-			preferences,
+			autoDeletionPolicy,
+			preferences: preferences!,
 			moderatorUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
-			speakerUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`
+			speakerUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
+			status: MeetRoomStatus.OPEN,
+			meetingEndAction: MeetingEndAction.NONE
 		};
 
 		await this.storageService.saveMeetRoom(meetRoom);
-
 		return meetRoom;
 	}
 
