@@ -1,4 +1,5 @@
 import {
+	MeetRoomStatus,
 	MeetTokenMetadata,
 	OpenViduMeetPermissions,
 	ParticipantOptions,
@@ -9,7 +10,11 @@ import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateMeetTokenMetadata } from '../middlewares/index.js';
-import { errorParticipantIdentityNotProvided, errorParticipantNotFound } from '../models/error.model.js';
+import {
+	errorParticipantIdentityNotProvided,
+	errorParticipantNotFound,
+	errorRoomClosed
+} from '../models/error.model.js';
 import {
 	FrontendEventService,
 	LiveKitService,
@@ -40,6 +45,13 @@ export class ParticipantService {
 		let finalParticipantOptions: ParticipantOptions = participantOptions;
 
 		if (participantName) {
+			// Check that room is open
+			const room = await this.roomService.getMeetRoom(roomId);
+
+			if (room.status === MeetRoomStatus.CLOSED) {
+				throw errorRoomClosed(roomId);
+			}
+
 			if (refresh) {
 				if (!participantIdentity) {
 					throw errorParticipantIdentityNotProvided();

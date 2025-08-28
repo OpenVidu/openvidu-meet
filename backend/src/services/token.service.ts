@@ -13,7 +13,6 @@ import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } from '../environment.js';
 import { LoggerService } from './index.js';
-import { uid } from 'uid';
 
 @injectable()
 export class TokenService {

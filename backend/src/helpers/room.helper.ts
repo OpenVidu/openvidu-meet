@@ -16,6 +16,7 @@ export class MeetRoomHelper {
 		return {
 			roomName: room.roomName,
 			autoDeletionDate: room.autoDeletionDate,
+			autoDeletionPolicy: room.autoDeletionPolicy,
 			preferences: room.preferences
 			// maxParticipants: room.maxParticipants
 		};

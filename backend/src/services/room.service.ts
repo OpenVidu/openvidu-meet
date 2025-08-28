@@ -454,7 +454,7 @@ export class RoomService {
 
 				if (result.status === 'fulfilled' && result.value) {
 					const room = result.value;
-					room.markedForDeletion = true;
+					room.meetingEndAction = MeetingEndAction.DELETE;
 					roomsToUpdate.push({ roomId, room });
 					successfulRoomIds.push(roomId);
 				} else {

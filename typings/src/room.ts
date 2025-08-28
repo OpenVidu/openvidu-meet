@@ -36,9 +36,8 @@ export const enum MeetRoomStatus {
 
 export const enum MeetingEndAction {
     NONE = 'none', // No action is taken when the meeting ends
-    CLOSE = 'close', // The room is closed when the meeting ends
-    DELETE = 'delete', // The room is deleted when the meeting ends
-    DELETE_ALL = 'delete_all' // The room and its recordings are deleted when the meeting ends
+    CLOSE = 'close', // The room will be closed when the meeting ends
+    DELETE = 'delete' // The room (and its recordings if any) will be deleted when the meeting ends
 }
 
 export interface MeetRoomAutoDeletionPolicy {

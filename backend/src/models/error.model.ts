@@ -204,6 +204,10 @@ export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' does not exist`, 404);
 };
 
+export const errorRoomClosed = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Room '${roomId}' is closed and cannot be joined`, 409);
+};
+
 export const errorRoomMetadataNotFound = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Room Error',
@@ -226,28 +230,20 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 	);
 };
 
-export const errorParticipantAlreadyExists = (participantIdentity: string, roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Participant Error',
-		`Participant '${participantIdentity}' already exists in room '${roomId}'`,
-		409
-	);
-};
-
 export const errorParticipantTokenNotPresent = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant', 'No participant token provided', 400);
+	return new OpenViduMeetError('Participant Error', 'No participant token provided', 400);
 };
 
 export const errorInvalidParticipantToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant', 'Invalid participant token', 400);
+	return new OpenViduMeetError('Participant Error', 'Invalid participant token', 400);
 };
 
 export const errorInvalidParticipantRole = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant', 'No valid participant role provided', 400);
+	return new OpenViduMeetError('Participant Error', 'No valid participant role provided', 400);
 };
 
 export const errorParticipantIdentityNotProvided = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant', 'No participant identity provided', 400);
+	return new OpenViduMeetError('Participant Error', 'No participant identity provided', 400);
 };
 
 // Handlers

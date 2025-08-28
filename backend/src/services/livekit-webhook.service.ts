@@ -1,10 +1,13 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { MeetingEndAction, MeetRecordingInfo, MeetRecordingStatus, MeetRoomStatus } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
+import ms from 'ms';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
 import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
+import { FrontendEventService } from './frontend-event.service.js';
 import {
+	DistributedEventService,
 	LiveKitService,
 	LoggerService,
 	MeetStorageService,
@@ -12,11 +15,8 @@ import {
 	OpenViduWebhookService,
 	ParticipantService,
 	RecordingService,
-	RoomService,
-	DistributedEventService
+	RoomService
 } from './index.js';
-import { FrontendEventService } from './frontend-event.service.js';
-import ms from 'ms';
 
 @injectable()
 export class LivekitWebhookService {
@@ -183,57 +183,89 @@ export class LivekitWebhookService {
 	 * Handles a room started event from LiveKit.
 	 *
 	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
-	 * If the meet room is found, it sends a webhook notification indicating that the meeting has started.
-	 * If the meet room is not found, it logs a warning message.
+	 * If the meet room is found, it updates the room status to ACTIVE_MEETING,
+	 * and sends a webhook notification indicating that the meeting has started.
+	 *
+	 * @param {Room} room - The room object that has started.
 	 */
-	async handleRoomStarted(room: Room) {
+	async handleRoomStarted({ name: roomId }: Room) {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(room.name);
+			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
 			if (!meetRoom) {
-				this.logger.warn(`Room ${room.name} not found in OpenVidu Meet.`);
+				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
 				return;
 			}
 
+			this.logger.info(`Processing room_started event for room: ${roomId}`);
+
+			// Update Meet room status to ACTIVE_MEETING
+			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
+			await this.storageService.saveMeetRoom(meetRoom);
+
+			// Send webhook notification
 			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
 		} catch (error) {
-			this.logger.error('Error sending meeting started webhook:', error);
+			this.logger.error('Error handling room started event:', error);
 		}
 	}
 
 	/**
-	 * Handles the event when a room is finished.
+	 * Handles a room finished event from LiveKit.
 	 *
-	 * This method sends a webhook notification indicating that the room has finished.
-	 * If an error occurs while sending the webhook, it logs the error.
+	 * This method retrieves the corresponding meet room from the room service using the LiveKit room name.
+	 * If the meet room is found, it processes the room based on its meeting end action:
+	 *
+	 * - If the action is DELETE, it deletes the room and all associated recordings.
+	 * - If the action is CLOSE, it closes the room without deleting it.
+	 * - If the action is NONE, it simply updates the room status to OPEN.
+	 *
+	 * Then, it sends a webhook notification indicating that the meeting has ended,
+	 * and cleans up any resources associated with the room.
 	 *
 	 * @param {Room} room - The room object that has finished.
-	 * @returns {Promise<void>} A promise that resolves when the webhook has been sent.
 	 */
-	async handleRoomFinished({ name: roomName }: Room): Promise<void> {
+	async handleRoomFinished({ name: roomId }: Room): Promise<void> {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomName);
+			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
 			if (!meetRoom) {
-				this.logger.warn(`Room ${roomName} not found in OpenVidu Meet.`);
+				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
 				return;
 			}
 
-			this.logger.info(`Processing room_finished event for room: ${roomName}`);
-
-			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
-
+			this.logger.info(`Processing room_finished event for room: ${roomId}`);
 			const tasks = [];
 
-			if (meetRoom.markedForDeletion) {
-				// If the room is marked for deletion, we need to delete it
-				this.logger.info(`Deleting room ${roomName} after meeting finished because it was marked for deletion`);
-				tasks.push(this.roomService.bulkDeleteRooms([roomName], true));
+			switch (meetRoom.meetingEndAction) {
+				case MeetingEndAction.DELETE:
+					// TODO: Delete also all recordings associated with the room
+					this.logger.info(
+						`Deleting room '${roomId}' after meeting finished because it was scheduled to be deleted`
+					);
+					tasks.push(this.roomService.bulkDeleteRooms([roomId], true));
+					break;
+				case MeetingEndAction.CLOSE:
+					this.logger.info(
+						`Closing room '${roomId}' after meeting finished because it was scheduled to be closed`
+					);
+					meetRoom.status = MeetRoomStatus.CLOSED;
+					meetRoom.meetingEndAction = MeetingEndAction.NONE;
+					tasks.push(this.storageService.saveMeetRoom(meetRoom));
+					break;
+				default:
+					// Update Meet room status to OPEN
+					meetRoom.status = MeetRoomStatus.OPEN;
+					meetRoom.meetingEndAction = MeetingEndAction.NONE;
+					tasks.push(this.storageService.saveMeetRoom(meetRoom));
 			}
 
+			// Send webhook notification
+			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
+
 			tasks.push(
-				this.participantService.cleanupParticipantNames(roomName),
-				this.recordingService.releaseRecordingLockIfNoEgress(roomName)
+				this.participantService.cleanupParticipantNames(roomId),
+				this.recordingService.releaseRecordingLockIfNoEgress(roomId)
 			);
 			await Promise.all(tasks);
 		} catch (error) {
