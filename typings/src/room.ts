@@ -4,6 +4,7 @@ import { MeetRoomPreferences } from './room-preferences.js';
 interface BaseRoomOptions {
     roomName?: string;
     autoDeletionDate?: number;
+    autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
     preferences?: MeetRoomPreferences;
     // maxParticipants?: number | null;
 }
@@ -20,9 +21,41 @@ export interface MeetRoom extends BaseRoomOptions {
     roomId: string;
     roomName: string;
     creationDate: number;
+    preferences: MeetRoomPreferences;
     moderatorUrl: string;
     speakerUrl: string;
-    markedForDeletion?: boolean;
+    status: MeetRoomStatus;
+    meetingEndAction: MeetingEndAction; // Action to take on the room when the meeting ends
+}
+
+export const enum MeetRoomStatus {
+    OPEN = 'open', // Room is open and available to host a meeting
+    ACTIVE_MEETING = 'active_meeting', // There is an ongoing meeting in the room
+    CLOSED = 'closed' // Room is closed to hosting new meetings
+}
+
+export const enum MeetingEndAction {
+    NONE = 'none', // No action is taken when the meeting ends
+    CLOSE = 'close', // The room is closed when the meeting ends
+    DELETE = 'delete', // The room is deleted when the meeting ends
+    DELETE_ALL = 'delete_all' // The room and its recordings are deleted when the meeting ends
+}
+
+export interface MeetRoomAutoDeletionPolicy {
+    withMeeting: MeetRoomDeletionPolicyWithMeeting;
+    withRecordings: MeetRoomDeletionPolicyWithRecordings;
+}
+
+export const enum MeetRoomDeletionPolicyWithMeeting {
+    FORCE = 'force', // Force deletion even if there is an active meeting
+    WHEN_MEETING_ENDS = 'when_meeting_ends', // Delete the room when the meeting ends
+    FAIL = 'fail' // Fail the deletion if there is an active meeting
+}
+
+export const enum MeetRoomDeletionPolicyWithRecordings {
+    FORCE = 'force', // Force deletion even if there are ongoing or previous recordings
+    CLOSE = 'close', // Close the room and keep recordings
+    FAIL = 'fail' // Fail the deletion if there are ongoing or previous recordings
 }
 
 export interface MeetRoomRoleAndPermissions {
