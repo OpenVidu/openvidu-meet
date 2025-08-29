@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { NavigationService, RecordingService, RoomService } from '@lib/services';
-import { MeetRecordingStatus, MeetRoom } from '@lib/typings/ce';
+import { MeetRecordingStatus, MeetRoom, MeetRoomStatus } from '@lib/typings/ce';
 
 interface OverviewStats {
 	totalRooms: number;
@@ -56,7 +56,7 @@ export class OverviewComponent implements OnInit {
 
 			this.stats = {
 				totalRooms: rooms.length,
-				activeRooms: rooms.filter((room: MeetRoom) => !room.markedForDeletion).length,
+				activeRooms: rooms.filter((room: MeetRoom) => room.status === MeetRoomStatus.ACTIVE_MEETING).length,
 				totalRecordings: recordings.length,
 				playableRecordings: recordings.filter((recording) => recording.status === MeetRecordingStatus.COMPLETE)
 					.length,

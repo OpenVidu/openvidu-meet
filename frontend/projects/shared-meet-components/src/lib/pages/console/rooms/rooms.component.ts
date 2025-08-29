@@ -16,7 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { RoomsListsComponent, RoomTableAction } from '@lib/components';
 import { NavigationService, NotificationService, RoomService } from '@lib/services';
-import { MeetRoom, MeetRoomFilters } from '@lib/typings/ce';
+import { MeetingEndAction, MeetRoom, MeetRoomFilters } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
@@ -273,7 +273,9 @@ export class RoomsComponent implements OnInit {
 					// If the room is marked for deletion, we don't remove it from the list immediately
 					const currentRooms = this.rooms();
 					this.rooms.set(
-						currentRooms.map((r) => (r.roomId === roomId ? { ...r, markedForDeletion: true } : r))
+						currentRooms.map((r) =>
+							r.roomId === roomId ? { ...r, meetingEndAction: MeetingEndAction.DELETE } : r
+						)
 					);
 					// this.dataSource.data = this.rooms();
 					this.notificationService.showSnackbar('Room marked for deletion');
@@ -331,7 +333,7 @@ export class RoomsComponent implements OnInit {
 						// We don't remove them from the list immediately
 						this.rooms.set(
 							currentRooms.map((r) =>
-								roomIds.includes(r.roomId) ? { ...r, markedForDeletion: true } : r
+								roomIds.includes(r.roomId) ? { ...r, meetingEndAction: MeetingEndAction.DELETE } : r
 							)
 						);
 						this.notificationService.showSnackbar('All rooms marked for deletion');

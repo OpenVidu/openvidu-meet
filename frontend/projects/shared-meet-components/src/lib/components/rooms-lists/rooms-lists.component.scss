@@ -109,16 +109,6 @@
 			@extend .actions-cell;
 		}
 	}
-
-	.mat-mdc-row {
-		&.marked-for-deletion {
-			background-color: rgba(244, 67, 54, 0.05);
-
-			&:hover {
-				background-color: rgba(244, 67, 54, 0.1);
-			}
-		}
-	}
 }
 
 .room-info {
@@ -133,6 +123,13 @@
 	}
 }
 
+.status-container {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	width: 100%;
+}
+
 .status-badge {
 	@extend .ov-status-badge;
 	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
@@ -142,6 +139,18 @@
 
 	.status-icon {
 		@include ov-icon(sm);
+	}
+}
+
+.meeting-end-info-icon {
+	@include ov-icon(sm);
+
+	&.meeting-end-close {
+		color: var(--ov-meet-color-warning);
+	}
+
+	&.meeting-end-delete {
+		color: var(--ov-meet-color-error);
 	}
 }
 
@@ -183,15 +192,7 @@
 		}
 	}
 
-	.auto-deletion-pending {
-		color: var(--ov-meet-color-warn);
-
-		.deletion-icon {
-			color: var(--ov-meet-color-warn);
-		}
-	}
-
-	.auto-deletion-not-scheduled {
+	.auto-deletion-disabled {
 		color: var(--ov-meet-text-hint);
 
 		.deletion-icon {

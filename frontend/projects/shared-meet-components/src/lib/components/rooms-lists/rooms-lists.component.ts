@@ -24,8 +24,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoom } from '@lib/typings/ce';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@lib/typings/ce';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
@@ -128,8 +127,9 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	// Status options
 	statusOptions = [
 		{ value: '', label: 'All statuses' },
-		{ value: 'active', label: 'Active' },
-		{ value: 'inactive', label: 'Inactive' }
+		{ value: 'open', label: 'Open' },
+		{ value: 'active_meeting', label: 'Active Meeting' },
+		{ value: 'closed', label: 'Closed' }
 	];
 
 	constructor() {}
@@ -228,8 +228,8 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		return this.selectedRooms().has(room.roomId);
 	}
 
-	canSelectRoom(room: MeetRoom): boolean {
-		return !room.markedForDeletion; // Only active rooms can be selected
+	canSelectRoom(_room: MeetRoom): boolean {
+		return true;
 	}
 
 	getSelectedRooms(): MeetRoom[] {
@@ -308,72 +308,106 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		this.statusFilterControl.setValue('');
 	}
 
-	// ===== STATUS UTILITY METHODS =====
-
-	getRoomStatus(room: MeetRoom): string {
-		return room.markedForDeletion ? 'INACTIVE' : 'ACTIVE';
-	}
-
 	// ===== PERMISSION AND CAPABILITY METHODS =====
 
 	canOpenRoom(room: MeetRoom): boolean {
-		return !room.markedForDeletion;
+		return room.status !== MeetRoomStatus.CLOSED;
 	}
 
-	canEditRoom(room: MeetRoom): boolean {
-		return !room.markedForDeletion;
+	canEditRoom(_room: MeetRoom): boolean {
+		return true;
 	}
 
 	// ===== UI HELPER METHODS =====
 
-	getStatusIcon(room: MeetRoom): string {
-		return room.markedForDeletion ? 'delete_outline' : 'check_circle';
+	// ===== STATUS =====
+
+	getRoomStatus(room: MeetRoom): string {
+		return room.status.toUpperCase().replace(/_/g, ' ');
 	}
 
-	getStatusColor(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'var(--ov-meet-color-error)';
+	getStatusIcon(room: MeetRoom): string {
+		switch (room.status) {
+			case MeetRoomStatus.OPEN:
+				return 'meeting_room';
+			case MeetRoomStatus.ACTIVE_MEETING:
+				return 'videocam';
+			case MeetRoomStatus.CLOSED:
+				return 'lock';
 		}
-		return 'var(--ov-meet-color-success)';
 	}
 
 	getStatusTooltip(room: MeetRoom): string {
-		return room.markedForDeletion
-			? 'Room is inactive and marked for deletion'
-			: 'Room is active and accepting participants';
+		switch (room.status) {
+			case MeetRoomStatus.OPEN:
+				return 'Room is open and ready to accept participants';
+			case MeetRoomStatus.ACTIVE_MEETING:
+				return 'A meeting is currently ongoing in this room';
+			case MeetRoomStatus.CLOSED:
+				return 'Room is closed and not accepting participants';
+		}
 	}
+
+	getStatusColor(room: MeetRoom): string {
+		switch (room.status) {
+			case MeetRoomStatus.OPEN:
+				return 'var(--ov-meet-color-success)';
+			case MeetRoomStatus.ACTIVE_MEETING:
+				return 'var(--ov-meet-color-primary)';
+			case MeetRoomStatus.CLOSED:
+				return 'var(--ov-meet-color-warning)';
+		}
+	}
+
+	// ===== MEETING END ACTION INFO =====
+
+	hasMeetingEndAction(room: MeetRoom): boolean {
+		return room.status === MeetRoomStatus.ACTIVE_MEETING && room.meetingEndAction !== MeetingEndAction.NONE;
+	}
+
+	getMeetingEndActionTooltip(room: MeetRoom): string {
+		switch (room.meetingEndAction) {
+			case MeetingEndAction.CLOSE:
+				return 'The room will be closed when the meeting ends';
+			case MeetingEndAction.DELETE:
+				return 'The room and its recordings will be deleted when the meeting ends';
+			default:
+				return '';
+		}
+	}
+
+	getMeetingEndActionClass(room: MeetRoom): string {
+		switch (room.meetingEndAction) {
+			case MeetingEndAction.CLOSE:
+				return 'meeting-end-close';
+			case MeetingEndAction.DELETE:
+				return 'meeting-end-delete';
+			default:
+				return '';
+		}
+	}
+
+	// ===== AUTO-DELETION =====
 
 	hasAutoDeletion(room: MeetRoom): boolean {
 		return !!room.autoDeletionDate;
 	}
 
 	getAutoDeletionStatus(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'Immediate';
-		}
-		return room.autoDeletionDate ? 'Scheduled' : 'Disabled';
+		return room.autoDeletionDate ? 'SCHEDULED' : 'DISABLED';
 	}
 
 	getAutoDeletionIcon(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'acute';
-		}
 		return room.autoDeletionDate ? 'auto_delete' : 'close';
 	}
 
-	getAutoDeletionClass(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'auto-deletion-pending';
-		}
-		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-not-scheduled';
-	}
-
 	getAutoDeletionTooltip(room: MeetRoom): string {
-		if (room.markedForDeletion) {
-			return 'Deletes when last participant leaves';
-		}
 		return room.autoDeletionDate
 			? 'Auto-deletion scheduled'
 			: 'No auto-deletion. Room remains until manually deleted';
+	}
+
+	getAutoDeletionClass(room: MeetRoom): string {
+		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-disabled';
 	}
 }

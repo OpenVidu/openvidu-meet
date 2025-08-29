@@ -182,22 +182,36 @@
 				<ng-container matColumnDef="status">
 					<th mat-header-cell *matHeaderCellDef id="status-header">Status</th>
 					<td mat-cell *matCellDef="let room" id="status-cell-{{ room.roomId }}">
-						<div
-							class="status-badge"
-							[style.color]="getStatusColor(room)"
-							[matTooltip]="getStatusTooltip(room)"
-							id="status-badge-{{ room.roomId }}"
-						>
-							<mat-icon
-								class="status-icon"
+						<div class="status-container" id="status-container-{{ room.roomId }}">
+							<div
+								class="status-badge"
 								[style.color]="getStatusColor(room)"
-								id="status-icon-{{ room.roomId }}"
+								[matTooltip]="getStatusTooltip(room)"
+								id="status-badge-{{ room.roomId }}"
 							>
-								{{ getStatusIcon(room) }}
-							</mat-icon>
-							<span class="status-label" id="status-label-{{ room.roomId }}">{{
-								getRoomStatus(room)
-							}}</span>
+								<mat-icon
+									class="status-icon"
+									[style.color]="getStatusColor(room)"
+									id="status-icon-{{ room.roomId }}"
+								>
+									{{ getStatusIcon(room) }}
+								</mat-icon>
+								<span class="status-label" id="status-label-{{ room.roomId }}">{{
+									getRoomStatus(room)
+								}}</span>
+							</div>
+
+							<!-- Meeting End Action Info Icon -->
+							@if (hasMeetingEndAction(room)) {
+								<mat-icon
+									class="meeting-end-info-icon"
+									[ngClass]="getMeetingEndActionClass(room)"
+									[matTooltip]="getMeetingEndActionTooltip(room)"
+									id="meeting-end-info-icon-{{ room.roomId }}"
+								>
+									info_outline
+								</mat-icon>
+							}
 						</div>
 					</td>
 				</ng-container>
@@ -227,52 +241,34 @@
 					<td mat-cell *matCellDef="let room" id="auto-deletion-cell-{{ room.roomId }}">
 						<div class="auto-deletion-content" id="auto-deletion-content-{{ room.roomId }}">
 							<div class="auto-deletion-info" id="auto-deletion-info-{{ room.roomId }}">
-								@if (hasAutoDeletion(room)) {
-									<div
-										class="deletion-badge"
-										[ngClass]="getAutoDeletionClass(room)"
-										[matTooltip]="getAutoDeletionTooltip(room)"
-										id="deletion-badge-{{ room.roomId }}"
+								<div
+									class="deletion-badge"
+									[ngClass]="getAutoDeletionClass(room)"
+									[matTooltip]="getAutoDeletionTooltip(room)"
+									id="deletion-badge-{{ room.roomId }}"
+								>
+									<mat-icon
+										class="deletion-icon material-symbols-outlined"
+										id="deletion-icon-{{ room.roomId }}"
+										>{{ getAutoDeletionIcon(room) }}</mat-icon
 									>
-										<mat-icon
-											class="deletion-icon material-symbols-outlined"
-											id="deletion-icon-{{ room.roomId }}"
-											>{{ getAutoDeletionIcon(room) }}</mat-icon
-										>
-										<span class="deletion-text" id="deletion-text-{{ room.roomId }}">{{
-											getAutoDeletionStatus(room)
-										}}</span>
-									</div>
+									<span class="deletion-text" id="deletion-text-{{ room.roomId }}">{{
+										getAutoDeletionStatus(room)
+									}}</span>
+								</div>
 
-									@if (!room.markedForDeletion) {
-										<div class="deletion-date-time" id="deletion-date-time-{{ room.roomId }}">
-											<div class="deletion-date" id="deletion-date-container-{{ room.roomId }}">
-												<span class="date" id="deletion-date-{{ room.roomId }}">{{
-													room.autoDeletionDate | date: 'mediumDate'
-												}}</span>
-											</div>
-											<div class="deletion-time" id="deletion-time-container-{{ room.roomId }}">
-												<span class="time" id="deletion-time-{{ room.roomId }}">{{
-													room.autoDeletionDate | date: 'shortTime'
-												}}</span>
-											</div>
+								@if (hasAutoDeletion(room)) {
+									<div class="deletion-date-time" id="deletion-date-time-{{ room.roomId }}">
+										<div class="deletion-date" id="deletion-date-container-{{ room.roomId }}">
+											<span class="date" id="deletion-date-{{ room.roomId }}">{{
+												room.autoDeletionDate | date: 'mediumDate'
+											}}</span>
 										</div>
-									}
-								} @else {
-									<div
-										class="deletion-badge"
-										[ngClass]="getAutoDeletionClass(room)"
-										[matTooltip]="getAutoDeletionTooltip(room)"
-										id="deletion-badge-{{ room.roomId }}"
-									>
-										<mat-icon
-											class="deletion-icon material-symbols-outlined"
-											id="deletion-icon-{{ room.roomId }}"
-											>{{ getAutoDeletionIcon(room) }}</mat-icon
-										>
-										<span class="deletion-text" id="deletion-text-{{ room.roomId }}">{{
-											getAutoDeletionStatus(room)
-										}}</span>
+										<div class="deletion-time" id="deletion-time-container-{{ room.roomId }}">
+											<span class="time" id="deletion-time-{{ room.roomId }}">{{
+												room.autoDeletionDate | date: 'shortTime'
+											}}</span>
+										</div>
 									</div>
 								}
 							</div>
@@ -333,7 +329,7 @@
 									<span>View Recordings</span>
 								</button>
 
-								@if (!room.markedForDeletion) {
+								@if (canOpenRoom(room)) {
 									<button
 										mat-menu-item
 										(click)="copyModeratorLink(room)"
@@ -350,18 +346,18 @@
 										<mat-icon>content_copy</mat-icon>
 										<span>Copy Speaker Link</span>
 									</button>
-
-									<mat-divider id="actions-divider-{{ room.roomId }}"></mat-divider>
-									<button
-										mat-menu-item
-										(click)="deleteRoom(room)"
-										class="delete-action"
-										id="delete-room-btn-{{ room.roomId }}"
-									>
-										<mat-icon>delete</mat-icon>
-										<span>Delete room</span>
-									</button>
 								}
+
+								<mat-divider id="actions-divider-{{ room.roomId }}"></mat-divider>
+								<button
+									mat-menu-item
+									(click)="deleteRoom(room)"
+									class="delete-action"
+									id="delete-room-btn-{{ room.roomId }}"
+								>
+									<mat-icon>delete</mat-icon>
+									<span>Delete room</span>
+								</button>
 							</mat-menu>
 						</div>
 					</td>
@@ -372,7 +368,6 @@
 					mat-row
 					*matRowDef="let row; columns: displayedColumns"
 					[class.selected-row]="isRoomSelected(row)"
-					[class.marked-for-deletion]="row.markedForDeletion"
 					id="table-row-{{ row.roomId }}"
 				></tr>
 			</table>
