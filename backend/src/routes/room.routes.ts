@@ -16,7 +16,8 @@ import {
 	withValidRoomId,
 	withValidRoomOptions,
 	withValidRoomPreferences,
-	withValidRoomSecret
+	withValidRoomSecret,
+	withValidRoomStatus
 } from '../middlewares/index.js';
 
 export const roomRouter = Router();
@@ -42,6 +43,7 @@ roomRouter.delete(
 	withValidRoomBulkDeleteRequest,
 	roomCtrl.bulkDeleteRooms
 );
+
 roomRouter.get(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
@@ -55,6 +57,7 @@ roomRouter.delete(
 	withValidRoomDeleteRequest,
 	roomCtrl.deleteRoom
 );
+
 roomRouter.get(
 	'/:roomId/preferences',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
@@ -68,6 +71,14 @@ roomRouter.put(
 	withValidRoomId,
 	withValidRoomPreferences,
 	roomCtrl.updateRoomPreferences
+);
+
+roomRouter.put(
+	'/:roomId/status',
+	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withValidRoomId,
+	withValidRoomStatus,
+	roomCtrl.updateRoomStatus
 );
 
 // Internal room routes

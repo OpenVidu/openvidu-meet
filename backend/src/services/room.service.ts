@@ -147,6 +147,30 @@ export class RoomService {
 	}
 
 	/**
+	 * Updates the status of a specific meeting room.
+	 *
+	 * @param roomId - The unique identifier of the meeting room to update
+	 * @param status - The new status to apply to the meeting room
+	 * @returns A Promise that resolves to an object containing the updated room
+	 * and a boolean indicating if the update was immediate or scheduled
+	 */
+	async updateMeetRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ room: MeetRoom; updated: boolean }> {
+		const room = await this.getMeetRoom(roomId);
+
+		// If closing the room while a meeting is active, mark it to be closed when the meeting ends
+		if (status === MeetRoomStatus.CLOSED && room.status === MeetRoomStatus.ACTIVE_MEETING) {
+			room.meetingEndAction = MeetingEndAction.CLOSE;
+			return { room, updated: false };
+		} else {
+			room.status = status;
+			room.meetingEndAction = MeetingEndAction.NONE;
+		}
+
+		await this.storageService.saveMeetRoom(room);
+		return { room, updated: true };
+	}
+
+	/**
 	 * Checks if a meeting room with the specified name exists
 	 *
 	 * @param roomName - The name of the meeting room to check

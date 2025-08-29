@@ -8,6 +8,7 @@ import {
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
+	MeetRoomStatus,
 	MeetVirtualBackgroundPreferences,
 	ParticipantRole,
 	RecordingPermissions
@@ -207,6 +208,10 @@ const UpdateRoomPreferencesSchema = z.object({
 	preferences: RoomPreferencesSchema
 });
 
+const UpdateRoomStatusSchema = z.object({
+	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
+});
+
 const RecordingTokenRequestSchema = z.object({
 	secret: z.string().nonempty('Secret is required')
 });
@@ -296,6 +301,17 @@ export const withValidRoomBulkDeleteRequest = (req: Request, res: Response, next
 	}
 
 	req.query = data;
+	next();
+};
+
+export const withValidRoomStatus = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomStatusSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.body = data;
 	next();
 };
 

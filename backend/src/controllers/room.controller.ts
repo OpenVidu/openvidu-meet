@@ -150,6 +150,30 @@ export const updateRoomPreferences = async (req: Request, res: Response) => {
 	}
 };
 
+export const updateRoomStatus = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { status } = req.body;
+	const { roomId } = req.params;
+
+	logger.verbose(`Updating room status for room '${roomId}' to '${status}'`);
+
+	try {
+		const { room, updated } = await roomService.updateMeetRoomStatus(roomId, status);
+		let message: string;
+
+		if (updated) {
+			message = `Room '${roomId}' ${status} successfully`;
+		} else {
+			message = `Room '${roomId}' scheduled to be closed when the meeting ends`;
+		}
+
+		return res.status(updated ? 200 : 202).json({ message, room });
+	} catch (error) {
+		handleError(res, error, `updating room status for room '${roomId}'`);
+	}
+};
+
 export const generateRecordingToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
