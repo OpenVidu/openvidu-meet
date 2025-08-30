@@ -349,6 +349,16 @@
 								}
 
 								<mat-divider id="actions-divider-{{ room.roomId }}"></mat-divider>
+
+								<button
+									mat-menu-item
+									(click)="toggleRoomStatus(room)"
+									[ngClass]="getRoomToggleIconClass(room)"
+									id="toggle-room-status-btn-{{ room.roomId }}"
+								>
+									<mat-icon>{{ getRoomToggleIcon(room) }}</mat-icon>
+									<span>{{ getRoomToggleLabel(room) }}</span>
+								</button>
 								<button
 									mat-menu-item
 									(click)="deleteRoom(room)"

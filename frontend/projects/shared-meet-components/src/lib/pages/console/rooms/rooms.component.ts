@@ -16,7 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { RoomsListsComponent, RoomTableAction } from '@lib/components';
 import { NavigationService, NotificationService, RoomService } from '@lib/services';
-import { MeetingEndAction, MeetRoom, MeetRoomFilters } from '@lib/typings/ce';
+import { MeetingEndAction, MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
@@ -107,6 +107,12 @@ export class RoomsComponent implements OnInit {
 				break;
 			case 'viewRecordings':
 				await this.viewRecordings(action.rooms[0]);
+				break;
+			case 'reopen':
+				this.reopenRoom(action.rooms[0]);
+				break;
+			case 'close':
+				this.closeRoom(action.rooms[0]);
 				break;
 			case 'delete':
 				this.deleteRoom(action.rooms[0]);
@@ -262,6 +268,40 @@ export class RoomsComponent implements OnInit {
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);
+		}
+	}
+
+	private async reopenRoom(room: MeetRoom) {
+		try {
+			const { room: updatedRoom } = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);
+
+			// Update room in the list
+			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			this.notificationService.showSnackbar('Room reopened successfully');
+		} catch (error) {
+			this.notificationService.showSnackbar('Failed to reopen room');
+			this.log.e('Error reopening room:', error);
+		}
+	}
+
+	private async closeRoom(room: MeetRoom) {
+		try {
+			const { statusCode, room: updatedRoom } = await this.roomService.updateRoomStatus(
+				room.roomId,
+				MeetRoomStatus.CLOSED
+			);
+
+			// Update room in the list
+			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+
+			if (statusCode === 202) {
+				this.notificationService.showSnackbar('Room scheduled to be closed when the meeting ends');
+			} else {
+				this.notificationService.showSnackbar('Room closed successfully');
+			}
+		} catch (error) {
+			this.notificationService.showSnackbar('Failed to close room');
+			this.log.e('Error closing room:', error);
 		}
 	}
 

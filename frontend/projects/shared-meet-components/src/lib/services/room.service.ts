@@ -5,7 +5,8 @@ import {
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
-	MeetRoomRoleAndPermissions
+	MeetRoomRoleAndPermissions,
+	MeetRoomStatus
 } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -104,9 +105,21 @@ export class RoomService {
 	 * @return A promise that resolves to the MeetRoom object
 	 */
 	async getRoom(roomId: string): Promise<MeetRoom> {
-		let path = `${this.ROOMS_API}/${roomId}`;
+		const path = `${this.ROOMS_API}/${roomId}`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		return this.httpService.getRequest(path, headers);
+	}
+
+	/**
+	 * Updates the status of a room.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param status - The new status to be set
+	 * @return A promise that resolves to an object containing the updated room and a status code
+	 */
+	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ statusCode: number; room: MeetRoom }> {
+		const path = `${this.ROOMS_API}/${roomId}/status`;
+		return this.httpService.putRequest(path, { status });
 	}
 
 	/**

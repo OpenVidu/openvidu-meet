@@ -42,7 +42,7 @@ export class GlobalPreferencesService {
 
 	async saveSecurityPreferences(preferences: SecurityPreferences) {
 		const path = `${this.PREFERENCES_API}/security`;
-		await this.httpService.putRequest<SecurityPreferences>(path, preferences);
+		await this.httpService.putRequest(path, preferences);
 		this.securityPreferences = preferences;
 	}
 
@@ -58,7 +58,7 @@ export class GlobalPreferencesService {
 
 	async saveWebhookPreferences(preferences: WebhookPreferences) {
 		const path = `${this.PREFERENCES_API}/webhooks`;
-		await this.httpService.putRequest<WebhookPreferences>(path, preferences);
+		await this.httpService.putRequest(path, preferences);
 	}
 
 	async testWebhookUrl(url: string): Promise<void> {

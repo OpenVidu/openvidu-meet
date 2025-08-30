@@ -35,6 +35,8 @@ export interface RoomTableAction {
 		| 'copyModeratorLink'
 		| 'copySpeakerLink'
 		| 'viewRecordings'
+		| 'reopen'
+		| 'close'
 		| 'delete'
 		| 'bulkDelete';
 }
@@ -263,6 +265,14 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		this.roomAction.emit({ rooms: [room], action: 'viewRecordings' });
 	}
 
+	toggleRoomStatus(room: MeetRoom) {
+		if (room.status !== MeetRoomStatus.CLOSED) {
+			this.roomAction.emit({ rooms: [room], action: 'close' });
+		} else {
+			this.roomAction.emit({ rooms: [room], action: 'reopen' });
+		}
+	}
+
 	deleteRoom(room: MeetRoom) {
 		this.roomAction.emit({ rooms: [room], action: 'delete' });
 	}
@@ -409,5 +419,19 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 
 	getAutoDeletionClass(room: MeetRoom): string {
 		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-disabled';
+	}
+
+	// ===== ROOM TOGGLE =====
+
+	getRoomToggleIcon(room: MeetRoom): string {
+		return room.status !== MeetRoomStatus.CLOSED ? 'lock' : 'meeting_room';
+	}
+
+	getRoomToggleLabel(room: MeetRoom): string {
+		return room.status !== MeetRoomStatus.CLOSED ? 'Close Room' : 'Open Room';
+	}
+
+	getRoomToggleIconClass(room: MeetRoom): string {
+		return room.status !== MeetRoomStatus.CLOSED ? 'close-room-icon' : 'open-room-icon';
 	}
 }

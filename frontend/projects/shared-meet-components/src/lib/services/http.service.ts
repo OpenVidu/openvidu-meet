@@ -24,8 +24,14 @@ export class HttpService {
 	}
 
 	async putRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
-		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.put<T>(path, body, options));
+		const options = {
+			observe: 'response' as const,
+			...(headers ? { headers: new HttpHeaders(headers) } : {})
+		};
+		return lastValueFrom(this.http.put<T>(path, body, options)).then((response) => ({
+			...(response.body as T),
+			statusCode: response.status
+		}));
 	}
 
 	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
