@@ -133,6 +133,16 @@
 		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-primary-light) 180%);
 		color: var(--ov-meet-text-on-primary);
 	}
+
+	&.room-closed-card {
+		.card-header {
+			background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-warning) 180%);
+
+			.mat-icon {
+				color: var(--ov-meet-color-warning) !important;
+			}
+		}
+	}
 }
 
 // Secondary Card - Recordings styling

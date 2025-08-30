@@ -50,6 +50,10 @@ export class ErrorComponent implements OnInit {
 	 */
 	private mapReasonToNameAndMessage(reason: string): { title: string; message: string } {
 		const reasonMap: { [key in ErrorReason]: { title: string; message: string } } = {
+			[ErrorReason.CLOSED_ROOM]: {
+				title: 'Closed room',
+				message: 'The room you are trying to access is closed'
+			},
 			[ErrorReason.MISSING_ROOM_SECRET]: {
 				title: 'Missing secret',
 				message: 'You need to provide a secret to join the room as a moderator or speaker'

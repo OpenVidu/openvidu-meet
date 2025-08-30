@@ -32,6 +32,9 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 			case 404:
 				// Room not found
 				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
+			case 409:
+				// Room is closed
+				return navigationService.redirectToErrorPage(ErrorReason.CLOSED_ROOM);
 			default:
 				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}

@@ -1,4 +1,5 @@
 export enum ErrorReason {
+	CLOSED_ROOM = 'closed-room',
 	MISSING_ROOM_SECRET = 'missing-room-secret',
 	MISSING_RECORDING_SECRET = 'missing-recording-secret',
 	INVALID_ROOM_SECRET = 'invalid-room-secret',

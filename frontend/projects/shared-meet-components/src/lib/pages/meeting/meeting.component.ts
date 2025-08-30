@@ -1,4 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
@@ -31,6 +32,7 @@ import {
 import {
 	LeftEventReason,
 	MeetRoom,
+	MeetRoomStatus,
 	ParticipantRole,
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
@@ -65,6 +67,7 @@ import { Subject, takeUntil } from 'rxjs';
 	imports: [
 		OpenViduComponentsUiModule,
 		ApiDirectiveModule,
+		CommonModule,
 		MatFormFieldModule,
 		MatInputModule,
 		FormsModule,
@@ -87,6 +90,7 @@ export class MeetingComponent implements OnInit {
 
 	hasRecordings = false;
 	showRecordingCard = false;
+	roomClosed = false;
 
 	showBackButton = true;
 	backButtonText = 'Back';
@@ -137,6 +141,7 @@ export class MeetingComponent implements OnInit {
 		this.roomId = this.roomService.getRoomId();
 		this.roomSecret = this.roomService.getRoomSecret();
 		this.room = await this.roomService.getRoom(this.roomId);
+		this.roomClosed = this.room.status === MeetRoomStatus.CLOSED;
 
 		await this.setBackButtonText();
 		await this.checkForRecordings();
@@ -217,6 +222,11 @@ export class MeetingComponent implements OnInit {
 
 		if (participantName) {
 			this.participantForm.get('name')?.setValue(participantName);
+		}
+
+		// Disable the form if the room is closed
+		if (this.roomClosed) {
+			this.participantForm.disable();
 		}
 	}
 
@@ -308,6 +318,10 @@ export class MeetingComponent implements OnInit {
 				case 404:
 					// Room not found
 					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM, true);
+					break;
+				case 409:
+					// Room is closed
+					await this.navigationService.redirectToErrorPage(ErrorReason.CLOSED_ROOM, true);
 					break;
 				default:
 					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);

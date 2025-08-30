@@ -215,12 +215,16 @@
 			<!-- Action Cards Grid -->
 			<div class="action-cards-grid">
 				<!-- Join Room Card -->
-				<mat-card class="action-card primary-card fade-in">
+				<mat-card class="action-card primary-card fade-in" [ngClass]="{ 'room-closed-card': roomClosed }">
 					<mat-card-header class="card-header">
-						<mat-icon class="ov-room-icon card-icon">meeting_room</mat-icon>
+						<mat-icon class="ov-room-icon card-icon">{{ roomClosed ? 'lock' : 'meeting_room' }}</mat-icon>
 						<div class="card-title-group">
-							<mat-card-title>Join Meeting</mat-card-title>
-							<mat-card-subtitle>Enter the room and start connecting</mat-card-subtitle>
+							<mat-card-title>{{ roomClosed ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
+							<mat-card-subtitle>{{
+								roomClosed
+									? 'This room is currently closed and not accepting new participants'
+									: 'Enter the room and start connecting'
+							}}</mat-card-subtitle>
 						</div>
 					</mat-card-header>
 
@@ -250,7 +254,7 @@
 								id="participant-name-submit"
 								type="submit"
 								class="join-button"
-								[disabled]="participantForm.invalid"
+								[disabled]="participantForm.invalid || roomClosed"
 							>
 								<span>Join Meeting</span>
 							</button>
