@@ -156,18 +156,19 @@ export class RoomService {
 	 */
 	async updateMeetRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ room: MeetRoom; updated: boolean }> {
 		const room = await this.getMeetRoom(roomId);
+		let updated = true;
 
 		// If closing the room while a meeting is active, mark it to be closed when the meeting ends
 		if (status === MeetRoomStatus.CLOSED && room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			room.meetingEndAction = MeetingEndAction.CLOSE;
-			return { room, updated: false };
+			updated = false;
 		} else {
 			room.status = status;
 			room.meetingEndAction = MeetingEndAction.NONE;
 		}
 
 		await this.storageService.saveMeetRoom(room);
-		return { room, updated: true };
+		return { room, updated };
 	}
 
 	/**
