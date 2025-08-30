@@ -52,6 +52,9 @@ export class ParticipantService {
 				throw errorRoomClosed(roomId);
 			}
 
+			// Create the Livekit room if it doesn't exist
+			await this.roomService.createLivekitRoom(roomId);
+
 			if (refresh) {
 				if (!participantIdentity) {
 					throw errorParticipantIdentityNotProvided();

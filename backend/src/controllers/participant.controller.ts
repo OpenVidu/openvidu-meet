@@ -14,7 +14,6 @@ import { getCookieOptions } from '../utils/cookie-utils.js';
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const participantService = container.get(ParticipantService);
-	const roomService = container.get(RoomService);
 	const participantOptions: ParticipantOptions = req.body;
 	const { roomId } = participantOptions;
 
@@ -39,11 +38,6 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Generating participant token for room '${roomId}'`);
-
-		// If participantName is provided, create the Livekit room if it doesn't exist
-		if (participantOptions.participantName) {
-			await roomService.createLivekitRoom(roomId);
-		}
 
 		const token = await participantService.generateOrRefreshParticipantToken(participantOptions, currentRoles);
 		res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
