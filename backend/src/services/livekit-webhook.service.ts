@@ -239,10 +239,10 @@ export class LivekitWebhookService {
 
 			switch (meetRoom.meetingEndAction) {
 				case MeetingEndAction.DELETE:
-					// TODO: Delete also all recordings associated with the room
 					this.logger.info(
-						`Deleting room '${roomId}' after meeting finished because it was scheduled to be deleted`
+						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
+					await this.recordingService.deleteAllRoomRecordings(roomId); // This operation must complete before deleting the room
 					tasks.push(this.roomService.bulkDeleteRooms([roomId], true));
 					break;
 				case MeetingEndAction.CLOSE:
@@ -256,7 +256,6 @@ export class LivekitWebhookService {
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					meetRoom.meetingEndAction = MeetingEndAction.NONE;
 					tasks.push(this.storageService.saveMeetRoom(meetRoom));
 			}
 

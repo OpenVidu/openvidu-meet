@@ -251,6 +251,136 @@ export class RecordingService {
 	}
 
 	/**
+	 * Deletes all recordings for a specific room.
+	 * If there are active recordings, it will stop them first and then delete all recordings.
+	 * This method will retry deletion for any recordings that fail to delete initially.
+	 *
+	 * @param roomId - The unique identifier of the room whose recordings should be deleted.
+	 */
+	async deleteAllRoomRecordings(roomId: string): Promise<void> {
+		try {
+			this.logger.info(`Starting deletion of all recordings for room '${roomId}'`);
+
+			// Check for active recordings first
+			const activeRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+
+			if (activeRecordings.length > 0) {
+				this.logger.info(
+					`Found ${activeRecordings.length} active recording(s) for room '${roomId}', stopping them first`
+				);
+
+				// Stop all active recordings
+				const stopPromises = activeRecordings.map(async (egressInfo) => {
+					const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
+
+					try {
+						this.logger.info(`Stopping active recording '${recordingId}'`);
+						await this.livekitService.stopEgress(egressInfo.egressId);
+						// Wait a bit for recording to fully stop
+						await new Promise((resolve) => setTimeout(resolve, 1000));
+
+						// Check if the recording has stopped and update status if needed
+						const recording = await this.getRecording(recordingId);
+
+						if (recording.status !== MeetRecordingStatus.COMPLETE) {
+							this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
+							this.logger.warn(`ABORTING RECORDING '${recordingId}'`);
+							await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+						}
+
+						this.logger.info(`Successfully stopped recording '${recordingId}'`);
+					} catch (error) {
+						this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
+						// Continue with deletion anyway
+					}
+				});
+
+				await Promise.allSettled(stopPromises);
+			}
+
+			// Get all recording IDs for the room
+			const allRecordingIds = await this.getAllRecordingIdsForRoom(roomId);
+
+			if (allRecordingIds.length === 0) {
+				this.logger.info(`No recordings found for room '${roomId}'`);
+				return;
+			}
+
+			this.logger.info(
+				`Found ${allRecordingIds.length} recordings for room '${roomId}', proceeding with deletion`
+			);
+
+			// Attempt initial deletion
+			let remainingRecordings = [...allRecordingIds];
+			let retryCount = 0;
+			const maxRetries = 3;
+			const retryDelayMs = 1000;
+
+			while (remainingRecordings.length > 0 && retryCount < maxRetries) {
+				if (retryCount > 0) {
+					this.logger.info(
+						`Retry ${retryCount}/${maxRetries}: attempting to delete ${remainingRecordings.length} remaining recordings`
+					);
+					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
+				}
+
+				const { notDeleted } = await this.bulkDeleteRecordingsAndAssociatedFiles(remainingRecordings, roomId);
+
+				if (notDeleted.length === 0) {
+					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
+					return;
+				}
+
+				// Prepare for retry with failed recordings
+				remainingRecordings = notDeleted.map((failed) => failed.recordingId);
+				retryCount++;
+
+				this.logger.warn(
+					`${notDeleted.length} recordings failed to delete for room '${roomId}': ${remainingRecordings.join(', ')}`
+				);
+
+				if (retryCount < maxRetries) {
+					this.logger.info(`Will retry deletion in ${retryDelayMs * retryCount}ms`);
+				}
+			}
+
+			// Final check and logging
+			if (remainingRecordings.length > 0) {
+				this.logger.error(
+					`Failed to delete ${remainingRecordings.length} recordings for room '${roomId}' after ${maxRetries} attempts: ${remainingRecordings.join(', ')}`
+				);
+				throw new Error(
+					`Failed to delete all recordings for room '${roomId}'. ${remainingRecordings.length} recordings could not be deleted.`
+				);
+			}
+		} catch (error) {
+			this.logger.error(`Error deleting all recordings for room '${roomId}': ${error}`);
+			throw error;
+		}
+	}
+
+	/**
+	 * Helper method to get all recording IDs for a specific room.
+	 * Handles pagination to ensure all recordings are retrieved.
+	 *
+	 * @param roomId - The room ID to get recordings for
+	 * @returns Array of all recording IDs for the room
+	 */
+	protected async getAllRecordingIdsForRoom(roomId: string): Promise<string[]> {
+		const allRecordingIds: string[] = [];
+		let nextPageToken: string | undefined;
+
+		do {
+			const response = await this.storageService.getAllRecordings(roomId, 100, nextPageToken);
+			const recordingIds = response.recordings.map((recording) => recording.recordingId);
+			allRecordingIds.push(...recordingIds);
+			nextPageToken = response.nextContinuationToken;
+		} while (nextPageToken);
+
+		return allRecordingIds;
+	}
+
+	/**
 	 * Deletes multiple recordings in bulk from S3.
 	 * For each provided egressId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
