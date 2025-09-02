@@ -179,10 +179,11 @@ export class RoomRecordingsComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
+			title: 'Delete Recording',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
-			title: 'Delete Recording',
-			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
 			confirmCallback: deleteCallback
 		});
 	}
@@ -228,10 +229,11 @@ export class RoomRecordingsComponent implements OnInit {
 
 		const count = recordings.length;
 		this.notificationService.showDialog({
+			title: 'Delete Recordings',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete <b>${count}</b> recordings?`,
 			confirmText: 'Delete all',
 			cancelText: 'Cancel',
-			title: 'Delete Recordings',
-			message: `Are you sure you want to delete <b>${count}</b> recordings?`,
 			confirmCallback: bulkDeleteCallback
 		});
 	}

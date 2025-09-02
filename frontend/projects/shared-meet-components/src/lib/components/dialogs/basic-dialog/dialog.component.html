@@ -1,0 +1,39 @@
+<div class="dialog-container">
+	@if (data.title) {
+		<h2 mat-dialog-title class="dialog-title ov-text-center">
+			@if (data.icon) {
+				<mat-icon class="dialog-icon">{{ data.icon }}</mat-icon>
+			}
+			{{ data.title }}
+		</h2>
+	}
+	<mat-dialog-content>
+		<div class="dialog-message" [innerHTML]="data.message"></div>
+		@if (data.showForceCheckbox) {
+			<div class="force-checkbox-container">
+				<mat-checkbox [(ngModel)]="force" class="force-checkbox" color="warn">
+					<span class="checkbox-text">{{ data.forceCheckboxText }}</span>
+				</mat-checkbox>
+				<div class="checkbox-warning">
+					<mat-icon class="warning-icon">warning</mat-icon>
+					<span class="warning-text">{{ data.forceCheckboxDescription }}</span>
+				</div>
+			</div>
+		}
+	</mat-dialog-content>
+	<mat-dialog-actions class="dialog-action">
+		<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">
+			{{ data.cancelText ?? 'Cancel' }}
+		</button>
+		<button
+			mat-flat-button
+			mat-dialog-close
+			cdkFocusInitial
+			(click)="close('confirm')"
+			class="confirm-button"
+			[class.force]="force"
+		>
+			{{ data.confirmText ?? 'Confirm' }}
+		</button>
+	</mat-dialog-actions>
+</div>

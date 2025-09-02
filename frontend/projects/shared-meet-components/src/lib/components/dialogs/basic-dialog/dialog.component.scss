@@ -156,8 +156,8 @@
 				transform: translateY(0);
 			}
 
-			// Force delete state - changes to warning color
-			&.force-delete {
+			// Force state - changes to warning color
+			&.force {
 				background: var(--ov-meet-color-warning) !important;
 				border-color: var(--ov-meet-color-warning) !important;
 
