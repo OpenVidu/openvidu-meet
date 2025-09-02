@@ -1,0 +1,51 @@
+<div class="dialog-container">
+	<h2 mat-dialog-title class="dialog-title ov-text-center">
+		<mat-icon class="dialog-icon">delete_outlined</mat-icon>
+		{{ data.title }}
+	</h2>
+
+	<mat-dialog-content>
+		<div class="dialog-message" [innerHTML]="data.message"></div>
+		<p>Please choose how to handle this situation:</p>
+
+		<div class="policy-options-container">
+			@if (data.showWithMeetingPolicy) {
+				<div class="policy-section">
+					<h4>With Active Meeting Policy:</h4>
+					<mat-radio-group [(ngModel)]="selectedMeetingPolicy" class="policy-group">
+						@for (option of meetingPolicyOptions; track option.value) {
+							<mat-radio-button [value]="option.value" class="policy-option">
+								<div class="policy-option-content">
+									<span class="policy-label">{{ option.label }}</span>
+									<span class="policy-description">{{ option.description }}</span>
+								</div>
+							</mat-radio-button>
+						}
+					</mat-radio-group>
+				</div>
+			}
+
+			@if (data.showWithRecordingsPolicy) {
+				<div class="policy-section">
+					<h4>With Recordings Policy:</h4>
+					<mat-radio-group [(ngModel)]="selectedRecordingPolicy" class="policy-group">
+						@for (option of recordingPolicyOptions; track option.value) {
+							<mat-radio-button [value]="option.value" class="policy-option">
+								<div class="policy-option-content">
+									<span class="policy-label">{{ option.label }}</span>
+									<span class="policy-description">{{ option.description }}</span>
+								</div>
+							</mat-radio-button>
+						}
+					</mat-radio-group>
+				</div>
+			}
+		</div>
+	</mat-dialog-content>
+	<mat-dialog-actions class="dialog-action">
+		<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">Cancel</button>
+		<button mat-flat-button mat-dialog-close cdkFocusInitial (click)="close('confirm')" class="confirm-button">
+			{{ data.confirmText ?? 'Confirm' }}
+		</button>
+	</mat-dialog-actions>
+</div>
