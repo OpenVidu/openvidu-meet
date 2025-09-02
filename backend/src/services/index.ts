@@ -12,9 +12,9 @@ export * from './auth.service.js';
 
 export * from './livekit.service.js';
 export * from './frontend-event.service.js';
+export * from './recording.service.js';
 export * from './room.service.js';
 export * from './participant-name.service.js';
 export * from './participant.service.js';
-export * from './recording.service.js';
 export * from './openvidu-webhook.service.js';
 export * from './livekit-webhook.service.js';

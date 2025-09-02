@@ -2,6 +2,10 @@ import {
 	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRoom,
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
@@ -19,10 +23,12 @@ import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
 import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
+	errorDeletingRoom,
 	errorInvalidRoomSecret,
 	errorRoomMetadataNotFound,
 	errorRoomNotFound,
-	internalError
+	internalError,
+	OpenViduMeetError
 } from '../models/error.model.js';
 import {
 	DistributedEventService,
@@ -31,6 +37,7 @@ import {
 	LiveKitService,
 	LoggerService,
 	MeetStorageService,
+	RecordingService,
 	TaskSchedulerService,
 	TokenService
 } from './index.js';
@@ -46,6 +53,7 @@ export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
@@ -235,43 +243,380 @@ export class RoomService {
 	}
 
 	/**
-	 * Deletes multiple rooms in bulk, with the option to force delete or gracefully handle rooms with active participants.
-	 * For rooms with participants, when `forceDelete` is false, the method performs a "graceful deletion"
-	 * by marking the room for deletion without disrupting active sessions.
-	 * However, if `forceDelete` is true, it will also end the meetings by removing the rooms from LiveKit.
+	 * Deletes a room based on the specified policies for handling active meetings and recordings.
 	 *
-	 * @param roomIds - Array of room identifiers to be deleted
-	 * @param forceDelete - If true, deletes rooms even if they have active participants.
-	 *                      If false, rooms with participants will be marked for deletion instead of being deleted immediately.
+	 * @param roomId - The unique identifier of the room to delete
+	 * @param withMeeting - Policy for handling rooms with active meetings
+	 * @param withRecordings - Policy for handling rooms with recordings
+	 * @returns Promise with deletion result including status code, success code, message and room (if updated instead of deleted)
+	 * @throws Error with specific error codes for conflict scenarios
 	 */
-	async bulkDeleteRooms(
-		roomIds: string[],
-		forceDelete: boolean
-	): Promise<{ deleted: string[]; markedForDeletion: string[] }> {
+	async deleteMeetRoom(
+		roomId: string,
+		withMeeting: MeetRoomDeletionPolicyWithMeeting,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings
+	): Promise<{
+		successCode: MeetRoomDeletionSuccessCode;
+		message: string;
+		room?: MeetRoom;
+	}> {
 		try {
-			this.logger.info(`Starting bulk deletion of ${roomIds.length} rooms (forceDelete: ${forceDelete})`);
-
-			// Classify rooms into those to delete and those to mark for deletion
-			const { toDelete, toMark } = await this.classifyRoomsForDeletion(roomIds, forceDelete);
-
-			// Process each group in parallel
-			const [deletedRooms, markedRooms] = await Promise.all([
-				this.batchDeleteRooms(toDelete),
-				this.batchMarkRoomsForDeletion(toMark)
-			]);
-
 			this.logger.info(
-				`Bulk deletion completed: ${deletedRooms.length} deleted, ${markedRooms.length} marked for deletion`
+				`Deleting room '${roomId}' with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 			);
 
-			return {
-				deleted: deletedRooms,
-				markedForDeletion: markedRooms
-			};
+			// Check if there's an active meeting in the room and/or if it has recordings associated
+			const room = await this.getMeetRoom(roomId);
+			const hasActiveMeeting = room.status === MeetRoomStatus.ACTIVE_MEETING;
+			const hasRecordings = await this.recordingService.hasRoomRecordings(roomId);
+
+			this.logger.debug(
+				`Room '${roomId}' status: hasActiveMeeting=${hasActiveMeeting}, hasRecordings=${hasRecordings}`
+			);
+
+			const updatedRoom = await this.executeDeletionStrategy(
+				roomId,
+				hasActiveMeeting,
+				hasRecordings,
+				withMeeting,
+				withRecordings
+			);
+			return this.getDeletionResponse(
+				roomId,
+				hasActiveMeeting,
+				hasRecordings,
+				withMeeting,
+				withRecordings,
+				updatedRoom
+			);
 		} catch (error) {
-			this.logger.error('Error deleting rooms:', error);
+			this.logger.error(`Error deleting room '${roomId}': ${error}`);
 			throw error;
 		}
+	}
+
+	/**
+	 * Executes the deletion strategy for a room based on its state and the provided deletion policies.
+	 * - Validates the deletion policies (throws if not allowed).
+	 * - If no active meeting and no recordings, deletes the room directly.
+	 * - If there is an active meeting, sets the meeting end action (DELETE or CLOSE) and optionally ends the meeting.
+	 * - If there are recordings and policy is CLOSE, closes the room.
+	 * - If force delete is requested, deletes all recordings and the room.
+	 */
+	protected async executeDeletionStrategy(
+		roomId: string,
+		hasActiveMeeting: boolean,
+		hasRecordings: boolean,
+		withMeeting: MeetRoomDeletionPolicyWithMeeting,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings
+	): Promise<MeetRoom | undefined> {
+		// Validate policies first (fail-fast)
+		this.validateDeletionPolicies(roomId, hasActiveMeeting, hasRecordings, withMeeting, withRecordings);
+
+		// No meeting, no recordings: simple deletion
+		if (!hasActiveMeeting && !hasRecordings) {
+			await this.storageService.deleteMeetRooms([roomId]);
+			return undefined;
+		}
+
+		const room = await this.getMeetRoom(roomId);
+
+		// Determine actions based on policies
+		const shouldForceEndMeeting = hasActiveMeeting && withMeeting === MeetRoomDeletionPolicyWithMeeting.FORCE;
+		const shouldCloseRoom = hasRecordings && withRecordings === MeetRoomDeletionPolicyWithRecordings.CLOSE;
+
+		if (hasActiveMeeting) {
+			// Set meeting end action (DELETE or CLOSE) depending on recording policy
+			room.meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
+			await this.storageService.saveMeetRoom(room);
+
+			if (shouldForceEndMeeting) {
+				// Force end meeting by deleting the LiveKit room
+				await this.livekitService.deleteRoom(roomId);
+			}
+
+			return room;
+		}
+
+		if (shouldCloseRoom) {
+			// Close room instead of deleting if recordings exist and policy is CLOSE
+			room.status = MeetRoomStatus.CLOSED;
+			await this.storageService.saveMeetRoom(room);
+			return room;
+		}
+
+		// Force delete: delete room and all recordings
+		await Promise.all([
+			this.recordingService.deleteAllRoomRecordings(roomId),
+			this.storageService.deleteMeetRooms([roomId])
+		]);
+		return undefined;
+	}
+
+	/**
+	 * Validates deletion policies and throws appropriate errors for conflicts.
+	 */
+	protected validateDeletionPolicies(
+		roomId: string,
+		hasActiveMeeting: boolean,
+		hasRecordings: boolean,
+		withMeeting: MeetRoomDeletionPolicyWithMeeting,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings
+	) {
+		const baseMessage = `Room '${roomId}'`;
+
+		// Meeting policy validation
+		if (hasActiveMeeting && withMeeting === MeetRoomDeletionPolicyWithMeeting.FAIL) {
+			if (hasRecordings) {
+				throw errorDeletingRoom(
+					MeetRoomDeletionErrorCode.ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING,
+					`${baseMessage} with recordings cannot be deleted because it has an active meeting.`
+				);
+			} else {
+				throw errorDeletingRoom(
+					MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING,
+					`${baseMessage} cannot be deleted because it has an active meeting.`
+				);
+			}
+		}
+
+		// Recording policy validation
+		if (hasRecordings && withRecordings === MeetRoomDeletionPolicyWithRecordings.FAIL) {
+			if (hasActiveMeeting) {
+				if (withMeeting === MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS) {
+					throw errorDeletingRoom(
+						MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION,
+						`${baseMessage} with active meeting cannot be scheduled to be deleted because it has recordings.`
+					);
+				} else {
+					throw errorDeletingRoom(
+						MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS,
+						`${baseMessage} with active meeting cannot be deleted because it has recordings.`
+					);
+				}
+			} else {
+				throw errorDeletingRoom(
+					MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS,
+					`${baseMessage} cannot be deleted because it has recordings.`
+				);
+			}
+		}
+	}
+
+	/**
+	 * Gets the appropriate response information based on room state and policies.
+	 */
+	private getDeletionResponse(
+		roomId: string,
+		hasActiveMeeting: boolean,
+		hasRecordings: boolean,
+		withMeeting: MeetRoomDeletionPolicyWithMeeting,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings,
+		room?: MeetRoom
+	): {
+		successCode: MeetRoomDeletionSuccessCode;
+		message: string;
+		room?: MeetRoom;
+	} {
+		const baseMessage = `Room '${roomId}'`;
+
+		// No meeting, no recordings
+		if (!hasActiveMeeting && !hasRecordings) {
+			return {
+				successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
+				message: `${baseMessage} deleted successfully`
+			};
+		}
+
+		// Has active meeting, no recordings
+		if (hasActiveMeeting && !hasRecordings) {
+			switch (withMeeting) {
+				case MeetRoomDeletionPolicyWithMeeting.FORCE:
+					return {
+						successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_DELETED,
+						message: `${baseMessage} with active meeting deleted successfully`
+					};
+				case MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS:
+					return {
+						successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED,
+						message: `${baseMessage} with active meeting scheduled to be deleted when the meeting ends`,
+						room
+					};
+				default:
+					throw internalError(`Unexpected meeting deletion policy: ${withMeeting}`);
+			}
+		}
+
+		// No active meeting, has recordings
+		if (!hasActiveMeeting && hasRecordings) {
+			switch (withRecordings) {
+				case MeetRoomDeletionPolicyWithRecordings.FORCE:
+					return {
+						successCode: MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED,
+						message: `${baseMessage} and its recordings deleted successfully`
+					};
+				case MeetRoomDeletionPolicyWithRecordings.CLOSE:
+					return {
+						successCode: MeetRoomDeletionSuccessCode.ROOM_CLOSED,
+						message: `${baseMessage} has been closed instead of deleted because it has recordings.`,
+						room
+					};
+				default:
+					throw internalError(`Unexpected recording deletion policy: ${withRecordings}`);
+			}
+		}
+
+		// Has active meeting, has recordings
+		switch (withMeeting) {
+			case MeetRoomDeletionPolicyWithMeeting.FORCE: {
+				switch (withRecordings) {
+					case MeetRoomDeletionPolicyWithRecordings.FORCE:
+						return {
+							successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED,
+							message: `${baseMessage} with active meeting and its recordings deleted successfully`
+						};
+					case MeetRoomDeletionPolicyWithRecordings.CLOSE:
+						return {
+							successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED,
+							message: `${baseMessage} with active meeting has been closed instead of deleted because it has recordings.`,
+							room
+						};
+					default:
+						throw internalError(`Unexpected recording deletion policy: ${withRecordings}`);
+				}
+			}
+
+			case MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS: {
+				switch (withRecordings) {
+					case MeetRoomDeletionPolicyWithRecordings.FORCE:
+						return {
+							successCode:
+								MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED,
+							message: `${baseMessage} with active meeting and its recordings scheduled to be deleted when the meeting ends`,
+							room
+						};
+					case MeetRoomDeletionPolicyWithRecordings.CLOSE:
+						return {
+							successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED,
+							message: `${baseMessage} with active meeting scheduled to be closed when the meeting ends because it has recordings.`,
+							room
+						};
+					default:
+						throw internalError(`Unexpected recording deletion policy: ${withRecordings}`);
+				}
+			}
+
+			default:
+				throw internalError(`Unexpected meeting deletion policy: ${withMeeting}`);
+		}
+	}
+
+	/**
+	 * Deletes multiple rooms in bulk using the deleteMeetRoom method, processing them in batches.
+	 *
+	 * @param roomIds - Array of room identifiers to be deleted
+	 * @param withMeeting - Policy for handling rooms with active meetings
+	 * @param withRecordings - Policy for handling rooms with recordings
+	 * @param batchSize - Number of rooms to process in each batch (default: 10)
+	 * @returns Promise with arrays of successful and failed deletions
+	 */
+	async bulkDeleteMeetRooms(
+		roomIds: string[],
+		withMeeting: MeetRoomDeletionPolicyWithMeeting,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings,
+		batchSize = 10
+	): Promise<{
+		successful: {
+			roomId: string;
+			successCode: MeetRoomDeletionSuccessCode;
+			message: string;
+			room?: MeetRoom;
+		}[];
+		failed: {
+			roomId: string;
+			error: string;
+			message: string;
+		}[];
+	}> {
+		this.logger.info(
+			`Starting bulk deletion of ${roomIds.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
+		);
+
+		const successful: {
+			roomId: string;
+			successCode: MeetRoomDeletionSuccessCode;
+			message: string;
+			room?: MeetRoom;
+		}[] = [];
+		const failed: {
+			roomId: string;
+			error: string;
+			message: string;
+		}[] = [];
+
+		// Process rooms in batches
+		for (let i = 0; i < roomIds.length; i += batchSize) {
+			const batch = roomIds.slice(i, i + batchSize);
+			const batchNumber = Math.floor(i / batchSize) + 1;
+			const totalBatches = Math.ceil(roomIds.length / batchSize);
+
+			this.logger.debug(`Processing batch ${batchNumber}/${totalBatches} with ${batch.length} rooms`);
+
+			// Process all rooms in the current batch concurrently
+			const batchResults = await Promise.all(
+				batch.map(async (roomId) => {
+					try {
+						const result = await this.deleteMeetRoom(roomId, withMeeting, withRecordings);
+						return {
+							roomId,
+							success: true,
+							result
+						};
+					} catch (error) {
+						return {
+							roomId,
+							success: false,
+							error
+						};
+					}
+				})
+			);
+
+			// Process batch results
+			batchResults.forEach((result) => {
+				const { roomId, success, result: deletionResult, error } = result;
+
+				if (success) {
+					successful.push({
+						roomId,
+						successCode: deletionResult!.successCode,
+						message: deletionResult!.message,
+						room: deletionResult!.room
+					});
+				} else {
+					let meetError: OpenViduMeetError;
+
+					if (error instanceof OpenViduMeetError) {
+						meetError = error;
+					} else {
+						meetError = internalError(`deleting room '${roomId}'`);
+					}
+
+					failed.push({
+						roomId,
+						error: meetError.name,
+						message: meetError.message
+					});
+				}
+			});
+
+			this.logger.debug(`Batch ${batchNumber} completed`);
+		}
+
+		this.logger.info(
+			`Bulk deletion completed: ${successful.length}/${roomIds.length} successful, ${failed.length}/${roomIds.length} failed`
+		);
+		return { successful, failed };
 	}
 
 	/**
@@ -349,156 +694,6 @@ export class RoomService {
 		} catch (error) {
 			this.logger.error('Failed to parse recording token metadata:', error);
 			throw new Error('Invalid recording token metadata format');
-		}
-	}
-
-	/**
-	 * Classifies rooms into those that should be deleted immediately vs marked for deletion
-	 */
-	protected async classifyRoomsForDeletion(
-		roomIds: string[],
-		forceDelete: boolean
-	): Promise<{ toDelete: string[]; toMark: string[] }> {
-		this.logger.debug(`Classifying ${roomIds.length} rooms for deletion strategy`);
-
-		// Check all rooms in parallel
-		const classificationResults = await Promise.allSettled(
-			roomIds.map(async (roomId) => {
-				try {
-					const activeMeeting = await this.livekitService.roomExists(roomId);
-					const shouldDelete = forceDelete || !activeMeeting;
-
-					return {
-						roomId,
-						action: shouldDelete ? 'delete' : 'mark'
-					} as const;
-				} catch (error) {
-					this.logger.warn(`Failed to check participants for room ${roomId}: ${error}`);
-					// Default to marking for deletion if we can't check participants
-					return {
-						roomId,
-						action: 'mark'
-					} as const;
-				}
-			})
-		);
-
-		// Group results
-		const toDelete: string[] = [];
-		const toMark: string[] = [];
-
-		classificationResults.forEach((result, index) => {
-			if (result.status === 'fulfilled') {
-				if (result.value.action === 'delete') {
-					toDelete.push(result.value.roomId);
-				} else {
-					toMark.push(result.value.roomId);
-				}
-			} else {
-				this.logger.warn(`Failed to classify room ${roomIds[index]}: ${result.reason}`);
-				// Default to marking for deletion
-				toMark.push(roomIds[index]);
-			}
-		});
-
-		this.logger.debug(`Classification complete: ${toDelete.length} to delete, ${toMark.length} to mark`);
-		return { toDelete, toMark };
-	}
-
-	/**
-	 * Performs batch deletion of rooms that can be deleted immediately
-	 */
-	protected async batchDeleteRooms(roomIds: string[]): Promise<string[]> {
-		if (roomIds.length === 0) {
-			return [];
-		}
-
-		this.logger.info(`Batch deleting ${roomIds.length} rooms`);
-
-		try {
-			// Check which rooms have an active LiveKit room (active meeting)
-			const activeRoomChecks = await Promise.all(
-				roomIds.map(async (roomId) => ({
-					roomId,
-					activeMeeting: await this.livekitService.roomExists(roomId)
-				}))
-			);
-
-			const withActiveMeeting = activeRoomChecks.filter((r) => r.activeMeeting).map((r) => r.roomId);
-			const withoutActiveMeeting = activeRoomChecks.filter((r) => !r.activeMeeting).map((r) => r.roomId);
-
-			// Mark all rooms with active meetings for deletion (in batch)
-			// This must be done before deleting the LiveKit rooms to ensure
-			// the rooms are marked when 'room_finished' webhook is sent
-			if (withActiveMeeting.length > 0) {
-				await this.batchMarkRoomsForDeletion(withActiveMeeting);
-			}
-
-			// Delete all LiveKit rooms for rooms with active meetings (in batch)
-			const livekitDeletePromise =
-				withActiveMeeting.length > 0
-					? this.livekitService.batchDeleteRooms(withActiveMeeting)
-					: Promise.resolve();
-
-			// Delete Meet rooms that do not have an active meeting (in batch)
-			const meetRoomsDeletePromise =
-				withoutActiveMeeting.length > 0
-					? this.storageService.deleteMeetRooms(withoutActiveMeeting)
-					: Promise.resolve();
-
-			await Promise.all([livekitDeletePromise, meetRoomsDeletePromise]);
-			return roomIds;
-		} catch (error) {
-			this.logger.error(`Batch deletion failed for rooms: ${roomIds.join(', ')}`, error);
-			throw internalError('Failed to delete rooms');
-		}
-	}
-
-	/**
-	 * Marks multiple rooms for deletion in batch
-	 */
-	private async batchMarkRoomsForDeletion(roomIds: string[]): Promise<string[]> {
-		if (roomIds.length === 0) {
-			return [];
-		}
-
-		this.logger.info(`Batch marking ${roomIds.length} rooms for deletion`);
-
-		try {
-			// Get all rooms in parallel
-			const roomResults = await Promise.allSettled(
-				roomIds.map((roomId) => this.storageService.getMeetRoom(roomId))
-			);
-
-			// Prepare rooms for batch update
-			const roomsToUpdate: { roomId: string; room: MeetRoom }[] = [];
-			const successfulRoomIds: string[] = [];
-
-			roomResults.forEach((result, index) => {
-				const roomId = roomIds[index];
-
-				if (result.status === 'fulfilled' && result.value) {
-					const room = result.value;
-					room.meetingEndAction = MeetingEndAction.DELETE;
-					roomsToUpdate.push({ roomId, room });
-					successfulRoomIds.push(roomId);
-				} else {
-					this.logger.warn(
-						`Failed to get room ${roomId} for marking: ${result.status === 'rejected' ? result.reason : 'Room not found'}`
-					);
-				}
-			});
-
-			// Batch save all updated rooms
-			if (roomsToUpdate.length > 0) {
-				await Promise.allSettled(roomsToUpdate.map(({ room }) => this.storageService.saveMeetRoom(room)));
-			}
-
-			this.logger.info(`Successfully marked ${successfulRoomIds.length} rooms for deletion`);
-			return successfulRoomIds;
-		} catch (error) {
-			this.logger.error(`Batch marking failed for rooms: ${roomIds.join(', ')}`, error);
-			throw internalError('Failed to mark rooms for deletion');
 		}
 	}
 

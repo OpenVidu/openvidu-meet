@@ -61,10 +61,10 @@ export const registerDependencies = () => {
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
+	container.bind(RecordingService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
 	container.bind(ParticipantNameService).toSelf().inSingletonScope();
 	container.bind(ParticipantService).toSelf().inSingletonScope();
-	container.bind(RecordingService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
 };

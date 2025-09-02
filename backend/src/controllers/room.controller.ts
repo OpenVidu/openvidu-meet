@@ -1,4 +1,12 @@
-import { MeetRoomFilters, MeetRoomOptions, MeetRoomRoleAndPermissions, ParticipantRole } from '@typings-ce';
+import {
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomFilters,
+	MeetRoomOptions,
+	MeetRoomRoleAndPermissions,
+	ParticipantRole
+} from '@typings-ce';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
@@ -63,21 +71,26 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 
 	const { roomId } = req.params;
-	const { force } = req.query;
-	const forceDelete = force === 'true';
+	const { withMeeting, withRecordings } = req.query as {
+		withMeeting: MeetRoomDeletionPolicyWithMeeting;
+		withRecordings: MeetRoomDeletionPolicyWithRecordings;
+	};
 
 	try {
 		logger.verbose(`Deleting room '${roomId}'`);
+		const response = await roomService.deleteMeetRoom(roomId, withMeeting, withRecordings);
 
-		const { deleted } = await roomService.bulkDeleteRooms([roomId], forceDelete);
+		// Determine the status code based on the success code
+		// If the room action is scheduled, return 202. Otherwise, return 200.
+		const scheduledSuccessCodes = [
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED,
+			MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED
+		];
+		const statusCode = scheduledSuccessCodes.includes(response.successCode) ? 202 : 200;
 
-		if (deleted.length > 0) {
-			// Room was deleted
-			return res.status(204).send();
-		}
-
-		// Room was marked as deleted
-		return res.status(202).json({ message: `Room '${roomId}' marked for deletion` });
+		logger.info(response.message);
+		return res.status(statusCode).json(response);
 	} catch (error) {
 		handleError(res, error, `deleting room '${roomId}'`);
 	}
@@ -86,34 +99,30 @@ export const deleteRoom = async (req: Request, res: Response) => {
 export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { roomIds, force } = req.query;
-	const forceDelete = force === 'true';
-	logger.verbose(`Deleting rooms: ${roomIds}`);
+
+	const { roomIds, withMeeting, withRecordings } = req.query as {
+		roomIds: string[];
+		withMeeting: MeetRoomDeletionPolicyWithMeeting;
+		withRecordings: MeetRoomDeletionPolicyWithRecordings;
+	};
 
 	try {
-		const roomIdsArray = roomIds as string[];
+		logger.verbose(`Deleting rooms: ${roomIds}`);
+		const { successful, failed } = await roomService.bulkDeleteMeetRooms(roomIds, withMeeting, withRecordings);
 
-		const { deleted, markedForDeletion } = await roomService.bulkDeleteRooms(roomIdsArray, forceDelete);
+		logger.info(
+			`Bulk delete operation - Successfully processed rooms: ${successful.length}, failed to process: ${failed.length}`
+		);
 
-		logger.info(`Deleted rooms: ${deleted.length}, marked for deletion: ${markedForDeletion.length}`);
-
-		// All rooms were deleted
-		if (deleted.length > 0 && markedForDeletion.length === 0) {
-			return res.sendStatus(204);
+		if (failed.length === 0) {
+			// All rooms were successfully processed
+			return res.status(200).json({ message: 'All rooms successfully processed for deletion', successful });
+		} else {
+			// Some rooms failed to process
+			return res
+				.status(400)
+				.json({ message: `${failed.length} room(s) failed to process while deleting`, successful, failed });
 		}
-
-		// All room were marked for deletion
-		if (deleted.length === 0 && markedForDeletion.length > 0) {
-			const message =
-				markedForDeletion.length === 1
-					? `Room '${markedForDeletion[0]}' marked for deletion`
-					: `Rooms '${markedForDeletion.join(', ')}' marked for deletion`;
-
-			return res.status(202).json({ message });
-		}
-
-		// Mixed result (some rooms deleted, some marked for deletion)
-		return res.status(200).json({ deleted, markedForDeletion });
 	} catch (error) {
 		handleError(res, error, `deleting rooms`);
 	}

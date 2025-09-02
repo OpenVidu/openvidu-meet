@@ -31,7 +31,6 @@ import {
 	MeetStorageService,
 	MutexService,
 	RedisLock,
-	RoomService,
 	TaskSchedulerService
 } from './index.js';
 
@@ -39,7 +38,6 @@ import {
 export class RecordingService {
 	constructor(
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(RoomService) protected roomService: RoomService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
@@ -552,6 +550,22 @@ export class RecordingService {
 		}
 	}
 
+	/**
+	 * Helper method to check if a room has recordings
+	 *
+	 * @param roomId - The ID of the room to check
+	 * @returns A promise that resolves to true if the room has recordings, false otherwise
+	 */
+	async hasRoomRecordings(roomId: string): Promise<boolean> {
+		try {
+			const response = await this.storageService.getAllRecordings(roomId, 1);
+			return response.recordings.length > 0;
+		} catch (error) {
+			this.logger.warn(`Error checking recordings for room '${roomId}': ${error}`);
+			return false;
+		}
+	}
+
 	async getRecordingAsStream(
 		recordingId: string,
 		rangeHeader?: string
@@ -584,7 +598,7 @@ export class RecordingService {
 	}
 
 	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
-		const room = await this.roomService.getMeetRoom(roomId);
+		const room = await this.storageService.getMeetRoom(roomId);
 
 		if (!room) throw errorRoomNotFound(roomId);
 

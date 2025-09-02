@@ -1,7 +1,8 @@
+import { MeetRoomDeletionErrorCode } from '@typings-ce';
 import { Response } from 'express';
+import { z } from 'zod';
 import { container } from '../config/index.js';
 import { LoggerService } from '../services/index.js';
-import { z } from 'zod';
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 415 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
@@ -218,6 +219,10 @@ export const errorRoomMetadataNotFound = (roomId: string): OpenViduMeetError => 
 
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
+};
+
+export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message: string): OpenViduMeetError => {
+	return new OpenViduMeetError(errorCode, message, 409);
 };
 
 // Participant errors
