@@ -253,8 +253,8 @@ export class RoomService {
 	 */
 	async deleteMeetRoom(
 		roomId: string,
-		withMeeting: MeetRoomDeletionPolicyWithMeeting,
-		withRecordings: MeetRoomDeletionPolicyWithRecordings
+		withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+		withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL
 	): Promise<{
 		successCode: MeetRoomDeletionSuccessCode;
 		message: string;
@@ -514,16 +514,17 @@ export class RoomService {
 	/**
 	 * Deletes multiple rooms in bulk using the deleteMeetRoom method, processing them in batches.
 	 *
-	 * @param roomIds - Array of room identifiers to be deleted
+	 * @param rooms - Array of room identifiers to be deleted.
+	 * If an array of MeetRoom objects is provided, the roomId will be extracted from each object.
 	 * @param withMeeting - Policy for handling rooms with active meetings
 	 * @param withRecordings - Policy for handling rooms with recordings
 	 * @param batchSize - Number of rooms to process in each batch (default: 10)
 	 * @returns Promise with arrays of successful and failed deletions
 	 */
 	async bulkDeleteMeetRooms(
-		roomIds: string[],
-		withMeeting: MeetRoomDeletionPolicyWithMeeting,
-		withRecordings: MeetRoomDeletionPolicyWithRecordings,
+		rooms: string[] | MeetRoom[],
+		withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+		withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL,
 		batchSize = 10
 	): Promise<{
 		successful: {
@@ -539,7 +540,7 @@ export class RoomService {
 		}[];
 	}> {
 		this.logger.info(
-			`Starting bulk deletion of ${roomIds.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
+			`Starting bulk deletion of ${rooms.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 		);
 
 		const successful: {
@@ -555,18 +556,33 @@ export class RoomService {
 		}[] = [];
 
 		// Process rooms in batches
-		for (let i = 0; i < roomIds.length; i += batchSize) {
-			const batch = roomIds.slice(i, i + batchSize);
+		for (let i = 0; i < rooms.length; i += batchSize) {
+			const batch = rooms.slice(i, i + batchSize);
 			const batchNumber = Math.floor(i / batchSize) + 1;
-			const totalBatches = Math.ceil(roomIds.length / batchSize);
+			const totalBatches = Math.ceil(rooms.length / batchSize);
 
 			this.logger.debug(`Processing batch ${batchNumber}/${totalBatches} with ${batch.length} rooms`);
 
 			// Process all rooms in the current batch concurrently
 			const batchResults = await Promise.all(
-				batch.map(async (roomId) => {
+				batch.map(async (room) => {
+					const roomId = typeof room === 'string' ? room : room.roomId;
+
 					try {
-						const result = await this.deleteMeetRoom(roomId, withMeeting, withRecordings);
+						let result;
+
+						if (typeof room === 'string') {
+							result = await this.deleteMeetRoom(roomId, withMeeting, withRecordings);
+						} else {
+							// Extract deletion policies from the room object
+							result = await this.deleteMeetRoom(
+								roomId,
+								room.autoDeletionPolicy?.withMeeting,
+								room.autoDeletionPolicy?.withRecordings
+							);
+						}
+
+						this.logger.info(result.message);
 						return {
 							roomId,
 							success: true,
@@ -614,7 +630,7 @@ export class RoomService {
 		}
 
 		this.logger.info(
-			`Bulk deletion completed: ${successful.length}/${roomIds.length} successful, ${failed.length}/${roomIds.length} failed`
+			`Bulk deletion completed: ${successful.length}/${rooms.length} successful, ${failed.length}/${rooms.length} failed`
 		);
 		return { successful, failed };
 	}
@@ -698,49 +714,51 @@ export class RoomService {
 	}
 
 	/**
-	 * Gracefully deletes expired rooms.
-	 *
-	 * This method checks for rooms that have an auto-deletion date in the past and deletes them.
-	 * It also marks rooms as deleted if they have participants.
+	 * This method checks for rooms that have an auto-deletion date in the past and
+	 * tries to delete them based on their auto-deletion policy.
 	 */
 	protected async deleteExpiredRooms(): Promise<void> {
-		let nextPageToken: string | undefined;
-		const deletedRooms: string[] = [];
-		const markedForDeletionRooms: string[] = [];
 		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			do {
-				const now = Date.now();
+			const expiredRooms = await this.getExpiredRooms();
 
+			if (expiredRooms.length === 0) {
+				this.logger.verbose(`No expired rooms found.`);
+				return;
+			}
+
+			this.logger.verbose(
+				`Trying to delete ${expiredRooms.length} expired Meet rooms: ${expiredRooms.map((room) => room.roomId).join(', ')}`
+			);
+			await this.bulkDeleteMeetRooms(expiredRooms);
+		} catch (error) {
+			this.logger.error('Error deleting expired rooms:', error);
+		}
+	}
+
+	/**
+	 * Retrieves a list of expired rooms that are eligible for deletion.
+	 * @returns A promise that resolves to an array of expired MeetRoom objects.
+	 */
+	protected async getExpiredRooms(): Promise<MeetRoom[]> {
+		const now = Date.now();
+		const expiredRooms: MeetRoom[] = [];
+		let nextPageToken: string | undefined;
+
+		try {
+			do {
 				const { rooms, nextPageToken: token } = await this.getAllMeetRooms({ maxItems: 100, nextPageToken });
 				nextPageToken = token;
 
-				const expiredRoomIds = rooms
-					.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now)
-					.map((room) => room.roomId);
-
-				if (expiredRoomIds.length > 0) {
-					this.logger.verbose(
-						`Trying to delete ${expiredRoomIds.length} expired Meet rooms: ${expiredRoomIds.join(', ')}`
-					);
-
-					const { deleted, markedForDeletion } = await this.bulkDeleteRooms(expiredRoomIds, false);
-
-					deletedRooms.push(...deleted);
-					markedForDeletionRooms.push(...markedForDeletion);
-				}
+				const expired = rooms.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now);
+				expiredRooms.push(...expired);
 			} while (nextPageToken);
 
-			if (deletedRooms.length > 0) {
-				this.logger.verbose(`Successfully deleted ${deletedRooms.length} expired rooms`);
-			}
-
-			if (markedForDeletionRooms.length > 0) {
-				this.logger.verbose(`Marked for deletion ${markedForDeletionRooms.length} expired rooms`);
-			}
+			return expiredRooms;
 		} catch (error) {
-			this.logger.error('Error deleting expired rooms:', error);
+			this.logger.error('Error getting expired rooms:', error);
+			throw error;
 		}
 	}
 }
