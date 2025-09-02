@@ -2,6 +2,7 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,8 +16,18 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { RoomsListsComponent, RoomTableAction } from '@lib/components';
+import { DeleteRoomDialogComponent } from '@lib/components/dialogs/delete-room-dialog/delete-room-dialog.component';
+import { DeleteRoomDialogOptions } from '@lib/models';
 import { NavigationService, NotificationService, RoomService } from '@lib/services';
-import { MeetingEndAction, MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@lib/typings/ce';
+import {
+	MeetRoom,
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomFilters,
+	MeetRoomStatus
+} from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
@@ -71,7 +82,8 @@ export class RoomsComponent implements OnInit {
 		private roomService: RoomService,
 		private notificationService: NotificationService,
 		protected navigationService: NavigationService,
-		private clipboard: Clipboard
+		private clipboard: Clipboard,
+		private dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
@@ -308,54 +320,99 @@ export class RoomsComponent implements OnInit {
 	private deleteRoom({ roomId }: MeetRoom) {
 		const deleteCallback = async () => {
 			try {
-				const response = await this.roomService.deleteRoom(roomId);
-				if (response.statusCode === 202) {
-					// If the room is marked for deletion, we don't remove it from the list immediately
-					const currentRooms = this.rooms();
-					this.rooms.set(
-						currentRooms.map((r) =>
-							r.roomId === roomId ? { ...r, meetingEndAction: MeetingEndAction.DELETE } : r
-						)
-					);
-					// this.dataSource.data = this.rooms();
-					this.notificationService.showSnackbar('Room marked for deletion');
+				const {
+					successCode,
+					message,
+					room: updatedRoom
+				} = await this.roomService.deleteRoom(
+					roomId,
+					MeetRoomDeletionPolicyWithMeeting.FAIL,
+					MeetRoomDeletionPolicyWithRecordings.FAIL
+				);
+				this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
+			} catch (error: any) {
+				// Check if errorCode exists and is a valid MeetRoomDeletionErrorCode
+				const errorCode = error.error?.error;
+				if (errorCode && this.isValidMeetRoomDeletionErrorCode(errorCode)) {
+					const errorMessage = this.extractGenericMessage(error.error.message);
+					this.showDeletionErrorDialogWithOptions(roomId, errorCode, errorMessage);
+				} else {
+					this.notificationService.showSnackbar('Failed to delete room');
+					this.log.e('Error deleting room:', error);
 					return;
 				}
-
-				const currentRooms = this.rooms();
-				this.rooms.set(currentRooms.filter((r) => r.roomId !== roomId));
-				// this.dataSource.data = this.rooms();
-				this.notificationService.showSnackbar('Room deleted successfully');
-			} catch (error) {
-				this.notificationService.showSnackbar('Failed to delete room');
-				this.log.e('Error deleting room:', error);
-			}
-		};
-
-		const forceDeleteCallback = async () => {
-			try {
-				await this.roomService.deleteRoom(roomId, true);
-
-				const currentRooms = this.rooms();
-				this.rooms.set(currentRooms.filter((r) => r.roomId !== roomId));
-				this.notificationService.showSnackbar('Room force deleted successfully');
-			} catch (error) {
-				this.notificationService.showSnackbar('Failed to force delete room');
-				this.log.e('Error force deleting room:', error);
 			}
 		};
 
 		this.notificationService.showDialog({
+			title: 'Delete Room',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
-			title: 'Delete Room',
-			message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
-			confirmCallback: deleteCallback,
-			showForceCheckbox: true,
-			forceCheckboxText: 'Force delete',
-			forceCheckboxDescription:
-				'This will immediately disconnect all active participants and delete the room without waiting for participants to leave',
-			forceConfirmCallback: forceDeleteCallback
+			confirmCallback: deleteCallback
+		});
+	}
+
+	private handleSuccessfulDeletion(
+		roomId: string,
+		successCode: MeetRoomDeletionSuccessCode,
+		message: string,
+		updatedRoom?: MeetRoom
+	) {
+		if (updatedRoom) {
+			// Room was not deleted, but updated (e.g., scheduled for deletion)
+			if (successCode === MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED) {
+				updatedRoom.status = MeetRoomStatus.CLOSED;
+			}
+
+			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+		} else {
+			// Room was deleted, remove from list
+			this.rooms.set(this.rooms().filter((r) => r.roomId !== roomId));
+		}
+
+		this.notificationService.showSnackbar(this.extractGenericMessage(message));
+	}
+
+	private showDeletionErrorDialogWithOptions(
+		roomId: string,
+		errorCode: MeetRoomDeletionErrorCode,
+		errorMessage: string
+	) {
+		// Determine available policy options based on error code
+		const showWithMeetingPolicy = errorCode !== MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS;
+		const showWithRecordingsPolicy = errorCode !== MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING;
+
+		const deleteWithPoliciesCallback = async (
+			meetingPolicy: MeetRoomDeletionPolicyWithMeeting,
+			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
+		) => {
+			try {
+				const {
+					successCode,
+					message,
+					room: updatedRoom
+				} = await this.roomService.deleteRoom(roomId, meetingPolicy, recordingPolicy);
+				this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
+			} catch (error) {
+				// If it fails again, just show a snackbar
+				this.notificationService.showSnackbar('Failed to delete room');
+				this.log.e('Error in second deletion attempt:', error);
+			}
+		};
+
+		const dialogOptions: DeleteRoomDialogOptions = {
+			title: 'Error Deleting Room',
+			message: errorMessage,
+			confirmText: 'Delete with Options',
+			showWithMeetingPolicy,
+			showWithRecordingsPolicy,
+			confirmCallback: deleteWithPoliciesCallback
+		};
+		this.dialog.open(DeleteRoomDialogComponent, {
+			data: dialogOptions,
+			disableClose: true
 		});
 	}
 
@@ -363,82 +420,178 @@ export class RoomsComponent implements OnInit {
 		const bulkDeleteCallback = async () => {
 			try {
 				const roomIds = rooms.map((r) => r.roomId);
-				const response = await this.roomService.bulkDeleteRooms(roomIds);
+				const { message, successful } = await this.roomService.bulkDeleteRooms(
+					roomIds,
+					MeetRoomDeletionPolicyWithMeeting.FAIL,
+					MeetRoomDeletionPolicyWithRecordings.FAIL
+				);
 
-				const currentRooms = this.rooms();
+				this.handleSuccessfulBulkDeletion(successful);
+				this.notificationService.showSnackbar(message);
+			} catch (error: any) {
+				// Check if it's a structured error with failed rooms
+				const failed = error.error?.failed;
+				const successful = error.error?.successful;
+				const message = error.error?.message;
 
-				switch (response.statusCode) {
-					case 202:
-						// All rooms were marked for deletion
-						// We don't remove them from the list immediately
-						this.rooms.set(
-							currentRooms.map((r) =>
-								roomIds.includes(r.roomId) ? { ...r, meetingEndAction: MeetingEndAction.DELETE } : r
-							)
-						);
-						this.notificationService.showSnackbar('All rooms marked for deletion');
-						break;
-					case 204:
-						// All rooms were deleted directly
-						// We remove them from the list immediately
-						this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));
-						this.notificationService.showSnackbar('All rooms deleted successfully');
-						break;
-					case 200:
-						// Some rooms were marked for deletion, some were deleted
-						const { markedForDeletion = [], deleted = [] } = response;
-
-						this.rooms.set(
-							currentRooms
-								.map((r) =>
-									markedForDeletion.includes(r.roomId) ? { ...r, markedForDeletion: true } : r
-								)
-								.filter((r) => !deleted.includes(r.roomId))
-						);
-
-						let msg = '';
-						if (markedForDeletion.length > 0) {
-							msg += `${markedForDeletion.length} room(s) marked for deletion. `;
-						}
-						if (deleted.length > 0) {
-							msg += `${deleted.length} room(s) deleted successfully.`;
-						}
-
-						this.notificationService.showSnackbar(msg.trim());
-						break;
+				if (failed && successful) {
+					this.handleSuccessfulBulkDeletion(successful);
+					this.showBulkDeletionErrorDialogWithOptions(failed, message);
+				} else {
+					this.notificationService.showSnackbar('Failed to delete rooms');
+					this.log.e('Error in bulk delete:', error);
 				}
-			} catch (error) {
-				this.notificationService.showSnackbar('Failed to delete rooms');
-				this.log.e('Error deleting rooms:', error);
 			}
 		};
 
-		const bulkForceDeleteCallback = async () => {
-			try {
-				const roomIds = rooms.map((r) => r.roomId);
-				await this.roomService.bulkDeleteRooms(roomIds, true);
-
-				const currentRooms = this.rooms();
-				this.rooms.set(currentRooms.filter((r) => !roomIds.includes(r.roomId)));
-				this.notificationService.showSnackbar('All rooms force deleted successfully');
-			} catch (error) {
-				this.notificationService.showSnackbar('Failed to force delete rooms');
-				this.log.e('Error force deleting rooms:', error);
-			}
-		};
-
-		const count = rooms.length;
 		this.notificationService.showDialog({
+			title: 'Delete Rooms',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete <b>${rooms.length}</b> rooms?`,
 			confirmText: 'Delete all',
 			cancelText: 'Cancel',
-			title: 'Delete Rooms',
-			message: `Are you sure you want to delete <b>${count}</b> rooms?`,
-			confirmCallback: bulkDeleteCallback,
-			showForceCheckbox: true,
-			forceCheckboxText: 'Force delete',
-			forceCheckboxDescription:
-				'This will immediately disconnect all active participants and delete all rooms without waiting for participants to leave',
-			forceConfirmCallback: bulkForceDeleteCallback
+			confirmCallback: bulkDeleteCallback
 		});
+	}
+
+	private handleSuccessfulBulkDeletion(
+		successResults: {
+			roomId: string;
+			successCode: MeetRoomDeletionSuccessCode;
+			message: string;
+			room?: MeetRoom;
+		}[]
+	) {
+		const currentRooms = this.rooms();
+		let updatedRooms = [...currentRooms];
+		const deletedRoomIds: string[] = [];
+
+		// Process each successful result
+		successResults.forEach(({ roomId, successCode, room: updatedRoom }) => {
+			if (updatedRoom) {
+				// Room was not deleted, but updated (e.g., scheduled for deletion, closed)
+				if (successCode === MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED) {
+					updatedRoom.status = MeetRoomStatus.CLOSED;
+				}
+
+				// Update the room in the array
+				updatedRooms = updatedRooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r));
+			} else {
+				// Room was deleted, mark for removal from list
+				deletedRoomIds.push(roomId);
+			}
+		});
+
+		// Remove deleted rooms from the array
+		if (deletedRoomIds.length > 0) {
+			updatedRooms = updatedRooms.filter((r) => !deletedRoomIds.includes(r.roomId));
+		}
+
+		// Update the rooms signal with all changes
+		this.rooms.set(updatedRooms);
+	}
+
+	private showBulkDeletionErrorDialogWithOptions(
+		failedResults: {
+			roomId: string;
+			error: string;
+			message: string;
+		}[],
+		errorMessage: string
+	) {
+		// Determine available policy options based on error codes
+		const showWithMeetingPolicy = failedResults.some(
+			(result) =>
+				this.isValidMeetRoomDeletionErrorCode(result.error) &&
+				result.error !== MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS
+		);
+		const showWithRecordingsPolicy = failedResults.some(
+			(result) =>
+				this.isValidMeetRoomDeletionErrorCode(result.error) &&
+				result.error !== MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
+		);
+
+		if (!showWithMeetingPolicy && !showWithRecordingsPolicy) {
+			// Generic error
+			this.notificationService.showSnackbar(errorMessage);
+			this.log.e('Error in bulk delete:', failedResults);
+			return;
+		}
+
+		const roomIds = failedResults.map((r) => r.roomId);
+
+		const bulkDeleteWithPoliciesCallback = async (
+			meetingPolicy: MeetRoomDeletionPolicyWithMeeting,
+			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
+		) => {
+			try {
+				const { message, successful } = await this.roomService.bulkDeleteRooms(
+					roomIds,
+					meetingPolicy,
+					recordingPolicy
+				);
+
+				this.handleSuccessfulBulkDeletion(successful);
+				this.notificationService.showSnackbar(message);
+			} catch (error: any) {
+				this.log.e('Error in second bulk deletion attempt:', error);
+
+				// Check if it fails again with structured error
+				const failed = error.error?.failed;
+				const successful = error.error?.successful;
+				const message = error.error?.message;
+
+				if (failed && successful) {
+					this.handleSuccessfulBulkDeletion(successful);
+					this.notificationService.showSnackbar(message);
+				} else {
+					this.notificationService.showSnackbar('Failed to delete rooms');
+				}
+			}
+		};
+
+		const dialogOptions: DeleteRoomDialogOptions = {
+			title: 'Error Deleting Rooms',
+			message: `${errorMessage}. They have active meetings and/or recordings:
+			<p>${roomIds.join(', ')}</p>`,
+			confirmText: 'Delete with Options',
+			showWithMeetingPolicy,
+			showWithRecordingsPolicy,
+			confirmCallback: bulkDeleteWithPoliciesCallback
+		};
+
+		this.dialog.open(DeleteRoomDialogComponent, {
+			data: dialogOptions,
+			disableClose: true
+		});
+	}
+
+	private isValidMeetRoomDeletionErrorCode(errorCode: string): boolean {
+		const validErrorCodes = [
+			MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING,
+			MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS,
+			MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS,
+			MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION,
+			MeetRoomDeletionErrorCode.ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING
+		];
+		return validErrorCodes.includes(errorCode as MeetRoomDeletionErrorCode);
+	}
+
+	/**
+	 * Removes the room ID from API response messages to create generic messages.
+	 *
+	 * @param message - The original message from the API response
+	 * @returns The message without the specific room ID
+	 */
+	private extractGenericMessage(message: string): string {
+		// Pattern to match room IDs in single quotes: 'room-id'
+		const roomIdPattern = /'[^']+'/g;
+
+		// Remove room ID
+		let genericMessage = message.replace(roomIdPattern, '');
+
+		// Clean up any double spaces that might result from the replacement
+		genericMessage = genericMessage.replace(/\s+/g, ' ').trim();
+		return genericMessage;
 	}
 }

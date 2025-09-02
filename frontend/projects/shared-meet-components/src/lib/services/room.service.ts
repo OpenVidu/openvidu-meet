@@ -2,6 +2,9 @@ import { Injectable } from '@angular/core';
 import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '@lib/services';
 import {
 	MeetRoom,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomPreferences,
@@ -126,13 +129,20 @@ export class RoomService {
 	 * Deletes a room by its ID.
 	 *
 	 * @param roomId - The unique identifier of the room to be deleted
-	 * @return A promise that resolves when the room has been deleted
+	 * @param withMeeting - Policy for handling rooms with active meetings
+	 * @param withRecordings - Policy for handling rooms with recordings
+	 * @return A promise that resolves to an object containing the success code and message
 	 */
-	async deleteRoom(roomId: string, force = false): Promise<any> {
-		let path = `${this.ROOMS_API}/${roomId}`;
-		if (force) {
-			path += '?force=true';
-		}
+	async deleteRoom(
+		roomId: string,
+		withMeeting: MeetRoomDeletionPolicyWithMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL
+	): Promise<{ successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }> {
+		const queryParams = new URLSearchParams();
+		queryParams.set('withMeeting', withMeeting);
+		queryParams.set('withRecordings', withRecordings);
+
+		const path = `${this.ROOMS_API}/${roomId}?${queryParams.toString()}`;
 		return this.httpService.deleteRequest(path);
 	}
 
@@ -140,17 +150,28 @@ export class RoomService {
 	 * Bulk deletes rooms by their IDs.
 	 *
 	 * @param roomIds - An array of room IDs to be deleted
+	 * @param withMeeting - Policy for handling rooms with active meetings
+	 * @param withRecordings - Policy for handling rooms with recordings
 	 * @return A promise that resolves when the rooms have been deleted
 	 */
-	async bulkDeleteRooms(roomIds: string[], force = false): Promise<any> {
+	async bulkDeleteRooms(
+		roomIds: string[],
+		withMeeting: MeetRoomDeletionPolicyWithMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+		withRecordings: MeetRoomDeletionPolicyWithRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL
+	): Promise<{
+		message: string;
+		successful: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }[];
+	}> {
 		if (roomIds.length === 0) {
 			throw new Error('No room IDs provided for bulk deletion');
 		}
 
-		let path = `${this.ROOMS_API}?roomIds=${roomIds.join(',')}`;
-		if (force) {
-			path += '&force=true';
-		}
+		const queryParams = new URLSearchParams();
+		queryParams.set('roomIds', roomIds.join(','));
+		queryParams.set('withMeeting', withMeeting);
+		queryParams.set('withRecordings', withRecordings);
+
+		const path = `${this.ROOMS_API}?${queryParams.toString()}`;
 		return this.httpService.deleteRequest(path);
 	}
 
