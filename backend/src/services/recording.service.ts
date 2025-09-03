@@ -322,19 +322,22 @@ export class RecordingService {
 					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
 				}
 
-				const { notDeleted } = await this.bulkDeleteRecordingsAndAssociatedFiles(remainingRecordings, roomId);
+				const { failed } = await this.bulkDeleteRecordingsAndAssociatedFiles(
+					remainingRecordings,
+					roomId
+				);
 
-				if (notDeleted.length === 0) {
+				if (failed.length === 0) {
 					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
 					return;
 				}
 
 				// Prepare for retry with failed recordings
-				remainingRecordings = notDeleted.map((failed) => failed.recordingId);
+				remainingRecordings = failed.map((failed) => failed.recordingId);
 				retryCount++;
 
 				this.logger.warn(
-					`${notDeleted.length} recordings failed to delete for room '${roomId}': ${remainingRecordings.join(', ')}`
+					`${failed.length} recordings failed to delete for room '${roomId}': ${remainingRecordings.join(', ')}`
 				);
 
 				if (retryCount < maxRetries) {
@@ -391,10 +394,10 @@ export class RecordingService {
 	async bulkDeleteRecordingsAndAssociatedFiles(
 		recordingIds: string[],
 		roomId?: string
-	): Promise<{ deleted: string[]; notDeleted: { recordingId: string; error: string }[] }> {
+	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
-		const notDeletedRecordings: Set<{ recordingId: string; error: string }> = new Set();
+		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 		const roomsToCheck: Set<string> = new Set();
 
 		for (const recordingId of recordingIds) {
@@ -404,7 +407,7 @@ export class RecordingService {
 
 				if (recRoomId !== roomId) {
 					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-					notDeletedRecordings.add({
+					failedRecordings.add({
 						recordingId,
 						error: `Recording '${recordingId}' does not belong to room '${roomId}'`
 					});
@@ -426,14 +429,14 @@ export class RecordingService {
 				// Track room for metadata cleanup
 				roomsToCheck.add(recordingInfo.roomId);
 			} catch (error) {
-				this.logger.error(`BulkDelete: Error processing recording ${recordingId}: ${error}`);
-				notDeletedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
+				this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
+				failedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
 			}
 		}
 
 		if (validRecordingIds.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
-			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
 		}
 
 		// Delete recordings and its metadata from S3
@@ -458,7 +461,7 @@ export class RecordingService {
 
 		if (roomMetadataToDelete.length === 0) {
 			this.logger.verbose(`BulkDelete: No room metadata files to delete.`);
-			return { deleted: Array.from(deletedRecordings), notDeleted: Array.from(notDeletedRecordings) };
+			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
 		}
 
 		// Perform bulk deletion of room metadata files
@@ -474,7 +477,7 @@ export class RecordingService {
 
 		return {
 			deleted: Array.from(deletedRecordings),
-			notDeleted: Array.from(notDeletedRecordings)
+			failed: Array.from(failedRecordings)
 		};
 	}
 

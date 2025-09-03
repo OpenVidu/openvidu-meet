@@ -82,18 +82,18 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 
 	try {
 		const recordingIdsArray = (recordingIds as string).split(',');
-		const { deleted, notDeleted } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(
+		const { deleted, failed } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(
 			recordingIdsArray,
 			roomId
 		);
 
 		// All recordings were successfully deleted
-		if (deleted.length > 0 && notDeleted.length === 0) {
-			return res.sendStatus(204);
+		if (deleted.length > 0 && failed.length === 0) {
+			return res.status(200).json({ message: 'All recordings deleted successfully', deleted });
 		}
 
 		// Some or all recordings could not be deleted
-		return res.status(200).json({ deleted, notDeleted });
+		return res.status(400).json({ message: `${failed.length} recording(s) could not be deleted`, deleted, failed });
 	} catch (error) {
 		handleError(res, error, 'deleting recordings');
 	}
