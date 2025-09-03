@@ -85,7 +85,7 @@ import { Subject, takeUntil } from 'rxjs';
 })
 export class MeetingComponent implements OnInit {
 	participantForm = new FormGroup({
-		name: new FormControl('', [Validators.required, Validators.minLength(4)])
+		name: new FormControl('', [Validators.required])
 	});
 
 	hasRecordings = false;

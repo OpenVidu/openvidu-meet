@@ -240,9 +240,6 @@
 										required
 									/>
 									<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
-									@if (participantForm.get('name')?.hasError('minlength')) {
-										<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
-									}
 									@if (participantForm.get('name')?.hasError('required')) {
 										<mat-error> The name is <strong>required</strong> </mat-error>
 									}
