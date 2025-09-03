@@ -91,8 +91,8 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		if (formValue.autoDeletionDate) {
 			// Combine date with time
 			const date = new Date(formValue.autoDeletionDate);
-			date.setHours(formValue.autoDeletionHour || 23);
-			date.setMinutes(formValue.autoDeletionMinute || 59);
+			date.setHours(formValue.autoDeletionHour ?? 23);
+			date.setMinutes(formValue.autoDeletionMinute ?? 59);
 			date.setSeconds(0);
 			date.setMilliseconds(0);
 			autoDeletionDateTime = date.getTime();
@@ -131,8 +131,8 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		}
 
 		const date = new Date(formValue.autoDeletionDate);
-		const hour = formValue.autoDeletionHour || 23;
-		const minute = formValue.autoDeletionMinute || 59;
+		const hour = formValue.autoDeletionHour ?? 23;
+		const minute = formValue.autoDeletionMinute ?? 59;
 
 		date.setHours(hour);
 		date.setMinutes(minute);
