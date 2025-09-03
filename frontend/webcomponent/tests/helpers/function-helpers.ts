@@ -128,7 +128,7 @@ export const createTestRoom = async (
 
 // Helper function to update room preferences via REST API
 export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
-	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}`, {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}/preferences`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
