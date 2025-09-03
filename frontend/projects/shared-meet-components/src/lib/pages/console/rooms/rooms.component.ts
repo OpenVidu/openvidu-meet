@@ -335,7 +335,7 @@ export class RoomsComponent implements OnInit {
 				const errorCode = error.error?.error;
 				if (errorCode && this.isValidMeetRoomDeletionErrorCode(errorCode)) {
 					const errorMessage = this.extractGenericMessage(error.error.message);
-					this.showDeletionErrorDialogWithOptions(roomId, errorCode, errorMessage);
+					this.showDeletionErrorDialogWithOptions(roomId, errorMessage);
 				} else {
 					this.notificationService.showSnackbar('Failed to delete room');
 					this.log.e('Error deleting room:', error);
@@ -375,15 +375,7 @@ export class RoomsComponent implements OnInit {
 		this.notificationService.showSnackbar(this.extractGenericMessage(message));
 	}
 
-	private showDeletionErrorDialogWithOptions(
-		roomId: string,
-		errorCode: MeetRoomDeletionErrorCode,
-		errorMessage: string
-	) {
-		// Determine available policy options based on error code
-		const showWithMeetingPolicy = errorCode !== MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS;
-		const showWithRecordingsPolicy = errorCode !== MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING;
-
+	private showDeletionErrorDialogWithOptions(roomId: string, errorMessage: string) {
 		const deleteWithPoliciesCallback = async (
 			meetingPolicy: MeetRoomDeletionPolicyWithMeeting,
 			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
@@ -406,8 +398,8 @@ export class RoomsComponent implements OnInit {
 			title: 'Error Deleting Room',
 			message: errorMessage,
 			confirmText: 'Delete with Options',
-			showWithMeetingPolicy,
-			showWithRecordingsPolicy,
+			showWithMeetingPolicy: true,
+			showWithRecordingsPolicy: true,
 			confirmCallback: deleteWithPoliciesCallback
 		};
 		this.dialog.open(DeleteRoomDialogComponent, {
@@ -430,13 +422,22 @@ export class RoomsComponent implements OnInit {
 				this.notificationService.showSnackbar(message);
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
-				const failed = error.error?.failed;
+				const failed = error.error?.failed as { roomId: string; error: string; message: string }[];
 				const successful = error.error?.successful;
-				const message = error.error?.message;
+				const errorMessage = error.error?.message;
 
 				if (failed && successful) {
 					this.handleSuccessfulBulkDeletion(successful);
-					this.showBulkDeletionErrorDialogWithOptions(failed, message);
+
+					const hasRoomDeletionError = failed.some((result) =>
+						this.isValidMeetRoomDeletionErrorCode(result.error)
+					);
+					if (hasRoomDeletionError) {
+						this.showBulkDeletionErrorDialogWithOptions(failed, errorMessage);
+					} else {
+						this.notificationService.showSnackbar(errorMessage);
+						this.log.e('Error in bulk delete:', failed);
+					}
 				} else {
 					this.notificationService.showSnackbar('Failed to delete rooms');
 					this.log.e('Error in bulk delete:', error);
@@ -499,25 +500,6 @@ export class RoomsComponent implements OnInit {
 		}[],
 		errorMessage: string
 	) {
-		// Determine available policy options based on error codes
-		const showWithMeetingPolicy = failedResults.some(
-			(result) =>
-				this.isValidMeetRoomDeletionErrorCode(result.error) &&
-				result.error !== MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS
-		);
-		const showWithRecordingsPolicy = failedResults.some(
-			(result) =>
-				this.isValidMeetRoomDeletionErrorCode(result.error) &&
-				result.error !== MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING
-		);
-
-		if (!showWithMeetingPolicy && !showWithRecordingsPolicy) {
-			// Generic error
-			this.notificationService.showSnackbar(errorMessage);
-			this.log.e('Error in bulk delete:', failedResults);
-			return;
-		}
-
 		const roomIds = failedResults.map((r) => r.roomId);
 
 		const bulkDeleteWithPoliciesCallback = async (
@@ -555,11 +537,10 @@ export class RoomsComponent implements OnInit {
 			message: `${errorMessage}. They have active meetings and/or recordings:
 			<p>${roomIds.join(', ')}</p>`,
 			confirmText: 'Delete with Options',
-			showWithMeetingPolicy,
-			showWithRecordingsPolicy,
+			showWithMeetingPolicy: true,
+			showWithRecordingsPolicy: true,
 			confirmCallback: bulkDeleteWithPoliciesCallback
 		};
-
 		this.dialog.open(DeleteRoomDialogComponent, {
 			data: dialogOptions,
 			disableClose: true

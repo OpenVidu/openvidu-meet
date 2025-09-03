@@ -34,27 +34,37 @@ export class DeleteRoomDialogComponent {
 
 	meetingPolicyOptions = [
 		{
+			value: MeetRoomDeletionPolicyWithMeeting.FORCE,
+			label: 'Force',
+			description:
+				'The meeting will be ended immediately, and the room will be deleted without waiting for participants to leave.'
+		},
+		{
 			value: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
 			label: 'When meeting ends',
 			description: 'The room will be deleted when the meeting ends.'
 		},
 		{
-			value: MeetRoomDeletionPolicyWithMeeting.FORCE,
-			label: 'Force',
-			description:
-				'The meeting will be ended immediately, and the room will be deleted without waiting for participants to leave.'
+			value: MeetRoomDeletionPolicyWithMeeting.FAIL,
+			label: 'Fail',
+			description: 'The deletion will fail if there is an active meeting.'
 		}
 	];
 	recordingPolicyOptions = [
+		{
+			value: MeetRoomDeletionPolicyWithRecordings.FORCE,
+			label: 'Force',
+			description: 'The room and its recordings will be deleted immediately.'
+		},
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.CLOSE,
 			label: 'Close',
 			description: 'The room will be closed instead of deleted, maintaining its recordings.'
 		},
 		{
-			value: MeetRoomDeletionPolicyWithRecordings.FORCE,
-			label: 'Force',
-			description: 'The room and its recordings will be deleted immediately.'
+			value: MeetRoomDeletionPolicyWithRecordings.FAIL,
+			label: 'Fail',
+			description: 'The deletion will fail if the room has recordings.'
 		}
 	];
 
