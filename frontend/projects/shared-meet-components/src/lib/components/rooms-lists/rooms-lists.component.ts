@@ -403,22 +403,48 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		return !!room.autoDeletionDate;
 	}
 
+	isAutoDeletionExpired(room: MeetRoom): boolean {
+		if (!room.autoDeletionDate) return false;
+
+		// Check if auto-deletion date is more than 1 hour in the past
+		const oneHourAgo = Date.now() - 60 * 60 * 1000;
+		return room.autoDeletionDate < oneHourAgo;
+	}
+
 	getAutoDeletionStatus(room: MeetRoom): string {
-		return room.autoDeletionDate ? 'SCHEDULED' : 'DISABLED';
+		if (!room.autoDeletionDate) {
+			return 'DISABLED';
+		}
+
+		return this.isAutoDeletionExpired(room) ? 'EXPIRED' : 'SCHEDULED';
 	}
 
 	getAutoDeletionIcon(room: MeetRoom): string {
-		return room.autoDeletionDate ? 'auto_delete' : 'close';
+		if (!room.autoDeletionDate) {
+			return 'close';
+		}
+
+		return this.isAutoDeletionExpired(room) ? 'warning' : 'auto_delete';
 	}
 
 	getAutoDeletionTooltip(room: MeetRoom): string {
-		return room.autoDeletionDate
-			? 'Auto-deletion scheduled'
-			: 'No auto-deletion. Room remains until manually deleted';
+		if (!room.autoDeletionDate) {
+			return 'No auto-deletion. Room remains until manually deleted';
+		}
+
+		if (this.isAutoDeletionExpired(room)) {
+			return 'Auto-deletion date has passed but room was not deleted due to auto-deletion policy';
+		}
+
+		return 'Auto-deletion scheduled';
 	}
 
 	getAutoDeletionClass(room: MeetRoom): string {
-		return room.autoDeletionDate ? 'auto-deletion-scheduled' : 'auto-deletion-disabled';
+		if (!room.autoDeletionDate) {
+			return 'auto-deletion-disabled';
+		}
+
+		return this.isAutoDeletionExpired(room) ? 'auto-deletion-expired' : 'auto-deletion-scheduled';
 	}
 
 	// ===== ROOM TOGGLE =====

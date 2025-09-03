@@ -181,6 +181,7 @@
 
 	.deletion-date-time {
 		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+
 		.deletion-date {
 			font-size: var(--ov-meet-font-size-sm);
 			color: var(--ov-meet-text-primary);
@@ -208,6 +209,15 @@
 			color: var(--ov-meet-color-warning);
 		}
 	}
+
+	.auto-deletion-expired {
+		font-weight: var(--ov-meet-font-weight-semibold);
+        color: var(--ov-meet-color-error);
+
+        .deletion-icon {
+            color: var(--ov-meet-color-error);
+        }
+    }
 }
 
 .no-data {
