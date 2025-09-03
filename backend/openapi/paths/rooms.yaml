@@ -56,11 +56,11 @@
         description: |
             Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
 
-            If a room has active participants, it will be marked for deletion
-            and will be removed once all participants leave.
+            If any of the rooms have active meetings or recordings, 
+            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
 
-            If the "force" parameter is set to true, all rooms will be deleted immediately
-            regardless of active participants.
+            Depending on these policies, the rooms may be deleted/closed immediately, scheduled to be deleted/closed once the meetings end, 
+            or the operation may fail if deletion is not permitted.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -68,16 +68,13 @@
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/room-ids.yaml'
-            - $ref: '../components/parameters/force-deletion.yaml'
+            - $ref: '../components/parameters/meeting-deletion-policy.yaml'
+            - $ref: '../components/parameters/recordings-deletion-policy.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-bulk-delete-rooms.yaml'
-            '202':
-                $ref: '../components/responses/success-rooms-marked-for-deletion.yaml'
-            '204':
-                description: >
-                    All specified rooms were successfully deleted immediately.
-                    No content is returned.
+            '400':
+                $ref: '../components/responses/error-bulk-delete-rooms.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -121,13 +118,13 @@
         operationId: deleteRoom
         summary: Delete a room
         description: |
-            Deletes an OpenVidu Meet room with the specified room ID.
+            Deletes the specified OpenVidu Meet room by its room ID.
 
-            If the room has active participants, it will be marked for deletion
-            and will be removed once all participants leave.
+            If the room has an active meeting or existing recordings, 
+            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
 
-            If the "force" parameter is set to true, the room will be deleted immediately
-            regardless of active participants.
+            Depending on these policies, the room may be deleted/closed immediately, scheduled to be deleted/closed once the meeting ends, 
+            or the operation may fail if deletion is not permitted.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -135,18 +132,21 @@
             - accessTokenCookie: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
-            - $ref: '../components/parameters/force-deletion.yaml'
+            - $ref: '../components/parameters/meeting-deletion-policy.yaml'
+            - $ref: '../components/parameters/recordings-deletion-policy.yaml'
         responses:
+            '200':
+                $ref: '../components/responses/success-room-process-deletion.yaml'
             '202':
-                $ref: '../components/responses/success-room-marked-for-deletion.yaml'
-            '204':
-                description: Successfully deleted the OpenVidu Meet room. No content is returned.
+                $ref: '../components/responses/success-room-schedule-deletion.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-room-process-deletion.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':

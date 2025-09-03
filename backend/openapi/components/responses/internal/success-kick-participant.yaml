@@ -1,4 +1,4 @@
-description: Meeting ended successfully
+description: Successfully kicked the participant
 content:
     application/json:
         schema:
@@ -6,4 +6,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: Meeting in room 'room-123' ended successfully
+                    example: Participant 'Alice' kicked successfully from room 'room-123'

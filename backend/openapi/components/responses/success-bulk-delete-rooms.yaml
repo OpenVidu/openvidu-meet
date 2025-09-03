@@ -1,27 +1,39 @@
-description: >
-    **Mixed results**. Some rooms were deleted immediately while others were
-    marked for deletion (due to active participants).
+description: All specified rooms were successfully processed for deletion.
 content:
     application/json:
         schema:
             type: object
             properties:
-                deleted:
+                message:
+                    type: string
+                successful:
                     type: array
                     items:
-                        type: string
-                    description: List of rooms that were deleted immediately
-                markedForDeletion:
-                    type: array
-                    items:
-                        type: string
-                    description: >-
-                        List of rooms that were marked for deletion but not actually deleted.
-                        These rooms will be deleted when all participants leave.
+                        type: object
+                        properties:
+                            successCode:
+                                type: string
+                                enum:
+                                    - room_deleted
+                                    - room_with_active_meeting_deleted
+                                    - room_with_active_meeting_scheduled_to_be_deleted
+                                    - room_and_recordings_deleted
+                                    - room_closed
+                                    - room_with_active_meeting_and_recordings_deleted
+                                    - room_with_active_meeting_closed
+                                    - room_with_active_meeting_and_recordings_scheduled_to_be_deleted
+                                    - room_with_active_meeting_scheduled_to_be_closed
+                                description: A code representing the success scenario
+                            message:
+                                type: string
+                                description: A message providing additional context about the success
+                    description: List of rooms that were successfully processed for deletion
         example:
-            deleted:
-                - 'room-123'
-                - 'room-456'
-            markedForDeletion:
-                - 'room-789'
-                - 'room-101'
+            message: 'All rooms successfully processed for deletion'
+            successful:
+                - roomId: room-123
+                  successCode: room_deleted
+                  message: Room 'room-123' deleted successfully
+                - roomId: room-456
+                  successCode: room_with_active_meeting_deleted
+                  message: Room 'room-456' with active meeting deleted successfully

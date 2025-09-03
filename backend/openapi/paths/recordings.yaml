@@ -52,10 +52,8 @@
         responses:
             '200':
                 $ref: '../components/responses/success-bulk-delete-recordings.yaml'
-            '204':
-                description: >
-                    All specified recordings were deleted successfully.
-                    No content is returned.
+            '400':
+                $ref: '../components/responses/error-bulk-delete-recordings.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -158,8 +156,8 @@
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
         responses:
-            '204':
-                description: Recording successfully deleted. No content is returned.
+            '200':
+                $ref: '../components/responses/success-delete-recording.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

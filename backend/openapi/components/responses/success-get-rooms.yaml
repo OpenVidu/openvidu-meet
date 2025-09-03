@@ -20,6 +20,9 @@ content:
                           roomName: 'room'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
+                          autoDeletionPolicy:
+                              withMeeting: when_meeting_ends
+                              withRecordings: close
                           preferences:
                               chatPreferences:
                                   enabled: true
@@ -29,10 +32,15 @@ content:
                                   enabled: true
                           moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                           speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                          status: open
+                          meetingEndAction: none
                         - roomId: 'room-456'
                           roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
+                          autoDeletionPolicy:
+                              withMeeting: when_meeting_ends
+                              withRecordings: close
                           preferences:
                               chatPreferences:
                                   enabled: false
@@ -42,6 +50,8 @@ content:
                                   enabled: false
                           moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
                           speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                          status: open
+                          meetingEndAction: none
                     pagination:
                         isTruncated: false
                         maxItems: 10

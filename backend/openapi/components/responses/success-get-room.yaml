@@ -11,6 +11,9 @@ content:
                     roomName: 'room'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
+                    autoDeletionPolicy:
+                        withMeeting: when_meeting_ends
+                        withRecordings: close
                     preferences:
                         chatPreferences:
                             enabled: true
@@ -20,6 +23,8 @@ content:
                             enabled: true
                     moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                     speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                    status: open
+                    meetingEndAction: none
 
             fields=roomId:
                 summary: Response with only the roomId

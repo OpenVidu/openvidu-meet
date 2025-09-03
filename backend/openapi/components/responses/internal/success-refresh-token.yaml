@@ -9,4 +9,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Token refreshed'
+                    example: Access token for user 'admin' successfully refreshed

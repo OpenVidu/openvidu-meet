@@ -1,0 +1,53 @@
+description: >
+    **Mixed results**. Some recordings were deleted successfully while others
+    could not be deleted (e.g., due to being in progress or not found).
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: List of recordings that were deleted successfully.
+                failed:
+                    type: array
+                    description: List of recordings that could not be deleted along with the corresponding error messages.
+                    items:
+                        type: object
+                        properties:
+                            recordingId:
+                                type: string
+                                description: The unique identifier of the recording that was not deleted.
+                                example: 'room-123--EG_XYZ--XX447'
+                            error:
+                                type: string
+                                description: A message explaining why the deletion failed.
+                                example: 'Recording not found'
+        examples:
+            partial_deletion_with_errors:
+                summary: Some recordings were deleted successfully, others failed
+                value:
+                    message: '2 recording(s) could not be deleted'
+                    deleted:
+                        - 'room-123--EG_XYZ--XX445'
+                        - 'room-123--EG_ZYX--XX446'
+                    failed:
+                        - recordingId: 'room-123--EG_XYZ--XX447'
+                          error: 'Recording not found'
+                        - recordingId: 'room-123--EG_XYZ--XX448'
+                          error: 'Recording in progress'
+
+            no_deletion_performed:
+                summary: No recordings were deleted
+                value:
+                    message: '2 recording(s) could not be deleted'
+                    deleted: []
+                    failed:
+                        - recordingId: 'room-123--EG_XYZ--XX447'
+                          error: 'Recording not found'
+                        - recordingId: 'room-123--EG_ZYX--XX448'
+                          error: 'Recording in progress'

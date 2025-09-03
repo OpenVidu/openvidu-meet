@@ -458,7 +458,7 @@ export class RoomService {
 				case MeetRoomDeletionPolicyWithRecordings.CLOSE:
 					return {
 						successCode: MeetRoomDeletionSuccessCode.ROOM_CLOSED,
-						message: `${baseMessage} has been closed instead of deleted because it has recordings.`,
+						message: `${baseMessage} has been closed instead of deleted because it has recordings`,
 						room
 					};
 				default:
@@ -478,7 +478,7 @@ export class RoomService {
 					case MeetRoomDeletionPolicyWithRecordings.CLOSE:
 						return {
 							successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED,
-							message: `${baseMessage} with active meeting has been closed instead of deleted because it has recordings.`,
+							message: `${baseMessage} with active meeting has been closed instead of deleted because it has recordings`,
 							room
 						};
 					default:
@@ -498,7 +498,7 @@ export class RoomService {
 					case MeetRoomDeletionPolicyWithRecordings.CLOSE:
 						return {
 							successCode: MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED,
-							message: `${baseMessage} with active meeting scheduled to be closed when the meeting ends because it has recordings.`,
+							message: `${baseMessage} with active meeting scheduled to be closed when the meeting ends because it has recordings`,
 							room
 						};
 					default:

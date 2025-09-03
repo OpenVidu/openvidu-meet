@@ -11,4 +11,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Login succeeded'
+                    example: User 'admin' logged in successfully

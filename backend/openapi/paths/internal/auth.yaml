@@ -92,7 +92,7 @@
         security:
             - accessTokenCookie: []
         responses:
-            '204':
-                description: Successfully deleted the API key. No content is returned.
+            '200':
+                $ref: '../../components/responses/internal/success-delete-api-key.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'

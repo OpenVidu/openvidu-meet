@@ -21,6 +21,8 @@
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-room-closed.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
@@ -48,6 +50,8 @@
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-room-closed.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':

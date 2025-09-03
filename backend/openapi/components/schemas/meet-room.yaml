@@ -30,6 +30,34 @@ properties:
             It will be removed after the last participant leaves (graceful deletion).
 
             If not set, the room remains active until manually deleted.
+    autoDeletionPolicy:
+        type: object
+        description: >
+            Policy for automatic deletion of the room and its contents. This includes
+            settings for how the room should be handled when certain conditions are met.
+        properties:
+            withMeeting:
+                type: string
+                enum:
+                    - force
+                    - when_meeting_ends
+                default: when_meeting_ends
+                example: when_meeting_ends
+                description: |
+                    Policy for automatic deletion when the room has an active meeting. Options are:
+                    - force: The meeting will be ended, and the room will be deleted without waiting for participants to leave.
+                    - when_meeting_ends: The room will be deleted when the meeting ends.
+            withRecordings:
+                type: string
+                enum:
+                    - force
+                    - close
+                default: close
+                example: close
+                description: |
+                    Policy for automatic deletion when the room has recordings. Options are:
+                    - force: The room and its recordings will be deleted.
+                    - close: The room will be closed instead of deleted, maintaining its recordings.
     preferences:
         $ref: meet-room-preferences.yaml#/MeetRoomPreferences
         description: The preferences for the room.
@@ -51,3 +79,27 @@ properties:
         description: >
             The URL for the speaker participants to join the room. The speaker role has permissions to publish audio and
             video streams to the room.
+    status:
+        type: string
+        enum:
+            - open
+            - active_meeting
+            - closed
+        example: open
+        description: |
+            The current status of the room. Options are:
+            - open: The room is open and available to host a meeting.
+            - active_meeting: There is an active meeting in progress in the room.
+            - closed: The room is closed to hosting new meetings.
+    meetingEndAction:
+        type: string
+        enum:
+            - none
+            - delete
+            - close
+        example: none
+        description: |
+            The action to take when the meeting ends. Options are:
+            - none: No action will be taken.
+            - close: The room will be closed.
+            - delete: The room (and its recordings if any) will be deleted.

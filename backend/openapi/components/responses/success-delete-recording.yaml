@@ -1,4 +1,4 @@
-description: Successfully disconnected the participant
+description: Successful deletion of the recording
 content:
     application/json:
         schema:
@@ -6,4 +6,5 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Participant deleted'
+        example:
+            message: Recording 'room-123--EG_XYZ--XX445' deleted successfully

@@ -1,0 +1,76 @@
+description: Room was successfully scheduled to be deleted or closed
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                successCode:
+                    type: string
+                    enum:
+                        - room_with_active_meeting_scheduled_to_be_deleted
+                        - room_with_active_meeting_and_recordings_scheduled_to_be_deleted
+                        - room_with_active_meeting_scheduled_to_be_closed
+                    description: A code representing the success scenario
+                message:
+                    type: string
+                    description: A message providing additional context about the success
+                room:
+                    $ref: '../schemas/meet-room.yaml'
+        examples:
+            room_with_active_meeting_scheduled_to_be_deleted:
+                value:
+                    successCode: room_with_active_meeting_scheduled_to_be_deleted
+                    message: Room 'room-123' with active meeting scheduled to be deleted when the meeting ends
+                    room:
+                        roomId: room-123
+                        roomName: room
+                        creationDate: 1620000000000
+                        preferences:
+                            chatPreferences:
+                                enabled: true
+                            recordingPreferences:
+                                enabled: false
+                            virtualBackgroundPreferences:
+                                enabled: true
+                        moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                        speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                        status: active_meeting
+                        meetingEndAction: delete
+            room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
+                value:
+                    successCode: room_with_active_meeting_and_recordings_scheduled_to_be_deleted
+                    message: Room 'room-123' with active meeting and its recordings scheduled to be deleted when the meeting ends
+                    room:
+                        roomId: room-123
+                        roomName: room
+                        creationDate: 1620000000000
+                        preferences:
+                            chatPreferences:
+                                enabled: true
+                            recordingPreferences:
+                                enabled: false
+                            virtualBackgroundPreferences:
+                                enabled: true
+                        moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                        speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                        status: active_meeting
+                        meetingEndAction: delete
+            room_with_active_meeting_scheduled_to_be_closed:
+                value:
+                    successCode: room_with_active_meeting_scheduled_to_be_closed
+                    message: Room 'room-123' with active meeting scheduled to be closed when the meeting ends because it has recordings
+                    room:
+                        roomId: room-123
+                        roomName: room
+                        creationDate: 1620000000000
+                        preferences:
+                            chatPreferences:
+                                enabled: true
+                            recordingPreferences:
+                                enabled: false
+                            virtualBackgroundPreferences:
+                                enabled: true
+                        moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                        speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                        status: active_meeting
+                        meetingEndAction: close
