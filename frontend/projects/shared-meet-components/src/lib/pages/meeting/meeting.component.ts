@@ -223,11 +223,6 @@ export class MeetingComponent implements OnInit {
 		if (participantName) {
 			this.participantForm.get('name')?.setValue(participantName);
 		}
-
-		// Disable the form if the room is closed
-		if (this.roomClosed) {
-			this.participantForm.disable();
-		}
 	}
 
 	async goToRecordings() {

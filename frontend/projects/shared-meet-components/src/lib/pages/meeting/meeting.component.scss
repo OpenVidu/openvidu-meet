@@ -31,13 +31,6 @@
 			color: var(--ov-meet-text-primary);
 			line-height: var(--ov-meet-line-height-tight);
 		}
-
-		.room-subtitle {
-			margin: var(--ov-meet-spacing-xs) 0 0 0;
-			font-size: var(--ov-meet-font-size-lg);
-			color: var(--ov-meet-text-secondary);
-			line-height: var(--ov-meet-line-height-normal);
-		}
 	}
 }
 
@@ -145,10 +138,33 @@
 	}
 }
 
+.room-closed-message {
+	@include ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	text-align: center;
+
+	.warning-icon {
+		@include ov-icon(xl);
+		color: var(--ov-meet-color-warning);
+	}
+
+	p {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-relaxed);
+	}
+}
+
 // Secondary Card - Recordings styling
 .secondary-card {
 	.card-header {
 		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-accent) 180%);
+	}
+
+	.card-content {
+		text-align: center;
 	}
 }
 

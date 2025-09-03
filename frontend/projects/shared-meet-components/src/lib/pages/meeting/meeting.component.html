@@ -208,7 +208,6 @@
 				<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
 				<div class="room-info">
 					<h1 class="room-title">{{ roomName }}</h1>
-					<p class="room-subtitle">Choose how you want to proceed</p>
 				</div>
 			</div>
 
@@ -222,43 +221,53 @@
 							<mat-card-title>{{ roomClosed ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
 							<mat-card-subtitle>{{
 								roomClosed
-									? 'This room is currently closed and not accepting new participants'
+									? 'This room is not available for meetings'
 									: 'Enter the room and start connecting'
 							}}</mat-card-subtitle>
 						</div>
 					</mat-card-header>
 
 					<mat-card-content class="card-content">
-						<form [formGroup]="participantForm" (ngSubmit)="submitAccessMeeting()" class="join-form">
-							<mat-form-field appearance="outline" class="name-field">
-								<mat-label>Your display name</mat-label>
-								<input
-									id="participant-name-input"
-									matInput
-									placeholder="Enter your name"
-									formControlName="name"
-									required
-								/>
-								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
-								@if (participantForm.get('name')?.hasError('minlength')) {
-									<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
-								}
-								@if (participantForm.get('name')?.hasError('required')) {
-									<mat-error> The name is <strong>required</strong> </mat-error>
-								}
-							</mat-form-field>
+						@if (!roomClosed) {
+							<form [formGroup]="participantForm" (ngSubmit)="submitAccessMeeting()" class="join-form">
+								<mat-form-field appearance="outline" class="name-field">
+									<mat-label>Your display name</mat-label>
+									<input
+										id="participant-name-input"
+										matInput
+										placeholder="Enter your name"
+										formControlName="name"
+										required
+									/>
+									<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
+									@if (participantForm.get('name')?.hasError('minlength')) {
+										<mat-error> The name must be at least <strong>4 characters</strong> </mat-error>
+									}
+									@if (participantForm.get('name')?.hasError('required')) {
+										<mat-error> The name is <strong>required</strong> </mat-error>
+									}
+								</mat-form-field>
 
-							<button
-								mat-raised-button
-								color="primary"
-								id="participant-name-submit"
-								type="submit"
-								class="join-button"
-								[disabled]="participantForm.invalid || roomClosed"
-							>
-								<span>Join Meeting</span>
-							</button>
-						</form>
+								<button
+									mat-raised-button
+									color="primary"
+									id="participant-name-submit"
+									type="submit"
+									class="join-button"
+									[disabled]="participantForm.invalid"
+								>
+									<span>Join Meeting</span>
+								</button>
+							</form>
+						} @else {
+							<div class="room-closed-message">
+								<mat-icon class="warning-icon">warning</mat-icon>
+								<p>
+									Sorry, this room is closed. You cannot join at this time. Please contact the meeting
+									organizer for more information.
+								</p>
+							</div>
+						}
 					</mat-card-content>
 				</mat-card>
 
@@ -296,7 +305,7 @@
 			</div>
 
 			<!-- Room URL Badge -->
-			@if (features().canModerateRoom) {
+			@if (!roomClosed && features().canModerateRoom) {
 				<ov-share-meeting-link
 					[meetingUrl]="hostname + '/room/' + roomId"
 					(copyClicked)="copySpeakerLink()"
