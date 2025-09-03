@@ -127,10 +127,29 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
 		)
 		.optional(),
-	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional().default({
-		withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-		withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
-	}),
+	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional()
+		.default({
+			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+			withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+		})
+		.refine(
+			(policy) => {
+				return !policy || policy.withMeeting !== MeetRoomDeletionPolicyWithMeeting.FAIL;
+			},
+			{
+				message: 'FAIL policy is not allowed for withMeeting auto-deletion policy',
+				path: ['withMeeting']
+			}
+		)
+		.refine(
+			(policy) => {
+				return !policy || policy.withRecordings !== MeetRoomDeletionPolicyWithRecordings.FAIL;
+			},
+			{
+				message: 'FAIL policy is not allowed for withRecordings auto-deletion policy',
+				path: ['withRecordings']
+			}
+		),
 	preferences: RoomPreferencesSchema.optional().default({
 		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
 		chatPreferences: { enabled: true },
