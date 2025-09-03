@@ -217,7 +217,10 @@ export class RecordingService {
 	 * @param recordingIds - An array of recording IDs to delete
 	 * @return A promise that resolves to the deletion response
 	 */
-	async bulkDeleteRecordings(recordingIds: string[]): Promise<any> {
+	async bulkDeleteRecordings(recordingIds: string[]): Promise<{
+		message: string;
+		deleted: string[];
+	}> {
 		if (recordingIds.length === 0) {
 			throw new Error('No recording IDs provided for bulk deletion');
 		}

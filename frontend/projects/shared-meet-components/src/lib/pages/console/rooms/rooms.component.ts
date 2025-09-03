@@ -298,19 +298,14 @@ export class RoomsComponent implements OnInit {
 
 	private async closeRoom(room: MeetRoom) {
 		try {
-			const { statusCode, room: updatedRoom } = await this.roomService.updateRoomStatus(
+			const { message, room: updatedRoom } = await this.roomService.updateRoomStatus(
 				room.roomId,
 				MeetRoomStatus.CLOSED
 			);
 
 			// Update room in the list
 			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
-
-			if (statusCode === 202) {
-				this.notificationService.showSnackbar('Room scheduled to be closed when the meeting ends');
-			} else {
-				this.notificationService.showSnackbar('Room closed successfully');
-			}
+			this.notificationService.showSnackbar(this.removeRoomIdFromMessage(message));
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to close room');
 			this.log.e('Error closing room:', error);
@@ -334,7 +329,7 @@ export class RoomsComponent implements OnInit {
 				// Check if errorCode exists and is a valid MeetRoomDeletionErrorCode
 				const errorCode = error.error?.error;
 				if (errorCode && this.isValidMeetRoomDeletionErrorCode(errorCode)) {
-					const errorMessage = this.extractGenericMessage(error.error.message);
+					const errorMessage = this.removeRoomIdFromMessage(error.error.message);
 					this.showDeletionErrorDialogWithOptions(roomId, errorMessage);
 				} else {
 					this.notificationService.showSnackbar('Failed to delete room');
@@ -372,7 +367,7 @@ export class RoomsComponent implements OnInit {
 			this.rooms.set(this.rooms().filter((r) => r.roomId !== roomId));
 		}
 
-		this.notificationService.showSnackbar(this.extractGenericMessage(message));
+		this.notificationService.showSnackbar(this.removeRoomIdFromMessage(message));
 	}
 
 	private showDeletionErrorDialogWithOptions(roomId: string, errorMessage: string) {
@@ -426,7 +421,7 @@ export class RoomsComponent implements OnInit {
 				const successful = error.error?.successful;
 				const errorMessage = error.error?.message;
 
-				if (failed && successful) {
+				if (failed) {
 					this.handleSuccessfulBulkDeletion(successful);
 
 					const hasRoomDeletionError = failed.some((result) =>
@@ -564,15 +559,13 @@ export class RoomsComponent implements OnInit {
 	 * @param message - The original message from the API response
 	 * @returns The message without the specific room ID
 	 */
-	private extractGenericMessage(message: string): string {
-		// Pattern to match room IDs in single quotes: 'room-id'
+	private removeRoomIdFromMessage(message: string): string {
+		// Pattern to match room ID in single quotes: 'room-id'
 		const roomIdPattern = /'[^']+'/g;
-
-		// Remove room ID
-		let genericMessage = message.replace(roomIdPattern, '');
+		let filteredMessage = message.replace(roomIdPattern, '');
 
 		// Clean up any double spaces that might result from the replacement
-		genericMessage = genericMessage.replace(/\s+/g, ' ').trim();
-		return genericMessage;
+		filteredMessage = filteredMessage.replace(/\s+/g, ' ').trim();
+		return filteredMessage;
 	}
 }

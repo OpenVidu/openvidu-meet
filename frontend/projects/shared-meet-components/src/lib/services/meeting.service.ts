@@ -41,7 +41,7 @@ export class MeetingService {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}`;
 		const headers = this.participantService.getParticipantRoleHeader();
 		await this.httpService.deleteRequest(path, headers);
-		this.log.d(`Participant '${participantIdentity}' kicked from room ${roomId}`);
+		this.log.d(`Participant '${participantIdentity}' kicked from room '${roomId}'`);
 	}
 
 	/**

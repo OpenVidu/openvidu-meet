@@ -24,14 +24,8 @@ export class HttpService {
 	}
 
 	async putRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
-		const options = {
-			observe: 'response' as const,
-			...(headers ? { headers: new HttpHeaders(headers) } : {})
-		};
-		return lastValueFrom(this.http.put<T>(path, body, options)).then((response) => ({
-			...(response.body as T),
-			statusCode: response.status
-		}));
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.put<T>(path, body, options));
 	}
 
 	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
@@ -40,13 +34,7 @@ export class HttpService {
 	}
 
 	async deleteRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
-		const options = {
-			observe: 'response' as const,
-			...(headers ? { headers: new HttpHeaders(headers) } : {})
-		};
-		return lastValueFrom(this.http.delete<T>(path, options)).then((response) => ({
-			...(response.body as T),
-			statusCode: response.status
-		}));
+		const options = headers ? { headers: new HttpHeaders(headers) } : {};
+		return lastValueFrom(this.http.delete<T>(path, options));
 	}
 }

@@ -169,8 +169,8 @@ export class RoomRecordingsComponent implements OnInit {
 				await this.recordingService.deleteRecording(recording.recordingId);
 
 				// Remove from local list
-				const currentRecordings = this.recordings();
-				this.recordings.set(currentRecordings.filter((r) => r.recordingId !== recording.recordingId));
+				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
+
 				this.notificationService.showSnackbar('Recording deleted successfully');
 			} catch (error) {
 				this.log.e('Error deleting recording:', error);
@@ -192,38 +192,37 @@ export class RoomRecordingsComponent implements OnInit {
 		const bulkDeleteCallback = async () => {
 			try {
 				const recordingIds = recordings.map((r) => r.recordingId);
-				const response = await this.recordingService.bulkDeleteRecordings(recordingIds);
+				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
 
-				const currentRecordings = this.recordings();
+				// Remove deleted recordings from the list
+				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
 
-				switch (response.statusCode) {
-					case 204:
-						// All recordings deleted successfully
-						this.recordings.set(currentRecordings.filter((r) => !recordingIds.includes(r.recordingId)));
-						this.notificationService.showSnackbar('All recordings deleted successfully');
-						break;
-					case 200:
-						// Some recordings were deleted, some not
-						const { deleted = [], notDeleted = [] } = response;
-
-						// Remove deleted recordings from the list
-						this.recordings.set(currentRecordings.filter((r) => !deleted.includes(r.recordingId)));
-
-						let msg = '';
-						if (deleted.length > 0) {
-							msg += `${deleted.length} recording(s) deleted successfully. `;
-						}
-						if (notDeleted.length > 0) {
-							msg += `${notDeleted.length} recording(s) could not be deleted.`;
-						}
-
-						this.notificationService.showSnackbar(msg.trim());
-						this.log.w('Some recordings could not be deleted:', notDeleted);
-						break;
-				}
-			} catch (error) {
+				this.notificationService.showSnackbar('All recordings deleted successfully');
+			} catch (error: any) {
 				this.log.e('Error deleting recordings:', error);
-				this.notificationService.showSnackbar('Failed to delete recordings');
+
+				const deleted = error.error?.deleted as string[];
+				const failed = error.error?.failed as { recordingId: string; error: string }[];
+
+				// Some recordings were deleted, some not
+				if (failed) {
+					// Remove deleted recordings from the list
+					if (deleted.length > 0) {
+						this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
+					}
+
+					let msg = '';
+					if (deleted.length > 0) {
+						msg += `${deleted.length} recording(s) deleted successfully. `;
+					}
+					if (failed.length > 0) {
+						msg += `${failed.length} recording(s) could not be deleted.`;
+					}
+
+					this.notificationService.showSnackbar(msg.trim());
+				} else {
+					this.notificationService.showSnackbar('Failed to delete recordings');
+				}
 			}
 		};
 

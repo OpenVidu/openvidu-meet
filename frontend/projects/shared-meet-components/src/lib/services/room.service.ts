@@ -120,7 +120,7 @@ export class RoomService {
 	 * @param status - The new status to be set
 	 * @return A promise that resolves to an object containing the updated room and a status code
 	 */
-	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ statusCode: number; room: MeetRoom }> {
+	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ message: string; room: MeetRoom }> {
 		const path = `${this.ROOMS_API}/${roomId}/status`;
 		return this.httpService.putRequest(path, { status });
 	}
