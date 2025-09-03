@@ -1,7 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
-import { MeetRecordingAccess, MeetRoomOptions, MeetRoomPreferences } from '@lib/typings/ce';
+import {
+	MeetRecordingAccess,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomOptions,
+	MeetRoomPreferences
+} from '@lib/typings/ce';
 
 // Default room preferences following the app's defaults
 const DEFAULT_PREFERENCES: MeetRoomPreferences = {
@@ -101,6 +107,22 @@ export class RoomWizardStateService {
 								disabled: editMode
 							},
 							editMode ? [] : [Validators.min(0), Validators.max(59)]
+						],
+						autoDeletionPolicyWithMeeting: [
+							{
+								value:
+									initialRoomOptions.autoDeletionPolicy?.withMeeting ||
+									MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+								disabled: editMode
+							}
+						],
+						autoDeletionPolicyWithRecordings: [
+							{
+								value:
+									initialRoomOptions.autoDeletionPolicy?.withRecordings ||
+									MeetRoomDeletionPolicyWithRecordings.CLOSE,
+								disabled: editMode
+							}
 						]
 					},
 					{
@@ -203,6 +225,9 @@ export class RoomWizardStateService {
 				}
 				if ('autoDeletionDate' in stepData) {
 					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;
+				}
+				if ('autoDeletionPolicy' in stepData) {
+					updatedOptions.autoDeletionPolicy = stepData.autoDeletionPolicy;
 				}
 
 				break;

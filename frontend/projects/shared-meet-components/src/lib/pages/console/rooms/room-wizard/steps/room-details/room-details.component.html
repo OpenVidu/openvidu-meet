@@ -4,9 +4,7 @@
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
 			<h3 class="step-title">Room Details</h3>
-			<p class="step-description">
-				Configure your room's details including name and automatic deletion date
-			</p>
+			<p class="step-description">Configure your room's details including name and automatic deletion date</p>
 		</div>
 	</header>
 
@@ -59,8 +57,8 @@
 				<mat-hint>Optional. Room will be automatically deleted on this date and time.</mat-hint>
 			</mat-form-field>
 
-			<!-- Time Selection (only shown when date is selected) -->
-			@if (roomDetailsForm.get('autoDeletionDate')?.value) {
+			@if (hasDateSelected) {
+				<!-- Time Selection (only shown when date is selected) -->
 				<div class="time-selection-container">
 					<div class="time-selection-row">
 						<mat-form-field appearance="outline" class="time-field">
@@ -89,6 +87,7 @@
 							<mat-icon matSuffix class="ov-settings-icon">access_time</mat-icon>
 						</mat-form-field>
 					</div>
+
 					@if (!roomDetailsForm.hasError('minFutureDateTime')) {
 						<div class="time-hint">
 							<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
@@ -97,6 +96,46 @@
 					} @else {
 						<mat-error> Deletion date and time must be at least one hour in the future </mat-error>
 					}
+
+					<!-- Auto-deletion Policies Section -->
+					<div class="auto-deletion-policies">
+						<h4 class="policies-title">
+							<mat-icon class="policies-icon">policy</mat-icon>
+							Auto-deletion Policies
+						</h4>
+						<p class="policies-description">
+							Configure how the room should be handled during auto-deletion if there are active meetings
+							or recordings.
+						</p>
+
+						<div class="policies-row">
+							<mat-form-field appearance="outline" class="policy-field">
+								<mat-label>With Active Meeting Policy</mat-label>
+								<mat-select formControlName="autoDeletionPolicyWithMeeting">
+									@for (option of meetingPolicyOptions; track option.value) {
+										<mat-option [value]="option.value">
+											{{ option.label }}
+										</mat-option>
+									}
+								</mat-select>
+								<mat-icon matSuffix class="ov-settings-icon">groups</mat-icon>
+								<mat-hint>{{ getMeetingPolicyDescription() }}</mat-hint>
+							</mat-form-field>
+
+							<mat-form-field appearance="outline" class="policy-field">
+								<mat-label>With Recordings Policy</mat-label>
+								<mat-select formControlName="autoDeletionPolicyWithRecordings">
+									@for (option of recordingPolicyOptions; track option.value) {
+										<mat-option [value]="option.value">
+											{{ option.label }}
+										</mat-option>
+									}
+								</mat-select>
+								<mat-icon matSuffix class="ov-settings-icon">video_library</mat-icon>
+								<mat-hint>{{ getRecordingPolicyDescription() }}</mat-hint>
+							</mat-form-field>
+						</div>
+					</div>
 				</div>
 			}
 		</form>

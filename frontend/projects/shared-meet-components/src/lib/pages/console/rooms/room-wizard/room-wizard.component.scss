@@ -32,9 +32,16 @@
 	max-width: 600px;
 	min-height: 450px;
 	max-height: 450px;
+	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
+}
+
+.step-content > :first-child {
+	margin: auto 0;
+	width: 100%;
+	min-height: min-content;
 }
 
 .wizard-footer {

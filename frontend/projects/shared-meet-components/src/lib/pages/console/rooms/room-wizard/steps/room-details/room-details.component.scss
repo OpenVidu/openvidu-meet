@@ -108,6 +108,51 @@
 					}
 				}
 
+				// Auto-deletion policies styling
+				.auto-deletion-policies {
+					margin-top: var(--ov-meet-spacing-lg);
+
+					.policies-title {
+						display: flex;
+						align-items: center;
+						gap: var(--ov-meet-spacing-xs);
+						margin: 0 0 var(--ov-meet-spacing-xs) 0;
+						font-size: var(--ov-meet-font-size-md);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-primary);
+
+						.policies-icon {
+							@include ov-icon(sm);
+							color: var(--ov-meet-primary);
+						}
+					}
+
+					.policies-description {
+						margin: 0 0 var(--ov-meet-spacing-md) 0;
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-text-secondary);
+						line-height: var(--ov-meet-line-height-relaxed);
+					}
+
+					.policies-row {
+						display: grid;
+						grid-template-columns: 1fr 1fr;
+						gap: var(--ov-meet-spacing-md);
+
+						.policy-field {
+							width: 100%;
+
+							::ng-deep {
+								.mat-mdc-form-field-hint {
+									font-size: var(--ov-meet-font-size-xs);
+									color: var(--ov-meet-text-hint);
+									line-height: var(--ov-meet-line-height-tight);
+								}
+							}
+						}
+					}
+				}
+
 				.time-hint {
 					display: flex;
 					align-items: center;
@@ -161,6 +206,13 @@
 
 						.time-separator {
 							display: none; // Hide separator in mobile vertical layout
+						}
+					}
+
+					.auto-deletion-policies {
+						.policies-row {
+							grid-template-columns: 1fr;
+							gap: var(--ov-meet-spacing-sm);
 						}
 					}
 				}

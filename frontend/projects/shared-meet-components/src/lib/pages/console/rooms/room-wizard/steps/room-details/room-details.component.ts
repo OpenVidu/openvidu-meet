@@ -9,7 +9,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RoomWizardStateService } from '@lib/services';
-import { MeetRoomOptions } from '@lib/typings/ce';
+import {
+	MeetRoomAutoDeletionPolicy,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomOptions
+} from '@lib/typings/ce';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
@@ -36,6 +41,32 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	hours = Array.from({ length: 24 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
 	minutes = Array.from({ length: 60 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
 
+	meetingPolicyOptions = [
+		{
+			value: MeetRoomDeletionPolicyWithMeeting.FORCE,
+			label: 'Force',
+			description:
+				'The meeting will be ended, and the room will be deleted without waiting for participants to leave.'
+		},
+		{
+			value: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+			label: 'When meeting ends',
+			description: 'The room will be deleted when the meeting ends.'
+		}
+	];
+	recordingPolicyOptions = [
+		{
+			value: MeetRoomDeletionPolicyWithRecordings.FORCE,
+			label: 'Force',
+			description: 'The room and its recordings will be deleted.'
+		},
+		{
+			value: MeetRoomDeletionPolicyWithRecordings.CLOSE,
+			label: 'Close',
+			description: 'The room will be closed instead of deleted, maintaining its recordings.'
+		}
+	];
+
 	private destroy$ = new Subject<void>();
 
 	constructor(private wizardService: RoomWizardStateService) {
@@ -54,20 +85,29 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 
 	private saveFormData(formValue: any) {
 		let autoDeletionDateTime: number | undefined = undefined;
+		let autoDeletionPolicy: MeetRoomAutoDeletionPolicy | undefined = undefined;
 
-		// If date is selected, combine it with time
+		// If date is selected
 		if (formValue.autoDeletionDate) {
+			// Combine date with time
 			const date = new Date(formValue.autoDeletionDate);
 			date.setHours(formValue.autoDeletionHour || 23);
 			date.setMinutes(formValue.autoDeletionMinute || 59);
 			date.setSeconds(0);
 			date.setMilliseconds(0);
 			autoDeletionDateTime = date.getTime();
+
+			// Set auto deletion policy
+			autoDeletionPolicy = {
+				withMeeting: formValue.autoDeletionPolicyWithMeeting,
+				withRecordings: formValue.autoDeletionPolicyWithRecordings
+			};
 		}
 
 		const stepData: Partial<MeetRoomOptions> = {
 			roomName: formValue.roomName,
-			autoDeletionDate: autoDeletionDateTime
+			autoDeletionDate: autoDeletionDateTime,
+			autoDeletionPolicy
 		};
 
 		// Always save to wizard state (including when values are cleared)
@@ -114,5 +154,17 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 			autoDeletionHour: 23,
 			autoDeletionMinute: 59
 		});
+	}
+
+	getMeetingPolicyDescription(): string {
+		const selectedValue = this.roomDetailsForm.get('autoDeletionPolicyWithMeeting')?.value;
+		const option = this.meetingPolicyOptions.find((opt) => opt.value === selectedValue);
+		return option?.description || '';
+	}
+
+	getRecordingPolicyDescription(): string {
+		const selectedValue = this.roomDetailsForm.get('autoDeletionPolicyWithRecordings')?.value;
+		const option = this.recordingPolicyOptions.find((opt) => opt.value === selectedValue);
+		return option?.description || '';
 	}
 }
