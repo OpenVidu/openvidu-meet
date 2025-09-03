@@ -29,7 +29,7 @@ export const changePassword = async (req: Request, res: Response) => {
 	try {
 		const userService = container.get(UserService);
 		await userService.changePassword(user.username, currentPassword, newPassword);
-		return res.status(200).json({ message: 'Password changed successfully' });
+		return res.status(200).json({ message: `Password for user '${user.username}' changed successfully` });
 	} catch (error) {
 		handleError(res, error, 'changing password');
 	}

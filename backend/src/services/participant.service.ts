@@ -129,9 +129,8 @@ export class ParticipantService {
 		return this.livekitService.participantExists(roomId, participantNameOrIdentity, participantField);
 	}
 
-	async deleteParticipant(roomId: string, participantIdentity: string): Promise<void> {
-		this.logger.verbose(`Deleting participant '${participantIdentity}' from room '${roomId}'`);
-
+	async kickParticipant(roomId: string, participantIdentity: string): Promise<void> {
+		this.logger.verbose(`Kicking participant '${participantIdentity}' from room '${roomId}'`);
 		return this.livekitService.deleteParticipant(roomId, participantIdentity);
 	}
 

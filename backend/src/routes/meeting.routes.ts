@@ -27,7 +27,7 @@ internalMeetingRouter.delete(
 	withAuth(participantTokenValidator),
 	withValidRoomId,
 	withModeratorPermissions,
-	participantCtrl.deleteParticipant
+	participantCtrl.kickParticipant
 );
 internalMeetingRouter.put(
 	'/:roomId/participants/:participantIdentity/role',

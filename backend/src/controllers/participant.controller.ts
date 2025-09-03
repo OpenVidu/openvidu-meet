@@ -107,7 +107,7 @@ export const updateParticipantRole = async (req: Request, res: Response) => {
 	}
 };
 
-export const deleteParticipant = async (req: Request, res: Response) => {
+export const kickParticipant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const participantService = container.get(ParticipantService);
@@ -121,10 +121,12 @@ export const deleteParticipant = async (req: Request, res: Response) => {
 	}
 
 	try {
-		logger.verbose(`Deleting participant '${participantIdentity}' from room '${roomId}'`);
-		await participantService.deleteParticipant(roomId, participantIdentity);
-		res.status(200).json({ message: 'Participant deleted' });
+		logger.verbose(`Kicking participant '${participantIdentity}' from room '${roomId}'`);
+		await participantService.kickParticipant(roomId, participantIdentity);
+		res.status(200).json({
+			message: `Participant '${participantIdentity}' kicked successfully from room '${roomId}'`
+		});
 	} catch (error) {
-		handleError(res, error, `deleting participant '${participantIdentity}' from room '${roomId}'`);
+		handleError(res, error, `kicking participant '${participantIdentity}' from room '${roomId}'`);
 	}
 };

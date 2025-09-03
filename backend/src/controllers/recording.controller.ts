@@ -142,7 +142,7 @@ export const deleteRecording = async (req: Request, res: Response) => {
 
 	try {
 		await recordingService.deleteRecording(recordingId);
-		return res.status(204).send();
+		return res.status(200).json({ message: `Recording '${recordingId}' deleted successfully` });
 	} catch (error) {
 		handleError(res, error, `deleting recording '${recordingId}'`);
 	}

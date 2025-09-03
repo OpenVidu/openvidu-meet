@@ -21,7 +21,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 		logger.info(`Ending meeting from room '${roomId}'`);
 		// To end a meeting, we need to delete the room from LiveKit
 		await livekitService.deleteRoom(roomId);
-		res.status(200).json({ message: 'Meeting ended successfully' });
+		res.status(200).json({ message: `Meeting in room '${roomId}' ended successfully` });
 	} catch (error) {
 		handleError(res, error, `ending meeting from room '${roomId}'`);
 	}

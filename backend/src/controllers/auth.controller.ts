@@ -45,7 +45,7 @@ export const login = async (req: Request, res: Response) => {
 			)
 		);
 		logger.info(`Login succeeded for user '${username}'`);
-		return res.status(200).json({ message: 'Login succeeded' });
+		return res.status(200).json({ message: `User '${username}' logged in successfully` });
 	} catch (error) {
 		handleError(res, error, 'generating token');
 	}
@@ -98,8 +98,8 @@ export const refreshToken = async (req: Request, res: Response) => {
 			accessToken,
 			getCookieOptions('/', INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION)
 		);
-		logger.info(`Token refreshed for user ${username}`);
-		return res.status(200).json({ message: 'Token refreshed' });
+		logger.info(`Access token refreshed for user '${username}'`);
+		return res.status(200).json({ message: `Access token for user '${username}' successfully refreshed` });
 	} catch (error) {
 		handleError(res, error, 'refreshing token');
 	}
@@ -141,7 +141,7 @@ export const deleteApiKeys = async (_req: Request, res: Response) => {
 
 	try {
 		await authService.deleteApiKeys();
-		return res.status(204).send();
+		return res.status(200).json({ message: 'API keys deleted successfully' });
 	} catch (error) {
 		handleError(res, error, 'deleting API keys');
 	}
