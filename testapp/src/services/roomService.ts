@@ -62,7 +62,7 @@ export async function deleteRoom(roomId: string): Promise<void> {
 }
 
 export async function deleteAllRooms(roomIds: string[]): Promise<void> {
-    const url = `${configService.meetApiUrl}/rooms?roomIds=${roomIds.join(',')}`;
+    const url = `${configService.meetApiUrl}/rooms?roomIds=${roomIds.join(',')}&withMeeting=force&withRecordings=force`;
     console.log(`Deleting ${roomIds.length} rooms from: ${url}`);
     console.log('Room IDs to delete:', roomIds);
     try {
