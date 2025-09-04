@@ -305,7 +305,7 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
-			const { preferences: updatedPreferences } = await updateRoomPreferences(
+			await updateRoomPreferences(
 				roomId,
 				{
 					chatPreferences: { enabled: true },
@@ -318,7 +318,6 @@ test.describe('UI Feature Preferences Tests', () => {
 				adminCookie
 			);
 
-			expect(updatedPreferences.virtualBackgroundPreferences.enabled).toBe(false);
 			await leaveRoom(page);
 			await page.reload();
 

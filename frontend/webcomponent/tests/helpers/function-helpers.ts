@@ -134,7 +134,7 @@ export const updateRoomPreferences = async (roomId: string, preferences: any, ad
 			'Content-Type': 'application/json',
 			Cookie: adminCookie
 		},
-		body: JSON.stringify(preferences)
+		body: JSON.stringify({ preferences })
 	});
 
 	if (!response.ok) {
