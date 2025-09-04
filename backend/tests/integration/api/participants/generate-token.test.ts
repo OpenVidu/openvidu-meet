@@ -4,9 +4,11 @@ import { expectValidationError, expectValidParticipantTokenResponse } from '../.
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	endMeeting,
 	generateParticipantToken,
 	generateParticipantTokenCookie,
-	startTestServer
+	startTestServer,
+	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
@@ -123,6 +125,17 @@ describe('Participant API Tests', () => {
 
 			// Recreate the room without the participant
 			roomData = await setupSingleRoom();
+		});
+
+		it('should fail with 409 when room is closed', async () => {
+			await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			await updateRoomStatus(roomData.room.roomId, 'closed');
+			const response = await generateParticipantToken({
+				roomId: roomData.room.roomId,
+				secret: roomData.moderatorSecret,
+				participantName
+			});
+			expect(response.status).toBe(409);
 		});
 
 		it('should fail with 404 when room does not exist', async () => {

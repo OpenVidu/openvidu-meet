@@ -16,7 +16,6 @@ describe('Users API Tests', () => {
 			const newPassword = 'newpassword123';
 			const response = await changePassword(MEET_INITIAL_ADMIN_PASSWORD, newPassword, adminCookie);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('message', 'Password changed successfully');
 
 			// Reset password
 			await changePassword(newPassword, MEET_INITIAL_ADMIN_PASSWORD, adminCookie);

@@ -428,7 +428,7 @@ describe('Recording API Security Tests', () => {
 				/*
 				  Use a simulated recording ID matching the API's expected format.
 				  This allows testing the delete endpoint logic without deleting a real recording.
-				  As a result, all successful delete tests will expect a 404 Not Found response.
+				  As a result, all successful delete tests will expect a 400 response with failed recordings.
 				*/
 				fakeRecordingId = `${roomData.room.roomId}--EG_xxx--uid`;
 			});
@@ -438,7 +438,7 @@ describe('Recording API Security Tests', () => {
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
 					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
-				expect(response.status).toBe(200);
+				expect(response.status).toBe(400);
 			});
 
 			it('should succeed when user is authenticated as admin', async () => {
@@ -446,7 +446,7 @@ describe('Recording API Security Tests', () => {
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
 					.set('Cookie', adminCookie);
-				expect(response.status).toBe(200);
+				expect(response.status).toBe(400);
 			});
 
 			it('should fail when recording access is admin-moderator-speaker and participant is speaker', async () => {
@@ -480,7 +480,7 @@ describe('Recording API Security Tests', () => {
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
 					.set('Cookie', recordingCookie);
-				expect(response.status).toBe(200);
+				expect(response.status).toBe(400);
 			});
 
 			it('should fail when recording access is admin-moderator and participant is speaker', async () => {
@@ -508,7 +508,7 @@ describe('Recording API Security Tests', () => {
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
 					.set('Cookie', recordingCookie);
-				expect(response.status).toBe(200);
+				expect(response.status).toBe(400);
 			});
 		});
 

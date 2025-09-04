@@ -3,11 +3,16 @@ import { container } from '../../src/config/dependency-injector.config';
 import INTERNAL_CONFIG from '../../src/config/internal-config';
 import { TokenService } from '../../src/services';
 import {
+	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
+	MeetRoomAutoDeletionPolicy,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomPreferences,
+	MeetRoomStatus,
 	ParticipantPermissions,
 	ParticipantRole
 } from '../../src/typings/ce';
@@ -91,7 +96,7 @@ export const expectSuccessRoomResponse = (
 	preferences?: MeetRoomPreferences
 ) => {
 	expect(response.status).toBe(200);
-	expectValidRoom(response.body, roomName, autoDeletionDate, preferences);
+	expectValidRoom(response.body, roomName, preferences, autoDeletionDate);
 };
 
 export const expectSuccessRoomPreferencesResponse = (response: any, preferences: MeetRoomPreferences) => {
@@ -103,9 +108,11 @@ export const expectSuccessRoomPreferencesResponse = (response: any, preferences:
 export const expectValidRoom = (
 	room: MeetRoom,
 	name: string,
-	autoDeletionDate?: number,
 	preferences?: MeetRoomPreferences,
-	markedForDeletion?: boolean
+	autoDeletionDate?: number,
+	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy,
+	status?: MeetRoomStatus,
+	meetingEndAction?: MeetingEndAction
 ) => {
 	expect(room).toBeDefined();
 
@@ -121,6 +128,16 @@ export const expectValidRoom = (
 		expect(room.autoDeletionDate).toBe(autoDeletionDate);
 	} else {
 		expect(room.autoDeletionDate).toBeUndefined();
+	}
+
+	if (autoDeletionPolicy !== undefined) {
+		expect(room.autoDeletionPolicy).toBeDefined();
+		expect(room.autoDeletionPolicy).toEqual(autoDeletionPolicy);
+	} else {
+		expect(room.autoDeletionPolicy).toEqual({
+			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+			withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+		});
 	}
 
 	expect(room.preferences).toBeDefined();
@@ -143,11 +160,10 @@ export const expectValidRoom = (
 	expect(room.moderatorUrl).toContain(room.roomId);
 	expect(room.speakerUrl).toContain(room.roomId);
 
-	if (markedForDeletion !== undefined) {
-		expect(room.autoDeletionDate).toBeDefined();
-
-		expect(room.markedForDeletion).toBe(markedForDeletion ?? false);
-	}
+	expect(room.status).toBeDefined();
+	expect(room.status).toEqual(status || MeetRoomStatus.OPEN);
+	expect(room.meetingEndAction).toBeDefined();
+	expect(room.meetingEndAction).toEqual(meetingEndAction || MeetingEndAction.NONE);
 };
 
 export const expectValidRecording = (

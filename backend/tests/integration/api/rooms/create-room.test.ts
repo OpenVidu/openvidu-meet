@@ -3,7 +3,11 @@ import { Express } from 'express';
 import ms from 'ms';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import {
+	MeetRecordingAccess,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings
+} from '../../../../src/typings/ce/index.js';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -25,6 +29,11 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Room Creation Tests', () => {
+		it('Should create a room with default name when roomName is omitted', async () => {
+			const room = await createRoom();
+			expectValidRoom(room, 'Room');
+		});
+
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
 			const room = await createRoom({
 				roomName: '   Test Room   '
@@ -38,13 +47,17 @@ describe('Room API Tests', () => {
 				roomName: '   .,-------}{¡$#<+My Room *123  '
 			});
 
-			expectValidRoom(room, 'My Room 123', validAutoDeletionDate);
+			expectValidRoom(room, 'My Room 123', undefined, validAutoDeletionDate);
 		});
 
 		it('Should create a room when sending full valid payload', async () => {
 			const payload = {
 				roomName: ' =Example Room&/ ',
 				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+				},
 				preferences: {
 					recordingPreferences: {
 						enabled: false,
@@ -57,7 +70,13 @@ describe('Room API Tests', () => {
 
 			const room = await createRoom(payload);
 
-			expectValidRoom(room, 'Example Room', validAutoDeletionDate, payload.preferences);
+			expectValidRoom(
+				room,
+				'Example Room',
+				payload.preferences,
+				validAutoDeletionDate,
+				payload.autoDeletionPolicy
+			);
 		});
 	});
 
@@ -120,6 +139,63 @@ describe('Room API Tests', () => {
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
+		});
+
+		it('should fail when autoDeletionPolicy is not an object (string provided)', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: 'invalid-policy'
+			};
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+
+			expect(JSON.stringify(response.body.details)).toContain('Expected object');
+		});
+
+		it('should fail when autoDeletionPolicy has invalid structure', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: {
+					withMeeting: 'invalid-value',
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+				}
+			};
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+
+			expect(JSON.stringify(response.body.details)).toContain('Invalid enum value');
+		});
+
+		it('should fail when autoDeletionPolicy.withMeeting has FAIL policy', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FAIL,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+				}
+			};
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+
+			expect(JSON.stringify(response.body.details)).toContain('FAIL policy is not allowed for withMeeting auto-deletion policy');
+		});
+
+		it('should fail when autoDeletionPolicy.withRecordings has FAIL policy', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				autoDeletionDate: validAutoDeletionDate,
+				autoDeletionPolicy: {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FAIL
+				}
+			};
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+
+			expect(JSON.stringify(response.body.details)).toContain('FAIL policy is not allowed for withRecordings auto-deletion policy');
 		});
 
 		it('should fail when roomName is not a string (number provided)', async () => {

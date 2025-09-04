@@ -1,209 +1,342 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import ms from 'ms';
-import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import {
+	MeetingEndAction,
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomStatus
+} from '../../../../src/typings/ce/room.js';
+import { expectSuccessListRecordingResponse, expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
+	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
 	disconnectFakeParticipants,
+	endMeeting,
+	getAllRecordings,
 	getRoom,
-	joinFakeParticipant,
-	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { RoomService } from '../../../../src/services/room.service.js';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { setInternalConfig } from '../../../../src/config/internal-config.js';
+import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
 	beforeAll(() => {
 		startTestServer();
 	});
 
-	afterEach(async () => {
+	afterAll(async () => {
 		// Remove all rooms created
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Delete Room Tests', () => {
-		it('should return 204 when room does not exist (idempotent deletion)', async () => {
-			const response = await deleteRoom('non-existent-room-id');
+		describe('without active meeting or recordings', () => {
+			it('should return 200 with successCode=room_deleted', async () => {
+				const { roomId } = await createRoom();
 
-			expect(response.status).toBe(204);
-		});
+				const response = await deleteRoom(roomId);
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
 
-		it('should default to force=false when force parameter is invalid', async () => {
-			// Create a room first
-			const { roomId } = await createRoom({
-				roomName: 'test-room'
+				// Check room is deleted
+				const getResponse = await getRoom(roomId);
+				expect(getResponse.status).toBe(404);
 			});
-			const response = await deleteRoom(roomId, { force: 'not-a-boolean' });
-
-			expect(response.status).toBe(204);
-			// Verify it's deleted
-			const getResponse = await getRoom(roomId);
-			expect(getResponse.status).toBe(404);
 		});
 
-		it('should mark room for deletion when participants exist and force parameter is invalid', async () => {
-			// Create a room first
-			const { roomId } = await createRoom({
-				roomName: 'test-room'
-			});
+		describe('with active meeting but no recordings', () => {
+			let roomId: string;
+			let roomName: string;
+			let moderatorCookie: string;
 
-			await joinFakeParticipant(roomId, 'test-participant');
-
-			// The force parameter is not a boolean so it should be defined as false
-			// and the room should be marked for deletion
-			const response = await deleteRoom(roomId, { force: 'not-a-boolean' });
-
-			// Check operation accepted
-			expect(response.status).toBe(202);
-
-			// The room should be marked for deletion
-			const roomResponse = await getRoom(roomId);
-			expect(roomResponse.body).toBeDefined();
-			expect(roomResponse.body.roomId).toBe(roomId);
-			expect(roomResponse.body.markedForDeletion).toBeDefined();
-			expect(roomResponse.body.markedForDeletion).toBe(true);
-		});
-
-		it('should delete an empty room completely (204)', async () => {
-			const { roomId } = await createRoom({ roomName: 'test-room' });
-
-			const response = await deleteRoom(roomId);
-
-			expect(response.status).toBe(204);
-
-			// Try to retrieve the room again
-			const responseAfterDelete = await getRoom(roomId);
-			expect(responseAfterDelete.status).toBe(404);
-		});
-
-		it('should sanitize roomId with spaces and special characters before deletion', async () => {
-			// Create a room first
-			const createdRoom = await createRoom({
-				roomName: 'test-mixed'
+			beforeEach(async () => {
+				// Create a room with an active meeting
+				const { room, moderatorCookie: cookie } = await setupSingleRoom(true);
+				roomId = room.roomId;
+				roomName = room.roomName;
+				moderatorCookie = cookie;
 			});
 
-			// Add some spaces and special chars to the valid roomId
-			const modifiedId = ` ${createdRoom.roomId}!@# `;
-			const response = await deleteRoom(modifiedId);
+			it('should return 200 with successCode=room_with_active_meeting_deleted when withMeeting=force', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE
+				});
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_DELETED
+				);
 
-			// The validation should sanitize the ID and successfully delete
-			expect(response.status).toBe(204);
-
-			// Verify it's deleted
-			const getResponse = await getRoom(createdRoom.roomId);
-			expect(getResponse.status).toBe(404);
-		});
-
-		it('should handle explicit force=true for room with no participants', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'test-room'
+				// Check room is deleted
+				const getResponse = await getRoom(roomId);
+				expect(getResponse.status).toBe(404);
 			});
 
-			const response = await deleteRoom(createdRoom.roomId, { force: true });
+			it('should return 202 with successCode=room_with_active_meeting_scheduled_to_be_deleted when withMeeting=when_meeting_ends', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
+				});
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+				expectValidRoom(
+					response.body.room,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.ACTIVE_MEETING,
+					MeetingEndAction.DELETE
+				);
 
-			expect(response.status).toBe(204);
-
-			// Try to retrieve the room again
-			const responseAfterDelete = await getRoom(createdRoom.roomId);
-			expect(responseAfterDelete.status).toBe(404);
-		});
-
-		it('should mark room for deletion (202) when participants exist and force=false', async () => {
-			const autoDeletionDate = Date.now() + ms('5h');
-			const { roomId } = await createRoom({
-				roomName: 'test-room',
-				autoDeletionDate
+				// End meeting and check the room is deleted
+				await endMeeting(roomId, moderatorCookie);
+				const getResponse = await getRoom(roomId);
+				expect(getResponse.status).toBe(404);
 			});
 
-			await joinFakeParticipant(roomId, 'test-participant');
-
-			const response = await deleteRoom(roomId, { force: false });
-
-			expect(response.status).toBe(202);
-
-			const roomResponse = await getRoom(roomId);
-			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
+			it('should return 409 with error=room_has_active_meeting when withMeeting=fail', async () => {
+				const response = await deleteRoom(roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.FAIL });
+				expect(response.status).toBe(409);
+				expect(response.body).toHaveProperty('error', MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING);
+			});
 		});
 
-		it('should delete a room marked for deletion when the webhook room_finished is received', async () => {
-			const autoDeletionDate = Date.now() + ms('5h');
-			const { roomId } = await createRoom({
-				roomName: 'test-room',
-				autoDeletionDate
+		describe('with recordings but no active meeting', () => {
+			let roomId: string;
+			let roomName: string;
+
+			beforeEach(async () => {
+				// Create a room with recordings and end the meeting
+				const { room, moderatorCookie } = await setupSingleRoomWithRecording(true);
+				roomId = room.roomId;
+				roomName = room.roomName;
+				await endMeeting(roomId, moderatorCookie);
 			});
 
-			const roomService = container.get(RoomService);
-			// Set MEETING_DEPARTURE_TIMEOUT to 1s to force the room to be closed immediately
-			setInternalConfig({
-				MEETING_DEPARTURE_TIMEOUT: '1s'
-			});
-			// Create livekit room with custom departure timeout
-			// This is needed to trigger the room_finished event
-			await roomService.createLivekitRoom(roomId);
+			it('should return 200 with successCode=room_and_recordings_deleted when withRecording=force', async () => {
+				const response = await deleteRoom(roomId, {
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+				});
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED
+				);
 
-			// Join a participant to the room
-			await joinFakeParticipant(roomId, 'test-participant');
-
-			const response = await deleteRoom(roomId, { force: false });
-
-			expect(response.status).toBe(202);
-
-			const roomResponse = await getRoom(roomId);
-			expectValidRoom(roomResponse.body, 'test-room', autoDeletionDate, undefined, true);
-
-			await disconnectFakeParticipants();
-
-			// Wait for room deletion
-			await sleep('2s');
-			const responseAfterDelete = await getRoom(roomId);
-			expect(responseAfterDelete.status).toBe(404);
-		});
-
-		it('should force delete (204) room with active participants when force=true', async () => {
-			const { roomId } = await createRoom({
-				roomName: 'test-room'
+				// Check the room and recordings are deleted
+				const roomResponse = await getRoom(roomId);
+				expect(roomResponse.status).toBe(404);
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
 			});
 
-			await joinFakeParticipant(roomId, 'test-participant');
+			it('should return 200 with successCode=room_closed when withRecording=close', async () => {
+				const response = await deleteRoom(roomId, {
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+				});
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_CLOSED);
 
-			const response = await deleteRoom(roomId, { force: true });
+				// Check that the room is closed and recordings are not deleted
+				expectValidRoom(
+					response.body.room,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.CLOSED,
+					MeetingEndAction.NONE
+				);
 
-			expect(response.status).toBe(204);
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
+			});
 
-			// Try to retrieve the room again
-			await sleep('1s'); // Wait a bit for the meeting to be closed and the room deleted
-			const responseAfterDelete = await getRoom(roomId);
-			expect(responseAfterDelete.status).toBe(404);
+			it('should return 409 with error=room_has_recordings when withRecording=fail', async () => {
+				const response = await deleteRoom(roomId, {
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FAIL
+				});
+				expect(response.status).toBe(409);
+				expect(response.body).toHaveProperty('error', MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS);
+			});
 		});
 
-		it('should successfully delete a room already marked for deletion', async () => {
-			const { roomId } = await createRoom({ roomName: 'test-marked' });
+		describe('with active meeting and recordings', () => {
+			let roomId: string;
+			let roomName: string;
+			let moderatorCookie: string;
 
-			// First mark it for deletion
-			await joinFakeParticipant(roomId, 'test-participant');
+			beforeEach(async () => {
+				// Create a room with recordings, keep the meeting active
+				const { room, moderatorCookie: cookie } = await setupSingleRoomWithRecording(true);
+				roomId = room.roomId;
+				roomName = room.roomName;
+				moderatorCookie = cookie;
+			});
 
-			await deleteRoom(roomId, { force: false });
+			it('should return 200 with successCode=room_with_active_meeting_and_recordings_deleted when withMeeting=force and withRecording=force', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+				});
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED
+				);
 
-			// Then try to delete it again
-			const response = await deleteRoom(roomId, { force: true });
-			expect(response.status).toBe(204);
-		});
+				// Check the room and recordings are deleted
+				const roomResponse = await getRoom(roomId);
+				expect(roomResponse.status).toBe(404);
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
+			});
 
-		it('should handle repeated deletion of the same room gracefully', async () => {
-			const { roomId } = await createRoom({ roomName: 'test-idempotent' });
+			it('should return 200 with successCode=room_with_active_meeting_closed when withMeeting=force and withRecording=close', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+				});
+				expect(response.status).toBe(200);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED
+				);
+				expectValidRoom(
+					response.body.room,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.ACTIVE_MEETING,
+					MeetingEndAction.CLOSE
+				);
 
-			// Delete first time
-			const response1 = await deleteRoom(roomId);
-			expect(response1.status).toBe(204);
+				// Check that the room is closed and recordings are not deleted
+				const roomResponse = await getRoom(roomId);
+				expect(roomResponse.status).toBe(200);
+				expectValidRoom(
+					roomResponse.body,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.CLOSED,
+					MeetingEndAction.NONE
+				);
 
-			// Delete second time - should still return 204 (no error)
-			const response2 = await deleteRoom(roomId);
-			expect(response2.status).toBe(204);
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
+			});
+
+			it('should return 409 with error=room_with_active_meeting_has_recordings when withMeeting=force and withRecording=fail', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FAIL
+				});
+				expect(response.status).toBe(409);
+				expect(response.body).toHaveProperty(
+					'error',
+					MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS
+				);
+			});
+
+			it('should return 202 with successCode=room_with_active_meeting_and_recordings_scheduled_to_be_deleted when withMeeting=when_meeting_ends and withRecording=force', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+				});
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_SCHEDULED_TO_BE_DELETED
+				);
+				expectValidRoom(
+					response.body.room,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.ACTIVE_MEETING,
+					MeetingEndAction.DELETE
+				);
+
+				// End meeting and check the room and recordings are deleted
+				await endMeeting(roomId, moderatorCookie);
+				const roomResponse = await getRoom(roomId);
+				expect(roomResponse.status).toBe(404);
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 0, false, false, 1);
+			});
+
+			it('should return 202 with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecording=close', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
+				});
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED
+				);
+				expectValidRoom(
+					response.body.room,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.ACTIVE_MEETING,
+					MeetingEndAction.CLOSE
+				);
+
+				// End meeting and check that the room is closed and recordings are not deleted
+				await endMeeting(roomId, moderatorCookie);
+				const roomResponse = await getRoom(roomId);
+				expect(roomResponse.status).toBe(200);
+				expectValidRoom(
+					roomResponse.body,
+					roomName,
+					undefined,
+					undefined,
+					undefined,
+					MeetRoomStatus.CLOSED,
+					MeetingEndAction.NONE
+				);
+
+				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
+				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
+			});
+
+			it('should return 409 with error=room_with_active_meeting_has_recordings_cannot_schedule_deletion when withMeeting=when_meeting_ends and withRecording=fail', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FAIL
+				});
+				expect(response.status).toBe(409);
+				expect(response.body).toHaveProperty(
+					'error',
+					MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION
+				);
+			});
+
+			it('should return 409 with error=room_with_recordings_has_active_meeting when withMeeting=fail', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.FAIL,
+					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
+				});
+				expect(response.status).toBe(409);
+				expect(response.body).toHaveProperty(
+					'error',
+					MeetRoomDeletionErrorCode.ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING
+				);
+			});
 		});
 	});
 
@@ -217,12 +350,20 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('roomId cannot be empty after sanitization');
 		});
 
-		it('should fail when force parameter is a number instead of boolean', async () => {
-			const response = await deleteRoom('testRoom', { force: { value: 123 } });
+		it('should fail when withMeeting parameter is invalid', async () => {
+			const response = await deleteRoom('testRoom', { withMeeting: 'invalid_value' });
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('Expected boolean, received object');
+			expect(JSON.stringify(response.body.details)).toContain('Invalid enum value');
+		});
+
+		it('should fail when withRecordings parameter is invalid', async () => {
+			const response = await deleteRoom('testRoom', { withRecordings: 'invalid_value' });
+
+			expect(response.status).toBe(422);
+			expect(response.body.error).toContain('Unprocessable Entity');
+			expect(JSON.stringify(response.body.details)).toContain('Invalid enum value');
 		});
 	});
 });

@@ -434,7 +434,7 @@ describe('Recording API Race Conditions Tests', () => {
 			streamResponse.status === 'fulfilled' &&
 			(streamResponse.value.status === 200 || streamResponse.value.status === 206);
 
-		const deleteSuccessful = deleteResponse.status === 'fulfilled' && deleteResponse.value.status === 204;
+		const deleteSuccessful = deleteResponse.status === 'fulfilled' && deleteResponse.value.status === 200;
 
 		console.log(`Stream successful: ${streamSuccessful}, Delete successful: ${deleteSuccessful}`);
 
@@ -485,8 +485,7 @@ describe('Recording API Race Conditions Tests', () => {
 		// Both operations should complete successfully
 		const [bulkDeleteResult, newRecordingResult] = await Promise.all([bulkDeletePromise, startNewRecordingPromise]);
 
-		expect(bulkDeleteResult.status).toBe(204);
-		expect(bulkDeleteResult.body).toEqual({});
+		expect(bulkDeleteResult.status).toBe(200);
 
 		// Check that the new recording started successfully
 		expectValidStartRecordingResponse(newRecordingResult, room3.room.roomId, room3.room.roomName);

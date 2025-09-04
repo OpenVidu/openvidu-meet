@@ -30,7 +30,7 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Bulk Delete Recording Tests', () => {
-		it('should return 200 when mixed valid and non-existent IDs are provided', async () => {
+		it('should return 400 when mixed valid and non-existent IDs are provided', async () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 3);
 			const recordingIds = testContext.rooms.map((room) => room.recordingId);
 			const nonExistentIds = ['nonExistent--EG_000--1234', 'nonExistent--EG_111--5678'];
@@ -38,10 +38,11 @@ describe('Recording API Tests', () => {
 
 			const deleteResponse = await bulkDeleteRecordings(mixedIds);
 
-			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
+				message: expect.stringContaining('could not be deleted'),
 				deleted: expect.arrayContaining(recordingIds),
-				notDeleted: expect.arrayContaining(
+				failed: expect.arrayContaining(
 					nonExistentIds.map((id) => ({
 						recordingId: id,
 						error: expect.stringContaining(`Recording '${id}' not found`)
@@ -50,7 +51,7 @@ describe('Recording API Tests', () => {
 			});
 		});
 
-		it('should return 200 with mixed results when some recordings are in active state', async () => {
+		it('should return 400 with mixed results when some recordings are in active state', async () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 2);
 			const activeRecordingRoom = testContext.getLastRoom();
 			const recordingIds = testContext.rooms
@@ -60,10 +61,11 @@ describe('Recording API Tests', () => {
 			const activeRecordingId = activeRecordingRoom?.recordingId;
 			let deleteResponse = await bulkDeleteRecordings([...recordingIds, activeRecordingId]);
 
-			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
+				message: expect.stringContaining('could not be deleted'),
 				deleted: expect.arrayContaining(recordingIds),
-				notDeleted: [
+				failed: [
 					{
 						recordingId: activeRecordingId,
 						error: expect.stringContaining(`Recording '${activeRecordingId}' is not stopped yet`)
@@ -75,18 +77,22 @@ describe('Recording API Tests', () => {
 
 			deleteResponse = await bulkDeleteRecordings([activeRecordingId]);
 
-			expect(deleteResponse.status).toBe(204);
-			expect(deleteResponse.body).toStrictEqual({});
+			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.body).toEqual({
+				message: expect.stringContaining('All recordings deleted successfully'),
+				deleted: expect.arrayContaining([activeRecordingId])
+			});
 		});
 
-		it('should not delete any recordings and return 200', async () => {
+		it('should not delete any recordings and return 400', async () => {
 			const testContext = await setupMultiRecordingsTestContext(2, 2, 0);
 			const recordingIds = testContext.rooms.map((room) => room.recordingId);
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
-			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
+				message: expect.stringContaining('could not be deleted'),
 				deleted: [],
-				notDeleted: expect.arrayContaining(
+				failed: expect.arrayContaining(
 					recordingIds.map((id) => ({
 						recordingId: id,
 						error: expect.stringContaining(`Recording '${id}' is not stopped yet`)
@@ -101,12 +107,12 @@ describe('Recording API Tests', () => {
 			);
 		});
 
-		it('should delete all recordings and return 204 when all operations succeed', async () => {
+		it('should delete all recordings and return 200 when all operations succeed', async () => {
 			const response = await setupMultiRecordingsTestContext(5, 5, 5);
 			const recordingIds = response.rooms.map((room) => room.recordingId);
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
 
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 		});
 
 		it('should only delete recordings belonging to the room when using a recording token', async () => {
@@ -125,10 +131,11 @@ describe('Recording API Tests', () => {
 			// Intenta eliminar ambas grabaciones usando el token de la primera sala
 			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingCookie);
 
-			expect(deleteResponse.status).toBe(200);
+			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
+				message: expect.stringContaining('could not be deleted'),
 				deleted: [recordingId],
-				notDeleted: [
+				failed: [
 					{
 						recordingId: otherRecordingId,
 						error: expect.stringContaining(
@@ -144,7 +151,7 @@ describe('Recording API Tests', () => {
 			const recordingIds = response.rooms.map((room) => room.recordingId);
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
 
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 
 			const storageService = container.get(MeetStorageService);
 
@@ -159,8 +166,7 @@ describe('Recording API Tests', () => {
 			const recordingId = testContext.rooms[0].recordingId;
 			const deleteResponse = await bulkDeleteRecordings([recordingId]);
 
-			expect(deleteResponse.status).toBe(204);
-			expect(deleteResponse.body).toStrictEqual({});
+			expect(deleteResponse.status).toBe(200);
 		});
 
 		it('should handle duplicate recording IDs by treating them as a single delete', async () => {
@@ -168,8 +174,7 @@ describe('Recording API Tests', () => {
 			const recordingId = testContext.getRoomByIndex(0)!.recordingId;
 			const deleteResponse = await bulkDeleteRecordings([recordingId, recordingId]);
 
-			expect(deleteResponse.status).toBe(204);
-			expect(deleteResponse.body).toStrictEqual({});
+			expect(deleteResponse.status).toBe(200);
 		});
 
 		it('should delete room metadata when deleting the last recording', async () => {
@@ -197,7 +202,7 @@ describe('Recording API Tests', () => {
 			await stopRecording(secondRecordingId, moderatorCookie);
 			// Delete first recording - room metadata should remain
 			const bulkResponse = await bulkDeleteRecordings([firstRecordingId, secondRecordingId]);
-			expect(bulkResponse.status).toBe(204);
+			expect(bulkResponse.status).toBe(200);
 
 			// // Verify second recording still exists
 			// const secondRecordingResponse = await getRecording(secondRecordingId);

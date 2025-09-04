@@ -22,6 +22,8 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions,
 	ParticipantRole,
 	WebhookPreferences
@@ -244,20 +246,18 @@ export const getRoom = async (roomId: string, fields?: string, cookie?: string, 
 export const getRoomPreferences = async (roomId: string) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
-		.set('Cookie', adminCookie)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 		.send();
 };
 
 export const updateRoomPreferences = async (roomId: string, preferences: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
-		.set('Cookie', adminCookie)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 		.send({ preferences });
 };
 
@@ -277,6 +277,15 @@ export const updateRecordingAccessPreferencesInRoom = async (roomId: string, rec
 	expect(response.status).toBe(200);
 };
 
+export const updateRoomStatus = async (roomId: string, status: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.send({ status });
+};
+
 export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
 	checkAppIsRunning();
 
@@ -288,13 +297,17 @@ export const deleteRoom = async (roomId: string, query: Record<string, any> = {}
 	return result;
 };
 
-export const bulkDeleteRooms = async (roomIds: any[], force?: any) => {
+export const bulkDeleteRooms = async (
+	roomIds: any[],
+	withMeeting?: string,
+	withRecordings?: string
+) => {
 	checkAppIsRunning();
 
 	const result = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-		.query({ roomIds: roomIds.join(','), force });
+		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
 	await sleep('1s');
 	return result;
 };
@@ -305,11 +318,8 @@ export const deleteAllRooms = async () => {
 	let nextPageToken: string | undefined;
 
 	do {
-		const response: any = await request(app)
-			.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-			.query({ fields: 'roomId', maxItems: 100, nextPageToken })
-			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-			.expect(200);
+		const response = await getRooms({ fields: 'roomId', maxItems: 100, nextPageToken });
+		expect(response.status).toBe(200);
 
 		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
 		const roomIds = response.body.rooms.map((room: { roomId: string }) => room.roomId);
@@ -318,13 +328,12 @@ export const deleteAllRooms = async () => {
 			break;
 		}
 
-		await request(app)
-			.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-			.query({ roomIds: roomIds.join(','), force: true })
-			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		await bulkDeleteRooms(
+			roomIds,
+			MeetRoomDeletionPolicyWithMeeting.FORCE,
+			MeetRoomDeletionPolicyWithRecordings.FORCE
+		);
 	} while (nextPageToken);
-
-	await sleep('1s');
 };
 
 /**
@@ -339,6 +348,7 @@ export const runRoomGarbageCollector = async () => {
 
 	const roomService = container.get(RoomService);
 	await (roomService as any)['deleteExpiredRooms']();
+	await sleep('1s');
 };
 
 export const runReleaseActiveRecordingLock = async (roomId: string) => {
@@ -547,7 +557,7 @@ export const updateParticipant = async (
 	return response;
 };
 
-export const deleteParticipant = async (roomId: string, participantIdentity: string, moderatorCookie: string) => {
+export const kickParticipant = async (roomId: string, participantIdentity: string, moderatorCookie: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)

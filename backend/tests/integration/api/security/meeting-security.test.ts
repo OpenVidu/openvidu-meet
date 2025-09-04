@@ -141,7 +141,7 @@ describe('Meeting API Security Tests', () => {
 		});
 	});
 
-	describe('Delete Participant from Meeting Tests', () => {
+	describe('Kick Participant from Meeting Tests', () => {
 		const PARTICIPANT_IDENTITY = 'TEST_PARTICIPANT';
 
 		it('should fail when request includes API key', async () => {

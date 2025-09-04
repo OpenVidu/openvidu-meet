@@ -85,7 +85,7 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
@@ -93,7 +93,7 @@ describe('Room API Security Tests', () => {
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
 				.set('Cookie', adminCookie);
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -165,12 +165,12 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`).set('Cookie', adminCookie);
-			expect(response.status).toBe(204);
+			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -279,6 +279,38 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/preferences`)
 				.send({ preferences: roomPreferences });
+			expect(response.status).toBe(401);
+		});
+	});
+
+	describe('Update Room Status Tests', () => {
+		let roomId: string;
+
+		beforeAll(async () => {
+			const room = await createRoom();
+			roomId = room.roomId;
+		});
+
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send({ status: 'open' });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set('Cookie', adminCookie)
+				.send({ status: 'open' });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.send({ status: 'open' });
 			expect(response.status).toBe(401);
 		});
 	});

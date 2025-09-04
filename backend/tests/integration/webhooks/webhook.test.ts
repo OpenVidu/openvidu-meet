@@ -114,7 +114,7 @@ describe('Webhook Integration Tests', () => {
 		const context = await setupSingleRoom(true);
 		const roomData = context.room;
 		// Forcefully delete the room
-		await deleteRoom(roomData.roomId, { force: true });
+		await deleteRoom(roomData.roomId, { withMeeting: 'force' });
 
 		// Verify 'meetingEnded' webhook is sent
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);

@@ -21,7 +21,7 @@ describe('Room API Tests', () => {
 		await deleteAllRooms();
 	});
 
-	describe('Update Room Tests', () => {
+	describe('Update Room Preferences Tests', () => {
 		let frontendEventService: FrontendEventService;
 
 		beforeAll(() => {
@@ -113,7 +113,7 @@ describe('Room API Tests', () => {
 		});
 	});
 
-	describe('Update Room Validation failures', () => {
+	describe('Update Room Preferences Validation failures', () => {
 		it('should fail when preferences have incorrect structure', async () => {
 			const { roomId } = await createRoom({
 				roomName: 'validation-test'

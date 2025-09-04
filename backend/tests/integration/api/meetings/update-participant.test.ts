@@ -141,8 +141,8 @@ describe('Meetings API Tests', () => {
 
 		it('should fail with 404 if room does not exist', async () => {
 			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { force: true });
-			expect(response.status).toBe(204);
+			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
+			expect(response.status).toBe(200);
 
 			response = await updateParticipant(
 				roomData.room.roomId,

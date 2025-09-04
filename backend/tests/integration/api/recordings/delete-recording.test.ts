@@ -44,7 +44,7 @@ describe('Recording API Tests', () => {
 		it('should delete a recording successfully', async () => {
 			// Delete the recording
 			const deleteResponse = await deleteRecording(recordingId);
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 
 			// Verify that the recording is deleted
 			const getResponse = await deleteRecording(recordingId);
@@ -61,7 +61,7 @@ describe('Recording API Tests', () => {
 
 			// Check that the room metadata still exists after deleteing the first recording
 			const deleteResponse = await deleteRecording(recordingId!);
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 
 			recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
 			expect(recSecrets).toBe(null);
@@ -85,7 +85,7 @@ describe('Recording API Tests', () => {
 
 			// Check that the room metadata still exists after deleteing the first recording
 			let deleteResponse = await deleteRecording(recordingId!);
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 
 			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 
@@ -95,7 +95,7 @@ describe('Recording API Tests', () => {
 
 			// Delete the second recording
 			deleteResponse = await deleteRecording(secondRecordingId!);
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 
 			// Verify that the room metadata is deleted after deleting the last recording
 			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
@@ -149,8 +149,7 @@ describe('Recording API Tests', () => {
 
 		it('should sanitize recordingId before validation', async () => {
 			const response = await deleteRecording(` ${recordingId} `);
-			expect(response.status).toBe(204);
-			expect(response.body).toStrictEqual({});
+			expect(response.status).toBe(200);
 		});
 
 		it('should return 409 when attempting to delete an active recording', async () => {
@@ -164,7 +163,7 @@ describe('Recording API Tests', () => {
 			await stopRecording(activeRecordingId, moderatorCookie);
 			// Attempt to delete the recording again
 			deleteResponse = await deleteRecording(activeRecordingId);
-			expect(deleteResponse.status).toBe(204);
+			expect(deleteResponse.status).toBe(200);
 		});
 	});
 });
