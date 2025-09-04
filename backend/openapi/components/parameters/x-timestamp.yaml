@@ -1,7 +1,7 @@
 name: x-timestamp
 in: header
 description: >
-    Unix timestamp (in seconds) when the webhook was sent.
+    Unix timestamp (in milliseconds) when the webhook was sent.
     Can be used to validate webhook age and prevent replay attacks.
 required: true
 schema:
