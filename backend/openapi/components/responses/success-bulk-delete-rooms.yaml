@@ -27,6 +27,8 @@ content:
                             message:
                                 type: string
                                 description: A message providing additional context about the success
+                            room:
+                                $ref: '../schemas/meet-room.yaml'
                     description: List of rooms that were successfully processed for deletion
         example:
             message: 'All rooms successfully processed for deletion'
