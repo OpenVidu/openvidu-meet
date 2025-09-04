@@ -22,17 +22,11 @@ recordingStarted:
                                       example: recordingStarted
                                   data:
                                       type: object
-                                      required:
-                                          - recordingId
-                                          - roomId
-                                          - status
                                       allOf:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    type: string
                                                     enum: [STARTING, ACTIVE]
-                                                    description: The status of the recording.
                                                     example: STARTING
         responses:
             '200':
@@ -62,17 +56,11 @@ recordingUpdated:
                                       example: recordingUpdated
                                   data:
                                       type: object
-                                      required:
-                                          - recordingId
-                                          - roomId
-                                          - status
                                       allOf:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    type: string
                                                     enum: [ACTIVE, ENDING]
-                                                    description: The status of the recording.
                                                     example: ACTIVE
         responses:
             '200':
@@ -104,17 +92,15 @@ recordingEnded:
                                   data:
                                       type: object
                                       required:
-                                          - recordingId
-                                          - roomId
-                                          - status
                                           - endDate
+                                          - duration
+                                          - size
+                                          - details
                                       allOf:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    type: string
                                                     enum: [COMPLETE, FAILED, ABORTED, LIMIT_REACHED]
-                                                    description: The status of the recording.
                                                     example: COMPLETE
                                                 endDate:
                                                     type: number
