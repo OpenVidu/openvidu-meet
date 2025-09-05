@@ -14,6 +14,7 @@ import { Readable } from 'stream';
 import {
 	MEET_INITIAL_ADMIN_PASSWORD,
 	MEET_INITIAL_ADMIN_USER,
+	MEET_INITIAL_API_KEY,
 	MEET_INITIAL_WEBHOOK_ENABLED,
 	MEET_INITIAL_WEBHOOK_URL,
 	MEET_NAME_ID
@@ -694,7 +695,7 @@ export class MeetStorageService<
 		return {
 			projectId: MEET_NAME_ID,
 			webhooksPreferences: {
-				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true',
+				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true' && MEET_INITIAL_API_KEY,
 				url: MEET_INITIAL_WEBHOOK_URL
 			},
 			securityPreferences: {
@@ -727,7 +728,7 @@ export class MeetStorageService<
 	 */
 	protected async initializeApiKey(): Promise<void> {
 		// Check if initial API key is configured
-		const initialApiKey = process.env.MEET_INITIAL_API_KEY;
+		const initialApiKey = MEET_INITIAL_API_KEY;
 
 		if (!initialApiKey) {
 			this.logger.verbose('No initial API key configured, skipping API key initialization');
