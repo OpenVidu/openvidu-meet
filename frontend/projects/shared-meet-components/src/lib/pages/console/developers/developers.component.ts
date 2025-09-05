@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, effect, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -56,12 +56,24 @@ export class DevelopersSettingsComponent implements OnInit {
 		protected clipboard: Clipboard
 	) {
 		// Disable url field initially and enable/disable based on isEnabled toggle
-		this.webhookForm.get('url')?.disable();
+		const urlControl = this.webhookForm.get('url');
+		urlControl?.disable();
 		this.webhookForm.get('isEnabled')?.valueChanges.subscribe((isEnabled) => {
 			if (isEnabled) {
-				this.webhookForm.get('url')?.enable();
+				urlControl?.enable();
 			} else {
-				this.webhookForm.get('url')?.disable();
+				urlControl?.disable();
+			}
+		});
+
+		// Disable webhook toggle initially and enable/disable based on API key presence
+		const webhookToggle = this.webhookForm.get('isEnabled');
+		webhookToggle?.disable();
+		effect(() => {
+			if (this.apiKeyData()) {
+				webhookToggle?.enable();
+			} else {
+				webhookToggle?.disable();
 			}
 		});
 
@@ -129,6 +141,14 @@ export class DevelopersSettingsComponent implements OnInit {
 			await this.authService.deleteApiKeys();
 			this.apiKeyData.set(undefined);
 			this.showApiKey.set(false);
+
+			// Disable webhooks when API key is revoked
+			const webhookToggle = this.webhookForm.get('isEnabled');
+			if (webhookToggle?.value) {
+				webhookToggle.setValue(false);
+				await this.saveWebhookConfig();
+			}
+
 			this.notificationService.showSnackbar('API Key revoked successfully');
 		} catch (error) {
 			console.error('Error revoking API key:', error);
@@ -137,6 +157,10 @@ export class DevelopersSettingsComponent implements OnInit {
 	}
 
 	// ===== WEBHOOK CONFIGURATION METHODS =====
+
+	get canEnableWebhooks(): boolean {
+		return !!this.apiKeyData();
+	}
 
 	private async loadWebhookConfig() {
 		try {
@@ -207,8 +231,10 @@ export class DevelopersSettingsComponent implements OnInit {
 			try {
 				await this.preferencesService.testWebhookUrl(url);
 				this.notificationService.showSnackbar('Test webhook sent successfully. Your URL is reachable.');
-			} catch (error) {
-				this.notificationService.showSnackbar('Failed to send test webhook. Your URL may not be reachable.');
+			} catch (error: any) {
+				const errorMessage = error.error?.message || error.message || 'Unknown error';
+				this.notificationService.showSnackbar(`Failed to send test webhook. ${errorMessage}`);
+				console.error(`Error sending test webhook. ${errorMessage}`);
 			}
 		}
 	}

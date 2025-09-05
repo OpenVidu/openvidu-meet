@@ -117,7 +117,11 @@
 						<h4 class="webhook-section-title">Webhook Notifications</h4>
 						<div class="webhook-toggle ov-mt-xs">
 							<span>Enable webhook notifications</span>
-							<mat-slide-toggle formControlName="isEnabled"></mat-slide-toggle>
+							<mat-slide-toggle
+								formControlName="isEnabled"
+								[matTooltip]="!canEnableWebhooks ? 'API key is required to enable webhooks' : ''"
+								[matTooltipDisabled]="canEnableWebhooks"
+							></mat-slide-toggle>
 						</div>
 
 						<!-- Webhook URL -->
