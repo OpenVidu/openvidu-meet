@@ -55,7 +55,6 @@ export const testWebhook = async (req: Request, res: Response) => {
 	try {
 		await webhookService.testWebhookUrl(url);
 		logger.info(`Webhook URL '${url}' is valid`);
-		// If the URL is valid, we can return a success response
 		return res.status(200).json({ message: 'Webhook URL is valid' });
 	} catch (error) {
 		handleError(res, error, 'testing webhook URL');

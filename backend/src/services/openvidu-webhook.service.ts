@@ -9,7 +9,11 @@ import {
 } from '@typings-ce';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
-import { errorWebhookUrlUnreachable } from '../models/error.model.js';
+import {
+	errorApiKeyNotConfiguredForWebhooks,
+	errorInvalidWebhookUrl,
+	OpenViduMeetError
+} from '../models/error.model.js';
 import { AuthService, LoggerService, MeetStorageService } from './index.js';
 
 @injectable()
@@ -112,16 +116,20 @@ export class OpenViduWebhookService {
 		};
 
 		try {
-			await this.sendRequest(url, {
+			const signature = await this.generateWebhookSignature(creationDate, data);
+
+			await this.sendTestRequest(url, {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					'X-Timestamp': creationDate.toString(),
+					'X-Signature': signature
 				},
 				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error testing webhook URL ${url}: ${error}`);
-			throw errorWebhookUrlUnreachable(url);
+			this.logger.error(`Error sending test webhook to URL '${url}': ${error}`);
+			throw error;
 		}
 	}
 
@@ -207,6 +215,80 @@ export class OpenViduWebhookService {
 		}
 	}
 
+	/**
+	 * Sends a test request to a webhook URL with specific error handling for testing purposes.
+	 *
+	 * @param url - The webhook URL to test
+	 * @param options - Request options
+	 */
+	protected async sendTestRequest(url: string, options: RequestInit): Promise<void> {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+		try {
+			const response = await fetch(url, {
+				...options,
+				signal: controller.signal
+			});
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				const reason =
+					response.status >= 500
+						? `Server error (${response.status} ${response.statusText})`
+						: response.status >= 400
+							? `Client error (${response.status} ${response.statusText})`
+							: `Unexpected response (${response.status})`;
+
+				throw errorInvalidWebhookUrl(url, reason);
+			}
+
+			// Success case
+			this.logger.info(`Webhook test successful for URL: ${url}`);
+		} catch (error: any) {
+			clearTimeout(timeoutId);
+
+			// If it's already our webhook error, re-throw it
+			if (error instanceof OpenViduMeetError && error.name === 'Webhook Error') {
+				throw error;
+			}
+
+			// Handle specific error types
+			let reason: string;
+
+			if (error.name === 'AbortError') {
+				reason = 'Request timed out after 10 seconds';
+			} else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+				// Network errors
+				const errorCode = error.cause?.code;
+
+				switch (errorCode) {
+					case 'ENOTFOUND':
+						reason = 'Domain name could not be resolved';
+						break;
+					case 'ECONNREFUSED':
+						reason = 'Connection refused by server';
+						break;
+					case 'ECONNRESET':
+						reason = 'Connection reset by server';
+						break;
+					case 'CERT_HAS_EXPIRED':
+					case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+					case 'SELF_SIGNED_CERT_IN_CHAIN':
+						reason = 'SSL/TLS certificate error';
+						break;
+					default:
+						reason = `Network error: ${error.message}`;
+				}
+			} else {
+				reason = `Connection failed: ${error.message}`;
+			}
+
+			throw errorInvalidWebhookUrl(url, reason);
+		}
+	}
+
 	protected async getWebhookPreferences(): Promise<WebhookPreferences> {
 		try {
 			const { webhooksPreferences } = await this.globalPrefService.getGlobalPreferences();
@@ -228,7 +310,7 @@ export class OpenViduWebhookService {
 		}
 
 		if (apiKeys.length === 0) {
-			throw new Error('There are no API keys configured yet. Please, create one to use webhooks.');
+			throw errorApiKeyNotConfiguredForWebhooks();
 		}
 
 		// Return the first API key
