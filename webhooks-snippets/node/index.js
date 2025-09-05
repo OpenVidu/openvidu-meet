@@ -2,8 +2,8 @@ import express from "express";
 import crypto from "crypto";
 
 const SERVER_PORT = 5080;
-const API_KEY = "meet-api-key";
-const MAX_ELAPSED_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+const OPENVIDU_MEET_API_KEY = "meet-api-key";
+const MAX_WEBHOOK_AGE = 120 * 1000; // 2 minutes in milliseconds
 
 const app = express();
 app.use(express.json());
@@ -22,7 +22,7 @@ app.post("/webhook", (req, res) => {
 });
 
 app.listen(SERVER_PORT, () =>
-    console.log("Webhook server listening on port 3000")
+    console.log("Webhook server listening on port " + SERVER_PORT)
 );
 
 function isWebhookEventValid(body, headers) {
@@ -35,17 +35,19 @@ function isWebhookEventValid(body, headers) {
 
     const current = Date.now();
     const diffTime = current - timestamp;
+    if (diffTime >= MAX_WEBHOOK_AGE) {
+        // Webhook event too old
+        return false;
+    }
 
     const signedPayload = `${timestamp}.${JSON.stringify(body)}`;
     const expectedSignature = crypto
-        .createHmac("sha256", API_KEY)
-        .update(signedPayload)
+        .createHmac("sha256", OPENVIDU_MEET_API_KEY)
+        .update(signedPayload, "utf8")
         .digest("hex");
 
-    return (
-        crypto.timingSafeEqual(
-            Buffer.from(expectedSignature, "utf-8"),
-            Buffer.from(signature, "utf-8")
-        ) && diffTime < MAX_ELAPSED_TIME
+    return crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, "hex"),
+        Buffer.from(signature, "hex")
     );
 }
