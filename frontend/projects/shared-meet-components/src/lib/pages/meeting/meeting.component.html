@@ -89,8 +89,9 @@
 
 		<ng-container *ovLayoutAdditionalElements>
 			@if (features().canModerateRoom && remoteParticipants.length === 0) {
-				<div class="main-share-meeting-link-container fade-in-delayed-more">
+				<div class="main-share-meeting-link-container fade-in-delayed-more OV_big">
 					<ov-share-meeting-link
+						class="main-share-meeting-link"
 						[title]="'Start collaborating'"
 						[subtitle]="'Share this link to bring others into the meeting'"
 						[titleSize]="'xl'"

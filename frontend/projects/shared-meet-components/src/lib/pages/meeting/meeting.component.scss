@@ -250,6 +250,10 @@
 	align-items: center;
 	justify-content: center;
 	border-radius: var(--ov-meet-radius-md);
+
+	.main-share-meeting-link {
+		max-width: 100%;
+	}
 }
 
 // Responsive adjustments

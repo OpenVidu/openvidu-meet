@@ -55,9 +55,10 @@ import {
 	RecordingStopRequestedEvent,
 	RemoteParticipant,
 	Room,
-	RoomEvent
+	RoomEvent,
+	Track
 } from 'openvidu-components-angular';
-import { Subject, takeUntil } from 'rxjs';
+import { combineLatest, Subject, takeUntil } from 'rxjs';
 
 @Component({
 	selector: 'app-meeting',
@@ -273,19 +274,38 @@ export class MeetingComponent implements OnInit {
 			await this.roomService.loadRoomConfig(this.roomId);
 			this.showMeeting = true;
 
-			// Subscribe to remote participants updates
-			this.componentParticipantService.remoteParticipants$
+			combineLatest([
+				this.componentParticipantService.remoteParticipants$,
+				this.componentParticipantService.localParticipant$
+			])
 				.pipe(takeUntil(this.destroy$))
-				.subscribe((participants) => {
+				.subscribe(([participants, local]) => {
 					this.remoteParticipants = participants as CustomParticipantModel[];
-				});
-			this.componentParticipantService.localParticipant$
-				.pipe(takeUntil(this.destroy$))
-				.subscribe((participant) => {
-					this.localParticipant = participant as CustomParticipantModel;
+					this.localParticipant = local as CustomParticipantModel;
+
+					this.updateVideoPinState();
 				});
 		} catch (error) {
 			console.error('Error accessing meeting:', error);
+		}
+	}
+
+	/**
+	 * Centralized logic for managing video pinning based on
+	 * remote participants and local screen sharing state.
+	 */
+	private updateVideoPinState(): void {
+		if (!this.localParticipant) return;
+
+		const hasRemote = this.remoteParticipants.length > 0;
+		const isSharing = this.localParticipant.isScreenShareEnabled;
+
+		if (hasRemote && isSharing) {
+			// Pin the local screen share to appear bigger
+			this.localParticipant.setVideoPinnedBySource(Track.Source.ScreenShare, true);
+		} else {
+			// Unpin everything if no remote participants or not sharing
+			this.localParticipant.setAllVideoPinned(false);
 		}
 	}
 
