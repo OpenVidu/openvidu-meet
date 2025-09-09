@@ -13,9 +13,8 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const { roomId, secret: querySecret, participantName, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret(roomId);
 
-	if (isValidUrl(leaveRedirectUrl)) {
-		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
-	}
+	// Handle leave redirect URL logic
+	handleLeaveRedirectUrl(leaveRedirectUrl);
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
@@ -63,6 +62,52 @@ const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
 	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL] as string,
 	showOnlyRecordings: (queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] as string) || 'false'
 });
+
+/**
+ * Handles the leave redirect URL logic with automatic referrer detection
+ */
+const handleLeaveRedirectUrl = (leaveRedirectUrl: string) => {
+	const navigationService = inject(NavigationService);
+
+	if (leaveRedirectUrl && isValidUrl(leaveRedirectUrl)) {
+		// If explicitly provided, use it
+		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
+	} else {
+		// Check if user came from another domain and auto-configure redirect
+		const autoRedirectUrl = getAutoRedirectUrl();
+		if (autoRedirectUrl) {
+			navigationService.setLeaveRedirectUrl(autoRedirectUrl);
+		}
+	}
+};
+
+/**
+ * Automatically detects if user came from another domain and returns appropriate redirect URL
+ */
+const getAutoRedirectUrl = (): string | null => {
+	try {
+		const referrer = document.referrer;
+
+		// No referrer means user typed URL directly or came from bookmark
+		if (!referrer) {
+			return null;
+		}
+
+		const referrerUrl = new URL(referrer);
+		const currentUrl = new URL(window.location.href);
+
+		// Check if referrer is from a different domain
+		if (referrerUrl.origin !== currentUrl.origin) {
+			console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
+			return referrer;
+		}
+
+		return null;
+	} catch (error) {
+		console.warn('Error detecting auto redirect URL:', error);
+		return null;
+	}
+};
 
 const isValidUrl = (url: string) => {
 	if (!url) return false;
