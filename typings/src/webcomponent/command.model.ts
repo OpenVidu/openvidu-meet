@@ -7,21 +7,21 @@ export enum WebComponentCommand {
      * This command is sent from the webcomponent to the iframe for intialice the domain.
      * @private
      */
-    INITIALIZE = 'INITIALIZE',
+    INITIALIZE = 'initialize',
     /**
      * Ends the current meeting for all participants.
      * @moderator
      */
-    END_MEETING = 'END_MEETING',
+    END_MEETING = 'endMeeting',
     /**
      * Disconnects the local participant from the current room.
      */
-    LEAVE_ROOM = 'LEAVE_ROOM',
+    LEAVE_ROOM = 'leaveRoom',
     /**
      * Kicks a participant from the meeting.
      * @moderator
      */
-    KICK_PARTICIPANT = 'KICK_PARTICIPANT'
+    KICK_PARTICIPANT = 'kickParticipant'
 }
 
 /**

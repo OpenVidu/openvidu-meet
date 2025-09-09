@@ -141,17 +141,17 @@
 			.status-icon {
 				@include ov-icon(sm);
 
-				&.COMPLETE {
+				&.complete {
 					color: var(--ov-meet-color-success);
 				}
 
-				&.STARTING,
-				&.ACTIVE,
-				&.ENDING {
+				&.starting,
+				&.active,
+				&.ending {
 					color: var(--ov-meet-color-warning);
 				}
 
-				&.FAILED {
+				&.failed {
 					color: var(--ov-meet-color-error);
 				}
 			}

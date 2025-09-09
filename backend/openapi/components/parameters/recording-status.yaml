@@ -4,16 +4,16 @@ required: false
 description: |
     Filter recordings by their status.
 
-    You can provide multiple statuses as a comma-separated list (e.g., `status=ACTIVE,FAILED`).
+    You can provide multiple statuses as a comma-separated list (e.g., `status=active,failed`).
 
     > ⚠️ **Note:** Using this filter may impact performance for large datasets.
 schema:
     type: string
     enum:
-        - STARTING
-        - ACTIVE
-        - ENDING
-        - COMPLETE
-        - FAILED
-        - ABORTED
-        - LIMIT_REACHED
+        - starting
+        - active
+        - ending
+        - complete
+        - failed
+        - aborted
+        - limit_reached

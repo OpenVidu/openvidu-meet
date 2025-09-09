@@ -49,48 +49,48 @@ test.describe('Web Component E2E Tests', () => {
 	});
 
 	test.describe('Event Handling', () => {
-		test('should successfully join as moderator and receive JOINED event', async ({ page }) => {
+		test('should successfully join as moderator and receive joined event', async ({ page }) => {
 			await joinRoomAs('moderator', participantName, page);
-			await page.waitForSelector('.event-JOINED');
-			const joinElements = await page.locator('.event-JOINED').all();
+			await page.waitForSelector('.event-joined');
+			const joinElements = await page.locator('.event-joined').all();
 			expect(joinElements.length).toBe(1);
 		});
 
-		test('should successfully join as speaker and receive JOINED event', async ({ page }) => {
+		test('should successfully join as speaker and receive joined event', async ({ page }) => {
 			await joinRoomAs('speaker', participantName, page);
-			await page.waitForSelector('.event-JOINED');
-			const joinElements = await page.locator('.event-JOINED').all();
+			await page.waitForSelector('.event-joined');
+			const joinElements = await page.locator('.event-joined').all();
 			expect(joinElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive LEFT event when using leave command', async ({ page }) => {
+		test('should successfully join to room and receive left event when using leave command', async ({ page }) => {
 			await joinRoomAs('moderator', participantName, page);
 
 			await page.click('#leave-room-btn');
-			await page.waitForSelector('.event-LEFT');
-			const leftElements = await page.locator('.event-LEFT').all();
+			await page.waitForSelector('.event-left');
+			const leftElements = await page.locator('.event-left').all();
 			expect(leftElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive LEFT event when using disconnect button', async ({
+		test('should successfully join to room and receive left event when using disconnect button', async ({
 			page
 		}) => {
 			await joinRoomAs('moderator', participantName, page);
 
 			await leaveRoom(page, 'moderator');
-			await page.waitForSelector('.event-LEFT');
-			const leftElements = await page.locator('.event-LEFT').all();
+			await page.waitForSelector('.event-left');
+			const leftElements = await page.locator('.event-left').all();
 			expect(leftElements.length).toBe(1);
 		});
 
-		test('should successfully join to room and receive LEFT event when using end meeting command', async ({
+		test('should successfully join to room and receive left event when using end meeting command', async ({
 			page
 		}) => {
 			await joinRoomAs('moderator', participantName, page);
 
 			await page.click('#end-meeting-btn');
-			await page.waitForSelector('.event-LEFT');
-			const meetingEndedElements = await page.locator('.event-LEFT').all();
+			await page.waitForSelector('.event-left');
+			const meetingEndedElements = await page.locator('.event-left').all();
 			expect(meetingEndedElements.length).toBe(1);
 		});
 	});

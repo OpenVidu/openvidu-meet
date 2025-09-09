@@ -23,9 +23,9 @@ export interface AuthMethod {
  * Enum for authentication types.
  */
 export const enum AuthType {
-	SINGLE_USER = 'single-user',
-	// MULTI_USER = 'multi-user',
-	// OAUTH_ONLY = 'oauth-only'
+	SINGLE_USER = 'single_user',
+	// MULTI_USER = 'multi_user',
+	// OAUTH_ONLY = 'oauth_only'
 }
 
 /**

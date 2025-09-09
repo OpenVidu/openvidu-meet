@@ -268,7 +268,7 @@ export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'spe
 		await option.click();
 	}
 
-	await page.waitForSelector('.event-LEFT');
+	await page.waitForSelector('.event-left');
 };
 
 export const startScreenSharing = async (page: Page) => {

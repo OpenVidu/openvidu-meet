@@ -27,14 +27,14 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Generate Recording Token Tests', () => {
-		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin-moderator', async () => {
+		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin_moderator', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 
 			const response = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
 			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
 		});
 
-		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin-moderator-speaker', async () => {
+		it('should generate a recording token with canRetrieve and canDelete permissions when using the moderator secret and recording access is admin_moderator_speaker', async () => {
 			await updateRecordingAccessPreferencesInRoom(
 				roomData.room.roomId,
 				MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
@@ -44,14 +44,14 @@ describe('Room API Tests', () => {
 			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.MODERATOR, true, true);
 		});
 
-		it('should generate a recording token without any permissions when using the speaker secret and recording access is admin-moderator', async () => {
+		it('should generate a recording token without any permissions when using the speaker secret and recording access is admin_moderator', async () => {
 			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
 
 			const response = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
 			expectValidRecordingTokenResponse(response, roomData.room.roomId, ParticipantRole.SPEAKER, false, false);
 		});
 
-		it('should generate a recording token with canRetrieve permission but not canDelete when using the speaker secret and recording access is admin-moderator-speaker', async () => {
+		it('should generate a recording token with canRetrieve permission but not canDelete when using the speaker secret and recording access is admin_moderator_speaker', async () => {
 			await updateRecordingAccessPreferencesInRoom(
 				roomData.room.roomId,
 				MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER

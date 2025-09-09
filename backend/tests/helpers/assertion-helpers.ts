@@ -361,7 +361,7 @@ export const expectValidStartRecordingResponse = (response: any, roomId: string,
 	expect(response.body).toHaveProperty('roomId', roomId);
 	expect(response.body).toHaveProperty('roomName', roomName);
 	expect(response.body).toHaveProperty('startDate');
-	expect(response.body).toHaveProperty('status', 'ACTIVE');
+	expect(response.body).toHaveProperty('status', 'active');
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).not.toHaveProperty('duration');
 	expect(response.body).not.toHaveProperty('endDate');

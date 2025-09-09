@@ -13,12 +13,12 @@ AuthenticationPreferences:
                 type:
                     type: string
                     enum:
-                        - single-user
-                    default: single-user
-                    example: single-user
+                        - single_user
+                    default: single_user
+                    example: single_user
                     description: |
                         Specifies the authentication method used to access the application.
-                        - `single-user`: Only one user account exists, which has administrative privileges and is used for all access.
+                        - `single_user`: Only one user account exists, which has administrative privileges and is used for all access.
         authModeToAccessRoom:
             type: string
             enum:

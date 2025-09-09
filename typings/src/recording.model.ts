@@ -1,15 +1,15 @@
 export const enum MeetRecordingStatus {
-    STARTING = 'STARTING',
-    ACTIVE = 'ACTIVE',
-    ENDING = 'ENDING',
-    COMPLETE = 'COMPLETE',
-    FAILED = 'FAILED',
-    ABORTED = 'ABORTED',
-    LIMIT_REACHED = 'LIMIT_REACHED'
+    STARTING = 'starting',
+    ACTIVE = 'active',
+    ENDING = 'ending',
+    COMPLETE = 'complete',
+    FAILED = 'failed',
+    ABORTED = 'aborted',
+    LIMIT_REACHED = 'limit_reached'
 }
 
 // export const enum MeetRecordingOutputMode {
-// 	COMPOSED = 'COMPOSED',
+// 	COMPOSED = 'composed',
 // }
 
 /**

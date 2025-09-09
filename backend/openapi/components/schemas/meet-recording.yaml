@@ -19,8 +19,8 @@ properties:
     #     The output mode of the recording. Possible value: "COMPOSED".
     status:
         type: string
-        enum: ['STARTING', 'ACTIVE', 'ENDING', 'COMPLETE', 'FAILED', 'ABORTED', 'LIMIT_REACHED']
-        example: 'ACTIVE'
+        enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
+        example: 'active'
         description: The status of the recording.
     filename:
         type: string

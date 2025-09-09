@@ -194,17 +194,17 @@ const listenWebComponentEvents = () => {
         return;
     }
 
-    meet.on('JOINED', (event: CustomEvent<any>) => {
-        console.log('JOINED event received:', event);
-        addEventToLog('JOINED', JSON.stringify(event));
+    meet.on('joined', (event: CustomEvent<any>) => {
+        console.log('"joined" event received:', event);
+        addEventToLog('joined', JSON.stringify(event));
     });
-    meet.on('LEFT', (event: CustomEvent<any>) => {
-        console.log('LEFT event received:', event);
-        addEventToLog('LEFT', JSON.stringify(event));
+    meet.on('left', (event: CustomEvent<any>) => {
+        console.log('"left" event received:', event);
+        addEventToLog('left', JSON.stringify(event));
     });
-    meet.on('CLOSED', (event: CustomEvent<any>) => {
-        console.log('CLOSED event received:', event);
-        addEventToLog('CLOSED', JSON.stringify(event));
+    meet.on('closed', (event: CustomEvent<any>) => {
+        console.log('"closed" event received:', event);
+        addEventToLog('closed', JSON.stringify(event));
 
         // Redirect to home page
         // window.location.href = '/';

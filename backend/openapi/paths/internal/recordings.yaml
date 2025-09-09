@@ -38,7 +38,7 @@
         description: |
             Stops a recording with the specified recording ID.
 
-            > **Note:** The recording must be in an `ACTIVE` state; otherwise, a 409 error is returned.
+            > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
         tags:
             - Internal API - Recordings
         security:

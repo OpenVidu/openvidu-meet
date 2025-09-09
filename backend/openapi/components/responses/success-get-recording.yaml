@@ -10,7 +10,7 @@ content:
                     recordingId: 'room-123--EG_XYZ--XX445'
                     roomId: 'room-123'
                     roomName: 'room'
-                    status: 'COMPLETE'
+                    status: 'complete'
                     filename: 'room-123--XX445.mp4'
                     startDate: 1600000000000
                     endDate: 1600000003600
@@ -24,6 +24,6 @@ content:
                     recordingId: 'room-456--EG_ABC--QR789'
                     roomId: 'room-456'
                     roomName: 'room'
-                    status: 'ACTIVE'
+                    status: 'active'
                     filename: 'room-456--QR789.mp4'
                     startDate: 1682500000000

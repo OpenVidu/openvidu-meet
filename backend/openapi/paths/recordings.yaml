@@ -146,7 +146,7 @@
             Deletes a recording with the specified recording ID.
 
             > ⚠️ **Note:** The recording will only be deleted if it exists and is not in progress
-            > (i.e., not in a state such as `ACTIVE`, `STARTING`, or `ENDING`).
+            > (i.e., not in a state such as `active`, `starting`, or `ending`).
         tags:
             - OpenVidu Meet - Recordings
         security:

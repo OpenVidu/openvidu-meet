@@ -7,19 +7,19 @@ export enum WebComponentEvent {
      * Event emitted when application is ready to receive commands.
      * @private
      */
-    READY = 'READY',
+    READY = 'ready',
     /**
      * Event emitted when the local participant joins the room.
      */
-    JOINED = 'JOINED',
+    JOINED = 'joined',
     /**
      * Event emitted when the local participant leaves the room.
      */
-    LEFT = 'LEFT',
+    LEFT = 'left',
     /**
      * Event emitted when the application is closed.
      */
-    CLOSED = 'CLOSED'
+    CLOSED = 'closed'
 }
 
 /**

@@ -22,14 +22,14 @@ describe('OpenViduMeet Event Handling', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('should call sendMessage when READY event is received', () => {
+	it('should call sendMessage when ready event is received', () => {
 		const sendMessageSpy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 
 		(component as any).eventsManager.setTargetOrigin(testOrigin);
 
 		// Mock a message event
 		const readyEvent = new MessageEvent('message', {
-			data: { event: 'READY' },
+			data: { event: 'ready' },
 			origin: testOrigin
 		});
 		window.dispatchEvent(readyEvent);

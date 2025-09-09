@@ -4,7 +4,7 @@ recordingStarted:
         description: |
             This webhook is triggered when a recording starts.
 
-            > The recording can be in the `STARTING` status for a few seconds before it becomes `ACTIVE`.
+            > The recording can be in the `starting` status for a few seconds before it becomes `active`.
         operationId: recordingStartedWebhook
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
@@ -26,8 +26,8 @@ recordingStarted:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    enum: [STARTING, ACTIVE]
-                                                    example: STARTING
+                                                    enum: [starting, active]
+                                                    example: starting
         responses:
             '200':
                 $ref: ../components/responses/webhook-success.yaml
@@ -38,7 +38,7 @@ recordingUpdated:
         description: |
             This webhook is triggered when a recording update occurs.
 
-            > This update can be due to a change in the recording status (e.g., from `STARTING` to `ACTIVE`).
+            > This update can be due to a change in the recording status (e.g., from `starting` to `active`).
         operationId: recordingUpdatedWebhook
         parameters:
             - $ref: ../components/parameters/x-timestamp.yaml
@@ -60,8 +60,8 @@ recordingUpdated:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    enum: [ACTIVE, ENDING]
-                                                    example: ACTIVE
+                                                    enum: [active, ending]
+                                                    example: active
         responses:
             '200':
                 $ref: ../components/responses/webhook-success.yaml
@@ -100,8 +100,8 @@ recordingEnded:
                                           - $ref: ../components/schemas/recording-base.yaml
                                           - properties:
                                                 status:
-                                                    enum: [COMPLETE, FAILED, ABORTED, LIMIT_REACHED]
-                                                    example: COMPLETE
+                                                    enum: [complete, failed, aborted, limit_reached]
+                                                    example: complete
                                                 endDate:
                                                     type: number
                                                     description: The date when the recording ended (milliseconds since the Unix epoch).

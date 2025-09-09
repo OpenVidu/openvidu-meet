@@ -125,7 +125,7 @@
 						<div class="video-unavailable-content">
 							<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
 							<h3>{{ getStatusMessage() }}</h3>
-							@if (['STARTING', 'ACTIVE', 'ENDING'].includes(recording.status)) {
+							@if (['starting', 'active', 'ending'].includes(recording.status)) {
 								<p>The recording is still being processed. Please check back in a few minutes.</p>
 								<button mat-raised-button color="primary" (click)="retryLoad()">
 									<mat-icon>refresh</mat-icon>

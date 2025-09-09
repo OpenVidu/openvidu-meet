@@ -84,7 +84,7 @@ describe('Security Preferences API Tests', () => {
 			expectValidationError(
 				response,
 				'authentication.authMethod.type',
-				"Invalid enum value. Expected 'single-user', received 'invalid'"
+				"Invalid enum value. Expected 'single_user', received 'invalid'"
 			);
 		});
 

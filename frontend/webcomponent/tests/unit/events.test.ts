@@ -52,7 +52,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
 		const event = new MessageEvent('message', {
 			origin: 'https://not-allowed.com',
-			data: { event: 'READY', payload: {} }
+			data: { event: 'ready', payload: {} }
 		});
 
 		(eventsManager as any).handleMessage(event);
@@ -64,13 +64,13 @@ describe('OpenViduMeet WebComponent Events', () => {
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
 		const event = new MessageEvent('message', {
 			origin: testOrigin,
-			data: { event: 'READY', payload: { foo: 'bar' } }
+			data: { event: 'ready', payload: { foo: 'bar' } }
 		});
 
 		(eventsManager as any).handleMessage(event);
 		expect(dispatchEventSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
-				type: 'READY',
+				type: 'ready',
 				detail: { foo: 'bar' }
 			})
 		);

@@ -165,7 +165,7 @@ const processFormPreferences = (body: any): any => {
             enabled: body['preferences.recordingPreferences.enabled'] === 'on',
             // Only include allowAccessTo if recording is enabled
             ...(body['preferences.recordingPreferences.enabled'] === 'on' && {
-                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin-moderator-speaker'
+                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin_moderator_speaker'
             })
         },
         virtualBackgroundPreferences: {
