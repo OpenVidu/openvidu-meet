@@ -1,14 +1,14 @@
-import { MeetRoom, MeetRecordingInfo, ParticipantRole } from '@typings-ce';
+import { MeetRecordingInfo, MeetRoom, ParticipantRole } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import { SendDataOptions } from 'livekit-server-sdk';
 import { OpenViduComponentsAdapterHelper, OpenViduComponentsSignalPayload } from '../helpers/index.js';
-import { LiveKitService, LoggerService } from './index.js';
 import {
 	MeetParticipantRoleUpdatedPayload,
-	MeetRoomPreferencesUpdatedPayload,
+	MeetRoomConfigUpdatedPayload,
 	MeetSignalPayload,
 	MeetSignalType
 } from '../typings/ce/event.model.js';
+import { LiveKitService, LoggerService } from './index.js';
 
 /**
  * Service responsible for all communication with the frontend
@@ -67,25 +67,25 @@ export class FrontendEventService {
 	}
 
 	/**
-	 * Sends a signal to notify participants in a room about updated room preferences.
+	 * Sends a signal to notify participants in a room about updated room config.
 	 */
-	async sendRoomPreferencesUpdatedSignal(roomId: string, updatedRoom: MeetRoom): Promise<void> {
-		this.logger.debug(`Sending room preferences updated signal for room ${roomId}`);
+	async sendRoomConfigUpdatedSignal(roomId: string, updatedRoom: MeetRoom): Promise<void> {
+		this.logger.debug(`Sending room config updated signal for room ${roomId}`);
 
 		try {
-			const payload: MeetRoomPreferencesUpdatedPayload = {
+			const payload: MeetRoomConfigUpdatedPayload = {
 				roomId,
-				preferences: updatedRoom.preferences!,
+				config: updatedRoom.config!,
 				timestamp: Date.now()
 			};
 
 			const options: SendDataOptions = {
-				topic: MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED
+				topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
 			};
 
 			await this.sendSignal(roomId, payload, options);
 		} catch (error) {
-			this.logger.error(`Error sending room preferences updated signal for room ${roomId}:`, error);
+			this.logger.error(`Error sending room config updated signal for room ${roomId}:`, error);
 		}
 	}
 

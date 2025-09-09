@@ -1,17 +1,17 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
 import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
-import { expectSuccessRoomPreferencesResponse } from '../../../helpers/assertion-helpers.js';
-import { deleteAllRooms, getRoomPreferences, startTestServer } from '../../../helpers/request-helpers.js';
+import { expectSuccessRoomConfigResponse } from '../../../helpers/assertion-helpers.js';
+import { deleteAllRooms, getRoomConfig, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
-	const DEFAULT_PREFERENCES = {
-		recordingPreferences: {
+	const DEFAULT_CONFIG = {
+		recordingConfig: {
 			enabled: true,
 			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		},
-		chatPreferences: { enabled: true },
-		virtualBackgroundPreferences: { enabled: true }
+		chatConfig: { enabled: true },
+		virtualBackgroundConfig: { enabled: true }
 	};
 
 	beforeAll(() => {
@@ -23,33 +23,33 @@ describe('Room API Tests', () => {
 		await deleteAllRooms();
 	});
 
-	describe('Get Room Preferences Tests', () => {
+	describe('Get Room Config Tests', () => {
 		it('should successfully retrieve a room by its ID', async () => {
 			const roomData = await setupSingleRoom();
 			const roomId = roomData.room.roomId;
 
-			const response = await getRoomPreferences(roomId);
-			expectSuccessRoomPreferencesResponse(response, DEFAULT_PREFERENCES);
+			const response = await getRoomConfig(roomId);
+			expectSuccessRoomConfigResponse(response, DEFAULT_CONFIG);
 		});
 
-		it('should retrieve custom room preferences', async () => {
+		it('should retrieve custom room config', async () => {
 			const payload = {
 				roomName: 'custom-prefs',
-				preferences: {
-					recordingPreferences: {
+				config: {
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatPreferences: { enabled: true },
-					virtualBackgroundPreferences: { enabled: false }
+					chatConfig: { enabled: true },
+					virtualBackgroundConfig: { enabled: false }
 				}
 			};
 
-			const roomData = await setupSingleRoom(false, payload.roomName, payload.preferences);
+			const roomData = await setupSingleRoom(false, payload.roomName, payload.config);
 			const roomId = roomData.room.roomId;
 
-			const response = await getRoomPreferences(roomId);
-			expectSuccessRoomPreferencesResponse(response, payload.preferences);
+			const response = await getRoomConfig(roomId);
+			expectSuccessRoomConfigResponse(response, payload.config);
 		});
 	});
 });

@@ -1,6 +1,6 @@
 @import '../../../../../../../../../../src/assets/styles/design-tokens';
 
-.room-preferences-step {
+.room-config-step {
 	@include ov-page-content;
 	@include ov-container;
 
@@ -41,13 +41,13 @@
 	.step-content {
 		margin-bottom: var(--ov-meet-spacing-md);
 
-		.preferences-form {
+		.config-form {
 			display: flex;
 			flex-direction: column;
 		}
 	}
 
-	.preferences-grid {
+	.config-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
 		gap: var(--ov-meet-spacing-md);
@@ -123,7 +123,7 @@
 
 // Responsive design
 @media (max-width: 1024px) {
-	.room-preferences-step {
+	.room-config-step {
 		// padding: var(--ov-meet-spacing-xs);
 
 		.step-header {
@@ -131,14 +131,14 @@
 			margin-bottom: var(--ov-meet-spacing-md);
 		}
 
-		.preferences-grid {
+		.config-grid {
 			gap: var(--ov-meet-spacing-sm);
 		}
 	}
 }
 
 @media (max-width: 768px) {
-	.room-preferences-step {
+	.room-config-step {
 		.step-header {
 			.step-title-group {
 				.step-title {
@@ -151,7 +151,7 @@
 			}
 		}
 
-		.preferences-grid {
+		.config-grid {
 			grid-template-columns: 1fr;
 		}
 
@@ -170,7 +170,7 @@
 }
 
 @media (max-width: 480px) {
-	.room-preferences-step {
+	.room-config-step {
 		.preference-card {
 			.card-header {
 				.icon-title-group {

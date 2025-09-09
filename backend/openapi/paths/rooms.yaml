@@ -151,12 +151,12 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-/rooms/{roomId}/preferences:
+/rooms/{roomId}/config:
     get:
-        operationId: getRoomPreferences
-        summary: Get room preferences
+        operationId: getRoomConfig
+        summary: Get room config
         description: >
-            Retrieves the preferences of an OpenVidu Meet room with the specified room ID.
+            Retrieves the config of an OpenVidu Meet room with the specified room ID.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -168,7 +168,7 @@
             - $ref: '../components/parameters/internal/x-participant-role.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-get-room-preferences.yaml'
+                $ref: '../components/responses/success-get-room-config.yaml'
             '400':
                 $ref: '../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
@@ -182,10 +182,10 @@
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
     put:
-        operationId: updateRoomPreferences
-        summary: Update room preferences
+        operationId: updateRoomConfig
+        summary: Update room config
         description: >
-            Updates the preferences of an OpenVidu Meet room with the specified room ID.
+            Updates the config of an OpenVidu Meet room with the specified room ID.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -194,10 +194,10 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
         requestBody:
-            $ref: '../components/requestBodies/update-room-preferences-request.yaml'
+            $ref: '../components/requestBodies/update-room-config-request.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-update-room-preferences.yaml'
+                $ref: '../components/responses/success-update-room-config.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

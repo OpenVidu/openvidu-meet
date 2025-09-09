@@ -128,34 +128,34 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	}
 };
 
-export const getRoomPreferences = async (req: Request, res: Response) => {
+export const getRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const { roomId } = req.params;
 
-	logger.verbose(`Getting room preferences for room '${roomId}'`);
+	logger.verbose(`Getting room config for room '${roomId}'`);
 
 	try {
-		const { preferences } = await roomService.getMeetRoom(roomId);
-		return res.status(200).json(preferences);
+		const { config } = await roomService.getMeetRoom(roomId);
+		return res.status(200).json(config);
 	} catch (error) {
-		handleError(res, error, `getting room preferences for room '${roomId}'`);
+		handleError(res, error, `getting room config for room '${roomId}'`);
 	}
 };
 
-export const updateRoomPreferences = async (req: Request, res: Response) => {
+export const updateRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { preferences } = req.body;
+	const { config } = req.body;
 	const { roomId } = req.params;
 
-	logger.verbose(`Updating room preferences for room '${roomId}'`);
+	logger.verbose(`Updating room config for room '${roomId}'`);
 
 	try {
-		await roomService.updateMeetRoomPreferences(roomId, preferences);
-		return res.status(200).json({ message: `Room preferences for room '${roomId}' updated successfully` });
+		await roomService.updateMeetRoomConfig(roomId, config);
+		return res.status(200).json({ message: `Room config for room '${roomId}' updated successfully` });
 	} catch (error) {
-		handleError(res, error, `updating room preferences for room '${roomId}'`);
+		handleError(res, error, `updating room config for room '${roomId}'`);
 	}
 };
 

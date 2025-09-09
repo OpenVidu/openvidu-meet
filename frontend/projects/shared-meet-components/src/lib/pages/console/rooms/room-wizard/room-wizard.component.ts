@@ -10,11 +10,11 @@ import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
 import { MeetRoomOptions } from '@lib/typings/ce';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
+import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
-import { RecordingPreferencesComponent } from './steps/recording-preferences/recording-preferences.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
+import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
-import { RoomPreferencesComponent } from './steps/room-preferences/room-preferences.component';
 
 @Component({
 	selector: 'ov-room-wizard',
@@ -29,10 +29,10 @@ import { RoomPreferencesComponent } from './steps/room-preferences/room-preferen
 		MatSlideToggleModule,
 		RoomBasicCreationComponent,
 		RoomWizardRoomDetailsComponent,
-		RecordingPreferencesComponent,
+		RecordingConfigComponent,
 		RecordingTriggerComponent,
 		RecordingLayoutComponent,
-		RoomPreferencesComponent
+		RoomConfigComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -89,8 +89,8 @@ export class RoomWizardComponent implements OnInit {
 		if (!this.roomId) return;
 
 		try {
-			const { roomName, autoDeletionDate, preferences } = await this.roomService.getRoom(this.roomId);
-			this.existingRoomData = { roomName, autoDeletionDate, preferences };
+			const { roomName, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId);
+			this.existingRoomData = { roomName, autoDeletionDate, config };
 			if (this.existingRoomData) {
 				this.isBasicCreation.set(false);
 			}
@@ -154,8 +154,8 @@ export class RoomWizardComponent implements OnInit {
 		this.isCreatingRoom.set(true);
 
 		try {
-			if (this.editMode && this.roomId && roomOptions.preferences) {
-				await this.roomService.updateRoomPreferences(this.roomId, roomOptions.preferences);
+			if (this.editMode && this.roomId && roomOptions.config) {
+				await this.roomService.updateRoomConfig(this.roomId, roomOptions.config);
 				await this.navigationService.navigateTo('rooms', undefined, true);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {

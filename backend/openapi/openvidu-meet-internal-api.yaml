@@ -63,8 +63,8 @@ components:
             $ref: components/schemas/meet-room.yaml
         MeetRoomOptions:
             $ref: components/schemas/meet-room-options.yaml
-        MeetRoomPreferences:
-            $ref: components/schemas/meet-room-preferences.yaml#/MeetRoomPreferences
+        MeetRoomConfig:
+            $ref: components/schemas/meet-room-config.yaml#/MeetRoomConfig
         MeetRoomRoleAndPermissions:
             $ref: components/schemas/internal/meet-room-role-permissions.yaml
         MeetRecording:

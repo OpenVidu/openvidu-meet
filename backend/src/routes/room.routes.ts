@@ -11,11 +11,11 @@ import {
 	tokenAndRoleValidator,
 	withAuth,
 	withValidRoomBulkDeleteRequest,
+	withValidRoomConfig,
 	withValidRoomDeleteRequest,
 	withValidRoomFiltersRequest,
 	withValidRoomId,
 	withValidRoomOptions,
-	withValidRoomPreferences,
 	withValidRoomSecret,
 	withValidRoomStatus
 } from '../middlewares/index.js';
@@ -59,18 +59,18 @@ roomRouter.delete(
 );
 
 roomRouter.get(
-	'/:roomId/preferences',
+	'/:roomId/config',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
 	withValidRoomId,
 	configureRoomAuthorization,
-	roomCtrl.getRoomPreferences
+	roomCtrl.getRoomConfig
 );
 roomRouter.put(
-	'/:roomId/preferences',
+	'/:roomId/config',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
 	withValidRoomId,
-	withValidRoomPreferences,
-	roomCtrl.updateRoomPreferences
+	withValidRoomConfig,
+	roomCtrl.updateRoomConfig
 );
 
 roomRouter.put(

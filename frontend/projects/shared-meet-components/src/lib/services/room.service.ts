@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '@lib/services';
 import {
 	MeetRoom,
+	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomOptions,
-	MeetRoomPreferences,
 	MeetRoomRoleAndPermissions,
 	MeetRoomStatus
 } from '@lib/typings/ce';
@@ -176,52 +176,52 @@ export class RoomService {
 	}
 
 	/**
-	 * Retrieves the preferences for a specific room.
+	 * Retrieves the config for a specific room.
 	 *
 	 * @param roomId - The unique identifier of the room
-	 * @return A promise that resolves to the MeetRoomPreferences object
+	 * @return A promise that resolves to the MeetRoomConfig object
 	 */
-	async getRoomPreferences(roomId: string): Promise<MeetRoomPreferences> {
-		this.log.d('Fetching room preferences for roomId:', roomId);
+	async getRoomConfig(roomId: string): Promise<MeetRoomConfig> {
+		this.log.d('Fetching room config for roomId:', roomId);
 
 		try {
-			const path = `${this.ROOMS_API}/${roomId}/preferences`;
+			const path = `${this.ROOMS_API}/${roomId}/config`;
 			const headers = this.participantService.getParticipantRoleHeader();
-			const preferences = await this.httpService.getRequest<MeetRoomPreferences>(path, headers);
-			return preferences;
+			const config = await this.httpService.getRequest<MeetRoomConfig>(path, headers);
+			return config;
 		} catch (error) {
-			this.log.e('Error fetching room preferences', error);
-			throw new Error(`Failed to fetch room preferences for roomId: ${roomId}`);
+			this.log.e('Error fetching room config', error);
+			throw new Error(`Failed to fetch room config for roomId: ${roomId}`);
 		}
 	}
 
 	/**
-	 * Loads the room preferences and updates the feature configuration service.
+	 * Loads the room config and updates the feature configuration service.
 	 *
 	 * @param roomId - The unique identifier of the room
 	 */
-	async loadRoomPreferences(roomId: string): Promise<void> {
+	async loadRoomConfig(roomId: string): Promise<void> {
 		try {
-			const preferences = await this.getRoomPreferences(roomId);
-			this.featureConfService.setRoomPreferences(preferences);
-			console.log('Room preferences loaded:', preferences);
+			const config = await this.getRoomConfig(roomId);
+			this.featureConfService.setRoomConfig(config);
+			console.log('Room config loaded:', config);
 		} catch (error) {
-			this.log.e('Error loading room preferences', error);
-			throw new Error('Failed to load room preferences');
+			this.log.e('Error loading room config', error);
+			throw new Error('Failed to load room config');
 		}
 	}
 
 	/**
-	 * Saves new room preferences.
+	 * Saves new room config.
 	 *
 	 * @param roomId - The unique identifier of the room
-	 * @param preferences - The room preferences to be saved.
-	 * @returns A promise that resolves when the preferences have been saved.
+	 * @param config - The room config to be saved.
+	 * @returns A promise that resolves when the config have been saved.
 	 */
-	async updateRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<void> {
-		this.log.d('Saving room preferences', preferences);
-		const path = `${this.ROOMS_API}/${roomId}/preferences`;
-		await this.httpService.putRequest(path, { preferences });
+	async updateRoomConfig(roomId: string, config: MeetRoomConfig): Promise<void> {
+		this.log.d('Saving room config', config);
+		const path = `${this.ROOMS_API}/${roomId}/config`;
+		await this.httpService.putRequest(path, { config });
 	}
 
 	/**

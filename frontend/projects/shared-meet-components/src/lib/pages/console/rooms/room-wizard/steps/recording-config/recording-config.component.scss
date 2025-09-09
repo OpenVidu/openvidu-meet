@@ -1,6 +1,6 @@
 @import '../../../../../../../../../../src/assets/styles/design-tokens';
 
-.recording-preferences-step {
+.recording-config-step {
 	@include ov-page-content;
 	@include ov-container;
 
@@ -49,7 +49,6 @@
 			.access-selection-section {
 				padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg) 0 var(--ov-meet-spacing-lg);
 				overflow: hidden;
-
 
 				.access-header {
 					display: flex;

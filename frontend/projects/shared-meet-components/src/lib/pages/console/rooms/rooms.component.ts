@@ -31,7 +31,7 @@ import {
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'ov-room-preferences',
+	selector: 'ov-room-config',
 	standalone: true,
 	imports: [
 		MatListModule,
@@ -109,7 +109,7 @@ export class RoomsComponent implements OnInit {
 				this.openRoom(action.rooms[0]);
 				break;
 			case 'edit':
-				await this.editRoomPreferences(action.rooms[0]);
+				await this.editRoomConfig(action.rooms[0]);
 				break;
 			case 'copyModeratorLink':
 				this.copyModeratorLink(action.rooms[0]);
@@ -254,12 +254,12 @@ export class RoomsComponent implements OnInit {
 		window.open(room.moderatorUrl, '_blank');
 	}
 
-	private async editRoomPreferences(room: MeetRoom) {
+	private async editRoomConfig(room: MeetRoom) {
 		try {
 			await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to room preferences');
-			this.log.e('Error navigating to room preferences:', error);
+			this.notificationService.showSnackbar('Error navigating to room config');
+			this.log.e('Error navigating to room config:', error);
 		}
 	}
 

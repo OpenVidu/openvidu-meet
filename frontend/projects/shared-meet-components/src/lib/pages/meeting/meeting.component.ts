@@ -39,7 +39,7 @@ import {
 } from '@lib/typings/ce';
 import {
 	MeetParticipantRoleUpdatedPayload,
-	MeetRoomPreferencesUpdatedPayload,
+	MeetRoomConfigUpdatedPayload,
 	MeetSignalType
 } from '@lib/typings/ce/event.model';
 import {
@@ -270,7 +270,7 @@ export class MeetingComponent implements OnInit {
 		try {
 			await this.generateParticipantToken();
 			await this.addParticipantNameToUrl();
-			await this.roomService.loadRoomPreferences(this.roomId);
+			await this.roomService.loadRoomConfig(this.roomId);
 			this.showMeeting = true;
 
 			// Subscribe to remote participants updates
@@ -357,13 +357,13 @@ export class MeetingComponent implements OnInit {
 
 						break;
 					}
-					case MeetSignalType.MEET_ROOM_PREFERENCES_UPDATED: {
-						// Update room preferences
-						const { preferences } = event as MeetRoomPreferencesUpdatedPayload;
-						this.featureConfService.setRoomPreferences(preferences);
+					case MeetSignalType.MEET_ROOM_CONFIG_UPDATED: {
+						// Update room config
+						const { config } = event as MeetRoomConfigUpdatedPayload;
+						this.featureConfService.setRoomConfig(config);
 
 						// Refresh recording token if recording is enabled
-						if (preferences.recordingPreferences.enabled) {
+						if (config.recordingConfig.enabled) {
 							try {
 								await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
 							} catch (error) {

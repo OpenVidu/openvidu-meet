@@ -54,7 +54,7 @@ properties:
     #     description: >
     #         The maximum number of participants allowed in the room. If the number of participants exceeds
     #         this limit, new participants will not be allowed to join.
-    preferences:
-        $ref: './meet-room-preferences.yaml#/MeetRoomPreferences'
+    config:
+        $ref: './meet-room-config.yaml#/MeetRoomConfig'
         description: >
-            The preferences for the room. These preferences will be used to configure the room's settings.
+            The config for the room. These config will be used to configure the room's settings.

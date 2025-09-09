@@ -1,14 +1,14 @@
 import { ParticipantRole } from './participant.js';
-import { MeetRoomPreferences } from './room-preferences.js';
+import { MeetRoomConfig } from './room-config.js';
 
 export enum MeetSignalType {
-    MEET_ROOM_PREFERENCES_UPDATED = 'meet_room_preferences_updated',
+    MEET_ROOM_CONFIG_UPDATED = 'meet_room_config_updated',
     MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated'
 }
 
-export interface MeetRoomPreferencesUpdatedPayload {
+export interface MeetRoomConfigUpdatedPayload {
     roomId: string;
-    preferences: MeetRoomPreferences;
+    config: MeetRoomConfig;
     timestamp: number;
 }
 
@@ -20,4 +20,4 @@ export interface MeetParticipantRoleUpdatedPayload {
     timestamp: number;
 }
 
-export type MeetSignalPayload = MeetRoomPreferencesUpdatedPayload | MeetParticipantRoleUpdatedPayload;
+export type MeetSignalPayload = MeetRoomConfigUpdatedPayload | MeetParticipantRoleUpdatedPayload;

@@ -1,7 +1,7 @@
 import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 import * as fs from 'fs';
 import { PNG } from 'pngjs';
-import { MeetRecordingAccess, MeetRoomPreferences } from '../../../../typings/src/room-preferences';
+import { MeetRecordingAccess, MeetRoomConfig } from '../../../../typings/src/room-config';
 import { MEET_ADMIN_PASSWORD, MEET_ADMIN_USER, MEET_API_KEY, MEET_API_URL, MEET_TESTAPP_URL } from '../config';
 
 /**
@@ -88,21 +88,18 @@ export async function interactWithElementInIframe(
 	}
 }
 
-// Helper function to get default room preferences
-const getDefaultRoomPreferences = (): MeetRoomPreferences => ({
-	recordingPreferences: {
+// Helper function to get default room config
+const getDefaultRoomConfig = (): MeetRoomConfig => ({
+	recordingConfig: {
 		enabled: true,
 		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
-	chatPreferences: { enabled: true },
-	virtualBackgroundPreferences: { enabled: true }
+	chatConfig: { enabled: true },
+	virtualBackgroundConfig: { enabled: true }
 });
 
 // Helper function to create a room for testing
-export const createTestRoom = async (
-	roomName: string,
-	preferences: MeetRoomPreferences = getDefaultRoomPreferences()
-) => {
+export const createTestRoom = async (roomName: string, config: MeetRoomConfig = getDefaultRoomConfig()) => {
 	const response = await fetch(`${MEET_API_URL}/api/v1/rooms`, {
 		method: 'POST',
 		headers: {
@@ -112,7 +109,7 @@ export const createTestRoom = async (
 		body: JSON.stringify({
 			roomName,
 			autoDeletionDate: new Date(Date.now() + 61 * 60 * 1000).getTime(), // 1 hour from now
-			preferences
+			config
 		})
 	});
 
@@ -126,19 +123,19 @@ export const createTestRoom = async (
 	return room.roomId;
 };
 
-// Helper function to update room preferences via REST API
-export const updateRoomPreferences = async (roomId: string, preferences: any, adminCookie: string) => {
-	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}/preferences`, {
+// Helper function to update room config via REST API
+export const updateRoomConfig = async (roomId: string, config: any, adminCookie: string) => {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}/config`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
 			Cookie: adminCookie
 		},
-		body: JSON.stringify({ preferences })
+		body: JSON.stringify({ config })
 	});
 
 	if (!response.ok) {
-		throw new Error(`Failed to update room preferences: ${response.status} ${await response.text()}`);
+		throw new Error(`Failed to update room config: ${response.status} ${await response.text()}`);
 	}
 
 	return response.json();

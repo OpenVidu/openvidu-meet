@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
+import { MeetRecordingAccess } from '../../../../typings/src/room-config';
 import { MEET_TESTAPP_URL } from '../config';
 import {
 	accessRoomAs,
@@ -11,7 +11,7 @@ import {
 	loginAsAdmin,
 	prepareForJoiningRoom,
 	startStopRecording,
-	updateRoomPreferences,
+	updateRoomConfig,
 	viewRecordingsAs,
 	waitForElementInIframe
 } from '../helpers/function-helpers';
@@ -72,15 +72,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should moderator not be able to access recording when access level is set to admin', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);
@@ -93,15 +93,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should speaker not be able to access recording when access level is set to admin', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);
@@ -114,15 +114,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow moderator to access recording when access level is set to moderator', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);
@@ -135,15 +135,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should speaker not be able to access recording when access level is set to moderator', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);
@@ -156,15 +156,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow moderators to access recording when access level is set to speaker', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);
@@ -177,15 +177,15 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow speaker to access recording when access level is set to speaker', async ({ page }) => {
-		await updateRoomPreferences(
+		await updateRoomConfig(
 			roomId,
 			{
-				chatPreferences: { enabled: true },
-				recordingPreferences: {
+				chatConfig: { enabled: true },
+				recordingConfig: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				virtualBackgroundPreferences: { enabled: true }
+				virtualBackgroundConfig: { enabled: true }
 			},
 			adminCookie
 		);

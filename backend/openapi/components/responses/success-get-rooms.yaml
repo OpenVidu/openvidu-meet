@@ -23,12 +23,12 @@ content:
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
-                          preferences:
-                              chatPreferences:
+                          config:
+                              chatConfig:
                                   enabled: true
-                              recordingPreferences:
+                              recordingConfig:
                                   enabled: false
-                              virtualBackgroundPreferences:
+                              virtualBackgroundConfig:
                                   enabled: true
                           moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                           speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
@@ -41,12 +41,12 @@ content:
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
-                          preferences:
-                              chatPreferences:
+                          config:
+                              chatConfig:
                                   enabled: false
-                              recordingPreferences:
+                              recordingConfig:
                                   enabled: true
-                              virtualBackgroundPreferences:
+                              virtualBackgroundConfig:
                                   enabled: false
                           moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
                           speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
@@ -65,31 +65,31 @@ content:
                         isTruncated: false
                         maxItems: 10
 
-            fields=roomId,roomName,creationDate,autoDeletionDate,preferences:
-                summary: Room details including preferences but no URLs
+            fields=roomId,roomName,creationDate,autoDeletionDate,config:
+                summary: Room details including config but no URLs
                 value:
                     rooms:
                         - roomId: 'room-123'
                           roomName: 'room'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
-                          preferences:
-                              chatPreferences:
+                          config:
+                              chatConfig:
                                   enabled: true
-                              recordingPreferences:
+                              recordingConfig:
                                   enabled: false
-                              virtualBackgroundPreferences:
+                              virtualBackgroundConfig:
                                   enabled: true
                         - roomId: 'room-456'
                           roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
-                          preferences:
-                              chatPreferences:
+                          config:
+                              chatConfig:
                                   enabled: false
-                              recordingPreferences:
+                              recordingConfig:
                                   enabled: true
-                              virtualBackgroundPreferences:
+                              virtualBackgroundConfig:
                                   enabled: false
                     pagination:
                         isTruncated: true

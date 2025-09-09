@@ -1,0 +1,16 @@
+description: New room config
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                config:
+                    $ref: '../schemas/meet-room-config.yaml#/MeetRoomConfig'
+        example:
+            config:
+                chatConfig:
+                    enabled: true
+                recordingConfig:
+                    enabled: false
+                virtualBackgroundConfig:
+                    enabled: true

@@ -1,15 +1,15 @@
 import {
-	MeetChatPreferences,
+	MeetChatConfig,
 	MeetRecordingAccess,
-	MeetRecordingPreferences,
+	MeetRecordingConfig,
 	MeetRoomAutoDeletionPolicy,
+	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomFilters,
 	MeetRoomOptions,
-	MeetRoomPreferences,
 	MeetRoomStatus,
-	MeetVirtualBackgroundPreferences,
+	MeetVirtualBackgroundConfig,
 	ParticipantRole,
 	RecordingPermissions
 } from '@typings-ce';
@@ -65,7 +65,7 @@ const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
 	MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 ]);
 
-const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z
+const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z
 	.object({
 		enabled: z.boolean(),
 		allowAccessTo: RecordingAccessSchema.optional()
@@ -81,18 +81,18 @@ const RecordingPreferencesSchema: z.ZodType<MeetRecordingPreferences> = z
 		}
 	);
 
-const ChatPreferencesSchema: z.ZodType<MeetChatPreferences> = z.object({
+const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const VirtualBackgroundPreferencesSchema: z.ZodType<MeetVirtualBackgroundPreferences> = z.object({
+const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const RoomPreferencesSchema: z.ZodType<MeetRoomPreferences> = z.object({
-	recordingPreferences: RecordingPreferencesSchema,
-	chatPreferences: ChatPreferencesSchema,
-	virtualBackgroundPreferences: VirtualBackgroundPreferencesSchema
+const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z.object({
+	recordingConfig: RecordingConfigSchema,
+	chatConfig: ChatConfigSchema,
+	virtualBackgroundConfig: VirtualBackgroundConfigSchema
 });
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([
@@ -150,10 +150,10 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 				path: ['withRecordings']
 			}
 		),
-	preferences: RoomPreferencesSchema.optional().default({
-		recordingPreferences: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
-		chatPreferences: { enabled: true },
-		virtualBackgroundPreferences: { enabled: true }
+	config: RoomConfigSchema.optional().default({
+		recordingConfig: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+		chatConfig: { enabled: true },
+		virtualBackgroundConfig: { enabled: true }
 	})
 	// maxParticipants: z
 	// 	.number()
@@ -223,8 +223,8 @@ const BulkDeleteRoomsSchema = z.object({
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
 
-const UpdateRoomPreferencesSchema = z.object({
-	preferences: RoomPreferencesSchema
+const UpdateRoomConfigSchema = z.object({
+	config: RoomConfigSchema
 });
 
 const UpdateRoomStatusSchema = z.object({
@@ -270,8 +270,8 @@ export const withValidRoomFiltersRequest = (req: Request, res: Response, next: N
 	next();
 };
 
-export const withValidRoomPreferences = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = UpdateRoomPreferencesSchema.safeParse(req.body);
+export const withValidRoomConfig = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomConfigSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

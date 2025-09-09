@@ -9,9 +9,9 @@ import {
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAutoDeletionPolicy,
+	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomPreferences,
 	MeetRoomStatus,
 	ParticipantPermissions,
 	ParticipantRole
@@ -93,22 +93,22 @@ export const expectSuccessRoomResponse = (
 	response: any,
 	roomName: string,
 	autoDeletionDate?: number,
-	preferences?: MeetRoomPreferences
+	config?: MeetRoomConfig
 ) => {
 	expect(response.status).toBe(200);
-	expectValidRoom(response.body, roomName, preferences, autoDeletionDate);
+	expectValidRoom(response.body, roomName, config, autoDeletionDate);
 };
 
-export const expectSuccessRoomPreferencesResponse = (response: any, preferences: MeetRoomPreferences) => {
+export const expectSuccessRoomConfigResponse = (response: any, config: MeetRoomConfig) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toBeDefined();
-	expect(response.body).toEqual(preferences);
+	expect(response.body).toEqual(config);
 };
 
 export const expectValidRoom = (
 	room: MeetRoom,
 	name: string,
-	preferences?: MeetRoomPreferences,
+	config?: MeetRoomConfig,
 	autoDeletionDate?: number,
 	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy,
 	status?: MeetRoomStatus,
@@ -140,18 +140,18 @@ export const expectValidRoom = (
 		});
 	}
 
-	expect(room.preferences).toBeDefined();
+	expect(room.config).toBeDefined();
 
-	if (preferences !== undefined) {
-		expect(room.preferences).toEqual(preferences);
+	if (config !== undefined) {
+		expect(room.config).toEqual(config);
 	} else {
-		expect(room.preferences).toEqual({
-			recordingPreferences: {
+		expect(room.config).toEqual({
+			recordingConfig: {
 				enabled: true,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
-			chatPreferences: { enabled: true },
-			virtualBackgroundPreferences: { enabled: true }
+			chatConfig: { enabled: true },
+			virtualBackgroundConfig: { enabled: true }
 		});
 	}
 

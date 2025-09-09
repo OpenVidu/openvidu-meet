@@ -212,12 +212,12 @@
 
 	.auto-deletion-expired {
 		font-weight: var(--ov-meet-font-weight-semibold);
-        color: var(--ov-meet-color-error);
+		color: var(--ov-meet-color-error);
 
-        .deletion-icon {
-            color: var(--ov-meet-color-error);
-        }
-    }
+		.deletion-icon {
+			color: var(--ov-meet-color-error);
+		}
+	}
 }
 
 .no-data {
@@ -240,7 +240,7 @@
 			color: var(--ov-meet-color-primary);
 		}
 
-		&.room-preferences-btn {
+		&.room-config-btn {
 			color: var(--ov-meet-icon-settings);
 		}
 

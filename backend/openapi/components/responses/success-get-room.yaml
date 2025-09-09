@@ -14,12 +14,12 @@ content:
                     autoDeletionPolicy:
                         withMeeting: when_meeting_ends
                         withRecordings: close
-                    preferences:
-                        chatPreferences:
+                    config:
+                        chatConfig:
                             enabled: true
-                        recordingPreferences:
+                        recordingConfig:
                             enabled: false
-                        virtualBackgroundPreferences:
+                        virtualBackgroundConfig:
                             enabled: true
                     moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                     speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
@@ -31,19 +31,19 @@ content:
                 value:
                     roomId: 'room-123'
 
-            fields=roomId,roomName,creationDate,autoDeletionDate,preferences:
-                summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and preferences
+            fields=roomId,roomName,creationDate,autoDeletionDate,config:
+                summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config
                 value:
                     roomId: 'room-123'
                     roomName: 'room'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
-                    preferences:
-                        chatPreferences:
+                    config:
+                        chatConfig:
                             enabled: true
-                        recordingPreferences:
+                        recordingConfig:
                             enabled: false
-                        virtualBackgroundPreferences:
+                        virtualBackgroundConfig:
                             enabled: true
 
             fields=moderatorUrl,speakerUrl:

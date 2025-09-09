@@ -181,10 +181,10 @@
 						</div>
 					</div>
 
-					<!-- Preferences Accordion -->
-					<div class="preferences-accordion">
-						<div class="accordion" id="preferencesAccordion">
-							<!-- Chat Preferences -->
+					<!-- Config Accordion -->
+					<div class="config-accordion">
+						<div class="accordion" id="configAccordion">
+							<!-- Chat Config -->
 							<div class="accordion-item">
 								<h2 class="accordion-header">
 									<button
@@ -194,7 +194,7 @@
 										data-bs-target="#chatCollapse"
 										aria-expanded="true"
 										aria-controls="chatCollapse"
-										data-testid="chat-preferences-toggle"
+										data-testid="chat-config-toggle"
 									>
 										Chat Settings
 									</button>
@@ -202,13 +202,13 @@
 								<div
 									id="chatCollapse"
 									class="accordion-collapse collapse show"
-									data-bs-parent="#preferencesAccordion"
+									data-bs-parent="#configAccordion"
 								>
 									<div class="accordion-body">
 										<div class="form-check">
 											<input
 												type="checkbox"
-												name="preferences.chatPreferences.enabled"
+												name="config.chatConfig.enabled"
 												id="chat-enabled"
 												class="form-check-input"
 												checked
@@ -222,7 +222,7 @@
 								</div>
 							</div>
 
-							<!-- Recording Preferences -->
+							<!-- Recording Config -->
 							<div class="accordion-item">
 								<h2 class="accordion-header">
 									<button
@@ -232,7 +232,7 @@
 										data-bs-target="#recordingCollapse"
 										aria-expanded="false"
 										aria-controls="recordingCollapse"
-										data-testid="recording-preferences-toggle"
+										data-testid="recording-config-toggle"
 									>
 										Recording Settings
 									</button>
@@ -240,13 +240,13 @@
 								<div
 									id="recordingCollapse"
 									class="accordion-collapse collapse"
-									data-bs-parent="#preferencesAccordion"
+									data-bs-parent="#configAccordion"
 								>
 									<div class="accordion-body">
 										<div class="form-check mb-2">
 											<input
 												type="checkbox"
-												name="preferences.recordingPreferences.enabled"
+												name="config.recordingConfig.enabled"
 												id="recording-enabled"
 												class="form-check-input"
 												checked
@@ -262,7 +262,7 @@
 												>Recording Access Level</label
 											>
 											<select
-												name="preferences.recordingPreferences.allowAccessTo"
+												name="config.recordingConfig.allowAccessTo"
 												id="recording-access"
 												class="form-select"
 												data-testid="recording-access-select"
@@ -280,7 +280,7 @@
 								</div>
 							</div>
 
-							<!-- Virtual Background Preferences -->
+							<!-- Virtual Background Config -->
 							<div class="accordion-item">
 								<h2 class="accordion-header">
 									<button
@@ -290,7 +290,7 @@
 										data-bs-target="#backgroundCollapse"
 										aria-expanded="false"
 										aria-controls="backgroundCollapse"
-										data-testid="background-preferences-toggle"
+										data-testid="background-config-toggle"
 									>
 										Virtual Background Settings
 									</button>
@@ -298,13 +298,13 @@
 								<div
 									id="backgroundCollapse"
 									class="accordion-collapse collapse"
-									data-bs-parent="#preferencesAccordion"
+									data-bs-parent="#configAccordion"
 								>
 									<div class="accordion-body">
 										<div class="form-check">
 											<input
 												type="checkbox"
-												name="preferences.virtualBackgroundPreferences.enabled"
+												name="config.virtualBackgroundConfig.enabled"
 												id="virtual-background-enabled"
 												class="form-check-input"
 												checked

@@ -18,7 +18,7 @@ interface RecordingAccessOption {
 }
 
 @Component({
-	selector: 'ov-recording-preferences',
+	selector: 'ov-recording-config',
 	standalone: true,
 	imports: [
 		CommonModule,
@@ -31,10 +31,10 @@ interface RecordingAccessOption {
 		MatFormFieldModule,
 		SelectableCardComponent
 	],
-	templateUrl: './recording-preferences.component.html',
-	styleUrl: './recording-preferences.component.scss'
+	templateUrl: './recording-config.component.html',
+	styleUrl: './recording-config.component.scss'
 })
-export class RecordingPreferencesComponent implements OnDestroy {
+export class RecordingConfigComponent implements OnDestroy {
 	recordingForm: FormGroup;
 	isAnimatingOut = false;
 
@@ -89,8 +89,8 @@ export class RecordingPreferencesComponent implements OnDestroy {
 		const enabled = formValue.recordingEnabled === 'enabled';
 
 		const stepData: any = {
-			preferences: {
-				recordingPreferences: {
+			config: {
+				recordingConfig: {
 					enabled,
 					...(enabled && { allowAccessTo: formValue.allowAccessTo })
 				}

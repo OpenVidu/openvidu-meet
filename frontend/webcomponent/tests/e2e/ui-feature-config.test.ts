@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { MeetRecordingAccess } from '../../../../typings/src/room-preferences';
+import { MeetRecordingAccess } from '../../../../typings/src/room-config';
 import { MEET_TESTAPP_URL } from '../config';
 import {
 	applyVirtualBackground,
@@ -14,14 +14,14 @@ import {
 	loginAsAdmin,
 	openMoreOptionsMenu,
 	prepareForJoiningRoom,
-	updateRoomPreferences,
+	updateRoomConfig,
 	waitForElementInIframe,
 	waitForVirtualBackgroundToApply
 } from '../helpers/function-helpers';
 
 let subscribedToAppErrors = false;
 
-test.describe('UI Feature Preferences Tests', () => {
+test.describe('UI Feature Config Tests', () => {
 	let roomId: string;
 	let participantName: string;
 	let adminCookie: string;
@@ -73,15 +73,15 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 
 		test('should show chat button when chat is enabled', async ({ page }) => {
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -97,15 +97,15 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should hide chat button when chat is disabled', async ({ page }) => {
 			// Disable chat via API
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: false },
-					recordingPreferences: {
+					chatConfig: { enabled: false },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -126,15 +126,15 @@ test.describe('UI Feature Preferences Tests', () => {
 
 	test.describe('Recording Feature', () => {
 		test('should show recording button for moderators', async ({ page }) => {
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -160,15 +160,15 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 
 		test('should not show recording button for speaker', async ({ page }) => {
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -185,15 +185,15 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
 			// Disable recording via API
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: false,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -226,15 +226,15 @@ test.describe('UI Feature Preferences Tests', () => {
 		});
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -255,15 +255,15 @@ test.describe('UI Feature Preferences Tests', () => {
 
 		test('should hide virtual background button when disabled', async ({ page }) => {
 			// Disable virtual backgrounds via API
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: false }
+					virtualBackgroundConfig: { enabled: false }
 				},
 				adminCookie
 			);
@@ -284,15 +284,15 @@ test.describe('UI Feature Preferences Tests', () => {
 			page
 		}) => {
 			// Ensure virtual backgrounds are enabled
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: true }
+					virtualBackgroundConfig: { enabled: true }
 				},
 				adminCookie
 			);
@@ -305,15 +305,15 @@ test.describe('UI Feature Preferences Tests', () => {
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
-			await updateRoomPreferences(
+			await updateRoomConfig(
 				roomId,
 				{
-					chatPreferences: { enabled: true },
-					recordingPreferences: {
+					chatConfig: { enabled: true },
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					virtualBackgroundPreferences: { enabled: false }
+					virtualBackgroundConfig: { enabled: false }
 				},
 				adminCookie
 			);

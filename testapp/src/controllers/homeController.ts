@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getAllRooms, createRoom, deleteRoom, deleteAllRooms } from '../services/roomService';
 import { deleteAllRecordings, getAllRecordings } from '../services/recordingService';
+import { createRoom, deleteAllRooms, deleteRoom, getAllRooms } from '../services/roomService';
 
 export const getHome = async (_req: Request, res: Response) => {
     try {
@@ -38,12 +38,12 @@ export const postCreateRoom = async (req: Request, res: Response) => {
     try {
         console.log('Creating room with body:', JSON.stringify(req.body, null, 2));
         const { roomName, autoDeletionDate } = req.body;
-        const preferences = processFormPreferences(req.body);
+        const config = processFormConfig(req.body);
 
-        console.log('Processed preferences:', JSON.stringify(preferences, null, 2));
+        console.log('Processed config:', JSON.stringify(config, null, 2));
         console.log('Room creation parameters:', { roomName, autoDeletionDate });
 
-        const result = await createRoom({ roomName, autoDeletionDate, preferences });
+        const result = await createRoom({ roomName, autoDeletionDate, config });
         console.log('Room created successfully:', result);
         res.redirect('/');
     } catch (error) {
@@ -154,24 +154,24 @@ export const deleteAllRecordingsCtrl = async (_req: Request, res: Response) => {
 };
 
 /**
- * Converts flat form data to nested MeetRoomPreferences object
+ * Converts flat form data to nested MeetRoomConfig object
  */
-const processFormPreferences = (body: any): any => {
-    const preferences = {
-        chatPreferences: {
-            enabled: body['preferences.chatPreferences.enabled'] === 'on'
+const processFormConfig = (body: any): any => {
+    const config = {
+        chatConfig: {
+            enabled: body['config.chatConfig.enabled'] === 'on'
         },
-        recordingPreferences: {
-            enabled: body['preferences.recordingPreferences.enabled'] === 'on',
+        recordingConfig: {
+            enabled: body['config.recordingConfig.enabled'] === 'on',
             // Only include allowAccessTo if recording is enabled
-            ...(body['preferences.recordingPreferences.enabled'] === 'on' && {
-                allowAccessTo: body['preferences.recordingPreferences.allowAccessTo'] || 'admin_moderator_speaker'
+            ...(body['config.recordingConfig.enabled'] === 'on' && {
+                allowAccessTo: body['config.recordingConfig.allowAccessTo'] || 'admin_moderator_speaker'
             })
         },
-        virtualBackgroundPreferences: {
-            enabled: body['preferences.virtualBackgroundPreferences.enabled'] === 'on'
+        virtualBackgroundConfig: {
+            enabled: body['config.virtualBackgroundConfig.enabled'] === 'on'
         }
     };
 
-    return preferences;
+    return config;
 };

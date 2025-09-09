@@ -32,25 +32,25 @@ describe('Room API Tests', () => {
 			expectSuccessRoomResponse(response, 'test-room');
 		});
 
-		it('should retrieve a room with custom preferences', async () => {
+		it('should retrieve a room with custom config', async () => {
 			const payload = {
 				roomName: 'custom-prefs',
-				preferences: {
-					recordingPreferences: {
+				config: {
+					recordingConfig: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatPreferences: { enabled: true },
-					virtualBackgroundPreferences: { enabled: false }
+					chatConfig: { enabled: true },
+					virtualBackgroundConfig: { enabled: false }
 				}
 			};
-			// Create a room with custom preferences
+			// Create a room with custom config
 			const { roomId } = await createRoom(payload);
 
 			// Retrieve the room by its ID
 			const response = await getRoom(roomId);
 
-			expectSuccessRoomResponse(response, 'custom-prefs', undefined, payload.preferences);
+			expectSuccessRoomResponse(response, 'custom-prefs', undefined, payload.config);
 		});
 
 		it('should retrieve only specified fields when using fields parameter', async () => {

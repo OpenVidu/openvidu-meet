@@ -243,34 +243,34 @@ export const getRoom = async (roomId: string, fields?: string, cookie?: string, 
 	return await req;
 };
 
-export const getRoomPreferences = async (roomId: string) => {
+export const getRoomConfig = async (roomId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 		.send();
 };
 
-export const updateRoomPreferences = async (roomId: string, preferences: any) => {
+export const updateRoomConfig = async (roomId: string, config: any) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/preferences`)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-		.send({ preferences });
+		.send({ config });
 };
 
-export const updateRecordingAccessPreferencesInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
-	const response = await updateRoomPreferences(roomId, {
-		recordingPreferences: {
+export const updateRecordingAccessConfigInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
+	const response = await updateRoomConfig(roomId, {
+		recordingConfig: {
 			enabled: true,
 			allowAccessTo: recordingAccess
 		},
-		chatPreferences: {
+		chatConfig: {
 			enabled: true
 		},
-		virtualBackgroundPreferences: {
+		virtualBackgroundConfig: {
 			enabled: true
 		}
 	});
@@ -297,11 +297,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, any> = {}
 	return result;
 };
 
-export const bulkDeleteRooms = async (
-	roomIds: any[],
-	withMeeting?: string,
-	withRecordings?: string
-) => {
+export const bulkDeleteRooms = async (roomIds: any[], withMeeting?: string, withRecordings?: string) => {
 	checkAppIsRunning();
 
 	const result = await request(app)

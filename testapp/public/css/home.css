@@ -1,168 +1,168 @@
 :root {
-	--primary-color: #4a90e2;
-	--secondary-color: #f4f4f4;
+    --primary-color: #4a90e2;
+    --secondary-color: #f4f4f4;
 }
 
 body,
 html {
-	height: 100vh;
-	width: 100%;
-	margin: 0;
-	background-color: #f8f9fa;
-	padding: 0px;
-	box-sizing: border-box;
+    height: 100vh;
+    width: 100%;
+    margin: 0;
+    background-color: #f8f9fa;
+    padding: 0px;
+    box-sizing: border-box;
 }
 
 .container {
-	width: 100%;
-	max-width: 1200px;
-	margin: 0 auto;
-	display: flex;
-	gap: 25px;
-	min-height: calc(80vh - 40px);
-	max-height: calc(80vh - 40px);
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    gap: 25px;
+    min-height: calc(80vh - 40px);
+    max-height: calc(80vh - 40px);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .action-buttons-container {
-	display: inline-flex;
-	gap: 2px;
+    display: inline-flex;
+    gap: 2px;
 }
 .rooms-container {
-	flex: 2;
-	background: white;
-	padding: 20px;
-	border-radius: 10px;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
+    flex: 2;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .create-room {
-	flex: 1;
-	background: var(--secondary-color);
-	padding: 15px;
-	border-radius: 10px;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
+    flex: 1;
+    background: var(--secondary-color);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 .create-room p,
 .create-room h2 {
-	margin-bottom: 0 !important	;
-	font-size: 0.9rem;
+    margin-bottom: 0 !important	;
+    font-size: 0.9rem;
 }
 .create-room h2 {
-	font-size: 1.1rem; /* Smaller title */
+    font-size: 1.1rem; /* Smaller title */
 }
 
 /* Collapsible sections for room creation form */
-.preferences-accordion {
-	flex: 1;
-	overflow-y: auto;
+.config-accordion {
+    flex: 1;
+    overflow-y: auto;
 }
 
 .accordion-item {
-	border: none;
-	margin-bottom: 0.25rem;
+    border: none;
+    margin-bottom: 0.25rem;
 }
 
 .accordion-button {
-	background-color: var(--primary-color);
-	color: white;
-	border-radius: 0.25rem !important; /* Smaller radius */
-	font-weight: 500; /* Less bold */
-	font-size: 0.8rem; /* Smaller text */
-	padding: 0.4rem 0.8rem; /* Much smaller padding */
-	min-height: auto; /* Remove default height */
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 0.25rem !important; /* Smaller radius */
+    font-weight: 500; /* Less bold */
+    font-size: 0.8rem; /* Smaller text */
+    padding: 0.4rem 0.8rem; /* Much smaller padding */
+    min-height: auto; /* Remove default height */
 }
 
 .accordion-button:not(.collapsed) {
-	background-color: var(--primary-color);
-	color: white;
-	box-shadow: none;
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: none;
 }
 
 .accordion-button:focus {
-	box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
 }
 
 .accordion-body {
-	padding: 0.5rem; /* Much smaller padding */
-	background-color: #f8f9fa;
-	font-size: 0.8rem; /* Smaller text */
+    padding: 0.5rem; /* Much smaller padding */
+    background-color: #f8f9fa;
+    font-size: 0.8rem; /* Smaller text */
 }
 
 form-label {
-	font-size: 0.8rem; /* Smaller labels */
-	margin-bottom: 0.25rem;
+    font-size: 0.8rem; /* Smaller labels */
+    margin-bottom: 0.25rem;
 }
 
 .form-control,
 .form-select {
-	font-size: 0.8rem; /* Smaller inputs */
-	padding: 0.25rem 0.5rem; /* Smaller padding */
+    font-size: 0.8rem; /* Smaller inputs */
+    padding: 0.25rem 0.5rem; /* Smaller padding */
 }
 
 .form-check {
-	margin-bottom: 0.25rem; /* Smaller spacing */
+    margin-bottom: 0.25rem; /* Smaller spacing */
 }
 
 .form-check-label {
-	font-size: 0.8rem; /* Smaller text */
+    font-size: 0.8rem; /* Smaller text */
 }
 
 .form-text {
-	font-size: 0.7rem !important; /* Much smaller help text */
-	margin-top: 0.125rem;
+    font-size: 0.7rem !important; /* Much smaller help text */
+    margin-top: 0.125rem;
 }
 
 #recording-access-section {
-	background-color: rgba(13, 110, 253, 0.1);
-	padding: 0.4rem; /* Smaller padding */
-	border-radius: 0.25rem;
-	border-left: 2px solid var(--primary-color); /* Thinner border */
-	margin-top: 0.25rem;
+    background-color: rgba(13, 110, 253, 0.1);
+    padding: 0.4rem; /* Smaller padding */
+    border-radius: 0.25rem;
+    border-left: 2px solid var(--primary-color); /* Thinner border */
+    margin-top: 0.25rem;
 }
 
 /* Compact button */
 .create-room-btn {
-	font-size: 0.85rem; /* Smaller button text */
-	padding: 0.4rem 0.8rem; /* Smaller button */
-	margin-top: 0.5rem; /* Less top margin */
+    font-size: 0.85rem; /* Smaller button text */
+    padding: 0.4rem 0.8rem; /* Smaller button */
+    margin-top: 0.5rem; /* Less top margin */
 }
 
 /* Responsive adjustments */
 @media (max-height: 600px) {
-	.container {
-		flex-direction: column;
-		max-height: none;
-		min-height: auto;
-	}
+    .container {
+        flex-direction: column;
+        max-height: none;
+        min-height: auto;
+    }
 
-	.create-room {
-		max-height: 350px; /* Smaller max height */
-	}
+    .create-room {
+        max-height: 350px; /* Smaller max height */
+    }
 }
 
 @media (max-width: 768px) {
-	.container {
-		flex-direction: column;
-		max-height: none;
-		gap: 15px;
-	}
+    .container {
+        flex-direction: column;
+        max-height: none;
+        gap: 15px;
+    }
 
-	body,
-	html {
-		padding: 10px;
-	}
+    body,
+    html {
+        padding: 10px;
+    }
 
-	.create-room {
-		padding: 10px; /* Even smaller on mobile */
-	}
+    .create-room {
+        padding: 10px; /* Even smaller on mobile */
+    }
 }

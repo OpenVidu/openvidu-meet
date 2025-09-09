@@ -58,25 +58,19 @@ describe('Room API Tests', () => {
 					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
 					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
 				},
-				preferences: {
-					recordingPreferences: {
+				config: {
+					recordingConfig: {
 						enabled: false,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatPreferences: { enabled: false },
-					virtualBackgroundPreferences: { enabled: true }
+					chatConfig: { enabled: false },
+					virtualBackgroundConfig: { enabled: true }
 				}
 			};
 
 			const room = await createRoom(payload);
 
-			expectValidRoom(
-				room,
-				'Example Room',
-				payload.preferences,
-				validAutoDeletionDate,
-				payload.autoDeletionPolicy
-			);
+			expectValidRoom(room, 'Example Room', payload.config, validAutoDeletionDate, payload.autoDeletionPolicy);
 		});
 	});
 
@@ -180,7 +174,9 @@ describe('Room API Tests', () => {
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
 
-			expect(JSON.stringify(response.body.details)).toContain('FAIL policy is not allowed for withMeeting auto-deletion policy');
+			expect(JSON.stringify(response.body.details)).toContain(
+				'FAIL policy is not allowed for withMeeting auto-deletion policy'
+			);
 		});
 
 		it('should fail when autoDeletionPolicy.withRecordings has FAIL policy', async () => {
@@ -195,7 +191,9 @@ describe('Room API Tests', () => {
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
 
-			expect(JSON.stringify(response.body.details)).toContain('FAIL policy is not allowed for withRecordings auto-deletion policy');
+			expect(JSON.stringify(response.body.details)).toContain(
+				'FAIL policy is not allowed for withRecordings auto-deletion policy'
+			);
 		});
 
 		it('should fail when roomName is not a string (number provided)', async () => {
@@ -220,11 +218,11 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
 
-		it('should fail when preferences is not an object (string provided)', async () => {
+		it('should fail when config is not an object (string provided)', async () => {
 			const payload = {
 				roomName: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
-				preferences: 'invalid-preferences'
+				config: 'invalid-config'
 			};
 
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
@@ -232,19 +230,19 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('Expected object');
 		});
 
-		it('should fail when preferences has an invalid structure', async () => {
-			// Assuming preferences expects each sub-property to be an object with a boolean "enabled",
+		it('should fail when config has an invalid structure', async () => {
+			// Assuming config expects each sub-property to be an object with a boolean "enabled",
 			// here we deliberately use an invalid structure.
 			const payload = {
 				roomName: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
-				preferences: {
-					recordingPreferences: {
+				config: {
+					recordingConfig: {
 						enabled: 'yes', // invalid boolean
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatPreferences: { enabled: true },
-					virtualBackgroundPreferences: { enabled: true }
+					chatConfig: { enabled: true },
+					virtualBackgroundConfig: { enabled: true }
 				}
 			};
 

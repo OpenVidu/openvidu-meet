@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import {
-	MeetRoomPreferences,
+	MeetRoomConfig,
 	ParticipantPermissions,
 	ParticipantRole,
 	RecordingPermissions,
@@ -57,7 +57,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 
 /**
  * Centralized service to manage feature configuration
- * based on room preferences and participant permissions
+ * based on room config and participant permissions
  */
 @Injectable({
 	providedIn: 'root'
@@ -66,7 +66,7 @@ export class FeatureConfigurationService {
 	protected log;
 
 	// Signals to handle reactive
-	protected roomPreferences = signal<MeetRoomPreferences | undefined>(undefined);
+	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
 	protected participantPermissions = signal<ParticipantPermissions | undefined>(undefined);
 	protected participantRole = signal<ParticipantRole | undefined>(undefined);
 	protected recordingPermissions = signal<RecordingPermissions | undefined>(undefined);
@@ -74,7 +74,7 @@ export class FeatureConfigurationService {
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<ApplicationFeatures>(() =>
 		this.calculateFeatures(
-			this.roomPreferences(),
+			this.roomConfig(),
 			this.participantPermissions(),
 			this.participantRole(),
 			this.recordingPermissions()
@@ -86,11 +86,11 @@ export class FeatureConfigurationService {
 	}
 
 	/**
-	 * Updates room preferences
+	 * Updates room config
 	 */
-	setRoomPreferences(preferences: MeetRoomPreferences): void {
-		this.log.d('Updating room preferences', preferences);
-		this.roomPreferences.set(preferences);
+	setRoomConfig(config: MeetRoomConfig): void {
+		this.log.d('Updating room config', config);
+		this.roomConfig.set(config);
 	}
 
 	/**
@@ -128,7 +128,7 @@ export class FeatureConfigurationService {
 	 * Core logic to calculate features based on all configurations
 	 */
 	protected calculateFeatures(
-		roomPrefs?: MeetRoomPreferences,
+		roomPrefs?: MeetRoomConfig,
 		participantPerms?: ParticipantPermissions,
 		role?: ParticipantRole,
 		recordingPerms?: RecordingPermissions
@@ -138,9 +138,9 @@ export class FeatureConfigurationService {
 
 		// Apply room configurations
 		if (roomPrefs) {
-			features.showRecordingPanel = roomPrefs.recordingPreferences.enabled;
-			features.showChat = roomPrefs.chatPreferences.enabled;
-			features.showBackgrounds = roomPrefs.virtualBackgroundPreferences.enabled;
+			features.showRecordingPanel = roomPrefs.recordingConfig.enabled;
+			features.showChat = roomPrefs.chatConfig.enabled;
+			features.showBackgrounds = roomPrefs.virtualBackgroundConfig.enabled;
 		}
 
 		// Apply participant permissions (these can restrict enabled features)
@@ -184,7 +184,7 @@ export class FeatureConfigurationService {
 	 * Resets all configurations to their initial values
 	 */
 	reset(): void {
-		this.roomPreferences.set(undefined);
+		this.roomConfig.set(undefined);
 		this.participantPermissions.set(undefined);
 		this.participantRole.set(undefined);
 	}

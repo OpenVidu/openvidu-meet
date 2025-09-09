@@ -1,11 +1,11 @@
 import { ParticipantPermissions, ParticipantRole } from './participant.js';
-import { MeetRoomPreferences } from './room-preferences.js';
+import { MeetRoomConfig } from './room-config.js';
 
 interface BaseRoomOptions {
     roomName?: string;
     autoDeletionDate?: number;
     autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
-    preferences?: MeetRoomPreferences;
+    config?: MeetRoomConfig;
     // maxParticipants?: number | null;
 }
 
@@ -21,7 +21,7 @@ export interface MeetRoom extends BaseRoomOptions {
     roomId: string;
     roomName: string;
     creationDate: number;
-    preferences: MeetRoomPreferences;
+    config: MeetRoomConfig;
     moderatorUrl: string;
     speakerUrl: string;
     status: MeetRoomStatus;

@@ -12,7 +12,7 @@ import {
 	disconnectFakeParticipants,
 	loginUser,
 	startTestServer,
-	updateRecordingAccessPreferencesInRoom
+	updateRecordingAccessConfigInRoom
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
@@ -179,7 +179,7 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
-	describe('Get Room Preferences Tests', () => {
+	describe('Get Room Config Tests', () => {
 		let roomData: RoomData;
 
 		beforeAll(async () => {
@@ -188,26 +188,26 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`);
+			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}/config`);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', roomData.moderatorCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
@@ -217,7 +217,7 @@ describe('Room API Security Tests', () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', newRoomData.moderatorCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
@@ -225,7 +225,7 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when participant is speaker', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', roomData.speakerCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(200);
@@ -235,21 +235,21 @@ describe('Room API Security Tests', () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/preferences`)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', newRoomData.speakerCookie)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
 	});
 
-	describe('Update Room Preferences Tests', () => {
-		const roomPreferences = {
-			recordingPreferences: {
+	describe('Update Room Config Tests', () => {
+		const roomConfig = {
+			recordingConfig: {
 				enabled: false,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
-			chatPreferences: { enabled: true },
-			virtualBackgroundPreferences: { enabled: true }
+			chatConfig: { enabled: true },
+			virtualBackgroundConfig: { enabled: true }
 		};
 
 		let roomId: string;
@@ -261,24 +261,22 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/preferences`)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-				.send({ preferences: roomPreferences });
+				.send({ config: roomConfig });
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/preferences`)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set('Cookie', adminCookie)
-				.send({ preferences: roomPreferences });
+				.send({ config: roomConfig });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/preferences`)
-				.send({ preferences: roomPreferences });
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/config`).send({ config: roomConfig });
 			expect(response.status).toBe(401);
 		});
 	});
@@ -308,9 +306,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/status`)
-				.send({ status: 'open' });
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/status`).send({ status: 'open' });
 			expect(response.status).toBe(401);
 		});
 	});
@@ -323,10 +319,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		beforeEach(async () => {
-			await updateRecordingAccessPreferencesInRoom(
-				roomData.room.roomId,
-				MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-			);
+			await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
 		});
 
 		it('should succeed when no authentication is required and participant is speaker', async () => {
@@ -414,7 +407,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when recording access is set to admin only', async () => {
-			await updateRecordingAccessPreferencesInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN);
+			await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)

@@ -1,16 +1,16 @@
-MeetRoomPreferences:
+MeetRoomConfig:
     type: object
     properties:
-        chatPreferences:
-            $ref: '#/MeetChatPreferences'
-            description: Preferences for the chat feature in the room.
-        recordingPreferences:
-            $ref: '#/MeetRecordingPreferences'
-            description: Preferences for recording the room.
-        virtualBackgroundPreferences:
-            $ref: '#/MeetVirtualBackgroundPreferences'
-            description: Preferences for virtual background in the room.
-MeetChatPreferences:
+        chatConfig:
+            $ref: '#/MeetChatConfig'
+            description: Config for the chat feature in the room.
+        recordingConfig:
+            $ref: '#/MeetRecordingConfig'
+            description: Config for recording the room.
+        virtualBackgroundConfig:
+            $ref: '#/MeetVirtualBackgroundConfig'
+            description: Config for virtual background in the room.
+MeetChatConfig:
     type: object
     properties:
         enabled:
@@ -18,7 +18,7 @@ MeetChatPreferences:
             default: true
             example: true
             description: If true, the room will be allowed to send and receive chat messages.
-MeetRecordingPreferences:
+MeetRecordingConfig:
     type: object
     properties:
         enabled:
@@ -39,7 +39,7 @@ MeetRecordingPreferences:
                 - `admin`: Only administrators can access the recording.
                 - `admin_moderator`: Administrators and moderators can access the recording.
                 - `admin_moderator_speaker`: Administrators, moderators and speakers can access the recording.
-MeetVirtualBackgroundPreferences:
+MeetVirtualBackgroundConfig:
     type: object
     properties:
         enabled:

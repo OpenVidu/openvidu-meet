@@ -58,9 +58,9 @@ properties:
                     Policy for automatic deletion when the room has recordings. Options are:
                     - force: The room and its recordings will be deleted.
                     - close: The room will be closed instead of deleted, maintaining its recordings.
-    preferences:
-        $ref: meet-room-preferences.yaml#/MeetRoomPreferences
-        description: The preferences for the room.
+    config:
+        $ref: meet-room-config.yaml#/MeetRoomConfig
+        description: The config for the room.
     # maxParticipants:
     #     type: integer
     #     example: 10

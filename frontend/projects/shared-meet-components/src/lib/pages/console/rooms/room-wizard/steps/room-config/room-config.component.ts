@@ -7,22 +7,22 @@ import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-preferences',
+	selector: 'ov-room-config',
 	standalone: true,
 	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
-	templateUrl: './room-preferences.component.html',
-	styleUrl: './room-preferences.component.scss'
+	templateUrl: './room-config.component.html',
+	styleUrl: './room-config.component.scss'
 })
-export class RoomPreferencesComponent implements OnDestroy {
-	preferencesForm: FormGroup;
+export class RoomConfigComponent implements OnDestroy {
+	configForm: FormGroup;
 
 	private destroy$ = new Subject<void>();
 
 	constructor(private wizardService: RoomWizardStateService) {
 		const currentStep = this.wizardService.currentStep();
-		this.preferencesForm = currentStep!.formGroup;
+		this.configForm = currentStep!.formGroup;
 
-		this.preferencesForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.configForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
 			this.saveFormData(value);
 		});
 	}
@@ -34,34 +34,34 @@ export class RoomPreferencesComponent implements OnDestroy {
 
 	private saveFormData(formValue: any): void {
 		const stepData: any = {
-			preferences: {
-				chatPreferences: {
+			config: {
+				chatConfig: {
 					enabled: formValue.chatEnabled
 				},
-				virtualBackgroundPreferences: {
+				virtualBackgroundConfig: {
 					enabled: formValue.virtualBackgroundsEnabled
 				}
 			}
 		};
 
-		this.wizardService.updateStepData('preferences', stepData);
+		this.wizardService.updateStepData('config', stepData);
 	}
 
 	onChatToggleChange(event: any): void {
 		const isEnabled = event.checked;
-		this.preferencesForm.patchValue({ chatEnabled: isEnabled });
+		this.configForm.patchValue({ chatEnabled: isEnabled });
 	}
 
 	onVirtualBackgroundToggleChange(event: any): void {
 		const isEnabled = event.checked;
-		this.preferencesForm.patchValue({ virtualBackgroundsEnabled: isEnabled });
+		this.configForm.patchValue({ virtualBackgroundsEnabled: isEnabled });
 	}
 
 	get chatEnabled(): boolean {
-		return this.preferencesForm.value.chatEnabled || false;
+		return this.configForm.value.chatEnabled || false;
 	}
 
 	get virtualBackgroundsEnabled(): boolean {
-		return this.preferencesForm.value.virtualBackgroundsEnabled || false;
+		return this.configForm.value.virtualBackgroundsEnabled || false;
 	}
 }

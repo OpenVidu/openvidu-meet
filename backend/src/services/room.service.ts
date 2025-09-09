@@ -2,13 +2,13 @@ import {
 	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRoom,
+	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomOptions,
-	MeetRoomPreferences,
 	MeetRoomStatus,
 	ParticipantRole,
 	RecordingPermissions
@@ -80,7 +80,7 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(baseUrl: string, roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { roomName, autoDeletionDate, autoDeletionPolicy, preferences } = roomOptions;
+		const { roomName, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
 		const roomIdPrefix = roomName!.replace(/\s+/g, ''); // Remove all spaces
 		const roomId = `${roomIdPrefix}-${uid(15)}`; // Generate a unique room ID based on the room name
 
@@ -91,7 +91,7 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy,
-			preferences: preferences!,
+			config: config!,
 			moderatorUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
 			speakerUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
 			status: MeetRoomStatus.OPEN,
@@ -135,21 +135,21 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the preferences of a specific meeting room.
+	 * Updates the config of a specific meeting room.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
-	 * @param preferences - The new preferences to apply to the meeting room
+	 * @param config - The new config to apply to the meeting room
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
-	async updateMeetRoomPreferences(roomId: string, preferences: MeetRoomPreferences): Promise<MeetRoom> {
+	async updateMeetRoomConfig(roomId: string, config: MeetRoomConfig): Promise<MeetRoom> {
 		const room = await this.getMeetRoom(roomId);
-		room.preferences = preferences;
+		room.config = config;
 
 		await this.storageService.saveMeetRoom(room);
 		// Update the archived room metadata if it exists
 		await Promise.all([
 			this.storageService.archiveRoomMetadata(roomId, true),
-			this.frontendEventService.sendRoomPreferencesUpdatedSignal(roomId, room)
+			this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room)
 		]);
 		return room;
 	}
@@ -684,7 +684,7 @@ export class RoomService {
 	}
 
 	protected getRecordingPermissions(room: Partial<MeetRoom>, role: ParticipantRole): RecordingPermissions {
-		const recordingAccess = room.preferences!.recordingPreferences.allowAccessTo;
+		const recordingAccess = room.config!.recordingConfig.allowAccessTo;
 
 		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
 		const canDeleteRecordings = role === ParticipantRole.MODERATOR && recordingAccess !== MeetRecordingAccess.ADMIN;
