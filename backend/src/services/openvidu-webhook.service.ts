@@ -208,10 +208,30 @@ export class OpenViduWebhookService {
 	}
 
 	protected async sendRequest(url: string, options: RequestInit): Promise<void> {
-		const response = await fetch(url, options);
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
 
-		if (!response.ok) {
-			throw new Error(`Request failed with status ${response.status}`);
+		try {
+			const response = await fetch(url, {
+				...options,
+				signal: controller.signal
+			});
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				throw new Error(`Request failed with status ${response.status}`);
+			}
+		} catch (error: any) {
+			clearTimeout(timeoutId);
+
+			// Handle timeout error specifically
+			if (error.name === 'AbortError') {
+				throw new Error('Request timed out after 5 seconds');
+			}
+
+			// Re-throw other errors
+			throw error;
 		}
 	}
 
@@ -223,7 +243,7 @@ export class OpenViduWebhookService {
 	 */
 	protected async sendTestRequest(url: string, options: RequestInit): Promise<void> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+		const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
 
 		try {
 			const response = await fetch(url, {
@@ -258,7 +278,7 @@ export class OpenViduWebhookService {
 			let reason: string;
 
 			if (error.name === 'AbortError') {
-				reason = 'Request timed out after 10 seconds';
+				reason = 'Request timed out after 5 seconds';
 			} else if (error.name === 'TypeError' && error.message.includes('fetch')) {
 				// Network errors
 				const errorCode = error.cause?.code;
