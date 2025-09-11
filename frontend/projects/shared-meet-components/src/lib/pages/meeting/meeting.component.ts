@@ -122,7 +122,7 @@ export class MeetingComponent implements OnInit {
 		protected sessionStorageService: SessionStorageService,
 		protected wcManagerService: WebComponentManagerService,
 		protected openviduService: OpenViduService,
-		protected componentParticipantService: ComponentParticipantService,
+		protected ovComponentsParticipantService: ComponentParticipantService,
 		protected navigationService: NavigationService,
 		protected notificationService: NotificationService,
 		protected clipboard: Clipboard
@@ -275,8 +275,8 @@ export class MeetingComponent implements OnInit {
 			this.showMeeting = true;
 
 			combineLatest([
-				this.componentParticipantService.remoteParticipants$,
-				this.componentParticipantService.localParticipant$
+				this.ovComponentsParticipantService.remoteParticipants$,
+				this.ovComponentsParticipantService.localParticipant$
 			])
 				.pipe(takeUntil(this.destroy$))
 				.subscribe(([participants, local]) => {
