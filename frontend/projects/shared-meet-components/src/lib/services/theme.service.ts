@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { computed, Inject, Injectable, signal } from '@angular/core';
+import { OpenViduThemeMode, OpenViduThemeService } from 'openvidu-components-angular';
 
 export type Theme = 'light' | 'dark';
 
@@ -15,7 +16,7 @@ export class ThemeService {
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
 	public readonly isLight = computed(() => this._currentTheme() === 'light');
 
-	constructor(@Inject(DOCUMENT) private document: Document) {}
+	constructor(@Inject(DOCUMENT) private document: Document, protected ovComponentsThemeService: OpenViduThemeService) {}
 
 	/**
 	 * Initializes the theme based on:
@@ -29,6 +30,7 @@ export class ThemeService {
 		const initialTheme = savedTheme || systemPreference || 'light';
 
 		this.setTheme(initialTheme);
+		this.ovComponentsThemeService.setTheme(initialTheme as OpenViduThemeMode);
 		this.listenToSystemChanges();
 	}
 
@@ -37,8 +39,7 @@ export class ThemeService {
 	 */
 	public toggleTheme(): void {
 		const newTheme: Theme = this._currentTheme() === 'light' ? 'dark' : 'light';
-		this.setTheme(newTheme);
-	}
+		this.setTheme(newTheme);	}
 
 	/**
 	 * Changes the current theme
@@ -47,6 +48,7 @@ export class ThemeService {
 		this._currentTheme.set(theme);
 		this.applyThemeToDocument(theme);
 		this.saveThemePreference(theme);
+		this.ovComponentsThemeService.setTheme(theme as OpenViduThemeMode);
 	}
 
 	/**
