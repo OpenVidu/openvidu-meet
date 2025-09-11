@@ -16,7 +16,10 @@ export class ThemeService {
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
 	public readonly isLight = computed(() => this._currentTheme() === 'light');
 
-	constructor(@Inject(DOCUMENT) private document: Document, protected ovComponentsThemeService: OpenViduThemeService) {}
+	constructor(
+		@Inject(DOCUMENT) private document: Document,
+		protected ovComponentsThemeService: OpenViduThemeService
+	) {}
 
 	/**
 	 * Initializes the theme based on:
@@ -39,7 +42,8 @@ export class ThemeService {
 	 */
 	public toggleTheme(): void {
 		const newTheme: Theme = this._currentTheme() === 'light' ? 'dark' : 'light';
-		this.setTheme(newTheme);	}
+		this.setTheme(newTheme);
+	}
 
 	/**
 	 * Changes the current theme

@@ -1,7 +1,13 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { ErrorReason } from '@lib/models';
-import { NavigationService, ParticipantService, RoomService, SessionStorageService } from '@lib/services';
+import {
+	AppDataService,
+	NavigationService,
+	ParticipantService,
+	RoomService,
+	SessionStorageService
+} from '@lib/services';
 import { WebComponentProperty } from '@lib/typings/ce/webcomponent/properties.model';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
@@ -66,14 +72,28 @@ const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
 /**
  * Handles the leave redirect URL logic with automatic referrer detection
  */
-const handleLeaveRedirectUrl = (leaveRedirectUrl: string) => {
+const handleLeaveRedirectUrl = (leaveRedirectUrl: string | undefined) => {
 	const navigationService = inject(NavigationService);
+	const appDataService = inject(AppDataService);
+	const isEmbeddedMode = appDataService.isEmbeddedMode();
 
+	// Explicit valid URL provided - use as is
 	if (leaveRedirectUrl && isValidUrl(leaveRedirectUrl)) {
-		// If explicitly provided, use it
 		navigationService.setLeaveRedirectUrl(leaveRedirectUrl);
-	} else {
-		// Check if user came from another domain and auto-configure redirect
+		return;
+	}
+
+	// Absolute path provided in embedded mode - construct full URL
+	if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
+		// If in embedded mode and a absolute path is provided, construct full URL based on parent origin
+		const parentUrl = document.referrer;
+		const parentOrigin = new URL(parentUrl).origin;
+		navigationService.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);
+		return;
+	}
+
+	// Auto-detect from referrer (only if no explicit URL provided and not embedded)
+	if (!leaveRedirectUrl && !isEmbeddedMode) {
 		const autoRedirectUrl = getAutoRedirectUrl();
 		if (autoRedirectUrl) {
 			navigationService.setLeaveRedirectUrl(autoRedirectUrl);
@@ -110,8 +130,6 @@ const getAutoRedirectUrl = (): string | null => {
 };
 
 const isValidUrl = (url: string) => {
-	if (!url) return false;
-
 	try {
 		new URL(url);
 		return true;

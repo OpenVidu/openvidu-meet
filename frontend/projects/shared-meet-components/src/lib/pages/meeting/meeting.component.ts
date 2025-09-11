@@ -248,7 +248,7 @@ export class MeetingComponent implements OnInit {
 		const redirectTo = this.navigationService.getLeaveRedirectURL();
 		if (redirectTo) {
 			// Navigate to the specified redirect URL
-			await this.navigationService.redirectTo(redirectTo);
+			await this.navigationService.redirectToLeaveUrl();
 			return;
 		}
 

@@ -119,7 +119,7 @@ export class EndMeetingComponent implements OnInit {
 		const redirectTo = this.navService.getLeaveRedirectURL();
 		if (redirectTo) {
 			// Navigate to the specified redirect URL
-			await this.navService.redirectTo(redirectTo);
+			await this.navService.redirectToLeaveUrl();
 			return;
 		}
 

@@ -1,4 +1,3 @@
-import { Location } from '@angular/common';
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { ErrorReason } from '@lib/models';
@@ -12,7 +11,6 @@ export class NavigationService {
 
 	constructor(
 		private router: Router,
-		private location: Location,
 		private sessionStorageService: SessionStorageService,
 		private appDataService: AppDataService
 	) {}
@@ -29,6 +27,31 @@ export class NavigationService {
 		}
 
 		return this.leaveRedirectUrl;
+	}
+
+	/**
+	 * Redirects the user to the leave redirect URL if set and valid.
+	 */
+	async redirectToLeaveUrl() {
+		const url = this.getLeaveRedirectURL();
+		if (!url) {
+			console.warn('No leave redirect URL set');
+			return;
+		}
+
+		const isExternalURL = /^https?:\/\//.test(url);
+		if (!isExternalURL) {
+			console.error('Leave redirect URL is not a valid external URL:', url);
+			return;
+		}
+
+		const isEmbeddedMode = this.appDataService.isEmbeddedMode();
+		if (isEmbeddedMode) {
+			// Change the top window location if in embedded mode
+			window.top!.location.href = url;
+		} else {
+			window.location.href = url;
+		}
 	}
 
 	/**
@@ -50,30 +73,16 @@ export class NavigationService {
 	}
 
 	/**
-	 * Redirects to internal or external URLs
+	 * Redirects to internal URL
 	 *
 	 * @param url - The URL to redirect to
 	 */
 	async redirectTo(url: string): Promise<void> {
-		const isExternalURL = /^https?:\/\//.test(url);
-		if (isExternalURL) {
-			console.log('Redirecting to external URL:', url);
-
-			if (this.appDataService.isEmbeddedMode()) {
-				// Change the top window location if in embedded mode
-				window.top!.location.href = url;
-			} else {
-				window.location.href = url;
-			}
-		} else {
-			console.log('Redirecting to internal route:', url);
-
-			try {
-				let urlTree = this.router.parseUrl(url);
-				await this.router.navigateByUrl(urlTree, { replaceUrl: true });
-			} catch (error) {
-				console.error('Error navigating to internal route:', error);
-			}
+		try {
+			let urlTree = this.router.parseUrl(url);
+			await this.router.navigateByUrl(urlTree, { replaceUrl: true });
+		} catch (error) {
+			console.error('Error navigating to internal route:', error);
 		}
 	}
 
