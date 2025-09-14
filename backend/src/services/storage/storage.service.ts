@@ -731,7 +731,7 @@ export class MeetStorageService<
 		const initialApiKey = MEET_INITIAL_API_KEY;
 
 		if (!initialApiKey) {
-			this.logger.verbose('No initial API key configured, skipping API key initialization');
+			this.logger.info('No initial API key configured, skipping API key initialization');
 			return;
 		}
 
