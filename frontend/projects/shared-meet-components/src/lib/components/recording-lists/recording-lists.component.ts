@@ -1,15 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import {
-	Component,
-	EventEmitter,
-	HostBinding,
-	Input,
-	OnChanges,
-	OnInit,
-	Output,
-	signal,
-	SimpleChanges
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,7 +16,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatBytes, formatDurationToHMS } from '@lib/utils';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { ViewportService } from '@lib/services';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
@@ -91,13 +81,6 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() showLoadMore = false;
 	@Input() loading = false;
 	@Input() initialFilters: { nameFilter: string; statusFilter: string } = { nameFilter: '', statusFilter: '' };
-
-	// Host binding for styling when recordings are selected
-	@HostBinding('class.has-selections')
-	get hasSelections(): boolean {
-		return this.selectedRecordings().size > 0;
-	}
-
 	// Output events
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
 	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
@@ -150,7 +133,11 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
 	} as const;
 
-	constructor() {}
+	constructor(private viewportService: ViewportService) {}
+
+	get isMobileView() {
+		return this.viewportService.isMobileView;
+	}
 
 	ngOnInit() {
 		this.setupFilters();

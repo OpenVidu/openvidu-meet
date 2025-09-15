@@ -12,4 +12,5 @@ export * from './navigation.service';
 export * from './notification.service';
 export * from './session-storage.service';
 export * from './theme.service';
+export * from './viewport.service';
 export * from './wizard-state.service';

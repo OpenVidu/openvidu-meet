@@ -1,45 +1,333 @@
 @import '../../../../../../src/assets/styles/design-tokens';
 
-// Use utility classes for recordings toolbar
-.recordings-toolbar {
-	@extend .ov-data-toolbar;
+// === MOBILE CARDS VIEW ===
+.cards-container {
+	@include ov-grid-responsive(280px);
+	gap: var(--ov-meet-spacing-md);
+	padding: var(--ov-meet-spacing-md) 0;
 
-	.toolbar-left {
-		::ng-deep .search-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
+	@include ov-mobile-down {
+		grid-template-columns: 1fr;
+		gap: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm) 0;
+	}
+}
+
+.recording-card {
+	@include ov-card;
+	@include ov-theme-transition;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	position: relative;
+
+	&.selected-card {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 8%, var(--ov-meet-card-background));
+		border: 1px solid var(--ov-meet-color-primary);
+		box-shadow: var(--ov-meet-card-shadow-hover);
 	}
 
-	.toolbar-right {
-		gap: var(--ov-meet-spacing-sm);
+	&:hover:not(.selected-card) {
+		@include ov-hover-lift(-2px);
+	}
 
-		::ng-deep .refresh-btn {
-			padding: var(--ov-meet-spacing-sm);
+	@include ov-mobile-down {
+		gap: var(--ov-meet-spacing-sm);
+	}
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: var(--ov-meet-spacing-md);
+
+	.card-header-left {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		flex: 1;
+		min-width: 0;
+	}
+
+	.card-checkbox {
+		margin: 0;
+		align-self: flex-start;
+		margin-top: 2px;
+	}
+
+	.status-info {
+		flex-shrink: 0;
+	}
+}
+
+.recording-details {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+
+	@include ov-mobile-down {
+		gap: var(--ov-meet-spacing-sm);
+	}
+}
+
+.detail-item {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ov-meet-spacing-sm);
+
+	.detail-icon {
+		@include ov-icon(sm);
+		color: var(--ov-meet-text-secondary);
+		margin-top: 2px;
+		flex-shrink: 0;
+	}
+
+	.detail-content {
+		flex: 1;
+		min-width: 0;
+
+		.detail-label {
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-secondary);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin-bottom: 2px;
 		}
 
-		::ng-deep .clear-btn {
-			padding: var(--ov-meet-spacing-sm);
+		.detail-value {
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+
+			&.no-data {
+				@extend .ov-no-data;
+			}
+		}
+
+		.detail-time {
+			font-size: var(--ov-meet-font-size-xs);
+			color: var(--ov-meet-text-secondary);
+			margin-top: 2px;
 		}
 	}
 }
 
-// Use utility classes for search field, selection info, and batch actions
+.action-button {
+	&.play-button mat-icon {
+		color: var(--ov-meet-color-success);
+	}
+
+	&.download-button mat-icon {
+		color: var(--ov-meet-color-primary);
+	}
+
+	&.delete-button mat-icon {
+		color: var(--ov-meet-color-error);
+	}
+
+	&.more-button mat-icon {
+		color: var(--ov-meet-text-secondary);
+	}
+}
+
+.card-actions {
+	@extend .ov-action-buttons;
+	justify-content: flex-end;
+	padding-top: var(--ov-meet-spacing-sm);
+	border-top: 1px solid var(--ov-meet-border-color-light);
+	margin-top: var(--ov-meet-spacing-sm);
+
+	.action-button {
+		@include ov-icon(lg);
+
+		padding: 0;
+		width: 40px;
+		height: 40px;
+
+		mat-icon {
+			font-size: 24px !important;
+			width: 24px !important;
+			height: 24px !important;
+		}
+	}
+
+	@include ov-mobile-down {
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	@media (max-width: 480px) {
+		.card-actions {
+			height: auto;
+		}
+	}
+}
+
+// === TOOLBAR AND SHARED UTILITIES ===
+.recordings-toolbar {
+	@extend .ov-data-toolbar;
+
+	// Responsive toolbar adjustments
+	@include ov-tablet-down {
+		.toolbar-center {
+			z-index: 1000;
+			position: fixed;
+
+			.batch-actions {
+				justify-content: center;
+
+				button {
+					padding: 0;
+				}
+			}
+		}
+	}
+
+	@include ov-mobile-down {
+		flex-wrap: wrap;
+		gap: var(--ov-meet-spacing-sm);
+
+		.toolbar-left {
+			order: 2;
+			width: 100%;
+		}
+
+		.toolbar-right {
+			order: 1;
+			width: 100%;
+			justify-content: flex-end;
+
+			.refresh-btn {
+				padding: 0;
+			}
+		}
+	}
+}
+
 .search-field {
 	@extend .ov-search-field;
 }
 
-.selection-info {
-	@extend .ov-selection-info;
-}
-
 .batch-actions {
 	@extend .ov-batch-actions;
-	::ng-deep button {
-		padding: var(--ov-meet-spacing-sm);
+}
+
+// === DESKTOP TABLE VIEW ===
+.table-container {
+	@extend .ov-table-container;
+	margin-top: 0;
+
+	@include ov-tablet-down {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 }
 
-// Filters Menu Styling
+.recordings-table {
+	@extend .ov-data-table;
+	min-width: 600px;
+
+	.mat-mdc-header-cell {
+		&.room-header {
+			min-width: 200px;
+		}
+
+		&.select-header {
+			width: 48px;
+			min-width: 48px;
+			max-width: 48px;
+		}
+
+		&.actions-header {
+			min-width: 140px;
+		}
+	}
+
+	.mat-mdc-cell {
+		&.select-cell {
+			width: 48px;
+			min-width: 48px;
+			max-width: 48px;
+		}
+	}
+
+	@include ov-tablet-down {
+		.mat-column-duration,
+		.mat-column-size {
+			display: none;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.mat-column-startDate .time {
+			display: none;
+		}
+	}
+}
+
+// === SHARED COMPONENTS ===
+.room-info {
+	@extend .ov-info-display;
+	flex: 1;
+	min-width: 0;
+
+	.room-name {
+		@include ov-text-truncate;
+		font-weight: var(--ov-meet-font-weight-medium);
+		margin-bottom: 2px;
+
+		.cards-container & {
+			font-size: var(--ov-meet-font-size-md);
+			line-height: var(--ov-meet-line-height-tight);
+		}
+	}
+
+	.room-id {
+		@include ov-text-truncate;
+		font-size: var(--ov-meet-font-size-xs);
+		color: var(--ov-meet-text-secondary);
+
+		.cards-container & {
+			font-size: var(--ov-meet-font-size-xxs);
+			opacity: 0.8;
+		}
+	}
+}
+
+.status-badge {
+	@extend .ov-status-badge;
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	font-weight: var(--ov-meet-font-weight-medium);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+
+	.status-icon {
+		@include ov-icon(sm);
+		margin: 0;
+	}
+
+	.status-label {
+		font-size: var(--ov-meet-font-size-xxs);
+		.cards-container & {
+			font-size: var(--ov-meet-font-size-xs);
+		}
+	}
+
+	@include ov-mobile-down {
+		padding: var(--ov-meet-spacing-xxs) var(--ov-meet-spacing-xs);
+		font-size: var(--ov-meet-font-size-xs);
+
+		.status-icon {
+			@include ov-icon(xs);
+		}
+	}
+}
+
+// === UTILITY EXTENSIONS ===
 .filters-menu {
 	@extend .ov-filters-menu;
 }
@@ -48,130 +336,63 @@
 	@extend .ov-loading-container;
 }
 
-// Enhanced Table Container
-.table-container {
-	@extend .ov-table-container;
-	margin-top: 0; // Remove top margin since toolbar is attached
-}
-
-// Toolbar + Table Integration
-.recordings-toolbar + .table-container {
-	border-top-left-radius: 0;
-	border-top-right-radius: 0;
-	border-top: none;
-	box-shadow: var(--ov-meet-shadow-sm);
-}
-
-// Ensure proper spacing when no toolbar
-:host:not(:has(.recordings-toolbar)) .table-container {
-	margin-top: var(--ov-meet-spacing-md);
-}
-
-.recordings-table {
-	@extend .ov-data-table;
-
-	// Header customizations
-	.mat-mdc-header-cell {
-		&.room-header {
-			@extend .primary-header;
-		}
-
-		&.actions-header {
-			@extend .actions-header;
-		}
-	}
-
-	// Cell customizations
-	.mat-mdc-cell {
-		&.room-cell {
-			@extend .primary-cell;
-		}
-
-		&.actions-cell {
-			@extend .actions-cell;
-		}
-	}
-}
-
-// Room information
-.room-info {
-	@extend .ov-info-display;
-
-	.room-name {
-		@extend .primary-text;
-	}
-
-	.room-id {
-		@extend .secondary-text, .monospace-text;
-	}
-
-	// .filename {
-	// 	@extend .secondary-text, .monospace-text;
-	// }
-}
-
-// Status badge
-.status-badge {
-	@extend .ov-status-badge;
-	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
-	border-radius: var(--ov-meet-radius-sm);
-	font-size: var(--ov-meet-font-size-xs);
-	width: fit-content;
-
-	.status-icon {
-		@include ov-icon(sm);
-	}
-}
-
-// Date information
 .date-info {
 	@extend .ov-date-info;
 }
 
-.no-data {
-	@extend .ov-no-data;
-}
-
-// Action buttons
 .action-buttons {
 	@extend .ov-action-buttons;
 
-	::ng-deep button {
-		padding: var(--ov-meet-spacing-sm);
-	}
-
-	.mat-mdc-icon-button {
-		&:hover {
-			background-color: transparent;
+	@include ov-tablet-down {
+		.play-btn,
+		.download-btn {
+			display: none;
 		}
 	}
 }
 
-// Menu item styles
 .delete-action {
 	@extend .ov-delete-action;
 }
 
-// Empty State Styling
 .no-recordings-state {
 	@extend .ov-empty-state;
 
 	.getting-started-actions {
-		@extend .action-buttons;
+		@include ov-mobile-down {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
 
-		.refresh-recordings-btn {
-			@extend .refresh-btn;
-		}
-
-		.clear-filters-btn {
-			@extend .refresh-btn;
+			button {
+				width: 100%;
+				padding: var(--ov-meet-spacing-md);
+			}
 		}
 	}
 }
 
-// Apply focus states for accessibility
+// === ACCESSIBILITY AND ANIMATIONS ===
 .mat-mdc-checkbox,
 .mat-mdc-icon-button,
 .mat-mdc-button {
 	@extend .ov-focus-visible;
+}
+
+@include ov-mobile-down {
+	.mat-mdc-icon-button {
+		min-width: 44px;
+		min-height: 44px;
+	}
+}
+
+.recording-card {
+	animation: fadeIn 0.3s ease-out;
+
+	&:nth-child(even) {
+		animation-delay: 0.1s;
+	}
+
+	&:nth-child(odd) {
+		animation-delay: 0.05s;
+	}
 }

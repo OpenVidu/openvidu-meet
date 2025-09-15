@@ -1006,6 +1006,7 @@
 	overflow: auto;
 	button {
 		@include ov-button-base;
+		padding: var(--ov-meet-spacing-xs);
 	}
 	@include ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
