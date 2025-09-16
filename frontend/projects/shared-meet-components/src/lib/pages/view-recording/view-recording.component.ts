@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NotificationService, RecordingService } from '@lib/services';
+import { NotificationService, RecordingService, ViewportService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatDurationToTime } from '@lib/utils';
 
@@ -26,7 +26,7 @@ import { formatDurationToTime } from '@lib/utils';
 		MatSnackBarModule
 	]
 })
-export class ViewRecordingComponent implements OnInit {
+export class ViewRecordingComponent implements OnInit, OnDestroy {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
 	videoError = false;
@@ -34,11 +34,16 @@ export class ViewRecordingComponent implements OnInit {
 	hasError = false;
 	isVideoLoaded = false;
 
+	// Mobile UI state
+	showMobileControls = true;
+	private controlsTimeout?: number;
+
 	constructor(
 		protected recordingService: RecordingService,
 		protected notificationService: NotificationService,
 		protected route: ActivatedRoute,
-		protected router: Router
+		protected router: Router,
+		public viewportService: ViewportService
 	) {}
 
 	async ngOnInit() {
@@ -72,6 +77,11 @@ export class ViewRecordingComponent implements OnInit {
 	onVideoLoaded() {
 		this.isVideoLoaded = true;
 		this.videoError = false;
+
+		// Start controls timeout for mobile
+		if (this.viewportService.isMobileView()) {
+			this.resetControlsTimeout();
+		}
 	}
 
 	onVideoError() {
@@ -135,5 +145,34 @@ export class ViewRecordingComponent implements OnInit {
 
 	formatDuration(duration: number): string {
 		return formatDurationToTime(duration);
+	}
+
+	goBack(): void {
+		// Try to go back in browser history, otherwise navigate to recordings
+		if (window.history.length > 1) {
+			window.history.back();
+		} else {
+			this.router.navigate(['/recordings']);
+		}
+	}
+
+	// Mobile UI interactions
+
+	private resetControlsTimeout(): void {
+		if (this.controlsTimeout) {
+			clearTimeout(this.controlsTimeout);
+		}
+
+		if (this.showMobileControls) {
+			this.controlsTimeout = window.setTimeout(() => {
+				this.showMobileControls = false;
+			}, 3000); // Hide controls after 3 seconds
+		}
+	}
+
+	ngOnDestroy(): void {
+		if (this.controlsTimeout) {
+			clearTimeout(this.controlsTimeout);
+		}
 	}
 }

@@ -37,6 +37,9 @@
 // === DARK THEME ===
 // Activated when the [data-theme="dark"] attribute is present on html
 [data-theme='dark'] {
+
+	--ov-meet-color-info: #2a9bf7;
+
 	// === SURFACE COLORS - DARK THEME ===
 	--ov-meet-background-color: #29292e;
 	--ov-meet-background-secondary: #21212b;
