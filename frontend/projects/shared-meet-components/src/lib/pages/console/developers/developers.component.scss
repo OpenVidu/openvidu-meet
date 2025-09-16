@@ -1,5 +1,10 @@
 @import '../../../../../../../src/assets/styles/design-tokens';
 
+.ov-page-container {
+	button {
+		padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
+	}
+}
 // API Key Section - use utility classes
 .api-key-section {
 	.api-key-display {
