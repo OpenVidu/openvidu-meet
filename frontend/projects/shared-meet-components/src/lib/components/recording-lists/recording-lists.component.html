@@ -120,72 +120,6 @@
 		</div>
 	</mat-toolbar>
 
-	<!-- Mobile Sticky Toolbar (always visible in mobile) -->
-	<!-- @if (isMobileView()) {
-		<div class="mobile-sticky-toolbar">
-			<div class="mobile-toolbar-content">
-				<-- Always visible: Refresh button --
-				<div class="toolbar-section primary-actions">
-					<button
-						mat-icon-button
-						class="refresh-btn"
-						(click)="refreshRecordings()"
-						[disabled]="loading"
-						matTooltip="Refresh recordings"
-					>
-						<mat-icon>refresh</mat-icon>
-					</button>
-
-					@if (hasActiveFilters()) {
-						<button
-							mat-icon-button
-							class="clear-btn"
-							(click)="clearFilters()"
-							[disabled]="loading"
-							matTooltip="Clear all filters"
-						>
-							<mat-icon>filter_alt_off</mat-icon>
-						</button>
-					}
-				</div>
-
-				-- Bulk actions: visible when items selected --
-				@if (showSelection && selectedRecordings().size > 0) {
-					<div class="toolbar-section bulk-actions">
-						<div class="selection-indicator">
-							<span class="selection-count">{{ selectedRecordings().size }} selected</span>
-						</div>
-
-						<div class="action-buttons">
-							@if (canDeleteRecordings) {
-								<button
-									mat-icon-button
-									color="warn"
-									(click)="bulkDeleteSelected()"
-									[disabled]="loading"
-									matTooltip="Delete selected recordings"
-									class="bulk-delete-btn"
-								>
-									<mat-icon>delete</mat-icon>
-								</button>
-							}
-
-							<button
-								mat-icon-button
-								(click)="bulkDownloadSelected()"
-								[disabled]="loading"
-								matTooltip="Download selected recordings"
-								class="bulk-download-btn"
-							>
-								<mat-icon>download</mat-icon>
-							</button>
-						</div>
-					</div>
-				}
-			</div>
-		</div>
-	} -->
-
 	<!-- Loading Spinner -->
 	@if (loading) {
 		<div class="loading-container">
@@ -252,29 +186,35 @@
 									<div class="detail-content">
 										<div class="detail-label">Start Date</div>
 										@if (recording.startDate) {
-											<div class="detail-value">
-												{{ recording.startDate | date: 'mediumDate' }}
+											<div class="detail-row">
+												<span class="detail-value">
+													{{ recording.startDate | date: 'mediumDate' }}
+												</span>
+												<span class="detail-time">
+													{{ recording.startDate | date: 'shortTime' }}
+												</span>
 											</div>
-											<div class="detail-time">{{ recording.startDate | date: 'shortTime' }}</div>
 										} @else {
 											<div class="detail-value no-data">-</div>
 										}
 									</div>
 								</div>
 
-								<div class="detail-item">
-									<mat-icon class="detail-icon">timer</mat-icon>
-									<div class="detail-content">
-										<div class="detail-label">Duration</div>
-										<div class="detail-value">{{ formatDuration(recording.duration) }}</div>
+								<div class="additional-details">
+									<div class="detail-item">
+										<mat-icon class="detail-icon">timer</mat-icon>
+										<div class="detail-content">
+											<div class="detail-label">Duration</div>
+											<div class="detail-value">{{ formatDuration(recording.duration) }}</div>
+										</div>
 									</div>
-								</div>
 
-								<div class="detail-item">
-									<mat-icon class="detail-icon">storage</mat-icon>
-									<div class="detail-content">
-										<div class="detail-label">Size</div>
-										<div class="detail-value">{{ formatFileSize(recording.size) }}</div>
+									<div class="detail-item">
+										<mat-icon class="detail-icon">storage</mat-icon>
+										<div class="detail-content">
+											<div class="detail-label">Size</div>
+											<div class="detail-value">{{ formatFileSize(recording.size) }}</div>
+										</div>
 									</div>
 								</div>
 							</div>

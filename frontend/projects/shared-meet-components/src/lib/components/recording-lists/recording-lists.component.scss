@@ -20,6 +20,7 @@
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-md);
 	position: relative;
+	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
 
 	&.selected-card {
 		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 8%, var(--ov-meet-card-background));
@@ -39,7 +40,7 @@
 .card-header {
 	display: flex;
 	justify-content: space-between;
-	align-items: flex-start;
+	align-items: center;
 	gap: var(--ov-meet-spacing-md);
 
 	.card-header-left {
@@ -69,6 +70,13 @@
 	@include ov-mobile-down {
 		gap: var(--ov-meet-spacing-sm);
 	}
+
+	.additional-details {
+		margin-top: 5px;
+		display: grid;
+		grid-template-columns: 1fr 1fr; /* dos columnas iguales */
+		gap: 1rem; /* espacio entre columnas y filas */
+	}
 }
 
 .detail-item {
@@ -84,21 +92,24 @@
 	}
 
 	.detail-content {
-		flex: 1;
-		min-width: 0;
+		flex-direction: column;
+		gap: 0.25rem;
 
 		.detail-label {
-			font-size: var(--ov-meet-font-size-xs);
+			font-size: var(--ov-meet-font-size-sm);
 			font-weight: var(--ov-meet-font-weight-medium);
-			color: var(--ov-meet-text-secondary);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			margin-bottom: 2px;
+			color: var(--ov-meet-text-primary);
+		}
+
+		.detail-row {
+			display: flex;
+			gap: 0.5rem;
+			align-items: baseline;
 		}
 
 		.detail-value {
 			font-size: var(--ov-meet-font-size-sm);
-			font-weight: var(--ov-meet-font-weight-medium);
+			font-weight: var(--ov-meet-font-weight-light);
 			color: var(--ov-meet-text-primary);
 			line-height: var(--ov-meet-line-height-tight);
 
@@ -168,6 +179,7 @@
 // === TOOLBAR AND SHARED UTILITIES ===
 .recordings-toolbar {
 	@extend .ov-data-toolbar;
+	margin-bottom: 0;
 
 	// Responsive toolbar adjustments
 	@include ov-tablet-down {
@@ -181,6 +193,15 @@
 				button {
 					padding: 0;
 				}
+			}
+		}
+		.toolbar-right {
+			order: 1;
+			width: 100%;
+			justify-content: flex-end;
+
+			.refresh-btn {
+				padding: 0;
 			}
 		}
 	}
