@@ -1,25 +1,21 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import {
-	getAppearancePreferences,
-	startTestServer,
-	updateAppearancePreferences
-} from '../../../helpers/request-helpers.js';
+import { getAppearanceConfig, startTestServer, updateAppearanceConfig } from '../../../helpers/request-helpers.js';
 
 describe('Appearance API Tests', () => {
 	beforeAll(() => {
 		startTestServer();
 	});
 
-	describe('Get Appearance Preferences', () => {
+	describe('Get Appearance Config', () => {
 		it('should return 402 status code as it is a PRO feature', async () => {
-			const response = await getAppearancePreferences();
+			const response = await getAppearanceConfig();
 			expect(response.status).toBe(402);
 		});
 	});
 
-	describe('Update Appearance Preferences', () => {
+	describe('Update Appearance Config', () => {
 		it('should return 402 status code as it is a PRO feature', async () => {
-			const response = await updateAppearancePreferences({});
+			const response = await updateAppearanceConfig({});
 			expect(response.status).toBe(402);
 		});
 	});

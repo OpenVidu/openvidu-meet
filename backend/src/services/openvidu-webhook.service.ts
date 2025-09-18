@@ -5,7 +5,7 @@ import {
 	MeetWebhookEvent,
 	MeetWebhookEventType,
 	MeetWebhookPayload,
-	WebhookPreferences
+	WebhookConfig
 } from '@typings-ce';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
@@ -20,7 +20,7 @@ import { AuthService, LoggerService, MeetStorageService } from './index.js';
 export class OpenViduWebhookService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(MeetStorageService) protected globalPrefService: MeetStorageService,
+		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(AuthService) protected authService: AuthService
 	) {}
 
@@ -153,9 +153,9 @@ export class OpenViduWebhookService {
 	}
 
 	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
-		const webhookPreferences = await this.getWebhookPreferences();
+		const webhookConfig = await this.getWebhookConfig();
 
-		if (!webhookPreferences.enabled) return;
+		if (!webhookConfig.enabled) return;
 
 		const creationDate = Date.now();
 		const data: MeetWebhookEvent = {
@@ -169,7 +169,7 @@ export class OpenViduWebhookService {
 		try {
 			const signature = await this.generateWebhookSignature(creationDate, data);
 
-			await this.fetchWithRetry(webhookPreferences.url!, {
+			await this.fetchWithRetry(webhookConfig.url!, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export class OpenViduWebhookService {
 				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error sending webhook event ${data.event} to '${webhookPreferences.url}':`, error);
+			this.logger.error(`Error sending webhook event ${data.event} to '${webhookConfig.url}':`, error);
 			throw error;
 		}
 	}
@@ -309,12 +309,12 @@ export class OpenViduWebhookService {
 		}
 	}
 
-	protected async getWebhookPreferences(): Promise<WebhookPreferences> {
+	protected async getWebhookConfig(): Promise<WebhookConfig> {
 		try {
-			const { webhooksPreferences } = await this.globalPrefService.getGlobalPreferences();
-			return webhooksPreferences;
+			const { webhooksConfig } = await this.storageService.getGlobalConfig();
+			return webhooksConfig;
 		} catch (error) {
-			this.logger.error('Error getting webhook preferences:', error);
+			this.logger.error('Error getting webhook config:', error);
 			throw error;
 		}
 	}

@@ -6,9 +6,9 @@ import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
 import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
-const PREFERENCES_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`;
+const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
 
-describe('Global Preferences API Security Tests', () => {
+describe('Global Config API Security Tests', () => {
 	let app: Express;
 	let adminCookie: string;
 
@@ -17,55 +17,55 @@ describe('Global Preferences API Security Tests', () => {
 		adminCookie = await loginUser();
 	});
 
-	describe('Update Webhook Preferences Tests', () => {
-		const webhookPreferences = {
+	describe('Update Webhook Config Tests', () => {
+		const webhookConfig = {
 			enabled: true,
 			url: 'https://example.com/webhook'
 		};
 
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/webhooks`)
+				.put(`${CONFIG_PATH}/webhooks`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-				.send(webhookPreferences);
+				.send(webhookConfig);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/webhooks`)
+				.put(`${CONFIG_PATH}/webhooks`)
 				.set('Cookie', adminCookie)
-				.send(webhookPreferences);
+				.send(webhookConfig);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${PREFERENCES_PATH}/webhooks`).send(webhookPreferences);
+			const response = await request(app).put(`${CONFIG_PATH}/webhooks`).send(webhookConfig);
 			expect(response.status).toBe(401);
 		});
 	});
 
-	describe('Get Webhook Preferences Tests', () => {
+	describe('Get Webhook Config Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.get(`${PREFERENCES_PATH}/webhooks`)
+				.get(`${CONFIG_PATH}/webhooks`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/webhooks`).set('Cookie', adminCookie);
+			const response = await request(app).get(`${CONFIG_PATH}/webhooks`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/webhooks`);
+			const response = await request(app).get(`${CONFIG_PATH}/webhooks`);
 			expect(response.status).toBe(401);
 		});
 	});
 
-	describe('Update Security Preferences Tests', () => {
-		const securityPreferences = {
+	describe('Update Security Config Tests', () => {
+		const securityConfig = {
 			authentication: {
 				authMethod: {
 					type: AuthType.SINGLE_USER
@@ -76,71 +76,68 @@ describe('Global Preferences API Security Tests', () => {
 
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/security`)
+				.put(`${CONFIG_PATH}/security`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
-				.send(securityPreferences);
+				.send(securityConfig);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/security`)
+				.put(`${CONFIG_PATH}/security`)
 				.set('Cookie', adminCookie)
-				.send(securityPreferences);
+				.send(securityConfig);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${PREFERENCES_PATH}/security`).send(securityPreferences);
+			const response = await request(app).put(`${CONFIG_PATH}/security`).send(securityConfig);
 			expect(response.status).toBe(401);
 		});
 	});
 
-	describe('Get Security Preferences Tests', () => {
+	describe('Get Security Config Tests', () => {
 		it('should succeed when user is not authenticated', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/security`);
+			const response = await request(app).get(`${CONFIG_PATH}/security`);
 			expect(response.status).toBe(200);
 		});
 	});
 
-	describe('Update Appearance Preferences Tests', () => {
+	describe('Update Appearance Config Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/appearance`)
+				.put(`${CONFIG_PATH}/appearance`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.send({});
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app)
-				.put(`${PREFERENCES_PATH}/appearance`)
-				.set('Cookie', adminCookie)
-				.send({});
+			const response = await request(app).put(`${CONFIG_PATH}/appearance`).set('Cookie', adminCookie).send({});
 			expect(response.status).toBe(402); // Assuming 402 is the expected status code for this case
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${PREFERENCES_PATH}/appearance`).send({});
+			const response = await request(app).put(`${CONFIG_PATH}/appearance`).send({});
 			expect(response.status).toBe(401);
 		});
 	});
 
-	describe('Get Appearance Preferences Tests', () => {
+	describe('Get Appearance Config Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
-				.get(`${PREFERENCES_PATH}/appearance`)
+				.get(`${CONFIG_PATH}/appearance`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/appearance`).set('Cookie', adminCookie);
+			const response = await request(app).get(`${CONFIG_PATH}/appearance`).set('Cookie', adminCookie);
 			expect(response.status).toBe(402); // Assuming 402 is the expected status code for this case
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${PREFERENCES_PATH}/appearance`);
+			const response = await request(app).get(`${CONFIG_PATH}/appearance`);
 			expect(response.status).toBe(401);
 		});
 	});

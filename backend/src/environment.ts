@@ -50,7 +50,7 @@ export const {
 	LIVEKIT_API_KEY = 'devkey',
 	LIVEKIT_API_SECRET = 'secret',
 
-	MEET_PREFERENCES_STORAGE_MODE = 's3', // Options: 's3', 'abs'
+	MEET_BLOB_STORAGE_MODE = 's3', // Options: 's3', 'abs'
 
 	// S3 configuration
 	MEET_S3_BUCKET = 'openvidu-appdata',
@@ -108,12 +108,12 @@ export const logEnvVars = () => {
 	console.log('SERVICE NAME ID: ', text(MEET_NAME_ID));
 	console.log('CORS ORIGIN:', text(SERVER_CORS_ORIGIN));
 	console.log('MEET LOG LEVEL: ', text(MEET_LOG_LEVEL));
-	console.log('MEET PREFERENCES STORAGE:', text(MEET_PREFERENCES_STORAGE_MODE));
+	console.log('MEET BLOB STORAGE MODE:', text(MEET_BLOB_STORAGE_MODE));
 	console.log('MEET INITIAL ADMIN USER: ', credential('****' + MEET_INITIAL_ADMIN_USER.slice(-3)));
 	console.log('MEET INITIAL ADMIN PASSWORD: ', credential('****' + MEET_INITIAL_ADMIN_PASSWORD.slice(-3)));
 
 	if (!MEET_INITIAL_API_KEY) {
-		console.log(chalk.red('MEET INITIAL_API_KEY: none'));
+		console.log(chalk.red('MEET INITIAL API KEY: none'));
 	} else {
 		console.log('MEET INITIAL API KEY: ', credential('****' + MEET_INITIAL_API_KEY.slice(-3)));
 	}
@@ -133,7 +133,7 @@ export const logEnvVars = () => {
 	console.log('LIVEKIT API KEY: ', credential('****' + LIVEKIT_API_KEY.slice(-3)));
 	console.log('---------------------------------------------------------');
 
-	if (MEET_PREFERENCES_STORAGE_MODE === 's3') {
+	if (MEET_BLOB_STORAGE_MODE === 's3') {
 		console.log('S3 Configuration');
 		console.log('---------------------------------------------------------');
 		console.log('MEET S3 BUCKET:', text(MEET_S3_BUCKET));
@@ -143,7 +143,7 @@ export const logEnvVars = () => {
 		console.log('MEET AWS REGION:', text(MEET_AWS_REGION));
 		console.log('MEET S3 WITH PATH STYLE ACCESS:', text(MEET_S3_WITH_PATH_STYLE_ACCESS));
 		console.log('---------------------------------------------------------');
-	} else if (MEET_PREFERENCES_STORAGE_MODE === 'abs') {
+	} else if (MEET_BLOB_STORAGE_MODE === 'abs') {
 		console.log('Azure Blob Storage Configuration');
 		console.log('---------------------------------------------------------');
 		console.log('MEET AZURE ACCOUNT NAME:', text(MEET_AZURE_ACCOUNT_NAME));

@@ -25,14 +25,15 @@ npm run build:prod
 
 ## Storage Structure
 
-The OpenVidu Meet backend uses an S3 bucket to store all application data, including rooms, recordings, user information, and system preferences. The bucket follows a hierarchical structure organized as follows:
+The OpenVidu Meet backend uses an S3 bucket to store all application data, including rooms, recordings, user information, and system config. The bucket follows a hierarchical structure organized as follows:
 
 ### Bucket Structure
 
 ```plaintext
 openvidu-appdata/
 ├── openvidu-meet/
-│   ├── global-preferences.json
+│   ├── api-keys.json
+│   ├── global-config.json
 │   ├── users/
 │   │   └── admin.json
 │   ├── rooms/
@@ -56,13 +57,17 @@ openvidu-appdata/
 
 ### Directory Descriptions
 
-#### **Global Preferences** (`global-preferences.json`)
+#### **API Keys** (`api-keys.json`)
 
-Contains system-wide settings and configurations for the OpenVidu Meet application, such as default recording settings, UI preferences, and feature toggles.
+Stores API keys used for authenticating requests to the OpenVidu Meet API. This file contains a list of valid API keys along with their creation dates.
+
+#### **Global Config** (`global-config.json`)
+
+Contains system-wide settings and configurations for the OpenVidu Meet application, such as security config, webhook config and global rooms appearance.
 
 #### **Users** (`users/`)
 
-Stores user account information in individual JSON files. Each file is named using the username (e.g., `admin.json`) and contains user-specific data including authentication details, permissions, and preferences.
+Stores user account information in individual JSON files. Each file is named using the username (e.g., `admin.json`) and contains user-specific data including authentication details and roles.
 
 #### **Rooms** (`rooms/`)
 

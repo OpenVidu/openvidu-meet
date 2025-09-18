@@ -1,10 +1,10 @@
 type: object
 properties:
     authentication:
-        $ref: '#/AuthenticationPreferences'
-        description: Preferences for authentication.
+        $ref: '#/AuthenticationConfig'
+        description: Config for authentication.
 
-AuthenticationPreferences:
+AuthenticationConfig:
     type: object
     properties:
         authMethod:

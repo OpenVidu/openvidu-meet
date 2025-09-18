@@ -1,6 +1,6 @@
 export * from './api-key.js';
-export * from './auth-preferences.js';
-export * from './global-preferences.js';
+export * from './auth-config.js';
+export * from './global-config.js';
 
 export * from './permissions/livekit-permissions.js';
 export * from './permissions/openvidu-permissions.js';

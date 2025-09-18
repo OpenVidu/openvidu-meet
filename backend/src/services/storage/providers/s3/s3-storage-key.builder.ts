@@ -3,8 +3,8 @@ import { RecordingHelper } from '../../../../helpers/recording.helper.js';
 import { StorageKeyBuilder } from '../../storage.interface.js';
 
 export class S3KeyBuilder implements StorageKeyBuilder {
-	buildGlobalPreferencesKey(): string {
-		return `global-preferences.json`;
+	buildGlobalConfigKey(): string {
+		return `global-config.json`;
 	}
 
 	buildMeetRoomKey(roomId: string): string {

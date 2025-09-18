@@ -3,7 +3,7 @@ import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@ang
 import { ErrorReason } from '@lib/models';
 import {
 	AuthService,
-	GlobalPreferencesService,
+	GlobalConfigService,
 	NavigationService,
 	ParticipantService,
 	RecordingService,
@@ -53,7 +53,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 ) => {
 	const navigationService = inject(NavigationService);
 	const authService = inject(AuthService);
-	const preferencesService = inject(GlobalPreferencesService);
+	const configService = inject(GlobalConfigService);
 	const roomService = inject(RoomService);
 	const participantService = inject(ParticipantService);
 
@@ -81,7 +81,7 @@ export const checkParticipantRoleAndAuthGuard: CanActivateFn = async (
 		}
 	}
 
-	const authMode = await preferencesService.getAuthModeToAccessRoom();
+	const authMode = await configService.getAuthModeToAccessRoom();
 
 	// If the user is a moderator and the room requires authentication for moderators only,
 	// or if the room requires authentication for all users,

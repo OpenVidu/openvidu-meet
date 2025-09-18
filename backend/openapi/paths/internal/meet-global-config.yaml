@@ -1,16 +1,16 @@
-/preferences/webhooks:
+/config/webhooks:
     get:
-        operationId: getWebhooksPreferences
-        summary: Get webhooks preferences
+        operationId: getWebhooksConfig
+        summary: Get webhooks config
         description: >
-            Retrieves the webhooks preferences for the OpenVidu Meet application.
+            Retrieves the webhooks config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         security:
             - accessTokenCookie: []
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-get-webhooks-preferences.yaml'
+                $ref: '../../components/responses/internal/success-get-webhooks-config.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -18,19 +18,19 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
     put:
-        operationId: updateWebhooksPreferences
-        summary: Update webhooks preferences
+        operationId: updateWebhooksConfig
+        summary: Update webhooks config
         description: >
-            Updates the webhooks preferences for the OpenVidu Meet application.
+            Updates the webhooks config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         security:
             - accessTokenCookie: []
         requestBody:
-            $ref: '../../components/requestBodies/internal/update-webhooks-preferences.yaml'
+            $ref: '../../components/requestBodies/internal/update-webhooks-config.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-update-webhooks-preferences.yaml'
+                $ref: '../../components/responses/internal/success-update-webhooks-config.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -40,14 +40,14 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
-/preferences/webhooks/test:
+/config/webhooks/test:
     post:
         operationId: testWebhookUrl
         summary: Test webhook URL
         description: >
             Tests the provided webhook URL to ensure it is valid and reachable.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         requestBody:
             $ref: '../../components/requestBodies/internal/test-webhook-url-request.yaml'
         responses:
@@ -60,33 +60,33 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
-/preferences/security:
+/config/security:
     get:
-        operationId: getSecurityPreferences
-        summary: Get security preferences
+        operationId: getSecurityConfig
+        summary: Get security config
         description: >
-            Retrieves the security preferences for the OpenVidu Meet application.
+            Retrieves the security config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-get-security-preferences.yaml'
+                $ref: '../../components/responses/internal/success-get-security-config.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
     put:
-        operationId: updateSecurityPreferences
-        summary: Update security preferences
+        operationId: updateSecurityConfig
+        summary: Update security config
         description: >
-            Updates the security preferences for the OpenVidu Meet application.
+            Updates the security config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         security:
             - accessTokenCookie: []
         requestBody:
-            $ref: '../../components/requestBodies/internal/update-security-preferences.yaml'
+            $ref: '../../components/requestBodies/internal/update-security-config.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-update-security-preferences.yaml'
+                $ref: '../../components/responses/internal/success-update-security-config.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -96,26 +96,26 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
-/preferences/appearance:
+/config/appearance:
     get:
-        operationId: getAppearancePreferences
-        summary: Get appearance preferences
+        operationId: getAppearanceConfig
+        summary: Get appearance config
         description: >
-            Retrieves the appearance preferences for the OpenVidu Meet application.
+            Retrieves the appearance config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         security:
             - accessTokenCookie: []
         responses:
             '202':
                 $ref: '../../components/responses/pro-feature-error.yaml'
     put:
-        operationId: updateAppearancePreferences
-        summary: Update appearance preferences
+        operationId: updateAppearanceConfig
+        summary: Update appearance config
         description: >
-            Updates the appearance preferences for the OpenVidu Meet application.
+            Updates the appearance config for the OpenVidu Meet application.
         tags:
-            - Internal API - Global Preferences
+            - Internal API - Global Config
         security:
             - accessTokenCookie: []
         responses:

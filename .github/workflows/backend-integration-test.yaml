@@ -1,595 +1,595 @@
 name: Backend Integration Tests
 on:
-  push:
-    paths:
-      - 'backend/src/**'
-      - 'backend/package.json'
-      - 'backend/package-lock.json'
-      - 'backend/tests/**'
-  pull_request:
-    paths:
-      - 'backend/src/**'
-  workflow_dispatch:
-    inputs:
-      use-aws:
-        description: 'Run recording tests in AWS EC2 runner'
-        default: 'true'
-      aws-instance-type:
-        description: 'AWS EC2 instance type'
-        default: 'c5.2xlarge'
+    push:
+        paths:
+            - 'backend/src/**'
+            - 'backend/package.json'
+            - 'backend/package-lock.json'
+            - 'backend/tests/**'
+    pull_request:
+        paths:
+            - 'backend/src/**'
+    workflow_dispatch:
+        inputs:
+            use-aws:
+                description: 'Run recording tests in AWS EC2 runner'
+                default: 'true'
+            aws-instance-type:
+                description: 'AWS EC2 instance type'
+                default: 'c5.2xlarge'
 
 jobs:
-  start-aws-runner:
-    name: Prepare AWS runner
-    runs-on: ov-actions-runner
-    if: ${{ inputs.use-aws != 'false' }}
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Start AWS EC2 Runner
-        id: start-ec2-runner
-        uses: OpenVidu/actions/start-aws-runner@main
-        with:
-          aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
-          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
-          github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
-          ec2-image-id: ${{ vars.AWS_GITHUB_ACTIONS_AMI }}
-          subnet-id: ${{ vars.AWS_SUBNET_ID }}
-          security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
-          workflow-name: ${{ github.workflow }}
-          repository-name: ${{ github.repository }}
-  test-rooms:
-    name: Rooms API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-rooms"
-                }
-              ' egress.yaml
-            fi
+    start-aws-runner:
+        name: Prepare AWS runner
+        runs-on: ov-actions-runner
+        if: ${{ inputs.use-aws != 'false' }}
+        outputs:
+            label: ${{ steps.start-ec2-runner.outputs.label }}
+            ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+        steps:
+            - name: Start AWS EC2 Runner
+              id: start-ec2-runner
+              uses: OpenVidu/actions/start-aws-runner@main
+              with:
+                  aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
+                  aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ vars.AWS_REGION }}
+                  github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
+                  ec2-image-id: ${{ vars.AWS_GITHUB_ACTIONS_AMI }}
+                  subnet-id: ${{ vars.AWS_SUBNET_ID }}
+                  security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
+                  workflow-name: ${{ github.workflow }}
+                  repository-name: ${{ github.repository }}
+    test-rooms:
+        name: Rooms API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-rooms"
+                          }
+                        ' egress.yaml
+                      fi
 
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
 
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-rooms'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-rooms
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-rooms'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-rooms'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-rooms
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-rooms'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-recordings:
-    name: Recordings API Tests
-    needs: start-aws-runner
-    if: ${{ always() && (needs.start-aws-runner.result == 'success' || needs.start-aws-runner.result == 'skipped') }}
-    runs-on: ${{ needs.start-aws-runner.outputs.label || 'ov-actions-runner' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    timeout-minutes: 30
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-recordings"
-                }
-              ' egress.yaml
+    test-recordings:
+        name: Recordings API Tests
+        needs: start-aws-runner
+        if: ${{ always() && (needs.start-aws-runner.result == 'success' || needs.start-aws-runner.result == 'skipped') }}
+        runs-on: ${{ needs.start-aws-runner.outputs.label || 'ov-actions-runner' }}
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        timeout-minutes: 30
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-recordings"
+                          }
+                        ' egress.yaml
 
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-recordings
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-recordings
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-webhooks:
-    name: Webhook Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-webhooks"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-webhooks'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-webhooks
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-webhooks'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-webhooks:
+        name: Webhook Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-webhooks"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-webhooks'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-webhooks
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-webhooks'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-security:
-    name: Security API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-security"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-security'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-security
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-security'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-security:
+        name: Security API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-security"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-security'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-security
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-security'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-global-preferences:
-    name: Global Preferences API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-global-preferences"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-global-preferences'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-global-preferences
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-global-preferences'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-global-config:
+        name: Global Config API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-global-preferences"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-global-preferences'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-global-config
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-global-preferences'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-participants:
-    name: Participants API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-participants"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-participants'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-participants
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-participants'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-participants:
+        name: Participants API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-participants"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-participants'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-participants
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-participants'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-meetings:
-    name: Meetings API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-meetings"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-meetings'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-meetings
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-meetings'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-meetings:
+        name: Meetings API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-meetings"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-meetings'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-meetings
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-meetings'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  test-users:
-    name: Users API Tests
-    runs-on: ov-actions-runner
-    strategy:
-      fail-fast: false
-      matrix:
-        storage-provider: [s3, abs]
-    steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.13'
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-      - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@main
-        with:
-          ref-openvidu-local-deployment: development
-          pre_startup_commands: |
-            cat <<'BASH' > pre_startup_commands.sh
-            #!/bin/bash
-            if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
-              echo "Using Azure storage provider"
-              yq e -i '
-                del(.storage.s3) |
-                .storage.azure = {
-                  "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
-                  "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
-                  "container_name": "openvidu-appdata-users"
-                }
-              ' egress.yaml
-            fi
-            echo "Commenting out openvidu-meet container in docker-compose.yaml"
-            if [ -f docker-compose.yaml ]; then
-              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
-            fi
-            BASH
-            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-users'
-      - name: Run tests
-        run: |
-          cd backend
-          npm run test:integration-users
-        env:
-          MEET_PREFERENCES_STORAGE_MODE: ${{ matrix.storage-provider }}
-          MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
-          MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
-          MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-users'
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/reports/junit.xml'
-          fail_on_failure: true
-          require_tests: true
-      - name: Clean up
-        if: always()
-        uses: OpenVidu/actions/cleanup@main
+    test-users:
+        name: Users API Tests
+        runs-on: ov-actions-runner
+        strategy:
+            fail-fast: false
+            matrix:
+                storage-provider: [s3, abs]
+        steps:
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.13'
+            - name: Install LK CLI
+              run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Setup OpenVidu Local Deployment
+              uses: OpenVidu/actions/start-openvidu-local-deployment@main
+              with:
+                  ref-openvidu-local-deployment: development
+                  pre_startup_commands: |
+                      cat <<'BASH' > pre_startup_commands.sh
+                      #!/bin/bash
+                      if [[ "${{ matrix['storage-provider'] }}" == "abs" ]]; then
+                        echo "Using Azure storage provider"
+                        yq e -i '
+                          del(.storage.s3) |
+                          .storage.azure = {
+                            "account_name": "${{ vars.MEET_AZURE_ACCOUNT_NAME }}",
+                            "account_key": "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}",
+                            "container_name": "openvidu-appdata-users"
+                          }
+                        ' egress.yaml
+                      fi
+                      echo "Commenting out openvidu-meet container in docker-compose.yaml"
+                      if [ -f docker-compose.yaml ]; then
+                        yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+                      fi
+                      BASH
+                      chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+            - name: Setup OpenVidu Meet
+              uses: OpenVidu/actions/start-openvidu-meet@main
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-users'
+            - name: Run tests
+              run: |
+                  cd backend
+                  npm run test:integration-users
+              env:
+                  MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
+                  MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
+                  MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
+                  MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-users'
+                  JEST_JUNIT_OUTPUT_DIR: './reports/'
+            - name: Publish Test Report
+              uses: mikepenz/action-junit-report@v4
+              if: always()
+              with:
+                  report_paths: '**/reports/junit.xml'
+                  fail_on_failure: true
+                  require_tests: true
+            - name: Clean up
+              if: always()
+              uses: OpenVidu/actions/cleanup@main
 
-  stop-runner:
-    name: Stop EC2 runner
-    needs:
-      - start-aws-runner
-      - test-recordings
-    runs-on: ov-actions-runner
-    if: ${{ always() && needs.start-aws-runner.outputs.label != '' }}
-    steps:
-      - name: Stop AWS EC2 Runner
-        id: stop-ec2-runner
-        uses: OpenVidu/actions/stop-aws-runner@main
-        with:
-          aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
-          github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
-          label: ${{ needs.start-aws-runner.outputs.label }}
-          ec2-instance-id: ${{ needs.start-aws-runner.outputs.ec2-instance-id }}
+    stop-runner:
+        name: Stop EC2 runner
+        needs:
+            - start-aws-runner
+            - test-recordings
+        runs-on: ov-actions-runner
+        if: ${{ always() && needs.start-aws-runner.outputs.label != '' }}
+        steps:
+            - name: Stop AWS EC2 Runner
+              id: stop-ec2-runner
+              uses: OpenVidu/actions/stop-aws-runner@main
+              with:
+                  aws-access-key-id: ${{ vars.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ vars.AWS_REGION }}
+                  github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
+                  label: ${{ needs.start-aws-runner.outputs.label }}
+                  ec2-instance-id: ${{ needs.start-aws-runner.outputs.ec2-instance-id }}

@@ -9,11 +9,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
+import { AuthService, GlobalConfigService, NotificationService } from '@lib/services';
 import { MeetApiKey } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-developers-settings',
+	selector: 'ov-embedded',
 	standalone: true,
 	imports: [
 		MatCardModule,
@@ -26,10 +26,10 @@ import { MeetApiKey } from '@lib/typings/ce';
 		ReactiveFormsModule,
 		MatProgressSpinnerModule
 	],
-	templateUrl: './developers.component.html',
-	styleUrl: './developers.component.scss'
+	templateUrl: './embedded.component.html',
+	styleUrl: './embedded.component.scss'
 })
-export class DevelopersSettingsComponent implements OnInit {
+export class EmbeddedComponent implements OnInit {
 	isLoading = signal(true);
 	hasWebhookChanges = signal(false);
 
@@ -51,7 +51,7 @@ export class DevelopersSettingsComponent implements OnInit {
 
 	constructor(
 		protected authService: AuthService,
-		protected preferencesService: GlobalPreferencesService,
+		protected configService: GlobalConfigService,
 		protected notificationService: NotificationService,
 		protected clipboard: Clipboard
 	) {
@@ -164,16 +164,16 @@ export class DevelopersSettingsComponent implements OnInit {
 
 	private async loadWebhookConfig() {
 		try {
-			const webhookPreferences = await this.preferencesService.getWebhookPreferences();
+			const webhookConfig = await this.configService.getWebhookConfig();
 			this.webhookForm.patchValue({
-				isEnabled: webhookPreferences.enabled,
-				url: webhookPreferences.url
-				// roomCreated: webhookPreferences.events.roomCreated,
-				// roomDeleted: webhookPreferences.events.roomDeleted,
-				// participantJoined: webhookPreferences.events.participantJoined,
-				// participantLeft: webhookPreferences.events.participantLeft,
-				// recordingStarted: webhookPreferences.events.recordingStarted,
-				// recordingFinished: webhookPreferences.events.recordingFinished
+				isEnabled: webhookConfig.enabled,
+				url: webhookConfig.url
+				// roomCreated: webhookConfig.events.roomCreated,
+				// roomDeleted: webhookConfig.events.roomDeleted,
+				// participantJoined: webhookConfig.events.participantJoined,
+				// participantLeft: webhookConfig.events.participantLeft,
+				// recordingStarted: webhookConfig.events.recordingStarted,
+				// recordingFinished: webhookConfig.events.recordingFinished
 			});
 
 			// Store initial values after loading
@@ -199,7 +199,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		if (!this.webhookForm.valid) return;
 
 		const formValue = this.webhookForm.value;
-		const webhookPreferences = {
+		const webhookConfig = {
 			enabled: formValue.isEnabled!,
 			url: formValue.url ?? undefined
 			// events: {
@@ -213,7 +213,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		};
 
 		try {
-			await this.preferencesService.saveWebhookPreferences(webhookPreferences);
+			await this.configService.saveWebhookConfig(webhookConfig);
 			this.notificationService.showSnackbar('Webhook configuration saved successfully');
 
 			// Update initial values after successful save
@@ -229,7 +229,7 @@ export class DevelopersSettingsComponent implements OnInit {
 		const url = this.webhookForm.get('url')?.value;
 		if (url) {
 			try {
-				await this.preferencesService.testWebhookUrl(url);
+				await this.configService.testWebhookUrl(url);
 				this.notificationService.showSnackbar('Test webhook sent successfully. Your URL is reachable.');
 			} catch (error: any) {
 				const errorMessage = error.error?.message || error.message || 'Unknown error';

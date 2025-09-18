@@ -13,7 +13,7 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  * - Otherwise, allow anonymous access.
  */
 export const configureParticipantTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const globalPrefService = container.get(MeetStorageService);
+	const storageService = container.get(MeetStorageService);
 	const roomService = container.get(RoomService);
 
 	let role: ParticipantRole;
@@ -28,10 +28,10 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityPreferences } = await globalPrefService.getGlobalPreferences();
-		authModeToAccessRoom = securityPreferences.authentication.authModeToAccessRoom;
+		const { securityConfig } = await storageService.getGlobalConfig();
+		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
-		return handleError(res, error, 'checking authentication preferences');
+		return handleError(res, error, 'checking authentication config');
 	}
 
 	const authValidators = [];

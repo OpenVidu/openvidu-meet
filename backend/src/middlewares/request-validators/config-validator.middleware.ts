@@ -1,17 +1,17 @@
 import {
-	AuthenticationPreferences,
+	AuthenticationConfig,
 	AuthMode,
 	AuthType,
-	SecurityPreferences,
+	SecurityConfig,
 	SingleUserAuth,
 	ValidAuthMethod,
-	WebhookPreferences
+	WebhookConfig
 } from '@typings-ce';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
-const WebhookPreferencesSchema: z.ZodType<WebhookPreferences> = z
+const WebhookConfigSchema: z.ZodType<WebhookConfig> = z
 	.object({
 		enabled: z.boolean(),
 		url: z
@@ -48,17 +48,17 @@ const SingleUserAuthSchema: z.ZodType<SingleUserAuth> = z.object({
 
 const ValidAuthMethodSchema: z.ZodType<ValidAuthMethod> = SingleUserAuthSchema;
 
-const AuthenticationPreferencesSchema: z.ZodType<AuthenticationPreferences> = z.object({
+const AuthenticationConfigSchema: z.ZodType<AuthenticationConfig> = z.object({
 	authMethod: ValidAuthMethodSchema,
 	authModeToAccessRoom: AuthModeSchema
 });
 
-const SecurityPreferencesSchema: z.ZodType<SecurityPreferences> = z.object({
-	authentication: AuthenticationPreferencesSchema
+const SecurityConfigSchema: z.ZodType<SecurityConfig> = z.object({
+	authentication: AuthenticationConfigSchema
 });
 
-export const validateWebhookPreferences = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = WebhookPreferencesSchema.safeParse(req.body);
+export const validateWebhookConfig = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = WebhookConfigSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -79,8 +79,8 @@ export const withValidWebhookTestRequest = (req: Request, res: Response, next: N
 	next();
 };
 
-export const validateSecurityPreferences = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = SecurityPreferencesSchema.safeParse(req.body);
+export const validateSecurityConfig = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = SecurityConfigSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

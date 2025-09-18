@@ -31,7 +31,7 @@ import {
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'ov-room-config',
+	selector: 'ov-rooms',
 	standalone: true,
 	imports: [
 		MatListModule,

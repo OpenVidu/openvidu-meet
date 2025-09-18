@@ -1,4 +1,4 @@
-export * from './global-preferences.routes.js';
+export * from './global-config.routes.js';
 export * from './auth.routes.js';
 export * from './user.routes.js';
 export * from './room.routes.js';

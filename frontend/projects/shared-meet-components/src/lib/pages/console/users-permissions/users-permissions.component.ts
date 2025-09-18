@@ -18,11 +18,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProFeatureBadgeComponent } from '@lib/components';
-import { AuthService, GlobalPreferencesService, NotificationService } from '@lib/services';
+import { AuthService, GlobalConfigService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-preferences',
+	selector: 'ov-users-permissions',
 	standalone: true,
 	imports: [
 		MatCardModule,
@@ -68,7 +68,7 @@ export class UsersPermissionsComponent implements OnInit {
 	private initialAccessSettingsFormValue: any = null;
 
 	constructor(
-		private preferencesService: GlobalPreferencesService,
+		private configService: GlobalConfigService,
 		private authService: AuthService,
 		private notificationService: NotificationService
 	) {
@@ -129,15 +129,15 @@ export class UsersPermissionsComponent implements OnInit {
 
 	private async loadAccessSettings() {
 		try {
-			const authMode = await this.preferencesService.getAuthModeToAccessRoom();
+			const authMode = await this.configService.getAuthModeToAccessRoom();
 			this.accessSettingsForm.get('authModeToAccessRoom')?.setValue(authMode);
 
 			// Store initial values after loading
 			this.initialAccessSettingsFormValue = this.accessSettingsForm.value;
 			this.hasAccessSettingsChanges.set(false);
 		} catch (error) {
-			console.error('Error loading security preferences:', error);
-			this.notificationService.showSnackbar('Failed to load security preferences');
+			console.error('Error loading security config:', error);
+			this.notificationService.showSnackbar('Failed to load security config');
 		}
 	}
 
@@ -220,10 +220,10 @@ export class UsersPermissionsComponent implements OnInit {
 		const formData = this.accessSettingsForm.value;
 
 		try {
-			const securityPrefs = await this.preferencesService.getSecurityPreferences();
-			securityPrefs.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
+			const securityConfig = await this.configService.getSecurityConfig();
+			securityConfig.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
 
-			await this.preferencesService.saveSecurityPreferences(securityPrefs);
+			await this.configService.saveSecurityConfig(securityConfig);
 			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
 
 			// Update initial values after successful save

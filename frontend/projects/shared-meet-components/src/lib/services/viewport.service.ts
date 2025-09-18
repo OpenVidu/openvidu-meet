@@ -1,5 +1,5 @@
-import { Injectable, signal, computed, OnDestroy } from '@angular/core';
-import { fromEvent, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { computed, Injectable, OnDestroy, signal } from '@angular/core';
+import { debounceTime, distinctUntilChanged, fromEvent, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 /**

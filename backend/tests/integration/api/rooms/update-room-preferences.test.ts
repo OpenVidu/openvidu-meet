@@ -77,7 +77,7 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.config).toEqual(updatedConfig);
 		});
 
-		it('should allow partial preference updates', async () => {
+		it('should allow partial config updates', async () => {
 			// Create a room first with all config enabled
 			const createdRoom = await createRoom({
 				roomName: 'partial-update',
@@ -91,7 +91,7 @@ describe('Room API Tests', () => {
 				}
 			});
 
-			// Update only one preference
+			// Update only one config field
 			const partialConfig = {
 				recording: {
 					enabled: false,

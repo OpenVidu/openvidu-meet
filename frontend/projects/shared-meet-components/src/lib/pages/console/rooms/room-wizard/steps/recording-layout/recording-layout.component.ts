@@ -39,7 +39,7 @@ export class RecordingLayoutComponent implements OnDestroy {
 			description: 'Highlight the active speaker with other participants below',
 			imageUrl: './assets/layouts/speaker.png',
 			isPro: true,
-			disabled: true,
+			disabled: true
 			// recommended: true
 		},
 		{

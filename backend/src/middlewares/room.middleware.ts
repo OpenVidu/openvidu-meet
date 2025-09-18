@@ -77,10 +77,10 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityPreferences } = await storageService.getGlobalPreferences();
-		authModeToAccessRoom = securityPreferences.authentication.authModeToAccessRoom;
+		const { securityConfig } = await storageService.getGlobalConfig();
+		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
-		return handleError(res, error, 'checking authentication preferences');
+		return handleError(res, error, 'checking authentication config');
 	}
 
 	const authValidators = [];

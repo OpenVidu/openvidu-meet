@@ -131,7 +131,7 @@ test.describe('Recording Access Tests', () => {
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
-		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
+		await waitForElementInIframe(page, 'ov-room-recordings', { state: 'visible' });
 	});
 
 	test('should speaker not be able to access recording when access level is set to moderator', async ({ page }) => {
@@ -155,7 +155,7 @@ test.describe('Recording Access Tests', () => {
 		await waitForElementInIframe(page, '#view-recordings-btn', { state: 'hidden' });
 	});
 
-	test('should allow moderators to access recording when access level is set to speaker', async ({ page }) => {
+	test('should allow moderator to access recording when access level is set to speaker', async ({ page }) => {
 		await updateRoomConfig(
 			roomId,
 			{
@@ -173,7 +173,7 @@ test.describe('Recording Access Tests', () => {
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
-		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
+		await waitForElementInIframe(page, 'ov-room-recordings', { state: 'visible' });
 	});
 
 	test('should allow speaker to access recording when access level is set to speaker', async ({ page }) => {
@@ -194,6 +194,6 @@ test.describe('Recording Access Tests', () => {
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('speaker', page);
 
-		await waitForElementInIframe(page, 'app-room-recordings', { state: 'visible' });
+		await waitForElementInIframe(page, 'ov-room-recordings', { state: 'visible' });
 	});
 });

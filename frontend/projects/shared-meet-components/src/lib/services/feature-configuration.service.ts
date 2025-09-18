@@ -128,7 +128,7 @@ export class FeatureConfigurationService {
 	 * Core logic to calculate features based on all configurations
 	 */
 	protected calculateFeatures(
-		roomPrefs?: MeetRoomConfig,
+		roomConfig?: MeetRoomConfig,
 		participantPerms?: ParticipantPermissions,
 		role?: ParticipantRole,
 		recordingPerms?: RecordingPermissions
@@ -137,10 +137,10 @@ export class FeatureConfigurationService {
 		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
 
 		// Apply room configurations
-		if (roomPrefs) {
-			features.showRecordingPanel = roomPrefs.recording.enabled;
-			features.showChat = roomPrefs.chat.enabled;
-			features.showBackgrounds = roomPrefs.virtualBackground.enabled;
+		if (roomConfig) {
+			features.showRecordingPanel = roomConfig.recording.enabled;
+			features.showChat = roomConfig.chat.enabled;
+			features.showBackgrounds = roomConfig.virtualBackground.enabled;
 		}
 
 		// Apply participant permissions (these can restrict enabled features)

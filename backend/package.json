@@ -42,7 +42,7 @@
 		"test:integration-recordings": "node --experimental-vm-modules node_modules/.bin/jest --maxWorkers=1 --maxConcurrency=1 --forceExit --testPathPattern \"tests/integration/api/recordings\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-webhooks": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/webhooks\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-security": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/security\" --ci --reporters=default --reporters=jest-junit",
-		"test:integration-global-preferences": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/global-preferences\" --ci --reporters=default --reporters=jest-junit",
+		"test:integration-global-config": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/global-config\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-participants": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/participants\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-meetings": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/meetings\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-users": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/users\" --ci --reporters=default --reporters=jest-junit",

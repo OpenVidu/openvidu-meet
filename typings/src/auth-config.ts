@@ -1,4 +1,4 @@
-export interface AuthenticationPreferences {
+export interface AuthenticationConfig {
 	authMethod: ValidAuthMethod;
 	authModeToAccessRoom: AuthMode;
 }

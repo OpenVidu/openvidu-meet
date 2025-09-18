@@ -13,7 +13,7 @@ import {
 	endMeeting,
 	sleep,
 	startTestServer,
-	updateWebbhookPreferences
+	updateWebbhookConfig
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -41,8 +41,8 @@ describe('Webhook Integration Tests', () => {
 
 	beforeEach(async () => {
 		receivedWebhooks = [];
-		// Enable webhooks in global preferences
-		await updateWebbhookPreferences({
+		// Enable webhooks in global config
+		await updateWebbhookConfig({
 			enabled: true,
 			url: `http://localhost:5080/webhook`
 		});
@@ -50,14 +50,14 @@ describe('Webhook Integration Tests', () => {
 
 	afterAll(async () => {
 		await stopWebhookServer();
-		await storageService['initializeGlobalPreferences']();
+		await storageService['initializeGlobalConfig']();
 
 		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
 	it('should not send webhooks when disabled', async () => {
-		await updateWebbhookPreferences({
+		await updateWebbhookConfig({
 			enabled: false
 		});
 

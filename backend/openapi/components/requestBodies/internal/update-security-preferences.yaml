@@ -1,6 +1,0 @@
-description: New security preferences
-required: true
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/security-preferences.yaml'

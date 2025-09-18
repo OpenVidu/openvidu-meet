@@ -10,7 +10,7 @@ import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'app-room-recordings',
+	selector: 'ov-room-recordings',
 	templateUrl: './room-recordings.component.html',
 	styleUrls: ['./room-recordings.component.scss'],
 	standalone: true,

@@ -5,7 +5,7 @@ import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { AuthMode, MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import {
-	changeSecurityPreferences,
+	changeSecurityConfig,
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -323,7 +323,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is speaker', async () => {
-			await changeSecurityPreferences(AuthMode.NONE);
+			await changeSecurityConfig(AuthMode.NONE);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -332,7 +332,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when no authentication is required and participant is moderator', async () => {
-			await changeSecurityPreferences(AuthMode.NONE);
+			await changeSecurityConfig(AuthMode.NONE);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -341,7 +341,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator and participant is speaker', async () => {
-			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
+			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -350,7 +350,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
+			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -360,7 +360,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.MODERATORS_ONLY);
+			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -369,7 +369,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is speaker and authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.ALL_USERS);
+			await changeSecurityConfig(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -379,7 +379,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is speaker but not authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.ALL_USERS);
+			await changeSecurityConfig(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -388,7 +388,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.ALL_USERS);
+			await changeSecurityConfig(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
@@ -398,7 +398,7 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when authentication is required for all users and participant is moderator but not authenticated', async () => {
-			await changeSecurityPreferences(AuthMode.ALL_USERS);
+			await changeSecurityConfig(AuthMode.ALL_USERS);
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)

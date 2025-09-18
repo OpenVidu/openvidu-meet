@@ -61,7 +61,7 @@ import {
 import { combineLatest, Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'app-meeting',
+	selector: 'ov-meeting',
 	templateUrl: './meeting.component.html',
 	styleUrls: ['./meeting.component.scss'],
 	standalone: true,

@@ -34,7 +34,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve a room with custom config', async () => {
 			const payload = {
-				roomName: 'custom-prefs',
+				roomName: 'custom-config',
 				config: {
 					recording: {
 						enabled: true,
@@ -50,7 +50,7 @@ describe('Room API Tests', () => {
 			// Retrieve the room by its ID
 			const response = await getRoom(roomId);
 
-			expectSuccessRoomResponse(response, 'custom-prefs', undefined, payload.config);
+			expectSuccessRoomResponse(response, 'custom-config', undefined, payload.config);
 		});
 
 		it('should retrieve only specified fields when using fields parameter', async () => {

@@ -14,7 +14,7 @@ import type { DeleteRoomDialogOptions } from '@lib/models';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-dialog',
+	selector: 'ov-delete-room-dialog',
 	standalone: true,
 	imports: [
 		FormsModule,

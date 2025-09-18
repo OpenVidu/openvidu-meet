@@ -31,7 +31,7 @@ export class RecordingTriggerComponent implements OnDestroy {
 			id: 'manual',
 			title: 'Manual Recording',
 			description: 'Start recording manually when needed',
-			icon: 'touch_app',
+			icon: 'touch_app'
 			// recommended: true
 		},
 		{

@@ -4,7 +4,7 @@ import { ConsoleNavLink } from '@lib/models';
 import { AuthService } from '@lib/services';
 
 @Component({
-	selector: 'app-console',
+	selector: 'ov-console',
 	standalone: true,
 	imports: [ConsoleNavComponent],
 	templateUrl: './console.component.html',

@@ -9,4 +9,4 @@ export * from './request-validators/user-validator.middleware.js';
 export * from './request-validators/room-validator.middleware.js';
 export * from './request-validators/participant-validator.middleware.js';
 export * from './request-validators/recording-validator.middleware.js';
-export * from './request-validators/preferences-validator.middleware.js';
+export * from './request-validators/config-validator.middleware.js';

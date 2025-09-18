@@ -1,13 +1,4 @@
-import {
-	AuthMode,
-	AuthType,
-	GlobalPreferences,
-	MeetApiKey,
-	MeetRecordingInfo,
-	MeetRoom,
-	User,
-	UserRole
-} from '@typings-ce';
+import { AuthMode, AuthType, GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, User, UserRole } from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
@@ -35,21 +26,21 @@ import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
 /**
  * Domain-specific storage service for OpenVidu Meet.
  *
- * This service handles all domain-specific logic for rooms, recordings, and preferences,
+ * This service handles all domain-specific logic for rooms, recordings, and global config,
  * while delegating basic storage operations to the StorageProvider.
  *
  * This architecture follows the Single Responsibility Principle:
  * - StorageProvider: Handles only basic CRUD operations
  * - MeetStorageService: Handles domain-specific business logic
  *
- * @template GPrefs - Type for global preferences, extends GlobalPreferences
+ * @template GConfig - Type for global config, extends GlobalConfig
  * @template MRoom - Type for room data, extends MeetRoom
  * @template MRec - Type for recording data, extends MeetRecordingInfo
  * @template MUser - Type for user data, extends User
  */
 @injectable()
 export class MeetStorageService<
-	GPrefs extends GlobalPreferences = GlobalPreferences,
+	GConfig extends GlobalConfig = GlobalConfig,
 	MRoom extends MeetRoom = MeetRoom,
 	MRec extends MeetRecordingInfo = MeetRecordingInfo,
 	MUser extends User = User
@@ -104,7 +95,7 @@ export class MeetStorageService<
 
 	/**
 	 * Initializes the storage with default data and initial environment variables if not already initialized.
-	 * This includes global preferences, admin user and API key.
+	 * This includes global config, admin user and API key.
 	 */
 	async initializeStorage(): Promise<void> {
 		try {
@@ -127,7 +118,7 @@ export class MeetStorageService<
 
 			this.logger.info('Storage not initialized or different project detected, proceeding with initialization');
 
-			await this.initializeGlobalPreferences();
+			await this.initializeGlobalConfig();
 			await this.initializeAdminUser();
 			await this.initializeApiKey();
 
@@ -139,32 +130,32 @@ export class MeetStorageService<
 	}
 
 	// ==========================================
-	// GLOBAL PREFERENCES DOMAIN LOGIC
+	// GLOBAL CONFIG DOMAIN LOGIC
 	// ==========================================
 
-	async getGlobalPreferences(): Promise<GPrefs> {
-		const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
-		const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+	async getGlobalConfig(): Promise<GConfig> {
+		const redisKey = RedisKeyName.GLOBAL_CONFIG;
+		const storageKey = this.keyBuilder.buildGlobalConfigKey();
 
-		const preferences = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
+		const config = await this.getFromCacheAndStorage<GConfig>(redisKey, storageKey);
 
-		if (preferences) return preferences;
+		if (config) return config;
 
-		// Build and save default preferences if not found in cache or storage
-		await this.initializeGlobalPreferences();
-		return this.getDefaultPreferences();
+		// Build and save default config if not found in cache or storage
+		await this.initializeGlobalConfig();
+		return this.getDefaultConfig();
 	}
 
 	/**
-	 * Saves global preferences to the storage provider.
-	 * @param {GPrefs} preferences - The global preferences to save.
-	 * @returns {Promise<GPrefs>} The saved global preferences.
+	 * Saves global config to the storage provider.
+	 * @param {GConfig} config - The global config to save.
+	 * @returns {Promise<GConfig>} The saved global config.
 	 */
-	async saveGlobalPreferences(preferences: GPrefs): Promise<GPrefs> {
-		this.logger.info('Saving global preferences');
-		const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
-		const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
-		return await this.saveCacheAndStorage<GPrefs>(redisKey, storageKey, preferences);
+	async saveGlobalConfig(config: GConfig): Promise<GConfig> {
+		this.logger.info('Saving global config');
+		const redisKey = RedisKeyName.GLOBAL_CONFIG;
+		const storageKey = this.keyBuilder.buildGlobalConfigKey();
+		return await this.saveCacheAndStorage<GConfig>(redisKey, storageKey, config);
 	}
 
 	// ==========================================
@@ -643,24 +634,24 @@ export class MeetStorageService<
 	// ==========================================
 
 	/**
-	 * Checks if storage is already initialized by verifying that global preferences exist
+	 * Checks if storage is already initialized by verifying that global config exist
 	 * and belong to the current project.
 	 * @returns {Promise<boolean>} True if storage is already initialized for this project
 	 */
 	protected async checkStorageInitialization(): Promise<boolean> {
 		try {
-			const redisKey = RedisKeyName.GLOBAL_PREFERENCES;
-			const storageKey = this.keyBuilder.buildGlobalPreferencesKey();
+			const redisKey = RedisKeyName.GLOBAL_CONFIG;
+			const storageKey = this.keyBuilder.buildGlobalConfigKey();
 
-			const existing = await this.getFromCacheAndStorage<GPrefs>(redisKey, storageKey);
+			const existing = await this.getFromCacheAndStorage<GConfig>(redisKey, storageKey);
 
 			if (!existing) {
-				this.logger.verbose('No global preferences found, storage needs initialization');
+				this.logger.verbose('No global config found, storage needs initialization');
 				return false;
 			}
 
 			// Check if it's from the same project
-			const existingProjectId = (existing as GlobalPreferences)?.projectId;
+			const existingProjectId = (existing as GlobalConfig)?.projectId;
 			const currentProjectId = MEET_NAME_ID;
 
 			if (existingProjectId !== currentProjectId) {
@@ -679,26 +670,26 @@ export class MeetStorageService<
 	}
 
 	/**
-	 * Initializes default global preferences if not already present.
+	 * Initializes default global config if not already present.
 	 */
-	protected async initializeGlobalPreferences(): Promise<void> {
-		const preferences = this.getDefaultPreferences();
-		await this.saveGlobalPreferences(preferences);
-		this.logger.info('Global preferences initialized with default values');
+	protected async initializeGlobalConfig(): Promise<void> {
+		const config = this.getDefaultConfig();
+		await this.saveGlobalConfig(config);
+		this.logger.info('Global config initialized with default values');
 	}
 
 	/**
-	 * Returns the default global preferences.
-	 * @returns {GPrefs}
+	 * Returns the default global config.
+	 * @returns {GConfig}
 	 */
-	protected getDefaultPreferences(): GPrefs {
+	protected getDefaultConfig(): GConfig {
 		return {
 			projectId: MEET_NAME_ID,
-			webhooksPreferences: {
+			webhooksConfig: {
 				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true' && MEET_INITIAL_API_KEY,
 				url: MEET_INITIAL_WEBHOOK_URL
 			},
-			securityPreferences: {
+			securityConfig: {
 				authentication: {
 					authMethod: {
 						type: AuthType.SINGLE_USER
@@ -706,7 +697,7 @@ export class MeetStorageService<
 					authModeToAccessRoom: AuthMode.NONE
 				}
 			}
-		} as GPrefs;
+		} as GConfig;
 	}
 
 	/**

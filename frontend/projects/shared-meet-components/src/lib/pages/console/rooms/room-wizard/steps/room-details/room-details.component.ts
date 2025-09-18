@@ -18,7 +18,7 @@ import {
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-wizard-room-details',
+	selector: 'ov-room-details',
 	standalone: true,
 	imports: [
 		ReactiveFormsModule,

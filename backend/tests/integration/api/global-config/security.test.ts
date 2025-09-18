@@ -3,13 +3,9 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { MeetStorageService } from '../../../../src/services/index.js';
 import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import {
-	getSecurityPreferences,
-	startTestServer,
-	updateSecurityPreferences
-} from '../../../helpers/request-helpers.js';
+import { getSecurityConfig, startTestServer, updateSecurityConfig } from '../../../helpers/request-helpers.js';
 
-const defaultPreferences = {
+const defaultConfig = {
 	authentication: {
 		authMethod: {
 			type: AuthType.SINGLE_USER
@@ -18,23 +14,23 @@ const defaultPreferences = {
 	}
 };
 
-const restoreDefaultGlobalPreferences = async () => {
-	const defaultPref = await container.get(MeetStorageService)['getDefaultPreferences']();
-	await container.get(MeetStorageService).saveGlobalPreferences(defaultPref);
+const restoreDefaultGlobalConfig = async () => {
+	const defaultGlobalConfig = await container.get(MeetStorageService)['getDefaultConfig']();
+	await container.get(MeetStorageService).saveGlobalConfig(defaultGlobalConfig);
 };
 
-describe('Security Preferences API Tests', () => {
+describe('Security Config API Tests', () => {
 	beforeAll(async () => {
 		startTestServer();
 	});
 
 	afterEach(async () => {
-		await restoreDefaultGlobalPreferences();
+		await restoreDefaultGlobalConfig();
 	});
 
-	describe('Update security preferences', () => {
-		it('should update security preferences with valid complete data', async () => {
-			const validPreferences = {
+	describe('Update security config', () => {
+		it('should update security config with valid complete data', async () => {
+			const validConfig = {
 				authentication: {
 					authMethod: {
 						type: AuthType.SINGLE_USER
@@ -42,20 +38,20 @@ describe('Security Preferences API Tests', () => {
 					authModeToAccessRoom: AuthMode.ALL_USERS
 				}
 			};
-			let response = await updateSecurityPreferences(validPreferences);
+			let response = await updateSecurityConfig(validConfig);
 
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Security preferences updated successfully');
+			expect(response.body.message).toBe('Security config updated successfully');
 
-			response = await getSecurityPreferences();
+			response = await getSecurityConfig();
 			expect(response.status).toBe(200);
-			expect(response.body).toEqual(validPreferences);
+			expect(response.body).toEqual(validConfig);
 		});
 	});
 
-	describe('Update security preferences validation', () => {
+	describe('Update security config validation', () => {
 		it('should reject when authModeToAccessRoom is not a valid enum value', async () => {
-			const response = await updateSecurityPreferences({
+			const response = await updateSecurityConfig({
 				authentication: {
 					authMethod: {
 						type: AuthType.SINGLE_USER
@@ -72,7 +68,7 @@ describe('Security Preferences API Tests', () => {
 		});
 
 		it('should reject when authType is not a valid enum value', async () => {
-			const response = await updateSecurityPreferences({
+			const response = await updateSecurityConfig({
 				authentication: {
 					authMethod: {
 						type: 'invalid'
@@ -89,14 +85,14 @@ describe('Security Preferences API Tests', () => {
 		});
 
 		it('should reject when authModeToAccessRoom or authMethod are not provided', async () => {
-			let response = await updateSecurityPreferences({
+			let response = await updateSecurityConfig({
 				authentication: {
 					authMode: AuthMode.NONE
 				}
 			});
 			expectValidationError(response, 'authentication.authMethod', 'Required');
 
-			response = await updateSecurityPreferences({
+			response = await updateSecurityConfig({
 				authentication: {
 					method: {
 						type: AuthType.SINGLE_USER
@@ -107,7 +103,7 @@ describe('Security Preferences API Tests', () => {
 		});
 
 		it('should reject when authentication is not an object', async () => {
-			const response = await updateSecurityPreferences({
+			const response = await updateSecurityConfig({
 				authentication: 'invalid'
 			});
 
@@ -115,12 +111,12 @@ describe('Security Preferences API Tests', () => {
 		});
 	});
 
-	describe('Get security preferences', () => {
-		it('should return security preferences when authenticated as admin', async () => {
-			const response = await getSecurityPreferences();
+	describe('Get security config', () => {
+		it('should return security config when authenticated as admin', async () => {
+			const response = await getSecurityConfig();
 
 			expect(response.status).toBe(200);
-			expect(response.body).toEqual(defaultPreferences);
+			expect(response.body).toEqual(defaultConfig);
 		});
 	});
 });

@@ -1,4 +1,4 @@
-description: Successfully updated webhooks preferences
+description: Successfully updated security config
 content:
     application/json:
         schema:
@@ -6,4 +6,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Webhooks preferences updated successfully'
+                    example: 'Security config updated successfully'

@@ -8,12 +8,12 @@ import { SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
 import { jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {
 	authRouter,
+	configRouter,
 	internalMeetingRouter,
 	internalParticipantRouter,
 	internalRecordingRouter,
 	internalRoomRouter,
 	livekitWebhookRouter,
-	preferencesRouter,
 	recordingRouter,
 	roomRouter,
 	userRouter
@@ -62,7 +62,7 @@ const createApp = () => {
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences`, preferencesRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
 
 	app.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 

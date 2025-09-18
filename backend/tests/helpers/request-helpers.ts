@@ -26,7 +26,7 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions,
 	ParticipantRole,
-	WebhookPreferences
+	WebhookConfig
 } from '../../src/typings/ce/index.js';
 
 const CREDENTIALS = {
@@ -77,47 +77,47 @@ export const getApiKeys = async () => {
 	return response;
 };
 
-export const getAppearancePreferences = async () => {
+export const getAppearanceConfig = async () => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/appearance`)
 		.set('Cookie', adminCookie)
 		.send();
 	return response;
 };
 
-export const updateAppearancePreferences = async (preferences: any) => {
+export const updateAppearanceConfig = async (config: any) => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/appearance`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/appearance`)
 		.set('Cookie', adminCookie)
-		.send(preferences);
+		.send(config);
 	return response;
 };
 
-export const getWebbhookPreferences = async () => {
+export const getWebbhookConfig = async () => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set('Cookie', adminCookie)
 		.send();
 	return response;
 };
 
-export const updateWebbhookPreferences = async (preferences: WebhookPreferences) => {
+export const updateWebbhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set('Cookie', adminCookie)
-		.send(preferences);
+		.send(config);
 
 	return response;
 };
@@ -126,35 +126,35 @@ export const testWebhookUrl = async (url: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/webhooks/test`)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`)
 		.send({ url });
 	return response;
 };
 
-export const getSecurityPreferences = async () => {
+export const getSecurityConfig = async () => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
 		.set('Cookie', adminCookie)
 		.send();
 	return response;
 };
 
-export const updateSecurityPreferences = async (preferences: any) => {
+export const updateSecurityConfig = async (config: any) => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/preferences/security`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
 		.set('Cookie', adminCookie)
-		.send(preferences);
+		.send(config);
 	return response;
 };
 
-export const changeSecurityPreferences = async (authMode: AuthMode) => {
-	const response = await updateSecurityPreferences({
+export const changeSecurityConfig = async (authMode: AuthMode) => {
+	const response = await updateSecurityConfig({
 		authentication: {
 			authMethod: {
 				type: AuthType.SINGLE_USER
@@ -376,7 +376,7 @@ export const generateParticipantToken = async (participantOptions: any, cookie?:
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences(AuthMode.NONE);
+	await changeSecurityConfig(AuthMode.NONE);
 
 	// Generate the participant token
 	const response = await request(app)
@@ -418,7 +418,7 @@ export const refreshParticipantToken = async (participantOptions: any, cookie: s
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences(AuthMode.NONE);
+	await changeSecurityConfig(AuthMode.NONE);
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token/refresh`)
@@ -580,7 +580,7 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
-	await changeSecurityPreferences(AuthMode.NONE);
+	await changeSecurityConfig(AuthMode.NONE);
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/recording-token`)

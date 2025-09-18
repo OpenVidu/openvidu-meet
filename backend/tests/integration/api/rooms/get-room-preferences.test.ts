@@ -34,7 +34,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve custom room config', async () => {
 			const payload = {
-				roomName: 'custom-prefs',
+				roomName: 'custom-config',
 				config: {
 					recording: {
 						enabled: true,

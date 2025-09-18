@@ -1,15 +1,18 @@
 import { Container } from 'inversify';
-import { MEET_PREFERENCES_STORAGE_MODE } from '../environment.js';
+import { MEET_BLOB_STORAGE_MODE } from '../environment.js';
 import {
 	ABSService,
 	ABSStorageProvider,
 	AuthService,
+	DistributedEventService,
+	FrontendEventService,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
 	MeetStorageService,
 	MutexService,
 	OpenViduWebhookService,
+	ParticipantNameService,
 	ParticipantService,
 	RecordingService,
 	RedisService,
@@ -20,12 +23,9 @@ import {
 	StorageFactory,
 	StorageKeyBuilder,
 	StorageProvider,
-	DistributedEventService,
 	TaskSchedulerService,
 	TokenService,
-	UserService,
-	FrontendEventService,
-	ParticipantNameService
+	UserService
 } from '../services/index.js';
 
 export const container: Container = new Container();
@@ -51,7 +51,7 @@ export const registerDependencies = () => {
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 
-	configureStorage(MEET_PREFERENCES_STORAGE_MODE);
+	configureStorage(MEET_BLOB_STORAGE_MODE);
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 	container.bind(MeetStorageService).toSelf().inSingletonScope();
 

@@ -13,7 +13,7 @@ import {
 } from '@lib/guards';
 import {
 	ConsoleComponent,
-	DevelopersSettingsComponent,
+	EmbeddedComponent,
 	EndMeetingComponent,
 	ErrorComponent,
 	LoginComponent,
@@ -96,7 +96,7 @@ export const baseRoutes: Routes = [
 			},
 			{
 				path: 'embedded',
-				component: DevelopersSettingsComponent
+				component: EmbeddedComponent
 			},
 			{
 				path: 'users-permissions',

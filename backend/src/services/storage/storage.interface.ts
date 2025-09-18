@@ -109,9 +109,9 @@ export interface StorageProvider {
  */
 export interface StorageKeyBuilder {
 	/**
-	 * Builds the key for global preferences storage.
+	 * Builds the key for global config storage.
 	 */
-	buildGlobalPreferencesKey(): string;
+	buildGlobalConfigKey(): string;
 
 	/**
 	 * Builds the key for a specific room.
