@@ -90,12 +90,12 @@ export async function interactWithElementInIframe(
 
 // Helper function to get default room config
 const getDefaultRoomConfig = (): MeetRoomConfig => ({
-	recordingConfig: {
+	recording: {
 		enabled: true,
 		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
-	chatConfig: { enabled: true },
-	virtualBackgroundConfig: { enabled: true }
+	chat: { enabled: true },
+	virtualBackground: { enabled: true }
 });
 
 // Helper function to create a room for testing

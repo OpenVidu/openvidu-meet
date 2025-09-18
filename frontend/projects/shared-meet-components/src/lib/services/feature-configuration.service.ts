@@ -138,9 +138,9 @@ export class FeatureConfigurationService {
 
 		// Apply room configurations
 		if (roomPrefs) {
-			features.showRecordingPanel = roomPrefs.recordingConfig.enabled;
-			features.showChat = roomPrefs.chatConfig.enabled;
-			features.showBackgrounds = roomPrefs.virtualBackgroundConfig.enabled;
+			features.showRecordingPanel = roomPrefs.recording.enabled;
+			features.showChat = roomPrefs.chat.enabled;
+			features.showBackgrounds = roomPrefs.virtualBackground.enabled;
 		}
 
 		// Apply participant permissions (these can restrict enabled features)

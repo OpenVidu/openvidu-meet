@@ -34,23 +34,23 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({
 				roomName: 'update-test',
 				config: {
-					recordingConfig: {
+					recording: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatConfig: { enabled: true },
-					virtualBackgroundConfig: { enabled: true }
+					chat: { enabled: true },
+					virtualBackground: { enabled: true }
 				}
 			});
 
 			// Update the room config
 			const updatedConfig = {
-				recordingConfig: {
+				recording: {
 					enabled: false,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
-				chatConfig: { enabled: false },
-				virtualBackgroundConfig: { enabled: false }
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
@@ -82,23 +82,23 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({
 				roomName: 'partial-update',
 				config: {
-					recordingConfig: {
+					recording: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatConfig: { enabled: true },
-					virtualBackgroundConfig: { enabled: true }
+					chat: { enabled: true },
+					virtualBackground: { enabled: true }
 				}
 			});
 
 			// Update only one preference
 			const partialConfig = {
-				recordingConfig: {
+				recording: {
 					enabled: false,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				chatConfig: { enabled: true },
-				virtualBackgroundConfig: { enabled: true }
+				chat: { enabled: true },
+				virtualBackground: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, partialConfig);
 
@@ -121,17 +121,17 @@ describe('Room API Tests', () => {
 
 			// Invalid config (missing required fields)
 			const invalidConfig = {
-				recordingConfig: {
+				recording: {
 					enabled: false
 				},
-				// Missing chatConfig
-				virtualBackgroundConfig: { enabled: false }
+				// Missing chat config
+				virtualBackground: { enabled: false }
 			};
 			const response = await updateRoomConfig(roomId, invalidConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('chatConfig');
+			expect(JSON.stringify(response.body.details)).toContain('chat');
 		});
 
 		it('should fail when config has incorrect types', async () => {
@@ -141,18 +141,18 @@ describe('Room API Tests', () => {
 
 			// Invalid config (wrong types)
 			const invalidConfig = {
-				recordingConfig: {
+				recording: {
 					enabled: 'true', // String instead of boolean
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				chatConfig: { enabled: false },
-				virtualBackgroundConfig: { enabled: false }
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
 			};
 			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('recordingConfig.enabled');
+			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
 		});
 
 		it('should fail when config is missing required properties', async () => {
@@ -173,29 +173,29 @@ describe('Room API Tests', () => {
 			});
 
 			const invalidConfig = {
-				recordingConfig: {
+				recording: {
 					enabled: true // Missing allowAccessTo
 				},
-				chatConfig: { enabled: false },
-				virtualBackgroundConfig: { enabled: false }
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
 			};
 			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('recordingConfig.allowAccessTo');
+			expect(JSON.stringify(response.body.details)).toContain('recording.allowAccessTo');
 		});
 
 		it('should return 404 when updating non-existent room', async () => {
 			const nonExistentRoomId = 'non-existent-room';
 
 			const config = {
-				recordingConfig: {
+				recording: {
 					enabled: false,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				chatConfig: { enabled: false },
-				virtualBackgroundConfig: { enabled: false }
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
 			};
 			const response = await updateRoomConfig(nonExistentRoomId, config);
 

@@ -35,10 +35,10 @@ export class RoomConfigComponent implements OnDestroy {
 	private saveFormData(formValue: any): void {
 		const stepData: any = {
 			config: {
-				chatConfig: {
+				chat: {
 					enabled: formValue.chatEnabled
 				},
-				virtualBackgroundConfig: {
+				virtualBackground: {
 					enabled: formValue.virtualBackgroundsEnabled
 				}
 			}

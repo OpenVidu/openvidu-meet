@@ -62,7 +62,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 			throw errorRoomMetadataNotFound(roomId);
 		}
 
-		const recordingAccess = room.config!.recordingConfig.allowAccessTo;
+		const recordingAccess = room.config?.recording.allowAccessTo;
 
 		if (!recordingAccess || recordingAccess === MeetRecordingAccess.ADMIN) {
 			// Deny request if the room is configured to allow access to recordings only for admins

@@ -1,13 +1,13 @@
 MeetRoomConfig:
     type: object
     properties:
-        chatConfig:
+        chat:
             $ref: '#/MeetChatConfig'
             description: Config for the chat feature in the room.
-        recordingConfig:
+        recording:
             $ref: '#/MeetRecordingConfig'
             description: Config for recording the room.
-        virtualBackgroundConfig:
+        virtualBackground:
             $ref: '#/MeetVirtualBackgroundConfig'
             description: Config for virtual background in the room.
 MeetChatConfig:

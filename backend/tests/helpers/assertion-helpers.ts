@@ -146,12 +146,12 @@ export const expectValidRoom = (
 		expect(room.config).toEqual(config);
 	} else {
 		expect(room.config).toEqual({
-			recordingConfig: {
+			recording: {
 				enabled: true,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
-			chatConfig: { enabled: true },
-			virtualBackgroundConfig: { enabled: true }
+			chat: { enabled: true },
+			virtualBackground: { enabled: true }
 		});
 	}
 

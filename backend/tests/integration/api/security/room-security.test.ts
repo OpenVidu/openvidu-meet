@@ -244,12 +244,12 @@ describe('Room API Security Tests', () => {
 
 	describe('Update Room Config Tests', () => {
 		const roomConfig = {
-			recordingConfig: {
+			recording: {
 				enabled: false,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
-			chatConfig: { enabled: true },
-			virtualBackgroundConfig: { enabled: true }
+			chat: { enabled: true },
+			virtualBackground: { enabled: true }
 		};
 
 		let roomId: string;

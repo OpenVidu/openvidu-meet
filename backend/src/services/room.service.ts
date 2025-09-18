@@ -684,7 +684,7 @@ export class RoomService {
 	}
 
 	protected getRecordingPermissions(room: Partial<MeetRoom>, role: ParticipantRole): RecordingPermissions {
-		const recordingAccess = room.config!.recordingConfig.allowAccessTo;
+		const recordingAccess = room.config?.recording.allowAccessTo;
 
 		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
 		const canDeleteRecordings = role === ParticipantRole.MODERATOR && recordingAccess !== MeetRecordingAccess.ADMIN;

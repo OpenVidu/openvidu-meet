@@ -158,18 +158,18 @@ export const deleteAllRecordingsCtrl = async (_req: Request, res: Response) => {
  */
 const processFormConfig = (body: any): any => {
     const config = {
-        chatConfig: {
-            enabled: body['config.chatConfig.enabled'] === 'on'
+        chat: {
+            enabled: body['config.chat.enabled'] === 'on'
         },
-        recordingConfig: {
-            enabled: body['config.recordingConfig.enabled'] === 'on',
+        recording: {
+            enabled: body['config.recording.enabled'] === 'on',
             // Only include allowAccessTo if recording is enabled
-            ...(body['config.recordingConfig.enabled'] === 'on' && {
-                allowAccessTo: body['config.recordingConfig.allowAccessTo'] || 'admin_moderator_speaker'
+            ...(body['config.recording.enabled'] === 'on' && {
+                allowAccessTo: body['config.recording.allowAccessTo'] || 'admin_moderator_speaker'
             })
         },
-        virtualBackgroundConfig: {
-            enabled: body['config.virtualBackgroundConfig.enabled'] === 'on'
+        virtualBackground: {
+            enabled: body['config.virtualBackground.enabled'] === 'on'
         }
     };
 

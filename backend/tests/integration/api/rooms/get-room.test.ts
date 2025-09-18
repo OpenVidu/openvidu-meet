@@ -36,12 +36,12 @@ describe('Room API Tests', () => {
 			const payload = {
 				roomName: 'custom-prefs',
 				config: {
-					recordingConfig: {
+					recording: {
 						enabled: true,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatConfig: { enabled: true },
-					virtualBackgroundConfig: { enabled: false }
+					chat: { enabled: true },
+					virtualBackground: { enabled: false }
 				}
 			};
 			// Create a room with custom config

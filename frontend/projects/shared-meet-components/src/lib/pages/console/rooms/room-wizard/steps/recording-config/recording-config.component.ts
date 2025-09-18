@@ -90,7 +90,7 @@ export class RecordingConfigComponent implements OnDestroy {
 
 		const stepData: any = {
 			config: {
-				recordingConfig: {
+				recording: {
 					enabled,
 					...(enabled && { allowAccessTo: formValue.allowAccessTo })
 				}

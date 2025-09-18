@@ -2,9 +2,9 @@
  * Interface representing the config for a room.
  */
 export interface MeetRoomConfig {
-    chatConfig: MeetChatConfig;
-    recordingConfig: MeetRecordingConfig;
-    virtualBackgroundConfig: MeetVirtualBackgroundConfig;
+    chat: MeetChatConfig;
+    recording: MeetRecordingConfig;
+    virtualBackground: MeetVirtualBackgroundConfig;
 }
 
 /**

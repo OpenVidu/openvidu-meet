@@ -26,11 +26,11 @@ content:
                         roomName: room
                         creationDate: 1620000000000
                         config:
-                            chatConfig:
+                            chat:
                                 enabled: true
-                            recordingConfig:
+                            recording:
                                 enabled: false
-                            virtualBackgroundConfig:
+                            virtualBackground:
                                 enabled: true
                         moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                         speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
@@ -45,11 +45,11 @@ content:
                         roomName: room
                         creationDate: 1620000000000
                         config:
-                            chatConfig:
+                            chat:
                                 enabled: true
-                            recordingConfig:
+                            recording:
                                 enabled: false
-                            virtualBackgroundConfig:
+                            virtualBackground:
                                 enabled: true
                         moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                         speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
@@ -64,11 +64,11 @@ content:
                         roomName: room
                         creationDate: 1620000000000
                         config:
-                            chatConfig:
+                            chat:
                                 enabled: true
-                            recordingConfig:
+                            recording:
                                 enabled: false
-                            virtualBackgroundConfig:
+                            virtualBackground:
                                 enabled: true
                         moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                         speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'

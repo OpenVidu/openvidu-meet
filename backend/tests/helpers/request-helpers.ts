@@ -263,14 +263,14 @@ export const updateRoomConfig = async (roomId: string, config: any) => {
 
 export const updateRecordingAccessConfigInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
 	const response = await updateRoomConfig(roomId, {
-		recordingConfig: {
+		recording: {
 			enabled: true,
 			allowAccessTo: recordingAccess
 		},
-		chatConfig: {
+		chat: {
 			enabled: true
 		},
-		virtualBackgroundConfig: {
+		virtualBackground: {
 			enabled: true
 		}
 	});

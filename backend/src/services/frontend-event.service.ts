@@ -75,7 +75,7 @@ export class FrontendEventService {
 		try {
 			const payload: MeetRoomConfigUpdatedPayload = {
 				roomId,
-				config: updatedRoom.config!,
+				config: updatedRoom.config,
 				timestamp: Date.now()
 			};
 

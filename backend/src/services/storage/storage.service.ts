@@ -303,7 +303,7 @@ export class MeetStorageService<
 			moderatorUrl: room.moderatorUrl,
 			speakerUrl: room.speakerUrl,
 			config: {
-				recordingConfig: room.config?.recordingConfig
+				recording: room.config.recording
 			}
 		} as Partial<MRoom>;
 

@@ -75,12 +75,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);
@@ -96,12 +96,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);
@@ -117,12 +117,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);
@@ -138,12 +138,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);
@@ -159,12 +159,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);
@@ -180,12 +180,12 @@ test.describe('Recording Access Tests', () => {
 		await updateRoomConfig(
 			roomId,
 			{
-				chatConfig: { enabled: true },
-				recordingConfig: {
+				chat: { enabled: true },
+				recording: {
 					enabled: true,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				virtualBackgroundConfig: { enabled: true }
+				virtualBackground: { enabled: true }
 			},
 			adminCookie
 		);

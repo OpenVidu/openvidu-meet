@@ -59,12 +59,12 @@ describe('Room API Tests', () => {
 					withRecordings: MeetRoomDeletionPolicyWithRecordings.FORCE
 				},
 				config: {
-					recordingConfig: {
+					recording: {
 						enabled: false,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatConfig: { enabled: false },
-					virtualBackgroundConfig: { enabled: true }
+					chat: { enabled: false },
+					virtualBackground: { enabled: true }
 				}
 			};
 
@@ -237,12 +237,12 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom',
 				autoDeletionDate: validAutoDeletionDate,
 				config: {
-					recordingConfig: {
+					recording: {
 						enabled: 'yes', // invalid boolean
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
-					chatConfig: { enabled: true },
-					virtualBackgroundConfig: { enabled: true }
+					chat: { enabled: true },
+					virtualBackground: { enabled: true }
 				}
 			};
 

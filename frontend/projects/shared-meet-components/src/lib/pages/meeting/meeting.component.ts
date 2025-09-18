@@ -383,7 +383,7 @@ export class MeetingComponent implements OnInit {
 						this.featureConfService.setRoomConfig(config);
 
 						// Refresh recording token if recording is enabled
-						if (config.recordingConfig.enabled) {
+						if (config.recording.enabled) {
 							try {
 								await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
 							} catch (error) {

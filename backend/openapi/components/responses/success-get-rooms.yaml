@@ -24,11 +24,11 @@ content:
                               withMeeting: when_meeting_ends
                               withRecordings: close
                           config:
-                              chatConfig:
+                              chat:
                                   enabled: true
-                              recordingConfig:
+                              recording:
                                   enabled: false
-                              virtualBackgroundConfig:
+                              virtualBackground:
                                   enabled: true
                           moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                           speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
@@ -42,11 +42,11 @@ content:
                               withMeeting: when_meeting_ends
                               withRecordings: close
                           config:
-                              chatConfig:
+                              chat:
                                   enabled: false
-                              recordingConfig:
+                              recording:
                                   enabled: true
-                              virtualBackgroundConfig:
+                              virtualBackground:
                                   enabled: false
                           moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
                           speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
@@ -74,22 +74,22 @@ content:
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           config:
-                              chatConfig:
+                              chat:
                                   enabled: true
-                              recordingConfig:
+                              recording:
                                   enabled: false
-                              virtualBackgroundConfig:
+                              virtualBackground:
                                   enabled: true
                         - roomId: 'room-456'
                           roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           config:
-                              chatConfig:
+                              chat:
                                   enabled: false
-                              recordingConfig:
+                              recording:
                                   enabled: true
-                              virtualBackgroundConfig:
+                              virtualBackground:
                                   enabled: false
                     pagination:
                         isTruncated: true

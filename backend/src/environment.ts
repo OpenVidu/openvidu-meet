@@ -111,11 +111,13 @@ export const logEnvVars = () => {
 	console.log('MEET PREFERENCES STORAGE:', text(MEET_PREFERENCES_STORAGE_MODE));
 	console.log('MEET INITIAL ADMIN USER: ', credential('****' + MEET_INITIAL_ADMIN_USER.slice(-3)));
 	console.log('MEET INITIAL ADMIN PASSWORD: ', credential('****' + MEET_INITIAL_ADMIN_PASSWORD.slice(-3)));
+
 	if (!MEET_INITIAL_API_KEY) {
 		console.log(chalk.red('MEET INITIAL_API_KEY: none'));
 	} else {
 		console.log('MEET INITIAL API KEY: ', credential('****' + MEET_INITIAL_API_KEY.slice(-3)));
 	}
+
 	console.log('MEET INITIAL WEBHOOK ENABLED:', text(MEET_INITIAL_WEBHOOK_ENABLED));
 
 	if (MEET_INITIAL_WEBHOOK_ENABLED === 'true') {

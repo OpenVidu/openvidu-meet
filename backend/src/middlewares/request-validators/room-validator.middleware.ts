@@ -90,9 +90,9 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 });
 
 const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z.object({
-	recordingConfig: RecordingConfigSchema,
-	chatConfig: ChatConfigSchema,
-	virtualBackgroundConfig: VirtualBackgroundConfigSchema
+	recording: RecordingConfigSchema,
+	chat: ChatConfigSchema,
+	virtualBackground: VirtualBackgroundConfigSchema
 });
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([
@@ -151,9 +151,9 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			}
 		),
 	config: RoomConfigSchema.optional().default({
-		recordingConfig: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
-		chatConfig: { enabled: true },
-		virtualBackgroundConfig: { enabled: true }
+		recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+		chat: { enabled: true },
+		virtualBackground: { enabled: true }
 	})
 	// maxParticipants: z
 	// 	.number()

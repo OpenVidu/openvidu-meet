@@ -11,12 +11,12 @@ import {
 
 // Default room config following the app's defaults
 const DEFAULT_CONFIG: MeetRoomConfig = {
-	recordingConfig: {
+	recording: {
 		enabled: true,
 		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
-	chatConfig: { enabled: true },
-	virtualBackgroundConfig: { enabled: true }
+	chat: { enabled: true },
+	virtualBackground: { enabled: true }
 };
 
 /**
@@ -156,8 +156,8 @@ export class RoomWizardStateService {
 				isActive: editMode, // Only active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: initialRoomOptions.config!.recordingConfig.enabled ? 'enabled' : 'disabled',
-					allowAccessTo: initialRoomOptions.config!.recordingConfig.allowAccessTo
+					recordingEnabled: initialRoomOptions.config!.recording.enabled ? 'enabled' : 'disabled',
+					allowAccessTo: initialRoomOptions.config!.recording.allowAccessTo
 				})
 			},
 			{
@@ -187,8 +187,8 @@ export class RoomWizardStateService {
 				isActive: false,
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					chatEnabled: initialRoomOptions.config!.chatConfig.enabled,
-					virtualBackgroundsEnabled: initialRoomOptions.config!.virtualBackgroundConfig.enabled
+					chatEnabled: initialRoomOptions.config!.chat.enabled,
+					virtualBackgroundsEnabled: initialRoomOptions.config!.virtualBackground.enabled
 				})
 			}
 		];
@@ -234,9 +234,9 @@ export class RoomWizardStateService {
 					...currentOptions,
 					config: {
 						...currentOptions.config,
-						recordingConfig: {
-							...currentOptions.config?.recordingConfig,
-							...stepData.config?.recordingConfig
+						recording: {
+							...currentOptions.config?.recording,
+							...stepData.config?.recording
 						}
 					} as MeetRoomConfig
 				};
@@ -251,17 +251,17 @@ export class RoomWizardStateService {
 					...currentOptions,
 					config: {
 						...currentOptions.config,
-						chatConfig: {
-							...currentOptions.config?.chatConfig,
-							...stepData.config?.chatConfig
+						chat: {
+							...currentOptions.config?.chat,
+							...stepData.config?.chat
 						},
-						virtualBackgroundConfig: {
-							...currentOptions.config?.virtualBackgroundConfig,
-							...stepData.config?.virtualBackgroundConfig
+						virtualBackground: {
+							...currentOptions.config?.virtualBackground,
+							...stepData.config?.virtualBackground
 						},
-						recordingConfig: {
-							...currentOptions.config?.recordingConfig,
-							...stepData.config?.recordingConfig
+						recording: {
+							...currentOptions.config?.recording,
+							...stepData.config?.recording
 						}
 					} as MeetRoomConfig
 				};
@@ -283,7 +283,7 @@ export class RoomWizardStateService {
 		const currentSteps = this._steps();
 		const currentOptions = this._roomOptions();
 		// TODO: Uncomment when recording config is fully implemented
-		const recordingEnabled = false; // currentOptions.config?.recordingConfig.enabled ?? false;
+		const recordingEnabled = false; // currentOptions.config?.recording.enabled ?? false;
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
