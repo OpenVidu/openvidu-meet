@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ViewportService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatBytes, formatDurationToHMS } from '@lib/utils';
+import { ViewportService } from 'openvidu-components-angular';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];

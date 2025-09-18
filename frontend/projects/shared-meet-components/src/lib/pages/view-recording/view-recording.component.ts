@@ -7,9 +7,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NotificationService, RecordingService, ViewportService } from '@lib/services';
+import { NotificationService, RecordingService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatDurationToTime } from '@lib/utils';
+import { ViewportService } from 'openvidu-components-angular';
 
 @Component({
 	selector: 'ov-view-recording',
