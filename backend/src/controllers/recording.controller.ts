@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { getBaseUrl } from '../environment.js';
 import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorRecordingNotFound,
@@ -23,7 +24,7 @@ export const startRecording = async (req: Request, res: Response) => {
 		const recordingInfo = await recordingService.startRecording(roomId);
 		res.setHeader(
 			'Location',
-			`${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
+			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
 		);
 
 		return res.status(201).json(recordingInfo);
@@ -126,7 +127,7 @@ export const stopRecording = async (req: Request, res: Response) => {
 		const recordingInfo = await recordingService.stopRecording(recordingId);
 		res.setHeader(
 			'Location',
-			`${req.protocol}://${req.get('host')}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`
+			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`
 		);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
@@ -250,7 +251,7 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 		}
 
 		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		const recordingUrl = `${req.protocol}://${req.get('host')}/recording/${recordingId}?secret=${secret}`;
+		const recordingUrl = `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
 
 		return res.status(200).json({ url: recordingUrl });
 	} catch (error) {

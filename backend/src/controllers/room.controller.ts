@@ -10,6 +10,7 @@ import {
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
+import { getBaseUrl } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 import { getCookieOptions } from '../utils/cookie-utils.js';
@@ -21,10 +22,9 @@ export const createRoom = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
-		const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-		const room = await roomService.createMeetRoom(baseUrl, options);
-		res.set('Location', `${baseUrl}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
+		const room = await roomService.createMeetRoom(options);
+		res.set('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
 		return res.status(201).json(room);
 	} catch (error) {
 		handleError(res, error, 'creating room');

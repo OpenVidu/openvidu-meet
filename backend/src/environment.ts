@@ -20,6 +20,7 @@ export const {
 	SERVER_CORS_ORIGIN = '*',
 	MEET_LOG_LEVEL = 'info',
 	MEET_NAME_ID = 'openviduMeet',
+	MEET_BASE_URL = `http://localhost:${SERVER_PORT}`,
 
 	/**
 	 * Authentication configuration
@@ -84,6 +85,13 @@ export const {
 	MODULE_NAME = 'openviduMeet',
 	ENABLED_MODULES = ''
 } = process.env;
+
+/**
+ * Gets the base URL without trailing slash
+ */
+export const getBaseUrl = (): string => {
+    return MEET_BASE_URL.endsWith('/') ? MEET_BASE_URL.slice(0, -1) : MEET_BASE_URL;
+};
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {

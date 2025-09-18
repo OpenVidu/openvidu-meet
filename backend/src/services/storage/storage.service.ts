@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
 import {
+	getBaseUrl,
 	MEET_INITIAL_ADMIN_PASSWORD,
 	MEET_INITIAL_ADMIN_USER,
 	MEET_INITIAL_API_KEY,
@@ -168,7 +169,12 @@ export class MeetStorageService<
 		const redisKey = RedisKeyName.ROOM + roomId;
 		const storageKey = this.keyBuilder.buildMeetRoomKey(roomId);
 
-		return await this.saveCacheAndStorage<MRoom>(redisKey, storageKey, meetRoom);
+		// Normalize room data for storage (ensure only paths are stored)
+		const normalizedRoom = this.normalizeRoomForStorage(meetRoom);
+		await this.saveCacheAndStorage<MRoom>(redisKey, storageKey, normalizedRoom);
+
+		// Return room with full URLs
+		return this.enrichRoomWithBaseUrls(normalizedRoom);
 	}
 
 	/**
@@ -206,7 +212,13 @@ export class MeetStorageService<
 					if (item.Key && item.Key.endsWith('.json')) {
 						try {
 							const room = await this.storageProvider.getObject<MRoom>(item.Key);
-							return room;
+
+							if (!room) {
+								return null;
+							}
+
+							// Add base URL to moderator and speaker URLs
+							return this.enrichRoomWithBaseUrls(room);
 						} catch (error) {
 							this.logger.warn(`Failed to load room from ${item.Key}: ${error}`);
 							return null;
@@ -235,7 +247,14 @@ export class MeetStorageService<
 		const redisKey = RedisKeyName.ROOM + roomId;
 		const storageKey = this.keyBuilder.buildMeetRoomKey(roomId);
 
-		return await this.getFromCacheAndStorage<MRoom>(redisKey, storageKey);
+		const room = await this.getFromCacheAndStorage<MRoom>(redisKey, storageKey);
+
+		if (!room) {
+			return null;
+		}
+
+		// Add base URL to moderator and speaker URLs
+		return this.enrichRoomWithBaseUrls(room);
 	}
 
 	async deleteMeetRooms(roomIds: string[]): Promise<void> {
@@ -253,7 +272,14 @@ export class MeetStorageService<
 		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
 		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
 
-		return await this.getFromCacheAndStorage<Partial<MRoom>>(redisKey, storageKey);
+		const archivedRoom = await this.getFromCacheAndStorage<Partial<MRoom>>(redisKey, storageKey);
+
+		if (!archivedRoom) {
+			return null;
+		}
+
+		// Add base URL to moderator and speaker URLs
+		return this.enrichRoomWithBaseUrls(archivedRoom as MRoom);
 	}
 
 	/**
@@ -298,7 +324,9 @@ export class MeetStorageService<
 			}
 		} as Partial<MRoom>;
 
-		await this.saveCacheAndStorage<Partial<MRoom>>(redisKey, storageKey, archivedRoom);
+		// Normalize room data for storage (ensure only paths are stored)
+		const normalizedRoom = this.normalizeRoomForStorage(archivedRoom as MRoom);
+		await this.saveCacheAndStorage<Partial<MRoom>>(redisKey, storageKey, normalizedRoom);
 	}
 
 	async deleteArchivedRoomMetadata(roomId: string): Promise<void> {
@@ -729,6 +757,53 @@ export class MeetStorageService<
 		const apiKeyData: MeetApiKey = PasswordHelper.generateApiKey(initialApiKey);
 		await this.saveApiKey(apiKeyData);
 		this.logger.info('API key initialized');
+	}
+
+	/**
+	 * Normalizes room data for storage by ensuring URLs contain only paths
+	 * @param room - The room object to normalize
+	 * @returns The room object with path-only URLs for storage
+	 */
+	private normalizeRoomForStorage(room: MRoom): MRoom {
+		return {
+			...room,
+			moderatorUrl: this.extractPathFromUrl(room.moderatorUrl),
+			speakerUrl: this.extractPathFromUrl(room.speakerUrl)
+		};
+	}
+
+	/**
+	 * Extracts path from URL, handling both full URLs and path-only strings
+	 * @param url - The URL or path to process
+	 * @returns The path portion of the URL
+	 */
+	private extractPathFromUrl(url: string): string {
+		// If it's already a path (starts with /), return as-is
+		if (url.startsWith('/')) {
+			return url;
+		}
+
+		// If it's a full URL, extract the path
+		try {
+			const urlObj = new URL(url);
+			return urlObj.pathname + urlObj.search + urlObj.hash;
+		} catch (error) {
+			this.logger.warn(`Failed to parse URL for path extraction: ${url}. Treating as path.`);
+			return url;
+		}
+	}
+
+	/**
+	 * Enriches a room object with base URLs for moderator and speaker URLs
+	 * @param room - The room object to enrich
+	 * @returns The room object with full URLs
+	 */
+	protected enrichRoomWithBaseUrls(room: MRoom): MRoom {
+		return {
+			...room,
+			moderatorUrl: `${getBaseUrl()}${room.moderatorUrl}`,
+			speakerUrl: `${getBaseUrl()}${room.speakerUrl}`
+		};
 	}
 
 	protected async getRecordingFileSize(key: string, recordingId: string): Promise<number> {

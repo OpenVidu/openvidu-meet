@@ -72,14 +72,13 @@ export class RoomService {
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
-	 * @param {string} baseUrl - The base URL for the room.
 	 * @param {MeetRoomOptions} options - The options for creating the OpenVidu room.
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
 	 *
 	 */
-	async createMeetRoom(baseUrl: string, roomOptions: MeetRoomOptions): Promise<MeetRoom> {
+	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
 		const roomIdPrefix = roomName!.replace(/\s+/g, ''); // Remove all spaces
 		const roomId = `${roomIdPrefix}-${uid(15)}`; // Generate a unique room ID based on the room name
@@ -92,14 +91,12 @@ export class RoomService {
 			autoDeletionDate,
 			autoDeletionPolicy,
 			config: config!,
-			moderatorUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
-			speakerUrl: `${baseUrl}/room/${roomId}?secret=${secureUid(10)}`,
+			moderatorUrl: `/room/${roomId}?secret=${secureUid(10)}`,
+			speakerUrl: `/room/${roomId}?secret=${secureUid(10)}`,
 			status: MeetRoomStatus.OPEN,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-
-		await this.storageService.saveMeetRoom(meetRoom);
-		return meetRoom;
+		return await this.storageService.saveMeetRoom(meetRoom);
 	}
 
 	/**
