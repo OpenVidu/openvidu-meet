@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpService } from '@lib/services';
-import { AuthMode, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
+import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
@@ -47,13 +47,8 @@ export class GlobalConfigService {
 	}
 
 	async getWebhookConfig(): Promise<WebhookConfig> {
-		try {
-			const path = `${this.GLOBAL_CONFIG_API}/webhooks`;
-			return await this.httpService.getRequest<WebhookConfig>(path);
-		} catch (error) {
-			this.log.e('Error fetching webhook config:', error);
-			throw error;
-		}
+		const path = `${this.GLOBAL_CONFIG_API}/webhooks`;
+		return await this.httpService.getRequest<WebhookConfig>(path);
 	}
 
 	async saveWebhookConfig(config: WebhookConfig) {
@@ -64,5 +59,15 @@ export class GlobalConfigService {
 	async testWebhookUrl(url: string): Promise<void> {
 		const path = `${this.GLOBAL_CONFIG_API}/webhooks/test`;
 		await this.httpService.postRequest(path, { url });
+	}
+
+	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
+		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;
+		return await this.httpService.getRequest<{ appearance: MeetAppearanceConfig }>(path);
+	}
+
+	async saveRoomsAppearanceConfig(config: MeetAppearanceConfig) {
+		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;
+		await this.httpService.putRequest(path, { appearance: config });
 	}
 }
