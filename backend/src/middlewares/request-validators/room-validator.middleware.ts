@@ -9,6 +9,7 @@ import {
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomStatus,
+	MeetRoomThemeMode,
 	MeetVirtualBackgroundConfig,
 	ParticipantRole,
 	RecordingPermissions
@@ -89,10 +90,28 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 	enabled: z.boolean()
 });
 
+const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK]);
+
+const hexColorSchema = z.string().regex(/^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/, 'Must be a valid hex color code');
+
+const RoomThemeSchema = z.object({
+	name: z.string().min(1, 'Theme name cannot be empty').max(50, 'Theme name cannot exceed 50 characters'),
+	baseTheme: ThemeModeSchema,
+	backgroundColor: hexColorSchema.optional(),
+	primaryColor: hexColorSchema.optional(),
+	secondaryColor: hexColorSchema.optional(),
+	surfaceColor: hexColorSchema.optional()
+});
+
+export const AppearanceConfigSchema = z.object({
+	themes: z.array(RoomThemeSchema).length(1, 'There must be exactly one theme defined')
+});
+
 const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z.object({
 	recording: RecordingConfigSchema,
 	chat: ChatConfigSchema,
 	virtualBackground: VirtualBackgroundConfigSchema
+	// appearance: AppearanceConfigSchema,
 });
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([

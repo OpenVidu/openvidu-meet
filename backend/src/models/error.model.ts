@@ -63,18 +63,6 @@ export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
-export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is invalid: ${reason}`, 400);
-};
-
-export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Webhook Error',
-		'There are no API keys configured yet. Please, create one to use webhooks.',
-		400
-	);
-};
-
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
@@ -257,6 +245,26 @@ export const errorInvalidParticipantRole = (): OpenViduMeetError => {
 
 export const errorParticipantIdentityNotProvided = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant Error', 'No participant identity provided', 400);
+};
+
+// Global config errors
+
+export const errorRoomsAppearanceConfigNotDefined = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Global Config Error', 'Rooms appearance config not defined', 404);
+};
+
+// Webhook errors
+
+export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook URL '${url}' is invalid: ${reason}`, 400);
+};
+
+export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Webhook Error',
+		'There are no API keys configured yet. Please, create one to use webhooks.',
+		400
+	);
 };
 
 // Handlers

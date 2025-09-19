@@ -6,6 +6,7 @@ import * as securityConfigCtrl from '../controllers/global-config/security-confi
 import * as webhookConfigCtrl from '../controllers/global-config/webhook-config.controller.js';
 import {
 	tokenAndRoleValidator,
+	validateRoomsAppearanceConfig,
 	validateSecurityConfig,
 	validateWebhookConfig,
 	withAuth,
@@ -37,12 +38,13 @@ configRouter.get('/security', securityConfigCtrl.getSecurityConfig);
 
 // Appearance config
 configRouter.put(
-	'/appearance',
+	'/rooms/appearance',
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
-	appearanceConfigCtrl.updateAppearanceConfig
+	validateRoomsAppearanceConfig,
+	appearanceConfigCtrl.updateRoomsAppearanceConfig
 );
 configRouter.get(
-	'/appearance',
+	'/rooms/appearance',
 	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
-	appearanceConfigCtrl.getAppearanceConfig
+	appearanceConfigCtrl.getRoomsAppearanceConfig
 );

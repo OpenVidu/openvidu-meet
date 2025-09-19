@@ -10,6 +10,7 @@ import {
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
+import { AppearanceConfigSchema } from './room-validator.middleware.js';
 
 const WebhookConfigSchema: z.ZodType<WebhookConfig> = z
 	.object({
@@ -57,6 +58,10 @@ const SecurityConfigSchema: z.ZodType<SecurityConfig> = z.object({
 	authentication: AuthenticationConfigSchema
 });
 
+const RoomsAppearanceConfigSchema = z.object({
+	appearance: AppearanceConfigSchema
+});
+
 export const validateWebhookConfig = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = WebhookConfigSchema.safeParse(req.body);
 
@@ -81,6 +86,17 @@ export const withValidWebhookTestRequest = (req: Request, res: Response, next: N
 
 export const validateSecurityConfig = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = SecurityConfigSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.body = data;
+	next();
+};
+
+export const validateRoomsAppearanceConfig = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = RoomsAppearanceConfigSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
