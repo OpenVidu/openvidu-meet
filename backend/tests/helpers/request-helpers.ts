@@ -77,23 +77,23 @@ export const getApiKeys = async () => {
 	return response;
 };
 
-export const getAppearanceConfig = async () => {
+export const getRoomsAppearanceConfig = async () => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/appearance`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
 		.set('Cookie', adminCookie)
 		.send();
 	return response;
 };
 
-export const updateAppearanceConfig = async (config: any) => {
+export const updateRoomsAppearanceConfig = async (config: any) => {
 	checkAppIsRunning();
 
 	const adminCookie = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/appearance`)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
 		.set('Cookie', adminCookie)
 		.send(config);
 	return response;
