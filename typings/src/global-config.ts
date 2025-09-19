@@ -1,4 +1,5 @@
 import { AuthenticationConfig } from './auth-config.js';
+import { MeetAppearanceConfig } from './room-config.js';
 
 /**
  * Represents global config for OpenVidu Meet.
@@ -7,7 +8,9 @@ export interface GlobalConfig {
     projectId: string;
     securityConfig: SecurityConfig;
     webhooksConfig: WebhookConfig;
-    // roomsConfig: MeetRoomConfig;
+    roomsConfig?: {
+        appearance: MeetAppearanceConfig;
+    };
 }
 
 export interface WebhookConfig {

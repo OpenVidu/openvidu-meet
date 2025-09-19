@@ -5,6 +5,7 @@ export interface MeetRoomConfig {
     chat: MeetChatConfig;
     recording: MeetRecordingConfig;
     virtualBackground: MeetVirtualBackgroundConfig;
+    // appearance?: MeetAppearanceConfig;
 }
 
 /**
@@ -27,4 +28,22 @@ export interface MeetChatConfig {
 
 export interface MeetVirtualBackgroundConfig {
     enabled: boolean;
+}
+
+export interface MeetAppearanceConfig {
+    themes: MeetRoomTheme[];
+}
+
+export interface MeetRoomTheme {
+    name: string;
+    baseTheme: MeetRoomThemeMode;
+    backgroundColor?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    surfaceColor?: string;
+}
+
+export const enum MeetRoomThemeMode {
+    LIGHT = 'light',
+    DARK = 'dark'
 }
