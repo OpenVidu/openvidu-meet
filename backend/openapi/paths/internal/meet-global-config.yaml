@@ -96,28 +96,46 @@
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 
-/config/appearance:
+/config/rooms/appearance:
     get:
-        operationId: getAppearanceConfig
-        summary: Get appearance config
+        operationId: getRoomsAppearanceConfig
+        summary: Get rooms appearance config
         description: >
-            Retrieves the appearance config for the OpenVidu Meet application.
+            Retrieves the appearance config for rooms in the OpenVidu Meet application.
         tags:
             - Internal API - Global Config
         security:
             - accessTokenCookie: []
         responses:
-            '202':
-                $ref: '../../components/responses/pro-feature-error.yaml'
+            '200':
+                $ref: '../../components/responses/internal/success-get-appearance-config.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-appearance-config-not-defined.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
     put:
-        operationId: updateAppearanceConfig
-        summary: Update appearance config
+        operationId: updateRoomsAppearanceConfig
+        summary: Update rooms appearance config
         description: >
-            Updates the appearance config for the OpenVidu Meet application.
+            Updates the appearance config for rooms in the OpenVidu Meet application.
         tags:
             - Internal API - Global Config
         security:
             - accessTokenCookie: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/update-appearance-config.yaml'
         responses:
-            '202':
-                $ref: '../../components/responses/pro-feature-error.yaml'
+            '200':
+                $ref: '../../components/responses/internal/success-update-appearance-config.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

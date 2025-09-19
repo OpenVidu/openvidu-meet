@@ -1,0 +1,9 @@
+description: Successfully updated rooms appearance config
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Rooms appearance config updated successfully'

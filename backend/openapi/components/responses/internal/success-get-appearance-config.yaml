@@ -1,0 +1,5 @@
+description: Successfully retrieved rooms appearance config
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/rooms-appearance-config.yaml'

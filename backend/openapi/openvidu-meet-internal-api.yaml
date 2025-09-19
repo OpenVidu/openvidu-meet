@@ -26,8 +26,8 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1webhooks~1test'
     /config/security:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1security'
-    /config/appearance:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1appearance'
+    /config/rooms/appearance:
+        $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
     /rooms/{roomId}/recording-token:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1recording-token'
     /rooms/{roomId}/roles:
