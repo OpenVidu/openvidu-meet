@@ -14,7 +14,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ViewportService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatBytes, formatDurationToHMS } from '@lib/utils';
 import { ViewportService } from 'openvidu-components-angular';

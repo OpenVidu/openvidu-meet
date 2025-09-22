@@ -46,6 +46,7 @@ import {
 	ApiDirectiveModule,
 	ParticipantService as ComponentParticipantService,
 	DataPacket_Kind,
+	LeaveButtonDirective,
 	OpenViduComponentsUiModule,
 	OpenViduService,
 	ParticipantLeftEvent,
@@ -56,7 +57,8 @@ import {
 	RemoteParticipant,
 	Room,
 	RoomEvent,
-	Track
+	Track,
+	ViewportService
 } from 'openvidu-components-angular';
 import { combineLatest, Subject, takeUntil } from 'rxjs';
 
@@ -67,7 +69,7 @@ import { combineLatest, Subject, takeUntil } from 'rxjs';
 	standalone: true,
 	imports: [
 		OpenViduComponentsUiModule,
-		ApiDirectiveModule,
+		// ApiDirectiveModule,
 		CommonModule,
 		MatFormFieldModule,
 		MatInputModule,
@@ -125,7 +127,8 @@ export class MeetingComponent implements OnInit {
 		protected ovComponentsParticipantService: ComponentParticipantService,
 		protected navigationService: NavigationService,
 		protected notificationService: NotificationService,
-		protected clipboard: Clipboard
+		protected clipboard: Clipboard,
+		protected viewportService: ViewportService
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -136,6 +139,10 @@ export class MeetingComponent implements OnInit {
 
 	get hostname(): string {
 		return window.location.origin.replace('http://', '').replace('https://', '');
+	}
+
+	get isMobile(): boolean {
+		return this.viewportService.isMobile();
 	}
 
 	async ngOnInit() {

@@ -294,15 +294,12 @@
 // Custom leave button styling (existing functionality)
 ::ng-deep {
 	#media-buttons-container .custom-leave-btn {
-		&:hover {
-			background-color: var(--ov-meet-color-error) !important;
-		}
 		text-align: center;
 		background-color: var(--ov-meet-color-error) !important;
 		color: #fff !important;
 		border-radius: var(--ov-meet-radius-md) !important;
-		width: 65px !important;
-		margin: 0px !important;
+		width: 65px;
+		margin: 6px !important;
 	}
 }
 

@@ -41,16 +41,27 @@
 		<ng-container *ovToolbarAdditionalButtons>
 			<!-- Copy Link Button -->
 			@if (features().canModerateRoom) {
-				<button
-					id="copy-speaker-link"
-					mat-icon-button
-					(click)="copySpeakerLink()"
-					[disableRipple]="true"
-					matTooltip="Copy the meeting link"
-				>
-					<mat-icon>link</mat-icon>
-				</button>
+				@if (isMobile) {
+					<button id="copy-speaker-link" mat-menu-item (click)="copySpeakerLink()" [disableRipple]="true">
+						<mat-icon>link</mat-icon>
+						<span class="button-text">Copy meeting link</span>
+					</button>
+				} @else {
+					<button
+						id="copy-speaker-link"
+						mat-icon-button
+						(click)="copySpeakerLink()"
+						[disableRipple]="true"
+						matTooltip="Copy the meeting link"
+					>
+						<mat-icon>link</mat-icon>
+					</button>
+				}
+			}
+		</ng-container>
 
+		<ng-container *ovToolbarLeaveButton>
+			@if (features().canModerateRoom) {
 				<!-- Leave Button -->
 				<button
 					id="leave-btn"
@@ -59,6 +70,7 @@
 					matTooltip="Leave options"
 					[disableRipple]="true"
 					class="custom-leave-btn"
+					[class.mobile-btn]="isMobile"
 				>
 					<mat-icon>call_end</mat-icon>
 				</button>
@@ -112,9 +124,9 @@
 						<ov-participant-panel-item [participant]="participant">
 							<ng-container *ovParticipantPanelParticipantBadge>
 								<span class="moderator-badge">
-									<mat-icon matTooltip="Moderator" class="material-symbols-outlined"
-										>shield_person</mat-icon
-									>
+									<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
+										shield_person
+									</mat-icon>
 								</span>
 							</ng-container>
 						</ov-participant-panel-item>
@@ -124,9 +136,9 @@
 							@if (participant.isModerator()) {
 								<ng-container *ovParticipantPanelParticipantBadge>
 									<span class="moderator-badge">
-										<mat-icon matTooltip="Moderator" class="material-symbols-outlined"
-											>shield_person</mat-icon
-										>
+										<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
+											shield_person
+										</mat-icon>
 									</span>
 								</ng-container>
 							}
