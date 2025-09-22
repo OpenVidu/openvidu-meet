@@ -12,7 +12,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.13.1'
+          node-version: '22.13'
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
@@ -29,7 +29,8 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -37,18 +38,31 @@ jobs:
           cd frontend/webcomponent
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium
           npm run test:e2e-core-room
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Upload failed test videos
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos-room-functionality
-          path: |
-            frontend/webcomponent/test-results/
+          name: room-test-results
+          path: frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: room-test-testapp-logs
+          path: testapp/testapp.log
+          retention-days: 2
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: room-test-openvidu-meet-logs
+          path: backend/meet_backend.log
           retention-days: 2
       - name: Clean up
         if: always()
@@ -78,7 +92,8 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -86,18 +101,31 @@ jobs:
           cd frontend/webcomponent
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium
           npm run test:e2e-core-events
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Upload failed test videos
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos-events-functionality
-          path: |
-            frontend/webcomponent/test-results/
+          name: events-test-results
+          path: frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: events-test-testapp-logs
+          path: testapp/testapp.log
+          retention-days: 2
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: events-test-openvidu-meet-logs
+          path: backend/meet_backend.log
           retention-days: 2
       - name: Clean up
         if: always()
@@ -127,7 +155,8 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -135,63 +164,35 @@ jobs:
           cd frontend/webcomponent
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium
           npm run test:e2e-core-webhooks
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Collect TestApp logs
-        if: always()
-        run: |
-          echo "=== Collecting TestApp logs ==="
-          echo "Current directory: $(pwd)"
-          echo "Looking for log files..."
-          find . -name "testapp.log" -type f 2>/dev/null | head -10
-
-          # Try multiple possible locations
-          if [ -f testapp.log ]; then
-            echo "TestApp log file found at ./testapp.log"
-            cp testapp.log testapp-logs-webhooks.log
-          elif [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/testapp.log"
-            cp testapp/testapp.log testapp-logs-webhooks.log
-          elif [ -f testapp/dist/testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
-            cp testapp/dist/testapp/testapp.log testapp-logs-webhooks.log
-          elif [ -f testapp/dist/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp.log"
-            cp testapp/dist/testapp.log testapp-logs-webhooks.log
-          else
-            echo "TestApp log file not found in any expected locations"
-            echo "Root directory contents:"
-            ls -la | head -10
-            echo "Testapp directory contents:"
-            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
-            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
-            echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-webhooks.log
-            echo "Process information that might be helpful:"
-            ps aux | grep -i testapp || echo "No testapp processes found"
-          fi
-      - name: Upload failed test videos
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos-webhooks-functionality
-          path: |
-            frontend/webcomponent/test-results/
+          name: webhooks-test-results
+          path: frontend/webcomponent/test-results/
           retention-days: 2
-      - name: Upload TestApp logs
-        if: always()
+      - name: Upload TestApp logs on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: testapp-logs-webhooks-functionality
-          path: testapp-logs-webhooks.log
+          name: webhooks-test-testapp-logs
+          path: testapp/testapp.log
+          retention-days: 2
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webhooks-test-openvidu-meet-logs
+          path: backend/meet_backend.log
           retention-days: 2
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main
-
 
   e2e-ui-features-test:
     name: E2E UI Features Tests
@@ -217,7 +218,8 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -225,58 +227,31 @@ jobs:
           cd frontend/webcomponent
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium
           npm run test:e2e-ui-features
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Collect TestApp logs
-        if: always()
-        run: |
-          echo "=== Collecting TestApp logs ==="
-          echo "Current directory: $(pwd)"
-          echo "Looking for log files..."
-          find . -name "testapp.log" -type f 2>/dev/null | head -10
-
-          # Try multiple possible locations
-          if [ -f testapp.log ]; then
-            echo "TestApp log file found at ./testapp.log"
-            cp testapp.log testapp-logs-ui-features.log
-          elif [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/testapp.log"
-            cp testapp/testapp.log testapp-logs-ui-features.log
-          elif [ -f testapp/dist/testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
-            cp testapp/dist/testapp/testapp.log testapp-logs-ui-features.log
-          elif [ -f testapp/dist/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp.log"
-            cp testapp/dist/testapp.log testapp-logs-ui-features.log
-          else
-            echo "TestApp log file not found in any expected locations"
-            echo "Root directory contents:"
-            ls -la | head -10
-            echo "Testapp directory contents:"
-            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
-            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
-            echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-ui-features.log
-            echo "Process information that might be helpful:"
-            ps aux | grep -i testapp || echo "No testapp processes found"
-          fi
-      - name: Upload failed test videos
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos-ui-features
-          path: |
-            frontend/webcomponent/test-results/
+          name: ui-features-test-results
+          path: frontend/webcomponent/test-results/
           retention-days: 2
-      - name: Upload TestApp logs
-        if: always()
+      - name: Upload TestApp logs on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: testapp-logs-ui-features
-          path: testapp-logs-ui-features.log
+          name: ui-features-test-testapp-logs
+          path: testapp/testapp.log
+          retention-days: 2
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-features-test-openvidu-meet-logs
+          path: backend/meet_backend.log
           retention-days: 2
       - name: Clean up
         if: always()
@@ -306,7 +281,8 @@ jobs:
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
-          MEET_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
       - name: Run tests
@@ -315,81 +291,31 @@ jobs:
           cd frontend/webcomponent
           # Install Playwright browsers
           mkdir -p /tmp/ms-playwright
-          PLAYWRIGHT_BROWSERS_PATH=/tmp/ms-playwright npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium
           npm run test:e2e-recording-access
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
-      - name: Collect TestApp logs
+      - name: Upload test results
         if: always()
-        run: |
-          echo "=== Collecting TestApp logs ==="
-          echo "Current directory: $(pwd)"
-          echo "Looking for log files..."
-          find . -name "testapp.log" -type f 2>/dev/null | head -10
-
-          # Try multiple possible locations
-          if [ -f testapp.log ]; then
-            echo "TestApp log file found at ./testapp.log"
-            cp testapp.log testapp-logs-recording-access.log
-          elif [ -f testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/testapp.log"
-            cp testapp/testapp.log testapp-logs-recording-access.log
-          elif [ -f testapp/dist/testapp/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp/testapp.log"
-            cp testapp/dist/testapp/testapp.log testapp-logs-recording-access.log
-          elif [ -f testapp/dist/testapp.log ]; then
-            echo "TestApp log file found at testapp/dist/testapp.log"
-            cp testapp/dist/testapp.log testapp-logs-recording-access.log
-          else
-            echo "TestApp log file not found in any expected locations"
-            echo "Root directory contents:"
-            ls -la | head -10
-            echo "Testapp directory contents:"
-            ls -la testapp/ 2>/dev/null || echo "testapp directory not found"
-            ls -la testapp/dist/ 2>/dev/null || echo "testapp/dist directory not found"
-            echo "Creating empty log file for artifact upload"
-            echo "TestApp log file not found during CI run at $(date)" > testapp-logs-recording-access.log
-            echo "Process information that might be helpful:"
-            ps aux | grep -i testapp || echo "No testapp processes found"
-          fi
-      - name: Dump TestApp logs on failure
+        uses: actions/upload-artifact@v4
+        with:
+          name: recording-access-test-results
+          path: frontend/webcomponent/test-results/
+          retention-days: 2
+      - name: Upload TestApp logs on failure
         if: failure()
-        run: |
-          echo "=== TestApp logs ==="
-          docker logs testapp || echo "TestApp container logs not available"
-
-          echo "=== OpenVidu Meet Backend logs ==="
-          docker logs openvidu-meet || echo "OpenVidu Meet container logs not available"
-      - name: Upload failed test videos
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-videos-recording-access
-          path: |
-            frontend/webcomponent/test-results/
+          name: recording-access-test-testapp-logs
+          path: testapp/testapp.log
           retention-days: 2
-      - name: Upload TestApp logs
-        if: always()
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: testapp-logs-recording-access
-          path: testapp-logs-recording-access.log
-          retention-days: 2
-      - name: Dump OpenVidu Local Deployment logs
-        if: always()
-        shell: bash
-        run: |
-          docker logs openvidu &> openvidu-server.logs
-          docker logs egress &> egress.logs
-      - name: Upload OpenVidu Local Deployment logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: openvidu-local-deployment-logs
-          path: |
-            openvidu-server.logs
-            egress.logs
+          name: recording-access-test-openvidu-meet-logs
+          path: backend/meet_backend.log
           retention-days: 2
       - name: Clean up
         if: always()

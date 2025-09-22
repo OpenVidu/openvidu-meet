@@ -1,7 +1,6 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
-import fs from 'fs';
 import { Server as IOServer } from 'socket.io';
 import {
     deleteAllRecordingsCtrl,
@@ -12,46 +11,6 @@ import {
 } from './controllers/homeController';
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
-
-// Setup log file for CI debugging - always write to current working directory
-const logPath = path.join(process.cwd(), 'testapp.log');
-console.log(`Setting up log file at: ${logPath}`);
-console.log(`Current working directory: ${process.cwd()}`);
-const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-
-// Override console methods to also write to log file
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-const originalConsoleWarn = console.warn;
-
-console.log = (...args: any[]) => {
-    const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
-    const timestamp = new Date().toISOString();
-    logStream.write(`[${timestamp}] LOG: ${message}\n`);
-    originalConsoleLog.apply(console, args);
-};
-
-console.error = (...args: any[]) => {
-    const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
-    const timestamp = new Date().toISOString();
-    logStream.write(`[${timestamp}] ERROR: ${message}\n`);
-    originalConsoleError.apply(console, args);
-};
-
-console.warn = (...args: any[]) => {
-    const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ');
-    const timestamp = new Date().toISOString();
-    logStream.write(`[${timestamp}] WARN: ${message}\n`);
-    originalConsoleWarn.apply(console, args);
-};
-
-console.log('=== TESTAPP STARTUP ===');
-console.log('Testapp initializing at:', new Date().toISOString());
-console.log('Environment variables:');
-console.log('MEET_API_URL:', process.env.MEET_API_URL);
-console.log('MEET_API_KEY:', process.env.MEET_API_KEY ? '***SET***' : 'NOT SET');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('PORT:', process.env.PORT);
 
 const app = express();
 const server = http.createServer(app);
@@ -87,36 +46,9 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Visit http://localhost:${PORT}/ to access the app`);
     console.log('-----------------------------------------');
-    console.log('Configuration:');
-    console.log(`  MEET_API_URL: ${configService.meetApiUrl}`);
-    console.log(`  MEET_API_KEY: ${configService.meetApiKey ? '[SET]' : '[NOT SET]'}`);
-    console.log(`  MEET_WEBCOMPONENT_SRC: ${configService.meetWebhookSrc}`);
-    console.log(`  SERVER_PORT: ${configService.serverPort}`);
-    console.log('-----------------------------------------');
     console.log('');
-
     console.log('OpenVidu Meet Configuration:');
     console.log(`Meet API URL: ${configService.meetApiUrl}`);
     console.log(`Meet API key: ${configService.meetApiKey}`);
     console.log(`Meet Webcomponent Source: ${configService.meetWebhookSrc}`);
-    console.log('=== TESTAPP STARTUP COMPLETE ===');
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('=== TESTAPP SHUTDOWN ===');
-    console.log('Received SIGTERM, shutting down gracefully');
-    logStream.end();
-    server.close(() => {
-        process.exit(0);
-    });
-});
-
-process.on('SIGINT', () => {
-    console.log('=== TESTAPP SHUTDOWN ===');
-    console.log('Received SIGINT, shutting down gracefully');
-    logStream.end();
-    server.close(() => {
-        process.exit(0);
-    });
 });

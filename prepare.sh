@@ -108,8 +108,6 @@ fi
 if [ "$BUILD_BACKEND" = true ]; then
   echo -e "${GREEN}Building backend...${NC}"
   cd backend
-  rm -rf node_modules package-lock.json
-  npm cache clean --force
   npm install
   npm run build:prod
   cd ..
