@@ -89,10 +89,26 @@ export class LivekitWebhookService {
 			}
 
 			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata found for room: ${room.name}`);
-			return (
-				MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(room.metadata) ||
-				(await this.roomService.meetRoomExists(room.name))
-			);
+
+			const belongToOpenViduMeet = MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(room.metadata);
+
+			if (!belongToOpenViduMeet) {
+				this.logger.debug(
+					`[webhookEventBelongsToOpenViduMeet] Room metadata does not indicate OpenVidu Meet for room: ${room.name}`
+				);
+				return false;
+			}
+
+			const roomExists = await this.roomService.meetRoomExists(room.name);
+
+			if (!roomExists) {
+				this.logger.debug(
+					`[webhookEventBelongsToOpenViduMeet] Room '${room.name}' does not exist in OpenVidu Meet`
+				);
+				return false;
+			}
+
+			return true;
 		}
 
 		// Case 2: No room in event - use roomName from egress/ingress info
