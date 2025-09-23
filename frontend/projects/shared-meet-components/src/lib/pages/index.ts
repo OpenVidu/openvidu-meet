@@ -6,6 +6,7 @@ export * from './console/recordings/recordings.component';
 export * from './console/rooms/rooms.component';
 export * from './console/rooms/room-wizard/room-wizard.component';
 export * from './console/users-permissions/users-permissions.component';
+export * from './console/config/config.component';
 export * from './meeting/end-meeting/end-meeting.component';
 export * from './error/error.component';
 export * from './login/login.component';

@@ -25,8 +25,9 @@ export class ConsoleComponent {
 			label: 'Users & Permissions',
 			route: 'users-permissions',
 			icon: 'passkey',
-			iconClass: 'ov-settings-icon material-symbols-outlined'
-		}
+			iconClass: 'ov-users-permissions material-symbols-outlined'
+		},
+		{ label: 'Configuration', route: 'config', icon: 'settings', iconClass: 'ov-settings-icon' }
 
 		// { label: 'About', route: 'about', icon: 'info' }
 	];

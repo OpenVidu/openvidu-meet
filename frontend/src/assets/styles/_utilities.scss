@@ -103,6 +103,10 @@
 	@include ov-theme-transition;
 }
 
+.ov-users-permissions {
+	color: var(--ov-meet-icon-users-permissions) !important;
+	@include ov-theme-transition;
+}
 .ov-settings-icon {
 	color: var(--ov-meet-icon-settings) !important;
 	@include ov-theme-transition;
@@ -115,11 +119,6 @@
 
 .ov-about-icon {
 	color: var(--ov-meet-icon-about) !important;
-	@include ov-theme-transition;
-}
-
-.ov-action-icon {
-	color: var(--ov-meet-icon-actions) !important;
 	@include ov-theme-transition;
 }
 

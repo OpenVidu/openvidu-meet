@@ -24,7 +24,8 @@ import {
 	RoomsComponent,
 	RoomWizardComponent,
 	UsersPermissionsComponent,
-	ViewRecordingComponent
+	ViewRecordingComponent,
+	ConfigComponent
 } from '@lib/pages';
 
 export const baseRoutes: Routes = [
@@ -101,6 +102,10 @@ export const baseRoutes: Routes = [
 			{
 				path: 'users-permissions',
 				component: UsersPermissionsComponent
+			},
+			{
+				path: 'config',
+				component: ConfigComponent
 			},
 			// {
 			// 	path: 'about',

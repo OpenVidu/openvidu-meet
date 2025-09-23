@@ -23,10 +23,11 @@
 	// to maintain visual consistency across the entire application
 	--ov-meet-icon-rooms: var(--ov-meet-color-primary); // video_chat, meeting_room
 	--ov-meet-icon-recordings: var(--ov-meet-color-accent); // video_library, play_circle
-	--ov-meet-icon-settings: var(--ov-meet-text-secondary); // settings, tune
 	--ov-meet-icon-developer: var(--ov-meet-color-warning); // code, api
-	--ov-meet-icon-actions: var(--ov-meet-text-secondary); // add, edit, delete, refresh
-	--ov-meet-icon-about: var(--ov-meet-color-info); // info, security, help
+	--ov-meet-icon-users-permissions: #e05200; // group, manage_accounts
+	--ov-meet-icon-settings: var(--ov-meet-color-secondary); // settings, tune
+
+	// --ov-meet-icon-about: var(--ov-meet-color-info); // info, security, help
 
 	// === SPACING AND DIMENSIONS ===
 	--ov-meet-spacing-xs: 4px;
