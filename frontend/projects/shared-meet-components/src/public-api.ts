@@ -10,4 +10,3 @@ export * from './lib/guards/index';
 export * from './lib/routes/base-routes';
 export * from './lib/typings/ce/index';
 export * from './lib/utils/index';
-export * from 'openvidu-components-angular';
