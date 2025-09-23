@@ -51,9 +51,9 @@ export const {
 	LIVEKIT_API_KEY = 'devkey',
 	LIVEKIT_API_SECRET = 'secret',
 
-	MEET_BLOB_STORAGE_MODE = 's3', // Options: 's3', 'abs'
+	MEET_BLOB_STORAGE_MODE = 's3', // Options: 's3', 'abs', 'gcs'
 
-	// S3 configuration
+	// S3 or GCS configuration
 	MEET_S3_BUCKET = 'openvidu-appdata',
 	MEET_S3_SUBBUCKET = 'openvidu-meet',
 	MEET_S3_SERVICE_ENDPOINT = 'http://localhost:9000',
@@ -90,7 +90,7 @@ export const {
  * Gets the base URL without trailing slash
  */
 export const getBaseUrl = (): string => {
-    return MEET_BASE_URL.endsWith('/') ? MEET_BASE_URL.slice(0, -1) : MEET_BASE_URL;
+	return MEET_BASE_URL.endsWith('/') ? MEET_BASE_URL.slice(0, -1) : MEET_BASE_URL;
 };
 
 export function checkModuleEnabled() {
@@ -157,6 +157,11 @@ export const logEnvVars = () => {
 		console.log('MEET AZURE ACCOUNT NAME:', text(MEET_AZURE_ACCOUNT_NAME));
 		console.log('MEET AZURE ACCOUNT KEY:', credential('****' + MEET_AZURE_ACCOUNT_KEY.slice(-3)));
 		console.log('MEET AZURE CONTAINER NAME:', text(MEET_AZURE_CONTAINER_NAME));
+		console.log('---------------------------------------------------------');
+	} else if (MEET_BLOB_STORAGE_MODE === 'gcs') {
+		console.log('GCS Configuration');
+		console.log('---------------------------------------------------------');
+		console.log('MEET GCS BUCKET:', text(MEET_S3_BUCKET));
 		console.log('---------------------------------------------------------');
 	}
 

@@ -6,6 +6,8 @@ import {
 	AuthService,
 	DistributedEventService,
 	FrontendEventService,
+	GCSService,
+	GCSStorageProvider,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
@@ -85,6 +87,12 @@ const configureStorage = (storageMode: string) => {
 			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
 			container.bind(ABSService).toSelf().inSingletonScope();
 			container.bind(ABSStorageProvider).toSelf().inSingletonScope();
+			break;
+		case 'gcs':
+			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(GCSStorageProvider).inSingletonScope();
+			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+			container.bind(GCSService).toSelf().inSingletonScope();
+			container.bind(GCSStorageProvider).toSelf().inSingletonScope();
 			break;
 	}
 };
