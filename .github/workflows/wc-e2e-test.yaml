@@ -33,6 +33,8 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        with:
+          skip_checkout: 'true'
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -96,6 +98,8 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        with:
+          skip_checkout: 'true'
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -159,6 +163,8 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        with:
+          skip_checkout: 'true'
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -222,6 +228,8 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        with:
+          skip_checkout: 'true'
       - name: Run tests
         run: |
           cd frontend/webcomponent
@@ -285,6 +293,8 @@ jobs:
           MEET_INITIAL_WEBHOOK_URL: "http://localhost:5080/webhook"
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        with:
+          skip_checkout: 'true'
       - name: Run tests
         run: |
           docker ps -a
