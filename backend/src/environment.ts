@@ -64,7 +64,7 @@ export const {
 
 	//Azure Blob storage configuration
 	MEET_AZURE_CONTAINER_NAME = 'openvidu-appdata',
-	MEET_AZURE_SUBCONATAINER_NAME = 'openvidu-meet',
+	MEET_AZURE_SUBCONTAINER_NAME = 'openvidu-meet',
 	MEET_AZURE_ACCOUNT_NAME = '',
 	MEET_AZURE_ACCOUNT_KEY = '',
 

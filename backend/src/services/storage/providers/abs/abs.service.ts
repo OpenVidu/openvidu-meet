@@ -11,7 +11,7 @@ import {
 	MEET_AZURE_ACCOUNT_KEY,
 	MEET_AZURE_ACCOUNT_NAME,
 	MEET_AZURE_CONTAINER_NAME,
-	MEET_AZURE_SUBCONATAINER_NAME
+	MEET_AZURE_SUBCONTAINER_NAME
 } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
@@ -279,7 +279,7 @@ export class ABSService {
 	}
 
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_AZURE_SUBCONATAINER_NAME}`;
+		const prefix = `${MEET_AZURE_SUBCONTAINER_NAME}`;
 
 		if (name.startsWith(prefix)) {
 			return name;
@@ -298,7 +298,9 @@ export class ABSService {
 			const exists = await this.containerClient.exists();
 
 			if (exists) {
-				this.logger.verbose(`ABS health check: service accessible and container '${MEET_AZURE_CONTAINER_NAME}' exists`);
+				this.logger.verbose(
+					`ABS health check: service accessible and container '${MEET_AZURE_CONTAINER_NAME}' exists`
+				);
 				return { accessible: true, containerExists: true };
 			} else {
 				this.logger.error(`ABS container '${MEET_AZURE_CONTAINER_NAME}' does not exist`);
