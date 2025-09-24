@@ -256,13 +256,11 @@ export const viewRecordingsAs = async (role: 'moderator' | 'speaker', page: Page
 };
 
 export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker') => {
-	const button = await waitForElementInIframe(page, '#leave-btn');
-	await button.click();
+	await interactWithElementInIframe(page, '#leave-btn', { action: 'click' });
 
 	if (role === 'moderator') {
 		await page.waitForTimeout(500); // Wait for leave animation
-		const option = await waitForElementInIframe(page, '#leave-option');
-		await option.click();
+		await interactWithElementInIframe(page, '#leave-option', { action: 'click' });
 	}
 
 	await page.waitForSelector('.event-left');
