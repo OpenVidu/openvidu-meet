@@ -6,6 +6,7 @@ on:
             - 'backend/package.json'
             - 'backend/package-lock.json'
             - 'backend/tests/**'
+            - '.github/workflows/backend-integration-test.yaml'
     pull_request:
         paths:
             - 'backend/src/**'
