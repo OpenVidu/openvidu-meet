@@ -131,8 +131,7 @@ jobs:
             - name: Save GCP credentials
               if: matrix.storage-provider == 'gcs'
               run: | 
-                echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /credentials.json
-                cat /credentials.json
+                echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /credentials.json
             - name: Setup OpenVidu Local Deployment
               uses: OpenVidu/actions/start-openvidu-local-deployment@main
               with:
@@ -173,7 +172,7 @@ jobs:
                   MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
                   MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
                   MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
-                  GOOGLE_APPLICATION_CREDENTIALS: '/credentials.json'
+                  GOOGLE_APPLICATION_CREDENTIALS: /credentials.json
                   MEET_S3_BUCKET: 'openvidu-appdata'
             - name: Run tests
               run: |
@@ -184,7 +183,7 @@ jobs:
                   MEET_AZURE_ACCOUNT_NAME: ${{ vars.MEET_AZURE_ACCOUNT_NAME }}
                   MEET_AZURE_ACCOUNT_KEY: ${{ secrets.MEET_AZURE_ACCOUNT_KEY }}
                   MEET_AZURE_CONTAINER_NAME: 'openvidu-appdata-recordings'
-                  GOOGLE_APPLICATION_CREDENTIALS: '/credentials.json'
+                  GOOGLE_APPLICATION_CREDENTIALS: /credentials.json
                   MEET_S3_BUCKET: 'openvidu-appdata'
                   JEST_JUNIT_OUTPUT_DIR: './reports/'
             - name: Publish Test Report
@@ -194,6 +193,13 @@ jobs:
                   report_paths: '**/reports/junit.xml'
                   fail_on_failure: true
                   require_tests: true
+            - name: Upload OpenVidu Meet logs on failure
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                name: recordings-test-openvidu-meet-logs
+                path: backend/meet_backend.log
+                retention-days: 2
             - name: Clean up
               if: always()
               uses: OpenVidu/actions/cleanup@main
