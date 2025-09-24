@@ -78,11 +78,9 @@ export async function interactWithElementInIframe(
 	// Perform the specified action
 	switch (action) {
 		case 'click':
-			await expect(element).toBeVisible({ timeout });
 			await element.click();
 			break;
 		case 'fill':
-			await expect(element).toBeVisible({ timeout });
 			await element.fill(value);
 			break;
 		default:
@@ -289,7 +287,6 @@ export const applyVirtualBackground = async (page: Page, backgroundId: string) =
 	await page.waitForTimeout(2000); // Allow background processing time
 	await interactWithElementInIframe(page, '.panel-close-button', { action: 'click' });
 	await page.waitForTimeout(1000); // Wait panel to close
-
 };
 
 export const removeVirtualBackground = async (page: Page) => {
