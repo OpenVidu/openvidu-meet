@@ -1,7 +1,7 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:22.16.0 AS builder
+FROM node:22.29.0 AS builder
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ RUN rm -rf frontend/node_modules backend/node_modules && \
 # ====================================================
 # Stage 2: production
 # ====================================================
-FROM node:22.16.0-alpine3.21 AS production
+FROM node:22.29.0-alpine3.21 AS production
 
 WORKDIR /opt/openvidu-meet
 
