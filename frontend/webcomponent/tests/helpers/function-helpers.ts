@@ -78,9 +78,11 @@ export async function interactWithElementInIframe(
 	// Perform the specified action
 	switch (action) {
 		case 'click':
+			await expect(element).toBeVisible({ timeout });
 			await element.click();
 			break;
 		case 'fill':
+			await expect(element).toBeVisible({ timeout });
 			await element.fill(value);
 			break;
 		default:
@@ -256,13 +258,11 @@ export const viewRecordingsAs = async (role: 'moderator' | 'speaker', page: Page
 };
 
 export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker') => {
-	const button = await waitForElementInIframe(page, '#leave-btn');
-	await button.click();
+	await interactWithElementInIframe(page, '#leave-btn', { action: 'click' });
 
 	if (role === 'moderator') {
 		await page.waitForTimeout(500); // Wait for leave animation
-		const option = await waitForElementInIframe(page, '#leave-option');
-		await option.click();
+		await interactWithElementInIframe(page, '#leave-option', { action: 'click' });
 	}
 
 	await page.waitForSelector('.event-left');
@@ -286,7 +286,10 @@ export const applyVirtualBackground = async (page: Page, backgroundId: string) =
 	await interactWithElementInIframe(page, '#virtual-bg-btn', { action: 'click' });
 	await waitForElementInIframe(page, 'ov-background-effects-panel', { state: 'visible' });
 	await interactWithElementInIframe(page, `#effect-${backgroundId}`, { action: 'click' });
+	await page.waitForTimeout(2000); // Allow background processing time
 	await interactWithElementInIframe(page, '.panel-close-button', { action: 'click' });
+	await page.waitForTimeout(1000); // Wait panel to close
+
 };
 
 export const removeVirtualBackground = async (page: Page) => {

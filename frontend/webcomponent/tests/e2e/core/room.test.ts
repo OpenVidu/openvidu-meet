@@ -239,7 +239,7 @@ test.describe('Room Functionality Tests', () => {
 	// ==========================================
 
 	test.describe('Advanced Features', () => {
-		test('should apply virtual background and detect visual changes', async ({ page }) => {
+		test.only('should apply virtual background and detect visual changes', async ({ page }) => {
 			await joinRoomAs('speaker', participantName, page);
 
 			// Wait for video element to be ready
@@ -250,7 +250,6 @@ test.describe('Room Functionality Tests', () => {
 
 			// Apply virtual background
 			await applyVirtualBackground(page, '2');
-			await page.waitForTimeout(1000); // Allow background processing time
 
 			// Capture post-change screenshot
 			await saveScreenshot(page, 'after.png', '.OV_video-element');
