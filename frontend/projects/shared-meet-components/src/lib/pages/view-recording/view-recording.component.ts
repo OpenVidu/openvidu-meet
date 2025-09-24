@@ -30,6 +30,8 @@ import { ViewportService } from 'openvidu-components-angular';
 export class ViewRecordingComponent implements OnInit, OnDestroy {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
+	secret?: string;
+
 	videoError = false;
 	isLoading = true;
 	hasError = false;
@@ -53,7 +55,7 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 
 	private async loadRecording() {
 		const recordingId = this.route.snapshot.params['recording-id'];
-		const secret = this.route.snapshot.queryParams['secret'];
+		this.secret = this.route.snapshot.queryParams['secret'];
 
 		if (!recordingId) {
 			this.hasError = true;
@@ -62,10 +64,10 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		}
 
 		try {
-			this.recording = await this.recordingService.getRecording(recordingId, secret);
+			this.recording = await this.recordingService.getRecording(recordingId, this.secret);
 
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, secret);
+				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, this.secret);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);
@@ -97,7 +99,7 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 			return;
 		}
 
-		this.recordingService.downloadRecording(this.recording);
+		this.recordingService.downloadRecording(this.recording, this.secret);
 	}
 
 	openShareDialog() {

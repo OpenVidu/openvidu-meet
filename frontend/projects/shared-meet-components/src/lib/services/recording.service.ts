@@ -245,8 +245,8 @@ export class RecordingService {
 	 *
 	 * @param recording - The recording information containing the ID and filename
 	 */
-	downloadRecording(recording: MeetRecordingInfo) {
-		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId);
+	downloadRecording(recording: MeetRecordingInfo, secret?: string) {
+		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, secret);
 		const link = document.createElement('a');
 		link.href = recordingUrl;
 		link.download = recording.filename || `${recording.recordingId}.mp4`;
