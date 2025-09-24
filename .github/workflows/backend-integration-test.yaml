@@ -144,8 +144,7 @@ jobs:
                             "container_name": "openvidu-appdata-recordings"
                           }
                         ' egress.yaml
-                      fi
-                      elseif [[ "${{ matrix['storage-provider'] }}" == "gcs" ]]; then
+                      elif [[ "${{ matrix['storage-provider'] }}" == "gcs" ]]; then
                         echo "Using GCS storage provider"
                         yq e -i '
                           del(.storage.s3) |
