@@ -128,6 +128,11 @@ jobs:
                   node-version: '22.13'
             - name: Install LK CLI
               run: curl -sSL https://get.livekit.io/cli | bash
+            - name: Save GCP credentials
+              if: matrix.storage-provider == 'gcs'
+              run: | 
+                echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /credentials.json
+                cat /credentials.json
             - name: Setup OpenVidu Local Deployment
               uses: OpenVidu/actions/start-openvidu-local-deployment@main
               with:
@@ -147,12 +152,11 @@ jobs:
                         ' egress.yaml
                       elif [[ "${{ matrix['storage-provider'] }}" == "gcs" ]]; then
                         echo "Using GCS storage provider"
+                        yq eval --inplace '.storage.gcp.credentials_json = (load("/credentials.json") | tostring) | .storage.gcp.credentials_json style="single"' egress.yaml
+                        
                         yq e -i '
                           del(.storage.s3) |
-                          .storage.gcp = {
-                            "credentials_json": "${{ secrets.GCP_CREDENTIALS_JSON }}",
-                            "bucket_name": "openvidu-appdata"
-                          }
+                          .storage.gcp.bucket = "openvidu-appdata"
                         ' egress.yaml
                       fi
 
@@ -162,9 +166,6 @@ jobs:
                       fi
                       BASH
                       chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-            - name: Save GCP credentials
-              if: matrix.storage-provider == 'gcs'
-              run: echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > /credentials.json
             - name: Setup OpenVidu Meet
               uses: OpenVidu/actions/start-openvidu-meet@main
               env:
