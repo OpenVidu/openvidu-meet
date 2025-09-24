@@ -245,7 +245,7 @@
 }
 
 .main-share-meeting-link-container {
-	background-color: var(--ov-meet-surface-color);
+	background-color: var(--ov-surface-color); // Use ov-components variable
 	display: flex;
 	align-items: center;
 	justify-content: center;
