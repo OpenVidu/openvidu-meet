@@ -276,7 +276,6 @@ test.describe('Room Functionality Tests', () => {
 			fs.unlinkSync('after.png');
 			fs.unlinkSync('diff.png');
 
-			await page.waitForTimeout(3000);
 			await leaveRoom(page);
 		});
 	});

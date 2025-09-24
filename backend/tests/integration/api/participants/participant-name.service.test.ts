@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeEach, afterEach, beforeAll } from '@jest/globals';
-import { container, registerDependencies } from '../../../src/config/index.js';
-import { ParticipantNameService } from '../../../src/services/participant-name.service.js';
-import { RedisService } from '../../../src/services/redis.service.js';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
+import { container, registerDependencies } from '../../../../src/config/index.js';
+import { ParticipantNameService } from '../../../../src/services/participant-name.service.js';
+import { RedisService } from '../../../../src/services/redis.service.js';
 
 describe('ParticipantNameService', () => {
 	let participantNameService: ParticipantNameService;
@@ -13,10 +13,7 @@ describe('ParticipantNameService', () => {
 		registerDependencies();
 		participantNameService = container.get(ParticipantNameService);
 		redisService = container.get(RedisService);
-	});
 
-	beforeEach(async () => {
-		// Clean up any existing test data
 		await cleanupTestData();
 	});
 
