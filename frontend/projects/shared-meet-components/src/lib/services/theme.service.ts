@@ -28,6 +28,10 @@ export class ThemeService {
 	 * 3. Light theme as default
 	 */
 	initializeTheme(): void {
+		// Override available themes in OpenVidu Components to match OpenVidu Meet themes.
+		// OpenVidu Meet users do not know nothing about "classic" theme.
+		this.ovComponentsThemeService.getAllThemes = () => [OpenViduThemeMode.Light, OpenViduThemeMode.Dark];
+
 		const savedTheme = this.getSavedTheme();
 		const systemPreference = this.getSystemPreference();
 		const initialTheme = savedTheme || systemPreference || 'light';

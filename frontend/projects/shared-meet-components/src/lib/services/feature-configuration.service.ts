@@ -26,6 +26,7 @@ export interface ApplicationFeatures {
 	showParticipantList: boolean;
 	showSettings: boolean;
 	showFullscreen: boolean;
+	showThemeSelector: boolean;
 
 	// Permissions
 	canModerateRoom: boolean;
@@ -49,6 +50,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showParticipantList: true,
 	showSettings: true,
 	showFullscreen: true,
+	showThemeSelector: true,
 
 	canModerateRoom: false,
 	canRecordRoom: false,

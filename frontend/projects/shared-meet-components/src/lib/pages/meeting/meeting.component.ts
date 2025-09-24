@@ -20,6 +20,7 @@ import {
 	ApplicationFeatures,
 	AuthService,
 	FeatureConfigurationService,
+	GlobalConfigService,
 	MeetingService,
 	NavigationService,
 	NotificationService,
@@ -49,6 +50,7 @@ import {
 	LeaveButtonDirective,
 	OpenViduComponentsUiModule,
 	OpenViduService,
+	OpenViduThemeService,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
@@ -128,7 +130,9 @@ export class MeetingComponent implements OnInit {
 		protected navigationService: NavigationService,
 		protected notificationService: NotificationService,
 		protected clipboard: Clipboard,
-		protected viewportService: ViewportService
+		protected viewportService: ViewportService,
+		protected ovThemeService: OpenViduThemeService,
+		protected configService: GlobalConfigService
 	) {
 		this.features = this.featureConfService.features;
 	}
@@ -280,6 +284,22 @@ export class MeetingComponent implements OnInit {
 			await this.addParticipantNameToUrl();
 			await this.roomService.loadRoomConfig(this.roomId);
 			this.showMeeting = true;
+
+			const { appearance } = await this.configService.getRoomsAppearanceConfig();
+			console.log('Loaded appearance config:', appearance);
+			if (appearance.themes.length > 0 && appearance.themes[0].enabled) {
+				const theme = appearance.themes[0];
+				this.ovThemeService.updateThemeVariables({
+					'--ov-primary-action-color': theme.primaryColor,
+					'--ov-secondary-action-color': theme.secondaryColor,
+					'--ov-background-color': theme.backgroundColor,
+					'--ov-surface-color': theme.surfaceColor
+				});
+				this.features().showThemeSelector = false;
+			} else {
+				this.ovThemeService.resetThemeVariables();
+				this.features().showThemeSelector = true;
+			}
 
 			combineLatest([
 				this.ovComponentsParticipantService.remoteParticipants$,
