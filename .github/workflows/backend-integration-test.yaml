@@ -118,7 +118,8 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                storage-provider: [s3, abs, gcs]
+                #storage-provider: [s3, abs, gcs]
+                storage-provider: [gcs]
         timeout-minutes: 30
         steps:
             - name: Setup Node.js
@@ -148,7 +149,7 @@ jobs:
                         echo "Using GCS storage provider"
                         yq e -i '
                           del(.storage.s3) |
-                          .storage.gcs = {
+                          .storage.gcp = {
                             "credentials_json": "${{ secrets.GCP_CREDENTIALS_JSON }}",
                             "bucket_name": "openvidu-appdata"
                           }
