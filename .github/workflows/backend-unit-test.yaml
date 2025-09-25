@@ -13,10 +13,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.13'
-      - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
-        with:
-          skip_backend_start: 'true'
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@v4
+      - name: Setup OpenVidu Meet Backend
+        shell: bash
+        run: ./prepare.sh --typings --backend
       - name: Run tests
         run: |
           cd backend
