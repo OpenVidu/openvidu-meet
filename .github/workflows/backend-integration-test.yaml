@@ -354,29 +354,10 @@ jobs:
         if: always()
         uses: OpenVidu/actions/cleanup@main
 
-  remove-components-artifact:
-    name: Remove OpenVidu Components Angular Artifact
-    needs:
-      - build-components
-      - test-rooms
-      - test-webhooks
-      - test-security
-      - test-global-config
-      - test-participants
-      - test-meetings
-      - test-users
-    runs-on: ov-actions-runner
-    if: ${{ always() }}
-    steps:
-      - name: Remove Artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: ${{ needs.build-components.outputs.artifact_name }}
-
   start-aws-runner:
     name: Prepare AWS runner
     runs-on: ov-actions-runner
-    if: ${{ inputs.use-aws == 'true' }}
+    if: ${{ inputs.use-aws != 'false' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -398,7 +379,7 @@ jobs:
 
   test-recordings:
     name: Recordings API Tests
-    needs: 
+    needs:
       - start-aws-runner
       - build-components
     if: ${{ always() && (needs.start-aws-runner.result == 'success' || needs.start-aws-runner.result == 'skipped') }}
@@ -418,7 +399,8 @@ jobs:
       - name: Save GCP credentials
         if: matrix.storage-provider == 'gcs'
         run: |
-          echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /credentials.json
+          echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /tmp/credentials.json
+          chmod 600 /tmp/credentials.json
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
@@ -438,7 +420,7 @@ jobs:
               ' egress.yaml
             elif [[ "${{ matrix['storage-provider'] }}" == "gcs" ]]; then
               echo "Using Google Cloud Storage provider"
-              yq eval --inplace '.storage.gcp.credentials_json = (load("/credentials.json") | tostring) | .storage.gcp.credentials_json style="single"' egress.yaml
+              yq eval --inplace '.storage.gcp.credentials_json = (load("/tmp/credentials.json") | tostring) | .storage.gcp.credentials_json style="single"' egress.yaml
               
               yq e -i '
                 del(.storage.s3) |
@@ -464,7 +446,7 @@ jobs:
           MEET_AZURE_ACCOUNT_KEY: ${{ matrix.storage-provider == 'abs' && secrets.MEET_AZURE_ACCOUNT_KEY || '' }}
           MEET_AZURE_CONTAINER_NAME: ${{ matrix.storage-provider == 'abs' && 'openvidu-appdata-recordings' || '' }}
           # GCS variables
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/credentials.json' || '' }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/tmp/credentials.json' || '' }}
           MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata' || '' }}
       - name: Run tests
         run: |
@@ -478,7 +460,7 @@ jobs:
           MEET_AZURE_ACCOUNT_KEY: ${{ matrix.storage-provider == 'abs' && secrets.MEET_AZURE_ACCOUNT_KEY || '' }}
           MEET_AZURE_CONTAINER_NAME: ${{ matrix.storage-provider == 'abs' && 'openvidu-appdata-recordings' || '' }}
           # GCS variables
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/credentials.json' || '' }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/tmp/credentials.json' || '' }}
           MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata' || '' }}
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -491,9 +473,14 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: recordings-test-openvidu-meet-logs
+          name: recordings-test-${{ matrix.storage-provider }}-openvidu-meet-logs
           path: backend/meet_backend.log
           retention-days: 2
+      - name: Clean up credentials
+        if: always() && matrix.storage-provider == 'gcs'
+        run: |
+          rm -f /tmp/credentials.json
+          echo "GCP credentials file removed"
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main
@@ -516,3 +503,23 @@ jobs:
           github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
           label: ${{ needs.start-aws-runner.outputs.label }}
           ec2-instance-id: ${{ needs.start-aws-runner.outputs.ec2-instance-id }}
+
+  remove-components-artifact:
+    name: Remove OpenVidu Components Angular Artifact
+    needs:
+      - build-components
+      - test-rooms
+      - test-webhooks
+      - test-security
+      - test-global-config
+      - test-participants
+      - test-meetings
+      - test-users
+      - test-recordings
+    runs-on: ov-actions-runner
+    if: ${{ always() }}
+    steps:
+      - name: Remove Artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ needs.build-components.outputs.artifact_name }}
