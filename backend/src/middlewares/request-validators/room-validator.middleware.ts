@@ -95,6 +95,7 @@ const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.
 const hexColorSchema = z.string().regex(/^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/, 'Must be a valid hex color code');
 
 const RoomThemeSchema = z.object({
+	enabled: z.boolean(),
 	name: z.string().min(1, 'Theme name cannot be empty').max(50, 'Theme name cannot exceed 50 characters'),
 	baseTheme: ThemeModeSchema,
 	backgroundColor: hexColorSchema.optional(),
