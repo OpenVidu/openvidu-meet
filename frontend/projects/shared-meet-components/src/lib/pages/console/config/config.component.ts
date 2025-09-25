@@ -15,7 +15,6 @@ import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@lib/typ
 import {
 	OPENVIDU_COMPONENTS_DARK_THEME,
 	OPENVIDU_COMPONENTS_LIGHT_THEME,
-	OpenViduThemeService
 } from 'openvidu-components-angular';
 
 type ColorField = 'backgroundColor' | 'primaryColor' | 'secondaryColor' | 'surfaceColor';
@@ -66,10 +65,10 @@ export class ConfigComponent implements OnInit {
 
 	// Color picker configuration
 	colorFields: Array<{ key: ColorField; label: string }> = [
-		{ key: 'backgroundColor', label: 'Background' },
-		{ key: 'primaryColor', label: 'Primary' },
-		{ key: 'secondaryColor', label: 'Secondary' },
-		{ key: 'surfaceColor', label: 'Surface' }
+		{ key: 'backgroundColor', label: 'Main Background' },
+		{ key: 'primaryColor', label: 'Button Colors' },
+		{ key: 'secondaryColor', label: 'Secondary Color' },
+		{ key: 'surfaceColor', label: 'Panels & Cards' }
 	];
 
 	private initialFormValue: MeetRoomTheme | null = null;
@@ -106,7 +105,7 @@ export class ConfigComponent implements OnInit {
 			await this.loadAppearanceConfig();
 		} catch (error) {
 			console.error('Error during component initialization:', error);
-			this.notificationService.showSnackbar('Failed to initialize theme configuration');
+			this.notificationService.showSnackbar('Failed to load visual settings');
 		} finally {
 			this.isLoading.set(false);
 		}
@@ -209,7 +208,7 @@ export class ConfigComponent implements OnInit {
 
 	async onSaveAppearanceConfig(): Promise<void> {
 		if (this.appearanceForm.invalid) {
-			this.notificationService.showSnackbar('Please fix form errors before saving');
+			this.notificationService.showSnackbar('Please fix the form errors before saving');
 			return;
 		}
 
@@ -221,11 +220,11 @@ export class ConfigComponent implements OnInit {
 			};
 
 			await this.configService.saveRoomsAppearanceConfig(appearanceConfig);
-			this.notificationService.showSnackbar('Theme configuration saved successfully');
+			this.notificationService.showSnackbar('Visual settings saved successfully');
 			this.storeInitialValues();
 		} catch (error) {
 			console.error('Error saving appearance config:', error);
-			this.notificationService.showSnackbar('Failed to save theme configuration');
+			this.notificationService.showSnackbar('Failed to save visual settings');
 		}
 	}
 
