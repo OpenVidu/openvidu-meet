@@ -23,7 +23,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { chunkArray } from '../utils/array.utils.js';
+import { chunkArray } from '../utils/index.js';
 import { LoggerService } from './index.js';
 
 @injectable()

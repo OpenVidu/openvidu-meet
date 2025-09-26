@@ -9,7 +9,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService, TokenService } from '../services/index.js';
-import { getCookieOptions } from '../utils/cookie-utils.js';
+import { getCookieOptions } from '../utils/index.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

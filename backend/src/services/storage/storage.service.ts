@@ -3,7 +3,6 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
 import {
-	getBaseUrl,
 	MEET_INITIAL_ADMIN_PASSWORD,
 	MEET_INITIAL_ADMIN_USER,
 	MEET_INITIAL_API_KEY,
@@ -20,6 +19,7 @@ import {
 	OpenViduMeetError,
 	RedisKeyName
 } from '../../models/index.js';
+import { getBaseUrl } from '../../utils/index.js';
 import { LoggerService, MutexService, RedisService } from '../index.js';
 import { StorageFactory } from './storage.factory.js';
 import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';

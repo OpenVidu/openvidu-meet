@@ -11,7 +11,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
-import { getCookieOptions } from '../utils/cookie-utils.js';
+import { getCookieOptions } from '../utils/index.js';
 
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

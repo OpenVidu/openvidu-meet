@@ -8,6 +8,7 @@ import {
 	FrontendEventService,
 	GCSService,
 	GCSStorageProvider,
+	HttpContextService,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
@@ -52,6 +53,7 @@ export const registerDependencies = () => {
 	container.bind(DistributedEventService).toSelf().inSingletonScope();
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
+	container.bind(HttpContextService).toSelf().inSingletonScope();
 
 	configureStorage(MEET_BLOB_STORAGE_MODE);
 	container.bind(StorageFactory).toSelf().inSingletonScope();

@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { getBaseUrl } from '../environment.js';
 import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorRecordingNotFound,
@@ -13,6 +12,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService, MeetStorageService, RecordingService } from '../services/index.js';
+import { getBaseUrl } from '../utils/index.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -125,10 +125,7 @@ export const stopRecording = async (req: Request, res: Response) => {
 		const recordingService = container.get(RecordingService);
 
 		const recordingInfo = await recordingService.stopRecording(recordingId);
-		res.setHeader(
-			'Location',
-			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`
-		);
+		res.setHeader('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `stopping recording '${recordingId}'`);

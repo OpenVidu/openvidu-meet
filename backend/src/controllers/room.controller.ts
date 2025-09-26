@@ -10,10 +10,9 @@ import {
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
-import { getBaseUrl } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
-import { getCookieOptions } from '../utils/cookie-utils.js';
+import { getBaseUrl, getCookieOptions } from '../utils/index.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

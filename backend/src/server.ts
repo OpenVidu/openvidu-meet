@@ -5,7 +5,7 @@ import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
 import INTERNAL_CONFIG from './config/internal-config.js';
 import { SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
-import { jsonSyntaxErrorHandler } from './middlewares/index.js';
+import { httpContextMiddleware, jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {
 	authRouter,
 	configRouter,
@@ -24,7 +24,7 @@ import {
 	internalApiHtmlFilePath,
 	publicApiHtmlFilePath,
 	webcomponentBundlePath
-} from './utils/path-utils.js';
+} from './utils/path.utils.js';
 
 const createApp = () => {
 	const app: Express = express();
@@ -41,9 +41,13 @@ const createApp = () => {
 
 	// Serve static files
 	app.use(express.static(frontendDirectoryPath));
+
 	app.use(express.json());
 	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
+
+	// Middleware to set HTTP context
+	app.use(httpContextMiddleware);
 
 	// Public API routes
 	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
