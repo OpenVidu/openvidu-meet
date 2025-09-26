@@ -239,7 +239,7 @@ test.describe('Room Functionality Tests', () => {
 	// ==========================================
 
 	test.describe('Advanced Features', () => {
-		test.only('should apply virtual background and detect visual changes', async ({ page }) => {
+		test('should apply virtual background and detect visual changes', async ({ page }) => {
 			await joinRoomAs('speaker', participantName, page);
 
 			// Wait for video element to be ready
