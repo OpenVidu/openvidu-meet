@@ -116,53 +116,63 @@ export class GCSService {
 	 */
 	async listObjectsPaginated(
 		additionalPrefix = '',
-		maxKeys = 50,
+		maxResults = 50,
 		continuationToken?: string,
 		bucket: string = MEET_S3_BUCKET
 	): Promise<{
-		Contents?: Array<{ Key?: string; LastModified?: Date; Size?: number; ETag?: string }>;
-		NextContinuationToken?: string;
-		IsTruncated?: boolean;
-		KeyCount?: number;
+		items: Array<{ Key?: string; LastModified?: Date; Size?: number; ETag?: string }>;
+		continuationToken?: string;
+		isTruncated?: boolean;
 	}> {
 		const basePrefix = this.getFullKey(additionalPrefix);
 		this.logger.verbose(`GCS listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
 
-		const options: GetFilesOptions = {
-			prefix: basePrefix,
-			maxResults: maxKeys
-		};
-
-		if (continuationToken && continuationToken !== 'undefined') {
-			options.pageToken = continuationToken;
-		}
-
 		try {
+			maxResults = Number(maxResults);
 			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-			const [files, , response] = await bucketObj.getFiles(options);
 
-			interface GCSFileContent {
-				Key?: string;
-				LastModified?: Date;
-				Size?: number;
-				ETag?: string;
+			const options: GetFilesOptions = {
+				prefix: basePrefix,
+				maxResults: maxResults,
+				autoPaginate: false
+			};
+
+			if (continuationToken && continuationToken !== 'undefined') {
+				options.pageToken = continuationToken;
 			}
 
-			const contents: GCSFileContent[] = files.map(
-				(file: File): GCSFileContent => ({
-					Key: file.name,
-					LastModified: file.metadata.updated ? new Date(file.metadata.updated) : undefined,
-					Size: file.metadata.size ? parseInt(file.metadata.size as string) : undefined,
-					ETag: file.metadata.etag || undefined
-				})
-			);
+			const [files, , response] = await bucketObj.getFiles(options);
 
-			const nextPageToken = (response as any)?.nextPageToken;
+			const items = files.map((file: File) => ({
+				Key: file.name,
+				LastModified: file.metadata.updated ? new Date(file.metadata.updated) : undefined,
+				Size: file.metadata.size ? parseInt(file.metadata.size as string) : undefined,
+				ETag: file.metadata.etag || undefined
+			}));
+
+			let NextContinuationToken = (response as any)?.nextPageToken;
+			let isTruncated = NextContinuationToken !== undefined;
+
+			// Check if next page has items, similar to ABS implementation
+			if (NextContinuationToken) {
+				const nextOptions: GetFilesOptions = {
+					prefix: basePrefix,
+					maxResults: 1,
+					autoPaginate: false,
+					pageToken: NextContinuationToken
+				};
+
+				const [nextFiles] = await bucketObj.getFiles(nextOptions);
+				if (nextFiles.length === 0) {
+					NextContinuationToken = undefined;
+					isTruncated = false;
+				}
+			}
+
 			return {
-				Contents: contents,
-				NextContinuationToken: nextPageToken,
-				IsTruncated: !!nextPageToken,
-				KeyCount: contents.length
+				items: items,
+				continuationToken: NextContinuationToken,
+				isTruncated: isTruncated
 			};
 		} catch (error) {
 			this.logger.error(`GCS listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);

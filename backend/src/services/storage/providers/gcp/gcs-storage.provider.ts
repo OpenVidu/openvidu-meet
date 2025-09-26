@@ -11,7 +11,7 @@ export class GCSStorageProvider implements StorageProvider {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(GCSService) protected gcsService: GCSService
-	) {}
+	) { }
 
 	/**
 	 * Retrieves an object from GCS Storage as a JSON object.
@@ -105,14 +105,14 @@ export class GCSStorageProvider implements StorageProvider {
 
 			// Transform GCS response to match the expected interface
 			return {
-				Contents: result.Contents?.map((item) => ({
+				Contents: result.items?.map((item) => ({
 					Key: item.Key,
 					LastModified: item.LastModified,
 					Size: item.Size,
 					ETag: undefined // GCS doesn't provide ETag in the same way as S3
 				})),
-				IsTruncated: !!result.NextContinuationToken,
-				NextContinuationToken: result.NextContinuationToken
+				IsTruncated: !!result.continuationToken,
+				NextContinuationToken: result.continuationToken
 			};
 		} catch (error) {
 			this.logger.error(`Error listing objects in GCS Storage with prefix ${prefix}: ${error}`);
