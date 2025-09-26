@@ -1,146 +1,204 @@
-* {
-	box-sizing: border-box;
+@import '../../../../../../src/assets/styles/design-tokens';
+
+// Login Page Container - Full height centered layout
+.ov-page-container {
+	@include ov-flex-center;
+	@include ov-theme-transition;
+	min-height: 100vh;
+	background: var(--ov-meet-background-color);
+	padding: var(--ov-meet-spacing-lg);
 }
 
-body {
-	margin: 0;
-	font-family: Arial, sans-serif;
-	background-color: #f8fafa;
-}
-
-.login-container {
-	height: 100vh;
-}
-
-.card-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 100%;
-	width: 75%;
-	margin: auto;
-	max-width: 1200px;
-}
-
-.login-card {
-	padding: 40px;
-	width: 400px;
-	height: 400px;
-	// box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-	box-shadow: none;
-	border-top-right-radius: 0px;
-	border-bottom-right-radius: 0px;
-}
-
-.form-input {
+.login-page-content {
+	@include ov-flex-center;
+	flex-direction: column;
+	// gap: var(--ov-meet-spacing-xl);
 	width: 100%;
+	max-width: 900px;
 }
 
-.login-button {
-	text-align: center;
-	button {
-		width: 100%;
-		background-color: #0088aa;
-		color: #ffffff;
-		border-radius: 4px;
-		transition: background-color 0.3s;
+// Login Header - Using get-started-header mixin for consistency
+.get-started-header {
+	@include ov-get-started-header;
+
+	.login-icon {
+		@include ov-icon(xl);
+		margin-bottom: var(--ov-meet-spacing-md);
+	}
+
+	h1 {
+		font-size: var(--ov-meet-font-size-hero);
+		font-weight: var(--ov-meet-font-weight-light);
+		margin-bottom: var(--ov-meet-spacing-sm);
+	}
+
+	.subtitle {
+		font-size: var(--ov-meet-font-size-lg);
+		color: var(--ov-meet-text-secondary);
+		margin: 0;
 	}
 }
-.login-button button:hover {
-	background-color: #00777f;
-}
 
-.login-button button:disabled {
-	background-color: #a19f9f;
-}
-
-.login-error {
-	text-align: center;
-	margin-top: 10px;
-}
-
-.signup-section {
+// Login Form Container - Side by side layout
+.login-form-container {
 	display: flex;
-	text-align: center;
-	justify-content: center;
-	align-items: center;
-	align-content: center;
-	background-color: #4d4d4d;
-	padding: 20px;
+	width: 100%;
+	max-width: 800px;
+	box-shadow: var(--ov-meet-shadow-md);
+	border-radius: var(--ov-meet-radius-lg);
+	overflow: hidden;
+	border: 1px solid var(--ov-meet-border-color);
+}
+
+// Login Card - Form section
+.login-card {
+	@include ov-card;
+	@include ov-theme-transition;
 	flex: 1;
-	width: 400px;
-	height: 400px;
-	max-width: 400px;
-	max-height: 400px;
-	border-top-right-radius: 12px;
-	border-bottom-right-radius: 12px;
-	// box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 	box-shadow: none;
+	border-radius: 0;
+	border-top-left-radius: var(--ov-meet-radius-lg);
+	border-bottom-left-radius: var(--ov-meet-radius-lg);
+
+	mat-card-content {
+		padding: var(--ov-meet-spacing-xl);
+	}
 }
 
-.signup-section img {
-	max-width: 80%;
-	height: auto;
-}
-
-a {
-	color: #6a5acd;
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
-}
-
-@media (max-width: 991px) {
-	/* Hide .signup-section on medium screens */
-	.signup-section {
-		display: none;
-	}
-
-	.card-container {
-		width: 75%;
-		flex-direction: column;
-	}
-
-	.login-card {
-		width: 100%;
-		max-width: 100%;
-		border-radius: 12px;
-		height: auto;
-		// box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.15);
-		padding: 40px;
-		margin-bottom: 15px;
-	}
-
-	.login-button button {
-		width: 100%;
-		padding: 12px;
-		font-size: 1em;
-	}
+// Form styling
+#login-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
 
 	.form-input {
-		margin-bottom: 10px;
+		width: 100%;
+
+		mat-icon {
+			@include ov-icon(md);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+
+	.login-error {
+		text-align: center;
+		margin: var(--ov-meet-spacing-sm) 0;
+		color: var(--ov-meet-color-error);
+		font-size: var(--ov-meet-font-size-sm);
+	}
+
+	.login-actions {
+		text-align: center;
+		margin-top: var(--ov-meet-spacing-md);
+
+		.primary-button {
+			@include ov-button-base;
+			width: 100%;
+			padding: var(--ov-meet-spacing-md);
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+		}
 	}
 }
 
-/* Small devices (landscape phones, 576px and up) */
-@media (max-width: 576px) {
+// Brand Section - Visual branding area
+.brand-section {
+	@include ov-flex-center;
+	@include ov-theme-transition;
+	flex: 1;
+	background: var(--ov-meet-color-secondary);
+	padding: var(--ov-meet-spacing-xl);
+	border-top-right-radius: var(--ov-meet-radius-lg);
+	border-bottom-right-radius: var(--ov-meet-radius-lg);
+
+	.brand-content {
+		text-align: center;
+
+		img {
+			max-width: 100%;
+			height: auto;
+			// opacity: 0.9;
+		}
+	}
+}
+
+// Responsive design using design system breakpoints
+@include ov-tablet-down {
+	.ov-page-container {
+		padding: var(--ov-meet-spacing-md);
+	}
+
+	.login-form-container {
+		flex-direction: column;
+		max-width: 500px;
+	}
+
 	.login-card {
-		padding: 40px;
-		font-size: 0.9em;
+		border-radius: var(--ov-meet-radius-lg) var(--ov-meet-radius-lg) 0 0;
+
+		mat-card-content {
+			padding: var(--ov-meet-spacing-lg);
+		}
 	}
 
-	.login-button button {
-		font-size: 0.85em;
-		padding: 10px;
+	.brand-section {
+		border-radius: 0 0 var(--ov-meet-radius-lg) var(--ov-meet-radius-lg);
+		padding: var(--ov-meet-spacing-lg);
+
+		.brand-content img {
+			max-width: 70%;
+		}
 	}
 
-	.card-container {
-		width: 95%;
+	.get-started-header {
+		h1 {
+			font-size: var(--ov-meet-font-size-xxl);
+		}
+	}
+}
+
+@include ov-mobile-down {
+	.ov-page-container {
+		padding: var(--ov-meet-spacing-sm);
 	}
 
-	.signup-section {
-		display: none;
+	.login-form-container {
+		max-width: 100%;
+	}
+
+	.login-card mat-card-content {
+		padding: var(--ov-meet-spacing-md);
+	}
+
+	.brand-section {
+		padding: var(--ov-meet-spacing-md);
+		min-height: 120px;
+
+		// .brand-content img {
+		// 	max-width: 50%;
+		// }
+	}
+
+	#login-form {
+		gap: var(--ov-meet-spacing-sm);
+
+		.login-actions .primary-button {
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+			font-size: var(--ov-meet-font-size-sm);
+		}
+	}
+
+	.get-started-header {
+		.login-icon {
+			@include ov-icon(lg);
+		}
+
+		h1 {
+			font-size: var(--ov-meet-font-size-xl);
+		}
+
+		.subtitle {
+			font-size: var(--ov-meet-font-size-md);
+		}
 	}
 }
