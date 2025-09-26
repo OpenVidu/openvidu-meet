@@ -3,7 +3,13 @@
 		<mat-icon>menu</mat-icon>
 	</button>
 
-	<span class="toolbar-title" id="app-title">OpenVidu Meet</span>
+	<img
+		id="app-logo"
+		class="toolbar-logo"
+		[src]="isDarkMode() ? 'assets/images/meet_dark.png' : 'assets/images/meet_light.png'"
+		height="46"
+		aria-label="OpenVidu Meet"
+	/>
 
 	<span class="toolbar-spacer"></span>
 
