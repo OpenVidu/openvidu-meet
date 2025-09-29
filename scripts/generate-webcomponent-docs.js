@@ -239,8 +239,8 @@ class WebComponentDocGenerator {
         const commandEnum = enums.find(e => e.name === 'WebComponentCommand');
         if (!commandEnum) return '';
 
-        let markdown = '| Method | Description | Parameters | Access Level |\n';
-        markdown += '|--------|-------------|------------|-------------|\n';
+        let markdown = '| Method | Command | Description | Parameters | Access Level |\n';
+        markdown += '|--------|---------|-------------|------------|-------------|\n';
 
         for (const item of commandEnum.items) {
             // Skip private commands
@@ -256,7 +256,7 @@ class WebComponentDocGenerator {
             // Determine access level based on @moderator annotation
             const accessLevel = this.getAccessLevel(item);
 
-            markdown += `| \`${methodName}\` | ${item.description || 'No description available'} | ${params} | ${accessLevel} |\n`;
+            markdown += `| \`${methodName}\` | \`${item.value}\` | ${item.description || 'No description available'} | ${params} | ${accessLevel} |\n`;
         }
 
         return markdown;
