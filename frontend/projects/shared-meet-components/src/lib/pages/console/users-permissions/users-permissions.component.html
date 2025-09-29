@@ -1,12 +1,11 @@
 <div class="ov-page-container ov-mb-xxl">
 	<div class="page-header">
 		<div class="title">
-			<mat-icon class="material-symbols-outlined ov-settings-icon">passkey</mat-icon>
-			<h1>Users & permissions</h1>
+			<mat-icon class="material-symbols-outlined ov-users-permissions">passkey</mat-icon>
+			<h1>Users & Permissions</h1>
 		</div>
 		<p class="subtitle">
-			Configure authentication settings and access controls to manage who can join your rooms and their
-			permissions.
+			Manage who can access your video meeting rooms and control their permissions.
 		</p>
 	</div>
 
@@ -16,9 +15,9 @@
 				<div class="loading-header">
 					<div class="loading-title">
 						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
-						<h1>Loading Settings</h1>
+						<h1>Loading Configuration</h1>
 					</div>
-					<p class="loading-subtitle">Please wait while we fetch your settings...</p>
+					<p class="loading-subtitle">Please wait while we load your security configurations...</p>
 				</div>
 
 				<div class="loading-spinner-container">
@@ -45,10 +44,10 @@
 			</mat-card> -->
 
 			<!-- Users Section -->
-			<mat-card class="section-card branding-section">
+			<mat-card class="section-card users-section">
 				<mat-card-header class="users-header">
 					<div mat-card-avatar class="users-avatar">
-						<mat-icon class="section-icon users-icon">group</mat-icon>
+						<mat-icon class="section-icon users-icon">admin_panel_settings</mat-icon>
 					</div>
 					<mat-card-title class="users-title">Users</mat-card-title>
 				</mat-card-header>
@@ -79,15 +78,19 @@
 					<form [formGroup]="adminCredentialsForm" (ngSubmit)="onSaveAdminCredentials()">
 						<div class="form-section">
 							<div class="form-field-header">
-								<h3>Admin Credentials</h3>
-								<p class="field-description">Change the password for the admin user.</p>
+								<h3>Administrator Password</h3>
+								<p class="field-description">
+									Update your administrator password to keep your account secure.
+									We recommend using a strong, unique password.
+								</p>
 							</div>
 
 							<div class="admin-auth-form">
 								<!-- Username Field -->
 								<mat-form-field subscriptSizing="dynamic" appearance="outline" class="username-field">
-									<mat-label>Username</mat-label>
+									<mat-label>Administrator Username</mat-label>
 									<input matInput type="text" formControlName="username" placeholder="admin" />
+									<mat-hint>This is your username to access the administration panel</mat-hint>
 								</mat-form-field>
 
 								<!-- Current Password Field -->
@@ -111,6 +114,7 @@
 											showCurrentPassword() ? 'visibility_off' : 'visibility'
 										}}</mat-icon>
 									</button>
+									<mat-hint>We need to verify your identity with your current password</mat-hint>
 									@if (getCurrentPasswordError()) {
 										<mat-error>{{ getCurrentPasswordError() }}</mat-error>
 									}
@@ -123,7 +127,7 @@
 										matInput
 										[type]="showNewPassword() ? 'text' : 'password'"
 										formControlName="newPassword"
-										placeholder="Enter your new password"
+										placeholder="Create a strong, secure password"
 									/>
 									<button
 										mat-icon-button
@@ -135,7 +139,7 @@
 									>
 										<mat-icon>{{ showNewPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
 									</button>
-									<mat-hint>Minimum of 5 characters</mat-hint>
+									<mat-hint>Minimum 5 characters. We recommend using letters, numbers, and symbols</mat-hint>
 									@if (getNewPasswordError()) {
 										<mat-error>{{ getNewPasswordError() }}</mat-error>
 									}
@@ -148,7 +152,7 @@
 										matInput
 										[type]="showConfirmPassword() ? 'text' : 'password'"
 										formControlName="confirmPassword"
-										placeholder="Confirm your new password"
+										placeholder="Type the new password again"
 									/>
 									<button
 										mat-icon-button
@@ -162,6 +166,7 @@
 											showConfirmPassword() ? 'visibility_off' : 'visibility'
 										}}</mat-icon>
 									</button>
+									<mat-hint>Must match exactly with your new password</mat-hint>
 									@if (getConfirmPasswordError()) {
 										<mat-error>{{ getConfirmPasswordError() }}</mat-error>
 									}
@@ -178,7 +183,7 @@
 						[disabled]="adminCredentialsForm.invalid"
 						(click)="onSaveAdminCredentials()"
 					>
-						Save admin password
+						Update Administrator Password
 					</button>
 				</mat-card-actions>
 			</mat-card>
