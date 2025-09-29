@@ -8,14 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { GlobalConfigService, NotificationService } from '@lib/services';
 import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@lib/typings/ce';
-import {
-	OPENVIDU_COMPONENTS_DARK_THEME,
-	OPENVIDU_COMPONENTS_LIGHT_THEME,
-} from 'openvidu-components-angular';
+import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 'openvidu-components-angular';
 
 type ColorField = 'backgroundColor' | 'primaryColor' | 'secondaryColor' | 'surfaceColor';
 
@@ -47,7 +44,8 @@ interface ThemeColors {
 })
 export class ConfigComponent implements OnInit {
 	isLoading = signal(true);
-	hasChanges = signal(false);
+	hasFormChanges = signal(false);
+	hasColorChanges = signal(false);
 
 	appearanceForm = new FormGroup({
 		enabled: new FormControl<boolean>(false, { nonNullable: true }),
@@ -116,14 +114,6 @@ export class ConfigComponent implements OnInit {
 		return this.appearanceForm.get('enabled')?.value ?? false;
 	}
 
-	// Form actions
-	onResetForm(): void {
-		if (this.initialFormValue) {
-			this.appearanceForm.patchValue(this.initialFormValue);
-			this.hasChanges.set(false);
-		}
-	}
-
 	// Color management methods
 	getColorValue(colorField: ColorField): string {
 		const formValue = this.appearanceForm.get(colorField)?.value;
@@ -149,9 +139,9 @@ export class ConfigComponent implements OnInit {
 	private async loadAppearanceConfig(): Promise<void> {
 		try {
 			const { appearance } = await this.configService.getRoomsAppearanceConfig();
-			const themeConfig = appearance?.themes?.[0];
 
-			if (themeConfig) {
+			if (appearance.themes.length > 0) {
+				const themeConfig = appearance.themes[0];
 				this.appearanceForm.patchValue({
 					enabled: themeConfig.enabled,
 					baseTheme: themeConfig.baseTheme,
@@ -190,7 +180,8 @@ export class ConfigComponent implements OnInit {
 
 	private storeInitialValues(): void {
 		this.initialFormValue = { ...this.appearanceForm.value } as MeetRoomTheme;
-		this.hasChanges.set(false);
+		this.hasFormChanges.set(false);
+		this.hasColorChanges.set(false);
 	}
 
 	private checkForChanges(): void {
@@ -198,11 +189,37 @@ export class ConfigComponent implements OnInit {
 			return;
 		}
 
-		const currentValue = this.appearanceForm.value;
-		const hasChangesDetected = JSON.stringify(currentValue) !== JSON.stringify(this.initialFormValue);
-		this.hasChanges.set(hasChangesDetected);
-		if (!currentValue.enabled) {
+		// Check for general form changes
+		const currentFormValue = this.appearanceForm.value;
+		const hasFormChangesDetected = JSON.stringify(currentFormValue) !== JSON.stringify(this.initialFormValue);
+		this.hasFormChanges.set(hasFormChangesDetected);
+
+		// Check for color-specific changes
+		const hasColorChangesDetected =
+			currentFormValue.backgroundColor !== this.initialFormValue.backgroundColor ||
+			currentFormValue.primaryColor !== this.initialFormValue.primaryColor ||
+			currentFormValue.secondaryColor !== this.initialFormValue.secondaryColor ||
+			currentFormValue.surfaceColor !== this.initialFormValue.surfaceColor;
+		this.hasColorChanges.set(hasColorChangesDetected);
+	}
+
+	onToggleTheme(event: MatSlideToggleChange): void {
+		// If theme was initially enabled and now disabled, save immediately
+		if (this.initialFormValue?.enabled && !event.checked) {
+			this.appearanceForm.patchValue({ ...this.initialFormValue, enabled: false });
 			this.onSaveAppearanceConfig();
+		}
+	}
+
+	onResetColors(): void {
+		if (this.initialFormValue) {
+			this.appearanceForm.patchValue({
+				backgroundColor: this.initialFormValue.backgroundColor,
+				primaryColor: this.initialFormValue.primaryColor,
+				secondaryColor: this.initialFormValue.secondaryColor,
+				surfaceColor: this.initialFormValue.surfaceColor
+			});
+			this.hasColorChanges.set(false);
 		}
 	}
 
@@ -233,13 +250,13 @@ export class ConfigComponent implements OnInit {
 		const defaults = this.defaultColors[baseTheme];
 
 		return {
-			enabled: formData.enabled,
 			name: 'default',
+			enabled: formData.enabled,
 			baseTheme,
-			backgroundColor: formData.backgroundColor?.trim() ? formData.backgroundColor : defaults.backgroundColor,
-			primaryColor: formData.primaryColor?.trim() ? formData.primaryColor : defaults.primaryColor,
-			secondaryColor: formData.secondaryColor?.trim() ? formData.secondaryColor : defaults.secondaryColor,
-			surfaceColor: formData.surfaceColor?.trim() ? formData.surfaceColor : defaults.surfaceColor
+			backgroundColor: formData.backgroundColor?.trim() || defaults.backgroundColor,
+			primaryColor: formData.primaryColor?.trim() || defaults.primaryColor,
+			secondaryColor: formData.secondaryColor?.trim() || defaults.secondaryColor,
+			surfaceColor: formData.surfaceColor?.trim() || defaults.surfaceColor
 		};
 	}
 }

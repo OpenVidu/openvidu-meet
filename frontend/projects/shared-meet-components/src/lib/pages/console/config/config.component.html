@@ -4,7 +4,10 @@
 			<mat-icon class="material-symbols-outlined ov-settings-icon">settings</mat-icon>
 			<h1>Visual Customization</h1>
 		</div>
-		<p class="subtitle">Personalize the visual appearance of your video conference rooms to reflect your organization's brand and style.</p>
+		<p class="subtitle">
+			Personalize the visual appearance of your video conference rooms to reflect your organization's brand and
+			style.
+		</p>
 	</div>
 
 	@if (isLoading()) {
@@ -43,7 +46,12 @@
 							<span>Use my own visual design</span>
 							<mat-slide-toggle
 								formControlName="enabled"
-								[matTooltip]="!isThemeEnabled ? 'Enable this option to customize the colors and appearance of your room' : ''"
+								(change)="onToggleTheme($event)"
+								[matTooltip]="
+									!isThemeEnabled
+										? 'Enable this option to customize the colors and appearance of your room'
+										: ''
+								"
 								[matTooltipDisabled]="isThemeEnabled"
 							></mat-slide-toggle>
 						</div>
@@ -54,7 +62,8 @@
 							<div class="theme-section">
 								<h4 class="section-title">Background Style</h4>
 								<p class="section-description ov-mt-xs">
-									Choose whether you prefer a light or dark background as the starting point for your customization.
+									Choose whether you prefer a light or dark background as the starting point for your
+									customization.
 								</p>
 								<mat-form-field appearance="outline" class="full-width">
 									<mat-label>Background style</mat-label>
@@ -110,14 +119,14 @@
 							mat-button
 							class="primary-button"
 							(click)="onSaveAppearanceConfig()"
-							[disabled]="appearanceForm.invalid || !hasChanges()"
+							[disabled]="appearanceForm.invalid || !hasFormChanges()"
 						>
 							<mat-icon>save</mat-icon>
 							Save Changes
 						</button>
-						<button mat-stroked-button (click)="onResetForm()" [disabled]="!hasChanges()">
+						<button mat-stroked-button (click)="onResetColors()" [disabled]="!hasColorChanges()">
 							<mat-icon>undo</mat-icon>
-							Reset Changes
+							Reset Colors
 						</button>
 					</mat-card-actions>
 				}
