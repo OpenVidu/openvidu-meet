@@ -247,12 +247,6 @@ export const errorParticipantIdentityNotProvided = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Participant Error', 'No participant identity provided', 400);
 };
 
-// Global config errors
-
-export const errorRoomsAppearanceConfigNotDefined = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Global Config Error', 'Rooms appearance config not defined', 404);
-};
-
 // Webhook errors
 
 export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {

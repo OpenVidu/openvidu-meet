@@ -711,10 +711,10 @@ export class MeetStorageService<
 	 * @returns {GConfig}
 	 */
 	protected getDefaultConfig(): GConfig {
-		return {
+		const defaultConfig: GlobalConfig = {
 			projectId: MEET_NAME_ID,
 			webhooksConfig: {
-				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true' && MEET_INITIAL_API_KEY,
+				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_INITIAL_API_KEY,
 				url: MEET_INITIAL_WEBHOOK_URL
 			},
 			securityConfig: {
@@ -724,8 +724,14 @@ export class MeetStorageService<
 					},
 					authModeToAccessRoom: AuthMode.NONE
 				}
+			},
+			roomsConfig: {
+				appearance: {
+					themes: []
+				}
 			}
-		} as GConfig;
+		};
+		return defaultConfig as GConfig;
 	}
 
 	/**

@@ -8,7 +8,7 @@ export interface GlobalConfig {
     projectId: string;
     securityConfig: SecurityConfig;
     webhooksConfig: WebhookConfig;
-    roomsConfig?: {
+    roomsConfig: {
         appearance: MeetAppearanceConfig;
     };
 }

@@ -163,6 +163,7 @@ export class GCSService {
 				};
 
 				const [nextFiles] = await bucketObj.getFiles(nextOptions);
+
 				if (nextFiles.length === 0) {
 					NextContinuationToken = undefined;
 					isTruncated = false;

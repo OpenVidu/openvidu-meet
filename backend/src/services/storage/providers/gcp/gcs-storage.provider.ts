@@ -11,7 +11,7 @@ export class GCSStorageProvider implements StorageProvider {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(GCSService) protected gcsService: GCSService
-	) { }
+	) {}
 
 	/**
 	 * Retrieves an object from GCS Storage as a JSON object.
