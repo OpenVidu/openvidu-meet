@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
-import { MeetRoomThemeMode } from '../../../../src/typings/ce/index.js';
+import { MeetAppearanceConfig, MeetRoomThemeMode } from '../../../../src/typings/ce/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getRoomsAppearanceConfig,
@@ -25,7 +25,8 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Custom Theme',
+							name: 'custom',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.DARK,
 							backgroundColor: '#121212',
 							primaryColor: '#bb86fc',
@@ -50,7 +51,8 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Minimal Theme',
+							name: 'default',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT
 						}
 					]
@@ -71,9 +73,11 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Initial Theme',
+							name: 'initial',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT,
-							primaryColor: '#1976d2'
+							primaryColor: '#1976d2',
+							backgroundColor: '#ffffff'
 						}
 					]
 				}
@@ -86,11 +90,12 @@ describe('Rooms Appearance Config API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual(initialConfig);
 
-			const newConfig = {
+			const newConfig: { appearance: MeetAppearanceConfig } = {
 				appearance: {
 					themes: [
 						{
-							name: 'New Theme',
+							name: 'new',
+							enabled: false,
 							baseTheme: MeetRoomThemeMode.DARK,
 							primaryColor: '#bb86fc'
 						}
@@ -103,6 +108,10 @@ describe('Rooms Appearance Config API Tests', () => {
 
 			response = await getRoomsAppearanceConfig();
 			expect(response.status).toBe(200);
+			newConfig.appearance.themes[0] = {
+				...newConfig.appearance.themes[0],
+				backgroundColor: '#ffffff'
+			};
 			expect(response.body).toEqual(newConfig);
 		});
 	});
@@ -124,10 +133,12 @@ describe('Rooms Appearance Config API Tests', () => {
 					themes: [
 						{
 							name: 'Theme 1',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT
 						},
 						{
 							name: 'Theme 2',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.DARK
 						}
 					]
@@ -143,6 +154,7 @@ describe('Rooms Appearance Config API Tests', () => {
 					themes: [
 						{
 							name: '',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT
 						}
 					]
@@ -157,7 +169,8 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'This is a very long theme name that exceeds fifty characters',
+							name: 'a'.repeat(51),
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT
 						}
 					]
@@ -165,6 +178,53 @@ describe('Rooms Appearance Config API Tests', () => {
 			});
 
 			expectValidationError(response, 'appearance.themes.0.name', 'Theme name cannot exceed 50 characters');
+		});
+
+		it('should reject when theme name has invalid characters', async () => {
+			const invalidNames = [
+				'Corporate Blue', // Uppercase and spaces
+				'dark-mode-2024!', // Exclamation mark
+				'theme.corporate', // Dot
+				'Dark_Mode', // Uppercase
+				'theme 1', // Space
+				'thème-français' // Accents
+			];
+
+			for (const name of invalidNames) {
+				const response = await updateRoomsAppearanceConfig({
+					appearance: {
+						themes: [
+							{
+								name: name,
+								enabled: true,
+								baseTheme: MeetRoomThemeMode.LIGHT
+							}
+						]
+					}
+				});
+
+				expectValidationError(
+					response,
+					'appearance.themes.0.name',
+					'Theme name can only contain lowercase letters, numbers, hyphens and underscores'
+				);
+			}
+		});
+
+		it('should reject when enabled is not a boolean', async () => {
+			const response = await updateRoomsAppearanceConfig({
+				appearance: {
+					themes: [
+						{
+							name: 'Valid Name',
+							enabled: 'yes',
+							baseTheme: MeetRoomThemeMode.LIGHT
+						}
+					]
+				}
+			});
+
+			expectValidationError(response, 'appearance.themes.0.enabled', 'Expected boolean, received string');
 		});
 
 		it('should reject when baseTheme is not a valid enum value', async () => {
@@ -245,7 +305,8 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Short Hex Theme',
+							name: 'custom',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT,
 							backgroundColor: '#fff',
 							primaryColor: '#000',
@@ -259,11 +320,12 @@ describe('Rooms Appearance Config API Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should reject when name or baseTheme are not provided', async () => {
+		it('should reject when name, enabled or baseTheme are not provided', async () => {
 			let response = await updateRoomsAppearanceConfig({
 				appearance: {
 					themes: [
 						{
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.LIGHT
 						}
 					]
@@ -275,7 +337,20 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Missing Base Theme'
+							name: 'Missing Enabled',
+							baseTheme: MeetRoomThemeMode.LIGHT
+						}
+					]
+				}
+			});
+			expectValidationError(response, 'appearance.themes.0.enabled', 'Required');
+
+			response = await updateRoomsAppearanceConfig({
+				appearance: {
+					themes: [
+						{
+							name: 'Missing Base Theme',
+							enabled: true
 						}
 					]
 				}
@@ -303,11 +378,11 @@ describe('Rooms Appearance Config API Tests', () => {
 	});
 
 	describe('Get rooms appearance config', () => {
-		it('should return 404 when no appearance config is set', async () => {
+		it('should return an empty array when no appearance config is set', async () => {
 			const response = await getRoomsAppearanceConfig();
 
-			expect(response.status).toBe(404);
-			expect(response.body.message).toBe('Rooms appearance config not defined');
+			expect(response.status).toBe(200);
+			expect(response.body).toEqual({ appearance: { themes: [] } });
 		});
 
 		it('should return rooms appearance config when one is set', async () => {
@@ -315,7 +390,8 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: [
 						{
-							name: 'Test Theme',
+							name: 'custom',
+							enabled: true,
 							baseTheme: MeetRoomThemeMode.DARK,
 							primaryColor: '#bb86fc'
 						}

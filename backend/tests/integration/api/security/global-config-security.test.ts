@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
@@ -6,7 +6,7 @@ import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
 import { AuthMode, AuthType, MeetRoomThemeMode } from '../../../../src/typings/ce/index.js';
-import { loginUser, startTestServer, updateRoomsAppearanceConfig } from '../../../helpers/request-helpers.js';
+import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
 
@@ -119,7 +119,8 @@ describe('Global Config API Security Tests', () => {
 			appearance: {
 				themes: [
 					{
-						name: 'Default Theme',
+						name: 'default',
+						enabled: true,
 						baseTheme: MeetRoomThemeMode.DARK
 					}
 				]
@@ -151,25 +152,6 @@ describe('Global Config API Security Tests', () => {
 	});
 
 	describe('Get Rooms Appearance Config Tests', () => {
-		const appearanceConfig = {
-			appearance: {
-				themes: [
-					{
-						name: 'Default Theme',
-						baseTheme: MeetRoomThemeMode.DARK
-					}
-				]
-			}
-		};
-
-		beforeAll(async () => {
-			await updateRoomsAppearanceConfig(appearanceConfig);
-		});
-
-		afterAll(async () => {
-			await restoreGlobalConfig();
-		});
-
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${CONFIG_PATH}/rooms/appearance`)
