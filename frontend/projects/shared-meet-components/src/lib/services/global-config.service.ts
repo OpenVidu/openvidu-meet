@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpService } from '@lib/services';
+import { FeatureConfigurationService, HttpService } from '@lib/services';
 import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -15,7 +15,8 @@ export class GlobalConfigService {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected httpService: HttpService
+		protected httpService: HttpService,
+		protected featureConfService: FeatureConfigurationService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
 	}
@@ -64,6 +65,16 @@ export class GlobalConfigService {
 	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
 		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;
 		return await this.httpService.getRequest<{ appearance: MeetAppearanceConfig }>(path);
+	}
+
+	async loadRoomsAppearanceConfig(): Promise<void> {
+		try {
+            const config = await this.getRoomsAppearanceConfig();
+            this.featureConfService.setAppearanceConfig(config.appearance);
+        } catch (error) {
+            this.log.e('Error loading rooms appearance config:', error);
+            throw error;
+        }
 	}
 
 	async saveRoomsAppearanceConfig(config: MeetAppearanceConfig) {

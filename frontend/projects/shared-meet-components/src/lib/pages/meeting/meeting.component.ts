@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Signal } from '@angular/core';
+import { Component, effect, OnInit, Signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule, MatIconButton } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -44,10 +44,8 @@ import {
 	MeetSignalType
 } from '@lib/typings/ce/event.model';
 import {
-	ApiDirectiveModule,
 	ParticipantService as ComponentParticipantService,
 	DataPacket_Kind,
-	LeaveButtonDirective,
 	OpenViduComponentsUiModule,
 	OpenViduService,
 	OpenViduThemeService,
@@ -135,6 +133,21 @@ export class MeetingComponent implements OnInit {
 		protected configService: GlobalConfigService
 	) {
 		this.features = this.featureConfService.features;
+
+		// Change theme variables when custom theme is enabled
+		effect(async () => {
+			if (this.features().hasCustomTheme) {
+				const theme = this.features().themeConfig;
+				this.ovThemeService.updateThemeVariables({
+					'--ov-primary-action-color': theme?.primaryColor,
+					'--ov-secondary-action-color': theme?.secondaryColor,
+					'--ov-background-color': theme?.backgroundColor,
+					'--ov-surface-color': theme?.surfaceColor
+				});
+			} else {
+				this.ovThemeService.resetThemeVariables();
+			}
+		});
 	}
 
 	get roomName(): string {
@@ -283,23 +296,12 @@ export class MeetingComponent implements OnInit {
 			await this.generateParticipantToken();
 			await this.addParticipantNameToUrl();
 			await this.roomService.loadRoomConfig(this.roomId);
-			this.showMeeting = true;
 
-			const { appearance } = await this.configService.getRoomsAppearanceConfig();
-			console.log('Loaded appearance config:', appearance);
-			if (appearance.themes.length > 0 && appearance.themes[0].enabled) {
-				const theme = appearance.themes[0];
-				this.ovThemeService.updateThemeVariables({
-					'--ov-primary-action-color': theme.primaryColor,
-					'--ov-secondary-action-color': theme.secondaryColor,
-					'--ov-background-color': theme.backgroundColor,
-					'--ov-surface-color': theme.surfaceColor
-				});
-				this.features().showThemeSelector = false;
-			} else {
-				this.ovThemeService.resetThemeVariables();
-				this.features().showThemeSelector = true;
-			}
+			// The meeting view must be shown before loading the appearance config,
+			// as it contains theme information that might be applied immediately
+			// when the meeting view is rendered
+			this.showMeeting = true;
+			await this.configService.loadRoomsAppearanceConfig();
 
 			combineLatest([
 				this.ovComponentsParticipantService.remoteParticipants$,

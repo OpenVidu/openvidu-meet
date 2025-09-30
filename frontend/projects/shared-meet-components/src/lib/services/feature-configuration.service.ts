@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import {
+	MeetAppearanceConfig,
 	MeetRoomConfig,
 	ParticipantPermissions,
 	ParticipantRole,
@@ -32,6 +33,15 @@ export interface ApplicationFeatures {
 	canModerateRoom: boolean;
 	canRecordRoom: boolean;
 	canRetrieveRecordings: boolean;
+
+	// Appearance
+	hasCustomTheme: boolean;
+	themeConfig?: {
+		primaryColor?: string;
+		secondaryColor?: string;
+		backgroundColor?: string;
+		surfaceColor?: string;
+	};
 }
 
 /**
@@ -54,7 +64,10 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 
 	canModerateRoom: false,
 	canRecordRoom: false,
-	canRetrieveRecordings: false
+	canRetrieveRecordings: false,
+
+	hasCustomTheme: false,
+	themeConfig: undefined
 };
 
 /**
@@ -72,6 +85,7 @@ export class FeatureConfigurationService {
 	protected participantPermissions = signal<ParticipantPermissions | undefined>(undefined);
 	protected participantRole = signal<ParticipantRole | undefined>(undefined);
 	protected recordingPermissions = signal<RecordingPermissions | undefined>(undefined);
+	protected appearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<ApplicationFeatures>(() =>
@@ -79,7 +93,8 @@ export class FeatureConfigurationService {
 			this.roomConfig(),
 			this.participantPermissions(),
 			this.participantRole(),
-			this.recordingPermissions()
+			this.recordingPermissions(),
+			this.appearanceConfig()
 		)
 	);
 
@@ -120,10 +135,11 @@ export class FeatureConfigurationService {
 	}
 
 	/**
-	 * Checks if a specific feature is enabled
+	 * Updates appearance config
 	 */
-	isFeatureEnabled(featureName: keyof ApplicationFeatures): boolean {
-		return this.features()[featureName];
+	setAppearanceConfig(config: MeetAppearanceConfig): void {
+		this.log.d('Updating appearance config', config);
+		this.appearanceConfig.set(config);
 	}
 
 	/**
@@ -133,7 +149,8 @@ export class FeatureConfigurationService {
 		roomConfig?: MeetRoomConfig,
 		participantPerms?: ParticipantPermissions,
 		role?: ParticipantRole,
-		recordingPerms?: RecordingPermissions
+		recordingPerms?: RecordingPermissions,
+		appearanceConfig?: MeetAppearanceConfig
 	): ApplicationFeatures {
 		// Start with default configuration
 		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
@@ -178,6 +195,24 @@ export class FeatureConfigurationService {
 			features.canRetrieveRecordings = recordingPerms.canRetrieveRecordings;
 		}
 
+		// Apply appearance configuration
+		if (appearanceConfig && appearanceConfig.themes.length > 0) {
+			const theme = appearanceConfig.themes[0];
+			const hasEnabledTheme = theme.enabled;
+
+			features.hasCustomTheme = hasEnabledTheme;
+			features.showThemeSelector = !hasEnabledTheme;
+
+			if (hasEnabledTheme) {
+				features.themeConfig = {
+					primaryColor: theme.primaryColor,
+					secondaryColor: theme.secondaryColor,
+					backgroundColor: theme.backgroundColor,
+					surfaceColor: theme.surfaceColor
+				};
+			}
+		}
+
 		this.log.d('Calculated features', features);
 		return features;
 	}
@@ -189,5 +224,7 @@ export class FeatureConfigurationService {
 		this.roomConfig.set(undefined);
 		this.participantPermissions.set(undefined);
 		this.participantRole.set(undefined);
+		this.recordingPermissions.set(undefined);
+		this.appearanceConfig.set(undefined);
 	}
 }
