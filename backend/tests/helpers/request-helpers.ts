@@ -80,10 +80,8 @@ export const getApiKeys = async () => {
 export const getRoomsAppearanceConfig = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
-		.set('Cookie', adminCookie)
 		.send();
 	return response;
 };

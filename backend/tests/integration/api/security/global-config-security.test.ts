@@ -152,21 +152,9 @@ describe('Global Config API Security Tests', () => {
 	});
 
 	describe('Get Rooms Appearance Config Tests', () => {
-		it('should fail when request includes API key', async () => {
-			const response = await request(app)
-				.get(`${CONFIG_PATH}/rooms/appearance`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(`${CONFIG_PATH}/rooms/appearance`).set('Cookie', adminCookie);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is not authenticated', async () => {
+		it('should succeed when user is not authenticated', async () => {
 			const response = await request(app).get(`${CONFIG_PATH}/rooms/appearance`);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 	});
 });

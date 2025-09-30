@@ -5,6 +5,7 @@ import * as appearanceConfigCtrl from '../controllers/global-config/appearance-c
 import * as securityConfigCtrl from '../controllers/global-config/security-config.controller.js';
 import * as webhookConfigCtrl from '../controllers/global-config/webhook-config.controller.js';
 import {
+	allowAnonymous,
 	tokenAndRoleValidator,
 	validateRoomsAppearanceConfig,
 	validateSecurityConfig,
@@ -34,7 +35,7 @@ configRouter.put(
 	validateSecurityConfig,
 	securityConfigCtrl.updateSecurityConfig
 );
-configRouter.get('/security', securityConfigCtrl.getSecurityConfig);
+configRouter.get('/security', withAuth(allowAnonymous), securityConfigCtrl.getSecurityConfig);
 
 // Appearance config
 configRouter.put(
@@ -43,8 +44,4 @@ configRouter.put(
 	validateRoomsAppearanceConfig,
 	appearanceConfigCtrl.updateRoomsAppearanceConfig
 );
-configRouter.get(
-	'/rooms/appearance',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
-	appearanceConfigCtrl.getRoomsAppearanceConfig
-);
+configRouter.get('/rooms/appearance', withAuth(allowAnonymous), appearanceConfigCtrl.getRoomsAppearanceConfig);
