@@ -48,6 +48,7 @@ import {
 	DataPacket_Kind,
 	OpenViduComponentsUiModule,
 	OpenViduService,
+	OpenViduThemeMode,
 	OpenViduThemeService,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
@@ -135,9 +136,10 @@ export class MeetingComponent implements OnInit {
 		this.features = this.featureConfService.features;
 
 		// Change theme variables when custom theme is enabled
-		effect(async () => {
+		effect(() => {
 			if (this.features().hasCustomTheme) {
 				const theme = this.features().themeConfig;
+				this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
 				this.ovThemeService.updateThemeVariables({
 					'--ov-primary-action-color': theme?.primaryColor,
 					'--ov-secondary-action-color': theme?.secondaryColor,

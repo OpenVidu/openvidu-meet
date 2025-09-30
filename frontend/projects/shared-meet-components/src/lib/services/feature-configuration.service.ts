@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import {
 	MeetAppearanceConfig,
 	MeetRoomConfig,
+	MeetRoomTheme,
 	ParticipantPermissions,
 	ParticipantRole,
 	RecordingPermissions,
@@ -36,12 +37,7 @@ export interface ApplicationFeatures {
 
 	// Appearance
 	hasCustomTheme: boolean;
-	themeConfig?: {
-		primaryColor?: string;
-		secondaryColor?: string;
-		backgroundColor?: string;
-		surfaceColor?: string;
-	};
+	themeConfig?: MeetRoomTheme;
 }
 
 /**
@@ -204,12 +200,7 @@ export class FeatureConfigurationService {
 			features.showThemeSelector = !hasEnabledTheme;
 
 			if (hasEnabledTheme) {
-				features.themeConfig = {
-					primaryColor: theme.primaryColor,
-					secondaryColor: theme.secondaryColor,
-					backgroundColor: theme.backgroundColor,
-					surfaceColor: theme.surfaceColor
-				};
+				features.themeConfig = theme;
 			}
 		}
 
