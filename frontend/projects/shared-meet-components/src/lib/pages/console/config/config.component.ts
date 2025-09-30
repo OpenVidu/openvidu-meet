@@ -62,11 +62,27 @@ export class ConfigComponent implements OnInit {
 	baseThemeOptions: MeetRoomThemeMode[] = [MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK];
 
 	// Color picker configuration
-	colorFields: Array<{ key: ColorField; label: string, description: string }> = [
-		{ key: 'backgroundColor', label: 'Meeting Background', description: 'The background color of your meeting screen' },
-		{ key: 'primaryColor', label: 'Control buttons', description: 'The color of the main control buttons (e.g., microphone, camera)' },
-		{ key: 'secondaryColor', label: 'Highlights & accents', description: 'Colors for active states, borders, and participant names' },
-		{ key: 'surfaceColor', label: 'Side panels & boxes', description: 'Background color for side panels and dialog boxes' }
+	colorFields: Array<{ key: ColorField; label: string; description: string }> = [
+		{
+			key: 'backgroundColor',
+			label: 'Meeting Background',
+			description: 'The background color of your meeting screen'
+		},
+		{
+			key: 'primaryColor',
+			label: 'Control buttons',
+			description: 'The color of the main control buttons (e.g., microphone, camera)'
+		},
+		{
+			key: 'secondaryColor',
+			label: 'Highlights & accents',
+			description: 'Colors for active states, borders, and participant names'
+		},
+		{
+			key: 'surfaceColor',
+			label: 'Side panels & boxes',
+			description: 'Background color for side panels and dialog boxes'
+		}
 	];
 
 	private initialFormValue: MeetRoomTheme | null = null;
@@ -87,13 +103,19 @@ export class ConfigComponent implements OnInit {
 		}
 	};
 
+	private lastBaseThemeValue: MeetRoomThemeMode | null = null;
+	private isUpdatingColors = false; // Flag to prevent infinite loops
+
 	constructor(
 		private configService: GlobalConfigService,
 		private notificationService: NotificationService
 	) {
 		// Track form changes
 		this.appearanceForm.valueChanges.subscribe(() => {
-			this.checkForChanges();
+			// Prevent infinite loops when updating colors programmatically
+			if (!this.isUpdatingColors) {
+				this.checkForChanges();
+			}
 		});
 	}
 
@@ -130,9 +152,30 @@ export class ConfigComponent implements OnInit {
 		inputElement?.click();
 	}
 
+	/**
+	 *
+	 * Checks if a color was customized from the current theme defaults
+	 * @param colorField
+	 * @returns
+	 */
 	hasCustomColor(colorField: ColorField): boolean {
 		const formValue = this.appearanceForm.get(colorField)?.value;
-		return Boolean(formValue?.trim());
+		const baseTheme = this.appearanceForm.get('baseTheme')?.value || MeetRoomThemeMode.LIGHT;
+		return formValue?.trim() !== '' && formValue !== this.defaultColors[baseTheme][colorField];
+	}
+
+	/**
+	 * Checks if a color was customized from the last theme defaults
+	 * @param colorField The color field to check
+	 * @returns true if the color differs from the last theme's default
+	 */
+	private wasColorCustomizedFromLastTheme(colorField: ColorField): boolean {
+		if (!this.lastBaseThemeValue) return false;
+
+		const defaultValue = this.defaultColors[this.lastBaseThemeValue][colorField];
+		const currentValue = this.appearanceForm.get(colorField)?.value?.trim() || '';
+
+		return currentValue !== '' && currentValue !== defaultValue;
 	}
 
 	// Configuration management
@@ -180,27 +223,72 @@ export class ConfigComponent implements OnInit {
 
 	private storeInitialValues(): void {
 		this.initialFormValue = { ...this.appearanceForm.value } as MeetRoomTheme;
+		this.lastBaseThemeValue = this.initialFormValue.baseTheme;
 		this.hasFormChanges.set(false);
 		this.hasColorChanges.set(false);
 	}
 
 	private checkForChanges(): void {
-		if (!this.initialFormValue) {
+		if (!this.initialFormValue) return;
+
+		const currentFormValue = this.appearanceForm.value;
+		const currentBaseTheme = currentFormValue.baseTheme || MeetRoomThemeMode.LIGHT;
+
+		this.updateFormChangeState(currentFormValue);
+
+		this.handleThemeChange(currentBaseTheme);
+
+		// Update color changes state
+		this.updateColorChangesState(currentFormValue);
+	}
+
+	private updateFormChangeState(current: any): void {
+		const hasChanges = JSON.stringify(current) !== JSON.stringify(this.initialFormValue);
+		this.hasFormChanges.set(hasChanges);
+	}
+
+	/**
+	 * Handles theme change by updating non-customized colors
+	 */
+	private handleThemeChange(newBaseTheme: MeetRoomThemeMode): void {
+		if (newBaseTheme === this.lastBaseThemeValue) return;
+		const newDefaults = this.defaultColors[newBaseTheme];
+
+		// Build update object with only non-customized colors
+		const updatedColors = this.colorFields.reduce((acc, { key }) => {
+			if (!this.wasColorCustomizedFromLastTheme(key)) {
+				acc[key] = newDefaults[key];
+			}
+			return acc;
+		}, {} as Partial<MeetRoomTheme>);
+
+		// Check if there are any colors to update
+		if (Object.keys(updatedColors).length === 0) {
 			return;
 		}
+		// Apply updates atomically
+		this.applyColorUpdates(updatedColors, newBaseTheme);
+	}
 
-		// Check for general form changes
-		const currentFormValue = this.appearanceForm.value;
-		const hasFormChangesDetected = JSON.stringify(currentFormValue) !== JSON.stringify(this.initialFormValue);
-		this.hasFormChanges.set(hasFormChangesDetected);
+	/**
+	 * Applies color updates without triggering infinite loops
+	 */
+	private applyColorUpdates(updatedColors: Partial<MeetRoomTheme>, newBaseTheme: MeetRoomThemeMode): void {
+		this.isUpdatingColors = true;
+		this.appearanceForm.patchValue(updatedColors);
+		this.lastBaseThemeValue = newBaseTheme;
+		this.isUpdatingColors = false;
+	}
 
-		// Check for color-specific changes
-		const hasColorChangesDetected =
-			currentFormValue.backgroundColor !== this.initialFormValue.backgroundColor ||
-			currentFormValue.primaryColor !== this.initialFormValue.primaryColor ||
-			currentFormValue.secondaryColor !== this.initialFormValue.secondaryColor ||
-			currentFormValue.surfaceColor !== this.initialFormValue.surfaceColor;
-		this.hasColorChanges.set(hasColorChangesDetected);
+	/**
+	 * Updates color changes state efficiently
+	 */
+	private updateColorChangesState(currentFormValue: any): void {
+		const colorKeys: ColorField[] = this.colorFields.map((field) => field.key);
+
+		const hasColorChanges = colorKeys.some((key) => currentFormValue[key] !== this.initialFormValue![key]);
+
+		this.hasColorChanges.set(hasColorChanges);
 	}
 
 	onToggleTheme(event: MatSlideToggleChange): void {
