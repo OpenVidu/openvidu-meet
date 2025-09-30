@@ -89,7 +89,18 @@
 								<div class="color-picker-grid ov-mt-md">
 									@for (colorConfig of colorFields; track colorConfig.key) {
 										<div class="color-picker-item" (click)="focusColorInput(colorConfig.key)">
-											<span class="color-label">{{ colorConfig.label }}</span>
+											<div class="color-label-container">
+												<span class="color-label">{{ colorConfig.label }}</span>
+												<mat-icon
+													class="info-icon"
+													[matTooltip]="colorConfig.description"
+													matTooltipPosition="above"
+													matTooltipClass="color-info-tooltip"
+													(click)="$event.stopPropagation()"
+												>
+													info
+												</mat-icon>
+											</div>
 											<div class="color-circle-wrapper">
 												<input
 													[id]="colorConfig.key"

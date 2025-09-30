@@ -80,6 +80,7 @@
 			transition:
 				transform 0.2s ease,
 				opacity 0.2s ease;
+			height: 140px;
 
 			&:hover {
 				transform: translateY(-2px);
@@ -90,13 +91,36 @@
 				transform: translateY(0);
 			}
 
+			.color-label-container {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-xs);
+				height: 48px;
+				text-align: center;
+				margin-bottom: var(--ov-meet-spacing-xs);
+			}
+
 			.color-label {
 				font-size: 0.875rem;
 				font-weight: 500;
 				color: var(--ov-meet-text-color-primary);
-				text-align: center;
-				margin-bottom: var(--ov-meet-spacing-xs);
 				user-select: none;
+				line-height: 1.2;
+			}
+
+			.info-icon {
+				font-size: 16px;
+				width: 16px;
+				height: 16px;
+				color: var(--ov-meet-text-hint);
+				transition: color 0.2s ease;
+				cursor: help;
+				flex-shrink: 0;
+
+				&:hover {
+					color: var(--ov-meet-color-primary);
+				}
 			}
 
 			.color-circle-wrapper {

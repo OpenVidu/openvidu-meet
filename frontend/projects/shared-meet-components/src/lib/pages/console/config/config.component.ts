@@ -62,11 +62,11 @@ export class ConfigComponent implements OnInit {
 	baseThemeOptions: MeetRoomThemeMode[] = [MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK];
 
 	// Color picker configuration
-	colorFields: Array<{ key: ColorField; label: string }> = [
-		{ key: 'backgroundColor', label: 'Main Background' },
-		{ key: 'primaryColor', label: 'Button Colors' },
-		{ key: 'secondaryColor', label: 'Secondary Color' },
-		{ key: 'surfaceColor', label: 'Panels & Cards' }
+	colorFields: Array<{ key: ColorField; label: string, description: string }> = [
+		{ key: 'backgroundColor', label: 'Meeting Background', description: 'The background color of your meeting screen' },
+		{ key: 'primaryColor', label: 'Control buttons', description: 'The color of the main control buttons (e.g., microphone, camera)' },
+		{ key: 'secondaryColor', label: 'Highlights & accents', description: 'Colors for active states, borders, and participant names' },
+		{ key: 'surfaceColor', label: 'Side panels & boxes', description: 'Background color for side panels and dialog boxes' }
 	];
 
 	private initialFormValue: MeetRoomTheme | null = null;
