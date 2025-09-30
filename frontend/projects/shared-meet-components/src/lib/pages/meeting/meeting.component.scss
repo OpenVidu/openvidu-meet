@@ -303,8 +303,8 @@
 	}
 }
 
-// Custom force disconnect button
-.force-disconnect-btn {
+.force-disconnect-btn,
+.remove-moderator-btn {
 	color: var(--ov-meet-color-error);
 }
 
