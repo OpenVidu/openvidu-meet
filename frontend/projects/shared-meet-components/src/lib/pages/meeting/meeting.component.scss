@@ -320,6 +320,8 @@
 	}
 	.moderator-badge {
 		color: var(--ov-meet-color-warning);
-		margin-right: var(--ov-meet-spacing-xs);
+		mat-icon {
+			vertical-align: bottom;
+		}
 	}
 }

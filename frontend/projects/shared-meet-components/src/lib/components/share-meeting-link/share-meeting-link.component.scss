@@ -66,6 +66,10 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 			overflow: hidden;
+
+			&:hover {
+				text-decoration: underline;
+			}
 		}
 
 		.copy-url-btn {
@@ -74,13 +78,18 @@
 			height: 32px;
 			min-width: 32px;
 			padding: 0;
-			color: var(--ov-meet-text-hint);
+			color: var(--ov-secondary-action-color);
 			cursor: pointer;
 			background: transparent;
 			border: 0;
 
 			.mat-icon {
 				@include ov-icon(sm);
+			}
+
+			&:hover {
+				background-color: var(--ov-hover-color);
+				color: var(--ov-text-surface-color);
 			}
 		}
 	}
