@@ -92,7 +92,7 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK]);
 
-const hexColorSchema = z.string().regex(/^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/, 'Must be a valid hex color code');
+const hexColorSchema = z.string().regex(/^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$/, 'Must be a valid hex color code (with or without alpha)');
 
 const RoomThemeSchema = z.object({
 	name: z
