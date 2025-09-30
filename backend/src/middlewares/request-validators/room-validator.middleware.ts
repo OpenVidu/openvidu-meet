@@ -99,7 +99,7 @@ const RoomThemeSchema = z.object({
 		.string()
 		.min(1, 'Theme name cannot be empty')
 		.max(50, 'Theme name cannot exceed 50 characters')
-		.regex(/^[a-z0-9_-]+$/, 'Theme name can only contain lowercase letters, numbers, hyphens and underscores'),
+		.regex(/^[a-zA-Z0-9_-]+$/, 'Theme name can only contain letters, numbers, hyphens and underscores'),
 	enabled: z.boolean(),
 	baseTheme: ThemeModeSchema,
 	backgroundColor: hexColorSchema.optional(),

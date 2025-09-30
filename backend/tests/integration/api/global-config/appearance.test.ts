@@ -182,12 +182,9 @@ describe('Rooms Appearance Config API Tests', () => {
 
 		it('should reject when theme name has invalid characters', async () => {
 			const invalidNames = [
-				'Corporate Blue', // Uppercase and spaces
-				'dark-mode-2024!', // Exclamation mark
-				'theme.corporate', // Dot
-				'Dark_Mode', // Uppercase
-				'theme 1', // Space
-				'thème-français' // Accents
+				'Corporate Blue', // Spaces
+				'dark-mode.2024!', // Special characters
+				'thème_français' // Accents
 			];
 
 			for (const name of invalidNames) {
@@ -206,7 +203,7 @@ describe('Rooms Appearance Config API Tests', () => {
 				expectValidationError(
 					response,
 					'appearance.themes.0.name',
-					'Theme name can only contain lowercase letters, numbers, hyphens and underscores'
+					'Theme name can only contain letters, numbers, hyphens and underscores'
 				);
 			}
 		});
