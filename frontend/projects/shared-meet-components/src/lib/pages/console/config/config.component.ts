@@ -14,12 +14,13 @@ import { GlobalConfigService, NotificationService } from '@lib/services';
 import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@lib/typings/ce';
 import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 'openvidu-components-angular';
 
-type ColorField = 'backgroundColor' | 'primaryColor' | 'secondaryColor' | 'surfaceColor';
+type ColorField = 'backgroundColor' | 'primaryColor' | 'secondaryColor' | 'accentColor' | 'surfaceColor';
 
 interface ThemeColors {
 	backgroundColor: string;
 	primaryColor: string;
 	secondaryColor: string;
+	accentColor: string;
 	surfaceColor: string;
 }
 
@@ -56,6 +57,7 @@ export class ConfigComponent implements OnInit {
 		backgroundColor: new FormControl<string>('', { nonNullable: true }),
 		primaryColor: new FormControl<string>('', { nonNullable: true }),
 		secondaryColor: new FormControl<string>('', { nonNullable: true }),
+		accentColor: new FormControl<string>('', { nonNullable: true }),
 		surfaceColor: new FormControl<string>('', { nonNullable: true })
 	});
 
@@ -75,8 +77,13 @@ export class ConfigComponent implements OnInit {
 		},
 		{
 			key: 'secondaryColor',
+			label: 'Secondary buttons',
+			description: 'Colors for secondary elements such as logo and icons backgrounds, borders and other subtle details'
+		},
+		{
+			key: 'accentColor',
 			label: 'Highlights & accents',
-			description: 'Colors for active states, borders, and participant names'
+			description: 'Colors for active states, highlights and interactive elements'
 		},
 		{
 			key: 'surfaceColor',
@@ -93,12 +100,14 @@ export class ConfigComponent implements OnInit {
 			backgroundColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-background-color'] as string,
 			primaryColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-primary-action-color'] as string,
 			secondaryColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-secondary-action-color'] as string,
+			accentColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-accent-action-color'] as string,
 			surfaceColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-surface-color'] as string
 		},
 		[MeetRoomThemeMode.DARK]: {
 			backgroundColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-background-color'] as string,
 			primaryColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-primary-action-color'] as string,
 			secondaryColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-secondary-action-color'] as string,
+			accentColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-accent-action-color'] as string,
 			surfaceColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-surface-color'] as string
 		}
 	};
@@ -191,6 +200,7 @@ export class ConfigComponent implements OnInit {
 					backgroundColor: themeConfig.backgroundColor || '',
 					primaryColor: themeConfig.primaryColor || '',
 					secondaryColor: themeConfig.secondaryColor || '',
+					accentColor: themeConfig.accentColor || '',
 					surfaceColor: themeConfig.surfaceColor || ''
 				});
 			} else {
@@ -201,6 +211,7 @@ export class ConfigComponent implements OnInit {
 					backgroundColor: '',
 					primaryColor: '',
 					secondaryColor: '',
+					accentColor: '',
 					surfaceColor: ''
 				});
 			}
@@ -214,6 +225,7 @@ export class ConfigComponent implements OnInit {
 				backgroundColor: '',
 				primaryColor: '',
 				secondaryColor: '',
+				accentColor: '',
 				surfaceColor: ''
 			});
 			this.storeInitialValues();
@@ -305,6 +317,7 @@ export class ConfigComponent implements OnInit {
 				backgroundColor: this.initialFormValue.backgroundColor,
 				primaryColor: this.initialFormValue.primaryColor,
 				secondaryColor: this.initialFormValue.secondaryColor,
+				accentColor: this.initialFormValue.accentColor,
 				surfaceColor: this.initialFormValue.surfaceColor
 			});
 			this.hasColorChanges.set(false);
@@ -344,6 +357,7 @@ export class ConfigComponent implements OnInit {
 			backgroundColor: formData.backgroundColor?.trim() || defaults.backgroundColor,
 			primaryColor: formData.primaryColor?.trim() || defaults.primaryColor,
 			secondaryColor: formData.secondaryColor?.trim() || defaults.secondaryColor,
+			accentColor: formData.accentColor?.trim() || defaults.accentColor,
 			surfaceColor: formData.surfaceColor?.trim() || defaults.surfaceColor
 		};
 	}

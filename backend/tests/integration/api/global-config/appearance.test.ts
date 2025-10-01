@@ -31,6 +31,7 @@ describe('Rooms Appearance Config API Tests', () => {
 							backgroundColor: '#121212',
 							primaryColor: '#bb86fc',
 							secondaryColor: '#03dac6',
+							accentColor: '#09554dff',
 							surfaceColor: '#1f1f1f'
 						}
 					]

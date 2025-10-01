@@ -105,6 +105,7 @@ const RoomThemeSchema = z.object({
 	backgroundColor: hexColorSchema.optional(),
 	primaryColor: hexColorSchema.optional(),
 	secondaryColor: hexColorSchema.optional(),
+	accentColor: hexColorSchema.optional(),
 	surfaceColor: hexColorSchema.optional()
 });
 

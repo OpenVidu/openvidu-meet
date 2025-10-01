@@ -41,6 +41,7 @@ export interface MeetRoomTheme {
     backgroundColor?: string;
     primaryColor?: string;
     secondaryColor?: string;
+    accentColor?: string;
     surfaceColor?: string;
 }
 

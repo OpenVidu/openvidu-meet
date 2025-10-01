@@ -49,13 +49,13 @@
 		// Color picker grid layout - responsive and clean
 		.color-picker-grid {
 			display: grid;
-			grid-template-columns: repeat(4, 1fr);
+			grid-template-columns: repeat(5, 1fr);
 			gap: var(--ov-meet-spacing-xl);
 			margin: var(--ov-meet-spacing-lg) 0;
 
 			// Tablet and larger - maintain 4 columns
 			@include ov-tablet-up {
-				gap: var(--ov-meet-spacing-xxl);
+				gap: var(--ov-meet-spacing-xs);
 			}
 
 			// Small tablets - 2 columns

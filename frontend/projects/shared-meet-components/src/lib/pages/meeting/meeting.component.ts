@@ -143,6 +143,7 @@ export class MeetingComponent implements OnInit {
 				this.ovThemeService.updateThemeVariables({
 					'--ov-primary-action-color': theme?.primaryColor,
 					'--ov-secondary-action-color': theme?.secondaryColor,
+					'--ov-accent-action-color': theme?.accentColor,
 					'--ov-background-color': theme?.backgroundColor,
 					'--ov-surface-color': theme?.surfaceColor
 				});
