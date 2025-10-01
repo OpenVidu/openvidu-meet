@@ -78,7 +78,8 @@ export class ConfigComponent implements OnInit {
 		{
 			key: 'secondaryColor',
 			label: 'Secondary buttons',
-			description: 'Colors for secondary elements such as logo and icons backgrounds, borders and other subtle details'
+			description:
+				'Colors for secondary elements such as logo and icons backgrounds, borders and other subtle details'
 		},
 		{
 			key: 'accentColor',
@@ -243,26 +244,25 @@ export class ConfigComponent implements OnInit {
 	private checkForChanges(): void {
 		if (!this.initialFormValue) return;
 
-		const currentFormValue = this.appearanceForm.value;
-		const currentBaseTheme = currentFormValue.baseTheme || MeetRoomThemeMode.LIGHT;
+		this.handleThemeChange();
 
-		this.updateFormChangeState(currentFormValue);
+		this.updateColorChangesState();
 
-		this.handleThemeChange(currentBaseTheme);
-
-		// Update color changes state
-		this.updateColorChangesState(currentFormValue);
+		this.updateFormChangeState();
 	}
 
-	private updateFormChangeState(current: any): void {
-		const hasChanges = JSON.stringify(current) !== JSON.stringify(this.initialFormValue);
+	private updateFormChangeState(): void {
+		const currentFormValue = this.appearanceForm.value;
+		const hasChanges = JSON.stringify(currentFormValue) !== JSON.stringify(this.initialFormValue);
 		this.hasFormChanges.set(hasChanges);
 	}
 
 	/**
 	 * Handles theme change by updating non-customized colors
 	 */
-	private handleThemeChange(newBaseTheme: MeetRoomThemeMode): void {
+	private handleThemeChange(): void {
+		const currentFormValue = this.appearanceForm.value;
+		const newBaseTheme = currentFormValue.baseTheme || MeetRoomThemeMode.LIGHT;
 		if (newBaseTheme === this.lastBaseThemeValue) return;
 		const newDefaults = this.defaultColors[newBaseTheme];
 
@@ -295,7 +295,8 @@ export class ConfigComponent implements OnInit {
 	/**
 	 * Updates color changes state efficiently
 	 */
-	private updateColorChangesState(currentFormValue: any): void {
+	private updateColorChangesState(): void {
+		const currentFormValue = this.appearanceForm.value;
 		const colorKeys: ColorField[] = this.colorFields.map((field) => field.key);
 
 		const hasColorChanges = colorKeys.some((key) => currentFormValue[key] !== this.initialFormValue![key]);
