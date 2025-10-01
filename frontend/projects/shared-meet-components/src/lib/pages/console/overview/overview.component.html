@@ -34,7 +34,12 @@
 						</div>
 					</mat-card-content>
 					<mat-card-actions>
-						<button mat-button (click)="navigateTo('rooms/new')" class="primary-button" id="create-room-button">
+						<button
+							mat-button
+							(click)="navigateTo('rooms/new')"
+							class="primary-button"
+							id="create-room-button"
+						>
 							<mat-icon>add</mat-icon>
 							Create Room
 						</button>
@@ -84,7 +89,11 @@
 									Create dedicated spaces for video conferences where participants can connect,
 									collaborate, and communicate seamlessly.
 								</p>
-								<button mat-stroked-button (click)="navigateTo('rooms/new')" id="create-first-room-button">
+								<button
+									mat-stroked-button
+									(click)="navigateTo('rooms/new')"
+									id="create-first-room-button"
+								>
 									<mat-icon class="ov-action-icon">add</mat-icon>
 									Create Room
 								</button>
@@ -93,14 +102,18 @@
 
 						<mat-card class="feature-card">
 							<mat-card-content>
-								<mat-icon class="ov-settings-icon material-symbols-outlined"> passkey </mat-icon>
-								<h3>Configure Authentication</h3>
+								<mat-icon class="material-symbols-outlined"> palette </mat-icon>
+								<h3>Customize the appearance</h3>
 								<p>
-									Set up user authentication and manage access permissions to ensure secure and
-									controlled participation in your video conferences.
+									Personalize the look and feel of your video conference rooms to align with your
+									brand and style.
 								</p>
-								<button mat-stroked-button (click)="navigateTo('users-permissions')" id="configure-auth-button">
-									Go to Users & Permissions
+								<button
+									mat-stroked-button
+									(click)="navigateTo('config')"
+									id="configure-appearance-button"
+								>
+									Go to Configuration
 								</button>
 							</mat-card-content>
 						</mat-card>
@@ -114,7 +127,9 @@
 									Embed OpenVidu Meet into your applications using our comprehensive REST API for
 									programmatic room creation and management.
 								</p>
-								<button mat-stroked-button (click)="navigateTo('embedded')" id="go-to-embedded-button">Go to Embedded</button>
+								<button mat-stroked-button (click)="navigateTo('embedded')" id="go-to-embedded-button">
+									Go to Embedded
+								</button>
 							</mat-card-content>
 						</mat-card>
 					</div>
