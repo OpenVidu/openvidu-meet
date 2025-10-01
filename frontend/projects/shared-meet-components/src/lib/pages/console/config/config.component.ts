@@ -67,28 +67,27 @@ export class ConfigComponent implements OnInit {
 	colorFields: Array<{ key: ColorField; label: string; description: string }> = [
 		{
 			key: 'backgroundColor',
-			label: 'Meeting Background',
-			description: 'The background color of your meeting screen'
+			label: 'Meeting background',
+			description: 'Sets the background color of your meeting screen'
 		},
 		{
 			key: 'primaryColor',
-			label: 'Control buttons',
-			description: 'The color of the main control buttons (e.g., microphone, camera)'
+			label: 'Main controls',
+			description: 'Colors for the main control buttons (mic, camera, etc.)'
 		},
 		{
 			key: 'secondaryColor',
-			label: 'Secondary buttons',
-			description:
-				'Colors for secondary elements such as logo and icons backgrounds, borders and other subtle details'
+			label: 'Secondary elements',
+			description: 'Colors for logos, icons, borders and subtle details'
 		},
 		{
 			key: 'accentColor',
 			label: 'Highlights & accents',
-			description: 'Colors for active states, highlights and interactive elements'
+			description: 'Colors for active states and highlighted items'
 		},
 		{
 			key: 'surfaceColor',
-			label: 'Side panels & boxes',
+			label: 'Panels & dialogs',
 			description: 'Background color for side panels and dialog boxes'
 		}
 	];
