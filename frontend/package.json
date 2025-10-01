@@ -1,7 +1,6 @@
 {
 	"name": "openvidu-meet-frontend",
 	"version": "3.4.0",
-	"private": true,
 	"scripts": {
 		"start:dev": "npx ng serve --configuration development --port=5080 --host=0.0.0.0",
 		"build:dev": "npx ng build --configuration development --watch",
