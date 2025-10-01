@@ -14,7 +14,7 @@
 @mixin ov-container {
 	max-width: var(--ov-meet-container-max-width);
 	margin: 0 auto;
-	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl);
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl);
 }
 
 // Mixin for truncated text
