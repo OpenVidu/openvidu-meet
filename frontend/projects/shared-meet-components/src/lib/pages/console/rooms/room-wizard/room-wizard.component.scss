@@ -1,15 +1,15 @@
-@import '../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../src/assets/styles/design-tokens';
 
 .wizard-container {
-	@include ov-container;
-	@include ov-page-content;
+	@include design-tokens.ov-container;
+	@include design-tokens.ov-page-content;
 	min-height: 600px;
 	gap: 0;
 	padding-top: 0;
 }
 
 .wizard-header {
-	@include ov-get-started-header;
+	@include design-tokens.ov-get-started-header;
 
 	h2 {
 		margin-bottom: var(--ov-meet-spacing-md);
@@ -27,7 +27,7 @@
 }
 
 .step-content {
-	@include ov-section-card;
+	@include design-tokens.ov-section-card;
 	width: 100%;
 	max-width: 600px;
 	min-height: 450px;
@@ -60,7 +60,7 @@
 		padding: var(--ov-meet-spacing-md) 0 0 0;
 	}
 	.cancel-button {
-		@include ov-button-base;
+		@include design-tokens.ov-button-base;
 		border-radius: var(--ov-meet-radius-sm);
 		min-width: 120px;
 		color: var(--ov-meet-text-secondary);
@@ -110,7 +110,7 @@
 
 // Room Creation Loading State
 .room-creation-loading {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	height: 100%;
 	min-height: 400px;
@@ -118,7 +118,7 @@
 	padding: var(--ov-meet-spacing-xl);
 
 	.loading-content {
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-xl);
 		width: 100%;
@@ -127,12 +127,12 @@
 			margin-bottom: var(--ov-meet-spacing-lg);
 
 			.loading-title {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				gap: var(--ov-meet-spacing-md);
 				margin-bottom: var(--ov-meet-spacing-md);
 
 				.loading-icon {
-					@include ov-icon(xl);
+					@include design-tokens.ov-icon(xl);
 					animation: pulse 2s ease-in-out infinite;
 				}
 
@@ -168,7 +168,7 @@
 }
 
 // Responsive design using the system mixins
-@include ov-tablet-down {
+@include design-tokens.ov-tablet-down {
 	.wizard-container {
 		padding: var(--ov-meet-spacing-md);
 	}
@@ -196,7 +196,7 @@
 	}
 }
 
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.wizard-header {
 		h2 {
 			font-size: var(--ov-meet-font-size-lg);

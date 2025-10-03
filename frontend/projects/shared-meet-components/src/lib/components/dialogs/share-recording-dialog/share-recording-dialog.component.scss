@@ -1,10 +1,10 @@
-@import '../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../src/assets/styles/design-tokens';
 
 .share-recording-dialog {
-	@include ov-theme-transition;
+	@include design-tokens.ov-theme-transition;
 
 	.dialog-title {
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		justify-content: flex-start;
 		gap: var(--ov-meet-spacing-sm);
 		margin: 0;
@@ -14,23 +14,23 @@
 		color: var(--ov-meet-text-primary);
 
 		.title-icon {
-			@include ov-icon(md);
+			@include design-tokens.ov-icon(md);
 		}
 	}
 
 	.dialog-content {
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 		padding: var(--ov-meet-spacing-xl);
 		display: flex;
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-lg);
 
-		@include ov-tablet-down {
+		@include design-tokens.ov-tablet-down {
 			min-width: 400px;
 			padding: var(--ov-meet-spacing-lg);
 		}
 
-		@include ov-mobile-down {
+		@include design-tokens.ov-mobile-down {
 			min-width: 320px;
 			padding: var(--ov-meet-spacing-md);
 		}
@@ -49,7 +49,7 @@
 		}
 
 		.error-message {
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 			justify-content: flex-start;
 			gap: var(--ov-meet-spacing-sm);
 			padding: var(--ov-meet-spacing-md);
@@ -59,7 +59,7 @@
 			color: var(--ov-meet-color-error);
 
 			.error-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 			}
 
 			.error-text {
@@ -75,7 +75,7 @@
 				gap: var(--ov-meet-spacing-sm);
 
 				.access-option {
-					@include ov-theme-transition;
+					@include design-tokens.ov-theme-transition;
 					border: 1px solid var(--ov-meet-border-color);
 					border-radius: var(--ov-meet-radius-sm);
 					padding: var(--ov-meet-spacing-md);
@@ -92,13 +92,13 @@
 					}
 
 					.option-content {
-						@include ov-flex-center;
+						@include design-tokens.ov-flex-center;
 						justify-content: flex-start;
 						gap: var(--ov-meet-spacing-md);
 						margin-left: var(--ov-meet-spacing-lg);
 
 						.option-icon {
-							@include ov-icon(md);
+							@include design-tokens.ov-icon(md);
 							color: var(--ov-meet-text-secondary);
 						}
 
@@ -124,11 +124,11 @@
 		}
 
 		.generate-section {
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 			justify-content: center;
 
 			.loading-state {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				gap: var(--ov-meet-spacing-sm);
 				color: var(--ov-meet-text-secondary);
 
@@ -139,12 +139,12 @@
 			}
 
 			.generate-button {
-				@include ov-button-base;
-				@include ov-flex-center;
+				@include design-tokens.ov-button-base;
+				@include design-tokens.ov-flex-center;
 				gap: var(--ov-meet-spacing-sm);
 
 				mat-icon {
-					@include ov-icon(sm);
+					@include design-tokens.ov-icon(sm);
 				}
 			}
 		}
@@ -172,13 +172,13 @@
 					}
 
 					.url-prefix-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 						color: var(--ov-meet-text-secondary);
 						margin-right: var(--ov-meet-spacing-xs);
 					}
 
 					.copy-button {
-						@include ov-theme-transition;
+						@include design-tokens.ov-theme-transition;
 						color: var(--ov-meet-text-secondary);
 
 						&:hover {
@@ -192,13 +192,13 @@
 						}
 
 						mat-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 						}
 					}
 				}
 
 				.copy-success-message {
-					@include ov-flex-center;
+					@include design-tokens.ov-flex-center;
 					justify-content: center;
 					gap: var(--ov-meet-spacing-xs);
 					margin-top: var(--ov-meet-spacing-sm);
@@ -211,18 +211,18 @@
 					font-weight: var(--ov-meet-font-weight-medium);
 
 					mat-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 					}
 				}
 			}
 
 			.url-actions {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				justify-content: center;
 				margin-top: var(--ov-meet-spacing-md);
 
 				.back-button {
-					@include ov-flex-center;
+					@include design-tokens.ov-flex-center;
 					gap: var(--ov-meet-spacing-xs);
 					color: var(--ov-meet-text-secondary);
 
@@ -232,7 +232,7 @@
 					}
 
 					mat-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 					}
 				}
 			}
@@ -240,26 +240,26 @@
 	}
 
 	.dialog-actions {
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-lg);
 		border-top: 1px solid var(--ov-meet-border-color-light);
 		justify-content: flex-end;
 
 		.close-button {
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 			gap: var(--ov-meet-spacing-xs);
 			color: var(--ov-meet-text-primary);
 			background: var(--ov-meet-surface-hover);
 
 			mat-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 			}
 		}
 	}
 }
 
 // Responsive adjustments
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.share-recording-dialog {
 		.dialog-content {
 			min-width: 280px;

@@ -1,4 +1,4 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .meeting-url-badge {
 	margin: var(--ov-meet-spacing-sm) auto;
@@ -43,8 +43,8 @@
 		margin: var(--ov-meet-spacing-sm);
 	}
 	.meeting-url-badge-container {
-		@include ov-flex-center;
-		@include ov-theme-transition;
+		@include design-tokens.ov-flex-center;
+		@include design-tokens.ov-theme-transition;
 		gap: var(--ov-meet-spacing-sm);
 		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		background-color: var(--ov-surface-color); // Use ov-components variable
@@ -73,7 +73,7 @@
 		}
 
 		.copy-url-btn {
-			@include ov-button-base;
+			@include design-tokens.ov-button-base;
 			width: 32px;
 			height: 32px;
 			min-width: 32px;
@@ -84,7 +84,7 @@
 			border: 0;
 
 			.mat-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 			}
 
 			&:hover {
@@ -95,7 +95,7 @@
 	}
 }
 
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.meeting-url-badge-container {
 		margin: var(--ov-meet-spacing-md) auto;
 		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);

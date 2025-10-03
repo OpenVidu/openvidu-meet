@@ -1,16 +1,16 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 // Login Page Container - Full height centered layout
 .ov-page-container {
-	@include ov-flex-center;
-	@include ov-theme-transition;
+	@include design-tokens.ov-flex-center;
+	@include design-tokens.ov-theme-transition;
 	min-height: 100vh;
 	background: var(--ov-meet-background-color);
 	padding: var(--ov-meet-spacing-lg);
 }
 
 .login-page-content {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	// gap: var(--ov-meet-spacing-xl);
 	width: 100%;
@@ -19,10 +19,10 @@
 
 // Login Header - Using get-started-header mixin for consistency
 .get-started-header {
-	@include ov-get-started-header;
+	@include design-tokens.ov-get-started-header;
 
 	.login-icon {
-		@include ov-icon(xl);
+		@include design-tokens.ov-icon(xl);
 		margin-bottom: var(--ov-meet-spacing-md);
 	}
 
@@ -52,8 +52,8 @@
 
 // Login Card - Form section
 .login-card {
-	@include ov-card;
-	@include ov-theme-transition;
+	@include design-tokens.ov-card;
+	@include design-tokens.ov-theme-transition;
 	flex: 1;
 	box-shadow: none;
 	border-radius: 0;
@@ -75,7 +75,7 @@
 		width: 100%;
 
 		mat-icon {
-			@include ov-icon(md);
+			@include design-tokens.ov-icon(md);
 			color: var(--ov-meet-text-secondary);
 		}
 	}
@@ -92,7 +92,7 @@
 		margin-top: var(--ov-meet-spacing-md);
 
 		.primary-button {
-			@include ov-button-base;
+			@include design-tokens.ov-button-base;
 			width: 100%;
 			padding: var(--ov-meet-spacing-md);
 			font-size: var(--ov-meet-font-size-md);
@@ -103,8 +103,8 @@
 
 // Brand Section - Visual branding area
 .brand-section {
-	@include ov-flex-center;
-	@include ov-theme-transition;
+	@include design-tokens.ov-flex-center;
+	@include design-tokens.ov-theme-transition;
 	flex: 1;
 	background: var(--ov-meet-color-secondary);
 	padding: var(--ov-meet-spacing-xl);
@@ -123,7 +123,7 @@
 }
 
 // Responsive design using design system breakpoints
-@include ov-tablet-down {
+@include design-tokens.ov-tablet-down {
 	.ov-page-container {
 		padding: var(--ov-meet-spacing-md);
 	}
@@ -157,7 +157,7 @@
 	}
 }
 
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.ov-page-container {
 		padding: var(--ov-meet-spacing-sm);
 	}
@@ -190,7 +190,7 @@
 
 	.get-started-header {
 		.login-icon {
-			@include ov-icon(lg);
+			@include design-tokens.ov-icon(lg);
 		}
 
 		h1 {

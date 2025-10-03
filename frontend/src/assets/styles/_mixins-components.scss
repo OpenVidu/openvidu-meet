@@ -1,9 +1,12 @@
 // Component Mixins - Specific mixins for UI components like cards, buttons, headers
 // This file contains mixins for specific component patterns
 
+@use 'mixins-layout' as layout;
+@use 'mixins-responsive' as responsive;
+
 // Mixin for consistent cards
 @mixin ov-card {
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 	background: var(--ov-meet-card-background);
 	border-radius: var(--ov-meet-card-border-radius);
 	box-shadow: var(--ov-meet-card-shadow);
@@ -20,7 +23,7 @@
 
 // Mixin for consistent buttons
 @mixin ov-button-base {
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 	border-radius: var(--ov-meet-button-border-radius);
 	font-weight: var(--ov-meet-button-font-weight);
 	transition:
@@ -33,7 +36,7 @@
 // Mixin for statistics and metrics
 @mixin ov-stat-card {
 	@include ov-card;
-	@include ov-hover-lift(-2px);
+	@include layout.ov-hover-lift(-2px);
 
 	.stat-content {
 		.stat-number {
@@ -129,7 +132,7 @@
 			color: var(--ov-meet-text-primary);
 			text-transform: uppercase;
 
-			@include ov-tablet-down {
+			@include responsive.ov-tablet-down {
 				font-size: var(--ov-meet-font-size-lg);
 			}
 		}
@@ -141,7 +144,7 @@
 		}
 
 		.section-icon {
-			@include ov-icon(lg);
+			@include layout.ov-icon(lg);
 			color: var(--ov-meet-text-secondary);
 		}
 	}

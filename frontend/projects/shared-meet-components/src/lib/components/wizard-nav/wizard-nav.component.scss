@@ -1,11 +1,11 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .wizard-navigation {
 	width: 100%;
 	padding: var(--ov-meet-spacing-md) 0 0 0;
 
 	.nav-buttons {
-		@include ov-container;
+		@include design-tokens.ov-container;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -26,7 +26,7 @@
 		}
 
 		button {
-			@include ov-button-base;
+			@include design-tokens.ov-button-base;
 			border-radius: var(--ov-meet-radius-sm);
 			min-width: 120px;
 
@@ -103,7 +103,7 @@
 			}
 
 			mat-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 				margin: 0 var(--ov-meet-spacing-xs);
 
 				&.leading-icon {
@@ -119,7 +119,7 @@
 		}
 	}
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		padding: var(--ov-meet-spacing-md) 0;
 
 		.nav-buttons {
@@ -146,7 +146,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		.nav-buttons {
 			.nav-group {
 				gap: var(--ov-meet-spacing-sm);
@@ -202,7 +202,7 @@
 				padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 
 				mat-icon {
-					@include ov-icon(xs);
+					@include design-tokens.ov-icon(xs);
 				}
 			}
 		}

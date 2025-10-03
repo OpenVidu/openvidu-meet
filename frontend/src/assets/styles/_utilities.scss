@@ -1,6 +1,10 @@
 // Utility Classes - Helper classes for common styling patterns
 // This file contains reusable utility classes
 
+@use 'mixins-layout' as layout;
+@use 'mixins-components' as components;
+@use 'mixins-responsive' as responsive;
+
 // === UTILITY CLASSES ===
 
 .ov-text-center {
@@ -8,11 +12,11 @@
 }
 
 .ov-text-truncate {
-	@include ov-text-truncate;
+	@include layout.ov-text-truncate;
 }
 
 .ov-flex-center {
-	@include ov-flex-center;
+	@include layout.ov-flex-center;
 }
 .ov-meet-dialog {
 	border-radius: var(--ov-meet-spacing-md);
@@ -20,7 +24,7 @@
 }
 
 .primary-button {
-	@include ov-button-base;
+	@include components.ov-button-base;
 	background-color: var(--ov-meet-color-secondary);
 	color: var(--ov-meet-text-on-secondary) !important;
 
@@ -88,50 +92,50 @@
 
 // === THEME CLASSES ===
 .ov-theme-transition {
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 // === CONCEPTUAL ICON CLASSES ===
 // Apply these classes directly to mat-icon elements for consistent conceptual colors
 .ov-room-icon {
 	color: var(--ov-meet-icon-rooms) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-recording-icon {
 	color: var(--ov-meet-icon-recordings) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-users-permissions {
 	color: var(--ov-meet-icon-users-permissions) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 .ov-settings-icon {
 	color: var(--ov-meet-icon-settings) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-developer-icon {
 	color: var(--ov-meet-icon-developer) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-about-icon {
 	color: var(--ov-meet-icon-about) !important;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-surface {
 	background-color: var(--ov-meet-surface-color);
 	color: var(--ov-meet-text-on-surface);
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-background {
 	background-color: var(--ov-meet-background-color);
 	color: var(--ov-meet-text-on-background);
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-text-primary {
@@ -239,7 +243,7 @@
 	color: var(--ov-meet-color-primary);
 
 	.selection-icon {
-		@include ov-icon(md);
+		@include layout.ov-icon(md);
 	}
 
 	.selection-text {
@@ -255,7 +259,7 @@
 	gap: var(--ov-meet-spacing-xs);
 
 	button {
-		@include ov-theme-transition;
+		@include layout.ov-theme-transition;
 
 		&[color='warn'] {
 			color: var(--ov-meet-color-error);
@@ -384,7 +388,7 @@
 	font-weight: var(--ov-meet-font-weight-medium);
 
 	mat-icon {
-		@include ov-icon(sm);
+		@include layout.ov-icon(sm);
 	}
 
 	.status-label {
@@ -418,7 +422,7 @@
 
 	.mat-mdc-icon-button {
 		.mat-icon {
-			@include ov-icon(sm);
+			@include layout.ov-icon(sm);
 		}
 
 		&:hover {
@@ -454,7 +458,7 @@
 
 // Empty State
 .ov-empty-state {
-	@include ov-card;
+	@include components.ov-card;
 	text-align: center;
 	margin: var(--ov-meet-spacing-xl) 0;
 
@@ -479,10 +483,10 @@
 
 	.action-buttons {
 		.refresh-btn {
-			@include ov-button-base;
+			@include components.ov-button-base;
 
 			mat-icon {
-				@include ov-icon(md);
+				@include layout.ov-icon(md);
 				margin-right: var(--ov-meet-spacing-sm);
 			}
 		}
@@ -492,7 +496,7 @@
 // === NAVIGATION UTILITIES ===
 // For console navigation and sidebar components
 .meet-toolbar {
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 	background-color: var(--ov-meet-surface-color);
 }
 
@@ -500,7 +504,7 @@
 	position: fixed;
 	top: 0;
 	z-index: 2;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 
 	.toolbar-title {
 		font-size: var(--ov-meet-font-size-xxl);
@@ -514,11 +518,11 @@
 }
 
 .ov-sidenav {
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 	background-color: var(--ov-meet-surface-color);
 	padding-top: 3.5rem;
 
-	@include ov-tablet-up {
+	@include responsive.ov-tablet-up {
 		padding-top: 4rem;
 	}
 
@@ -550,7 +554,7 @@
 .ov-sidenav-content {
 	padding-top: 3.5rem;
 
-	@include ov-tablet-up {
+	@include responsive.ov-tablet-up {
 		padding-top: 4rem;
 	}
 
@@ -560,7 +564,7 @@
 	}
 
 	.page-content {
-		@include ov-container;
+		@include layout.ov-container;
 	}
 }
 
@@ -569,7 +573,7 @@
 	text-align: justify;
 	transition: var(--ov-meet-transition-normal);
 	border-radius: var(--ov-meet-radius-sm);
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 
 	&:hover {
 		background-color: var(--ov-meet-surface-hover) !important;
@@ -590,13 +594,13 @@
 	font-size: var(--ov-meet-font-size-xs);
 	color: var(--ov-text-hint);
 	text-align: center;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 .ov-nav-separator {
 	margin: 0;
 	border-top: 1px solid var(--ov-border-color);
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 }
 
 // === MENU AND FILTER UTILITIES ===
@@ -635,7 +639,7 @@
 // Toolbar Responsive Patterns
 .ov-data-toolbar {
 	background-color: var(--ov-meet-background-color) !important;
-	@include ov-tablet-down {
+	@include responsive.ov-tablet-down {
 		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		gap: var(--ov-meet-spacing-sm);
 
@@ -656,7 +660,7 @@
 		}
 	}
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		flex-direction: column;
 		align-items: stretch;
 		gap: var(--ov-meet-spacing-sm);
@@ -694,7 +698,7 @@
 
 // Table Responsive Patterns
 .ov-table-container {
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		margin: 0 calc(-1 * var(--ov-meet-spacing-sm));
 		border-radius: var(--ov-meet-radius-sm);
 		border-left: none;
@@ -704,7 +708,7 @@
 
 .ov-data-table {
 	background-color: rgba(var(--ov-meet-surface-color), 0.8);
-	@include ov-tablet-down {
+	@include responsive.ov-tablet-down {
 		.mat-mdc-header-cell,
 		.mat-mdc-cell {
 			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-xs);
@@ -721,7 +725,7 @@
 		}
 	}
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		font-size: var(--ov-meet-font-size-xs);
 
 		.mat-mdc-header-cell {
@@ -747,7 +751,7 @@
 }
 
 .ov-action-buttons {
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		.mat-mdc-icon-button {
 			width: 28px;
 			height: 28px;
@@ -763,7 +767,7 @@
 }
 
 .ov-empty-state {
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		padding: var(--ov-meet-spacing-xl) var(--ov-meet-spacing-lg);
 
 		.empty-icon {
@@ -870,7 +874,7 @@
 	gap: var(--ov-meet-spacing-lg);
 	align-items: flex-start;
 
-	@include ov-tablet-down {
+	@include responsive.ov-tablet-down {
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-md);
 	}
@@ -893,7 +897,7 @@
 			}
 
 			mat-icon {
-				@include ov-icon(xl);
+				@include layout.ov-icon(xl);
 				color: var(--ov-meet-text-hint);
 			}
 		}
@@ -914,10 +918,10 @@
 		}
 
 		button {
-			@include ov-button-base;
+			@include components.ov-button-base;
 
 			mat-icon {
-				@include ov-icon(sm);
+				@include layout.ov-icon(sm);
 			}
 		}
 	}
@@ -938,12 +942,12 @@
 	justify-content: center;
 	animation: fadeIn 0.5s ease-out;
 
-	@include ov-tablet-down {
+	@include responsive.ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
 		min-height: 50vh;
 	}
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		padding: var(--ov-meet-spacing-lg);
 		min-height: 40vh;
 	}
@@ -964,7 +968,7 @@
 				margin-bottom: var(--ov-meet-spacing-md);
 
 				.loading-icon {
-					@include ov-icon(xl);
+					@include layout.ov-icon(xl);
 					animation: pulse 2s ease-in-out infinite;
 				}
 
@@ -1005,31 +1009,31 @@
 	height: 100%;
 	overflow: auto;
 	button {
-		@include ov-button-base;
+		@include components.ov-button-base;
 		padding: var(--ov-meet-spacing-xs);
 	}
-	@include ov-tablet-down {
+	@include responsive.ov-tablet-down {
 		padding: var(--ov-meet-spacing-md);
 	}
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		padding: var(--ov-meet-spacing-lg);
 	}
 
 	.page-header {
-		@include ov-page-header;
+		@include components.ov-page-header;
 	}
 
 	.page-content {
-		@include ov-page-content;
+		@include components.ov-page-content;
 	}
 
 	.get-started-header {
-		@include ov-get-started-header;
+		@include components.ov-get-started-header;
 	}
 
 	.section-card {
-		@include ov-section-card;
+		@include components.ov-section-card;
 	}
 
 	.section-divider {
@@ -1047,7 +1051,7 @@
 	align-items: center;
 	gap: var(--ov-meet-spacing-md);
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		flex-direction: column;
 		align-items: stretch;
 		gap: var(--ov-meet-spacing-sm);
@@ -1059,13 +1063,13 @@
 		align-items: center;
 		gap: var(--ov-meet-spacing-md);
 
-		@include ov-mobile-down {
+		@include responsive.ov-mobile-down {
 			justify-content: center;
 		}
 	}
 
 	.refresh-btn {
-		@include ov-theme-transition;
+		@include layout.ov-theme-transition;
 		border-radius: var(--ov-meet-radius-circle);
 
 		&:hover:not([disabled]) {
@@ -1077,13 +1081,13 @@
 		}
 
 		mat-icon {
-			@include ov-icon(md);
+			@include layout.ov-icon(md);
 		}
 	}
 }
 
 .ov-table-page-container {
-	@include ov-card;
+	@include components.ov-card;
 	padding: 0;
 	overflow: hidden;
 	position: relative;
@@ -1109,7 +1113,7 @@
 		color: var(--ov-meet-text-secondary);
 
 		.no-results-icon {
-			@include ov-icon(lg);
+			@include layout.ov-icon(lg);
 			color: var(--ov-meet-text-hint);
 			margin-bottom: var(--ov-meet-spacing-md);
 			display: block;
@@ -1129,7 +1133,7 @@
 
 		button {
 			mat-icon {
-				@include ov-icon(sm);
+				@include layout.ov-icon(sm);
 				margin-right: var(--ov-meet-spacing-xs);
 			}
 		}
@@ -1164,7 +1168,7 @@
 	gap: var(--ov-meet-spacing-md);
 	padding: var(--ov-meet-spacing-md);
 
-	@include ov-mobile-down {
+	@include responsive.ov-mobile-down {
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-sm);
 	}
@@ -1185,13 +1189,13 @@
 			border-color: var(--ov-border-color);
 		}
 
-		@include ov-tablet-down {
+		@include responsive.ov-tablet-down {
 			min-width: 100%;
 		}
 	}
 
 	.copy-api-key-btn {
-		@include ov-button-base;
+		@include components.ov-button-base;
 		background-color: var(--ov-meet-color-primary);
 		color: white;
 
@@ -1200,11 +1204,11 @@
 		}
 
 		mat-icon {
-			@include ov-icon(md);
+			@include layout.ov-icon(md);
 			margin-right: var(--ov-meet-spacing-sm);
 		}
 
-		@include ov-mobile-down {
+		@include responsive.ov-mobile-down {
 			width: 100%;
 			justify-content: center;
 		}
@@ -1221,7 +1225,7 @@
 		align-items: center;
 		gap: var(--ov-meet-spacing-md);
 
-		@include ov-mobile-down {
+		@include responsive.ov-mobile-down {
 			flex-direction: column;
 			align-items: stretch;
 			gap: var(--ov-meet-spacing-sm);
@@ -1237,7 +1241,7 @@
 		gap: var(--ov-meet-spacing-sm);
 		justify-content: flex-end;
 
-		@include ov-mobile-down {
+		@include responsive.ov-mobile-down {
 			justify-content: center;
 		}
 	}
@@ -1266,7 +1270,7 @@
 		}
 
 		.field-icon {
-			@include ov-icon(md);
+			@include layout.ov-icon(md);
 			color: var(--ov-meet-text-secondary);
 		}
 	}
@@ -1288,7 +1292,7 @@
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);
 
-			@include ov-mobile-down {
+			@include responsive.ov-mobile-down {
 				flex-direction: column;
 				align-items: stretch;
 			}
@@ -1314,10 +1318,10 @@
 	border-top: 1px solid var(--ov-border-color-light);
 
 	button {
-		@include ov-button-base;
+		@include components.ov-button-base;
 
 		mat-icon {
-			@include ov-icon(md);
+			@include layout.ov-icon(md);
 			margin-right: var(--ov-meet-spacing-sm);
 		}
 	}
@@ -1384,15 +1388,15 @@
 }
 
 .ov-feature-card {
-	@include ov-card;
-	@include ov-hover-lift(-5px);
+	@include components.ov-card;
+	@include layout.ov-hover-lift(-5px);
 	text-align: center;
 
 	mat-card-content {
 		padding: var(--ov-meet-spacing-lg);
 
 		mat-icon {
-			@include ov-icon(xl);
+			@include layout.ov-icon(xl);
 			margin-bottom: var(--ov-meet-spacing-md);
 		}
 
@@ -1410,11 +1414,11 @@
 		}
 
 		button {
-			@include ov-button-base;
+			@include components.ov-button-base;
 			width: 100%;
 
 			mat-icon {
-				@include ov-icon(md);
+				@include layout.ov-icon(md);
 				margin-right: var(--ov-meet-spacing-sm);
 			}
 		}
@@ -1422,17 +1426,17 @@
 }
 
 .ov-getting-started-grid {
-	@include ov-grid-responsive(280px);
+	@include layout.ov-grid-responsive(280px);
 	margin-top: var(--ov-meet-spacing-lg);
 }
 
 .ov-quick-actions {
-	@include ov-flex-center;
+	@include layout.ov-flex-center;
 	gap: var(--ov-meet-spacing-md);
 	margin-bottom: var(--ov-meet-spacing-xxl);
 
 	button {
-		@include ov-button-base;
+		@include components.ov-button-base;
 
 		mat-icon {
 			margin-right: var(--ov-meet-spacing-sm);
@@ -1441,16 +1445,16 @@
 }
 
 .ov-stats-grid {
-	@include ov-grid-responsive(300px);
+	@include layout.ov-grid-responsive(300px);
 }
 
 .ov-stats-card {
-	@include ov-card;
+	@include components.ov-card;
 	text-align: center;
-	@include ov-theme-transition;
+	@include layout.ov-theme-transition;
 
 	&:hover {
-		@include ov-hover-lift(-3px);
+		@include layout.ov-hover-lift(-3px);
 	}
 
 	.stats-content {
@@ -1458,7 +1462,7 @@
 	}
 
 	.stats-icon {
-		@include ov-icon(lg);
+		@include layout.ov-icon(lg);
 		margin-bottom: var(--ov-meet-spacing-sm);
 	}
 
@@ -1488,7 +1492,7 @@
 		gap: var(--ov-meet-spacing-xs);
 
 		button {
-			@include ov-button-base;
+			@include components.ov-button-base;
 
 			mat-icon {
 				margin-left: var(--ov-meet-spacing-xs);

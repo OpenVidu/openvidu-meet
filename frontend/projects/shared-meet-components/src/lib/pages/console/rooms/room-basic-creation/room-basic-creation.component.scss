@@ -1,8 +1,8 @@
-@import '../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../src/assets/styles/design-tokens';
 
 .room-basic-creation-page {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-xl);
 	max-width: 600px;
@@ -15,7 +15,7 @@
 		margin-bottom: var(--ov-meet-spacing-xl);
 
 		.page-icon {
-			@include ov-icon(xxl);
+			@include design-tokens.ov-icon(xxl);
 			color: var(--ov-meet-icon-rooms);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -67,7 +67,7 @@
 					// Icon styling in form fields
 					.mat-mdc-form-field-icon-suffix {
 						mat-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 						}
 					}
 				}
@@ -81,7 +81,7 @@
 				margin-top: var(--ov-meet-spacing-lg);
 
 				.create-button {
-					@include ov-button-base;
+					@include design-tokens.ov-button-base;
 					flex: 1;
 					max-width: 200px;
 					background-color: var(--ov-meet-color-success);
@@ -89,7 +89,7 @@
 					box-shadow: var(--ov-meet-shadow-sm);
 
 					mat-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 						margin-right: var(--ov-meet-spacing-xs);
 					}
 
@@ -100,12 +100,12 @@
 				}
 
 				.advanced-button {
-					@include ov-button-base;
+					@include design-tokens.ov-button-base;
 					flex: 1;
 					max-width: 200px;
 
 					mat-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 						margin-right: var(--ov-meet-spacing-xs);
 					}
 
@@ -118,7 +118,7 @@
 		}
 	}
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		padding: var(--ov-meet-spacing-lg);
 
 		.page-header {
@@ -157,7 +157,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		.page-content {
 			.room-basic-creation-form {
 				.action-buttons {

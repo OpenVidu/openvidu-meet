@@ -1,4 +1,4 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 // === MOBILE RESPONSIVE EXPERIENCE ===
 
@@ -10,7 +10,7 @@
 	display: flex;
 	flex-direction: column;
 
-	@include ov-tablet-up {
+	@include design-tokens.ov-tablet-up {
 		display: none; // Hide on tablet and desktop
 	}
 }
@@ -38,7 +38,7 @@
 		flex-shrink: 0;
 
 		mat-icon {
-			@include ov-icon(md);
+			@include design-tokens.ov-icon(md);
 		}
 	}
 
@@ -66,13 +66,13 @@
 
 			.recording-date,
 			.recording-duration {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				gap: var(--ov-meet-spacing-xs);
 				font-size: var(--ov-meet-font-size-xs);
 				color: var(--ov-meet-text-secondary);
 
 				mat-icon {
-					@include ov-icon(xs);
+					@include design-tokens.ov-icon(xs);
 				}
 			}
 		}
@@ -94,14 +94,14 @@
 			}
 
 			mat-icon {
-				@include ov-icon(md);
+				@include design-tokens.ov-icon(md);
 			}
 		}
 	}
 }
 
 .status-bar {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	gap: var(--ov-meet-spacing-xs);
 	justify-content: center;
 	background: color-mix(in srgb, var(--ov-meet-color-warning) 12%, transparent);
@@ -111,7 +111,7 @@
 	color: var(--ov-meet-color-warning);
 
 	.status-icon {
-		@include ov-icon(xs);
+		@include design-tokens.ov-icon(xs);
 	}
 
 	.status-text {
@@ -146,7 +146,7 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		flex-direction: column;
 		gap: var(--ov-meet-spacing-md);
 		background: var(--ov-meet-background-color);
@@ -157,7 +157,7 @@
 
 .video-error-container,
 .video-unavailable-container {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	min-height: 300px;
 	background: var(--ov-meet-surface-color);
 	border-radius: var(--ov-meet-radius-lg);
@@ -172,7 +172,7 @@
 
 		.error-icon,
 		.status-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			margin-bottom: var(--ov-meet-spacing-md);
 		}
 
@@ -199,7 +199,7 @@
 		}
 
 		button {
-			@include ov-button-base;
+			@include design-tokens.ov-button-base;
 			display: inline-flex;
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);
@@ -210,8 +210,8 @@
 // === MAIN PAGE LAYOUT ===
 
 .recording-page-content {
-	@include ov-container;
-	@include ov-page-content;
+	@include design-tokens.ov-container;
+	@include design-tokens.ov-page-content;
 	max-width: 1000px;
 	padding-top: var(--ov-meet-spacing-xl);
 }
@@ -219,7 +219,7 @@
 // === LOADING STATES ===
 
 .loading-container {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-md);
 	height: 60vh;
@@ -235,7 +235,7 @@
 // === ERROR STATES ===
 
 .error-container {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	min-height: 60vh;
 	padding: var(--ov-meet-spacing-xl);
 
@@ -244,7 +244,7 @@
 		max-width: 500px;
 
 		.error-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-color-error);
 			margin-bottom: var(--ov-meet-spacing-md);
 		}
@@ -270,7 +270,7 @@
 			flex-wrap: wrap;
 
 			button {
-				@include ov-button-base;
+				@include design-tokens.ov-button-base;
 				display: flex;
 				align-items: center;
 				gap: var(--ov-meet-spacing-sm);
@@ -290,7 +290,7 @@
 		align-items: flex-start;
 		gap: var(--ov-meet-spacing-lg);
 
-		@include ov-tablet-down {
+		@include design-tokens.ov-tablet-down {
 			flex-direction: column;
 			align-items: stretch;
 		}
@@ -311,7 +311,7 @@
 			color: var(--ov-meet-text-primary);
 			line-height: var(--ov-meet-line-height-tight);
 
-			@include ov-mobile-down {
+			@include design-tokens.ov-mobile-down {
 				font-size: var(--ov-meet-font-size-xxl);
 			}
 		}
@@ -322,31 +322,31 @@
 			gap: var(--ov-meet-spacing-lg);
 			margin-bottom: var(--ov-meet-spacing-sm);
 
-			@include ov-mobile-down {
+			@include design-tokens.ov-mobile-down {
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-xs);
 			}
 
 			.recording-date,
 			.recording-duration {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				gap: var(--ov-meet-spacing-xs);
 				font-size: var(--ov-meet-font-size-sm);
 				color: var(--ov-meet-text-secondary);
 
 				mat-icon {
-					@include ov-icon(sm);
+					@include design-tokens.ov-icon(sm);
 				}
 			}
 		}
 
 		.recording-status {
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 			gap: var(--ov-meet-spacing-xs);
 			justify-content: flex-start;
 
 			.status-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 
 				&.complete {
 					color: var(--ov-meet-color-success);
@@ -401,7 +401,7 @@
 			left: 0;
 			width: 100%;
 			height: 100%;
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 			flex-direction: column;
 			gap: var(--ov-meet-spacing-md);
 			background: var(--ov-meet-surface-color);
@@ -412,7 +412,7 @@
 
 	.video-error-container,
 	.video-unavailable-container {
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		min-height: 300px;
 		background: var(--ov-meet-surface-color);
 		border-radius: var(--ov-meet-radius-lg);
@@ -426,7 +426,7 @@
 
 			.error-icon,
 			.status-icon {
-				@include ov-icon(xl);
+				@include design-tokens.ov-icon(xl);
 				margin-bottom: var(--ov-meet-spacing-md);
 			}
 
@@ -453,7 +453,7 @@
 			}
 
 			button {
-				@include ov-button-base;
+				@include design-tokens.ov-button-base;
 				display: inline-flex;
 				align-items: center;
 				gap: var(--ov-meet-spacing-sm);
@@ -469,13 +469,13 @@
 	align-self: self-end;
 
 	.primary-actions {
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		gap: var(--ov-meet-spacing-md);
 		flex-wrap: wrap;
 		justify-content: end;
 
 		.action-btn {
-			@include ov-button-base;
+			@include design-tokens.ov-button-base;
 			display: flex;
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);
@@ -483,7 +483,7 @@
 			height: 48px;
 
 			mat-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 			}
 		}
 	}
@@ -491,7 +491,7 @@
 
 // === RESPONSIVE ADJUSTMENTS ===
 
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.recording-page-content {
 		padding: var(--ov-meet-spacing-lg);
 		padding-top: var(--ov-meet-spacing-xl);
@@ -508,7 +508,7 @@
 	}
 }
 
-@include ov-tablet-down {
+@include design-tokens.ov-tablet-down {
 	.video-section {
 		.video-error-container,
 		.video-unavailable-container {

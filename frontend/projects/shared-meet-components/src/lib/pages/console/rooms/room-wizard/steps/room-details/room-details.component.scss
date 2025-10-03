@@ -1,8 +1,8 @@
-@import '../../../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
 
 .room-details-step {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-md);
 
@@ -13,7 +13,7 @@
 		// margin-bottom: var(--ov-meet-spacing-xl);
 
 		.step-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-icon-rooms);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -42,7 +42,7 @@
 		// margin-bottom: var(--ov-meet-spacing-xl);
 
 		.room-details-form {
-			@include ov-grid-responsive(280px);
+			@include design-tokens.ov-grid-responsive(280px);
 			gap: var(--ov-meet-spacing-lg);
 
 			.form-field {
@@ -66,23 +66,23 @@
 					// Icon styling in form fields
 					.mat-mdc-form-field-icon-suffix {
 						mat-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 						}
 					}
 
 					.mat-datepicker-toggle {
 						mat-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 						}
 					}
 
 					// Clear button styling
 					.clear-date-button {
-						@include ov-button-base;
+						@include design-tokens.ov-button-base;
 						padding: var(--ov-meet-spacing-xs);
 
 						mat-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 						}
 					}
 				}
@@ -122,7 +122,7 @@
 						color: var(--ov-meet-text-primary);
 
 						.policies-icon {
-							@include ov-icon(sm);
+							@include design-tokens.ov-icon(sm);
 							color: var(--ov-meet-primary);
 						}
 					}
@@ -162,7 +162,7 @@
 					border-left: 3px solid var(--ov-meet-primary);
 
 					.hint-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 						color: var(--ov-meet-color-warning);
 					}
 
@@ -176,7 +176,7 @@
 		}
 	}
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		.step-header {
 			flex-direction: column;
 			text-align: center;
@@ -220,7 +220,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		.step-content {
 			.room-details-form {
 				grid-template-columns: 1fr;

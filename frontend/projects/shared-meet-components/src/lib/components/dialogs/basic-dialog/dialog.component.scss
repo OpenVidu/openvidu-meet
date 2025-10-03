@@ -1,5 +1,5 @@
 // Import design system utilities
-@import '../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../src/assets/styles/design-tokens';
 
 // === DIALOG CONTAINER ===
 ::ng-deep {
@@ -15,7 +15,7 @@
 
 :host {
 	.dialog-container {
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 		display: block;
 		animation: dialogFadeIn 0.2s ease-out;
 	}
@@ -36,8 +36,8 @@
 // === DIALOG TITLE ===
 .dialog-title {
 	@extend .ov-text-center;
-	@include ov-theme-transition;
-	@include ov-flex-center;
+	@include design-tokens.ov-theme-transition;
+	@include design-tokens.ov-flex-center;
 	gap: var(--ov-meet-spacing-sm);
 	color: var(--ov-meet-text-primary);
 	font-size: var(--ov-meet-font-size-xl) !important;
@@ -47,14 +47,14 @@
 	line-height: var(--ov-meet-line-height-tight);
 
 	.dialog-icon {
-		@include ov-icon(md);
+		@include design-tokens.ov-icon(md);
 		color: var(--ov-meet-text-secondary);
 	}
 }
 
 // === DIALOG CONTENT ===
 ::ng-deep mat-dialog-content {
-	@include ov-theme-transition;
+	@include design-tokens.ov-theme-transition;
 	color: var(--ov-meet-text-secondary);
 	font-size: var(--ov-meet-font-size-md) !important;
 	line-height: var(--ov-meet-line-height-relaxed);
@@ -67,7 +67,7 @@
 	}
 
 	.force-checkbox-container {
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 		margin-top: var(--ov-meet-spacing-lg);
 		padding: var(--ov-meet-spacing-md);
 		border: 1px solid var(--ov-meet-border-color);
@@ -93,7 +93,7 @@
 			margin-top: var(--ov-meet-spacing-xs);
 
 			.warning-icon {
-				@include ov-icon(sm);
+				@include design-tokens.ov-icon(sm);
 				color: var(--ov-meet-color-warning);
 				flex-shrink: 0;
 				margin-top: 2px; // Align with first line of text
@@ -112,7 +112,7 @@
 
 // === DIALOG ACTIONS ===
 .dialog-action {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	gap: var(--ov-meet-spacing-sm);
 	padding: var(--ov-meet-spacing-lg);
 	margin: 0;
@@ -120,15 +120,15 @@
 
 	// Button styling
 	button {
-		@include ov-button-base;
-		@include ov-theme-transition;
-		@include ov-flex-center;
+		@include design-tokens.ov-button-base;
+		@include design-tokens.ov-theme-transition;
+		@include design-tokens.ov-flex-center;
 		gap: var(--ov-meet-spacing-xs);
 		min-width: 80px;
 		margin: 0; // Reset default margin
 
 		mat-icon {
-			@include ov-icon(sm);
+			@include design-tokens.ov-icon(sm);
 		}
 
 		// Cancel/Secondary button
@@ -138,7 +138,7 @@
 			background: transparent;
 
 			&:hover {
-				@include ov-hover-lift(-1px);
+				@include design-tokens.ov-hover-lift(-1px);
 				background: var(--ov-meet-surface-hover);
 				color: var(--ov-meet-text-primary);
 			}
@@ -149,7 +149,7 @@
 			color: var(--ov-meet-text-on-primary);
 
 			&:hover {
-				@include ov-hover-lift(-1px);
+				@include design-tokens.ov-hover-lift(-1px);
 			}
 
 			&:active {
@@ -176,7 +176,7 @@
 }
 
 // === RESPONSIVE DESIGN ===
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.dialog-title {
 		font-size: var(--ov-meet-font-size-lg);
 		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-md) 0;
@@ -184,7 +184,7 @@
 		gap: var(--ov-meet-spacing-xs);
 
 		.dialog-icon {
-			@include ov-icon(lg);
+			@include design-tokens.ov-icon(lg);
 		}
 	}
 

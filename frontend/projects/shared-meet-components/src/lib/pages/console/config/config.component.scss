@@ -1,4 +1,4 @@
-@import '../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../src/assets/styles/design-tokens';
 
 .ov-page-container {
 	button {
@@ -54,18 +54,18 @@
 			margin: var(--ov-meet-spacing-lg) 0;
 
 			// Tablet and larger - maintain 4 columns
-			@include ov-tablet-up {
+			@include design-tokens.ov-tablet-up {
 				gap: var(--ov-meet-spacing-xs);
 			}
 
 			// Small tablets - 2 columns
-			@include ov-tablet-down {
+			@include design-tokens.ov-tablet-down {
 				grid-template-columns: repeat(2, 1fr);
 				gap: var(--ov-meet-spacing-lg);
 			}
 
 			// Mobile - single column
-			@include ov-mobile-down {
+			@include design-tokens.ov-mobile-down {
 				grid-template-columns: 1fr;
 				gap: var(--ov-meet-spacing-md);
 			}
@@ -207,7 +207,7 @@
 	display: flex;
 	flex-wrap: wrap;
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		flex-direction: column;
 
 		.mat-mdc-button,
@@ -218,7 +218,7 @@
 		}
 	}
 
-	@include ov-tablet-up {
+	@include design-tokens.ov-tablet-up {
 		justify-content: flex-start;
 
 		button:first-child {

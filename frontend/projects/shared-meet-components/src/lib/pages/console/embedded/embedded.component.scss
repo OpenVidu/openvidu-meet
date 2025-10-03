@@ -1,4 +1,4 @@
-@import '../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../src/assets/styles/design-tokens';
 
 .ov-page-container {
 	button {
@@ -113,7 +113,7 @@
 		border-color: var(--ov-meet-color-error);
 	}
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		flex-direction: column;
 
 		.mat-mdc-button,

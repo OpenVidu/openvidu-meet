@@ -1,7 +1,7 @@
-@import '../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../src/assets/styles/design-tokens';
 
 .disconnected-container {
-	@include ov-theme-transition;
+	@include design-tokens.ov-theme-transition;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -11,7 +11,7 @@
 }
 
 .disconnect-content {
-	@include ov-card;
+	@include design-tokens.ov-card;
 	max-width: 520px;
 	width: 100%;
 	text-align: center;
@@ -19,7 +19,7 @@
 	background: var(--ov-meet-surface-elevated);
 	box-shadow: var(--ov-meet-shadow-lg);
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		padding: var(--ov-meet-spacing-xl);
 		margin: var(--ov-meet-spacing-md);
 		max-width: calc(100vw - 2 * var(--ov-meet-spacing-md));
@@ -31,6 +31,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	position: relative;
 
 	.logo-image {
 		width: 50px;
@@ -39,7 +40,7 @@
 		display: block;
 		transition: all var(--ov-meet-transition-normal);
 
-		@include ov-mobile-down {
+		@include design-tokens.ov-mobile-down {
 			width: 40px;
 		}
 	}
@@ -53,13 +54,12 @@
 		border-radius: var(--ov-meet-radius-circle);
 		z-index: -1;
 
-		@include ov-mobile-down {
+		@include design-tokens.ov-mobile-down {
 			width: 64px;
 			height: 64px;
 		}
 	}
 
-	position: relative;
 }
 
 .disconnect-message {
@@ -72,7 +72,7 @@
 		margin: 0 0 var(--ov-meet-spacing-sm) 0;
 		line-height: var(--ov-meet-line-height-tight);
 
-		@include ov-mobile-down {
+		@include design-tokens.ov-mobile-down {
 			font-size: var(--ov-meet-font-size-xl);
 		}
 	}
@@ -86,7 +86,7 @@
 		margin-left: auto;
 		margin-right: auto;
 
-		@include ov-mobile-down {
+		@include design-tokens.ov-mobile-down {
 			font-size: var(--ov-meet-font-size-sm);
 		}
 	}
@@ -107,7 +107,7 @@
 		font-weight: var(--ov-meet-font-weight-medium);
 	}
 
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		.footer-text {
 			font-size: var(--ov-meet-font-size-xs);
 			flex-direction: column;
@@ -116,12 +116,12 @@
 	}
 
 	.quick-actions {
-		@include ov-flex-center;
+		@include design-tokens.ov-flex-center;
 		margin-top: var(--ov-meet-spacing-md);
 
 		.quick-action-button {
-			@include ov-button-base;
-			@include ov-theme-transition;
+			@include design-tokens.ov-button-base;
+			@include design-tokens.ov-theme-transition;
 			display: flex;
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);

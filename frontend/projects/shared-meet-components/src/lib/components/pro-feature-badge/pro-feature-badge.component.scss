@@ -1,4 +1,4 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .pro-badge {
 	position: absolute;
@@ -18,6 +18,6 @@
 	z-index: 2;
 
 	mat-icon {
-		@include ov-icon(xs);
+		@include design-tokens.ov-icon(xs);
 	}
 }

@@ -1,8 +1,8 @@
-@import '../../../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
 
 .recording-trigger-step {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-sm);
 
@@ -13,7 +13,7 @@
 		margin-bottom: var(--ov-meet-spacing-md);
 
 		.step-icon {
-			@include ov-icon(lg);
+			@include design-tokens.ov-icon(lg);
 			color: var(--ov-meet-icon-recordings);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -43,11 +43,11 @@
 
 		.trigger-form {
 			.options-grid {
-				@include ov-grid-responsive(260px);
+				@include design-tokens.ov-grid-responsive(260px);
 				gap: var(--ov-meet-spacing-md);
 
 				// On larger screens, limit to 3 cards per row
-				@include ov-tablet-up {
+				@include design-tokens.ov-tablet-up {
 					justify-content: space-between;
 				}
 			}
@@ -55,7 +55,7 @@
 	}
 
 	// Responsive Design
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		.step-header {
 			flex-direction: column;
 			text-align: center;
@@ -74,7 +74,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		padding: var(--ov-meet-spacing-xs);
 
 		.step-content .trigger-form .options-grid {

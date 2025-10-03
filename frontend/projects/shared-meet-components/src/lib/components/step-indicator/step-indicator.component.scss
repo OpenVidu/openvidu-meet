@@ -1,4 +1,4 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .step-indicator-wrapper {
 	width: 100%;
@@ -8,7 +8,7 @@
 	&[data-layout='vertical-sidebar'] {
 		.wizard-stepper {
 			padding: var(--ov-meet-spacing-lg);
-			@include ov-theme-transition;
+			@include design-tokens.ov-theme-transition;
 
 			::ng-deep {
 				.mat-stepper-vertical {
@@ -53,7 +53,7 @@
 			width: 100%;
 			max-width: 100%;
 			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-xs);
-			@include ov-theme-transition;
+			@include design-tokens.ov-theme-transition;
 
 			::ng-deep {
 				.mat-step-text-label {
@@ -120,7 +120,7 @@
 			background-color: var(--ov-meet-surface-variant);
 			border-radius: var(--ov-meet-radius-md);
 			margin-bottom: var(--ov-meet-spacing-md);
-			@include ov-theme-transition;
+			@include design-tokens.ov-theme-transition;
 
 			::ng-deep {
 				.mat-stepper-vertical {

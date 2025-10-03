@@ -1,24 +1,24 @@
 // Design Tokens - Centralized design variable system for OpenVidu Meet
-// This file imports all modular design system files to maintain the same public API
+// This file forwards all modular design system files to maintain the same public API
 // while organizing the code in a more maintainable structure
 
 // Core tokens (colors, spacing, typography, etc.)
-@import 'tokens-core';
+@forward 'tokens-core';
 
 // Theme-specific variables (light/dark themes)
-@import 'tokens-themes';
+@forward 'tokens-themes';
 
 // Layout-related mixins (containers, grids, positioning)
-@import 'mixins-layout';
+@forward 'mixins-layout';
 
 // Component-specific mixins (cards, buttons, headers)
-@import 'mixins-components';
+@forward 'mixins-components';
 
 // Responsive design utilities
-@import 'mixins-responsive';
+@forward 'mixins-responsive';
 
 // Animation keyframes and classes
-@import 'animations';
+@forward 'animations';
 
 // Utility classes
-@import 'utilities';
+@forward 'utilities';

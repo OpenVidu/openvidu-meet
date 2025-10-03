@@ -1,8 +1,8 @@
-@import '../../../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
 
 .recording-layout-step {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-sm);
 
@@ -12,7 +12,7 @@
 		gap: var(--ov-meet-spacing-sm);
 
 		.step-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-icon-recordings);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -42,11 +42,11 @@
 
 		.layout-form {
 			.options-grid {
-				@include ov-grid-responsive(280px);
+				@include design-tokens.ov-grid-responsive(280px);
 				gap: var(--ov-meet-spacing-md);
 
 				// Custom layout for recording layout selector
-				@include ov-tablet-up {
+				@include design-tokens.ov-tablet-up {
 					grid-template-columns: repeat(3, 1fr);
 					max-width: 900px;
 					margin: 0 auto;
@@ -84,7 +84,7 @@
 	}
 
 	// Responsive Design
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		.step-header {
 			flex-direction: column;
 			text-align: center;
@@ -123,7 +123,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		padding: var(--ov-meet-spacing-xs);
 
 		.step-content .layout-form .options-grid {

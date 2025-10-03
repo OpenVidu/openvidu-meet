@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 @use './assets/styles/openvidu-theme.scss';
-@import './assets/styles/design-tokens';
+@use './assets/styles/design-tokens';
 
 @include mat.elevation-classes();
 @include mat.app-background();

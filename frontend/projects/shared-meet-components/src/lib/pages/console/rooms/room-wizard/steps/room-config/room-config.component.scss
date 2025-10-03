@@ -1,8 +1,8 @@
-@import '../../../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
 
 .room-config-step {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-sm);
 
@@ -13,7 +13,7 @@
 		margin-bottom: var(--ov-meet-spacing-lg);
 
 		.step-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-icon-settings);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -60,7 +60,7 @@
 	}
 
 	.config-card {
-		@include ov-card;
+		@include design-tokens.ov-card;
 		border: 2px solid var(--ov-meet-border-secondary);
 		transition: all 0.2s ease-in-out;
 		cursor: default;
@@ -88,7 +88,7 @@
 				flex: 1;
 
 				.feature-icon {
-					@include ov-icon(lg);
+					@include design-tokens.ov-icon(lg);
 					color: var(--ov-meet-icon-primary);
 					margin-top: var(--ov-meet-spacing-xs);
 				}

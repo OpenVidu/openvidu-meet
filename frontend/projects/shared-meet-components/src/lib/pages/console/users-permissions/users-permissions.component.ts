@@ -17,7 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ProFeatureBadgeComponent } from '@lib/components';
+// import { ProFeatureBadgeComponent } from '@lib/components';
 import { AuthService, GlobalConfigService, NotificationService } from '@lib/services';
 import { AuthMode } from '@lib/typings/ce';
 
@@ -34,7 +34,7 @@ import { AuthMode } from '@lib/typings/ce';
         MatProgressSpinnerModule,
         MatDividerModule,
         ReactiveFormsModule,
-        ProFeatureBadgeComponent
+        // ProFeatureBadgeComponent
     ],
     templateUrl: './users-permissions.component.html',
     styleUrl: './users-permissions.component.scss'

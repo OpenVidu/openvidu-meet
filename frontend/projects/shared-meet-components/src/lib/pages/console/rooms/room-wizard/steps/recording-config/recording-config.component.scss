@@ -1,8 +1,8 @@
-@import '../../../../../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
 
 .recording-config-step {
-	@include ov-page-content;
-	@include ov-container;
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
 
 	padding: var(--ov-meet-spacing-sm);
 
@@ -12,7 +12,7 @@
 		gap: var(--ov-meet-spacing-sm);
 
 		.step-icon {
-			@include ov-icon(xl);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-icon-recordings);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -42,7 +42,7 @@
 
 		.recording-form {
 			.options-grid {
-				@include ov-grid-responsive(260px);
+				@include design-tokens.ov-grid-responsive(260px);
 				gap: var(--ov-meet-spacing-md);
 			}
 
@@ -57,7 +57,7 @@
 					margin-bottom: var(--ov-meet-spacing-lg);
 
 					.access-icon {
-						@include ov-icon(md);
+						@include design-tokens.ov-icon(md);
 						color: var(--ov-meet-icon-security);
 						margin-top: var(--ov-meet-spacing-xs);
 					}
@@ -132,7 +132,7 @@
 	}
 
 	// Responsive Design
-	@include ov-mobile-down {
+	@include design-tokens.ov-mobile-down {
 		.step-header {
 			flex-direction: column;
 			text-align: center;
@@ -169,7 +169,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		padding: var(--ov-meet-spacing-xs);
 
 		.step-content .recording-form {

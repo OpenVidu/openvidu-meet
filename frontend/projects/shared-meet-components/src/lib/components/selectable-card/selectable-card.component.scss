@@ -1,8 +1,8 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .option-card {
-	@include ov-card;
-	@include ov-theme-transition;
+	@include design-tokens.ov-card;
+	@include design-tokens.ov-theme-transition;
 	position: relative;
 	cursor: pointer;
 	border: 2px solid transparent;
@@ -12,7 +12,7 @@
 	flex-direction: column;
 
 	&:hover:not(.no-hover):not(.selected) {
-		@include ov-hover-lift(-2px);
+		@include design-tokens.ov-hover-lift(-2px);
 	}
 
 	&.selected {
@@ -42,9 +42,9 @@
 		z-index: 2;
 
 		.selection-icon {
-			@include ov-icon(md);
+			@include design-tokens.ov-icon(md);
 			color: var(--ov-meet-text-hint);
-			@include ov-theme-transition;
+			@include design-tokens.ov-theme-transition;
 
 			&.selected {
 				color: var(--ov-meet-color-primary);
@@ -69,7 +69,7 @@
 				height: 100%;
 				object-fit: cover;
 				display: block;
-				@include ov-theme-transition;
+				@include design-tokens.ov-theme-transition;
 			}
 
 			// &:hover img {
@@ -86,8 +86,8 @@
 			font-weight: var(--ov-meet-font-weight-semibold);
 
 			.option-icon {
-				@include ov-icon(md);
-				@include ov-theme-transition;
+				@include design-tokens.ov-icon(md);
+				@include design-tokens.ov-theme-transition;
 			}
 
 			.option-title {

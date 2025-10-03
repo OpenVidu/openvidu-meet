@@ -1,14 +1,14 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 .error-page {
-	@include ov-theme-transition;
-	@include ov-flex-center;
+	@include design-tokens.ov-theme-transition;
+	@include design-tokens.ov-flex-center;
 	min-height: 100vh;
 	background: var(--ov-meet-background-color);
 	padding: var(--ov-meet-spacing-lg);
 
 	.error-container {
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
@@ -16,7 +16,7 @@
 		max-width: 800px;
 		width: 100%;
 
-		@include ov-tablet-down {
+		@include design-tokens.ov-tablet-down {
 			flex-direction: column;
 			gap: var(--ov-meet-spacing-xl);
 			text-align: center;
@@ -29,15 +29,15 @@
 			gap: var(--ov-meet-spacing-lg);
 
 			.error-icon-section {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				justify-content: flex-start;
 
-				@include ov-tablet-down {
+				@include design-tokens.ov-tablet-down {
 					justify-content: center;
 				}
 
 				.error-main-icon {
-					@include ov-icon(xl);
+					@include design-tokens.ov-icon(xl);
 					color: var(--ov-meet-color-error);
 					background: rgba(var(--ov-meet-color-error), 0.1);
 					border-radius: var(--ov-meet-radius-circle);
@@ -56,7 +56,7 @@
 					color: var(--ov-meet-text-primary);
 					line-height: var(--ov-meet-line-height-tight);
 
-					@include ov-mobile-down {
+					@include design-tokens.ov-mobile-down {
 						font-size: var(--ov-meet-font-size-xl);
 					}
 				}
@@ -68,11 +68,11 @@
 					line-height: var(--ov-meet-line-height-normal);
 					max-width: 400px;
 
-					@include ov-tablet-down {
+					@include design-tokens.ov-tablet-down {
 						max-width: none;
 					}
 
-					@include ov-mobile-down {
+					@include design-tokens.ov-mobile-down {
 						font-size: var(--ov-meet-font-size-sm);
 					}
 				}
@@ -83,18 +83,18 @@
 				gap: var(--ov-meet-spacing-md);
 				margin-top: var(--ov-meet-spacing-md);
 
-				@include ov-tablet-down {
+				@include design-tokens.ov-tablet-down {
 					justify-content: center;
 				}
 
-				@include ov-mobile-down {
+				@include design-tokens.ov-mobile-down {
 					flex-direction: column;
 					align-items: center;
 				}
 
 				.action-button {
-					@include ov-button-base;
-					@include ov-flex-center;
+					@include design-tokens.ov-button-base;
+					@include design-tokens.ov-flex-center;
 					gap: var(--ov-meet-spacing-xs);
 					min-width: 120px;
 
@@ -110,10 +110,10 @@
 					}
 
 					mat-icon {
-						@include ov-icon(sm);
+						@include design-tokens.ov-icon(sm);
 					}
 
-					@include ov-mobile-down {
+					@include design-tokens.ov-mobile-down {
 						min-width: 200px;
 					}
 				}
@@ -122,14 +122,14 @@
 
 		.error-illustration {
 			flex: 1;
-			@include ov-flex-center;
+			@include design-tokens.ov-flex-center;
 
-			@include ov-tablet-down {
+			@include design-tokens.ov-tablet-down {
 				order: -1;
 			}
 
 			.illustration-container {
-				@include ov-flex-center;
+				@include design-tokens.ov-flex-center;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-lg);
 				opacity: 0.6;
@@ -140,7 +140,7 @@
 					height: 120px;
 					color: var(--ov-meet-text-hint);
 
-					@include ov-mobile-down {
+					@include design-tokens.ov-mobile-down {
 						font-size: 80px;
 						width: 80px;
 						height: 80px;
@@ -158,7 +158,7 @@
 						font-weight: var(--ov-meet-font-weight-bold);
 						color: var(--ov-meet-text-secondary);
 
-						@include ov-mobile-down {
+						@include design-tokens.ov-mobile-down {
 							font-size: var(--ov-meet-font-size-lg);
 						}
 					}
@@ -179,7 +179,7 @@
 }
 
 // Enhanced responsive design
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.error-page {
 		padding: var(--ov-meet-spacing-md);
 

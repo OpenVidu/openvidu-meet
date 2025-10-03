@@ -1,9 +1,9 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 // Room Access Container - Main layout using design tokens
 .room-access-container {
-	@include ov-container;
-	@include ov-page-content;
+	@include design-tokens.ov-container;
+	@include design-tokens.ov-page-content;
 	padding-top: var(--ov-meet-spacing-xxl);
 	background: var(--ov-meet-background-color);
 	gap: 0;
@@ -11,14 +11,14 @@
 
 // Room Header - Clean title section
 .room-header {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-md);
 	margin-bottom: var(--ov-meet-spacing-xxl);
 	text-align: center;
 
 	.room-icon {
-		@include ov-icon(xl);
+		@include design-tokens.ov-icon(xl);
 		color: var(--ov-meet-icon-rooms);
 		margin-bottom: var(--ov-meet-spacing-sm);
 	}
@@ -36,7 +36,7 @@
 
 // Action Cards Grid - Responsive layout
 .action-cards-grid {
-	@include ov-grid-responsive(320px);
+	@include design-tokens.ov-grid-responsive(320px);
 	gap: var(--ov-meet-spacing-xl);
 	margin-bottom: var(--ov-meet-spacing-xxl);
 	justify-content: center;
@@ -52,7 +52,7 @@
 		}
 	}
 
-	@include ov-tablet-down {
+	@include design-tokens.ov-tablet-down {
 		grid-template-columns: 1fr;
 		gap: var(--ov-meet-spacing-lg);
 
@@ -67,9 +67,9 @@
 
 // Action Card Base - Consistent card styling
 .action-card {
-	@include ov-card;
-	@include ov-hover-lift(-4px);
-	@include ov-theme-transition;
+	@include design-tokens.ov-card;
+	@include design-tokens.ov-hover-lift(-4px);
+	@include design-tokens.ov-theme-transition;
 	padding: 0;
 	overflow: hidden;
 	min-height: 300px;
@@ -86,7 +86,7 @@
 		flex-shrink: 0;
 
 		.card-icon {
-			@include ov-icon(lg);
+			@include design-tokens.ov-icon(lg);
 			flex-shrink: 0;
 		}
 
@@ -139,13 +139,13 @@
 }
 
 .room-closed-message {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-md);
 	text-align: center;
 
 	.warning-icon {
-		@include ov-icon(xl);
+		@include design-tokens.ov-icon(xl);
 		color: var(--ov-meet-color-warning);
 	}
 
@@ -184,7 +184,7 @@
 	}
 
 	.join-button {
-		@include ov-button-base;
+		@include design-tokens.ov-button-base;
 		height: 56px;
 		display: flex;
 		align-items: center;
@@ -212,7 +212,7 @@
 }
 
 .recordings-button {
-	@include ov-button-base;
+	@include design-tokens.ov-button-base;
 	height: 56px;
 	display: flex;
 	align-items: center;
@@ -223,7 +223,7 @@
 
 // Quick Actions - Footer actions
 .quick-actions {
-	@include ov-flex-center;
+	@include design-tokens.ov-flex-center;
 	margin-top: var(--ov-meet-spacing-xl);
 
 	.quick-action-button {
@@ -231,7 +231,7 @@
 		align-items: center;
 		gap: var(--ov-meet-spacing-sm);
 		color: var(--ov-meet-text-secondary);
-		@include ov-theme-transition;
+		@include design-tokens.ov-theme-transition;
 
 		&:hover {
 			color: var(--ov-meet-text-primary);
@@ -257,7 +257,7 @@
 }
 
 // Responsive adjustments
-@include ov-mobile-down {
+@include design-tokens.ov-mobile-down {
 	.room-access-container {
 		padding: 0;
 		padding-top: var(--ov-meet-spacing-sm);

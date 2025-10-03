@@ -1,4 +1,4 @@
-@import '../../../../../../src/assets/styles/design-tokens';
+@use '../../../../../../src/assets/styles/design-tokens';
 
 // Use utility classes for rooms toolbar
 .rooms-toolbar {
@@ -138,12 +138,12 @@
 	width: fit-content;
 
 	.status-icon {
-		@include ov-icon(sm);
+		@include design-tokens.ov-icon(sm);
 	}
 }
 
 .meeting-end-info-icon {
-	@include ov-icon(sm);
+	@include design-tokens.ov-icon(sm);
 
 	&.meeting-end-close {
 		color: var(--ov-meet-color-warning);
@@ -175,7 +175,7 @@
 		text-transform: uppercase;
 
 		.deletion-icon {
-			@include ov-icon(sm);
+			@include design-tokens.ov-icon(sm);
 		}
 	}
 
@@ -282,7 +282,7 @@
 	@extend .ov-empty-state;
 
 	.empty-icon {
-		@include ov-icon(xl);
+		@include design-tokens.ov-icon(xl);
 		color: var(--ov-meet-text-hint);
 		margin-bottom: var(--ov-meet-spacing-lg);
 		display: block;
