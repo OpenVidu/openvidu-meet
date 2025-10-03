@@ -42,6 +42,7 @@ const createApp = () => {
 	// Serve static files
 	app.use(express.static(frontendDirectoryPath));
 
+	app.set('trust proxy', true);
 	app.use(express.json());
 	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
