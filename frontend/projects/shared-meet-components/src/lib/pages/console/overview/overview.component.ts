@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,7 +18,7 @@ interface OverviewStats {
 
 @Component({
     selector: 'ov-overview',
-    imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
+    imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
     templateUrl: './overview.component.html',
     styleUrl: './overview.component.scss'
 })

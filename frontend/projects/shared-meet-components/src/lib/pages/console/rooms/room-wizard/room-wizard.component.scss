@@ -28,14 +28,17 @@
 
 .step-content {
 	@include design-tokens.ov-section-card;
-	width: 100%;
-	max-width: 600px;
-	min-height: 450px;
-	max-height: 450px;
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
+
+	& {
+		width: 100%;
+		max-width: 600px;
+		min-height: 450px;
+		max-height: 450px;
+		flex-direction: column;
+		justify-content: flex-start;
+		display: flex;
+		overflow-y: auto;
+	}
 }
 
 .step-content > :first-child {
@@ -100,11 +103,11 @@
 // Slide toggle customization
 .ov-slide-toggle-success {
 	.mat-mdc-slide-toggle {
-		--mdc-switch-selected-track-color: var(--ov-meet-color-success);
-		--mdc-switch-selected-handle-color: var(--ov-meet-color-success);
-		--mdc-switch-selected-hover-handle-color: var(--ov-meet-color-success);
-		--mdc-switch-selected-focus-handle-color: var(--ov-meet-color-success);
-		--mdc-switch-selected-pressed-handle-color: var(--ov-meet-color-success);
+		--mat-slide-toggle-selected-track-color: var(--ov-meet-color-success);
+		--mat-slide-toggle-selected-handle-color: var(--ov-meet-color-success);
+		--mat-slide-toggle-selected-hover-handle-color: var(--ov-meet-color-success);
+		--mat-slide-toggle-selected-focus-handle-color: var(--ov-meet-color-success);
+		--mat-slide-toggle-selected-pressed-handle-color: var(--ov-meet-color-success);
 	}
 }
 

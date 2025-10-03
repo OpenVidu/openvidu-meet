@@ -11,7 +11,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	const participantTokenService = inject(ParticipantService);
 	const recordingService = inject(RecordingService);
 
-	const pageUrl = router.getCurrentNavigation()?.finalUrl?.toString() || router.url;
+	const pageUrl = router.currentNavigation()?.finalUrl?.toString() || router.url;
 	const requestUrl = req.url;
 
 	req = req.clone({

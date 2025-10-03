@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -9,7 +9,7 @@ import { LeftEventReason } from '@lib/typings/ce';
 
 @Component({
     selector: 'ov-end-meeting',
-    imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+    imports: [MatCardModule, MatButtonModule, MatIconModule],
     templateUrl: './end-meeting.component.html',
     styleUrl: './end-meeting.component.scss'
 })

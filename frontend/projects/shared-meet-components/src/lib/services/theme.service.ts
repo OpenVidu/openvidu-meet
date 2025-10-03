@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { computed, Inject, Injectable, signal } from '@angular/core';
+
+import { computed, Inject, Injectable, signal, DOCUMENT } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from 'openvidu-components-angular';
 
 export type Theme = 'light' | 'dark';

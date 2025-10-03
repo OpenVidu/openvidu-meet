@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, OnInit, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,20 +19,19 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 @Component({
     selector: 'ov-room-wizard',
     imports: [
-        CommonModule,
-        StepIndicatorComponent,
-        WizardNavComponent,
-        MatButtonModule,
-        MatIconModule,
-        MatProgressSpinnerModule,
-        MatSlideToggleModule,
-        RoomBasicCreationComponent,
-        RoomWizardRoomDetailsComponent,
-        RecordingConfigComponent,
-        RecordingTriggerComponent,
-        RecordingLayoutComponent,
-        RoomConfigComponent
-    ],
+    StepIndicatorComponent,
+    WizardNavComponent,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatSlideToggleModule,
+    RoomBasicCreationComponent,
+    RoomWizardRoomDetailsComponent,
+    RecordingConfigComponent,
+    RecordingTriggerComponent,
+    RecordingLayoutComponent,
+    RoomConfigComponent
+],
     templateUrl: './room-wizard.component.html',
     styleUrl: './room-wizard.component.scss'
 })

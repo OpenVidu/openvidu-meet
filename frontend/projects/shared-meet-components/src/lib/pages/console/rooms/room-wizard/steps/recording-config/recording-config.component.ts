@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,16 +20,15 @@ interface RecordingAccessOption {
 @Component({
     selector: 'ov-recording-config',
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatCardModule,
-        MatRadioModule,
-        MatSelectModule,
-        MatFormFieldModule,
-        SelectableCardComponent
-    ],
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatRadioModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    SelectableCardComponent
+],
     templateUrl: './recording-config.component.html',
     styleUrl: './recording-config.component.scss'
 })

@@ -92,7 +92,6 @@
 		margin-top: var(--ov-meet-spacing-md);
 
 		.primary-button {
-			@include design-tokens.ov-button-base;
 			width: 100%;
 			padding: var(--ov-meet-spacing-md);
 			font-size: var(--ov-meet-font-size-md);

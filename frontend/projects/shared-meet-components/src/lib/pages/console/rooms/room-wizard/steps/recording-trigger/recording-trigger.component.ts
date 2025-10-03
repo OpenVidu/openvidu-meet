@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,14 +12,13 @@ import { Subject, takeUntil } from 'rxjs';
 @Component({
     selector: 'ov-recording-trigger',
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatCardModule,
-        MatRadioModule,
-        SelectableCardComponent
-    ],
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatRadioModule,
+    SelectableCardComponent
+],
     templateUrl: './recording-trigger.component.html',
     styleUrl: './recording-trigger.component.scss'
 })

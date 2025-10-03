@@ -25,7 +25,7 @@
 
 .primary-button {
 	@include components.ov-button-base;
-	background-color: var(--ov-meet-color-secondary);
+	background-color: var(--ov-meet-color-secondary) !important;
 	color: var(--ov-meet-text-on-secondary) !important;
 
 	&.mat-mdc-button-disabled {
@@ -158,17 +158,17 @@
 	}
 
 	// Selected state styling with success color
-	--mdc-switch-selected-handle-color: var(--ov-meet-surface-color);
-	--mdc-switch-selected-pressed-handle-color: var(--ov-meet-surface-color);
-	--mdc-switch-selected-hover-handle-color: var(--ov-meet-surface-color);
-	--mdc-switch-selected-focus-handle-color: var(--ov-meet-surface-color);
-	--mdc-switch-selected-track-color: var(--ov-meet-color-success);
-	--mdc-switch-selected-pressed-track-color: var(--ov-meet-color-success);
-	--mdc-switch-selected-hover-track-color: var(--ov-meet-color-success);
-	--mdc-switch-selected-focus-track-color: var(--ov-meet-color-success);
-	--mdc-switch-selected-pressed-state-layer-color: var(--ov-meet-color-success);
-	--mdc-switch-selected-hover-state-layer-color: var(--ov-meet-surface-color);
-	--mdc-switch-selected-focus-state-layer-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-handle-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-pressed-handle-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-hover-handle-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-focus-handle-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-track-color: var(--ov-meet-color-success);
+	--mat-slide-toggle-selected-pressed-track-color: var(--ov-meet-color-success);
+	--mat-slide-toggle-selected-hover-track-color: var(--ov-meet-color-success);
+	--mat-slide-toggle-selected-focus-track-color: var(--ov-meet-color-success);
+	--mat-slide-toggle-selected-pressed-state-layer-color: var(--ov-meet-color-success);
+	--mat-slide-toggle-selected-hover-state-layer-color: var(--ov-meet-surface-color);
+	--mat-slide-toggle-selected-focus-state-layer-color: var(--ov-meet-surface-color);
 }
 
 // Material Navigation List - Clean borders
