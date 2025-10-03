@@ -47,28 +47,27 @@ export interface RecordingTableAction {
  */
 
 @Component({
-	selector: 'ov-recording-lists',
-	standalone: true,
-	imports: [
-		CommonModule,
-		ReactiveFormsModule,
-		MatTableModule,
-		MatCheckboxModule,
-		MatButtonModule,
-		MatIconModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatSelectModule,
-		MatMenuModule,
-		MatTooltipModule,
-		MatProgressSpinnerModule,
-		MatToolbarModule,
-		MatBadgeModule,
-		MatDividerModule,
-		DatePipe
-	],
-	templateUrl: './recording-lists.component.html',
-	styleUrl: './recording-lists.component.scss'
+    selector: 'ov-recording-lists',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatTableModule,
+        MatCheckboxModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatMenuModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatToolbarModule,
+        MatBadgeModule,
+        MatDividerModule,
+        DatePipe
+    ],
+    templateUrl: './recording-lists.component.html',
+    styleUrl: './recording-lists.component.scss'
 })
 export class RecordingListsComponent implements OnInit, OnChanges {
 	// Input properties

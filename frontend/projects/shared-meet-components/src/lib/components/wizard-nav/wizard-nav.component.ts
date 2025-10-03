@@ -4,11 +4,10 @@ import { MatIcon } from '@angular/material/icon';
 import type { WizardNavigationConfig, WizardNavigationEvent } from '@lib/models';
 
 @Component({
-	selector: 'ov-wizard-nav',
-	standalone: true,
-	imports: [MatButton, MatIcon],
-	templateUrl: './wizard-nav.component.html',
-	styleUrl: './wizard-nav.component.scss'
+    selector: 'ov-wizard-nav',
+    imports: [MatButton, MatIcon],
+    templateUrl: './wizard-nav.component.html',
+    styleUrl: './wizard-nav.component.scss'
 })
 export class WizardNavComponent {
 	/**

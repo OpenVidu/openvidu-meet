@@ -22,23 +22,22 @@ import { AuthService, GlobalConfigService, NotificationService } from '@lib/serv
 import { AuthMode } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-users-permissions',
-	standalone: true,
-	imports: [
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		MatInputModule,
-		MatFormFieldModule,
-		MatSelectModule,
-		MatTooltipModule,
-		MatProgressSpinnerModule,
-		MatDividerModule,
-		ReactiveFormsModule,
-		ProFeatureBadgeComponent
-	],
-	templateUrl: './users-permissions.component.html',
-	styleUrl: './users-permissions.component.scss'
+    selector: 'ov-users-permissions',
+    imports: [
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatDividerModule,
+        ReactiveFormsModule,
+        ProFeatureBadgeComponent
+    ],
+    templateUrl: './users-permissions.component.html',
+    styleUrl: './users-permissions.component.scss'
 })
 export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(true);

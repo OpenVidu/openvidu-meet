@@ -1,6 +1,6 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection, inject, provideAppInitializer } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { routes } from '@app/app.routes';
@@ -17,13 +17,10 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 
 export const appConfig: ApplicationConfig = {
 	providers: [
-		{
-			provide: APP_INITIALIZER,
-			// Ensure the theme is initialized before the app starts
-			useFactory: (themeService: ThemeService) => () => themeService.initializeTheme(),
-			deps: [ThemeService],
-			multi: true
-		},
+		provideAppInitializer(() => {
+        const initializerFn = ((themeService: ThemeService) => () => themeService.initializeTheme())(inject(ThemeService));
+        return initializerFn();
+      }),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(routes),

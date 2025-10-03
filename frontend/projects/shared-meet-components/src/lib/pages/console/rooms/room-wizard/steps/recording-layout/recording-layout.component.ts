@@ -10,19 +10,18 @@ import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-recording-layout',
-	standalone: true,
-	imports: [
-		CommonModule,
-		ReactiveFormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatCardModule,
-		MatRadioModule,
-		SelectableCardComponent
-	],
-	templateUrl: './recording-layout.component.html',
-	styleUrl: './recording-layout.component.scss'
+    selector: 'ov-recording-layout',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatCardModule,
+        MatRadioModule,
+        SelectableCardComponent
+    ],
+    templateUrl: './recording-layout.component.html',
+    styleUrl: './recording-layout.component.scss'
 })
 export class RecordingLayoutComponent implements OnDestroy {
 	layoutForm: FormGroup;

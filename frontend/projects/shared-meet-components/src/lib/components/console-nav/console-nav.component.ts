@@ -11,20 +11,19 @@ import { ConsoleNavLink } from '@lib/models';
 import { AppDataService, ThemeService } from '@lib/services';
 
 @Component({
-	selector: 'ov-console-nav',
-	standalone: true,
-	imports: [
-		CommonModule,
-		MatToolbarModule,
-		MatListModule,
-		MatButtonModule,
-		MatIconModule,
-		MatSidenavModule,
-		MatTooltipModule,
-		RouterModule
-	],
-	templateUrl: './console-nav.component.html',
-	styleUrl: './console-nav.component.scss'
+    selector: 'ov-console-nav',
+    imports: [
+        CommonModule,
+        MatToolbarModule,
+        MatListModule,
+        MatButtonModule,
+        MatIconModule,
+        MatSidenavModule,
+        MatTooltipModule,
+        RouterModule
+    ],
+    templateUrl: './console-nav.component.html',
+    styleUrl: './console-nav.component.scss'
 })
 export class ConsoleNavComponent {
 	@ViewChild(MatSidenav) sidenav!: MatSidenav;

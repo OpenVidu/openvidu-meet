@@ -4,11 +4,10 @@ import { ConsoleNavLink } from '@lib/models';
 import { AuthService } from '@lib/services';
 
 @Component({
-	selector: 'ov-console',
-	standalone: true,
-	imports: [ConsoleNavComponent],
-	templateUrl: './console.component.html',
-	styleUrl: './console.component.scss'
+    selector: 'ov-console',
+    imports: [ConsoleNavComponent],
+    templateUrl: './console.component.html',
+    styleUrl: './console.component.scss'
 })
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[] = [

@@ -7,11 +7,10 @@ import { ErrorReason } from '@lib/models';
 import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '@lib/services';
 
 @Component({
-	selector: 'ov-error',
-	standalone: true,
-	imports: [MatCardModule, MatIconModule, MatButtonModule],
-	templateUrl: './error.component.html',
-	styleUrl: './error.component.scss'
+    selector: 'ov-error',
+    imports: [MatCardModule, MatIconModule, MatButtonModule],
+    templateUrl: './error.component.html',
+    styleUrl: './error.component.scss'
 })
 export class ErrorComponent implements OnInit {
 	errorName = 'Error';

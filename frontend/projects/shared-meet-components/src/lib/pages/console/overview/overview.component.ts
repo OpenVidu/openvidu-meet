@@ -17,11 +17,10 @@ interface OverviewStats {
 }
 
 @Component({
-	selector: 'ov-overview',
-	standalone: true,
-	imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
-	templateUrl: './overview.component.html',
-	styleUrl: './overview.component.scss'
+    selector: 'ov-overview',
+    imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
+    templateUrl: './overview.component.html',
+    styleUrl: './overview.component.scss'
 })
 export class OverviewComponent implements OnInit {
 	stats: OverviewStats = {

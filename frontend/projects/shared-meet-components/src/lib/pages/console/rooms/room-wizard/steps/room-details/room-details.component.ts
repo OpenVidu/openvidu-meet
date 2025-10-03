@@ -18,21 +18,20 @@ import {
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-details',
-	standalone: true,
-	imports: [
-		ReactiveFormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatInputModule,
-		MatFormFieldModule,
-		MatDatepickerModule,
-		MatNativeDateModule,
-		MatSelectModule,
-		MatTooltipModule
-	],
-	templateUrl: './room-details.component.html',
-	styleUrl: './room-details.component.scss'
+    selector: 'ov-room-details',
+    imports: [
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatSelectModule,
+        MatTooltipModule
+    ],
+    templateUrl: './room-details.component.html',
+    styleUrl: './room-details.component.scss'
 })
 export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	roomDetailsForm: FormGroup;

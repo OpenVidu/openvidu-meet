@@ -11,21 +11,20 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService, NavigationService } from '@lib/services';
 
 @Component({
-	selector: 'ov-login',
-	standalone: true,
-	imports: [
-		MatFormFieldModule,
-		ReactiveFormsModule,
-		MatInputModule,
-		MatButtonModule,
-		FormsModule,
-		MatCardModule,
-		MatIconModule,
-		MatTooltipModule,
-		RouterModule
-	],
-	templateUrl: './login.component.html',
-	styleUrl: './login.component.scss'
+    selector: 'ov-login',
+    imports: [
+        MatFormFieldModule,
+        ReactiveFormsModule,
+        MatInputModule,
+        MatButtonModule,
+        FormsModule,
+        MatCardModule,
+        MatIconModule,
+        MatTooltipModule,
+        RouterModule
+    ],
+    templateUrl: './login.component.html',
+    styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({

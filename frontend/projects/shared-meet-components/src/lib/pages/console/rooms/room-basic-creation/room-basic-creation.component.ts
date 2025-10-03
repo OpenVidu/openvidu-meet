@@ -10,18 +10,17 @@ import { MeetRoomOptions } from '@lib/typings/ce';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-basic-creation',
-	standalone: true,
-	imports: [
-		ReactiveFormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatInputModule,
-		MatFormFieldModule,
-		MatTooltipModule
-	],
-	templateUrl: './room-basic-creation.component.html',
-	styleUrl: './room-basic-creation.component.scss'
+    selector: 'ov-room-basic-creation',
+    imports: [
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatTooltipModule
+    ],
+    templateUrl: './room-basic-creation.component.html',
+    styleUrl: './room-basic-creation.component.scss'
 })
 export class RoomBasicCreationComponent implements OnDestroy {
 	@Output() createRoom = new EventEmitter<string | undefined>();

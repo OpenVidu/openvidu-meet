@@ -31,27 +31,26 @@ import {
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'ov-rooms',
-	standalone: true,
-	imports: [
-		MatListModule,
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		RouterModule,
-		MatTableModule,
-		MatMenuModule,
-		MatTooltipModule,
-		MatDividerModule,
-		MatSortModule,
-		MatPaginatorModule,
-		MatProgressSpinnerModule,
-		MatFormFieldModule,
-		MatInputModule,
-		RoomsListsComponent
-	],
-	templateUrl: './rooms.component.html',
-	styleUrl: './rooms.component.scss'
+    selector: 'ov-rooms',
+    imports: [
+        MatListModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        RouterModule,
+        MatTableModule,
+        MatMenuModule,
+        MatTooltipModule,
+        MatDividerModule,
+        MatSortModule,
+        MatPaginatorModule,
+        MatProgressSpinnerModule,
+        MatFormFieldModule,
+        MatInputModule,
+        RoomsListsComponent
+    ],
+    templateUrl: './rooms.component.html',
+    styleUrl: './rooms.component.scss'
 })
 export class RoomsComponent implements OnInit {
 	// @ViewChild(MatSort) sort!: MatSort;

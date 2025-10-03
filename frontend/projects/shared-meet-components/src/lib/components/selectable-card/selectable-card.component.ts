@@ -28,11 +28,10 @@ export interface SelectionEvent {
 }
 
 @Component({
-	selector: 'ov-selectable-card',
-	standalone: true,
-	imports: [CommonModule, MatIconModule, ProFeatureBadgeComponent],
-	templateUrl: './selectable-card.component.html',
-	styleUrl: './selectable-card.component.scss'
+    selector: 'ov-selectable-card',
+    imports: [CommonModule, MatIconModule, ProFeatureBadgeComponent],
+    templateUrl: './selectable-card.component.html',
+    styleUrl: './selectable-card.component.scss'
 })
 export class SelectableCardComponent {
 	/**

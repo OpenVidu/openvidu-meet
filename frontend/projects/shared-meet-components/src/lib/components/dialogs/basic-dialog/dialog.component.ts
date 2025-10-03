@@ -13,20 +13,19 @@ import { MatIconModule } from '@angular/material/icon';
 import type { DialogOptions } from '@lib/models';
 
 @Component({
-	selector: 'ov-dialog',
-	standalone: true,
-	imports: [
-		FormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatCheckboxModule,
-		MatDialogActions,
-		MatDialogContent,
-		MatDialogTitle
-	],
-	templateUrl: './dialog.component.html',
-	styleUrl: './dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ov-dialog',
+    imports: [
+        FormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatCheckboxModule,
+        MatDialogActions,
+        MatDialogContent,
+        MatDialogTitle
+    ],
+    templateUrl: './dialog.component.html',
+    styleUrl: './dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DialogComponent>);

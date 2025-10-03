@@ -14,20 +14,19 @@ import type { DeleteRoomDialogOptions } from '@lib/models';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-delete-room-dialog',
-	standalone: true,
-	imports: [
-		FormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatRadioModule,
-		MatDialogActions,
-		MatDialogContent,
-		MatDialogTitle
-	],
-	templateUrl: './delete-room-dialog.component.html',
-	styleUrl: './delete-room-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ov-delete-room-dialog',
+    imports: [
+        FormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatRadioModule,
+        MatDialogActions,
+        MatDialogContent,
+        MatDialogTitle
+    ],
+    templateUrl: './delete-room-dialog.component.html',
+    styleUrl: './delete-room-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeleteRoomDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DeleteRoomDialogComponent>);

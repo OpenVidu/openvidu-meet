@@ -7,11 +7,10 @@ import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-room-config',
-	standalone: true,
-	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
-	templateUrl: './room-config.component.html',
-	styleUrl: './room-config.component.scss'
+    selector: 'ov-room-config',
+    imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
+    templateUrl: './room-config.component.html',
+    styleUrl: './room-config.component.scss'
 })
 export class RoomConfigComponent implements OnDestroy {
 	configForm: FormGroup;

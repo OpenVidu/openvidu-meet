@@ -25,23 +25,22 @@ interface ThemeColors {
 }
 
 @Component({
-	selector: 'ov-config',
-	standalone: true,
-	imports: [
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		MatInputModule,
-		MatFormFieldModule,
-		MatSelectModule,
-		MatSlideToggleModule,
-		MatTooltipModule,
-		MatProgressSpinnerModule,
-		MatDividerModule,
-		ReactiveFormsModule
-	],
-	templateUrl: './config.component.html',
-	styleUrl: './config.component.scss'
+    selector: 'ov-config',
+    imports: [
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatSlideToggleModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatDividerModule,
+        ReactiveFormsModule
+    ],
+    templateUrl: './config.component.html',
+    styleUrl: './config.component.scss'
 })
 export class ConfigComponent implements OnInit {
 	isLoading = signal(true);

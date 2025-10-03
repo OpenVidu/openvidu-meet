@@ -18,24 +18,23 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RecordingService } from '@lib/services';
 
 @Component({
-	selector: 'ov-share-recording-dialog',
-	standalone: true,
-	imports: [
-		FormsModule,
-		MatRadioModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatButtonModule,
-		MatIconModule,
-		MatDialogTitle,
-		MatDialogContent,
-		MatDialogActions,
-		MatDialogClose,
-		MatTooltipModule,
-		MatProgressSpinnerModule
-	],
-	templateUrl: './share-recording-dialog.component.html',
-	styleUrl: './share-recording-dialog.component.scss'
+    selector: 'ov-share-recording-dialog',
+    imports: [
+        FormsModule,
+        MatRadioModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatIconModule,
+        MatDialogTitle,
+        MatDialogContent,
+        MatDialogActions,
+        MatDialogClose,
+        MatTooltipModule,
+        MatProgressSpinnerModule
+    ],
+    templateUrl: './share-recording-dialog.component.html',
+    styleUrl: './share-recording-dialog.component.scss'
 })
 export class ShareRecordingDialogComponent implements OnInit {
 	accessType: 'private' | 'public' = 'public';

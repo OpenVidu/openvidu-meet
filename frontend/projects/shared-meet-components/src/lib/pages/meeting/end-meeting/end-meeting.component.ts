@@ -8,11 +8,10 @@ import { AppDataService, AuthService, NavigationService, WebComponentManagerServ
 import { LeftEventReason } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-end-meeting',
-	standalone: true,
-	imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
-	templateUrl: './end-meeting.component.html',
-	styleUrl: './end-meeting.component.scss'
+    selector: 'ov-end-meeting',
+    imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+    templateUrl: './end-meeting.component.html',
+    styleUrl: './end-meeting.component.scss'
 })
 export class EndMeetingComponent implements OnInit {
 	disconnectedTitle = 'You Left the Meeting';

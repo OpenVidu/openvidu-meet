@@ -13,19 +13,18 @@ import { formatDurationToTime } from '@lib/utils';
 import { ViewportService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'ov-view-recording',
-	templateUrl: './view-recording.component.html',
-	styleUrls: ['./view-recording.component.scss'],
-	standalone: true,
-	imports: [
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		DatePipe,
-		MatProgressSpinnerModule,
-		MatTooltipModule,
-		MatSnackBarModule
-	]
+    selector: 'ov-view-recording',
+    templateUrl: './view-recording.component.html',
+    styleUrls: ['./view-recording.component.scss'],
+    imports: [
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        DatePipe,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+        MatSnackBarModule
+    ]
 })
 export class ViewRecordingComponent implements OnInit, OnDestroy {
 	recording?: MeetRecordingInfo;

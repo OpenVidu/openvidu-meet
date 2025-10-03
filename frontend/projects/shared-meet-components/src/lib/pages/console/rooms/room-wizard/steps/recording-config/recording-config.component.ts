@@ -18,21 +18,20 @@ interface RecordingAccessOption {
 }
 
 @Component({
-	selector: 'ov-recording-config',
-	standalone: true,
-	imports: [
-		CommonModule,
-		ReactiveFormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatCardModule,
-		MatRadioModule,
-		MatSelectModule,
-		MatFormFieldModule,
-		SelectableCardComponent
-	],
-	templateUrl: './recording-config.component.html',
-	styleUrl: './recording-config.component.scss'
+    selector: 'ov-recording-config',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatCardModule,
+        MatRadioModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        SelectableCardComponent
+    ],
+    templateUrl: './recording-config.component.html',
+    styleUrl: './recording-config.component.scss'
 })
 export class RecordingConfigComponent implements OnDestroy {
 	recordingForm: FormGroup;

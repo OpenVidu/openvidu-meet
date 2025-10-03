@@ -13,21 +13,20 @@ import { AuthService, GlobalConfigService, NotificationService } from '@lib/serv
 import { MeetApiKey } from '@lib/typings/ce';
 
 @Component({
-	selector: 'ov-embedded',
-	standalone: true,
-	imports: [
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		MatInputModule,
-		MatFormFieldModule,
-		MatSlideToggleModule,
-		MatTooltipModule,
-		ReactiveFormsModule,
-		MatProgressSpinnerModule
-	],
-	templateUrl: './embedded.component.html',
-	styleUrl: './embedded.component.scss'
+    selector: 'ov-embedded',
+    imports: [
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatSlideToggleModule,
+        MatTooltipModule,
+        ReactiveFormsModule,
+        MatProgressSpinnerModule
+    ],
+    templateUrl: './embedded.component.html',
+    styleUrl: './embedded.component.scss'
 })
 export class EmbeddedComponent implements OnInit {
 	isLoading = signal(true);

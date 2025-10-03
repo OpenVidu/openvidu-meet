@@ -9,11 +9,10 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({
-	selector: 'ov-step-indicator',
-	standalone: true,
-	imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
-	templateUrl: './step-indicator.component.html',
-	styleUrl: './step-indicator.component.scss'
+    selector: 'ov-step-indicator',
+    imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
+    templateUrl: './step-indicator.component.html',
+    styleUrl: './step-indicator.component.scss'
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();

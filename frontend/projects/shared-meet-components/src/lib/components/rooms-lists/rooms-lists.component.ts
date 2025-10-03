@@ -67,28 +67,27 @@ export interface RoomTableAction {
  */
 
 @Component({
-	selector: 'ov-rooms-lists',
-	standalone: true,
-	imports: [
-		CommonModule,
-		ReactiveFormsModule,
-		MatTableModule,
-		MatCheckboxModule,
-		MatButtonModule,
-		MatIconModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatSelectModule,
-		MatMenuModule,
-		MatTooltipModule,
-		MatProgressSpinnerModule,
-		MatToolbarModule,
-		MatBadgeModule,
-		MatDividerModule,
-		DatePipe
-	],
-	templateUrl: './rooms-lists.component.html',
-	styleUrl: './rooms-lists.component.scss'
+    selector: 'ov-rooms-lists',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatTableModule,
+        MatCheckboxModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatMenuModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatToolbarModule,
+        MatBadgeModule,
+        MatDividerModule,
+        DatePipe
+    ],
+    templateUrl: './rooms-lists.component.html',
+    styleUrl: './rooms-lists.component.scss'
 })
 export class RoomsListsComponent implements OnInit, OnChanges {
 	// Input properties

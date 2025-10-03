@@ -8,11 +8,10 @@ import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-	selector: 'ov-recordings',
-	standalone: true,
-	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
-	templateUrl: './recordings.component.html',
-	styleUrl: './recordings.component.scss'
+    selector: 'ov-recordings',
+    imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
+    templateUrl: './recordings.component.html',
+    styleUrl: './recordings.component.scss'
 })
 export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);

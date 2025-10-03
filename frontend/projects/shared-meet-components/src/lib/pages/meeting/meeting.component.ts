@@ -64,28 +64,27 @@ import {
 import { combineLatest, Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-meeting',
-	templateUrl: './meeting.component.html',
-	styleUrls: ['./meeting.component.scss'],
-	standalone: true,
-	imports: [
-		OpenViduComponentsUiModule,
-		// ApiDirectiveModule,
-		CommonModule,
-		MatFormFieldModule,
-		MatInputModule,
-		FormsModule,
-		ReactiveFormsModule,
-		MatCardModule,
-		MatButtonModule,
-		MatIconModule,
-		MatIconButton,
-		MatMenuModule,
-		MatDividerModule,
-		MatTooltipModule,
-		MatRippleModule,
-		ShareMeetingLinkComponent
-	]
+    selector: 'ov-meeting',
+    templateUrl: './meeting.component.html',
+    styleUrls: ['./meeting.component.scss'],
+    imports: [
+        OpenViduComponentsUiModule,
+        // ApiDirectiveModule,
+        CommonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatIconButton,
+        MatMenuModule,
+        MatDividerModule,
+        MatTooltipModule,
+        MatRippleModule,
+        ShareMeetingLinkComponent
+    ]
 })
 export class MeetingComponent implements OnInit {
 	participantForm = new FormGroup({

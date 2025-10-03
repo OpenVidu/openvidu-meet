@@ -10,19 +10,18 @@ import { RoomWizardStateService } from '@lib/services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-	selector: 'ov-recording-trigger',
-	standalone: true,
-	imports: [
-		CommonModule,
-		ReactiveFormsModule,
-		MatButtonModule,
-		MatIconModule,
-		MatCardModule,
-		MatRadioModule,
-		SelectableCardComponent
-	],
-	templateUrl: './recording-trigger.component.html',
-	styleUrl: './recording-trigger.component.scss'
+    selector: 'ov-recording-trigger',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatCardModule,
+        MatRadioModule,
+        SelectableCardComponent
+    ],
+    templateUrl: './recording-trigger.component.html',
+    styleUrl: './recording-trigger.component.scss'
 })
 export class RecordingTriggerComponent implements OnDestroy {
 	triggerForm: FormGroup;

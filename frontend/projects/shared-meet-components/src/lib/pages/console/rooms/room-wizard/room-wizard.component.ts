@@ -17,25 +17,24 @@ import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 
 @Component({
-	selector: 'ov-room-wizard',
-	standalone: true,
-	imports: [
-		CommonModule,
-		StepIndicatorComponent,
-		WizardNavComponent,
-		MatButtonModule,
-		MatIconModule,
-		MatProgressSpinnerModule,
-		MatSlideToggleModule,
-		RoomBasicCreationComponent,
-		RoomWizardRoomDetailsComponent,
-		RecordingConfigComponent,
-		RecordingTriggerComponent,
-		RecordingLayoutComponent,
-		RoomConfigComponent
-	],
-	templateUrl: './room-wizard.component.html',
-	styleUrl: './room-wizard.component.scss'
+    selector: 'ov-room-wizard',
+    imports: [
+        CommonModule,
+        StepIndicatorComponent,
+        WizardNavComponent,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatSlideToggleModule,
+        RoomBasicCreationComponent,
+        RoomWizardRoomDetailsComponent,
+        RecordingConfigComponent,
+        RecordingTriggerComponent,
+        RecordingLayoutComponent,
+        RoomConfigComponent
+    ],
+    templateUrl: './room-wizard.component.html',
+    styleUrl: './room-wizard.component.scss'
 })
 export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;
