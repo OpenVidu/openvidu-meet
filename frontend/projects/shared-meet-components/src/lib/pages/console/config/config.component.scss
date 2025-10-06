@@ -35,7 +35,9 @@
 			margin-bottom: var(--ov-meet-spacing-lg);
 
 			::ng-deep .mat-mdc-text-field-wrapper {
-				background-color: var(--ov-meet-surface-variant);
+				&.mdc-text-field--disabled {
+					background-color: var(--ov-meet-surface-variant);
+				}
 				border-radius: var(--ov-meet-border-radius-sm);
 			}
 
