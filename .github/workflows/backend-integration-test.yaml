@@ -4,7 +4,7 @@ on:
     paths:
       - 'backend/src/**'
       - 'backend/package.json'
-      - 'backend/package-lock.json'
+      - 'backend/pnpm-lock.yaml'
       - 'backend/tests/**'
       - '.github/workflows/backend-integration-test.yaml'
   pull_request:
@@ -62,7 +62,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-rooms
+          pnpm run test:integration-rooms
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -108,7 +108,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-webhooks
+          pnpm run test:integration-webhooks
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -156,7 +156,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-security
+          pnpm run test:integration-security
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -202,7 +202,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-global-config
+          pnpm run test:integration-global-config
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -248,7 +248,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-participants
+          pnpm run test:integration-participants
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -294,7 +294,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-meetings
+          pnpm run test:integration-meetings
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -340,7 +340,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-users
+          pnpm run test:integration-users
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
@@ -421,7 +421,7 @@ jobs:
             elif [[ "${{ matrix['storage-provider'] }}" == "gcs" ]]; then
               echo "Using Google Cloud Storage provider"
               yq eval --inplace '.storage.gcp.credentials_json = (load("/tmp/credentials.json") | tostring) | .storage.gcp.credentials_json style="single"' egress.yaml
-              
+
               yq e -i '
                 del(.storage.s3) |
                 .storage.gcp.bucket = "openvidu-appdata"
@@ -451,7 +451,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:integration-recordings
+          pnpm run test:integration-recordings
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}

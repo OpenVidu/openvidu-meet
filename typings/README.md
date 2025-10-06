@@ -7,8 +7,8 @@ This library contains common types used by the OpenVidu Meet application. It is 
 To build the library, run the following command:
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ## Serve
@@ -16,7 +16,7 @@ npm run build
 For developing purposes, you can serve the library for actively watching changes. To do so, run the following command:
 
 ```bash
-npm run serve
+pnpm run serve
 ```
 
 ## Sync with OpenVidu Meet
@@ -70,5 +70,5 @@ To apply changes from this library to the OpenVidu Meet application, use the `sy
 For compatibility, you can still use:
 
 ```bash
-npm run sync-ce
+pnpm run sync-ce
 ```

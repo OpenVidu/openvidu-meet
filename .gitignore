@@ -9,8 +9,19 @@
 
 
 # dependencies
-**/*/node_modules
-**/*/target
+**/**/node_modules
+**/**/target
+
+# Package managers
+# npm (legacy - keeping for reference)
+package-lock.json
+npm-debug.log
+yarn-error.log
+
+# pnpm
+.pnpm-store
+.pnpm-debug.log
+pnpm-debug.log*
 
 # profiling files
 chrome-profiler-events*.json
@@ -33,8 +44,6 @@ speed-measure-plugin*.json
 /connect.lock
 /coverage
 /libpeerconnection.log
-npm-debug.log
-yarn-error.log
 testem.log
 ./**/typings
 

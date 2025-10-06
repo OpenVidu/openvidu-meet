@@ -4,11 +4,11 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "npm run build:server && npm run build:client && cp -r public ./dist/testapp",
+		"build": "pnpm run build:server && pnpm run build:client && cp -r public ./dist/testapp",
 		"build:watch": "tsc --watch",
 		"start": "node dist/testapp/src/index.js",
 		"dev:server": "ts-node-dev --respawn --watch src,public/ts,public/views src/index.ts",
-		"dev": "concurrently \"npm:watch:client\" \"npm run dev:server\" --kill-others",
+		"dev": "concurrently \"pnpm:watch:client\" \"pnpm run dev:server\" --kill-others",
 		"build:server": "tsc --rootDir ../",
 		"build:client": "tsc -p tsconfig.client.json",
 		"watch:client": "tsc -p tsconfig.client.json --watch"

@@ -55,7 +55,7 @@ cd openvidu-meet
 
 ```bash
 cd backend && \
-npm run start:dev
+pnpm run start:dev
 ```
 
 > [!NOTE]
@@ -70,7 +70,7 @@ Opening a new tab, under root directory:
 
 ```bash
 cd frontend && \
-npm run build:dev
+pnpm run build:dev
 ```
 
 This command will build the frontend application and move the files to the backend project. It will also listen for changes in the frontend application and rebuild the application when changes are detected.
@@ -98,13 +98,13 @@ To run the testing application, follow these steps under the root directory:
 
 ```bash
 cd testapp && \
-npm install
+pnpm install
 ```
 
 2. Start the testing application:
 
 ```bash
-npm run start
+pnpm run start
 ```
 
 After running these commands, you can access the testing application at [http://localhost:5080](http://localhost:5080).

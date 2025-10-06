@@ -1,0 +1,6 @@
+{
+	"name": "openvidu-meet-workspace",
+	"version": "3.4.0",
+	"private": true,
+	"description": "OpenVidu Meet Monorepo"
+}

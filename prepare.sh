@@ -90,8 +90,8 @@ fi
 if [ "$BUILD_TYPINGS" = true ]; then
   echo -e "${GREEN}Building types library...${NC}"
   cd typings
-  # npm install
-  npm run sync-ce
+  pnpm install
+  pnpm run sync-ce
   cd ..
 fi
 
@@ -99,8 +99,8 @@ fi
 if [ "$BUILD_FRONTEND" = true ]; then
   echo -e "${GREEN}Building frontend...${NC}"
   cd frontend
-  npm install
-  npm run build
+  pnpm install
+  pnpm run build
   cd ..
 fi
 
@@ -108,8 +108,8 @@ fi
 if [ "$BUILD_BACKEND" = true ]; then
   echo -e "${GREEN}Building backend...${NC}"
   cd backend
-  npm install
-  npm run build:prod
+  pnpm install
+  pnpm run build:prod
   cd ..
 fi
 
@@ -117,8 +117,8 @@ fi
 if [ "$BUILD_WEBCOMPONENT" = true ]; then
   echo -e "${GREEN}Building webcomponent...${NC}"
   cd frontend/webcomponent
-  npm install
-  npm run build
+  pnpm install
+  pnpm run build
   cd ../..
 fi
 
@@ -126,8 +126,8 @@ fi
 if [ "$BUILD_TESTAPP" = true ]; then
   echo -e "${GREEN}Building testapp...${NC}"
   cd testapp
-  npm install
-  npm run build
+  pnpm install
+  pnpm run build
   cd ..
 fi
 

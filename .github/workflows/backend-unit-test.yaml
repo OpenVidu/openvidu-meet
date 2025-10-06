@@ -13,6 +13,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.13'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
       - name: Setup OpenVidu Meet Backend
@@ -21,7 +25,7 @@ jobs:
       - name: Run tests
         run: |
           cd backend
-          npm run test:unit
+          pnpm run test:unit
         env:
           JEST_JUNIT_OUTPUT_DIR: './reports/'
       - name: Publish Test Report
