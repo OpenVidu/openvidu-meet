@@ -12,11 +12,18 @@ RUN mkdir -p typings frontend backend && chown -R node:node /app
 
 USER node
 
-# Copy package files first for better layer caching
-COPY --chown=node:node frontend/package.json frontend/pnpm-lock.yaml ./frontend/
-COPY --chown=node:node backend/package.json backend/pnpm-lock.yaml ./backend/
-COPY --chown=node:node typings/package.json typings/pnpm-lock.yaml ./typings/
-COPY --chown=node:node frontend/webcomponent/package.json frontend/webcomponent/pnpm-lock.yaml ./frontend/webcomponent/
+# Copy workspace configuration files
+COPY --chown=node:node pnpm-workspace.yaml .npmrc ./
+COPY --chown=node:node package.json pnpm-lock.yaml ./
+
+# Copy package.json files for better layer caching
+COPY --chown=node:node typings/package.json ./typings/
+COPY --chown=node:node frontend/package.json ./frontend/
+COPY --chown=node:node backend/package.json ./backend/
+COPY --chown=node:node frontend/webcomponent/package.json ./frontend/webcomponent/
+
+# Install all dependencies using workspace
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the project
 COPY --chown=node:node . .
