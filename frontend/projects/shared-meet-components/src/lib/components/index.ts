@@ -4,6 +4,7 @@ export * from './dialogs/share-recording-dialog/share-recording-dialog.component
 export * from './logo-selector/logo-selector.component';
 export * from './pro-feature-badge/pro-feature-badge.component';
 export * from './recording-lists/recording-lists.component';
+export * from './recording-video-player/recording-video-player.component';
 export * from './rooms-lists/rooms-lists.component';
 export * from './selectable-card/selectable-card.component';
 export * from './spinner/spinner.component';

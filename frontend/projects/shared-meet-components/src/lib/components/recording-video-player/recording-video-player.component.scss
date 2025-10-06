@@ -1,0 +1,159 @@
+@use '../../../../../../src/assets/styles/design-tokens';
+
+// === VIDEO PLAYER WRAPPER ===
+
+.video-player-wrapper {
+	// Default: Desktop/Tablet styles
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	// Mobile styles
+	&.mobile {
+		background: var(--ov-meet-background-color);
+		min-height: inherit;
+		margin-bottom: 0;
+	}
+}
+
+// === VIDEO CONTAINER ===
+
+.video-container {
+	position: relative;
+	width: 100%;
+	padding-top: 56.25%; // 16:9 aspect ratio
+	background: var(--ov-meet-surface-color);
+	border-radius: var(--ov-meet-radius-lg);
+	overflow: hidden;
+
+	&.mobile {
+		position: unset;
+		padding-top: 0;
+	}
+
+	// Desktop/Tablet: add shadow
+	.video-player-wrapper:not(.mobile) & {
+		box-shadow: var(--ov-meet-shadow-md);
+	}
+
+	.video-player {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		background: var(--ov-meet-background-color);
+	}
+
+	.video-loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		@include design-tokens.ov-flex-center;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+		background: var(--ov-meet-background-color);
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-sm);
+	}
+}
+
+// === ERROR & UNAVAILABLE STATES ===
+
+.video-error-container,
+.video-unavailable-container {
+	@include design-tokens.ov-flex-center;
+	min-height: 300px;
+	background: var(--ov-meet-surface-color);
+	border-radius: var(--ov-meet-radius-lg);
+	border: 1px solid var(--ov-meet-border-color-light);
+
+	// Mobile: add bottom margin
+	.video-player-wrapper.mobile & {
+		margin-bottom: var(--ov-meet-spacing-lg);
+	}
+
+	.error-content,
+	.unavailable-content {
+		text-align: center;
+		padding: var(--ov-meet-spacing-xl);
+
+		// Desktop: larger max-width
+		.video-player-wrapper:not(.mobile) & {
+			max-width: 400px;
+		}
+
+		// Mobile: smaller max-width
+		.video-player-wrapper.mobile & {
+			max-width: 300px;
+		}
+
+		.error-icon,
+		.status-icon {
+			@include design-tokens.ov-icon(xl);
+			margin-bottom: var(--ov-meet-spacing-md);
+		}
+
+		.error-icon {
+			color: var(--ov-meet-color-error);
+		}
+
+		.status-icon {
+			color: var(--ov-meet-text-secondary);
+		}
+
+		h3 {
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+
+			// Desktop: larger font
+			.video-player-wrapper:not(.mobile) & {
+				font-size: var(--ov-meet-font-size-xl);
+			}
+
+			// Mobile: smaller font
+			.video-player-wrapper.mobile & {
+				font-size: var(--ov-meet-font-size-lg);
+			}
+		}
+
+		p {
+			margin: 0 0 var(--ov-meet-spacing-lg) 0;
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-relaxed);
+
+			// Desktop: larger font
+			.video-player-wrapper:not(.mobile) & {
+				font-size: var(--ov-meet-font-size-md);
+			}
+
+			// Mobile: smaller font
+			.video-player-wrapper.mobile & {
+				font-size: var(--ov-meet-font-size-sm);
+			}
+		}
+
+		button {
+			@include design-tokens.ov-button-base;
+			display: inline-flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// === RESPONSIVE ADJUSTMENTS ===
+
+@include design-tokens.ov-tablet-down {
+	.video-error-container,
+	.video-unavailable-container {
+		min-height: 250px;
+
+		.error-content,
+		.unavailable-content {
+			padding: var(--ov-meet-spacing-lg);
+		}
+	}
+}

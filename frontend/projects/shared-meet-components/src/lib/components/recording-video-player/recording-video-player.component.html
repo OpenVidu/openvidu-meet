@@ -1,0 +1,60 @@
+<div class="video-player-wrapper" [class.mobile]="viewportService.isMobileView()">
+	<!-- Video Player -->
+	@if (recordingUrl && !hasVideoError) {
+		<div class="video-container" [class.mobile]="viewportService.isMobileView()">
+			<video
+				#videoPlayer
+				[src]="recordingUrl"
+				controls
+				controlsList="nodownload"
+				playsinline
+				autoplay
+				[muted]="viewportService.isMobileView()"
+				[disablePictureInPicture]="viewportService.isMobileView()"
+				class="video-player"
+				(loadeddata)="onVideoLoaded()"
+				(error)="onVideoError()"
+			></video>
+
+			@if (!isVideoLoaded) {
+				<div class="video-loading-overlay">
+					<mat-spinner diameter="40"></mat-spinner>
+					<span>Loading video...</span>
+				</div>
+			}
+		</div>
+	}
+	<!-- Video Error State -->
+	@else if (hasVideoError) {
+		<div class="video-error-container">
+			<div class="error-content">
+				<mat-icon class="error-icon">error</mat-icon>
+				<h3>Video Playback Error</h3>
+				<p>There was an error loading the video. Please check your connection and try again.</p>
+				<button mat-raised-button color="primary" (click)="onRetryClick()">
+					<mat-icon>refresh</mat-icon>
+					<span>Retry</span>
+				</button>
+			</div>
+		</div>
+	}
+	<!-- Video Unavailable State -->
+	@else {
+		<div class="video-unavailable-container">
+			<div class="unavailable-content">
+				<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
+				<h3>{{ getStatusMessage() }}</h3>
+				@if (isRecordingInProgress()) {
+					<p>The recording is still being processed. Please check back in a few minutes.</p>
+					<button mat-raised-button color="primary" (click)="onRetryClick()">
+						<mat-icon>refresh</mat-icon>
+						<span>Refresh</span>
+					</button>
+				} @else {
+					<p>This recording is not available for playback.</p>
+				}
+			</div>
+		</div>
+	}
+</div>
+

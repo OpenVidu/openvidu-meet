@@ -58,7 +58,7 @@
 					</div>
 
 					<!-- Right: Actions -->
-					@if (!videoError && recordingUrl) {
+					@if (recordingUrl) {
 						<div class="header-actions">
 							<button
 								mat-icon-button
@@ -74,7 +74,7 @@
 								color="accent"
 								(click)="openShareDialog()"
 								matTooltip="Share"
-								class="action-button share-buttosssn"
+								class="action-button share-button"
 							>
 								<mat-icon>share</mat-icon>
 							</button>
@@ -91,58 +91,15 @@
 				}
 			</div>
 
-			<!-- Video Content -->
-			<div class="mobile-video-content">
-				@if (recordingUrl && !videoError) {
-					<div class="video-container">
-						<video
-							[src]="recordingUrl"
-							controls
-							controlsList="nodownload nofullscreen"
-							playsinline
-							disablePictureInPicture
-							class="video-player"
-							(loadeddata)="onVideoLoaded()"
-							(error)="onVideoError()"
-						></video>
-
-						@if (!isVideoLoaded) {
-							<div class="video-loading-overlay">
-								<mat-spinner diameter="40"></mat-spinner>
-								<span>Loading video...</span>
-							</div>
-						}
-					</div>
-				} @else if (videoError) {
-					<div class="video-error-container">
-						<div class="error-content">
-							<mat-icon class="error-icon">error</mat-icon>
-							<h3>Video Playback Error</h3>
-							<p>There was an error loading the video. Please check your connection and try again.</p>
-							<button mat-raised-button color="primary" (click)="retryLoad()">
-								<mat-icon>refresh</mat-icon>
-								<span>Retry</span>
-							</button>
-						</div>
-					</div>
-				} @else {
-					<div class="video-unavailable-container">
-						<div class="unavailable-content">
-							<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
-							<h3>{{ getStatusMessage() }}</h3>
-							@if (['starting', 'active', 'ending'].includes(recording.status)) {
-								<p>The recording is still being processed. Please check back in a few minutes.</p>
-								<button mat-raised-button color="primary" (click)="retryLoad()">
-									<mat-icon>refresh</mat-icon>
-									<span>Refresh</span>
-								</button>
-							} @else {
-								<p>This recording is not available for playbook.</p>
-							}
-						</div>
-					</div>
-				}
-			</div>
+			<!-- Video Player Component -->
+			<ov-recording-video-player
+				[recordingUrl]="recordingUrl"
+				[recordingStatus]="recording.status"
+				[showDownload]="false"
+				[showShare]="false"
+				(videoError)="onVideoError()"
+				(retry)="retryLoad()"
+			/>
 		</div>
 	} @else {
 		<!-- Desktop/Tablet Experience -->
@@ -174,20 +131,18 @@
 								</div>
 							</div>
 							<!-- Actions Section -->
-							@if (!videoError) {
+							@if (recordingUrl) {
 								<div class="actions-section">
 									<div class="primary-actions">
-										@if (recordingUrl) {
-											<button
-												mat-button
-												(click)="downloadRecording()"
-												matTooltip="Download recording"
-												class="action-btn primary-button"
-											>
-												<mat-icon>download</mat-icon>
-												<span>Download</span>
-											</button>
-										}
+										<button
+											mat-button
+											(click)="downloadRecording()"
+											matTooltip="Download recording"
+											class="action-btn primary-button"
+										>
+											<mat-icon>download</mat-icon>
+											<span>Download</span>
+										</button>
 
 										<button
 											mat-raised-button
@@ -206,57 +161,15 @@
 					</div>
 				</div>
 
-				<!-- Video Player Section -->
-				<div class="video-section">
-					@if (recordingUrl && !videoError) {
-						<div class="video-container">
-							<video
-								[src]="recordingUrl"
-								controls
-								controlsList="nodownload"
-								playsinline
-								class="video-player"
-								(loadeddata)="onVideoLoaded()"
-								(error)="onVideoError()"
-							></video>
-
-							@if (!isVideoLoaded) {
-								<div class="video-loading-overlay">
-									<mat-spinner diameter="40"></mat-spinner>
-									<span>Loading video...</span>
-								</div>
-							}
-						</div>
-					} @else if (videoError) {
-						<div class="video-error-container">
-							<div class="video-error-content">
-								<mat-icon class="error-icon">error</mat-icon>
-								<h3>Video Playback Error</h3>
-								<p>There was an error loading the video. Please check your connection and try again.</p>
-								<button mat-raised-button color="primary" (click)="retryLoad()">
-									<mat-icon>refresh</mat-icon>
-									<span>Retry</span>
-								</button>
-							</div>
-						</div>
-					} @else {
-						<div class="video-unavailable-container">
-							<div class="video-unavailable-content">
-								<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
-								<h3>{{ getStatusMessage() }}</h3>
-								@if (['starting', 'active', 'ending'].includes(recording.status)) {
-									<p>The recording is still being processed. Please check back in a few minutes.</p>
-									<button mat-raised-button color="primary" (click)="retryLoad()">
-										<mat-icon>refresh</mat-icon>
-										<span>Refresh</span>
-									</button>
-								} @else {
-									<p>This recording is not available for playback.</p>
-								}
-							</div>
-						</div>
-					}
-				</div>
+				<!-- Video Player Component -->
+				<ov-recording-video-player
+					[recordingUrl]="recordingUrl"
+					[recordingStatus]="recording.status"
+					[showDownload]="false"
+					[showShare]="false"
+					(videoError)="onVideoError()"
+					(retry)="retryLoad()"
+				/>
 			</div>
 		</div>
 	}

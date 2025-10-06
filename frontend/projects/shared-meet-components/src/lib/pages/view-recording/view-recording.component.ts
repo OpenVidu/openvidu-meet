@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
+import { RecordingVideoPlayerComponent } from '@lib/components';
 import { NotificationService, RecordingService } from '@lib/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
 import { formatDurationToTime } from '@lib/utils';
@@ -23,22 +24,17 @@ import { ViewportService } from 'openvidu-components-angular';
         DatePipe,
         MatProgressSpinnerModule,
         MatTooltipModule,
-        MatSnackBarModule
+        MatSnackBarModule,
+        RecordingVideoPlayerComponent
     ]
 })
-export class ViewRecordingComponent implements OnInit, OnDestroy {
+export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
 	secret?: string;
 
-	videoError = false;
 	isLoading = true;
 	hasError = false;
-	isVideoLoaded = false;
-
-	// Mobile UI state
-	showMobileControls = true;
-	private controlsTimeout?: number;
 
 	constructor(
 		protected recordingService: RecordingService,
@@ -76,29 +72,15 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	onVideoLoaded() {
-		this.isVideoLoaded = true;
-		this.videoError = false;
-
-		// Start controls timeout for mobile
-		if (this.viewportService.isMobileView()) {
-			this.resetControlsTimeout();
-		}
-	}
-
 	onVideoError() {
 		console.error('Error loading video');
-		this.videoError = true;
-		this.isVideoLoaded = false;
+		this.notificationService.showSnackbar('Error loading video. Please try again.');
 	}
 
 	downloadRecording() {
-		if (!this.recording || !this.recordingUrl) {
-			this.notificationService.showSnackbar('Recording is not available for download');
-			return;
+		if (this.recording) {
+			this.recordingService.downloadRecording(this.recording, this.secret);
 		}
-
-		this.recordingService.downloadRecording(this.recording, this.secret);
 	}
 
 	openShareDialog() {
@@ -109,7 +91,6 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 	async retryLoad() {
 		this.isLoading = true;
 		this.hasError = false;
-		this.videoError = false;
 		await this.loadRecording();
 	}
 
@@ -158,23 +139,5 @@ export class ViewRecordingComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	// Mobile UI interactions
 
-	private resetControlsTimeout(): void {
-		if (this.controlsTimeout) {
-			clearTimeout(this.controlsTimeout);
-		}
-
-		if (this.showMobileControls) {
-			this.controlsTimeout = window.setTimeout(() => {
-				this.showMobileControls = false;
-			}, 3000); // Hide controls after 3 seconds
-		}
-	}
-
-	ngOnDestroy(): void {
-		if (this.controlsTimeout) {
-			clearTimeout(this.controlsTimeout);
-		}
-	}
 }
