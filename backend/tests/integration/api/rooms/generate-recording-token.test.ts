@@ -1,8 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { AuthTransportMode } from '../../../../src/typings/ce/index.js';
-import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/room-config.js';
+import { AuthTransportMode, MeetRecordingAccess, ParticipantRole} from '@openvidu-meet/typings';
 import { expectValidRecordingTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	changeAuthTransportMode,

@@ -1,4 +1,4 @@
-import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@typings-ce';
+import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';

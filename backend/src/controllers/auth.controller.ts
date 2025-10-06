@@ -1,4 +1,4 @@
-import { AuthTransportMode } from '@typings-ce';
+import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../config/index.js';

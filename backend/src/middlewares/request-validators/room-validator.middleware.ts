@@ -13,7 +13,7 @@ import {
 	MeetVirtualBackgroundConfig,
 	ParticipantRole,
 	RecordingPermissions
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
 import { z } from 'zod';

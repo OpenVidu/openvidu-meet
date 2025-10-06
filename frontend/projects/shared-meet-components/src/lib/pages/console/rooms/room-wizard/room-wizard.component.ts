@@ -8,7 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 import { StepIndicatorComponent, WizardNavComponent } from '@lib/components';
 import { WizardNavigationConfig, WizardStep } from '@lib/models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '@lib/services';
-import { MeetRoomOptions } from '@lib/typings/ce';
+import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';

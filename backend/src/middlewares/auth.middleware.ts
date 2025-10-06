@@ -1,4 +1,4 @@
-import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@typings-ce';
+import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';

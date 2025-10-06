@@ -13,7 +13,7 @@ import {
 	loginUser,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { AuthTransportMode } from '../../../../src/typings/ce/index.js';
+import { AuthTransportMode } from '@openvidu-meet/typings';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 

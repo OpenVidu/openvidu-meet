@@ -1,7 +1,6 @@
 import { del, get, post } from '../utils/http';
 import { configService } from './configService';
-// @ts-ignore
-import { MeetRoom, MeetRoomOptions } from '../../../typings/src/room';
+import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 
 export async function getAllRooms(): Promise<{
     pagination: any;

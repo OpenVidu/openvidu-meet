@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
-import { AuthMode, AuthTransportMode, AuthType } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode, AuthType } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { getSecurityConfig, startTestServer, updateSecurityConfig } from '../../../helpers/request-helpers.js';
 

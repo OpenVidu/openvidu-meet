@@ -9,7 +9,7 @@ import {
 	RecordingService,
 	RoomService
 } from '@lib/services';
-import { AuthMode, ParticipantRole } from '@lib/typings/ce';
+import { AuthMode, ParticipantRole } from '@openvidu-meet/typings';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,

@@ -9,7 +9,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { SelectableCardComponent, SelectableOption, SelectionEvent } from '@lib/components';
 import { RoomWizardStateService } from '@lib/services';
-import { MeetRecordingAccess } from '@lib/typings/ce';
+import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 
 interface RecordingAccessOption {

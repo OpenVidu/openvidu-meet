@@ -1,4 +1,4 @@
-import { MeetRecordingFilters } from '@typings-ce';
+import { MeetRecordingFilters } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';

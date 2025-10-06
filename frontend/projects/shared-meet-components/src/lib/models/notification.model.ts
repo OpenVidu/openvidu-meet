@@ -1,4 +1,4 @@
-import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@lib/typings/ce';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 
 export interface DialogOptions {
 	title?: string;

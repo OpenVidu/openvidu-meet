@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import { AuthMode, AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '@openvidu-meet/typings';
 import {
 	changeAuthTransportMode,
 	changeSecurityConfig,

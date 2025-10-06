@@ -1,4 +1,4 @@
-import { WebComponentOutboundEventMessage } from '../typings/ce/message.type';
+import { WebComponentOutboundEventMessage } from '@openvidu-meet/typings';
 
 export class EventsManager {
 	private element: HTMLElement;

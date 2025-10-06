@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
 import ms from 'ms';
-import { MeetRoom } from '../../../../src/typings/ce/index.js';
+import { MeetRoom } from '@openvidu-meet/typings';
 import {
 	expectSuccessRoomsResponse,
 	expectValidationError,

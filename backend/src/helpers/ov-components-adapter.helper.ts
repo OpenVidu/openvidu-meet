@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { SendDataOptions } from 'livekit-server-sdk';
 
 const enum OpenViduComponentsDataTopic {

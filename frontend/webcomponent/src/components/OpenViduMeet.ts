@@ -1,8 +1,7 @@
 import { CommandsManager } from './CommandsManager';
 import { EventsManager } from './EventsManager';
-import { WebComponentEvent } from '../typings/ce/event.model';
+import { WebComponentEvent, WebComponentProperty } from '@openvidu-meet/typings';
 import styles from '../assets/css/styles.css';
-import { WebComponentProperty } from '../typings/ce/properties.model';
 
 /**
  * The `OpenViduMeet` web component provides an interface for embedding an OpenVidu Meet room within a web page.

@@ -5,7 +5,7 @@ import {
 	ParticipantOptions,
 	ParticipantPermissions,
 	ParticipantRole
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetRoomHelper } from '../helpers/room.helper.js';

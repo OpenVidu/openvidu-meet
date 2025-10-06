@@ -1,4 +1,4 @@
-import { ParticipantRole, User } from '@typings-ce';
+import { ParticipantRole, User } from '@openvidu-meet/typings';
 import { ClaimGrants } from 'livekit-server-sdk';
 
 // Override the Express Request type to include a session object with user and token properties

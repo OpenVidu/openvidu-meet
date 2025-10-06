@@ -14,7 +14,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { formatBytes, formatDurationToHMS } from '@lib/utils';
 import { ViewportService } from 'openvidu-components-angular';
 
@@ -47,27 +47,27 @@ export interface RecordingTableAction {
  */
 
 @Component({
-    selector: 'ov-recording-lists',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatTableModule,
-        MatCheckboxModule,
-        MatButtonModule,
-        MatIconModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatMenuModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-        MatToolbarModule,
-        MatBadgeModule,
-        MatDividerModule,
-        DatePipe
-    ],
-    templateUrl: './recording-lists.component.html',
-    styleUrl: './recording-lists.component.scss'
+	selector: 'ov-recording-lists',
+	imports: [
+		CommonModule,
+		ReactiveFormsModule,
+		MatTableModule,
+		MatCheckboxModule,
+		MatButtonModule,
+		MatIconModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatSelectModule,
+		MatMenuModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatToolbarModule,
+		MatBadgeModule,
+		MatDividerModule,
+		DatePipe
+	],
+	templateUrl: './recording-lists.component.html',
+	styleUrl: './recording-lists.component.scss'
 })
 export class RecordingListsComponent implements OnInit, OnChanges {
 	// Input properties

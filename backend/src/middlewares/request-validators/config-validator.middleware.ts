@@ -7,7 +7,7 @@ import {
 	SingleUserAuth,
 	ValidAuthMethod,
 	WebhookConfig
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';

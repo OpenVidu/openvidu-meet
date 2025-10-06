@@ -1,5 +1,5 @@
 import { EgressStatus } from '@livekit/protocol';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@typings-ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { EgressInfo } from 'livekit-server-sdk';
 import { uid as secureUid } from 'uid/secure';
 import { container } from '../config/index.js';

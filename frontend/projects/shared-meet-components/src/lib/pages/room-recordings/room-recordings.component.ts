@@ -6,7 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
 import { NavigationService, NotificationService, RecordingService, RoomService } from '@lib/services';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@lib/typings/ce';
+import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({

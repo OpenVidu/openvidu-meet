@@ -1,6 +1,4 @@
-import { WebComponentCommand } from '../typings/ce/command.model';
-import { WebComponentEvent } from '../typings/ce/event.model';
-import { WebComponentInboundCommandMessage } from '../typings/ce/message.type';
+import { WebComponentCommand, WebComponentEvent, WebComponentInboundCommandMessage } from '@openvidu-meet/typings';
 
 /**
  * Manages communication between a parent application and an embedded iframe

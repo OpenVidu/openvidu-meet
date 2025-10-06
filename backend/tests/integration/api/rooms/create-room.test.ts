@@ -8,7 +8,7 @@ import {
 	MeetRecordingAccess,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
-} from '../../../../src/typings/ce/index.js';
+} from '@openvidu-meet/typings';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 

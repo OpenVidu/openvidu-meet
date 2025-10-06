@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-import { MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess, ParticipantRole } from'@openvidu-meet/typings';
 import {
 	expectSuccessRoomResponse,
 	expectValidationError,

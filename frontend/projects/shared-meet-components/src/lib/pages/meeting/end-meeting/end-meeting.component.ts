@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '@lib/services';
-import { LeftEventReason } from '@lib/typings/ce';
+import { LeftEventReason } from '@openvidu-meet/typings';
 
 @Component({
     selector: 'ov-end-meeting',

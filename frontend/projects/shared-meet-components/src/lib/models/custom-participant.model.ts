@@ -1,4 +1,4 @@
-import { MeetTokenMetadata, ParticipantRole } from '@lib/typings/ce';
+import { MeetTokenMetadata, ParticipantRole } from '@openvidu-meet/typings';
 import { ParticipantModel, ParticipantProperties } from 'openvidu-components-angular';
 
 // Represents a participant in the application.

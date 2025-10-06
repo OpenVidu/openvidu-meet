@@ -1,0 +1,17 @@
+packages:
+  - typings
+  - frontend
+  - frontend/webcomponent
+  - backend
+  - testapp
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - chromedriver
+  - core-js
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+
+onlyBuiltDependencies:
+  - bcrypt

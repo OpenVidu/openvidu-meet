@@ -6,7 +6,7 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
-} from '../../../../src/typings/ce/room.js';
+} from '@openvidu-meet/typings';
 import { expectSuccessListRecordingResponse, expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,

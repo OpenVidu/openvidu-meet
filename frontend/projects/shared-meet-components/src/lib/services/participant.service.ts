@@ -6,7 +6,7 @@ import {
 	ParticipantOptions,
 	ParticipantPermissions,
 	ParticipantRole
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 

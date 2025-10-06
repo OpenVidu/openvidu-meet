@@ -11,7 +11,7 @@ import {
 	MutexService,
 	RecordingService
 } from '../../../../src/services/index.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Recording Cleanup Tests', () => {

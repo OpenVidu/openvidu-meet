@@ -9,7 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RecordingVideoPlayerComponent } from '@lib/components';
 import { NotificationService, RecordingService } from '@lib/services';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@lib/typings/ce';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { formatDurationToTime } from '@lib/utils';
 import { ViewportService } from 'openvidu-components-angular';
 

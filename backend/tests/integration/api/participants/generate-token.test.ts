@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { AuthTransportMode } from '../../../../src/typings/ce/index.js';
-import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
+import { AuthTransportMode, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	changeAuthTransportMode,

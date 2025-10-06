@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { MeetRecordingInfo, MeetRecordingStatus, MeetRoom } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetRoom } from '@openvidu-meet/typings';
 import {
 	expectSuccessListRecordingResponse,
 	expectValidationError,

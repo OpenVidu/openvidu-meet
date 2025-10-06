@@ -27,7 +27,7 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomStatus
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({

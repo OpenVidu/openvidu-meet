@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoom } from '../../../../src/typings/ce';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { expectSuccessRecordingMediaResponse, expectValidationError } from '../../../helpers/assertion-helpers';
 import {
 	deleteAllRecordings,

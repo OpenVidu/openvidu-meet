@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FeatureConfigurationService, HttpService } from '@lib/services';
-import { AuthMode, AuthTransportMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
+import { AuthMode, AuthTransportMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({

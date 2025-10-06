@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { CommandsManager } from '../../src/components/CommandsManager';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
-import { WebComponentCommand } from '../../src/typings/ce/command.model';
+import { WebComponentCommand } from '@openvidu-meet/typings';
 
 describe('OpenViduMeet Event Handling', () => {
 	const testOrigin = window.location.origin;

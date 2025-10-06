@@ -1,6 +1,5 @@
 import { del, get } from '../utils/http';
-// @ts-ignore
-import { MeetRecordingInfo } from '../../../typings/src/recording.model';
+import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { configService } from './configService';
 
 export const getAllRecordings = async (): Promise<{

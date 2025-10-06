@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { VideoGrant } from 'livekit-server-sdk';
-import { LiveKitPermissions } from '../../../src/typings/ce/index.js';
+import { LiveKitPermissions } from '@openvidu-meet/typings';
 
 // 1) Extract the keys from each interface using keyof
 type KeysLiveKit = keyof LiveKitPermissions;

@@ -1,4 +1,4 @@
-import { MeetAppearanceConfig } from '@typings-ce';
+import { MeetAppearanceConfig } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../../config/index.js';
 import { handleError } from '../../models/error.model.js';

@@ -5,7 +5,7 @@ import {
 	WebComponentEvent,
 	WebComponentInboundCommandMessage,
 	WebComponentOutboundEventMessage
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 
 /**

@@ -3,7 +3,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
-import { MeetRoom } from '../../../../src/typings/ce/index.js';
+import { MeetRoom } from '@openvidu-meet/typings';
 import {
 	expectValidationError,
 	expectValidStartRecordingResponse,

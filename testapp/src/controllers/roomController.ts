@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { Server as IOServer } from 'socket.io';
-import { ParticipantRole } from '../../../typings/src/participant';
-// @ts-ignore
-import { MeetWebhookEvent } from '../../../typings/src/webhook.model';
+import { ParticipantRole, MeetWebhookEvent } from '@openvidu-meet/typings';
 import { configService } from '../services/configService';
 
 interface JoinRoomRequest {

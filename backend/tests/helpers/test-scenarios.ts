@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
-import { MeetRoom, MeetRoomConfig } from '../../src/typings/ce';
+import { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,

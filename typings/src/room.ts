@@ -28,13 +28,13 @@ export interface MeetRoom extends BaseRoomOptions {
     meetingEndAction: MeetingEndAction; // Action to take on the room when the meeting ends
 }
 
-export const enum MeetRoomStatus {
+export enum MeetRoomStatus {
     OPEN = 'open', // Room is open and available to host a meeting
     ACTIVE_MEETING = 'active_meeting', // There is an ongoing meeting in the room
     CLOSED = 'closed' // Room is closed to hosting new meetings
 }
 
-export const enum MeetingEndAction {
+export enum MeetingEndAction {
     NONE = 'none', // No action is taken when the meeting ends
     CLOSE = 'close', // The room will be closed when the meeting ends
     DELETE = 'delete' // The room (and its recordings if any) will be deleted when the meeting ends
@@ -45,13 +45,13 @@ export interface MeetRoomAutoDeletionPolicy {
     withRecordings: MeetRoomDeletionPolicyWithRecordings;
 }
 
-export const enum MeetRoomDeletionPolicyWithMeeting {
+export enum MeetRoomDeletionPolicyWithMeeting {
     FORCE = 'force', // Force deletion even if there is an active meeting
     WHEN_MEETING_ENDS = 'when_meeting_ends', // Delete the room when the meeting ends
     FAIL = 'fail' // Fail the deletion if there is an active meeting
 }
 
-export const enum MeetRoomDeletionPolicyWithRecordings {
+export enum MeetRoomDeletionPolicyWithRecordings {
     FORCE = 'force', // Force deletion even if there are ongoing or previous recordings
     CLOSE = 'close', // Close the room and keep recordings
     FAIL = 'fail' // Fail the deletion if there are ongoing or previous recordings
@@ -69,7 +69,7 @@ export type MeetRoomFilters = {
     fields?: string;
 };
 
-export const enum MeetRoomDeletionSuccessCode {
+export enum MeetRoomDeletionSuccessCode {
     ROOM_DELETED = 'room_deleted',
     ROOM_WITH_ACTIVE_MEETING_DELETED = 'room_with_active_meeting_deleted',
     ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED = 'room_with_active_meeting_scheduled_to_be_deleted',
@@ -81,7 +81,7 @@ export const enum MeetRoomDeletionSuccessCode {
     ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_CLOSED = 'room_with_active_meeting_scheduled_to_be_closed'
 }
 
-export const enum MeetRoomDeletionErrorCode {
+export enum MeetRoomDeletionErrorCode {
     ROOM_HAS_ACTIVE_MEETING = 'room_has_active_meeting',
     ROOM_HAS_RECORDINGS = 'room_has_recordings',
     ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS = 'room_with_active_meeting_has_recordings',

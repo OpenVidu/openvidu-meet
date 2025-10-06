@@ -3,8 +3,8 @@
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"build": "npm install && rollup -c",
-		"build:watch": "npm install && rollup -c -w",
+		"build": "rollup -c",
+		"build:watch": "rollup -c -w",
 		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test",
 		"test:e2e-core": "playwright test tests/e2e/core/",
@@ -19,6 +19,9 @@
 	"author": "",
 	"license": "Apache-2.0",
 	"description": "",
+	"dependencies": {
+		"@openvidu-meet/typings": "workspace:*"
+	},
 	"devDependencies": {
 		"@playwright/test": "1.53.2",
 		"@rollup/plugin-commonjs": "28.0.2",

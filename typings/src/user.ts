@@ -4,7 +4,7 @@ export interface User {
 	roles: UserRole[];
 }
 
-export const enum UserRole {
+export enum UserRole {
 	// Represents a user with administrative privileges
 	ADMIN = 'admin',
 	// Represents a regular user with standard access

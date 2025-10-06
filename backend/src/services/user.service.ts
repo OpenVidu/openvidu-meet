@@ -1,4 +1,4 @@
-import { User, UserDTO, UserRole } from '@typings-ce';
+import { User, UserDTO, UserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { PasswordHelper } from '../helpers/password.helper.js';

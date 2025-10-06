@@ -2,8 +2,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { CommandsManager } from '../../src/components/CommandsManager';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
-import { WebComponentCommand } from '../../src/typings/ce/command.model';
-import { WebComponentEvent } from '../../src/typings/ce/event.model';
+import { WebComponentCommand, WebComponentEvent } from '@openvidu-meet/typings';
 
 describe('OpenViduMeet WebComponent Commands', () => {
 	let component: OpenViduMeet;

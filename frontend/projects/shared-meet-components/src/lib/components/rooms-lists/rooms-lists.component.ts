@@ -24,7 +24,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@lib/typings/ce';
+import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
@@ -67,27 +67,27 @@ export interface RoomTableAction {
  */
 
 @Component({
-    selector: 'ov-rooms-lists',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatTableModule,
-        MatCheckboxModule,
-        MatButtonModule,
-        MatIconModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatMenuModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-        MatToolbarModule,
-        MatBadgeModule,
-        MatDividerModule,
-        DatePipe
-    ],
-    templateUrl: './rooms-lists.component.html',
-    styleUrl: './rooms-lists.component.scss'
+	selector: 'ov-rooms-lists',
+	imports: [
+		CommonModule,
+		ReactiveFormsModule,
+		MatTableModule,
+		MatCheckboxModule,
+		MatButtonModule,
+		MatIconModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatSelectModule,
+		MatMenuModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatToolbarModule,
+		MatBadgeModule,
+		MatDividerModule,
+		DatePipe
+	],
+	templateUrl: './rooms-lists.component.html',
+	styleUrl: './rooms-lists.component.scss'
 })
 export class RoomsListsComponent implements OnInit, OnChanges {
 	// Input properties

@@ -1,4 +1,4 @@
-import { MeetRoomDeletionErrorCode } from '@typings-ce';
+import { MeetRoomDeletionErrorCode } from '@openvidu-meet/typings';
 import { Response } from 'express';
 import { z } from 'zod';
 import { container } from '../config/index.js';

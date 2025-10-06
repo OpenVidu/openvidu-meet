@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
-import { MeetRecordingStatus, MeetRoom } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingStatus, MeetRoom } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidGetRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,

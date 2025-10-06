@@ -8,7 +8,7 @@ import {
 	RoomService,
 	SessionStorageService
 } from '@lib/services';
-import { WebComponentProperty } from '@lib/typings/ce/webcomponent/properties.model';
+import { WebComponentProperty } from '@openvidu-meet/typings';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);

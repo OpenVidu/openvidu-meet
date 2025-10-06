@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService, GlobalConfigService, NotificationService } from '@lib/services';
-import { MeetApiKey } from '@lib/typings/ce';
+import { MeetApiKey } from '@openvidu-meet/typings';
 
 @Component({
     selector: 'ov-embedded',

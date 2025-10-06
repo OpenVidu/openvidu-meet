@@ -2,8 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { container } from '../../../../src/config/index.js';
 import { LIVEKIT_URL } from '../../../../src/environment.js';
 import { FrontendEventService, LiveKitService } from '../../../../src/services/index.js';
-import { MeetSignalType } from '../../../../src/typings/ce/event.model.js';
-import { MeetTokenMetadata, ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { MeetSignalType, MeetTokenMetadata, ParticipantRole } from '@openvidu-meet/typings';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,

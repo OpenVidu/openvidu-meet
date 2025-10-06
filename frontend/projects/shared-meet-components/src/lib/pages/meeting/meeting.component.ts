@@ -37,13 +37,11 @@ import {
 	MeetRoomStatus,
 	ParticipantRole,
 	WebComponentEvent,
-	WebComponentOutboundEventMessage
-} from '@lib/typings/ce';
-import {
+	WebComponentOutboundEventMessage,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRoomConfigUpdatedPayload,
 	MeetSignalType
-} from '@lib/typings/ce/event.model';
+} from '@openvidu-meet/typings';
 import {
 	ParticipantService as ComponentParticipantService,
 	DataPacket_Kind,

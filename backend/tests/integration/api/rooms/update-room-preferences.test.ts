@@ -1,8 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { container } from '../../../../src/config/index.js';
 import { FrontendEventService } from '../../../../src/services/index.js';
-import { MeetSignalType } from '../../../../src/typings/ce/event.model.js';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { MeetSignalType, MeetRecordingAccess } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRooms,

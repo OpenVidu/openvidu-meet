@@ -3,8 +3,7 @@ import { Request } from 'express';
 import http from 'http';
 import { container } from '../../../src/config/dependency-injector.config.js';
 import { MeetStorageService } from '../../../src/services/index.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '../../../src/typings/ce/recording.model.js';
-import { MeetWebhookEvent, MeetWebhookEventType } from '../../../src/typings/ce/webhook.model.js';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,

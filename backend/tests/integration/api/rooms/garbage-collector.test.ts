@@ -5,7 +5,7 @@ import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
 import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
-} from '../../../../src/typings/ce/room.js';
+} from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRecordings,

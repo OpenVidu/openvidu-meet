@@ -15,7 +15,7 @@ import {
 	MeetRoomStatus,
 	ParticipantPermissions,
 	ParticipantRole
-} from '../../src/typings/ce';
+} from '@openvidu-meet/typings';
 
 export const expectErrorResponse = (
 	response: any,

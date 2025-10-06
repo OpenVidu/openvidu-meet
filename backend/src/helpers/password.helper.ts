@@ -1,4 +1,4 @@
-import { MeetApiKey } from '@typings-ce';
+import { MeetApiKey } from '@openvidu-meet/typings';
 import bcrypt from 'bcrypt';
 import { uid } from 'uid/secure';
 

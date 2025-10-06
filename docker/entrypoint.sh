@@ -34,9 +34,11 @@ if [ -n "${MODULES_FILE}" ]; then
     . "${MODULES_FILE}"
 fi
 
-
+corepack enable
+corepack prepare pnpm@10.18.2 --activate
 cd /opt/openvidu-meet || { echo "Can't cd into /opt/openvidu-meet"; exit 1; }
-node dist/src/server.js &
+sh ./meet.sh  start --prod &
+# node dist/src/server.js &
 
 # Save the PID of the Node.js process
 node_pid=$!

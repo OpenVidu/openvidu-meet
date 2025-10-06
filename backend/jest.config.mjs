@@ -11,14 +11,14 @@ const jestConfig = {
 	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
 	moduleFileExtensions: ['js', 'ts', 'json', 'node'],
 	testEnvironment: 'node',
-	moduleNameMapper: {
-		'^@typings-ce$': '<rootDir>/src/typings/ce/index.ts'
-	},
 	globals: {
 		'ts-jest': {
 			tsconfig: 'tsconfig.json'
 		}
-	}
+	},
+	moduleNameMapper: {
+		'^@openvidu-meet/typings$': '<rootDir>/../typings/src/index.ts'
+	},
 	// transform: {
 	// 	'^.+\\.tsx?$': ['ts-jest', {
 	// 	  // Opcionalmente, especifica el archivo tsconfig si es necesario

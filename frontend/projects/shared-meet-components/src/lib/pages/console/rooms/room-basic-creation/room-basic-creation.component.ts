@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RoomWizardStateService } from '@lib/services';
-import { MeetRoomOptions } from '@lib/typings/ce';
+import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({

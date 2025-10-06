@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
-import { MeetRecordingAccess } from '../../../../src/typings/ce/index.js';
+import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import { expectSuccessRoomConfigResponse } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getRoomConfig, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';

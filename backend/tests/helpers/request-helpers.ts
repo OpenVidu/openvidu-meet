@@ -27,7 +27,7 @@ import {
 	MeetRoomOptions,
 	ParticipantRole,
 	WebhookConfig
-} from '../../src/typings/ce/index.js';
+} from '@openvidu-meet/typings';
 
 const CREDENTIALS = {
 	admin: {

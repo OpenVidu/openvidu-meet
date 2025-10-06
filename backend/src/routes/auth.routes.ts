@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as authCtrl from '../controllers/auth.controller.js';
 import { tokenAndRoleValidator, validateLoginRequest, withAuth, withLoginLimiter } from '../middlewares/index.js';
-import { UserRole } from '@typings-ce';
+import { UserRole } from '@openvidu-meet/typings';
 
 export const authRouter = Router();
 authRouter.use(bodyParser.urlencoded({ extended: true }));

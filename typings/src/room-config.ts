@@ -16,7 +16,7 @@ export interface MeetRecordingConfig {
     allowAccessTo?: MeetRecordingAccess;
 }
 
-export const enum MeetRecordingAccess {
+export enum MeetRecordingAccess {
     ADMIN = 'admin', // Only admins can access the recording
     ADMIN_MODERATOR = 'admin_moderator', // Admins and moderators can access
     ADMIN_MODERATOR_SPEAKER = 'admin_moderator_speaker' // Admins, moderators and speakers can access
@@ -45,7 +45,7 @@ export interface MeetRoomTheme {
     surfaceColor?: string;
 }
 
-export const enum MeetRoomThemeMode {
+export enum MeetRoomThemeMode {
     LIGHT = 'light',
     DARK = 'dark'
 }

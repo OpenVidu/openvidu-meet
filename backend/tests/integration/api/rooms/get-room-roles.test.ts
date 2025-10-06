@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { ParticipantRole } from '@openvidu-meet/typings';
 import {
 	expectValidRoomRoleAndPermissionsResponse,
 	expectValidRoomRolesAndPermissionsResponse
