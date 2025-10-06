@@ -86,64 +86,55 @@ else
   done
 fi
 
+# Install all dependencies once at the root (pnpm workspace handles all subpackages)
+echo -e "${BLUE}Installing dependencies for all workspaces...${NC}"
+pnpm install
+
 # Build typings if selected
 if [ "$BUILD_TYPINGS" = true ]; then
   echo -e "${GREEN}Building types library...${NC}"
-  cd typings
-  pnpm install
-  pnpm run sync-ce
-  cd ..
+  pnpm run build:typings
 fi
 
 # Build frontend if selected
 if [ "$BUILD_FRONTEND" = true ]; then
   echo -e "${GREEN}Building frontend...${NC}"
-  cd frontend
-  pnpm install
-  pnpm run build
-  cd ..
+  pnpm run build:frontend
 fi
 
 # Build backend if selected
 if [ "$BUILD_BACKEND" = true ]; then
   echo -e "${GREEN}Building backend...${NC}"
-  cd backend
-  pnpm install
-  pnpm run build:prod
-  cd ..
+  pnpm run build:backend
 fi
 
 # Build webcomponent if selected
 if [ "$BUILD_WEBCOMPONENT" = true ]; then
   echo -e "${GREEN}Building webcomponent...${NC}"
-  cd frontend/webcomponent
-  pnpm install
-  pnpm run build
-  cd ../..
+  pnpm run build:webcomponent
 fi
 
 # Build testapp if selected
 if [ "$BUILD_TESTAPP" = true ]; then
   echo -e "${GREEN}Building testapp...${NC}"
-  cd testapp
-  pnpm install
-  pnpm run build
-  cd ..
+  pnpm run build:testapp
 fi
 
 # Generate webcomponent documentation if selected
 if [ "$BUILD_WC_DOC" = true ]; then
   echo -e "${GREEN}Generating webcomponent documentation...${NC}"
-  node scripts/generate-webcomponent-docs.js docs
+  pnpm run build:wc-doc
 
   # Copy the generated documentation to the openvidu.io directory
-  echo -e "${GREEN}Copying webcomponent documentation to openvidu.io...${NC}"
-
-  cp docs/webcomponent-events.md ../openvidu.io/shared/meet/webcomponent-events.md
-  cp docs/webcomponent-commands.md ../openvidu.io/shared/meet/webcomponent-commands.md
-  cp docs/webcomponent-attributes.md ../openvidu.io/shared/meet/webcomponent-attributes.md
-
-  echo -e "${GREEN}Webcomponent documentation generated successfully!${NC}"
+  if [ -d "../openvidu.io/shared/meet" ]; then
+    echo -e "${GREEN}Copying webcomponent documentation to openvidu.io...${NC}"
+    cp docs/webcomponent-events.md ../openvidu.io/shared/meet/webcomponent-events.md
+    cp docs/webcomponent-commands.md ../openvidu.io/shared/meet/webcomponent-commands.md
+    cp docs/webcomponent-attributes.md ../openvidu.io/shared/meet/webcomponent-attributes.md
+    echo -e "${GREEN}Webcomponent documentation copied successfully!${NC}"
+  else
+    echo -e "${YELLOW}Warning: openvidu.io directory not found, skipping documentation copy${NC}"
+  fi
 fi
 
 echo -e "${BLUE}Preparation completed!${NC}"

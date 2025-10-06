@@ -2,5 +2,22 @@
 	"name": "openvidu-meet-workspace",
 	"version": "3.4.0",
 	"private": true,
-	"description": "OpenVidu Meet Monorepo"
+	"description": "OpenVidu Meet Monorepo",
+	"scripts": {
+		"install:all": "pnpm install",
+		"build:typings": "pnpm --filter typings run sync-ce",
+		"build:frontend": "pnpm --filter openvidu-meet-frontend run build",
+		"build:backend": "pnpm --filter openvidu-meet-backend run build:prod",
+		"build:webcomponent": "pnpm --filter openvidu-meet-webcomponent run build",
+		"build:testapp": "pnpm --filter testapp run build",
+		"build:all": "pnpm run build:typings && pnpm run build:frontend && pnpm run build:backend && pnpm run build:webcomponent && pnpm run build:testapp",
+		"build:wc-doc": "node scripts/generate-webcomponent-docs.js docs",
+		"dev:backend": "pnpm --filter openvidu-meet-backend run dev",
+		"dev:frontend": "pnpm --filter openvidu-meet-frontend run start",
+		"dev:testapp": "pnpm --filter testapp run dev",
+		"test:backend": "pnpm --filter openvidu-meet-backend run test",
+		"test:webcomponent": "pnpm --filter openvidu-meet-webcomponent run test",
+		"clean": "pnpm -r exec rm -rf dist node_modules && rm -rf node_modules",
+		"clean:dist": "pnpm -r exec rm -rf dist"
+	}
 }
