@@ -33,8 +33,6 @@ export const {
 	MEET_INITIAL_ADMIN_PASSWORD = 'admin',
 	MEET_INITIAL_API_KEY = '',
 
-	MEET_COOKIE_SECURE = 'false',
-
 	/**
 	 * Webhook configuration
 	 *
