@@ -1,0 +1,17 @@
+packages:
+  - meet-ce/typings
+  - meet-ce/frontend
+  - meet-ce/frontend/webcomponent
+  - meet-ce/backend
+  - testapp
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - chromedriver
+  - core-js
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+
+onlyBuiltDependencies:
+  - bcrypt

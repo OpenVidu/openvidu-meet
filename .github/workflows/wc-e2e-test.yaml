@@ -10,9 +10,13 @@ jobs:
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.13'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
@@ -26,25 +30,27 @@ jobs:
             fi
             BASH
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
-      - name: Setup OpenVidu Meet
+
+      - name: Build and Start OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@main
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
+
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@main
         with:
+          skip_install: 'true'
           skip_checkout: 'true'
+          skip_build_typings: 'true'
+          skip_build_webcomponent: 'true'
+
       - name: Run tests
-        run: |
-          cd frontend/webcomponent
-          # Install Playwright browsers
-          mkdir -p /tmp/ms-playwright
-          npx playwright install --with-deps chromium
-          npm run test:e2e
+        run: ./meet.sh test-e2e-webcomponent --skip-install
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,6 +58,7 @@ jobs:
           name: room-test-results
           path: frontend/webcomponent/test-results/
           retention-days: 2
+
       - name: Upload TestApp logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -59,6 +66,7 @@ jobs:
           name: room-test-testapp-logs
           path: testapp/testapp.log
           retention-days: 2
+
       - name: Upload OpenVidu Meet logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -66,6 +74,7 @@ jobs:
           name: room-test-openvidu-meet-logs
           path: backend/meet_backend.log
           retention-days: 2
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main

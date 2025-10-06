@@ -6,8 +6,8 @@ const path = require('path');
  */
 class WebComponentDocGenerator {
     constructor() {
-        this.typingsPath = path.join(__dirname, '../typings/src/webcomponent');
-        this.webComponentPath = path.join(__dirname, '../frontend/webcomponent/src/components/OpenViduMeet.ts');
+        this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/webcomponent');
+        this.webComponentPath = path.join(__dirname, '../meet-ce/frontend/webcomponent/src/components/OpenViduMeet.ts');
     }
 
     /**

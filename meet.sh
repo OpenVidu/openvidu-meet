@@ -1,0 +1,626 @@
+#!/bin/sh
+
+set -e
+
+# Colors for messages
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Global flags (can be set via environment or arguments)
+SKIP_INSTALL=${SKIP_INSTALL:-false}
+SKIP_BUILD=${SKIP_BUILD:-false}
+SKIP_TYPINGS=${SKIP_TYPINGS:-false}
+BASE_HREF=${BASE_HREF:-/}
+
+# Function to check if pnpm is installed
+check_pnpm() {
+  if ! command -v pnpm >/dev/null 2>&1; then
+    printf "${RED}Error: pnpm is not installed.${NC}\n"
+    printf "${YELLOW}pnpm is required to run this script.${NC}\n\n"
+    printf "Would you like to install pnpm globally? (y/n): "
+    read REPLY
+    case "$REPLY" in
+      [Yy]*)
+        printf "${BLUE}Installing pnpm globally (requires sudo)...${NC}\n"
+        if sudo npm install -g pnpm; then
+          printf "${GREEN}pnpm installed successfully!${NC}\n"
+        else
+          printf "${RED}Failed to install pnpm. Please install it manually.${NC}\n"
+          exit 1
+        fi
+        ;;
+      *)
+        printf "${YELLOW}pnpm installation cancelled. Please install it manually and try again.${NC}\n"
+        exit 1
+        ;;
+    esac
+  fi
+}
+
+
+# Parse global flags from arguments
+parse_global_flags() {
+  SKIP_INSTALL=false
+  SKIP_BUILD=false
+  SKIP_TYPINGS=false
+  BASE_HREF="/"
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --skip-install)
+        SKIP_INSTALL=true
+        ;;
+      --skip-build)
+        SKIP_BUILD=true
+        ;;
+      --skip-typings)
+        SKIP_TYPINGS=true
+        ;;
+      --base-href)
+        shift
+        BASE_HREF="$1"
+        ;;
+      --base-href=*)
+        BASE_HREF="${1#*=}"
+        ;;
+      *)
+        # Unknown argument, ignore
+        ;;
+    esac
+    shift
+  done
+}
+
+
+# Function to display help
+show_help() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   OpenVidu Meet - Build Script${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+  echo -e "${GREEN}Usage:${NC} ./meet.sh [command] [options]"
+  echo
+  echo -e "${GREEN}Global Options (can be used with any command):${NC}"
+  echo -e "  ${YELLOW}--skip-install${NC}    Skip dependency installation (useful in CI)"
+  echo -e "  ${YELLOW}--skip-build${NC}      Skip build steps (for testing only)"
+  echo -e "  ${YELLOW}--skip-typings${NC}    Skip typings build (when already built)"
+  echo -e "  ${YELLOW}--base-href <path>${NC} Set base href for frontend build (default: /)"
+  echo
+  echo -e "${GREEN}Commands:${NC}"
+  echo
+  echo -e "  ${BLUE}install${NC}"
+  echo "    Install all dependencies (pnpm install)"
+  echo
+  echo -e "  ${BLUE}build${NC}"
+  echo "    Build all project components (typings, frontend, backend, webcomponent)"
+  echo
+  echo -e "  ${BLUE}build-typings${NC}"
+  echo "    Build only the shared typings"
+  echo
+  echo -e "  ${BLUE}build-webcomponent${NC}"
+  echo "    Build only the webcomponent package"
+  echo
+  echo -e "  ${BLUE}build-testapp${NC}"
+  echo "    Build the testapp"
+  echo
+  echo -e "  ${BLUE}test-unit-webcomponent${NC}"
+  echo "    Run unit tests for the webcomponent project"
+  echo
+  echo -e "  ${BLUE}test-unit-backend${NC}"
+  echo "    Run unit tests for the backend project"
+  echo
+  echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
+  echo "    Run end-to-end tests for the webcomponent project"
+  echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
+  echo
+  echo -e "  ${BLUE}dev${NC}"
+  echo "    Start development mode with watchers"
+  echo
+  echo -e "  ${BLUE}start${NC}"
+  echo "    Start services in production or CI mode"
+  echo -e "    ${YELLOW}Options:${NC} --prod    Start in production mode"
+  echo -e "            ${NC} --ci      Start in CI mode"
+  echo
+  echo -e "  ${BLUE}start-testapp${NC}"
+  echo "    Start the testapp"
+  echo
+  echo -e "  ${BLUE}build-webcomponent-doc${NC} [output_dir]"
+  echo "    Generate webcomponent documentation"
+  echo
+  echo -e "  ${BLUE}build-rest-api-doc${NC} [output_dir]"
+  echo "    Generate REST API documentation"
+  echo
+  echo -e "  ${BLUE}build-docker${NC} <image-name> [--demos]"
+  echo "    Build Docker image (use --demos for demo deployment)"
+  echo
+  echo -e "  ${BLUE}help${NC}"
+  echo "    Show this help message"
+  echo
+  echo -e "${GREEN}CI/CD Optimized Examples:${NC}"
+  echo -e "  ${YELLOW}# Install once${NC}"
+  echo -e "  ./meet.sh install"
+  echo
+  echo -e "  ${YELLOW}# Build typings once${NC}"
+  echo -e "  ./meet.sh build-typings"
+  echo
+  echo -e "  ${YELLOW}# Start development mode${NC}"
+  echo -e "  ./meet.sh dev"
+  echo
+  echo -e "  ${YELLOW}# Build webcomponent (skip install & typings)${NC}"
+  echo -e "  ./meet.sh build-webcomponent --skip-install --skip-typings"
+  echo
+  echo -e "  ${YELLOW}# Run tests (skip install)${NC}"
+  echo -e "  ./meet.sh test-unit-webcomponent --skip-install"
+  echo
+  echo -e "  ${YELLOW}# Build Docker image${NC}"
+  echo -e "  ./meet.sh build-docker openvidu-meet-ce"
+  echo
+  echo -e "  ${YELLOW}# Build Docker image for demos${NC}"
+  echo -e "  ./meet.sh build-docker openvidu-meet-ce --demos"
+  echo
+}
+
+# Install dependencies
+install_dependencies() {
+  if [ "$SKIP_INSTALL" = true ]; then
+    echo -e "${YELLOW}Skipping dependency installation (--skip-install flag)${NC}"
+    return 0
+  fi
+
+  check_pnpm
+  echo -e "${BLUE}Installing dependencies...${NC}"
+  pnpm install --frozen-lockfile
+}
+
+# Build typings
+build_typings() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Typings${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+  install_dependencies
+  pnpm run build:typings
+  echo -e "${GREEN}✓ Typings built successfully!${NC}"
+}
+
+# Build entire project
+build_project() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building OpenVidu Meet${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  echo
+
+  echo -e "${GREEN}Building all components...${NC}"
+  export BASE_HREF
+  pnpm run build
+
+  echo
+  echo -e "${GREEN}✓ Build completed successfully!${NC}"
+}
+
+# Build only webcomponent
+build_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Webcomponent${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  build_typings
+  echo
+
+  echo -e "${GREEN}Building webcomponent...${NC}"
+  pnpm run build:webcomponent
+
+  echo
+  echo -e "${GREEN}✓ Webcomponent build completed successfully!${NC}"
+}
+
+# Build testapp
+build_testapp() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building TestApp${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  build_typings
+  echo
+
+  echo -e "${GREEN}Building testapp...${NC}"
+  pnpm run build:testapp
+  echo -e "${GREEN}✓ Testapp build completed successfully!${NC}"
+}
+
+# Run unit tests for webcomponent
+test_unit_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Webcomponent Unit Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running webcomponent unit tests...${NC}"
+  pnpm run test:unit-webcomponent
+}
+
+# Run unit tests for backend
+test_unit_backend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Backend Unit Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running backend unit tests...${NC}"
+  pnpm run test:unit-backend
+}
+
+# Run e2e tests for webcomponent
+test_e2e_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Webcomponent E2E Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  # Parse optional flags
+  FORCE_INSTALL=false
+  for arg in "$@"; do
+    case "$arg" in
+      --force-install|-f)
+        FORCE_INSTALL=true
+        ;;
+    esac
+  done
+
+  install_dependencies
+
+  echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
+  PW_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright}
+  mkdir -p "$PW_BROWSERS_PATH"
+
+  MARKER_FILE="$PW_BROWSERS_PATH/.playwright_chromium_installed"
+
+  chromium_present=false
+  if ls "$PW_BROWSERS_PATH" 2>/dev/null | grep -qi chromium; then
+    chromium_present=true
+  fi
+
+  if [ "$FORCE_INSTALL" = true ]; then
+    echo -e "${YELLOW}Force install requested. Will reinstall Playwright browsers.${NC}"
+    chromium_present=false
+  fi
+
+  if [ "$chromium_present" = true ] && [ -f "$MARKER_FILE" ]; then
+    echo -e "${GREEN}Chromium already installed in $PW_BROWSERS_PATH, skipping install.${NC}"
+  else
+    echo -e "${GREEN}Installing Playwright browsers...${NC}"
+    PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright install --with-deps chromium
+    PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright --version 2>/dev/null || true)
+    echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
+    echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
+  fi
+
+  echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
+  pnpm run test:e2e-webcomponent
+}
+
+
+dev() {
+  echo -e "${BLUE}=============================================${NC}"
+  echo -e "${BLUE}  🚀 Starting OpenVidu Meet in dev mode...${NC}"
+  echo -e "${BLUE}=============================================${NC}"
+  echo
+
+  install_dependencies
+
+  # Paths
+  COMPONENTS_PATH="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
+
+  # Define concurrent commands
+  COMPONENTS_CMD="npm --prefix ../openvidu/openvidu-components-angular run lib:serve"
+  TYPINGS_CMD="./scripts/dev/watch-typings.sh"
+  BACKEND_CMD="node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'"
+  FRONTEND_CMD="sleep 3 && wait-on ${COMPONENTS_PATH} && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'"
+  REST_API_DOCS_CMD="pnpm run dev:rest-api-docs"
+  BROWSERSYNC_CMD="node --input-type=module -e \"
+    import browserSync from 'browser-sync';
+    import chalk from 'chalk';
+
+    const bs = browserSync.create();
+    const port = 5080;
+
+    bs.init({
+      proxy: 'http://localhost:6080',
+      files: ['meet-ce/backend/public/**/*'],
+      open: false,
+      reloadDelay: 500,
+      port
+    });
+
+    bs.emitter.on('browser:reload', () => {
+      const now = Date.now();
+      const time = new Date().toLocaleTimeString();
+      console.log(chalk.yellowBright('🔁 Browser reloaded at ' + time));
+
+      const urls = bs.getOption('urls');
+      const local = urls?.get('local') ?? 'undefined';
+      const external = urls?.get('external') ?? 'undefined';
+      console.log(chalk.cyanBright('   OpenVidu Meet:    http://localhost:6080'));
+      console.log(chalk.cyanBright('   Live reload Local:    ' + local));
+      console.log(chalk.cyanBright('   Live reload LAN: ' + external));
+
+      console.log(chalk.gray('---------------------------------------------'));
+    });
+    \""
+
+  echo -e "${YELLOW}⏳ Launching all development watchers...${NC}"
+  echo
+
+  # Run processes concurrently
+  pnpm exec concurrently -k \
+    --names "components,typings,backend,frontend,rest-api-docs,browser-sync" \
+    --prefix-colors "red,green,cyan,magenta,yellow,blue" \
+    "$COMPONENTS_CMD" \
+    "$TYPINGS_CMD" \
+    "$BACKEND_CMD" \
+    "$FRONTEND_CMD" \
+    "$REST_API_DOCS_CMD" \
+    "$BROWSERSYNC_CMD"
+}
+
+# Start services
+start_services() {
+  MODE=""
+  for arg in "$@"; do
+    case "$arg" in
+      --prod)
+        MODE="prod" ;;
+      --ci)
+        MODE="ci" ;;
+    esac
+  done
+
+  if [ -z "$MODE" ]; then
+    echo -e "${RED}Error: start command requires --prod or --ci option${NC}"
+    echo -e "${YELLOW}Usage: ./meet.sh start --prod  or  ./meet.sh start --ci${NC}"
+    exit 1
+  fi
+
+  case "$MODE" in
+    prod)
+      echo -e "${BLUE}Building and starting in production mode...${NC}"
+      NODE_ENV=production pnpm --filter openvidu-meet-backend run start
+      ;;
+    ci)
+      echo -e "${BLUE}Building and starting in CI mode...${NC}"
+      NODE_ENV=ci pnpm --filter openvidu-meet-backend run start
+      ;;
+  esac
+}
+
+# Start testapp
+start_testapp() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Starting TestApp${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  echo -e "${GREEN}Starting testapp...${NC}"
+  pnpm run start:testapp
+}
+
+# Build webcomponent documentation
+build_webcomponent_doc() {
+  local output_dir="$1"
+
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Webcomponent Docs${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  check_pnpm
+
+  echo -e "${GREEN}Generating webcomponent documentation...${NC}"
+  pnpm run build:webcomponent-doc
+
+  if [ -n "$output_dir" ]; then
+    output_dir="${output_dir%/}"
+
+    if [ ! -d "$output_dir" ]; then
+      echo -e "${YELLOW}Creating output directory: $output_dir${NC}"
+      mkdir -p "$output_dir"
+    fi
+
+    if [ -f "docs/webcomponent-events.md" ] && [ -f "docs/webcomponent-commands.md" ] && [ -f "docs/webcomponent-attributes.md" ]; then
+      echo -e "${GREEN}Copying documentation to: $output_dir${NC}"
+      cp docs/webcomponent-events.md "$output_dir/webcomponent-events.md"
+      cp docs/webcomponent-commands.md "$output_dir/webcomponent-commands.md"
+      cp docs/webcomponent-attributes.md "$output_dir/webcomponent-attributes.md"
+      echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
+    else
+      echo -e "${RED}Error: Documentation files not found in docs/ directory${NC}"
+      exit 1
+    fi
+  else
+    echo -e "${YELLOW}No output directory specified. Documentation remains in docs/ directory.${NC}"
+  fi
+
+  echo
+  echo -e "${GREEN}✓ Webcomponent documentation generated successfully!${NC}"
+  echo -e "${YELLOW}Output directory: $output_dir${NC}"
+  rm -f docs/webcomponent-events.md docs/webcomponent-commands.md docs/webcomponent-attributes.md
+}
+
+# Build REST API documentation
+build_rest_api_doc() {
+  local output_dir="$1"
+  CE_REST_API_DOC_PATH="meet-ce/backend/public/openapi/"
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building REST API Docs${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  check_pnpm
+
+  echo -e "${GREEN}Generating REST API documentation...${NC}"
+  pnpm run build:rest-api-docs
+
+  if [ -n "$output_dir" ]; then
+    output_dir="${output_dir%/}"
+
+    if [ ! -d "$output_dir" ]; then
+      echo -e "${YELLOW}Creating output directory: $output_dir${NC}"
+      mkdir -p "$output_dir"
+    fi
+
+    if [ -f "$CE_REST_API_DOC_PATH/public.html" ]; then
+      echo -e "${GREEN}Copying REST API documentation to: $output_dir${NC}"
+      cp "$CE_REST_API_DOC_PATH/public.html" "$output_dir/public.html"
+      echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
+    else
+      echo -e "${RED}Error: REST API documentation files not found${NC}"
+      exit 1
+    fi
+  else
+    echo -e "${YELLOW}No output directory specified. Documentation remains in backend/ directory.${NC}"
+  fi
+
+  echo
+  echo -e "${GREEN}✓ REST API documentation generated successfully!${NC}"
+}
+
+# Build Docker image
+build_docker() {
+  local image_name="$1"
+  local is_demos=false
+
+  if [ -z "$image_name" ]; then
+    echo -e "${RED}Error: You need to specify an image name${NC}"
+    echo -e "${YELLOW}Usage: ./meet.sh build-docker <image-name> [--demos]${NC}"
+    exit 1
+  fi
+
+  # Parse remaining arguments for flags
+  shift # Remove image_name from arguments
+  for arg in "$@"; do
+    case "$arg" in
+      --demos)
+        is_demos=true
+        ;;
+    esac
+  done
+
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Docker Image${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  local final_image_name="$image_name"
+  local base_href="/"
+
+  if [ "$is_demos" = true ]; then
+    final_image_name="${image_name}-demos"
+    base_href="/openvidu-meet/"
+    echo -e "${GREEN}Building demos image: $final_image_name${NC}"
+  else
+    echo -e "${GREEN}Building production image: $final_image_name${NC}"
+  fi
+
+  echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
+  export BUILDKIT_PROGRESS=plain && \
+  docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .
+
+  if [ $? -eq 0 ]; then
+    echo
+    echo -e "${GREEN}✓ Docker image '$final_image_name' built successfully!${NC}"
+  else
+    echo
+    echo -e "${RED}✗ Failed to build Docker image '$final_image_name'${NC}"
+    exit 1
+  fi
+}
+
+# Main script logic
+main() {
+  if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}No command specified.${NC}"
+    echo
+    show_help
+    exit 1
+  fi
+
+  command="$1"
+  shift
+
+  # Parse global flags
+  parse_global_flags "$@"
+
+  case "$command" in
+    install)
+      SKIP_INSTALL=false  # Force install even if flag was set
+      install_dependencies
+      ;;
+    build)
+      build_project
+      ;;
+    build-typings)
+      SKIP_TYPINGS=false  # Force build typings
+      build_typings
+      ;;
+    build-webcomponent)
+      build_webcomponent
+      ;;
+    build-testapp)
+      build_testapp
+      ;;
+    test-unit-webcomponent)
+      test_unit_webcomponent
+      ;;
+    test-unit-backend)
+      test_unit_backend
+      ;;
+    test-e2e-webcomponent)
+      test_e2e_webcomponent "$@"
+      ;;
+    dev)
+      dev
+      ;;
+    start)
+      start_services "$@"
+      ;;
+    start-testapp)
+      start_testapp
+      ;;
+    build-webcomponent-doc)
+      build_webcomponent_doc "$1"
+      ;;
+    build-rest-api-doc)
+      build_rest_api_doc "$1"
+      ;;
+    build-docker)
+      build_docker "$@"
+      ;;
+    help|--help|-h)
+      show_help
+      ;;
+    *)
+      echo -e "${RED}Error: Unknown command '$command'${NC}"
+      echo
+      show_help
+      exit 1
+      ;;
+  esac
+}
+
+# Run main function with all arguments
+main "$@"

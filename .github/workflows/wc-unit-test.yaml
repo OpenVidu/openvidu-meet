@@ -10,18 +10,28 @@ jobs:
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.13'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Setup OpenVidu Meet WebComponent
-        shell: bash
-        run: ./prepare.sh --typings --webcomponent
+
+      - name: Install dependencies
+        run: ./meet.sh install
+
+      - name: Build typings
+        run: ./meet.sh build-typings --skip-install
+
+      - name: Build webcomponent
+        run: ./meet.sh build-webcomponent --skip-install --skip-typings
+
       - name: Run tests
-        run: |
-          cd frontend/webcomponent
-          npm run test:unit
+        run: ./meet.sh test-unit-webcomponent --skip-install
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main

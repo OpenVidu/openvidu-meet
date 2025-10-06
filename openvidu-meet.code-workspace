@@ -1,6 +1,10 @@
 {
 	"folders": [
 		{
+			"name": "openvidu-components-angular",
+			"path": "../openvidu/openvidu-components-angular"
+		},
+		{
 			"path": "."
 		},
 		{
@@ -13,7 +17,7 @@
 		},
 		{
 			"name": "frontend-src",
-			"path": "frontend/src",
+			"path": "frontend/src"
 		},
 		{
 			"name": "testapp",
@@ -27,6 +31,9 @@
 			"name": "webcomponent",
 			"path": "frontend/webcomponent"
 		},
+		{
+			"path": "../openvidu/openvidu-components-angular"
+		}
 	],
 	"settings": {
 		"jest.disabledWorkspaceFolders": ["openvidu-meet", "types", "frontend"],
