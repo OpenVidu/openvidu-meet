@@ -12,7 +12,7 @@
 		"build:testapp": "pnpm --filter testapp run build",
 		"build:all": "pnpm run build:typings && pnpm run build:frontend && pnpm run build:backend && pnpm run build:webcomponent && pnpm run build:testapp",
 		"build:wc-doc": "node scripts/generate-webcomponent-docs.js docs",
-		"dev": "concurrently -k -n backend,frontend,typings,docs -c cyan,magenta,green,yellow \"pnpm run dev:backend\" \"pnpm run dev:frontend\" \"pnpm run dev:typings\" \"pnpm run dev:rest-api-docs\"",
+		"dev": "concurrently -k -n typings,backend,frontend,rest-api-docs -c green,cyan,magenta,yellow \"./scripts/dev/watch-typings.sh\" \"./scripts/dev/wait-for-typings.sh && pnpm run dev:backend && echo\" \"./scripts/dev/wait-for-typings.sh && pnpm run dev:frontend\"  \"pnpm run dev:rest-api-docs\"",
 		"dev:backend": "pnpm --filter openvidu-meet-backend run start:dev",
 		"dev:frontend": "pnpm --filter openvidu-meet-frontend run build:dev",
 		"dev:typings": "pnpm --filter @openvidu-meet/typings run dev",
