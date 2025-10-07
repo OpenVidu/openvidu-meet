@@ -1,13 +1,15 @@
-import { MeetRecordingInfo, MeetRoom, ParticipantRole } from '@typings-ce';
-import { inject, injectable } from 'inversify';
-import { SendDataOptions } from 'livekit-server-sdk';
-import { OpenViduComponentsAdapterHelper, OpenViduComponentsSignalPayload } from '../helpers/index.js';
 import {
+	MeetRecordingInfo,
+	MeetRoom,
+	ParticipantRole,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRoomConfigUpdatedPayload,
 	MeetSignalPayload,
 	MeetSignalType
-} from '../typings/ce/event.model.js';
+} from '@openvidu-meet/typings';
+import { inject, injectable } from 'inversify';
+import { SendDataOptions } from 'livekit-server-sdk';
+import { OpenViduComponentsAdapterHelper, OpenViduComponentsSignalPayload } from '../helpers/index.js';
 import { LiveKitService, LoggerService } from './index.js';
 
 /**

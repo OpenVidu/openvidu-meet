@@ -1,74 +1,87 @@
-# @types/openvidu-meet
+# @openvidu-meet/typings
 
-This library contains common types used by the OpenVidu Meet application. It is a shared library that is used by both the frontend and backend of the application.
+Shared TypeScript type definitions for the OpenVidu Meet monorepo.
 
-## Build
+## 📦 Package Structure
 
-To build the library, run the following command:
+```
+typings/
+├── src/              # ✏️ Source TypeScript files (.ts only)
+│   ├── index.ts      # Main export barrel
+│   ├── room-config.ts
+│   ├── user.ts
+│   └── ...
+│
+├── dist/             # 📦 Compiled output (generated, DO NOT EDIT)
+│   ├── index.d.ts    # Type definitions
+│   ├── index.js      # Transpiled JavaScript
+│   ├── index.js.map  # Source maps
+│   └── ...
+│
+├── package.json      # Package configuration
+├── tsconfig.json     # Base TypeScript config
+└── tsconfig.build.json  # Build-specific config
+```
 
+## 🛠️ Development
+
+### Build the package
 ```bash
-pnpm install
 pnpm run build
 ```
+This compiles `src/*.ts` → `dist/*.{d.ts,js,js.map}`
 
-## Serve
-
-For developing purposes, you can serve the library for actively watching changes. To do so, run the following command:
-
+### Watch mode (during development)
 ```bash
-pnpm run serve
+pnpm run dev
+```
+Auto-recompiles when you change files in `src/`
+
+### Clean build artifacts
+```bash
+pnpm run clean
+```
+Removes the `dist/` directory
+
+## 📝 Adding New Types
+
+1. Create your `.ts` file in `src/`
+   ```typescript
+   // src/my-new-type.ts
+   export interface MyNewType {
+     id: string;
+     name: string;
+   }
+   ```
+
+2. Export it from `src/index.ts`
+   ```typescript
+   export * from './my-new-type.js';
+   ```
+   **Note**: Use `.js` extension in imports (ESM requirement)
+
+3. Build the package
+   ```bash
+   pnpm run build
+   ```
+
+4. The types are now available to all workspaces:
+   ```typescript
+   import { MyNewType } from '@openvidu-meet/typings';
+   ```
+
+
+## 🔗 Usage in Workspaces
+
+All workspaces (backend, frontend, webcomponent) depend on this package:
+
+```json
+{
+  "dependencies": {
+    "@openvidu-meet/typings": "workspace:*"
+  }
+}
 ```
 
-## Sync with OpenVidu Meet
+The `workspace:*` protocol tells pnpm to use the local workspace version.
 
-To apply changes from this library to the OpenVidu Meet application, use the `sync-types.sh` script:
-
-### Basic Usage
-
-```bash
-# Sync to all targets (default)
-./sync-types.sh
-
-# Sync to Community Edition targets only
-./sync-types.sh ce
-
-# Sync to Professional Edition target only
-./sync-types.sh pro
-
-# Sync to a specific target
-./sync-types.sh frontend
-```
-
-### Advanced Options
-
-```bash
-# Show what would be done without actually doing it
-./sync-types.sh --dry-run ce
-
-# Verbose output
-./sync-types.sh --verbose frontend
-
-# Add headers to source files and sync
-./sync-types.sh --add-headers
-
-# List all available targets
-./sync-types.sh --list-targets
-
-# Show help
-./sync-types.sh --help
-```
-
-### Available Targets
-
-- `frontend`: Frontend shared components
-- `backend`: Backend types
-- `webcomponent`: Web component types
-- `pro`: Professional edition types
-
-### Legacy NPM Commands
-
-For compatibility, you can still use:
-
-```bash
-pnpm run sync-ce
-```

@@ -1,4 +1,4 @@
-import { MeetApiKey, User } from '@typings-ce';
+import { MeetApiKey, User } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { PasswordHelper } from '../helpers/index.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';

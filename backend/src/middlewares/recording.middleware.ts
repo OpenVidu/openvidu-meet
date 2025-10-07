@@ -1,4 +1,4 @@
-import { MeetRoom, UserRole } from '@typings-ce';
+import { MeetRoom, UserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';

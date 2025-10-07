@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRecordingStatus } from '@lib/typings/ce';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 
 @Component({

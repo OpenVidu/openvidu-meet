@@ -15,10 +15,10 @@ export const enum AuthTransportMode {
 /**
  * Authentication modes available to enter a room.
  */
-export const enum AuthMode {
-    NONE = 'none', // No authentication required
-    MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
-    ALL_USERS = 'all_users' // All users need authentication
+export enum AuthMode {
+	NONE = 'none', // No authentication required
+	MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
+	ALL_USERS = 'all_users', // All users need authentication
 }
 
 /**
@@ -31,10 +31,10 @@ export interface AuthMethod {
 /**
  * Enum for authentication types.
  */
-export const enum AuthType {
-    SINGLE_USER = 'single_user'
-    // MULTI_USER = 'multi_user',
-    // OAUTH_ONLY = 'oauth_only'
+export enum AuthType {
+	SINGLE_USER = 'single_user',
+	// MULTI_USER = 'multi_user',
+	// OAUTH_ONLY = 'oauth_only'
 }
 
 /**
@@ -78,7 +78,7 @@ export type ValidAuthMethod = SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth 
 /**
  * Supported OAuth providers.
  */
-// export const enum OAuthProvider {
+// export enum OAuthProvider {
 //     GOOGLE = 'google',
 //     GITHUB = 'github'
 // }

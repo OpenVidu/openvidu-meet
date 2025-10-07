@@ -10,7 +10,7 @@ import {
 	MeetRoomOptions,
 	MeetRoomRoleAndPermissions,
 	MeetRoomStatus
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({

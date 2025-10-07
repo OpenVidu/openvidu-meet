@@ -1,4 +1,4 @@
-export const enum MeetRecordingStatus {
+export enum MeetRecordingStatus {
     STARTING = 'starting',
     ACTIVE = 'active',
     ENDING = 'ending',
@@ -8,7 +8,7 @@ export const enum MeetRecordingStatus {
     LIMIT_REACHED = 'limit_reached'
 }
 
-// export const enum MeetRecordingOutputMode {
+// export enum MeetRecordingOutputMode {
 // 	COMPOSED = 'composed',
 // }
 

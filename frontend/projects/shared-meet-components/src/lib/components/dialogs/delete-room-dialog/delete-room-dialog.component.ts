@@ -11,22 +11,22 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import type { DeleteRoomDialogOptions } from '@lib/models';
-import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@lib/typings/ce';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 
 @Component({
-    selector: 'ov-delete-room-dialog',
-    imports: [
-        FormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatRadioModule,
-        MatDialogActions,
-        MatDialogContent,
-        MatDialogTitle
-    ],
-    templateUrl: './delete-room-dialog.component.html',
-    styleUrl: './delete-room-dialog.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+	selector: 'ov-delete-room-dialog',
+	imports: [
+		FormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatRadioModule,
+		MatDialogActions,
+		MatDialogContent,
+		MatDialogTitle
+	],
+	templateUrl: './delete-room-dialog.component.html',
+	styleUrl: './delete-room-dialog.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeleteRoomDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DeleteRoomDialogComponent>);

@@ -6,10 +6,10 @@ import {
 	FeatureConfigurationService,
 	GlobalConfigService,
 	HttpService,
-	ParticipantService,
 	TokenStorageService
+	ParticipantService,
 } from '@lib/services';
-import { AuthTransportMode, MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
+import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@openvidu-meet/typings';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 

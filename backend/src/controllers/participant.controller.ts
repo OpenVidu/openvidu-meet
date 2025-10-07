@@ -1,4 +1,4 @@
-import { AuthTransportMode, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@typings-ce';
+import { AuthTransportMode, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';

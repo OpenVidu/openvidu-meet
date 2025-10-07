@@ -32,9 +32,6 @@
       ],
       "@lib/*": [
         "projects/shared-meet-components/src/lib/*"
-      ],
-      "@typings-ce": [
-        "projects/shared-meet-components/src/lib/typings/ce/index.ts"
       ]
     },
     "importHelpers": true,

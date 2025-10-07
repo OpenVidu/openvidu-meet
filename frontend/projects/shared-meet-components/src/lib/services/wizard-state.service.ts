@@ -7,7 +7,7 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 
 // Default room config following the app's defaults
 const DEFAULT_CONFIG: MeetRoomConfig = {

@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRoom } from '@typings-ce';
+import { MeetRecordingInfo, MeetRoom } from '@openvidu-meet/typings';
 
 export class UtilsHelper {
 	// Prevent instantiation of this utility class.

@@ -14,7 +14,7 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions
-} from '@lib/typings/ce';
+} from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({

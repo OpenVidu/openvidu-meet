@@ -1,4 +1,4 @@
-import { AuthMode, MeetRecordingAccess, MeetRoom, ParticipantRole, UserRole } from '@typings-ce';
+import { AuthMode, MeetRecordingAccess, MeetRoom, ParticipantRole, UserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import {

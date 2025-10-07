@@ -19,6 +19,9 @@
 	"author": "",
 	"license": "Apache-2.0",
 	"description": "",
+	"dependencies": {
+		"@openvidu-meet/typings": "workspace:*"
+	},
 	"devDependencies": {
 		"@playwright/test": "1.53.2",
 		"@rollup/plugin-commonjs": "28.0.2",

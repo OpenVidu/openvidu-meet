@@ -12,7 +12,7 @@ import {
 	MeetRoomStatus,
 	ParticipantRole,
 	RecordingPermissions
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
 import ms from 'ms';

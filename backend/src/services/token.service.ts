@@ -6,7 +6,7 @@ import {
 	ParticipantRole,
 	RecordingPermissions,
 	User
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';

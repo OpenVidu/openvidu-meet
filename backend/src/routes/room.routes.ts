@@ -1,4 +1,4 @@
-import { UserRole } from '@typings-ce';
+import { UserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as roomCtrl from '../controllers/room.controller.js';

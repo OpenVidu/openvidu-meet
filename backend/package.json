@@ -35,7 +35,6 @@
 		"start:dev": "NODE_ENV=development nodemon",
 		"start:ci": "NODE_ENV=ci node dist/src/server.js",
 		"package:build": "pnpm run build:prod && pnpm pack",
-		"typings:sync": "pnpm --filter=@types/openvidu-meet run sync-ce",
 		"test:integration": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-rooms": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/rooms\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-recordings": "node --experimental-vm-modules node_modules/.bin/jest --maxWorkers=1 --maxConcurrency=1 --forceExit --testPathPattern \"tests/integration/api/recordings\" --ci --reporters=default --reporters=jest-junit",
@@ -50,6 +49,7 @@
 		"format:code": "prettier --ignore-path .gitignore --write '**/*.{ts,js,json,md}'"
 	},
 	"dependencies": {
+		"@openvidu-meet/typings": "workspace:*",
 		"@aws-sdk/client-s3": "3.846.0",
 		"@azure/storage-blob": "12.27.0",
 		"@google-cloud/storage": "7.17.1",

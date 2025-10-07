@@ -1,4 +1,4 @@
-import { SecurityConfig } from '@typings-ce';
+import { SecurityConfig } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../../config/index.js';
 import { handleError } from '../../models/error.model.js';

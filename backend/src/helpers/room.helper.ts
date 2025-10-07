@@ -1,4 +1,4 @@
-import { MeetRoom, MeetRoomOptions } from '@typings-ce';
+import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 import { MEET_NAME_ID } from '../environment.js';
 
 export class MeetRoomHelper {

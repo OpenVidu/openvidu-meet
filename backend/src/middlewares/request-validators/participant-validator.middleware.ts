@@ -1,4 +1,4 @@
-import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@typings-ce';
+import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';

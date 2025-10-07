@@ -1,14 +1,4 @@
-import {
-	AuthMode,
-	AuthTransportMode,
-	AuthType,
-	GlobalConfig,
-	MeetApiKey,
-	MeetRecordingInfo,
-	MeetRoom,
-	User,
-	UserRole
-} from '@typings-ce';
+import { AuthMode, AuthTransportMode, AuthType, GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, User, UserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';

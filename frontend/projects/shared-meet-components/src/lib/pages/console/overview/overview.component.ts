@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { NavigationService, RecordingService, RoomService } from '@lib/services';
-import { MeetRecordingStatus, MeetRoom, MeetRoomStatus } from '@lib/typings/ce';
+import { MeetRecordingStatus, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 
 interface OverviewStats {
 	totalRooms: number;

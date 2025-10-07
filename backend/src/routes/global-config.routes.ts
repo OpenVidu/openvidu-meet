@@ -1,4 +1,4 @@
-import { UserRole } from '@typings-ce';
+import { UserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as appearanceConfigCtrl from '../controllers/global-config/appearance-config.controller.js';

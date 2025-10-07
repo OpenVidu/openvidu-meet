@@ -6,7 +6,7 @@ import {
 	MeetWebhookEventType,
 	MeetWebhookPayload,
 	WebhookConfig
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import {

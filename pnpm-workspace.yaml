@@ -1,14 +1,17 @@
-# pnpm workspace configuration
-# This defines the packages that are part of the workspace
-
 packages:
-  - 'typings'
-  - 'frontend'
-  - 'frontend/webcomponent'
-  - 'backend'
-  - 'testapp'
+  - typings
+  - frontend
+  - frontend/webcomponent
+  - backend
+  - testapp
 
-# Exclude these directories from workspace
-# exclude:
-#   - '**/*.test.ts'
-#   - '**/node_modules/**'
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - chromedriver
+  - core-js
+  - esbuild
+  - lmdb
+  - msgpackr-extract
+
+onlyBuiltDependencies:
+  - bcrypt

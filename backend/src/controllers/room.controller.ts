@@ -7,7 +7,7 @@ import {
 	MeetRoomOptions,
 	MeetRoomRoleAndPermissions,
 	ParticipantRole
-} from '@typings-ce';
+} from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
