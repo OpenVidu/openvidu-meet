@@ -608,7 +608,8 @@ export const expectValidParticipantTokenResponse = (
 	expect(participantTokenCookie).toBeDefined();
 	expect(participantTokenCookie).toContain(token);
 	expect(participantTokenCookie).toContain('HttpOnly');
-	expect(participantTokenCookie).toContain('SameSite=Strict');
+	expect(participantTokenCookie).toContain('SameSite=None');
+	expect(participantTokenCookie).toContain('Secure');
 	expect(participantTokenCookie).toContain('Path=/');
 };
 
@@ -639,14 +640,15 @@ export const expectValidRecordingTokenResponse = (
 	// Check that the token is included in a cookie
 	expect(response.headers['set-cookie']).toBeDefined();
 	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const participantTokenCookie = cookies.find((cookie) =>
+	const recordingTokenCookie = cookies.find((cookie) =>
 		cookie.startsWith(`${INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME}=`)
 	) as string;
-	expect(participantTokenCookie).toBeDefined();
-	expect(participantTokenCookie).toContain(token);
-	expect(participantTokenCookie).toContain('HttpOnly');
-	expect(participantTokenCookie).toContain('SameSite=Strict');
-	expect(participantTokenCookie).toContain('Path=/');
+	expect(recordingTokenCookie).toBeDefined();
+	expect(recordingTokenCookie).toContain(token);
+	expect(recordingTokenCookie).toContain('HttpOnly');
+	expect(recordingTokenCookie).toContain('SameSite=None');
+	expect(recordingTokenCookie).toContain('Secure');
+	expect(recordingTokenCookie).toContain('Path=/');
 };
 
 const decodeJWTToken = (token: string) => {
