@@ -2,11 +2,12 @@
 	"env": {
 		"NODE_ENV": "development"
 	},
-	"watch": ["openapi/**/*.yaml", "src", "../typings/dist"],
-	"ext": "js,json,ts,yaml,yml",
+	"watch": ["src", "../typings/dist"],
+	"ext": "js,json,ts",
 	"ignore": ["node_modules", "dist", "src/typings", "public"],
+	"delay": "500",
 	"exec": "node --import tsx ./src/server.ts",
 	"events": {
-		"restart": "npm run doc:api && npm run doc:internal-api"
+		"restart": "echo '🔄 Backend restarted due to source change'"
 	}
 }
