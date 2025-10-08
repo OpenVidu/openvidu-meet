@@ -235,8 +235,8 @@ export class RecordingService {
 	 * @param recordingId - The ID of the recording to play
 	 */
 	async playRecording(recordingId: string) {
-		const privateAccess = await this.authService.isUserAuthenticated();
-		const { url } = await this.generateRecordingUrl(recordingId, privateAccess);
+		// const privateAccess = await this.authService.isUserAuthenticated();
+		const { url } = await this.generateRecordingUrl(recordingId, false);
 		window.open(url, '_blank');
 	}
 
