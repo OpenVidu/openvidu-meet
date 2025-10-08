@@ -6,6 +6,7 @@ export const getCookieOptions = (path: string, expiration?: string): CookieOptio
 		httpOnly: true,
 		secure: true,
 		sameSite: 'none',
+		partitioned: true,
 		maxAge: expiration ? ms(expiration as StringValue) : undefined,
 		path
 	};
