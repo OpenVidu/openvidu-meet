@@ -69,7 +69,7 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 
 	constructor(public viewportService: ViewportService) {}
 
-	onVideoLoaded() {
+	async onVideoLoaded() {
 		this.isVideoLoaded = true;
 		this.hasVideoError = false;
 		this.videoLoaded.emit();
@@ -77,6 +77,20 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 		// Start controls timeout for mobile
 		if (this.viewportService.isMobileView()) {
 			this.resetControlsTimeout();
+		}
+
+		// try play unmuted and if it fails, mute and play again
+		if (this.videoPlayer && this.videoPlayer.nativeElement) {
+			try {
+				await this.videoPlayer.nativeElement.play();
+				// Autoplay started successfully without muting
+			} catch (error) {
+				// Autoplay was prevented, mute and try again
+				this.videoPlayer!.nativeElement.muted = true;
+				this.videoPlayer!.nativeElement.play().catch((err) => {
+					console.error('Error playing video after muting:', err);
+				});
+			}
 		}
 	}
 
