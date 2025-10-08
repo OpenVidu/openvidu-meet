@@ -105,7 +105,7 @@
 		"ts-jest": "29.4.0",
 		"ts-jest-resolver": "2.0.1",
 		"tsx": "4.20.3",
-		"typescript": "5.8.3",
+		"typescript": "5.9.2",
 		"unzipper": "0.12.3"
 	},
 	"jest-junit": {

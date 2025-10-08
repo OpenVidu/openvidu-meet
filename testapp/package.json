@@ -32,6 +32,6 @@
 		"@types/socket.io-client": "1.4.36",
 		"concurrently": "9.1.2",
 		"ts-node-dev": "2.0.0",
-		"typescript": "5.8.3"
+		"typescript": "5.9.2"
 	}
 }
