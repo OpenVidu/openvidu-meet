@@ -27,14 +27,12 @@
 		"package.json"
 	],
 	"scripts": {
-		"build:prod": "tsc",
-		"postbuild:prod": "pnpm run doc:api && pnpm run doc:internal-api",
+		"build": "tsc",
 		"doc:api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-api.yaml --ui=stoplight --theme=light --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o ../public/openapi/public.html",
 		"doc:internal-api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-internal-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet Internal REST API' --description 'OpenVidu Meet Internal REST API' -o ../public/openapi/internal.html",
-		"start:prod": "NODE_ENV=production node dist/src/server.js",
+		"start": "node dist/src/server.js",
 		"start:dev": "NODE_ENV=development concurrently -k -n server,typecheck -c cyan,yellow \"pnpm tsx watch --clear-screen=false --include src ./src/server.ts\" \"pnpm run dev:typecheck\"",
 		"dev:typecheck": "node ./check-types.mjs",
-		"start:ci": "NODE_ENV=ci node dist/src/server.js",
 		"package:build": "pnpm run build:prod && pnpm pack",
 		"test:integration": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-rooms": "node --experimental-vm-modules node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/rooms\" --ci --reporters=default --reporters=jest-junit",

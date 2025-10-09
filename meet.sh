@@ -58,7 +58,9 @@ show_help() {
   echo -e "    ${YELLOW}Options:${NC} --force-install|-f    Force reinstall of Playwright browsers"
   echo
   echo -e "  ${BLUE}start${NC}"
-  echo "    Start development mode with hot-reload for all components"
+  echo "    Start services. By default starts development watchers."
+  echo -e "    ${YELLOW}Options:${NC} --prod    Start in production mode (build + start)"
+  echo -e "            ${NC} --ci      Start in CI mode (build + start)"
   echo
   echo -e "  ${BLUE}build-webcomponent-doc${NC} [output_dir]"
   echo "    Generate webcomponent documentation"
@@ -70,13 +72,36 @@ show_help() {
   echo -e "    ${YELLOW}output_dir${NC}: Optional. Directory where documentation will be copied"
   echo -e "    ${YELLOW}Example:${NC} ./meet.sh build-rest-api-doc /path/to/docs"
   echo
+  echo -e "  ${BLUE}build-typings${NC}"
+  echo "    Build only the shared typings"
+  echo
+  echo -e "  ${BLUE}start-testapp${NC}"
+  echo "    Start the testapp (pnpm run start:testapp)"
+  echo
+  echo -e "  ${BLUE}build-testapp${NC}"
+  echo "    Build the testapp (pnpm run build:testapp)"
+  echo
   echo -e "  ${BLUE}help${NC}"
   echo "    Show this help message"
   echo
-  echo -e "${GREEN}Examples:${NC}"
-  echo -e "  ${YELLOW}./meet.sh build${NC}                           # Build entire project"
-  echo -e "  ${YELLOW}./meet.sh start${NC}                           # Start development mode"
+}
+
+# Install dependencies helper
+install_dependencies() {
+  check_pnpm
+  echo -e "${BLUE}Installing dependencies...${NC}"
+  pnpm install
+}
+
+# Build typings helper
+build_typings() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Typings${NC}"
+  echo -e "${BLUE}=====================================${NC}"
   echo
+  check_pnpm
+  pnpm run build:typings
+  echo -e "${GREEN}✓ Typings built successfully!${NC}"
 }
 
 # Function to build the entire project
@@ -87,9 +112,7 @@ build_project() {
   echo
 
   check_pnpm
-
-  echo -e "${BLUE}Installing dependencies...${NC}"
-  pnpm install
+  install_dependencies
   echo
 
   echo -e "${GREEN}Building all components...${NC}"
@@ -107,13 +130,74 @@ start_dev() {
   echo
 
   check_pnpm
-
-  echo -e "${BLUE}Installing dependencies...${NC}"
-  pnpm install
+  install_dependencies
   echo
 
   echo -e "${GREEN}Starting development servers...${NC}"
   pnpm run dev
+}
+
+# Start services with optional mode (dev/default, prod, ci)
+start_services() {
+  MODE="dev"
+  for arg in "$@"; do
+    case "$arg" in
+      --prod)
+        MODE="prod" ;;
+      --ci)
+        MODE="ci" ;;
+    esac
+  done
+
+  case "$MODE" in
+    dev)
+      echo -e "${BLUE}Starting development mode (watchers)...${NC}"
+      install_dependencies
+      pnpm run dev
+      ;;
+    prod)
+      echo -e "${BLUE}Building backend and starting in production mode...${NC}"
+      install_dependencies
+      # Build only backend to ensure dist exists
+      pnpm run build
+      NODE_ENV=production pnpm --filter openvidu-meet-backend run start:prod
+      ;;
+    ci)
+      echo -e "${BLUE}Building backend and starting in CI mode...${NC}"
+      install_dependencies
+      pnpm run build
+      NODE_ENV=ci pnpm --filter openvidu-meet-backend run start
+      ;;
+    *)
+      echo -e "${RED}Unknown start mode: $MODE${NC}"
+      exit 1
+      ;;
+  esac
+}
+
+# Start testapp
+start_testapp() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Starting TestApp${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  echo -e "${GREEN}Starting testapp...${NC}"
+  pnpm run start:testapp
+}
+
+# Build testapp
+build_testapp() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building TestApp${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  echo -e "${GREEN}Building testapp...${NC}"
+  pnpm run build:testapp
+  echo -e "${GREEN}✓ Testapp build completed successfully!${NC}"
 }
 
 # Function to build only webcomponent
@@ -124,9 +208,8 @@ build_webcomponent() {
   echo
 
   check_pnpm
-
-  echo -e "${GREEN}Installing dependencies...${NC}"
-  pnpm install
+  install_dependencies
+  build_typings
   echo
 
   echo -e "${GREEN}Building webcomponent...${NC}"
@@ -166,8 +249,8 @@ test_e2e_webcomponent() {
     esac
   done
 
-  check_pnpm
-
+  # Ensure pnpm is installed and dependencies available
+  install_dependencies
 
   echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
   # Respect existing PLAYWRIGHT_BROWSERS_PATH or use default
@@ -301,14 +384,23 @@ main() {
   shift  # Remove first argument (command)
 
   case "$command" in
+    start)
+      start_services "$@"
+      ;;
     build)
       build_project
       ;;
     build-webcomponent)
       build_webcomponent
       ;;
-    start)
-      start_dev
+    build-testapp)
+      build_testapp
+      ;;
+    start-testapp)
+      start_testapp
+      ;;
+    build-typings)
+      build_typings
       ;;
     build-webcomponent-doc)
       build_webcomponent_doc "$1"
