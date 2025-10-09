@@ -16,16 +16,14 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
       - name: Setup OpenVidu Meet WebComponent
         shell: bash
-        run: ./prepare.sh --typings --webcomponent
+        run: ./meet.sh build-webcomponent
       - name: Run tests
-        run: |
-          cd frontend/webcomponent
-          pnpm run test:unit
+        run: ./meet.sh test-unit-webcomponent
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main

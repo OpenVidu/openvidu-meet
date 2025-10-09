@@ -16,7 +16,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
@@ -40,12 +40,7 @@ jobs:
         with:
           skip_checkout: 'true'
       - name: Run tests
-        run: |
-          cd frontend/webcomponent
-          # Install Playwright browsers
-          mkdir -p /tmp/ms-playwright
-          pnpm exec playwright install --with-deps chromium
-          pnpm run test:e2e
+        run: ./meet.sh test-e2e-webcomponent
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
