@@ -119,7 +119,7 @@ start_dev() {
 # Function to build only webcomponent
 build_webcomponent() {
   echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Building Webcomponent Only${NC}"
+  echo -e "${BLUE}   Building Webcomponent${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
 
