@@ -53,6 +53,10 @@ show_help() {
   echo -e "  ${BLUE}test-unit-webcomponent${NC}"
   echo "    Run unit tests for the webcomponent project"
   echo
+  echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
+  echo "    Run end-to-end tests for the webcomponent project (install Playwright chromium)"
+  echo -e "    ${YELLOW}Options:${NC} --force-install|-f    Force reinstall of Playwright browsers"
+  echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start development mode with hot-reload for all components"
   echo
@@ -143,6 +147,70 @@ test_unit_webcomponent() {
 
   echo -e "${GREEN}Running webcomponent unit tests...${NC}"
   pnpm run test:unit-webcomponent
+}
+
+# Function to run e2e tests for webcomponent (install browser deps first)
+test_e2e_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Webcomponent E2E Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  # Parse optional flags
+  FORCE_INSTALL=false
+  for arg in "$@"; do
+    case "$arg" in
+      --force-install|-f)
+        FORCE_INSTALL=true
+        ;;
+    esac
+  done
+
+  check_pnpm
+
+  echo -e "${GREEN}Installing dependencies...${NC}"
+  pnpm install
+  echo
+
+  # Change into webcomponent folder for tests
+  # if ! pushd frontend/webcomponent > /dev/null; then
+  #   echo -e "${RED}Cannot change directory to frontend/webcomponent${NC}"
+  #   exit 1
+  # fi
+
+  echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
+  # Respect existing PLAYWRIGHT_BROWSERS_PATH or use default
+  PW_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright}
+  mkdir -p "$PW_BROWSERS_PATH"
+
+  MARKER_FILE="$PW_BROWSERS_PATH/.playwright_chromium_installed"
+
+  chromium_present=false
+  # Heuristic: check for any entry with 'chromium' in the browsers path
+  if ls "$PW_BROWSERS_PATH" 2>/dev/null | grep -qi chromium; then
+    chromium_present=true
+  fi
+
+  if [ "$FORCE_INSTALL" = true ]; then
+    echo -e "${YELLOW}Force install requested. Will reinstall Playwright browsers.${NC}"
+    chromium_present=false
+  fi
+
+  if [ "$chromium_present" = true ] && [ -f "$MARKER_FILE" ]; then
+    echo -e "${GREEN}Chromium appears already installed and marker found in $PW_BROWSERS_PATH, skipping install.${NC}"
+  else
+    echo -e "${GREEN}Chromium not found or marker missing. Installing Playwright browsers...${NC}"
+    PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright install --with-deps chromium
+    # Write marker with timestamp and optional playwright version
+    PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright --version 2>/dev/null || true)
+    echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
+    echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
+  fi
+
+  echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
+  pnpm run test:e2e-webcomponent
+
+  # popd > /dev/null
 }
 
 # Function to build webcomponent documentation
@@ -254,6 +322,9 @@ main() {
       ;;
     build-webcomponent-doc)
       build_webcomponent_doc "$1"
+      ;;
+    test-e2e-webcomponent)
+      test_e2e_webcomponent
       ;;
     test-unit-webcomponent)
       test_unit_webcomponent
