@@ -17,6 +17,7 @@ const jestConfig = {
     }
   },
   moduleNameMapper: {
+    '^@openvidu-meet/typings$': '<rootDir>/../../typings/src/index.ts',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js'
   }
 }
