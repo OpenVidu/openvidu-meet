@@ -56,6 +56,8 @@ Thumbs.db
 .git/*
 
 
+**/**/test-results
+
 backend/public/
 
 frontend/projects/shared-meet-components/src/lib/typings/
