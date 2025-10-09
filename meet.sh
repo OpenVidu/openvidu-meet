@@ -117,13 +117,17 @@ start_dev() {
 }
 
 # Function to build only webcomponent
-build_webcomponent_only() {
+build_webcomponent() {
   echo -e "${BLUE}=====================================${NC}"
   echo -e "${BLUE}   Building Webcomponent Only${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
 
   check_pnpm
+
+  echo -e "${GREEN}Installing dependencies...${NC}"
+  pnpm install
+  echo
 
   echo -e "${GREEN}Building webcomponent...${NC}"
   pnpm run build:webcomponent
@@ -140,10 +144,6 @@ test_unit_webcomponent() {
   echo
 
   check_pnpm
-
-  echo -e "${GREEN}Installing dependencies...${NC}"
-  pnpm install
-  echo
 
   echo -e "${GREEN}Running webcomponent unit tests...${NC}"
   pnpm run test:unit-webcomponent
@@ -168,15 +168,6 @@ test_e2e_webcomponent() {
 
   check_pnpm
 
-  echo -e "${GREEN}Installing dependencies...${NC}"
-  pnpm install
-  echo
-
-  # Change into webcomponent folder for tests
-  # if ! pushd frontend/webcomponent > /dev/null; then
-  #   echo -e "${RED}Cannot change directory to frontend/webcomponent${NC}"
-  #   exit 1
-  # fi
 
   echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
   # Respect existing PLAYWRIGHT_BROWSERS_PATH or use default
@@ -210,7 +201,6 @@ test_e2e_webcomponent() {
   echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
   pnpm run test:e2e-webcomponent
 
-  # popd > /dev/null
 }
 
 # Function to build webcomponent documentation
@@ -315,7 +305,7 @@ main() {
       build_project
       ;;
     build-webcomponent)
-      build_webcomponent_only
+      build_webcomponent
       ;;
     start)
       start_dev
