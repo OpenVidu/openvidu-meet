@@ -8,7 +8,6 @@ import {
 	deleteAllRooms,
 	joinRoomAs,
 	leaveRoom,
-	loginAsAdmin,
 	prepareForJoiningRoom,
 	startStopRecording,
 	updateRoomConfig,
@@ -22,12 +21,8 @@ let recordingCreated = false;
 test.describe('Recording Access Tests', () => {
 	let roomId: string;
 	let participantName: string;
-	let adminCookie: string;
 
 	test.beforeAll(async () => {
-		// Login as admin to get authentication cookie
-		adminCookie = await loginAsAdmin();
-
 		// Create a test room before all tests
 		roomId = await createTestRoom('test-room');
 	});
@@ -72,18 +67,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should moderator not be able to access recording when access level is set to admin', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -93,18 +84,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should speaker not be able to access recording when access level is set to admin', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -114,18 +101,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow moderator to access recording when access level is set to moderator', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -135,18 +118,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should speaker not be able to access recording when access level is set to moderator', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -156,18 +135,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow moderator to access recording when access level is set to speaker', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -177,18 +152,14 @@ test.describe('Recording Access Tests', () => {
 	});
 
 	test('should allow speaker to access recording when access level is set to speaker', async ({ page }) => {
-		await updateRoomConfig(
-			roomId,
-			{
-				chat: { enabled: true },
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				virtualBackground: { enabled: true }
+		await updateRoomConfig(roomId, {
+			chat: { enabled: true },
+			recording: {
+				enabled: true,
+				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
-			adminCookie
-		);
+			virtualBackground: { enabled: true }
+		});
 
 		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);

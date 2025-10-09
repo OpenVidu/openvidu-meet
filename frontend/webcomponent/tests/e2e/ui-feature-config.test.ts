@@ -11,7 +11,6 @@ import {
 	isVirtualBackgroundApplied,
 	joinRoomAs,
 	leaveRoom,
-	loginAsAdmin,
 	openMoreOptionsMenu,
 	prepareForJoiningRoom,
 	updateRoomConfig,
@@ -24,16 +23,12 @@ let subscribedToAppErrors = false;
 test.describe('UI Feature Config Tests', () => {
 	let roomId: string;
 	let participantName: string;
-	let adminCookie: string;
 
 	// ==========================================
 	// SETUP & TEARDOWN
 	// ==========================================
 
 	test.beforeAll(async () => {
-		// Login as admin to get authentication cookie
-		adminCookie = await loginAsAdmin();
-
 		// Create a test room before all tests
 		roomId = await createTestRoom('test-room');
 	});
@@ -73,18 +68,14 @@ test.describe('UI Feature Config Tests', () => {
 		});
 
 		test('should show chat button when chat is enabled', async ({ page }) => {
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -97,18 +88,14 @@ test.describe('UI Feature Config Tests', () => {
 
 		test('should hide chat button when chat is disabled', async ({ page }) => {
 			// Disable chat via API
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: false },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: false },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -126,18 +113,14 @@ test.describe('UI Feature Config Tests', () => {
 
 	test.describe('Recording Feature', () => {
 		test('should show recording button for moderators', async ({ page }) => {
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -160,18 +143,14 @@ test.describe('UI Feature Config Tests', () => {
 		});
 
 		test('should not show recording button for speaker', async ({ page }) => {
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -185,18 +164,14 @@ test.describe('UI Feature Config Tests', () => {
 
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
 			// Disable recording via API
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: false,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -226,18 +201,14 @@ test.describe('UI Feature Config Tests', () => {
 		});
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -255,18 +226,14 @@ test.describe('UI Feature Config Tests', () => {
 
 		test('should hide virtual background button when disabled', async ({ page }) => {
 			// Disable virtual backgrounds via API
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: false }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: false }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -284,18 +251,14 @@ test.describe('UI Feature Config Tests', () => {
 			page
 		}) => {
 			// Ensure virtual backgrounds are enabled
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: true }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: true }
+			});
 
 			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -305,18 +268,14 @@ test.describe('UI Feature Config Tests', () => {
 			await waitForVirtualBackgroundToApply(page);
 
 			// Now disable virtual backgrounds
-			await updateRoomConfig(
-				roomId,
-				{
-					chat: { enabled: true },
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					virtualBackground: { enabled: false }
+			await updateRoomConfig(roomId, {
+				chat: { enabled: true },
+				recording: {
+					enabled: true,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
-				adminCookie
-			);
+				virtualBackground: { enabled: false }
+			});
 
 			await leaveRoom(page);
 			await page.reload();

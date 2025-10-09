@@ -2,7 +2,7 @@ import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 import * as fs from 'fs';
 import { PNG } from 'pngjs';
 import { MeetRecordingAccess, MeetRoomConfig } from '../../../../typings/src/room-config';
-import { MEET_ADMIN_PASSWORD, MEET_ADMIN_USER, MEET_API_KEY, MEET_API_URL, MEET_TESTAPP_URL } from '../config';
+import { MEET_API_KEY, MEET_API_URL, MEET_TESTAPP_URL } from '../config';
 
 /**
  * Gets a FrameLocator for an iframe inside a Shadow DOM
@@ -124,12 +124,12 @@ export const createTestRoom = async (roomName: string, config: MeetRoomConfig = 
 };
 
 // Helper function to update room config via REST API
-export const updateRoomConfig = async (roomId: string, config: any, adminCookie: string) => {
+export const updateRoomConfig = async (roomId: string, config: any) => {
 	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}/config`, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
-			Cookie: adminCookie
+			'x-api-key': MEET_API_KEY
 		},
 		body: JSON.stringify({ config })
 	});
@@ -139,38 +139,6 @@ export const updateRoomConfig = async (roomId: string, config: any, adminCookie:
 	}
 
 	return response.json();
-};
-
-// Helper function to login and get admin cookie
-export const loginAsAdmin = async (): Promise<string> => {
-	const response = await fetch(`${MEET_API_URL}/internal-api/v1/auth/login`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			username: MEET_ADMIN_USER,
-			password: MEET_ADMIN_PASSWORD
-		})
-	});
-
-	if (!response.ok || response.status !== 200) {
-		console.error('Login failed:', await response.text());
-		throw new Error(`Failed to login: ${response.status}`);
-	}
-
-	const cookies = response.headers.get('set-cookie') || '';
-	if (!cookies) {
-		throw new Error('No cookies received from login');
-	}
-
-	// Extract the access token cookie
-	const accessTokenCookie = cookies.split(';').find((cookie) => cookie.trim().startsWith('OvMeetAccessToken='));
-	if (!accessTokenCookie) {
-		throw new Error('Access token cookie not found');
-	}
-
-	return accessTokenCookie.trim();
 };
 
 // Helper function to delete a room
