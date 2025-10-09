@@ -19,6 +19,8 @@ jobs:
           version: 10
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
+        with:
+          ref: pnpm_migration
       - name: Setup OpenVidu Meet WebComponent
         shell: bash
         run: ./meet.sh build-webcomponent

@@ -31,12 +31,12 @@ jobs:
             BASH
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@main
+        uses: OpenVidu/actions/start-openvidu-meet@meet-pnpm-migration
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@main
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@meet-pnpm-migration
         with:
           skip_checkout: 'true'
       - name: Run tests
