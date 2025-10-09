@@ -21,11 +21,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: pnpm_migration
-      - name: Setup OpenVidu Meet WebComponent
-        shell: bash
-        run: ./meet.sh build-webcomponent
+      - name: Install dependencies
+        run: ./meet.sh install
+      - name: Build typings
+        run: ./meet.sh build-typings
+      - name: Build webcomponent
+        run: ./meet.sh build-webcomponent --skip-install --skip-typings
       - name: Run tests
-        run: ./meet.sh test-unit-webcomponent
+        run: ./meet.sh test-unit-webcomponent --skip-install
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main

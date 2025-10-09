@@ -38,9 +38,10 @@ jobs:
       - name: Start OpenVidu Meet Testapp
         uses: OpenVidu/actions/start-openvidu-meet-testapp@meet_pnpm_migration
         with:
+          skip_install: 'true'
           skip_checkout: 'true'
       - name: Run tests
-        run: ./meet.sh test-e2e-webcomponent
+        run: ./meet.sh test-e2e-webcomponent --skip-install
         env:
           RUN_MODE: CI
           PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
