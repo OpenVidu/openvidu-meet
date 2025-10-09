@@ -17,6 +17,7 @@ import { createApp, registerDependencies } from '../../src/server.js';
 import { RecordingService, RoomService } from '../../src/services/index.js';
 import {
 	AuthMode,
+	AuthTransportMode,
 	AuthType,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
@@ -157,6 +158,7 @@ export const changeSecurityConfig = async (authMode: AuthMode) => {
 			authMethod: {
 				type: AuthType.SINGLE_USER
 			},
+			authTransportMode: AuthTransportMode.COOKIE,
 			authModeToAccessRoom: authMode
 		}
 	});

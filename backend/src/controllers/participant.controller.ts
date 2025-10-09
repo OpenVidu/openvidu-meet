@@ -9,7 +9,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService, TokenService } from '../services/index.js';
-import { getAuthTransportMode, getCookieOptions, getRecordingToken } from '../utils/index.js';
+import { getAuthTransportMode, getCookieOptions, getParticipantToken } from '../utils/index.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -61,7 +61,7 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 	const participantService = container.get(ParticipantService);
 
 	// Check if there is a previous token
-	const previousToken = await getRecordingToken(req);
+	const previousToken = await getParticipantToken(req);
 
 	if (!previousToken) {
 		logger.verbose('No previous participant token found. Cannot refresh.');

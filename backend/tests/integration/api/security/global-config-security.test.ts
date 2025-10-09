@@ -5,7 +5,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
-import { AuthMode, AuthType, MeetRoomThemeMode } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode, AuthType, MeetRoomThemeMode } from '../../../../src/typings/ce/index.js';
 import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
@@ -79,6 +79,7 @@ describe('Global Config API Security Tests', () => {
 				authMethod: {
 					type: AuthType.SINGLE_USER
 				},
+				authTransportMode: AuthTransportMode.COOKIE,
 				authModeToAccessRoom: AuthMode.ALL_USERS
 			}
 		};

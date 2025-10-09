@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
-import { AuthMode, AuthType } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode, AuthType } from '../../../../src/typings/ce/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { getSecurityConfig, startTestServer, updateSecurityConfig } from '../../../helpers/request-helpers.js';
 
@@ -10,6 +10,7 @@ const defaultConfig = {
 		authMethod: {
 			type: AuthType.SINGLE_USER
 		},
+		authTransportMode: AuthTransportMode.COOKIE,
 		authModeToAccessRoom: AuthMode.NONE
 	}
 };
@@ -35,6 +36,7 @@ describe('Security Config API Tests', () => {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
+					authTransportMode: AuthTransportMode.COOKIE,
 					authModeToAccessRoom: AuthMode.ALL_USERS
 				}
 			};
@@ -84,19 +86,49 @@ describe('Security Config API Tests', () => {
 			);
 		});
 
-		it('should reject when authModeToAccessRoom or authMethod are not provided', async () => {
+		it('should reject when authTransportMode is not a valid enum value', async () => {
+			const response = await updateSecurityConfig({
+				authentication: {
+					authMethod: {
+						type: AuthType.SINGLE_USER
+					},
+					authModeToAccessRoom: AuthMode.ALL_USERS,
+					authTransportMode: 'invalid'
+				}
+			});
+
+			expectValidationError(
+				response,
+				'authentication.authTransportMode',
+				"Invalid enum value. Expected 'cookie' | 'header', received 'invalid'"
+			);
+		});
+
+		it('should reject when authModeToAccessRoom, authTransportMode or authMethod are not provided', async () => {
 			let response = await updateSecurityConfig({
 				authentication: {
-					authMode: AuthMode.NONE
+					authMode: AuthMode.NONE,
+					authTransportMode: AuthTransportMode.COOKIE
 				}
 			});
 			expectValidationError(response, 'authentication.authMethod', 'Required');
 
 			response = await updateSecurityConfig({
 				authentication: {
-					method: {
+					authMethod: {
 						type: AuthType.SINGLE_USER
-					}
+					},
+					authModeToAccessRoom: AuthMode.NONE
+				}
+			});
+			expectValidationError(response, 'authentication.authTransportMode', 'Required');
+
+			response = await updateSecurityConfig({
+				authentication: {
+					authMethod: {
+						type: AuthType.SINGLE_USER
+					},
+					authTransportMode: AuthTransportMode.COOKIE
 				}
 			});
 			expectValidationError(response, 'authentication.authModeToAccessRoom', 'Required');
