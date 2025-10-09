@@ -47,6 +47,12 @@ show_help() {
   echo -e "  ${BLUE}build${NC}"
   echo "    Build all project components (typings, frontend, backend, webcomponent, testapp)"
   echo
+  echo -e "  ${BLUE}build-webcomponent${NC}"
+  echo "    Build only the webcomponent package"
+  echo
+  echo -e "  ${BLUE}test-unit-webcomponent${NC}"
+  echo "    Run unit tests for the webcomponent project"
+  echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start development mode with hot-reload for all components"
   echo
@@ -104,6 +110,39 @@ start_dev() {
 
   echo -e "${GREEN}Starting development servers...${NC}"
   pnpm run dev
+}
+
+# Function to build only webcomponent
+build_webcomponent_only() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Webcomponent Only${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  check_pnpm
+
+  echo -e "${GREEN}Building webcomponent...${NC}"
+  pnpm run build:webcomponent
+
+  echo
+  echo -e "${GREEN}✓ Webcomponent build completed successfully!${NC}"
+}
+
+# Function to run unit tests for webcomponent
+test_unit_webcomponent() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Webcomponent Unit Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  check_pnpm
+
+  echo -e "${GREEN}Installing dependencies...${NC}"
+  pnpm install
+  echo
+
+  echo -e "${GREEN}Running webcomponent unit tests...${NC}"
+  pnpm run test:unit-webcomponent
 }
 
 # Function to build webcomponent documentation
@@ -207,11 +246,17 @@ main() {
     build)
       build_project
       ;;
+    build-webcomponent)
+      build_webcomponent_only
+      ;;
     start)
       start_dev
       ;;
     build-webcomponent-doc)
       build_webcomponent_doc "$1"
+      ;;
+    test-unit-webcomponent)
+      test_unit_webcomponent
       ;;
     build-rest-api-doc)
       build_rest_api_doc "$1"
