@@ -93,8 +93,11 @@ show_help() {
   echo "    Run end-to-end tests for the webcomponent project"
   echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
   echo
+  echo -e "  ${BLUE}dev${NC}"
+  echo "    Start development mode with watchers"
+  echo
   echo -e "  ${BLUE}start${NC}"
-  echo "    Start services. By default starts development watchers."
+  echo "    Start services in production or CI mode"
   echo -e "    ${YELLOW}Options:${NC} --prod    Start in production mode"
   echo -e "            ${NC} --ci      Start in CI mode"
   echo
@@ -116,6 +119,9 @@ show_help() {
   echo
   echo -e "  ${YELLOW}# Build typings once${NC}"
   echo -e "  ./meet.sh build-typings"
+  echo
+  echo -e "  ${YELLOW}# Start development mode${NC}"
+  echo -e "  ./meet.sh dev"
   echo
   echo -e "  ${YELLOW}# Build webcomponent (skip install & typings)${NC}"
   echo -e "  ./meet.sh build-webcomponent --skip-install --skip-typings"
@@ -266,9 +272,17 @@ test_e2e_webcomponent() {
   pnpm run test:e2e-webcomponent
 }
 
+
+dev(){
+  echo -e "${BLUE}Starting development mode (watchers)...${NC}"
+  install_dependencies
+  pnpm run dev
+}
+
+
 # Start services
 start_services() {
-  MODE="dev"
+  MODE=""
   for arg in "$@"; do
     case "$arg" in
       --prod)
@@ -278,12 +292,13 @@ start_services() {
     esac
   done
 
+  if [ -z "$MODE" ]; then
+    echo -e "${RED}Error: start command requires --prod or --ci option${NC}"
+    echo -e "${YELLOW}Usage: ./meet.sh start --prod  or  ./meet.sh start --ci${NC}"
+    exit 1
+  fi
+
   case "$MODE" in
-    dev)
-      echo -e "${BLUE}Starting development mode (watchers)...${NC}"
-      install_dependencies
-      pnpm run dev
-      ;;
     prod)
       echo -e "${BLUE}Building and starting in production mode...${NC}"
       install_dependencies
@@ -427,6 +442,9 @@ main() {
       ;;
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"
+      ;;
+    dev)
+      dev
       ;;
     start)
       start_services "$@"
