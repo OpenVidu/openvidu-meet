@@ -276,7 +276,22 @@ test_e2e_webcomponent() {
 dev(){
   echo -e "${BLUE}Starting development mode (watchers)...${NC}"
   install_dependencies
-  pnpm run dev
+  # Define commands for concurrent execution
+  COMPONENTS_CMD="npm --prefix ../openvidu/openvidu-components-angular run lib:serve"
+  TYPINGS_CMD="./scripts/dev/watch-typings.sh"
+  BACKEND_CMD="node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'"
+  FRONTEND_CMD="sleep 1 && wait-on ../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'"
+  REST_API_DOCS_CMD="pnpm run dev:rest-api-docs"
+
+  # Run commands concurrently
+  pnpm exec concurrently -k \
+    -n components-angular,typings,backend,frontend,rest-api-docs \
+    -c red,green,cyan,magenta,yellow \
+    "$COMPONENTS_CMD" \
+    "$TYPINGS_CMD" \
+    "$BACKEND_CMD" \
+    "$FRONTEND_CMD" \
+    "$REST_API_DOCS_CMD"
 }
 
 

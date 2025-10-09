@@ -12,7 +12,6 @@
 		"build:testapp": "pnpm --filter testapp run build",
 		"build:webcomponent-doc": "node scripts/generate-webcomponent-docs.js docs",
 		"build:rest-api-docs": "pnpm --filter openvidu-meet-backend run doc:api && pnpm --filter openvidu-meet-backend run doc:internal-api",
-		"dev": "concurrently -k -n typings,backend,frontend,rest-api-docs -c green,cyan,magenta,yellow \"./scripts/dev/watch-typings.sh\" \"node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'\" \"node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'\" \"pnpm run dev:rest-api-docs\"",
 		"dev:frontend": "pnpm --filter openvidu-meet-frontend run dev",
 		"dev:backend": "pnpm --filter openvidu-meet-backend run start:dev",
 		"dev:webcomponent": "pnpm --filter openvidu-meet-webcomponent run build:watch",
@@ -27,6 +26,7 @@
 	},
 	"devDependencies": {
 		"concurrently": "9.1.2",
-		"tree-kill": "1.2.2"
+		"tree-kill": "1.2.2",
+		"wait-on": "^9.0.1"
 	}
 }
