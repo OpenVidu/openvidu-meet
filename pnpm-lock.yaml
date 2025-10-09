@@ -434,6 +434,9 @@ importers:
 
   testapp:
     dependencies:
+      '@openvidu-meet/typings':
+        specifier: workspace:*
+        version: link:../typings
       dotenv:
         specifier: 16.5.0
         version: 16.5.0
