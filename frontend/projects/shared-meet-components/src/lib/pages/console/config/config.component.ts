@@ -243,9 +243,7 @@ export class ConfigComponent implements OnInit {
 		if (!this.initialFormValue) return;
 
 		this.handleThemeChange();
-
 		this.updateColorChangesState();
-
 		this.updateFormChangeState();
 	}
 
@@ -259,9 +257,9 @@ export class ConfigComponent implements OnInit {
 	 * Handles theme change by updating non-customized colors
 	 */
 	private handleThemeChange(): void {
-		const currentFormValue = this.appearanceForm.value;
-		const newBaseTheme = currentFormValue.baseTheme || MeetRoomThemeMode.LIGHT;
+		const newBaseTheme = this.appearanceForm.value.baseTheme || MeetRoomThemeMode.LIGHT;
 		if (newBaseTheme === this.lastBaseThemeValue) return;
+
 		const newDefaults = this.defaultColors[newBaseTheme];
 
 		// Build update object with only non-customized colors
@@ -276,6 +274,7 @@ export class ConfigComponent implements OnInit {
 		if (Object.keys(updatedColors).length === 0) {
 			return;
 		}
+
 		// Apply updates atomically
 		this.applyColorUpdates(updatedColors, newBaseTheme);
 	}
@@ -294,11 +293,8 @@ export class ConfigComponent implements OnInit {
 	 * Updates color changes state efficiently
 	 */
 	private updateColorChangesState(): void {
-		const currentFormValue = this.appearanceForm.value;
 		const colorKeys: ColorField[] = this.colorFields.map((field) => field.key);
-
-		const hasColorChanges = colorKeys.some((key) => currentFormValue[key] !== this.initialFormValue![key]);
-
+		const hasColorChanges = colorKeys.some((key) => this.appearanceForm.value[key] !== this.initialFormValue![key]);
 		this.hasColorChanges.set(hasColorChanges);
 	}
 

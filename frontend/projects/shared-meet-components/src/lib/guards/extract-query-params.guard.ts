@@ -17,7 +17,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret, participantName, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
-	const secret = querySecret || sessionStorageService.getRoomSecret(roomId);
+	const secret = querySecret || sessionStorageService.getRoomSecret();
 
 	// Handle leave redirect URL logic
 	handleLeaveRedirectUrl(leaveRedirectUrl);
@@ -48,7 +48,7 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret } = extractParams(route);
-	const secret = querySecret || sessionStorageService.getRoomSecret(roomId);
+	const secret = querySecret || sessionStorageService.getRoomSecret();
 
 	if (!secret) {
 		// If no secret is provided, redirect to the error page
@@ -83,9 +83,8 @@ const handleLeaveRedirectUrl = (leaveRedirectUrl: string | undefined) => {
 		return;
 	}
 
-	// Absolute path provided in embedded mode - construct full URL
+	// Absolute path provided in embedded mode - construct full URL based on parent origin
 	if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
-		// If in embedded mode and a absolute path is provided, construct full URL based on parent origin
 		const parentUrl = document.referrer;
 		const parentOrigin = new URL(parentUrl).origin;
 		navigationService.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);

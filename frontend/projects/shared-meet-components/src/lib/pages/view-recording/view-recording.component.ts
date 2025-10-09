@@ -14,19 +14,19 @@ import { formatDurationToTime } from '@lib/utils';
 import { ViewportService } from 'openvidu-components-angular';
 
 @Component({
-    selector: 'ov-view-recording',
-    templateUrl: './view-recording.component.html',
-    styleUrls: ['./view-recording.component.scss'],
-    imports: [
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        DatePipe,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-        MatSnackBarModule,
-        RecordingVideoPlayerComponent
-    ]
+	selector: 'ov-view-recording',
+	templateUrl: './view-recording.component.html',
+	styleUrls: ['./view-recording.component.scss'],
+	imports: [
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		DatePipe,
+		MatProgressSpinnerModule,
+		MatTooltipModule,
+		MatSnackBarModule,
+		RecordingVideoPlayerComponent
+	]
 })
 export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
@@ -138,6 +138,4 @@ export class ViewRecordingComponent implements OnInit {
 			this.router.navigate(['/recordings']);
 		}
 	}
-
-
 }

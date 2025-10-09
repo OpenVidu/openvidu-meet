@@ -11,6 +11,14 @@ const INTERNAL_CONFIG = {
 	PARTICIPANT_TOKEN_COOKIE_NAME: 'OvMeetParticipantToken',
 	RECORDING_TOKEN_COOKIE_NAME: 'OvMeetRecordingToken',
 
+	// Headers names
+	API_KEY_HEADER: 'x-api-key',
+	ACCESS_TOKEN_HEADER: 'authorization',
+	REFRESH_TOKEN_HEADER: 'x-refresh-token',
+	PARTICIPANT_TOKEN_HEADER: 'x-participant-token',
+	PARTICIPANT_ROLE_HEADER: 'x-participant-role',
+	RECORDING_TOKEN_HEADER: 'x-recording-token',
+
 	// Token expiration times
 	ACCESS_TOKEN_EXPIRATION: '2h',
 	REFRESH_TOKEN_EXPIRATION: '1d',
@@ -20,10 +28,6 @@ const INTERNAL_CONFIG = {
 	// Participant name reservations
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
-
-	// Headers for API requests
-	API_KEY_HEADER: 'x-api-key',
-	PARTICIPANT_ROLE_HEADER: 'x-participant-role',
 
 	// Authentication usernames
 	ANONYMOUS_USER: 'anonymous',

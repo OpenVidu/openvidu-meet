@@ -26,6 +26,7 @@ import {
 	TokenService,
 	UserService
 } from '../services/index.js';
+import { getAccessToken, getParticipantToken, getRecordingToken } from '../utils/index.js';
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
@@ -68,7 +69,7 @@ export const withAuth = (...validators: ((req: Request) => Promise<void>)[]): Re
 // Configure token validatior for role-based access
 export const tokenAndRoleValidator = (role: UserRole) => {
 	return async (req: Request) => {
-		const token = req.cookies[INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME];
+		const token = await getAccessToken(req);
 
 		if (!token) {
 			throw errorWithControl(errorUnauthorized(), false);
@@ -102,7 +103,8 @@ export const tokenAndRoleValidator = (role: UserRole) => {
 
 // Configure token validator for participant access
 export const participantTokenValidator = async (req: Request) => {
-	await validateTokenAndSetSession(req, INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME);
+	const token = await getParticipantToken(req);
+	await validateTokenAndSetSession(req, token);
 
 	// Check if the participant role is provided in the request headers
 	// This is required to distinguish roles when multiple are present in the token
@@ -140,7 +142,8 @@ export const participantTokenValidator = async (req: Request) => {
 
 // Configure token validator for recording access
 export const recordingTokenValidator = async (req: Request) => {
-	await validateTokenAndSetSession(req, INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME);
+	const token = await getRecordingToken(req);
+	await validateTokenAndSetSession(req, token);
 
 	// Validate the recording token metadata
 	try {
@@ -153,9 +156,7 @@ export const recordingTokenValidator = async (req: Request) => {
 	}
 };
 
-const validateTokenAndSetSession = async (req: Request, cookieName: string) => {
-	const token = req.cookies[cookieName];
-
+const validateTokenAndSetSession = async (req: Request, token: string | undefined) => {
 	if (!token) {
 		throw errorWithControl(errorUnauthorized(), false);
 	}
@@ -221,7 +222,7 @@ const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<User> => {
 	let user: User | null = null;
 
 	// Check if there is a user already authenticated
-	const token = req.cookies[INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME];
+	const token = await getAccessToken(req);
 
 	if (token) {
 		try {

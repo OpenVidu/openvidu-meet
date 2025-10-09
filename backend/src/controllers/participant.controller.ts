@@ -1,4 +1,4 @@
-import { OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@typings-ce';
+import { AuthTransportMode, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@typings-ce';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
@@ -9,23 +9,25 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService, TokenService } from '../services/index.js';
-import { getCookieOptions } from '../utils/index.js';
+import { getAuthTransportMode, getCookieOptions, getRecordingToken } from '../utils/index.js';
 
 export const generateParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const participantService = container.get(ParticipantService);
+	const tokenService = container.get(TokenService);
+
 	const participantOptions: ParticipantOptions = req.body;
 	const { roomId } = participantOptions;
 
-	// Check if there is a previous token
+	// Check if there is a previous token (only for cookie mode)
 	const previousToken = req.cookies[INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME];
 	let currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[] = [];
 
 	if (previousToken) {
 		// If there is a previous token, extract the roles from it
 		// and use them to generate the new token, aggregating the new role to the current ones
+		// This logic is only used in cookie mode to allow multiple roles across tabs
 		logger.verbose('Previous participant token found. Extracting roles');
-		const tokenService = container.get(TokenService);
 
 		try {
 			const claims = tokenService.getClaimsIgnoringExpiration(previousToken);
@@ -38,9 +40,15 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 	try {
 		logger.verbose(`Generating participant token for room '${roomId}'`);
-
 		const token = await participantService.generateOrRefreshParticipantToken(participantOptions, currentRoles);
-		res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
+
+		const authTransportMode = await getAuthTransportMode();
+
+		// Send participant token as cookie for cookie mode
+		if (authTransportMode === AuthTransportMode.COOKIE) {
+			res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
+		}
+
 		return res.status(200).json({ token });
 	} catch (error) {
 		handleError(res, error, `generating participant token for room '${roomId}'`);
@@ -49,9 +57,11 @@ export const generateParticipantToken = async (req: Request, res: Response) => {
 
 export const refreshParticipantToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const tokenService = container.get(TokenService);
+	const participantService = container.get(ParticipantService);
 
 	// Check if there is a previous token
-	const previousToken = req.cookies[INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME];
+	const previousToken = await getRecordingToken(req);
 
 	if (!previousToken) {
 		logger.verbose('No previous participant token found. Cannot refresh.');
@@ -60,8 +70,6 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 	}
 
 	// Extract roles from the previous token
-	const tokenService = container.get(TokenService);
-	const participantService = container.get(ParticipantService);
 	let currentRoles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[] = [];
 
 	try {
@@ -85,7 +93,13 @@ export const refreshParticipantToken = async (req: Request, res: Response) => {
 			true
 		);
 
-		res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
+		const authTransportMode = await getAuthTransportMode();
+
+		// Send participant token as cookie for cookie mode
+		if (authTransportMode === AuthTransportMode.COOKIE) {
+			res.cookie(INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME, token, getCookieOptions('/'));
+		}
+
 		return res.status(200).json({ token });
 	} catch (error) {
 		handleError(res, error, `refreshing participant token for room '${roomId}'`);

@@ -46,7 +46,7 @@ export class RoomService {
 	setRoomSecret(secret: string, updateStorage = true) {
 		this.roomSecret = secret;
 		if (updateStorage) {
-			this.sessionStorageService.setRoomSecret(this.roomId, secret);
+			this.sessionStorageService.setRoomSecret(secret);
 		}
 	}
 

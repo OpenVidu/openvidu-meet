@@ -28,6 +28,7 @@ import {
 	RecordingService,
 	RoomService,
 	SessionStorageService,
+	TokenStorageService,
 	WebComponentManagerService
 } from '@lib/services';
 import {
@@ -64,27 +65,27 @@ import {
 import { combineLatest, Subject, takeUntil } from 'rxjs';
 
 @Component({
-    selector: 'ov-meeting',
-    templateUrl: './meeting.component.html',
-    styleUrls: ['./meeting.component.scss'],
-    imports: [
-        OpenViduComponentsUiModule,
-        // ApiDirectiveModule,
-        CommonModule,
-        MatFormFieldModule,
-        MatInputModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatIconButton,
-        MatMenuModule,
-        MatDividerModule,
-        MatTooltipModule,
-        MatRippleModule,
-        ShareMeetingLinkComponent
-    ]
+	selector: 'ov-meeting',
+	templateUrl: './meeting.component.html',
+	styleUrls: ['./meeting.component.scss'],
+	imports: [
+		OpenViduComponentsUiModule,
+		// ApiDirectiveModule,
+		CommonModule,
+		MatFormFieldModule,
+		MatInputModule,
+		FormsModule,
+		ReactiveFormsModule,
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		MatIconButton,
+		MatMenuModule,
+		MatDividerModule,
+		MatTooltipModule,
+		MatRippleModule,
+		ShareMeetingLinkComponent
+	]
 })
 export class MeetingComponent implements OnInit {
 	participantForm = new FormGroup({
@@ -130,7 +131,8 @@ export class MeetingComponent implements OnInit {
 		protected clipboard: Clipboard,
 		protected viewportService: ViewportService,
 		protected ovThemeService: OpenViduThemeService,
-		protected configService: GlobalConfigService
+		protected configService: GlobalConfigService,
+		protected tokenStorageService: TokenStorageService
 	) {
 		this.features = this.featureConfService.features;
 
@@ -488,9 +490,12 @@ export class MeetingComponent implements OnInit {
 		};
 		this.wcManagerService.sendMessageToParent(message);
 
-		// Remove the moderator secret from session storage if the participant left for a reason other than browser unload
+		// Remove the moderator secret (and stored tokens) from session storage
+		// if the participant left for a reason other than browser unload
 		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
-			this.sessionStorageService.removeRoomSecret(event.roomName);
+			this.sessionStorageService.removeRoomSecret();
+			this.tokenStorageService.clearParticipantToken();
+			this.tokenStorageService.clearRecordingToken();
 		}
 
 		// Navigate to the disconnected page with the reason

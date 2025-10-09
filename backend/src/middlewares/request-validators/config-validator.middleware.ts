@@ -1,6 +1,7 @@
 import {
 	AuthenticationConfig,
 	AuthMode,
+	AuthTransportMode,
 	AuthType,
 	SecurityConfig,
 	SingleUserAuth,
@@ -39,6 +40,8 @@ const WebhookTestSchema = z.object({
 		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
 });
 
+const AuthTransportModeSchema = z.enum([AuthTransportMode.COOKIE, AuthTransportMode.HEADER]);
+
 const AuthModeSchema: z.ZodType<AuthMode> = z.enum([AuthMode.NONE, AuthMode.MODERATORS_ONLY, AuthMode.ALL_USERS]);
 
 const AuthTypeSchema: z.ZodType<AuthType> = z.enum([AuthType.SINGLE_USER]);
@@ -51,6 +54,7 @@ const ValidAuthMethodSchema: z.ZodType<ValidAuthMethod> = SingleUserAuthSchema;
 
 const AuthenticationConfigSchema: z.ZodType<AuthenticationConfig> = z.object({
 	authMethod: ValidAuthMethodSchema,
+	authTransportMode: AuthTransportModeSchema,
 	authModeToAccessRoom: AuthModeSchema
 });
 

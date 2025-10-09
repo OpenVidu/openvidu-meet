@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, HttpService } from '@lib/services';
-import { MeetTokenMetadata, ParticipantOptions, ParticipantPermissions, ParticipantRole } from '@lib/typings/ce';
+import { FeatureConfigurationService, GlobalConfigService, HttpService, TokenStorageService } from '@lib/services';
+import {
+	AuthTransportMode,
+	MeetTokenMetadata,
+	ParticipantOptions,
+	ParticipantPermissions,
+	ParticipantRole
+} from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -21,7 +27,9 @@ export class ParticipantService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected featureConfService: FeatureConfigurationService
+		protected featureConfService: FeatureConfigurationService,
+		protected globalConfigService: GlobalConfigService,
+		protected tokenStorageService: TokenStorageService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ParticipantTokenService');
 	}
@@ -49,6 +57,12 @@ export class ParticipantService {
 		const path = `${this.PARTICIPANTS_API}/token`;
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, participantOptions);
 
+		// Store token in sessionStorage for header mode
+		const authTransportMode = await this.globalConfigService.getAuthTransportMode();
+		if (authTransportMode === AuthTransportMode.HEADER) {
+			this.tokenStorageService.setParticipantToken(token);
+		}
+
 		this.updateParticipantTokenInfo(token);
 		return token;
 	}
@@ -62,6 +76,12 @@ export class ParticipantService {
 	async refreshParticipantToken(participantOptions: ParticipantOptions): Promise<string> {
 		const path = `${this.PARTICIPANTS_API}/token/refresh`;
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, participantOptions);
+
+		// Store token in sessionStorage for header mode
+		const authTransportMode = await this.globalConfigService.getAuthTransportMode();
+		if (authTransportMode === AuthTransportMode.HEADER) {
+			this.tokenStorageService.setParticipantToken(token);
+		}
 
 		this.updateParticipantTokenInfo(token);
 		return token;

@@ -1,4 +1,5 @@
 import {
+	AuthTransportMode,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
@@ -12,7 +13,7 @@ import { container } from '../config/index.js';
 import INTERNAL_CONFIG from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
-import { getBaseUrl, getCookieOptions } from '../utils/index.js';
+import { getAuthTransportMode, getBaseUrl, getCookieOptions } from '../utils/index.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -192,12 +193,17 @@ export const generateRecordingToken = async (req: Request, res: Response) => {
 
 	try {
 		const token = await roomService.generateRecordingToken(roomId, secret);
+		const authTransportMode = await getAuthTransportMode();
 
-		res.cookie(
-			INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME,
-			token,
-			getCookieOptions('/', INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION)
-		);
+		// Send recording token as cookie for cookie mode
+		if (authTransportMode === AuthTransportMode.COOKIE) {
+			res.cookie(
+				INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME,
+				token,
+				getCookieOptions('/', INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION)
+			);
+		}
+
 		return res.status(200).json({ token });
 	} catch (error) {
 		handleError(res, error, `generating recording token for room '${roomId}'`);

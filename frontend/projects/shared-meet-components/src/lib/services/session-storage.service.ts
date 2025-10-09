@@ -8,35 +8,32 @@ import { Injectable } from '@angular/core';
  * Provides methods to store, retrieve, and remove data from sessionStorage.
  */
 export class SessionStorageService {
-	constructor() {}
+	private readonly ROOM_SECRET_KEY = 'ovMeet-roomSecret';
+	private readonly REDIRECT_URL_KEY = 'ovMeet-redirectUrl';
 
 	/**
-	 * Stores a secret associated with a participant role for a specific room.
+	 * Stores the room secret.
 	 *
-	 * @param roomId The room ID.
 	 * @param secret The secret to store.
 	 */
-	public setRoomSecret(roomId: string, secret: string): void {
-		this.set(`room_secret_${roomId}`, secret);
+	public setRoomSecret(secret: string): void {
+		this.set(this.ROOM_SECRET_KEY, secret);
 	}
 
 	/**
-	 * Retrieves the room secret for a specific room.
+	 * Retrieves the room secret.
 	 *
-	 * @param roomId The room ID.
 	 * @returns The stored secret or null if not found.
 	 */
-	public getRoomSecret(roomId: string): string | null {
-		return this.get<string>(`room_secret_${roomId}`) ?? null;
+	public getRoomSecret(): string | null {
+		return this.get<string>(this.ROOM_SECRET_KEY);
 	}
 
 	/**
-	 * Removes the room secret for a specific room.
-	 *
-	 * @param roomId The room ID.
+	 * Removes the room secret.
 	 */
-	public removeRoomSecret(roomId: string): void {
-		this.remove(`room_secret_${roomId}`);
+	public removeRoomSecret(): void {
+		this.remove(this.ROOM_SECRET_KEY);
 	}
 
 	/**
@@ -45,7 +42,7 @@ export class SessionStorageService {
 	 * @param redirectUrl The URL to redirect to.
 	 */
 	public setRedirectUrl(redirectUrl: string): void {
-		this.set('redirect_url', redirectUrl);
+		this.set(this.REDIRECT_URL_KEY, redirectUrl);
 	}
 
 	/**
@@ -54,7 +51,7 @@ export class SessionStorageService {
 	 * @returns The redirect URL or null if not found.
 	 */
 	public getRedirectUrl(): string | null {
-		return this.get<string>('redirect_url') ?? null;
+		return this.get<string>(this.REDIRECT_URL_KEY);
 	}
 
 	/**

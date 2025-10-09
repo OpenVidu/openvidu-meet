@@ -1,8 +1,42 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, ParticipantService, RecordingService, RoomService } from '@lib/services';
+import { AuthService, ParticipantService, RecordingService, RoomService, TokenStorageService } from '@lib/services';
 import { catchError, from, Observable, switchMap } from 'rxjs';
+
+/**
+ * Adds all necessary authorization headers to the request based on available tokens
+ * - authorization: Bearer token for access token (from localStorage)
+ * - x-participant-token: Bearer token for participant token (from sessionStorage)
+ * - x-recording-token: Bearer token for recording token (from sessionStorage)
+ */
+const addAuthHeadersIfNeeded = (
+	req: HttpRequest<unknown>,
+	tokenStorageService: TokenStorageService
+): HttpRequest<unknown> => {
+	const headers: { [key: string]: string } = {};
+
+	// Add access token header if available
+	const accessToken = tokenStorageService.getAccessToken();
+	if (accessToken) {
+		headers['authorization'] = `Bearer ${accessToken}`;
+	}
+
+	// Add participant token header if available
+	const participantToken = tokenStorageService.getParticipantToken();
+	if (participantToken) {
+		headers['x-participant-token'] = `Bearer ${participantToken}`;
+	}
+
+	// Add recording token header if available
+	const recordingToken = tokenStorageService.getRecordingToken();
+	if (recordingToken) {
+		headers['x-recording-token'] = `Bearer ${recordingToken}`;
+	}
+
+	// Clone request with all headers at once if any were added
+	return Object.keys(headers).length > 0 ? req.clone({ setHeaders: headers }) : req;
+};
 
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router: Router = inject(Router);
@@ -10,19 +44,25 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	const roomService = inject(RoomService);
 	const participantTokenService = inject(ParticipantService);
 	const recordingService = inject(RecordingService);
+	const tokenStorageService = inject(TokenStorageService);
 
 	const pageUrl = router.currentNavigation()?.finalUrl?.toString() || router.url;
 	const requestUrl = req.url;
 
+	// Clone request with credentials for cookie mode
 	req = req.clone({
 		withCredentials: true
 	});
 
+	// Add all authorization headers if tokens exist
+	req = addAuthHeadersIfNeeded(req, tokenStorageService);
+
 	const refreshAccessToken = (firstError: HttpErrorResponse) => {
 		console.log('Refreshing access token...');
-		return authService.refreshToken().pipe(
+		return from(authService.refreshToken()).pipe(
 			switchMap(() => {
 				console.log('Access token refreshed');
+				req = addAuthHeadersIfNeeded(req, tokenStorageService);
 				return next(req);
 			}),
 			catchError(async (error: HttpErrorResponse) => {
@@ -55,6 +95,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		).pipe(
 			switchMap(() => {
 				console.log('Participant token refreshed');
+				req = addAuthHeadersIfNeeded(req, tokenStorageService);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {
@@ -76,6 +117,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		return from(recordingService.generateRecordingToken(roomId, secret)).pipe(
 			switchMap(() => {
 				console.log('Recording token refreshed');
+				req = addAuthHeadersIfNeeded(req, tokenStorageService);
 				return next(req);
 			}),
 			catchError((error: HttpErrorResponse) => {

@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { HttpService, NavigationService } from '@lib/services';
+import { HttpService, NavigationService, TokenStorageService } from '@lib/services';
 import { MeetApiKey, User, UserRole } from '@lib/typings/ce';
 import { from, Observable } from 'rxjs';
 
@@ -16,6 +16,7 @@ export class AuthService {
 
 	constructor(
 		protected httpService: HttpService,
+		protected tokenStorageService: TokenStorageService,
 		protected navigationService: NavigationService
 	) {}
 
@@ -23,7 +24,14 @@ export class AuthService {
 		try {
 			const path = `${this.AUTH_API}/login`;
 			const body = { username, password };
-			await this.httpService.postRequest(path, body);
+			const response = await this.httpService.postRequest<any>(path, body);
+
+			// Check if we got tokens in the response (header mode)
+			if (response.accessToken && response.refreshToken) {
+				this.tokenStorageService.setAccessToken(response.accessToken);
+				this.tokenStorageService.setRefreshToken(response.refreshToken);
+			}
+
 			await this.getAuthenticatedUser(true);
 		} catch (err) {
 			const error = err as HttpErrorResponse;
@@ -32,10 +40,25 @@ export class AuthService {
 		}
 	}
 
-	refreshToken(): Observable<any> {
+	async refreshToken() {
 		const path = `${this.AUTH_API}/refresh`;
-		const response = this.httpService.postRequest(path);
-		return from(response);
+		const refreshToken = this.tokenStorageService.getRefreshToken();
+
+		// Add refresh token header if in header mode
+		let headers: Record<string, string> | undefined;
+		if (refreshToken) {
+			headers = {};
+			headers['x-refresh-token'] = `Bearer ${refreshToken}`;
+		}
+
+		const response = await this.httpService.postRequest<any>(path, {}, headers);
+
+		// Update access token in localStorage if returned in response
+		if (response.accessToken) {
+			this.tokenStorageService.setAccessToken(response.accessToken);
+		}
+
+		return response;
 	}
 
 	async logout(redirectToAfterLogin?: string) {
@@ -43,6 +66,9 @@ export class AuthService {
 			const path = `${this.AUTH_API}/logout`;
 			await this.httpService.postRequest(path);
 			this.user = null;
+
+			// Clear tokens from localStorage if in header mode
+			this.tokenStorageService.clearAccessAndRefreshTokens();
 
 			// Redirect to login page with a query parameter if provided
 			// to redirect to the original page after login

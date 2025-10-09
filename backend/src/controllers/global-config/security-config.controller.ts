@@ -13,11 +13,7 @@ export const updateSecurityConfig = async (req: Request, res: Response) => {
 
 	try {
 		const globalConfig = await storageService.getGlobalConfig();
-		const currentAuth = globalConfig.securityConfig.authentication;
-		const newAuth = securityConfig.authentication;
-
-		currentAuth.authMethod = newAuth.authMethod;
-		currentAuth.authModeToAccessRoom = newAuth.authModeToAccessRoom;
+		globalConfig.securityConfig.authentication = { ...securityConfig.authentication };
 		await storageService.saveGlobalConfig(globalConfig);
 
 		return res.status(200).json({ message: 'Security config updated successfully' });

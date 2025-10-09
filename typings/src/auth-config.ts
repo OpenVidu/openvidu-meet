@@ -1,38 +1,47 @@
 export interface AuthenticationConfig {
-	authMethod: ValidAuthMethod;
-	authModeToAccessRoom: AuthMode;
+    authMethod: ValidAuthMethod;
+    authTransportMode: AuthTransportMode;
+    authModeToAccessRoom: AuthMode;
+}
+
+/**
+ * Authentication transport modes for JWT tokens.
+ */
+export const enum AuthTransportMode {
+    COOKIE = 'cookie', // JWT sent via cookies
+    HEADER = 'header' // JWT sent via Authorization header
 }
 
 /**
  * Authentication modes available to enter a room.
  */
 export const enum AuthMode {
-	NONE = 'none', // No authentication required
-	MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
-	ALL_USERS = 'all_users', // All users need authentication
+    NONE = 'none', // No authentication required
+    MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
+    ALL_USERS = 'all_users' // All users need authentication
 }
 
 /**
  * Authentication method base interface.
  */
 export interface AuthMethod {
-	type: AuthType;
+    type: AuthType;
 }
 
 /**
  * Enum for authentication types.
  */
 export const enum AuthType {
-	SINGLE_USER = 'single_user',
-	// MULTI_USER = 'multi_user',
-	// OAUTH_ONLY = 'oauth_only'
+    SINGLE_USER = 'single_user'
+    // MULTI_USER = 'multi_user',
+    // OAUTH_ONLY = 'oauth_only'
 }
 
 /**
  * Authentication method: Single user with fixed credentials.
  */
 export interface SingleUserAuth extends AuthMethod {
-	type: AuthType.SINGLE_USER;
+    type: AuthType.SINGLE_USER;
 }
 
 /**
@@ -54,8 +63,7 @@ export interface SingleUserAuth extends AuthMethod {
 /**
  * Union type for allowed authentication methods.
  */
-export type ValidAuthMethod =
-	SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth */;
+export type ValidAuthMethod = SingleUserAuth /* | MultiUserAuth | OAuthOnlyAuth */;
 
 /**
  * Configuration for OAuth authentication.

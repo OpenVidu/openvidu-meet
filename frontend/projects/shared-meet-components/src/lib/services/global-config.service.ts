@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { FeatureConfigurationService, HttpService } from '@lib/services';
-import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
+import { AuthMode, AuthTransportMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@lib/typings/ce';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
@@ -39,6 +39,11 @@ export class GlobalConfigService {
 	async getAuthModeToAccessRoom(): Promise<AuthMode> {
 		await this.getSecurityConfig();
 		return this.securityConfig!.authentication.authModeToAccessRoom;
+	}
+
+	async getAuthTransportMode(): Promise<AuthTransportMode> {
+		await this.getSecurityConfig();
+		return this.securityConfig!.authentication.authTransportMode;
 	}
 
 	async saveSecurityConfig(config: SecurityConfig) {

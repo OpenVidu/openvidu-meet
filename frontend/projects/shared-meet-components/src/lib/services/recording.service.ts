@@ -1,8 +1,15 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareRecordingDialogComponent } from '@lib/components';
-import { AuthService, FeatureConfigurationService, HttpService, ParticipantService } from '@lib/services';
-import { MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
+import {
+	AuthService,
+	FeatureConfigurationService,
+	GlobalConfigService,
+	HttpService,
+	ParticipantService,
+	TokenStorageService
+} from '@lib/services';
+import { AuthTransportMode, MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@lib/typings/ce';
 import { getValidDecodedToken } from '@lib/utils';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -26,6 +33,8 @@ export class RecordingService {
 		protected participantService: ParticipantService,
 		protected authService: AuthService,
 		protected featureConfService: FeatureConfigurationService,
+		protected globalConfigService: GlobalConfigService,
+		protected tokenStorageService: TokenStorageService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -130,8 +139,21 @@ export class RecordingService {
 	 */
 	getRecordingMediaUrl(recordingId: string, secret?: string): string {
 		const params = new URLSearchParams();
+
+		// If secret is provided, use it (public/private access mode)
 		if (secret) {
 			params.append('secret', secret);
+		} else {
+			// Otherwise, try to use access and/or recording token from sessionStorage (header mode)
+			const accessToken = this.tokenStorageService.getAccessToken();
+			if (accessToken) {
+				params.append('accessToken', accessToken);
+			}
+
+			const recordingToken = this.tokenStorageService.getRecordingToken();
+			if (recordingToken) {
+				params.append('recordingToken', recordingToken);
+			}
 		}
 
 		const now = Date.now();
@@ -163,6 +185,13 @@ export class RecordingService {
 
 		try {
 			const { token } = await this.httpService.postRequest<{ token: string }>(path, { secret });
+
+			// Store token in sessionStorage for header mode
+			const authTransportMode = await this.globalConfigService.getAuthTransportMode();
+			if (authTransportMode === AuthTransportMode.HEADER) {
+				this.tokenStorageService.setRecordingToken(token);
+			}
+
 			this.setRecordingPermissionsFromToken(token);
 			return this.recordingPermissions;
 		} catch (error) {
@@ -244,6 +273,7 @@ export class RecordingService {
 	 * Downloads a recording by creating a link and triggering a click event
 	 *
 	 * @param recording - The recording information containing the ID and filename
+	 * @param secret - Optional secret for accessing the recording
 	 */
 	downloadRecording(recording: MeetRecordingInfo, secret?: string) {
 		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, secret);
@@ -256,14 +286,28 @@ export class RecordingService {
 	/**
 	 * Downloads multiple recordings as a ZIP file
 	 *
-	 * @param recordings - An array of recording IDs to download
+	 * @param recordingIds - An array of recording IDs to download
 	 */
 	downloadRecordingsAsZip(recordingIds: string[]) {
 		if (recordingIds.length === 0) {
 			throw new Error('No recordings IDs provided for download');
 		}
 
-		const downloadUrl = `${this.RECORDINGS_API}/download?recordingIds=${recordingIds.join(',')}`;
+		const params = new URLSearchParams();
+		params.append('recordingIds', recordingIds.join(','));
+
+		// Try to add access and/or recording token from sessionStorage (header mode)
+		const accessToken = this.tokenStorageService.getAccessToken();
+		if (accessToken) {
+			params.append('accessToken', accessToken);
+		}
+
+		const recordingToken = this.tokenStorageService.getRecordingToken();
+		if (recordingToken) {
+			params.append('recordingToken', recordingToken);
+		}
+
+		const downloadUrl = `${this.RECORDINGS_API}/download?${params.toString()}`;
 		const link = document.createElement('a');
 		link.href = downloadUrl;
 		link.download = 'recordings.zip';

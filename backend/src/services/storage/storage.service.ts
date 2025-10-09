@@ -1,4 +1,14 @@
-import { AuthMode, AuthType, GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, User, UserRole } from '@typings-ce';
+import {
+	AuthMode,
+	AuthTransportMode,
+	AuthType,
+	GlobalConfig,
+	MeetApiKey,
+	MeetRecordingInfo,
+	MeetRoom,
+	User,
+	UserRole
+} from '@typings-ce';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
@@ -722,7 +732,8 @@ export class MeetStorageService<
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authModeToAccessRoom: AuthMode.NONE
+					authModeToAccessRoom: AuthMode.NONE,
+					authTransportMode: AuthTransportMode.COOKIE
 				}
 			},
 			roomsConfig: {
