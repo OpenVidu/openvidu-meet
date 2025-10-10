@@ -3,8 +3,8 @@
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"build": "pnpm install && rollup -c",
-		"build:watch": "pnpm install && rollup -c -w",
+		"build": "rollup -c",
+		"build:watch": "rollup -c -w",
 		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test",
 		"test:e2e-core": "playwright test tests/e2e/core/",
