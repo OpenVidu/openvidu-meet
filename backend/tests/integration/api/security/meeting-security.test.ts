@@ -3,9 +3,10 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { LIVEKIT_URL, MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import { MeetTokenMetadata, ParticipantRole } from '../../../../src/typings/ce';
+import { AuthTransportMode, MeetTokenMetadata, ParticipantRole } from '../../../../src/typings/ce';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
+	changeAuthTransportMode,
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	loginUser,
@@ -18,12 +19,12 @@ const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
 
 describe('Meeting API Security Tests', () => {
 	let app: Express;
-	let adminCookie: string;
+	let adminAccessToken: string;
 	let roomData: RoomData;
 
 	beforeAll(async () => {
 		app = startTestServer();
-		adminCookie = await loginUser();
+		adminAccessToken = await loginUser();
 	});
 
 	beforeEach(async () => {
@@ -46,16 +47,33 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', adminCookie);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when participant is moderator and token is sent in cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Create a new room to obtain participant token in cookie mode
+			const newRoomData = await setupSingleRoom(true);
+
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${newRoomData.room.roomId}`)
+				.set('Cookie', newRoomData.moderatorToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
@@ -63,7 +81,7 @@ describe('Meeting API Security Tests', () => {
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
@@ -71,7 +89,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
@@ -106,7 +124,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
-				.set('Cookie', adminCookie)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
 				.send({ role });
 			expect(response.status).toBe(401);
 		});
@@ -114,10 +132,38 @@ describe('Meeting API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 				.send({ role });
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when participant is moderator and token is sent in cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Create a new room to obtain participant token in cookie mode
+			const newRoomData = await setupSingleRoom(true);
+			await updateParticipantMetadata(newRoomData.room.roomId, PARTICIPANT_NAME, {
+				livekitUrl: LIVEKIT_URL,
+				roles: [
+					{
+						role: ParticipantRole.SPEAKER,
+						permissions: getPermissions(newRoomData.room.roomId, ParticipantRole.SPEAKER).openvidu
+					}
+				],
+				selectedRole: ParticipantRole.SPEAKER
+			});
+
+			const response = await request(app)
+				.put(`${MEETINGS_PATH}/${newRoomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
+				.set('Cookie', newRoomData.moderatorToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
+				.send({ role });
+			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
@@ -125,7 +171,7 @@ describe('Meeting API Security Tests', () => {
 
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
-				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 				.send({ role });
 			expect(response.status).toBe(403);
@@ -134,7 +180,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER)
 				.send({ role });
 			expect(response.status).toBe(403);
@@ -154,16 +200,33 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
-				.set('Cookie', adminCookie);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(401);
 		});
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when participant is moderator and token is sent in cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Create a new room to obtain participant token in cookie mode
+			const newRoomData = await setupSingleRoom(true);
+
+			const response = await request(app)
+				.delete(`${MEETINGS_PATH}/${newRoomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
+				.set('Cookie', newRoomData.moderatorToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
@@ -171,7 +234,7 @@ describe('Meeting API Security Tests', () => {
 
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
-				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
@@ -179,7 +242,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});

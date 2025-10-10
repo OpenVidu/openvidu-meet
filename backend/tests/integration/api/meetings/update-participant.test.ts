@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@je
 import { container } from '../../../../src/config/index.js';
 import { LIVEKIT_URL } from '../../../../src/environment.js';
 import { FrontendEventService, LiveKitService } from '../../../../src/services/index.js';
+import { MeetSignalType } from '../../../../src/typings/ce/event.model.js';
 import { MeetTokenMetadata, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
@@ -13,7 +14,6 @@ import {
 	updateParticipantMetadata
 } from '../../../helpers/request-helpers.js';
 import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { MeetSignalType } from '../../../../src/typings/ce/event.model.js';
 
 const participantIdentity = 'TEST_PARTICIPANT';
 
@@ -60,7 +60,7 @@ describe('Meetings API Tests', () => {
 				roomData.room.roomId,
 				participantIdentity,
 				ParticipantRole.MODERATOR,
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
 
@@ -76,7 +76,8 @@ describe('Meetings API Tests', () => {
 			// Verify sendSignal method has been called twice
 			expect(sendSignalSpy).toHaveBeenCalledTimes(2);
 
-			expect(sendSignalSpy).toHaveBeenNthCalledWith(1, 
+			expect(sendSignalSpy).toHaveBeenNthCalledWith(
+				1,
 				roomData.room.roomId,
 				{
 					roomId: roomData.room.roomId,
@@ -91,7 +92,8 @@ describe('Meetings API Tests', () => {
 				}
 			);
 
-			expect(sendSignalSpy).toHaveBeenNthCalledWith(2, 
+			expect(sendSignalSpy).toHaveBeenNthCalledWith(
+				2,
 				roomData.room.roomId,
 				{
 					roomId: roomData.room.roomId,
@@ -114,7 +116,7 @@ describe('Meetings API Tests', () => {
 				roomData.room.roomId,
 				participantIdentity,
 				ParticipantRole.SPEAKER,
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
 
@@ -133,7 +135,7 @@ describe('Meetings API Tests', () => {
 				roomData.room.roomId,
 				'NON_EXISTENT_PARTICIPANT',
 				ParticipantRole.MODERATOR,
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Participant Error');
@@ -148,7 +150,7 @@ describe('Meetings API Tests', () => {
 				roomData.room.roomId,
 				participantIdentity,
 				ParticipantRole.MODERATOR,
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Room Error');

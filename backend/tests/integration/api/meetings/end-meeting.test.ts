@@ -35,7 +35,7 @@ describe('Meetings API Tests', () => {
 			expect(lkRoom.name).toBe(roomData.room.roomId);
 
 			// End the meeting
-			let response = await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			let response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 
 			// Check if the LiveKit room has been removed
@@ -62,7 +62,7 @@ describe('Meetings API Tests', () => {
 			}
 
 			// End the meeting
-			const response = await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			const response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 
 			// Recreate the room with a participant
@@ -74,7 +74,7 @@ describe('Meetings API Tests', () => {
 			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
 			expect(response.status).toBe(200);
 
-			response = await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 			expect(response.status).toBe(404);
 		});
 	});

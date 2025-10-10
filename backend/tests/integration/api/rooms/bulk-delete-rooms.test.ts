@@ -154,13 +154,13 @@ describe('Room API Tests', () => {
 		});
 
 		it('should handle deletion when specifying withMeeting and withRecordings parameters', async () => {
-			const [room1, { room: room2 }, { room: room3 }, { room: room4, moderatorCookie }] = await Promise.all([
+			const [room1, { room: room2 }, { room: room3 }, { room: room4, moderatorToken }] = await Promise.all([
 				createRoom(), // Room without active meeting or recordings
 				setupSingleRoom(true), // Room with active meeting
 				setupSingleRoomWithRecording(true), // Room with active meeting and recordings
 				setupSingleRoomWithRecording(true) // Room with recordings
 			]);
-			await endMeeting(room4.roomId, moderatorCookie);
+			await endMeeting(room4.roomId, moderatorToken);
 			const fakeRoomId = 'fakeRoomId'; // Non-existing room
 
 			const response = await bulkDeleteRooms(

@@ -39,7 +39,7 @@ describe('Meetings API Tests', () => {
 			expect(participant.identity).toBe(participantIdentity);
 
 			// Delete the participant
-			const response = await kickParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorCookie);
+			const response = await kickParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 
 			// Check if the participant has been removed from LiveKit
@@ -54,7 +54,7 @@ describe('Meetings API Tests', () => {
 			const response = await kickParticipant(
 				roomData.room.roomId,
 				'NON_EXISTENT_PARTICIPANT',
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Participant Error');
@@ -65,7 +65,7 @@ describe('Meetings API Tests', () => {
 			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
 			expect(response.status).toBe(200);
 
-			response = await kickParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorCookie);
+			response = await kickParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorToken);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Room Error');
 		});

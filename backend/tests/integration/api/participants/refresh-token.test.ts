@@ -1,10 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { AuthTransportMode } from '../../../../src/typings/ce/index.js';
 import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
+	changeAuthTransportMode,
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	extractCookieFromHeaders,
 	refreshParticipantToken,
 	sleep,
 	startTestServer
@@ -44,7 +47,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expectValidParticipantTokenResponse(
 				response,
@@ -63,7 +66,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.speakerCookie
+				roomData.speakerToken
 			);
 			expectValidParticipantTokenResponse(
 				response,
@@ -74,6 +77,47 @@ describe('Participant API Tests', () => {
 			);
 		});
 
+		it('should refresh participant token and store it in a cookie when in cookie mode', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Create a new room to obtain participant token in cookie mode
+			const newRoomData = await setupSingleRoom(true);
+
+			// Refresh the participant token
+			const response = await refreshParticipantToken(
+				{
+					roomId: newRoomData.room.roomId,
+					secret: newRoomData.moderatorSecret,
+					participantName,
+					participantIdentity: participantName
+				},
+				newRoomData.moderatorToken
+			);
+			expectValidParticipantTokenResponse(
+				response,
+				newRoomData.room.roomId,
+				ParticipantRole.MODERATOR,
+				participantName,
+				participantName
+			);
+
+			// Check that the token is included in a cookie
+			const participantTokenCookie = extractCookieFromHeaders(
+				response,
+				INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME
+			);
+			expect(participantTokenCookie).toBeDefined();
+			expect(participantTokenCookie).toContain(response.body.token);
+			expect(participantTokenCookie).toContain('HttpOnly');
+			expect(participantTokenCookie).toContain('SameSite=None');
+			expect(participantTokenCookie).toContain('Secure');
+			expect(participantTokenCookie).toContain('Path=/');
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
+		});
+
 		it('should fail with 400 when secret is invalid', async () => {
 			const response = await refreshParticipantToken(
 				{
@@ -82,7 +126,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(400);
 		});
@@ -108,7 +152,7 @@ describe('Participant API Tests', () => {
 					secret: 'invalid_secret',
 					participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(400);
 		});
@@ -122,7 +166,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 		});
@@ -135,7 +179,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 		});
@@ -149,7 +193,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expectValidationError(response, 'roomId', 'Required');
 		});
@@ -161,7 +205,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expectValidationError(response, 'secret', 'Required');
 		});
@@ -174,7 +218,7 @@ describe('Participant API Tests', () => {
 					participantName,
 					participantIdentity: participantName
 				},
-				roomData.moderatorCookie
+				roomData.moderatorToken
 			);
 			expectValidationError(response, 'secret', 'Secret is required');
 		});

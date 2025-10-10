@@ -1,12 +1,16 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { AuthTransportMode } from '../../../../src/typings/ce/index.js';
 import { ParticipantRole } from '../../../../src/typings/ce/participant.js';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
+	changeAuthTransportMode,
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	endMeeting,
+	extractCookieFromHeaders,
 	generateParticipantToken,
-	generateParticipantTokenCookie,
+	generateParticipantTokenRequest,
 	startTestServer,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
@@ -33,7 +37,7 @@ describe('Participant API Tests', () => {
 
 	describe('Generate Participant Token Tests', () => {
 		it('should generate a participant token without join permissions when not specifying participant name', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret
 			});
@@ -41,7 +45,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should generate a participant token with moderator permissions when using the moderator secret', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName
@@ -55,7 +59,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should generate a participant token with speaker permissions when using the speaker secret', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.speakerSecret,
 				participantName
@@ -69,19 +73,22 @@ describe('Participant API Tests', () => {
 		});
 
 		it(`should generate a participant token with both speaker and moderator permissions
-			 when using the speaker secret after having a moderator token`, async () => {
-			const moderatorCookie = await generateParticipantTokenCookie(
+			 when using the speaker secret after having a moderator token in cookie mode`, async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			const moderatorToken = await generateParticipantToken(
 				roomData.room.roomId,
 				roomData.moderatorSecret,
 				`${participantName}_MODERATOR`
 			);
-			const speakerResponse = await generateParticipantToken(
+			const speakerResponse = await generateParticipantTokenRequest(
 				{
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
 					participantName: `${participantName}_SPEAKER`
 				},
-				moderatorCookie
+				moderatorToken
 			);
 			expectValidParticipantTokenResponse(
 				speakerResponse,
@@ -91,11 +98,47 @@ describe('Participant API Tests', () => {
 				undefined,
 				[ParticipantRole.MODERATOR]
 			);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
+		});
+
+		it('should generate a participant token and store it in a cookie when in cookie mode', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Generate the participant token
+			const response = await generateParticipantTokenRequest({
+				roomId: roomData.room.roomId,
+				secret: roomData.moderatorSecret,
+				participantName
+			});
+			expectValidParticipantTokenResponse(
+				response,
+				roomData.room.roomId,
+				ParticipantRole.MODERATOR,
+				participantName
+			);
+
+			// Check that the token is included in a cookie
+			const participantTokenCookie = extractCookieFromHeaders(
+				response,
+				INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME
+			);
+			expect(participantTokenCookie).toBeDefined();
+			expect(participantTokenCookie).toContain(response.body.token);
+			expect(participantTokenCookie).toContain('HttpOnly');
+			expect(participantTokenCookie).toContain('SameSite=None');
+			expect(participantTokenCookie).toContain('Secure');
+			expect(participantTokenCookie).toContain('Path=/');
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should success when participant already exists in the room', async () => {
 			roomData = await setupSingleRoom(true);
-			let response = await generateParticipantToken({
+			let response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName
@@ -109,7 +152,7 @@ describe('Participant API Tests', () => {
 				participantName
 			);
 
-			response = await generateParticipantToken({
+			response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName
@@ -128,9 +171,9 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should fail with 409 when room is closed', async () => {
-			await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 			await updateRoomStatus(roomData.room.roomId, 'closed');
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName
@@ -139,7 +182,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should fail with 404 when room does not exist', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: 'non_existent_room',
 				secret: roomData.moderatorSecret,
 				participantName
@@ -148,7 +191,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should fail with 400 when secret is invalid', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: 'invalid_secret',
 				participantName
@@ -159,7 +202,7 @@ describe('Participant API Tests', () => {
 
 	describe('Generate Participant Token Validation Tests', () => {
 		it('should fail when roomId is not provided', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				secret: roomData.moderatorSecret,
 				participantName
 			});
@@ -167,7 +210,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should fail when secret is not provided', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				participantName
 			});
@@ -175,7 +218,7 @@ describe('Participant API Tests', () => {
 		});
 
 		it('should fail when secret is empty', async () => {
-			const response = await generateParticipantToken({
+			const response = await generateParticipantTokenRequest({
 				roomId: roomData.room.roomId,
 				secret: '',
 				participantName

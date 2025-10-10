@@ -2,16 +2,16 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { getProfile, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Users API Tests', () => {
-	let adminCookie: string;
+	let adminAccessToken: string;
 
 	beforeAll(async () => {
 		startTestServer();
-		adminCookie = await loginUser();
+		adminAccessToken = await loginUser();
 	});
 
 	describe('Profile Tests', () => {
 		it('should return 200 and admin profile', async () => {
-			const response = await getProfile(adminCookie);
+			const response = await getProfile(adminAccessToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('username');
 			expect(response.body.username).toBe('admin');

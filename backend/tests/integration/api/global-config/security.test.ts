@@ -10,7 +10,7 @@ const defaultConfig = {
 		authMethod: {
 			type: AuthType.SINGLE_USER
 		},
-		authTransportMode: AuthTransportMode.COOKIE,
+		authTransportMode: AuthTransportMode.HEADER,
 		authModeToAccessRoom: AuthMode.NONE
 	}
 };
@@ -36,7 +36,7 @@ describe('Security Config API Tests', () => {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authTransportMode: AuthTransportMode.COOKIE,
+					authTransportMode: AuthTransportMode.HEADER,
 					authModeToAccessRoom: AuthMode.ALL_USERS
 				}
 			};
@@ -108,7 +108,7 @@ describe('Security Config API Tests', () => {
 			let response = await updateSecurityConfig({
 				authentication: {
 					authMode: AuthMode.NONE,
-					authTransportMode: AuthTransportMode.COOKIE
+					authTransportMode: AuthTransportMode.HEADER
 				}
 			});
 			expectValidationError(response, 'authentication.authMethod', 'Required');
@@ -128,7 +128,7 @@ describe('Security Config API Tests', () => {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authTransportMode: AuthTransportMode.COOKIE
+					authTransportMode: AuthTransportMode.HEADER
 				}
 			});
 			expectValidationError(response, 'authentication.authModeToAccessRoom', 'Required');

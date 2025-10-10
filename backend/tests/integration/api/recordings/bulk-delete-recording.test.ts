@@ -7,7 +7,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	generateRecordingTokenCookie,
+	generateRecordingToken,
 	getAllRecordings,
 	startRecording,
 	startTestServer,
@@ -73,7 +73,7 @@ describe('Recording API Tests', () => {
 				]
 			});
 
-			await stopRecording(activeRecordingId!, activeRecordingRoom!.moderatorCookie);
+			await stopRecording(activeRecordingId!, activeRecordingRoom!.moderatorToken);
 
 			deleteResponse = await bulkDeleteRecordings([activeRecordingId]);
 
@@ -102,7 +102,7 @@ describe('Recording API Tests', () => {
 
 			await Promise.all(
 				recordingIds.map((id, index) => {
-					return stopRecording(id!, testContext.getRoomByIndex(index)!.moderatorCookie);
+					return stopRecording(id!, testContext.getRoomByIndex(index)!.moderatorToken);
 				})
 			);
 		});
@@ -122,14 +122,14 @@ describe('Recording API Tests', () => {
 			const recordingId = roomData.recordingId;
 
 			// Generate a recording token for the room
-			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.moderatorSecret);
+			const recordingToken = await generateRecordingToken(roomId, roomData.moderatorSecret);
 
 			// Create another room and start a recording
 			const otherRoomData = await setupSingleRoomWithRecording(true);
 			const otherRecordingId = otherRoomData.recordingId;
 
 			// Intenta eliminar ambas grabaciones usando el token de la primera sala
-			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingCookie);
+			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingToken);
 
 			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
@@ -181,7 +181,7 @@ describe('Recording API Tests', () => {
 			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
 			// Create two recordings in the same room
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
-			const { room, recordingId: firstRecordingId, moderatorCookie } = testContext.rooms[0];
+			const { room, recordingId: firstRecordingId, moderatorToken } = testContext.rooms[0];
 
 			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
 
@@ -195,11 +195,11 @@ describe('Recording API Tests', () => {
 			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
 			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
-			const response = await startRecording(room.roomId, moderatorCookie);
+			const response = await startRecording(room.roomId, moderatorToken);
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 			const secondRecordingId = response.body.recordingId;
 
-			await stopRecording(secondRecordingId, moderatorCookie);
+			await stopRecording(secondRecordingId, moderatorToken);
 			// Delete first recording - room metadata should remain
 			const bulkResponse = await bulkDeleteRecordings([firstRecordingId, secondRecordingId]);
 			expect(bulkResponse.status).toBe(200);

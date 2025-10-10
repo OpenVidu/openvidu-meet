@@ -3,8 +3,9 @@ import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import { AuthMode, MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '../../../../src/typings/ce/index.js';
 import {
+	changeAuthTransportMode,
 	changeSecurityConfig,
 	createRoom,
 	deleteAllRecordings,
@@ -21,11 +22,11 @@ const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`
 
 describe('Room API Security Tests', () => {
 	let app: Express;
-	let adminCookie: string;
+	let adminAccessToken: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-		adminCookie = await loginUser();
+		adminAccessToken = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -43,8 +44,25 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({});
+			expect(response.status).toBe(201);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
 			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send({});
 			expect(response.status).toBe(201);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -62,8 +80,24 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
-			const response = await request(app).get(ROOMS_PATH).set('Cookie', adminCookie);
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send({});
+			expect(response.status).toBe(201);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -92,8 +126,25 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
 				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -117,8 +168,24 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
 			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -129,7 +196,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
@@ -139,7 +206,7 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
@@ -147,7 +214,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is speaker', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(200);
 		});
@@ -169,8 +236,24 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
 			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`).set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -196,8 +279,24 @@ describe('Room API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
 				.set('Cookie', adminCookie);
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -208,7 +307,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
@@ -218,7 +317,7 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set('Cookie', newRoomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(403);
 		});
@@ -226,7 +325,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when participant is speaker', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(200);
 		});
@@ -236,7 +335,7 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set('Cookie', newRoomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
 			expect(response.status).toBe(403);
 		});
@@ -270,9 +369,26 @@ describe('Room API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
 				.set('Cookie', adminCookie)
 				.send({ config: roomConfig });
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -300,9 +416,26 @@ describe('Room API Security Tests', () => {
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as admin via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
 				.set('Cookie', adminCookie)
 				.send({ status: 'open' });
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -354,9 +487,28 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({ secret: roomData.moderatorSecret });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when authentication is required for moderator, participant is moderator and authenticated via cookie', async () => {
+			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
+
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
 				.set('Cookie', adminCookie)
 				.send({ secret: roomData.moderatorSecret });
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
@@ -373,7 +525,7 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
-				.set('Cookie', adminCookie)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
 				.send({ secret: roomData.speakerSecret });
 			expect(response.status).toBe(200);
 		});
@@ -392,7 +544,7 @@ describe('Room API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/recording-token`)
-				.set('Cookie', adminCookie)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
 				.send({ secret: roomData.moderatorSecret });
 			expect(response.status).toBe(200);
 		});

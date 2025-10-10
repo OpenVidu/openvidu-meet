@@ -51,14 +51,14 @@ describe('Room API Tests', () => {
 		describe('with active meeting but no recordings', () => {
 			let roomId: string;
 			let roomName: string;
-			let moderatorCookie: string;
+			let moderatorToken: string;
 
 			beforeEach(async () => {
 				// Create a room with an active meeting
-				const { room, moderatorCookie: cookie } = await setupSingleRoom(true);
+				const { room, moderatorToken: token } = await setupSingleRoom(true);
 				roomId = room.roomId;
 				roomName = room.roomName;
-				moderatorCookie = cookie;
+				moderatorToken = token;
 			});
 
 			it('should return 200 with successCode=room_with_active_meeting_deleted when withMeeting=force', async () => {
@@ -96,7 +96,7 @@ describe('Room API Tests', () => {
 				);
 
 				// End meeting and check the room is deleted
-				await endMeeting(roomId, moderatorCookie);
+				await endMeeting(roomId, moderatorToken);
 				const getResponse = await getRoom(roomId);
 				expect(getResponse.status).toBe(404);
 			});
@@ -114,10 +114,10 @@ describe('Room API Tests', () => {
 
 			beforeEach(async () => {
 				// Create a room with recordings and end the meeting
-				const { room, moderatorCookie } = await setupSingleRoomWithRecording(true);
+				const { room, moderatorToken } = await setupSingleRoomWithRecording(true);
 				roomId = room.roomId;
 				roomName = room.roomName;
-				await endMeeting(roomId, moderatorCookie);
+				await endMeeting(roomId, moderatorToken);
 			});
 
 			it('should return 200 with successCode=room_and_recordings_deleted when withRecording=force', async () => {
@@ -171,14 +171,14 @@ describe('Room API Tests', () => {
 		describe('with active meeting and recordings', () => {
 			let roomId: string;
 			let roomName: string;
-			let moderatorCookie: string;
+			let moderatorToken: string;
 
 			beforeEach(async () => {
 				// Create a room with recordings, keep the meeting active
-				const { room, moderatorCookie: cookie } = await setupSingleRoomWithRecording(true);
+				const { room, moderatorToken: token } = await setupSingleRoomWithRecording(true);
 				roomId = room.roomId;
 				roomName = room.roomName;
-				moderatorCookie = cookie;
+				moderatorToken = token;
 			});
 
 			it('should return 200 with successCode=room_with_active_meeting_and_recordings_deleted when withMeeting=force and withRecording=force', async () => {
@@ -269,7 +269,7 @@ describe('Room API Tests', () => {
 				);
 
 				// End meeting and check the room and recordings are deleted
-				await endMeeting(roomId, moderatorCookie);
+				await endMeeting(roomId, moderatorToken);
 				const roomResponse = await getRoom(roomId);
 				expect(roomResponse.status).toBe(404);
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
@@ -297,7 +297,7 @@ describe('Room API Tests', () => {
 				);
 
 				// End meeting and check that the room is closed and recordings are not deleted
-				await endMeeting(roomId, moderatorCookie);
+				await endMeeting(roomId, moderatorToken);
 				const roomResponse = await getRoom(roomId);
 				expect(roomResponse.status).toBe(200);
 				expectValidRoom(

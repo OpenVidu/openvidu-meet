@@ -102,7 +102,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(
 				roomData.room.roomId,
 				undefined,
-				roomData.speakerCookie,
+				roomData.speakerToken,
 				ParticipantRole.SPEAKER
 			);
 			expect(response.status).toBe(200);

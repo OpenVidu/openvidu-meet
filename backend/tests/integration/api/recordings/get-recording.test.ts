@@ -50,7 +50,7 @@ describe('Recording API Tests', () => {
 			const {
 				room: roomAux,
 				recordingId: recordingIdAux = '',
-				moderatorCookie: moderatorCookieAux
+				moderatorToken: moderatorTokenAux
 			} = contextAux.getRoomByIndex(0)!;
 			const response = await getRecording(recordingIdAux);
 
@@ -62,7 +62,7 @@ describe('Recording API Tests', () => {
 				MeetRecordingStatus.ACTIVE
 			);
 
-			await stopAllRecordings(moderatorCookieAux);
+			await stopAllRecordings(moderatorTokenAux);
 		});
 
 		it('should return 404 when recording does not exist', async () => {

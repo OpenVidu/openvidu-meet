@@ -41,10 +41,10 @@ describe('Recording API Race Conditions Tests', () => {
 	});
 
 	afterEach(async () => {
-		const moderatorCookie = context?.getRoomByIndex(0)?.moderatorCookie;
+		const moderatorToken = context?.getRoomByIndex(0)?.moderatorToken;
 
-		if (moderatorCookie) {
-			await stopAllRecordings(moderatorCookie);
+		if (moderatorToken) {
+			await stopAllRecordings(moderatorToken);
 		}
 
 		eventController.reset();
@@ -67,7 +67,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		try {
 			// Attempt to start recording
-			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+			const result = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 			expect(eventServiceOffSpy).toHaveBeenCalledWith(
 				DistributedEventType.RECORDING_ACTIVE,
 				expect.any(Function)
@@ -122,7 +122,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		try {
 			// Start recording with a short timeout
-			const result = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+			const result = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 
 			expect(eventServiceOffSpy).toHaveBeenCalledWith(
 				DistributedEventType.RECORDING_ACTIVE,
@@ -182,7 +182,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		try {
 			// Start recording in room1 (should timeout)
-			const rec1 = await startRecording(room1.room.roomId, room1.moderatorCookie);
+			const rec1 = await startRecording(room1.room.roomId, room1.moderatorToken);
 			expect(rec1.status).toBe(503);
 
 			setInternalConfig({
@@ -190,18 +190,18 @@ describe('Recording API Race Conditions Tests', () => {
 			});
 			// ✅ EXPECTED BEHAVIOR: System should remain stable
 			// Recording in different room should work normally
-			const rec2 = await startRecording(room2.room.roomId, room2.moderatorCookie);
+			const rec2 = await startRecording(room2.room.roomId, room2.moderatorToken);
 			expect(rec2.status).toBe(201);
 			expectValidStartRecordingResponse(rec2, room2.room.roomId, room2.room.roomName);
 
-			let response = await stopRecording(rec2.body.recordingId!, room2.moderatorCookie);
+			let response = await stopRecording(rec2.body.recordingId!, room2.moderatorToken);
 			expectValidStopRecordingResponse(response, rec2.body.recordingId!, room2.room.roomId, room2.room.roomName);
 
 			// ✅ EXPECTED BEHAVIOR: After timeout cleanup, room1 should be available again
-			const rec3 = await startRecording(room1.room.roomId, room1.moderatorCookie);
+			const rec3 = await startRecording(room1.room.roomId, room1.moderatorToken);
 			expect(rec3.status).toBe(201);
 			expectValidStartRecordingResponse(rec3, room1.room.roomId, room1.room.roomName);
-			response = await stopRecording(rec3.body.recordingId!, room1.moderatorCookie);
+			response = await stopRecording(rec3.body.recordingId!, room1.moderatorToken);
 			expectValidStopRecordingResponse(response, rec3.body.recordingId!, room1.room.roomId, room1.room.roomName);
 		} finally {
 			startRoomCompositeSpy.mockRestore();
@@ -226,7 +226,7 @@ describe('Recording API Race Conditions Tests', () => {
 		try {
 			// Start recordings in all rooms simultaneously (all should timeout)
 			const results = await Promise.all(
-				rooms.map((room) => startRecording(room.room.roomId, room.moderatorCookie))
+				rooms.map((room) => startRecording(room.room.roomId, room.moderatorToken))
 			);
 
 			// All should timeout
@@ -241,14 +241,14 @@ describe('Recording API Race Conditions Tests', () => {
 
 			// ✅ EXPECTED BEHAVIOR: After timeouts, all rooms should be available again
 			const retryResults = await Promise.all(
-				rooms.map((room) => startRecording(room.room.roomId, room.moderatorCookie))
+				rooms.map((room) => startRecording(room.room.roomId, room.moderatorToken))
 			);
 
 			for (const startResult of retryResults) {
 				expect(startResult.status).toBe(201);
 				const room = rooms.find((r) => r.room.roomId === startResult.body.roomId)!;
 				expectValidStartRecordingResponse(startResult, room.room.roomId, room.room.roomName);
-				const stopResult = await stopRecording(startResult.body.recordingId!, room.moderatorCookie);
+				const stopResult = await stopRecording(startResult.body.recordingId!, room.moderatorToken);
 				expectValidStopRecordingResponse(
 					stopResult,
 					startResult.body.recordingId!,
@@ -272,18 +272,18 @@ describe('Recording API Race Conditions Tests', () => {
 		eventController.initialize();
 		eventController.pauseEventsForRoom(roomDataA!.room.roomId);
 
-		const recordingPromiseA = startRecording(roomDataA!.room.roomId, roomDataA!.moderatorCookie);
+		const recordingPromiseA = startRecording(roomDataA!.room.roomId, roomDataA!.moderatorToken);
 
 		// Brief delay to ensure both recordings start in the right order
 		await sleep('1s');
 
 		// Step 2: Start recording in roomB (this will complete quickly)
-		const recordingResponseB = await startRecording(roomDataB!.room.roomId, roomDataB!.moderatorCookie);
+		const recordingResponseB = await startRecording(roomDataB!.room.roomId, roomDataB!.moderatorToken);
 		expectValidStartRecordingResponse(recordingResponseB, roomDataB!.room.roomId, roomDataB!.room.roomName);
 		const recordingIdB = recordingResponseB.body.recordingId;
 
 		// Step 3: Stop recording in roomB while roomA is still waiting for its event
-		const stopResponseB = await stopRecording(recordingIdB, roomDataB!.moderatorCookie);
+		const stopResponseB = await stopRecording(recordingIdB, roomDataB!.moderatorToken);
 		expectValidStopRecordingResponse(stopResponseB, recordingIdB, roomDataB!.room.roomId, roomDataB!.room.roomName);
 
 		eventController.releaseEventsForRoom(roomDataA!.room.roomId);
@@ -303,7 +303,7 @@ describe('Recording API Race Conditions Tests', () => {
 		const roomDataList = Array.from({ length: 5 }, (_, index) => context!.getRoomByIndex(index)!);
 
 		const startResponses = await Promise.all(
-			roomDataList.map((roomData) => startRecording(roomData.room.roomId, roomData.moderatorCookie))
+			roomDataList.map((roomData) => startRecording(roomData.room.roomId, roomData.moderatorToken))
 		);
 
 		startResponses.forEach((response, index) => {
@@ -317,7 +317,7 @@ describe('Recording API Race Conditions Tests', () => {
 		const recordingIds = startResponses.map((res) => res.body.recordingId);
 
 		const stopResponses = await Promise.all(
-			recordingIds.map((recordingId, index) => stopRecording(recordingId, roomDataList[index].moderatorCookie))
+			recordingIds.map((recordingId, index) => stopRecording(recordingId, roomDataList[index].moderatorToken))
 		);
 
 		stopResponses.forEach((response, index) => {
@@ -334,14 +334,14 @@ describe('Recording API Race Conditions Tests', () => {
 		context = await setupMultiRoomTestContext(2, true);
 		const roomDataA = context.getRoomByIndex(0);
 		const roomDataB = context.getRoomByIndex(1);
-		const responseA = await startRecording(roomDataA!.room.roomId, roomDataA!.moderatorCookie);
-		const responseB = await startRecording(roomDataB!.room.roomId, roomDataB!.moderatorCookie);
+		const responseA = await startRecording(roomDataA!.room.roomId, roomDataA!.moderatorToken);
+		const responseB = await startRecording(roomDataB!.room.roomId, roomDataB!.moderatorToken);
 		const recordingIdA = responseA.body.recordingId;
 		const recordingIdB = responseB.body.recordingId;
 
 		const [stopResponseA, stopResponseB] = await Promise.all([
-			stopRecording(recordingIdA, roomDataA!.moderatorCookie),
-			stopRecording(recordingIdB, roomDataB!.moderatorCookie)
+			stopRecording(recordingIdA, roomDataA!.moderatorToken),
+			stopRecording(recordingIdB, roomDataB!.moderatorToken)
 		]);
 		expectValidStopRecordingResponse(stopResponseA, recordingIdA, roomDataA!.room.roomId, roomDataA!.room.roomName);
 		expectValidStopRecordingResponse(stopResponseB, recordingIdB, roomDataB!.room.roomId, roomDataB!.room.roomName);
@@ -352,8 +352,8 @@ describe('Recording API Race Conditions Tests', () => {
 		const roomData = context.getRoomByIndex(0)!;
 
 		const [firstRecordingResponse, secondRecordingResponse] = await Promise.all([
-			startRecording(roomData.room.roomId, roomData.moderatorCookie),
-			startRecording(roomData.room.roomId, roomData.moderatorCookie)
+			startRecording(roomData.room.roomId, roomData.moderatorToken),
+			startRecording(roomData.room.roomId, roomData.moderatorToken)
 		]);
 
 		console.log('First recording response:', firstRecordingResponse.body);
@@ -368,7 +368,7 @@ describe('Recording API Race Conditions Tests', () => {
 		if (firstRecordingResponse.status === 201) {
 			expectValidStartRecordingResponse(firstRecordingResponse, roomData.room.roomId, roomData.room.roomName);
 			// stop the first recording
-			const stopResponse = await stopRecording(firstRecordingResponse.body.recordingId, roomData.moderatorCookie);
+			const stopResponse = await stopRecording(firstRecordingResponse.body.recordingId, roomData.moderatorToken);
 			expectValidStopRecordingResponse(
 				stopResponse,
 				firstRecordingResponse.body.recordingId,
@@ -378,10 +378,7 @@ describe('Recording API Race Conditions Tests', () => {
 		} else {
 			expectValidStartRecordingResponse(secondRecordingResponse, roomData.room.roomId, roomData.room.roomName);
 			// stop the second recording
-			const stopResponse = await stopRecording(
-				secondRecordingResponse.body.recordingId,
-				roomData.moderatorCookie
-			);
+			const stopResponse = await stopRecording(secondRecordingResponse.body.recordingId, roomData.moderatorToken);
 			expectValidStopRecordingResponse(
 				stopResponse,
 				secondRecordingResponse.body.recordingId,
@@ -397,12 +394,12 @@ describe('Recording API Race Conditions Tests', () => {
 
 		const gcSpy = jest.spyOn(recordingService as any, 'performRecordingLocksGarbageCollection');
 
-		const startResponse = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+		const startResponse = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 		expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
 		const recordingId = startResponse.body.recordingId;
 
 		// Execute garbage collection while stopping the recording
-		const stopPromise = stopRecording(recordingId, roomData.moderatorCookie);
+		const stopPromise = stopRecording(recordingId, roomData.moderatorToken);
 		const gcPromise = recordingService['performRecordingLocksGarbageCollection']();
 
 		// Both operations should complete
@@ -469,18 +466,18 @@ describe('Recording API Race Conditions Tests', () => {
 		const room2 = context.getRoomByIndex(1)!;
 		const room3 = context.getRoomByIndex(2)!;
 
-		const start1 = await startRecording(room1.room.roomId, room1.moderatorCookie);
-		const start2 = await startRecording(room2.room.roomId, room2.moderatorCookie);
+		const start1 = await startRecording(room1.room.roomId, room1.moderatorToken);
+		const start2 = await startRecording(room2.room.roomId, room2.moderatorToken);
 
 		const recordingId1 = start1.body.recordingId;
 		const recordingId2 = start2.body.recordingId;
 
-		await stopRecording(recordingId1, room1.moderatorCookie);
-		await stopRecording(recordingId2, room2.moderatorCookie);
+		await stopRecording(recordingId1, room1.moderatorToken);
+		await stopRecording(recordingId2, room2.moderatorToken);
 
 		// Bulk delete the recordings while starting a new one
 		const bulkDeletePromise = bulkDeleteRecordings([recordingId1, recordingId2]);
-		const startNewRecordingPromise = startRecording(room3.room.roomId, room3.moderatorCookie);
+		const startNewRecordingPromise = startRecording(room3.room.roomId, room3.moderatorToken);
 
 		// Both operations should complete successfully
 		const [bulkDeleteResult, newRecordingResult] = await Promise.all([bulkDeletePromise, startNewRecordingPromise]);
@@ -490,7 +487,7 @@ describe('Recording API Race Conditions Tests', () => {
 		// Check that the new recording started successfully
 		expectValidStartRecordingResponse(newRecordingResult, room3.room.roomId, room3.room.roomName);
 
-		const newStopResponse = await stopRecording(newRecordingResult.body.recordingId, room3.moderatorCookie);
+		const newStopResponse = await stopRecording(newRecordingResult.body.recordingId, room3.moderatorToken);
 		expectValidStopRecordingResponse(
 			newStopResponse,
 			newRecordingResult.body.recordingId,

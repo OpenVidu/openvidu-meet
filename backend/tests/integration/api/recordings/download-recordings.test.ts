@@ -7,7 +7,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	downloadRecordings,
-	generateRecordingTokenCookie,
+	generateRecordingToken,
 	startTestServer
 } from '../../../helpers/request-helpers';
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
@@ -59,12 +59,12 @@ describe('Recording API Tests', () => {
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 			const recordingId = roomData.recordingId!;
-			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.moderatorSecret);
+			const recordingToken = await generateRecordingToken(roomId, roomData.moderatorSecret);
 
 			const otherRoomData = await setupSingleRoomWithRecording(true);
 			const otherRecordingId = otherRoomData.recordingId!;
 
-			const res = await downloadRecordings([recordingId, otherRecordingId], true, recordingCookie);
+			const res = await downloadRecordings([recordingId, otherRecordingId], true, recordingToken);
 
 			expect(res.status).toBe(200);
 			const entries = await getZipEntries(res.body);
@@ -75,12 +75,12 @@ describe('Recording API Tests', () => {
 		it('should return an error if none of the recordings belong to the room in the token', async () => {
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
-			const recordingCookie = await generateRecordingTokenCookie(roomId, roomData.moderatorSecret);
+			const recordingToken = await generateRecordingToken(roomId, roomData.moderatorSecret);
 
 			const otherRoomData = await setupSingleRoomWithRecording(true);
 			const otherRecordingId = otherRoomData.recordingId!;
 
-			const res = await downloadRecordings([otherRecordingId], false, recordingCookie);
+			const res = await downloadRecordings([otherRecordingId], false, recordingToken);
 
 			expect(res.status).toBe(400);
 			expect(res.body).toHaveProperty('error');

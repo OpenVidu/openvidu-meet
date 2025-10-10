@@ -68,7 +68,7 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.meetingEndAction).toEqual('close');
 
 			// End meeting and verify closed status
-			await endMeeting(roomData.room.roomId, roomData.moderatorCookie);
+			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 
 			getResponse = await getRoom(roomData.room.roomId);
 			expect(getResponse.status).toBe(200);

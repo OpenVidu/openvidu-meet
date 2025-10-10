@@ -2,8 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
-import { AuthMode } from '../../../../src/typings/ce/index.js';
+import { AuthMode, AuthTransportMode } from '../../../../src/typings/ce/index.js';
 import {
+	changeAuthTransportMode,
 	changeSecurityConfig,
 	deleteAllRooms,
 	disconnectFakeParticipants,
@@ -19,11 +20,11 @@ describe('Participant API Security Tests', () => {
 	const PARTICIPANT_NAME = 'TEST_PARTICIPANT';
 
 	let app: Express;
-	let adminCookie: string;
+	let adminAccessToken: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-		adminCookie = await loginUser();
+		adminAccessToken = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -74,12 +75,33 @@ describe('Participant API Security Tests', () => {
 		it('should succeed when authentication is required for moderator, participant is moderator and authenticated', async () => {
 			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
 
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({
+					roomId: roomData.room.roomId,
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
+				});
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when authentication is required for moderator, participant is moderator and authenticated via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
 			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
 				roomId: roomData.room.roomId,
 				secret: roomData.moderatorSecret,
 				participantName: PARTICIPANT_NAME
 			});
 			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
@@ -96,11 +118,14 @@ describe('Participant API Security Tests', () => {
 		it('should succeed when authentication is required for all users, participant is speaker and authenticated', async () => {
 			await changeSecurityConfig(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
-				roomId: roomData.room.roomId,
-				secret: roomData.speakerSecret,
-				participantName: PARTICIPANT_NAME
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({
+					roomId: roomData.room.roomId,
+					secret: roomData.speakerSecret,
+					participantName: PARTICIPANT_NAME
+				});
 			expect(response.status).toBe(200);
 		});
 
@@ -118,11 +143,14 @@ describe('Participant API Security Tests', () => {
 		it('should succeed when authentication is required for all users, participant is moderator and authenticated', async () => {
 			await changeSecurityConfig(AuthMode.ALL_USERS);
 
-			const response = await request(app).post(`${PARTICIPANTS_PATH}/token`).set('Cookie', adminCookie).send({
-				roomId: roomData.room.roomId,
-				secret: roomData.moderatorSecret,
-				participantName: PARTICIPANT_NAME
-			});
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.send({
+					roomId: roomData.room.roomId,
+					secret: roomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME
+				});
 			expect(response.status).toBe(200);
 		});
 
@@ -158,7 +186,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
@@ -173,7 +201,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
@@ -188,7 +216,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
@@ -203,7 +231,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', [adminCookie, roomData.moderatorCookie])
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
@@ -213,12 +242,38 @@ describe('Participant API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
+		it('should succeed when authentication is required for moderator, participant is moderator and authenticated via cookie', async () => {
+			// Set auth transport mode to cookie
+			await changeAuthTransportMode(AuthTransportMode.COOKIE);
+
+			// Login as admin to get access token cookie
+			const adminCookie = await loginUser();
+
+			// Create a new room to obtain participant token in cookie mode
+			const newRoomData = await setupSingleRoom(true);
+
+			const response = await request(app)
+				.post(`${PARTICIPANTS_PATH}/token/refresh`)
+				.set('Cookie', adminCookie)
+				.set('Cookie', newRoomData.moderatorToken)
+				.send({
+					roomId: newRoomData.room.roomId,
+					secret: newRoomData.moderatorSecret,
+					participantName: PARTICIPANT_NAME,
+					participantIdentity: PARTICIPANT_NAME
+				});
+			expect(response.status).toBe(200);
+
+			// Revert auth transport mode to header
+			await changeAuthTransportMode(AuthTransportMode.HEADER);
+		});
+
 		it('should fail when authentication is required for moderator and participant is moderator but not authenticated', async () => {
 			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
@@ -233,7 +288,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', [adminCookie, roomData.speakerCookie])
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
@@ -248,7 +304,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.speakerCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.speakerSecret,
@@ -263,7 +319,8 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', [adminCookie, roomData.moderatorCookie])
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,
@@ -278,7 +335,7 @@ describe('Participant API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${PARTICIPANTS_PATH}/token/refresh`)
-				.set('Cookie', roomData.moderatorCookie)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
 				.send({
 					roomId: roomData.room.roomId,
 					secret: roomData.moderatorSecret,

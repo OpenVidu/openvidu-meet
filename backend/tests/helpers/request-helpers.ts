@@ -18,7 +18,6 @@ import { RecordingService, RoomService } from '../../src/services/index.js';
 import {
 	AuthMode,
 	AuthTransportMode,
-	AuthType,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
@@ -57,10 +56,10 @@ export const startTestServer = (): Express => {
 export const generateApiKey = async (): Promise<string> => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('key');
@@ -70,10 +69,10 @@ export const generateApiKey = async (): Promise<string> => {
 export const getApiKeys = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 	return response;
 };
@@ -90,10 +89,10 @@ export const getRoomsAppearanceConfig = async () => {
 export const updateRoomsAppearanceConfig = async (config: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send(config);
 	return response;
 };
@@ -101,10 +100,10 @@ export const updateRoomsAppearanceConfig = async (config: any) => {
 export const getWebbhookConfig = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 	return response;
 };
@@ -112,10 +111,10 @@ export const getWebbhookConfig = async () => {
 export const updateWebbhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send(config);
 
 	return response;
@@ -133,40 +132,51 @@ export const testWebhookUrl = async (url: string) => {
 export const getSecurityConfig = async () => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
-	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
-		.set('Cookie', adminCookie)
-		.send();
+	const response = await request(app).get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`).send();
 	return response;
 };
 
 export const updateSecurityConfig = async (config: any) => {
 	checkAppIsRunning();
 
-	const adminCookie = await loginUser();
+	const accessToken = await loginUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
-		.set('Cookie', adminCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send(config);
 	return response;
 };
 
 export const changeSecurityConfig = async (authMode: AuthMode) => {
-	const response = await updateSecurityConfig({
-		authentication: {
-			authMethod: {
-				type: AuthType.SINGLE_USER
-			},
-			authTransportMode: AuthTransportMode.COOKIE,
-			authModeToAccessRoom: authMode
-		}
-	});
+	// Get current config to avoid overwriting other properties
+	let response = await getSecurityConfig();
+	expect(response.status).toBe(200);
+	const currentConfig = response.body;
+
+	currentConfig.authentication.authModeToAccessRoom = authMode;
+	response = await updateSecurityConfig(currentConfig);
 	expect(response.status).toBe(200);
 };
 
+export const changeAuthTransportMode = async (authTransportMode: AuthTransportMode) => {
+	// Get current config to avoid overwriting other properties
+	let response = await getSecurityConfig();
+	expect(response.status).toBe(200);
+	const currentConfig = response.body;
+
+	currentConfig.authentication.authTransportMode = authTransportMode;
+	response = await updateSecurityConfig(currentConfig);
+	expect(response.status).toBe(200);
+};
+
+const getAuthTransportMode = async (): Promise<AuthTransportMode> => {
+	const response = await getSecurityConfig();
+	return response.body.authentication.authTransportMode;
+};
+
 /**
- * Logs in a user and returns the access token cookie
+ * Logs in a user and returns the access token in the format
+ * "Bearer <token>" or the cookie string if in cookie mode
  */
 export const loginUser = async (): Promise<string> => {
 	checkAppIsRunning();
@@ -176,28 +186,56 @@ export const loginUser = async (): Promise<string> => {
 		.send(CREDENTIALS.admin)
 		.expect(200);
 
-	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const accessTokenCookie = cookies.find((cookie) =>
-		cookie.startsWith(`${INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME}=`)
-	) as string;
-	return accessTokenCookie;
+	const authTransportMode = await getAuthTransportMode();
+
+	// Return token in header or cookie based on transport mode
+	if (authTransportMode === AuthTransportMode.COOKIE) {
+		const cookie = extractCookieFromHeaders(response, INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME);
+		return cookie!;
+	}
+
+	expect(response.body).toHaveProperty('accessToken');
+	return `Bearer ${response.body.accessToken}`;
 };
 
-export const getProfile = async (cookie: string) => {
+/**
+ * Extracts cookie from response headers
+ *
+ * @param response - The supertest response
+ * @param cookieName - Name of the cookie to extract
+ * @returns The cookie string
+ */
+export const extractCookieFromHeaders = (response: Response, cookieName: string): string | undefined => {
+	expect(response.headers['set-cookie']).toBeDefined();
+	const cookies = response.headers['set-cookie'] as unknown as string[];
+	return cookies?.find((cookie) => cookie.startsWith(`${cookieName}=`));
+};
+
+/**
+ * Selects the appropriate HTTP header name based on the format of the provided access token.
+ *
+ * If the access token starts with 'Bearer ', the specified header name is returned (typically 'Authorization').
+ * Otherwise, 'Cookie' is returned, indicating that the token should be sent as a cookie.
+ */
+const selectHeaderBasedOnToken = (headerName: string, accessToken: string): string => {
+	return accessToken.startsWith('Bearer ') ? headerName : 'Cookie';
+};
+
+export const getProfile = async (accessToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`)
-		.set('Cookie', cookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 };
 
-export const changePassword = async (currentPassword: string, newPassword: string, cookie: string) => {
+export const changePassword = async (currentPassword: string, newPassword: string, accessToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`)
-		.set('Cookie', cookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send({ currentPassword, newPassword });
 };
 
@@ -229,13 +267,16 @@ export const getRooms = async (query: Record<string, any> = {}) => {
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string, cookie?: string, role?: ParticipantRole) => {
+export const getRoom = async (roomId: string, fields?: string, participantToken?: string, role?: ParticipantRole) => {
 	checkAppIsRunning();
 
 	const req = request(app).get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`).query({ fields });
 
-	if (cookie && role) {
-		req.set('Cookie', cookie).set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, role);
+	if (participantToken && role) {
+		req.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, participantToken).set(
+			INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER,
+			role
+		);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 	}
@@ -372,49 +413,51 @@ export const getRoomRoleBySecret = async (roomId: string, secret: string) => {
 	return response;
 };
 
-export const generateParticipantToken = async (participantOptions: any, cookie?: string) => {
+export const generateParticipantTokenRequest = async (participantOptions: any, previousToken?: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
 	await changeSecurityConfig(AuthMode.NONE);
 
 	// Generate the participant token
-	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token`)
-		.set('Cookie', cookie || '')
-		.send(participantOptions);
-	return response;
+	const req = request(app).post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token`);
+
+	if (previousToken) {
+		req.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, previousToken), previousToken);
+	}
+
+	req.send(participantOptions);
+	return await req;
 };
 
 /**
- * Generates a participant token for a room and returns the cookie containing the token
+ * Generates a participant token for a room and returns the JWT token in the format "Bearer <token>"
  */
-export const generateParticipantTokenCookie = async (
+export const generateParticipantToken = async (
 	roomId: string,
 	secret: string,
-	participantName: string,
-	cookie?: string
+	participantName: string
 ): Promise<string> => {
-	// Generate the participant token
-	const response = await generateParticipantToken(
-		{
-			roomId,
-			secret,
-			participantName
-		},
-		cookie
-	);
+	const response = await generateParticipantTokenRequest({
+		roomId,
+		secret,
+		participantName
+	});
 	expect(response.status).toBe(200);
 
-	// Return the participant token cookie
-	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const participantTokenCookie = cookies.find((cookie) =>
-		cookie.startsWith(`${INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME}=`)
-	) as string;
-	return participantTokenCookie;
+	const authTransportMode = await getAuthTransportMode();
+
+	// Return token in header or cookie based on transport mode
+	if (authTransportMode === AuthTransportMode.COOKIE) {
+		const cookie = extractCookieFromHeaders(response, INTERNAL_CONFIG.PARTICIPANT_TOKEN_COOKIE_NAME);
+		return cookie!;
+	}
+
+	expect(response.body).toHaveProperty('token');
+	return `Bearer ${response.body.token}`;
 };
 
-export const refreshParticipantToken = async (participantOptions: any, cookie: string) => {
+export const refreshParticipantToken = async (participantOptions: any, previousToken: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -422,7 +465,7 @@ export const refreshParticipantToken = async (participantOptions: any, cookie: s
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants/token/refresh`)
-		.set('Cookie', cookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, previousToken), previousToken)
 		.send(participantOptions);
 	return response;
 };
@@ -541,42 +584,42 @@ export const updateParticipant = async (
 	roomId: string,
 	participantIdentity: string,
 	newRole: ParticipantRole,
-	moderatorCookie: string
+	moderatorToken: string
 ) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`)
-		.set('Cookie', moderatorCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send({ role: newRole });
 	return response;
 };
 
-export const kickParticipant = async (roomId: string, participantIdentity: string, moderatorCookie: string) => {
+export const kickParticipant = async (roomId: string, participantIdentity: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
-		.set('Cookie', moderatorCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	return response;
 };
 
-export const endMeeting = async (roomId: string, moderatorCookie: string) => {
+export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
-		.set('Cookie', moderatorCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	await sleep('1s');
 	return response;
 };
 
-export const generateRecordingToken = async (roomId: string, secret: string) => {
+export const generateRecordingTokenRequest = async (roomId: string, secret: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -591,39 +634,42 @@ export const generateRecordingToken = async (roomId: string, secret: string) => 
 };
 
 /**
- * Generates a token for retrieving/deleting recordings from a room and returns the cookie containing the token
+ * Generates a token for retrieving/deleting recordings from a room and returns the JWT token in the format "Bearer <token>"
  */
-export const generateRecordingTokenCookie = async (roomId: string, secret: string) => {
-	// Generate the recording token
-	const response = await generateRecordingToken(roomId, secret);
+export const generateRecordingToken = async (roomId: string, secret: string) => {
+	const response = await generateRecordingTokenRequest(roomId, secret);
 	expect(response.status).toBe(200);
 
-	// Return the recording token cookie
-	const cookies = response.headers['set-cookie'] as unknown as string[];
-	const recordingTokenCookie = cookies.find((cookie) =>
-		cookie.startsWith(`${INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME}=`)
-	) as string;
-	return recordingTokenCookie;
+	const authTransportMode = await getAuthTransportMode();
+
+	// Return token in header or cookie based on transport mode
+	if (authTransportMode === AuthTransportMode.COOKIE) {
+		const cookie = extractCookieFromHeaders(response, INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME);
+		return cookie!;
+	}
+
+	expect(response.body).toHaveProperty('token');
+	return `Bearer ${response.body.token}`;
 };
 
-export const startRecording = async (roomId: string, moderatorCookie = '') => {
+export const startRecording = async (roomId: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`)
-		.set('Cookie', moderatorCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send({
 			roomId
 		});
 };
 
-export const stopRecording = async (recordingId: string, moderatorCookie = '') => {
+export const stopRecording = async (recordingId: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
-		.set('Cookie', moderatorCookie)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 		.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
 		.send();
 	await sleep('2.5s');
@@ -670,15 +716,15 @@ export const deleteRecording = async (recordingId: string) => {
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 };
 
-export const bulkDeleteRecordings = async (recordingIds: any[], recordingTokenCookie?: string): Promise<Response> => {
+export const bulkDeleteRecordings = async (recordingIds: any[], recordingToken?: string): Promise<Response> => {
 	checkAppIsRunning();
 
 	const req = request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
 		.query({ recordingIds: recordingIds.join(',') });
 
-	if (recordingTokenCookie) {
-		req.set('Cookie', recordingTokenCookie);
+	if (recordingToken) {
+		req.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken), recordingToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 	}
@@ -689,7 +735,7 @@ export const bulkDeleteRecordings = async (recordingIds: any[], recordingTokenCo
 export const downloadRecordings = async (
 	recordingIds: string[],
 	asBuffer = true,
-	recordingTokenCookie?: string
+	recordingToken?: string
 ): Promise<Response> => {
 	checkAppIsRunning();
 
@@ -697,8 +743,8 @@ export const downloadRecordings = async (
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
 		.query({ recordingIds: recordingIds.join(',') });
 
-	if (recordingTokenCookie) {
-		req.set('Cookie', recordingTokenCookie);
+	if (recordingToken) {
+		req.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken), recordingToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 	}
@@ -714,7 +760,7 @@ export const downloadRecordings = async (
 	return await req;
 };
 
-export const stopAllRecordings = async (moderatorCookie: string) => {
+export const stopAllRecordings = async (moderatorToken: string) => {
 	checkAppIsRunning();
 
 	const response = await getAllRecordings();
@@ -731,8 +777,8 @@ export const stopAllRecordings = async (moderatorCookie: string) => {
 	const tasks = recordingIds.map((recordingId: string) =>
 		request(app)
 			.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+			.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, moderatorToken), moderatorToken)
 			.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR)
-			.set('Cookie', moderatorCookie)
 			.send()
 	);
 	const results = await Promise.all(tasks);
@@ -753,10 +799,12 @@ export const getAllRecordings = async (query: Record<string, any> = {}) => {
 		.query(query);
 };
 
-export const getAllRecordingsFromRoom = async (recordingTokenCookie: string) => {
+export const getAllRecordingsFromRoom = async (recordingToken: string) => {
 	checkAppIsRunning();
 
-	return await request(app).get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`).set('Cookie', recordingTokenCookie);
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken), recordingToken);
 };
 
 export const deleteAllRecordings = async () => {

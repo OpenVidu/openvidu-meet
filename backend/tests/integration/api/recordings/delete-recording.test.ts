@@ -27,17 +27,17 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Delete Recording Tests', () => {
-		let room: MeetRoom, recordingId: string, moderatorCookie: string;
+		let room: MeetRoom, recordingId: string, moderatorToken: string;
 
 		beforeEach(async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
-			({ room, recordingId = '', moderatorCookie } = roomData);
+			({ room, recordingId = '', moderatorToken } = roomData);
 		});
 
 		afterAll(async () => {
-			await stopAllRecordings(moderatorCookie);
+			await stopAllRecordings(moderatorToken);
 			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 		});
 
@@ -77,11 +77,11 @@ describe('Recording API Tests', () => {
 			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
 
 			// Generate a new recording
-			const response = await startRecording(room.roomId, moderatorCookie);
+			const response = await startRecording(room.roomId, moderatorToken);
 			console.log('Start recording response:', response.body);
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 			const secondRecordingId = response.body.recordingId;
-			await stopRecording(secondRecordingId, moderatorCookie);
+			await stopRecording(secondRecordingId, moderatorToken);
 
 			// Check that the room metadata still exists after deleteing the first recording
 			let deleteResponse = await deleteRecording(recordingId!);
@@ -104,17 +104,17 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Delete Recording Validation', () => {
-		let room: MeetRoom, recordingId: string, moderatorCookie: string;
+		let room: MeetRoom, recordingId: string, moderatorToken: string;
 		beforeAll(async () => {
 			await deleteAllRecordings();
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
-			({ room, recordingId = '', moderatorCookie } = roomData);
+			({ room, recordingId = '', moderatorToken } = roomData);
 		});
 
 		afterAll(async () => {
-			await stopAllRecordings(moderatorCookie);
+			await stopAllRecordings(moderatorToken);
 			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 		});
 		it('should fail when recordingId has incorrect format', async () => {
@@ -154,13 +154,13 @@ describe('Recording API Tests', () => {
 
 		it('should return 409 when attempting to delete an active recording', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 0);
-			const { recordingId: activeRecordingId = '', moderatorCookie } = testContext.rooms[0];
+			const { recordingId: activeRecordingId = '', moderatorToken } = testContext.rooms[0];
 
 			// Attempt to delete the active recording
 			let deleteResponse = await deleteRecording(activeRecordingId);
 			expect(deleteResponse.status).toBe(409);
 
-			await stopRecording(activeRecordingId, moderatorCookie);
+			await stopRecording(activeRecordingId, moderatorToken);
 			// Attempt to delete the recording again
 			deleteResponse = await deleteRecording(activeRecordingId);
 			expect(deleteResponse.status).toBe(200);

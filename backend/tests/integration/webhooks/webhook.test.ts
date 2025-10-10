@@ -91,10 +91,10 @@ describe('Webhook Integration Tests', () => {
 	it('should send meeting_ended webhook when meeting is closed', async () => {
 		const context = await setupSingleRoom(true);
 		const roomData = context.room;
-		const moderatorCookie = context.moderatorCookie;
+		const moderatorToken = context.moderatorToken;
 
 		// Close the room
-		await endMeeting(roomData.roomId, moderatorCookie);
+		await endMeeting(roomData.roomId, moderatorToken);
 
 		// Wait for the room to be closed
 		await sleep('1s');

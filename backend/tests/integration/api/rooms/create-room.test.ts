@@ -3,13 +3,14 @@ import { Express } from 'express';
 import ms from 'ms';
 import request from 'supertest';
 import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import {
 	MeetRecordingAccess,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
 } from '../../../../src/typings/ce/index.js';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 
@@ -17,11 +18,9 @@ describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
 	let app: Express;
-	let adminCookie: string;
 
 	beforeAll(async () => {
 		app = startTestServer();
-		adminCookie = await loginUser();
 	});
 
 	afterAll(async () => {
@@ -81,7 +80,11 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			// Check that the error message contains the positive number validation
 			expect(response.body.error).toContain('Unprocessable Entity');
@@ -94,7 +97,11 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain(
@@ -108,7 +115,11 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -119,7 +130,11 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -130,7 +145,11 @@ describe('Room API Tests', () => {
 				roomName: 'TestRoom'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
@@ -142,7 +161,11 @@ describe('Room API Tests', () => {
 				autoDeletionPolicy: 'invalid-policy'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected object');
 		});
@@ -157,7 +180,11 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Invalid enum value');
 		});
@@ -172,7 +199,11 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain(
 				'FAIL policy is not allowed for withMeeting auto-deletion policy'
@@ -189,7 +220,11 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain(
 				'FAIL policy is not allowed for withRecordings auto-deletion policy'
@@ -202,7 +237,11 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
@@ -213,7 +252,11 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected string');
 		});
@@ -225,7 +268,11 @@ describe('Room API Tests', () => {
 				config: 'invalid-config'
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected object');
 		});
@@ -246,7 +293,11 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected boolean');
 		});
@@ -255,7 +306,7 @@ describe('Room API Tests', () => {
 			// In this case, instead of sending JSON object, send an invalid JSON string.
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set('Cookie', adminCookie)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
 				.set('Content-Type', 'application/json')
 				.send('{"roomName": "TestRoom",') // invalid JSON syntax
 				.expect(400);
@@ -271,7 +322,11 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate
 			};
 
-			const response = await request(app).post(ROOMS_PATH).set('Cookie', adminCookie).send(payload).expect(422);
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('roomName cannot exceed 50 characters');
 		});

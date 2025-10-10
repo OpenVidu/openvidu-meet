@@ -6,7 +6,7 @@ import { MeetRoom, MeetRoomConfig } from '../../src/typings/ce';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
-	generateParticipantTokenCookie,
+	generateParticipantToken,
 	joinFakeParticipant,
 	sleep,
 	startRecording,
@@ -18,9 +18,9 @@ let mockWebhookServer: http.Server;
 export interface RoomData {
 	room: MeetRoom;
 	moderatorSecret: string;
-	moderatorCookie: string;
+	moderatorToken: string;
 	speakerSecret: string;
-	speakerCookie: string;
+	speakerToken: string;
 	recordingId?: string;
 }
 
@@ -36,7 +36,7 @@ export interface TestContext {
  * @param withParticipant Whether to join a fake participant in the room.
  * @param roomName        Name of the room to create.
  * @param config     Optional room config.
- * @returns               Room data including secrets and cookies.
+ * @returns               Room data including secrets and tokens.
  */
 export const setupSingleRoom = async (
 	withParticipant = false,
@@ -48,11 +48,11 @@ export const setupSingleRoom = async (
 		config
 	});
 
-	// Extract the room secrets and generate participant tokens, saved as cookies
+	// Extract the room secrets and generate participant tokens
 	const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-	const [moderatorCookie, speakerCookie] = await Promise.all([
-		generateParticipantTokenCookie(room.roomId, moderatorSecret, 'MODERATOR'),
-		generateParticipantTokenCookie(room.roomId, speakerSecret, 'SPEAKER')
+	const [moderatorToken, speakerToken] = await Promise.all([
+		generateParticipantToken(room.roomId, moderatorSecret, 'MODERATOR'),
+		generateParticipantToken(room.roomId, speakerSecret, 'SPEAKER')
 	]);
 
 	// Join participant if needed
@@ -63,9 +63,9 @@ export const setupSingleRoom = async (
 	return {
 		room,
 		moderatorSecret,
-		moderatorCookie,
+		moderatorToken,
 		speakerSecret,
-		speakerCookie
+		speakerToken
 	};
 };
 
@@ -109,7 +109,7 @@ export const setupSingleRoomWithRecording = async (
 	stopDelay?: StringValue
 ): Promise<RoomData> => {
 	const roomData = await setupSingleRoom(true, 'TEST_ROOM');
-	const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+	const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	roomData.recordingId = response.body.recordingId;
 
@@ -119,7 +119,7 @@ export const setupSingleRoomWithRecording = async (
 	}
 
 	if (stopRecordingCond) {
-		await stopRecording(roomData.recordingId!, roomData.moderatorCookie);
+		await stopRecording(roomData.recordingId!, roomData.moderatorToken);
 	}
 
 	return roomData;
@@ -154,7 +154,7 @@ export const setupMultiRecordingsTestContext = async (
 		}
 
 		// Send start recording request
-		const response = await startRecording(roomData.room.roomId, roomData.moderatorCookie);
+		const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 		expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 
 		// Store the recordingId in context
@@ -171,7 +171,7 @@ export const setupMultiRecordingsTestContext = async (
 	// Stop recordings for the first numStops rooms
 	const stopPromises = startedRooms.slice(0, numStops).map(async (roomData) => {
 		if (roomData.recordingId) {
-			await stopRecording(roomData.recordingId, roomData.moderatorCookie);
+			await stopRecording(roomData.recordingId, roomData.moderatorToken);
 			console.log(`Recording stopped for room ${roomData.room.roomId}`);
 			return roomData.recordingId;
 		}

@@ -12,7 +12,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	endMeeting,
-	generateParticipantTokenCookie,
+	generateParticipantToken,
 	getRoom,
 	joinFakeParticipant,
 	runRoomGarbageCollector,
@@ -102,8 +102,8 @@ describe('Room Garbage Collector Tests', () => {
 
 		// End the meeting
 		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-		const moderatorCookie = await generateParticipantTokenCookie(room.roomId, moderatorSecret, 'moderator');
-		await endMeeting(room.roomId, moderatorCookie);
+		const moderatorToken = await generateParticipantToken(room.roomId, moderatorSecret, 'moderator');
+		await endMeeting(room.roomId, moderatorToken);
 
 		// Verify that the room is deleted
 		response = await getRoom(room.roomId);
@@ -180,8 +180,8 @@ describe('Room Garbage Collector Tests', () => {
 
 		// Start recording
 		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room1);
-		const moderatorCookie = await generateParticipantTokenCookie(room1.roomId, moderatorSecret, 'moderator');
-		await startRecording(room1.roomId, moderatorCookie);
+		const moderatorToken = await generateParticipantToken(room1.roomId, moderatorSecret, 'moderator');
+		await startRecording(room1.roomId, moderatorToken);
 
 		await runRoomGarbageCollector();
 
