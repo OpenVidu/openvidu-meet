@@ -89,6 +89,9 @@ show_help() {
   echo -e "  ${BLUE}test-unit-webcomponent${NC}"
   echo "    Run unit tests for the webcomponent project"
   echo
+  echo -e "  ${BLUE}test-unit-backend${NC}"
+  echo "    Run unit tests for the backend project"
+  echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project"
   echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
@@ -221,6 +224,19 @@ test_unit_webcomponent() {
 
   echo -e "${GREEN}Running webcomponent unit tests...${NC}"
   pnpm run test:unit-webcomponent
+}
+
+# Run unit tests for backend
+test_unit_backend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Backend Unit Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running backend unit tests...${NC}"
+  pnpm run test:unit-backend
 }
 
 # Run e2e tests for webcomponent
@@ -454,6 +470,9 @@ main() {
       ;;
     test-unit-webcomponent)
       test_unit_webcomponent
+      ;;
+    test-unit-backend)
+      test_unit_backend
       ;;
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"
