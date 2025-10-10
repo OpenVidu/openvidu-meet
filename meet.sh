@@ -332,14 +332,10 @@ start_services() {
   case "$MODE" in
     prod)
       echo -e "${BLUE}Building and starting in production mode...${NC}"
-      install_dependencies
-      pnpm run build
       NODE_ENV=production pnpm --filter openvidu-meet-backend run start:prod
       ;;
     ci)
       echo -e "${BLUE}Building and starting in CI mode...${NC}"
-      install_dependencies
-      pnpm run build
       NODE_ENV=ci pnpm --filter openvidu-meet-backend run start:ci
       ;;
   esac
