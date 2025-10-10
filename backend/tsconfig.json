@@ -16,5 +16,5 @@
 		"typeRoots": ["src/config/@types"]
 	},
 	"include": ["src/**/*.ts", "index.ts"],
-	"exclude": ["node_modules", "tests/**/*.ts", "tests/**/*.tsx"],
+	"exclude": ["node_modules", "tests/**/*.ts", "tests/**/*.tsx", "node_modules/@types/cookie-parser/node_modules/@types/express*", "node_modules/@types/cookie-parser/node_modules/@types/express-serve-static-core*"],
 }
