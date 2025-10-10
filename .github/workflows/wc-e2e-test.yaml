@@ -31,7 +31,7 @@ jobs:
             BASH
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
-      - name: Setup OpenVidu Meet
+      - name: Build and Start OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@meet_pnpm_migration
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
@@ -42,6 +42,8 @@ jobs:
         with:
           skip_install: 'true'
           skip_checkout: 'true'
+          skip_build_typings: 'true'
+          skip_build_webcomponent: 'true'
 
       - name: Run tests
         run: ./meet.sh test-e2e-webcomponent --skip-install
