@@ -165,7 +165,7 @@ build_typings() {
 # Build entire project
 build_project() {
   echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Building OpenVidu Meet Project${NC}"
+  echo -e "${BLUE}   Building OpenVidu Meet${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
 
@@ -332,11 +332,11 @@ start_services() {
   case "$MODE" in
     prod)
       echo -e "${BLUE}Building and starting in production mode...${NC}"
-      NODE_ENV=production pnpm --filter openvidu-meet-backend run start:prod
+      NODE_ENV=production pnpm --filter openvidu-meet-backend run start
       ;;
     ci)
       echo -e "${BLUE}Building and starting in CI mode...${NC}"
-      NODE_ENV=ci pnpm --filter openvidu-meet-backend run start:ci
+      NODE_ENV=ci pnpm --filter openvidu-meet-backend run start
       ;;
   esac
 }
