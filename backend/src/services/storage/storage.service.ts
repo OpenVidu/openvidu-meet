@@ -733,7 +733,7 @@ export class MeetStorageService<
 						type: AuthType.SINGLE_USER
 					},
 					authModeToAccessRoom: AuthMode.NONE,
-					authTransportMode: AuthTransportMode.COOKIE
+					authTransportMode: AuthTransportMode.HEADER
 				}
 			},
 			roomsConfig: {

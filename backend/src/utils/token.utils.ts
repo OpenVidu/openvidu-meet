@@ -17,8 +17,8 @@ export const getAuthTransportMode = async (): Promise<AuthTransportMode> => {
 	} catch (error) {
 		const logger = container.get(LoggerService);
 		logger.error('Error fetching auth transport mode:', error);
-		// Fallback to cookie mode in case of error
-		return AuthTransportMode.COOKIE;
+		// Fallback to header mode in case of error
+		return AuthTransportMode.HEADER;
 	}
 };
 
