@@ -10,7 +10,7 @@ jobs:
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.13'
       - name: Setup pnpm
@@ -19,16 +19,19 @@ jobs:
           version: 10
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-        with:
-          ref: pnpm_migration
+
       - name: Install dependencies
         run: ./meet.sh install
+
       - name: Build typings
-        run: ./meet.sh build-typings
+        run: ./meet.sh build-typings --skip-install
+
       - name: Build webcomponent
         run: ./meet.sh build-webcomponent --skip-install --skip-typings
+
       - name: Run tests
         run: ./meet.sh test-unit-webcomponent --skip-install
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main
