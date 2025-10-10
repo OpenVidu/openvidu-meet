@@ -7,7 +7,7 @@ export interface AuthenticationConfig {
 /**
  * Authentication transport modes for JWT tokens.
  */
-export const enum AuthTransportMode {
+export enum AuthTransportMode {
     COOKIE = 'cookie', // JWT sent via cookies
     HEADER = 'header' // JWT sent via Authorization header
 }
