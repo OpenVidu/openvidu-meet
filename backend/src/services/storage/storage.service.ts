@@ -107,6 +107,7 @@ export class MeetStorageService<
 	/**
 	 * Initializes the storage with default data and initial environment variables if not already initialized.
 	 * This includes global config, admin user and API key.
+	 * Also runs migrations to update existing data structures when needed.
 	 */
 	async initializeStorage(): Promise<void> {
 		try {
@@ -123,7 +124,9 @@ export class MeetStorageService<
 			const isInitialized = await this.checkStorageInitialization();
 
 			if (isInitialized) {
-				this.logger.verbose('Storage already initialized for this project, skipping initialization');
+				this.logger.verbose('Storage already initialized for this project, running migrations if needed');
+				// Run migrations to update existing data structures
+				await this.runMigrations();
 				return;
 			}
 
@@ -774,6 +777,74 @@ export class MeetStorageService<
 		const apiKeyData: MeetApiKey = PasswordHelper.generateApiKey(initialApiKey);
 		await this.saveApiKey(apiKeyData);
 		this.logger.info('API key initialized');
+	}
+
+	/**
+	 * Runs all necessary migrations to update existing data structures.
+	 * This method should be called during startup to ensure backwards compatibility
+	 * when new fields are added to existing data structures.
+	 */
+	protected async runMigrations(): Promise<void> {
+		this.logger.info('Running storage migrations...');
+
+		try {
+			await this.migrateGlobalConfigAuthTransportMode();
+			this.logger.info('All migrations completed successfully');
+		} catch (error) {
+			this.logger.error('Error running migrations:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Migration: Adds authTransportMode field to existing global config if missing.
+	 * This migration ensures backwards compatibility when upgrading from versions
+	 * that didn't have the authTransportMode field.
+	 */
+	protected async migrateGlobalConfigAuthTransportMode(): Promise<void> {
+		try {
+			const redisKey = RedisKeyName.GLOBAL_CONFIG;
+			const storageKey = this.keyBuilder.buildGlobalConfigKey();
+
+			// Get current config directly from storage
+			const currentConfig = await this.getFromCacheAndStorage<GConfig>(redisKey, storageKey);
+
+			if (!currentConfig) {
+				this.logger.debug('No global config found, skipping authTransportMode migration');
+				return;
+			}
+
+			// Check if authTransportMode is missing
+			const authConfig = currentConfig.securityConfig?.authentication;
+
+			if (!authConfig) {
+				this.logger.warn('Authentication config missing in global config, skipping migration');
+				return;
+			}
+
+			// Check if the property already exists
+			if ('authTransportMode' in authConfig) {
+				this.logger.debug('authTransportMode already exists, skipping migration');
+				return;
+			}
+
+			this.logger.info('Migrating global config: adding authTransportMode field');
+
+			// Directly add the missing field to the existing object
+			Object.assign(currentConfig.securityConfig.authentication, {
+				authTransportMode: AuthTransportMode.HEADER
+			});
+
+			// Save updated config
+			await this.saveCacheAndStorage<GConfig>(redisKey, storageKey, currentConfig);
+
+			this.logger.info(
+				'Successfully migrated global config: authTransportMode added with default value "header"'
+			);
+		} catch (error) {
+			this.logger.error('Error migrating authTransportMode in global config:', error);
+			throw error;
+		}
 	}
 
 	/**
