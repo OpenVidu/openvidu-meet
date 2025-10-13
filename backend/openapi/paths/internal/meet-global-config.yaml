@@ -7,7 +7,7 @@
         tags:
             - Internal API - Global Config
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-webhooks-config.yaml'
@@ -25,7 +25,7 @@
         tags:
             - Internal API - Global Config
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         requestBody:
             $ref: '../../components/requestBodies/internal/update-webhooks-config.yaml'
         responses:
@@ -81,7 +81,7 @@
         tags:
             - Internal API - Global Config
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         requestBody:
             $ref: '../../components/requestBodies/internal/update-security-config.yaml'
         responses:
@@ -105,7 +105,7 @@
         tags:
             - Internal API - Global Config
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-appearance-config.yaml'
@@ -125,7 +125,7 @@
         tags:
             - Internal API - Global Config
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         requestBody:
             $ref: '../../components/requestBodies/internal/update-appearance-config.yaml'
         responses:

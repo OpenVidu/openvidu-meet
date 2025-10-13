@@ -8,7 +8,7 @@
         tags:
             - Internal API - Rooms
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
         requestBody:

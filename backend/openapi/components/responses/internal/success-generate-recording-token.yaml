@@ -1,7 +1,7 @@
 description: Successfully generated the recording token
-headers:
-    Set-Cookie:
-        $ref: '../../headers/set-cookie-recording-token.yaml'
+# headers:
+#     Set-Cookie:
+#         $ref: '../../headers/set-cookie-recording-token.yaml'
 content:
     application/json:
         schema:

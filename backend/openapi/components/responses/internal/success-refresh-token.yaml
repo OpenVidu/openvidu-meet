@@ -1,7 +1,7 @@
 description: Successfully refreshed the access token
-headers:
-    Set-Cookie:
-        $ref: '../../headers/set-cookie-access-token.yaml'
+# headers:
+#     Set-Cookie:
+#         $ref: '../../headers/set-cookie-access-token.yaml'
 content:
     application/json:
         schema:
@@ -10,3 +10,7 @@ content:
                 message:
                     type: string
                     example: Access token for user 'admin' successfully refreshed
+                accessToken:
+                    type: string
+                    description: >
+                        The new access token to authenticate the user in subsequent requests.

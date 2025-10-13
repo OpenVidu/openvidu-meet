@@ -1,9 +1,9 @@
 description: Successfully logged in
-headers:
-    Set-Cookie:
-        $ref: '../../headers/set-cookie-access-token.yaml'
-    Set-Cookie*:
-        $ref: '../../headers/set-cookie-refresh-token.yaml'
+# headers:
+#     Set-Cookie:
+#         $ref: '../../headers/set-cookie-access-token.yaml'
+#     Set-Cookie*:
+#         $ref: '../../headers/set-cookie-refresh-token.yaml'
 content:
     application/json:
         schema:
@@ -12,3 +12,11 @@ content:
                 message:
                     type: string
                     example: User 'admin' logged in successfully
+                accessToken:
+                    type: string
+                    description: >
+                        The access token to authenticate the user in subsequent requests.
+                refreshToken:
+                    type: string
+                    description: >
+                        The refresh token to obtain a new access token when the current one expires.

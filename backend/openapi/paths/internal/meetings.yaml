@@ -9,7 +9,7 @@
         tags:
             - Internal API - Meetings
         security:
-            - participantTokenCookie: []
+            - participantTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/x-participant-role.yaml'
@@ -35,7 +35,7 @@
         tags:
             - Internal API - Meetings
         security:
-            - participantTokenCookie: []
+            - participantTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/participant-identity.yaml'
@@ -62,7 +62,7 @@
         tags:
             - Internal API - Meetings
         security:
-            - participantTokenCookie: []
+            - participantTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
             - $ref: '../../components/parameters/internal/participant-identity.yaml'

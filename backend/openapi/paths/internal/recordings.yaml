@@ -7,7 +7,7 @@
         tags:
             - Internal API - Recordings
         security:
-            - participantTokenCookie: []
+            - participantTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/internal/x-participant-role.yaml'
         requestBody:
@@ -42,7 +42,7 @@
         tags:
             - Internal API - Recordings
         security:
-            - participantTokenCookie: []
+            - participantTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/recording-id.yaml'
             - $ref: '../../components/parameters/internal/x-participant-role.yaml'

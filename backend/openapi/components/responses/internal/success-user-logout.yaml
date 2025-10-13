@@ -1,11 +1,11 @@
 description: Successfully logged out
-headers:
-    Set-Cookie:
-        description: >
-            Clears the access and refresh token cookie.
-        schema:
-            type: string
-        example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
+# headers:
+#     Set-Cookie:
+#         description: >
+#             Clears the access and refresh token cookie.
+#         schema:
+#             type: string
+#         example: 'OvMeetAccessToken=; Path=/; HttpOnly; SameSite=Strict'
 content:
     application/json:
         schema:

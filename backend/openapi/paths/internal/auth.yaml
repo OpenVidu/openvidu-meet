@@ -38,7 +38,7 @@
         tags:
             - Internal API - Authentication
         security:
-            - refreshTokenCookie: []
+            - refreshTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-refresh-token.yaml'
@@ -59,7 +59,7 @@
         tags:
             - Internal API - Authentication
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '201':
                 $ref: '../../components/responses/internal/success-create-api-key.yaml'
@@ -76,7 +76,7 @@
         tags:
             - Internal API - Authentication
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-api-keys.yaml'
@@ -90,7 +90,7 @@
         tags:
             - Internal API - Authentication
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-delete-api-key.yaml'

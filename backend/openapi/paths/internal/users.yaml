@@ -7,7 +7,7 @@
         tags:
             - Internal API - Users
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-profile.yaml'
@@ -22,7 +22,7 @@
         tags:
             - Internal API - Users
         security:
-            - accessTokenCookie: []
+            - accessTokenHeader: []
         requestBody:
             $ref: '../../components/requestBodies/internal/change-password-request.yaml'
         responses:

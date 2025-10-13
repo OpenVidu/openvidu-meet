@@ -6,14 +6,14 @@
             Retrieves a paginated list of all recordings available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 
-            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            > **Note:** If this endpoint is called using the `recordingTokenHeader` authentication method,
             > the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             # - $ref: '../components/parameters/recording-status.yaml'
             - $ref: '../components/parameters/recording-fields.yaml'
@@ -38,15 +38,15 @@
         description: |
             Deletes multiple recordings at once with the specified recording IDs.
 
-            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            > **Note:** If this endpoint is called using the `recordingTokenHeader` authentication method,
             > all specified recordings must belong to the same room included in the token.
             > If a recording does not belong to that room, it will not be deleted.
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-ids.yaml'
         responses:
@@ -71,15 +71,15 @@
             Downloads multiple recordings as a ZIP file with the specified recording IDs.
             The ZIP file will contain all recordings in MP4 format.
 
-            > **Note:** If this endpoint is called using the `recordingTokenCookie` authentication method,
+            > **Note:** If this endpoint is called using the `recordingTokenHeader` authentication method,
             > all specified recordings must belong to the same room included in the token.
             > If a recording does not belong to that room, it will not be included in the ZIP file.
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-ids.yaml'
         responses:
@@ -118,9 +118,9 @@
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
             - $ref: '../components/parameters/recording-secret.yaml'
@@ -150,9 +150,9 @@
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
         responses:
@@ -183,9 +183,9 @@
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
             - $ref: '../components/parameters/recording-secret.yaml'
@@ -252,14 +252,14 @@
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
 
-        # It can be configured to be accessible by anyone (public access) or restricted to authenticated users only, 
+        # It can be configured to be accessible by anyone (public access) or restricted to authenticated users only,
         # depending on the `privateAccess` query parameter.
         tags:
             - OpenVidu Meet - Recordings
         security:
-            - apiKeyInHeader: []
-            - accessTokenCookie: []
-            - recordingTokenCookie: []
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - recordingTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
             # - $ref: '../components/parameters/private-access.yaml'
