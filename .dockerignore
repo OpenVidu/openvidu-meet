@@ -159,7 +159,6 @@
 # FRONTEND BUILD ARTIFACTS
 # ====================================================
 **/**/node_modules/
-**/**/*.tgz
 **/**/webcomponent/dist/
 **/**/frontend/dist/
 **/**/frontend/.angular/
