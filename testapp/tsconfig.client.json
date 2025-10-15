@@ -6,7 +6,10 @@
     "rootDir": "public/ts",
     "outDir": "public/js",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": []
   },
-  "include": ["public/ts/**/*"]
+  "include": ["public/ts/**/*"],
+  "exclude": ["node_modules"]
 }

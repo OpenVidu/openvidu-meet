@@ -10,20 +10,27 @@ jobs:
     runs-on: ov-actions-runner
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.13'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@v4
-      - name: Setup OpenVidu Meet Backend
-        shell: bash
-        run: ./prepare.sh --typings --backend
+
+      - name: Install dependencies
+        run: ./meet.sh install
+
+      - name: Build typings
+        run: ./meet.sh build-typings --skip-install
+
       - name: Run tests
-        run: |
-          cd backend
-          npm run test:unit
+        run: ./meet.sh test-unit-backend --skip-install
         env:
-          JEST_JUNIT_OUTPUT_DIR: './reports/'
+          JEST_JUNIT_OUTPUT_DIR: './backend/reports/'
+
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
         if: always()
@@ -31,6 +38,7 @@ jobs:
           report_paths: '**/reports/junit.xml'
           fail_on_failure: true
           require_tests: true
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@main
