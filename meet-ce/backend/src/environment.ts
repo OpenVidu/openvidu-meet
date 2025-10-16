@@ -21,6 +21,7 @@ export const {
 	MEET_LOG_LEVEL = 'info',
 	MEET_NAME_ID = 'openviduMeet',
 	MEET_BASE_URL = '',
+	MEET_EDITION = 'CE',
 
 	/**
 	 * Authentication configuration
@@ -102,7 +103,7 @@ export const logEnvVars = () => {
 
 	console.log(' ');
 	console.log('---------------------------------------------------------');
-	console.log('OpenVidu Meet Server Configuration');
+	console.log(`OpenVidu Meet ${MEET_EDITION} Server Configuration`);
 	console.log('---------------------------------------------------------');
 	console.log('SERVICE NAME ID: ', text(MEET_NAME_ID));
 	console.log('CORS ORIGIN:', text(SERVER_CORS_ORIGIN));

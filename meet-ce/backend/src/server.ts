@@ -4,7 +4,7 @@ import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
-import { SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
+import { MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
 import { httpContextMiddleware, jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {
 	authRouter,
@@ -94,7 +94,7 @@ const startServer = (app: express.Application) => {
 		console.log(' ');
 		console.log('---------------------------------------------------------');
 		console.log(' ');
-		console.log('OpenVidu Meet is listening on port', chalk.cyanBright(SERVER_PORT));
+		console.log(`OpenVidu Meet ${MEET_EDITION} is listening on port`, chalk.cyanBright(SERVER_PORT));
 		console.log(
 			'REST API Docs: ',
 			chalk.cyanBright(`http://localhost:${SERVER_PORT}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
