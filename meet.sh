@@ -501,7 +501,7 @@ clone_meet_pro() {
 
   echo -e "${GREEN}Attempting to clone '$REPO_URL' into ./$TARGET_DIR...${NC}"
   # Use shallow clone to be quicker by default
-  if git clone --depth 1 "$REPO_URL" "$TARGET_DIR"; then
+  if git clone "$REPO_URL" "$TARGET_DIR"; then
     echo
     echo -e "${GREEN}✓ Repository cloned into ./$TARGET_DIR${NC}"
     return 0
