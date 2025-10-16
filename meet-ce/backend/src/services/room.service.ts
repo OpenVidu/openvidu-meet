@@ -18,7 +18,7 @@ import { CreateOptions, Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
 import { validateRecordingTokenMetadata } from '../middlewares/index.js';

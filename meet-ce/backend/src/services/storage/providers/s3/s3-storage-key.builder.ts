@@ -1,4 +1,4 @@
-import INTERNAL_CONFIG from '../../../../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { RecordingHelper } from '../../../../helpers/recording.helper.js';
 import { StorageKeyBuilder } from '../../storage.interface.js';
 

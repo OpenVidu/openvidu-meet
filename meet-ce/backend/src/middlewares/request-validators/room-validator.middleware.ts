@@ -17,7 +17,7 @@ import {
 import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
 import { z } from 'zod';
-import INTERNAL_CONFIG from '../../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 /**
@@ -92,7 +92,12 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK]);
 
-const hexColorSchema = z.string().regex(/^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$/, 'Must be a valid hex color code (with or without alpha)');
+const hexColorSchema = z
+	.string()
+	.regex(
+		/^#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{3})$/,
+		'Must be a valid hex color code (with or without alpha)'
+	);
 
 const RoomThemeSchema = z.object({
 	name: z

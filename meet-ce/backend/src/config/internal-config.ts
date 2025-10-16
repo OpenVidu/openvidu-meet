@@ -1,6 +1,6 @@
 import { StringValue } from 'ms';
 
-const INTERNAL_CONFIG = {
+export const INTERNAL_CONFIG = {
 	// Base paths for the API
 	API_BASE_PATH_V1: '/api/v1',
 	INTERNAL_API_BASE_PATH_V1: '/internal-api/v1',
@@ -63,5 +63,3 @@ const INTERNAL_CONFIG = {
 export const setInternalConfig = (overrides: Partial<typeof INTERNAL_CONFIG>): void => {
 	Object.assign(INTERNAL_CONFIG, overrides);
 };
-
-export default INTERNAL_CONFIG;

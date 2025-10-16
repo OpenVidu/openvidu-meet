@@ -4,7 +4,7 @@ import { EgressInfo, EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompo
 import ms from 'ms';
 import { Readable } from 'stream';
 import { uid } from 'uid';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_S3_SUBBUCKET } from '../environment.js';
 import { MeetLock, RecordingHelper, UtilsHelper } from '../helpers/index.js';
 import {
@@ -322,10 +322,7 @@ export class RecordingService {
 					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
 				}
 
-				const { failed } = await this.bulkDeleteRecordingsAndAssociatedFiles(
-					remainingRecordings,
-					roomId
-				);
+				const { failed } = await this.bulkDeleteRecordingsAndAssociatedFiles(remainingRecordings, roomId);
 
 				if (failed.length === 0) {
 					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);

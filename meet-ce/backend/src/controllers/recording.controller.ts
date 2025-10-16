@@ -2,7 +2,7 @@ import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorRecordingNotFound,

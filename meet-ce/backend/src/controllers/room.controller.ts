@@ -10,7 +10,7 @@ import {
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 import { getAuthTransportMode, getBaseUrl, getCookieOptions } from '../utils/index.js';

@@ -1,6 +1,6 @@
 import { User, UserDTO, UserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, internalError } from '../models/error.model.js';
 import { MeetStorageService } from './index.js';

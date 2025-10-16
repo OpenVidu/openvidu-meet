@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
-import INTERNAL_CONFIG from './config/internal-config.js';
+import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
 import { httpContextMiddleware, jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {

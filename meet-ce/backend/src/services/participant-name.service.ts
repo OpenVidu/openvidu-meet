@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { RedisKeyName } from '../models/redis.model.js';
 import { LoggerService, RedisService } from './index.js';
 import ms from 'ms';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 
 @injectable()
 export class ParticipantNameService {

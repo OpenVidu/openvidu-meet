@@ -10,7 +10,7 @@ import {
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } from '../environment.js';
 import { LoggerService } from './index.js';
 

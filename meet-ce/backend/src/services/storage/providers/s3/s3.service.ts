@@ -14,7 +14,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import INTERNAL_CONFIG from '../../../../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import {
 	MEET_AWS_REGION,
 	MEET_S3_ACCESS_KEY,

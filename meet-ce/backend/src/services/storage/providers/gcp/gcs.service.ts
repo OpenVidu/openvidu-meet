@@ -1,7 +1,7 @@
 import { Bucket, File, GetFilesOptions, Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import INTERNAL_CONFIG from '../../../../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_S3_BUCKET, MEET_S3_SUBBUCKET } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';

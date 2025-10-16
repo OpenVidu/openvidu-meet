@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../config/index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,

@@ -2,7 +2,7 @@ import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../config/index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,

@@ -1,7 +1,7 @@
 import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Request } from 'express';
 import { container } from '../config/index.js';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { LoggerService, MeetStorageService } from '../services/index.js';
 
 /**

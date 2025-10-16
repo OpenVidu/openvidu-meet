@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
-import INTERNAL_CONFIG from '../config/internal-config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/index.js';
 import { LoggerService, MutexService, DistributedEventService } from './index.js';
 
