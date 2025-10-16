@@ -77,92 +77,70 @@ parse_global_flags() {
 
 # Function to display help
 show_help() {
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   OpenVidu Meet - Build Script${NC}"
-  echo -e "${BLUE}=====================================${NC}"
+  echo "${BLUE}=====================================${NC}"
+  echo "${BLUE}   OpenVidu Meet - Build Script${NC}"
+  echo "${BLUE}=====================================${NC}"
   echo
-  echo -e "${GREEN}Usage:${NC} ./meet.sh [command] [options]"
+  echo "${GREEN}Usage:${NC} ./meet.sh [command] [options]"
   echo
-  echo -e "${GREEN}Global Options (can be used with any command):${NC}"
-  echo -e "  ${YELLOW}--skip-install${NC}    Skip dependency installation (useful in CI)"
-  echo -e "  ${YELLOW}--skip-build${NC}      Skip build steps (for testing only)"
-  echo -e "  ${YELLOW}--skip-typings${NC}    Skip typings build (when already built)"
-  echo -e "  ${YELLOW}--base-href <path>${NC} Set base href for frontend build (default: /)"
+  echo "${GREEN}Global Options (can be used with any command):${NC}"
+  echo "  ${YELLOW}--skip-install${NC}    Skip dependency installation (useful in CI)"
+  echo "  ${YELLOW}--skip-build${NC}      Skip build steps (for testing only)"
+  echo "  ${YELLOW}--skip-typings${NC}    Skip typings build (when already built)"
+  echo "  ${YELLOW}--base-href <path>${NC} Set base href for frontend build (default: /)"
   echo
-  echo -e "${GREEN}Commands:${NC}"
+  echo "${GREEN}Commands:${NC}"
   echo
-  echo -e "  ${BLUE}install${NC}"
+  echo "  ${BLUE}install${NC}"
   echo "    Install all dependencies (pnpm install)"
   echo
-  echo -e "  ${BLUE}build${NC}"
+  echo "  ${BLUE}build${NC}"
   echo "    Build all project components (typings, frontend, backend, webcomponent)"
   echo
-  echo -e "  ${BLUE}build-typings${NC}"
+  echo "  ${BLUE}build-typings${NC}"
   echo "    Build only the shared typings"
   echo
-  echo -e "  ${BLUE}build-webcomponent${NC}"
+  echo "  ${BLUE}build-webcomponent${NC}"
   echo "    Build only the webcomponent package"
   echo
-  echo -e "  ${BLUE}build-testapp${NC}"
+  echo "  ${BLUE}build-testapp${NC}"
   echo "    Build the testapp"
   echo
-  echo -e "  ${BLUE}test-unit-webcomponent${NC}"
+  echo "  ${BLUE}test-unit-webcomponent${NC}"
   echo "    Run unit tests for the webcomponent project"
   echo
-  echo -e "  ${BLUE}test-unit-backend${NC}"
+  echo "  ${BLUE}test-unit-backend${NC}"
   echo "    Run unit tests for the backend project"
   echo
-  echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
+  echo "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project"
-  echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
+  echo "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
   echo
-  echo -e "  ${BLUE}dev${NC}"
+  echo "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
   echo
-  echo -e "  ${BLUE}start${NC}"
+  echo "  ${BLUE}start${NC}"
   echo "    Start services in production or CI mode"
-  echo -e "    ${YELLOW}Options:${NC} --prod    Start in production mode"
-  echo -e "            ${NC} --ci      Start in CI mode"
+  echo "    ${YELLOW}Options:${NC} --prod    Start in production mode"
+  echo "            ${NC} --ci      Start in CI mode"
   echo
-  echo -e "  ${BLUE}start-testapp${NC}"
+  echo "  ${BLUE}start-testapp${NC}"
   echo "    Start the testapp"
   echo
-  echo -e "  ${BLUE}build-webcomponent-doc${NC} [output_dir]"
+  echo "  ${BLUE}build-webcomponent-doc${NC} [output_dir]"
   echo "    Generate webcomponent documentation"
   echo
-  echo -e "  ${BLUE}build-rest-api-doc${NC} [output_dir]"
+  echo "  ${BLUE}build-rest-api-doc${NC} [output_dir]"
   echo "    Generate REST API documentation"
   echo
-  echo -e "  ${BLUE}build-docker${NC} <image-name> [--demos]"
+  echo "  ${BLUE}build-docker${NC} <image-name> [--demos]"
   echo "    Build Docker image (use --demos for demo deployment)"
   echo
-  echo -e "  ${BLUE}help${NC}"
+  echo "  ${BLUE}help${NC}"
   echo "    Show this help message"
   echo
-  echo -e "  ${BLUE}clone-pro${NC}"
+  echo "  ${BLUE}clone-pro${NC}"
   echo "    Clone the private 'meet-pro' repository into ./meet-pro if you have access"
-  echo
-  echo -e "${GREEN}CI/CD Optimized Examples:${NC}"
-  echo -e "  ${YELLOW}# Install once${NC}"
-  echo -e "  ./meet.sh install"
-  echo
-  echo -e "  ${YELLOW}# Build typings once${NC}"
-  echo -e "  ./meet.sh build-typings"
-  echo
-  echo -e "  ${YELLOW}# Start development mode${NC}"
-  echo -e "  ./meet.sh dev"
-  echo
-  echo -e "  ${YELLOW}# Build webcomponent (skip install & typings)${NC}"
-  echo -e "  ./meet.sh build-webcomponent --skip-install --skip-typings"
-  echo
-  echo -e "  ${YELLOW}# Run tests (skip install)${NC}"
-  echo -e "  ./meet.sh test-unit-webcomponent --skip-install"
-  echo
-  echo -e "  ${YELLOW}# Build Docker image${NC}"
-  echo -e "  ./meet.sh build-docker openvidu-meet-ce"
-  echo
-  echo -e "  ${YELLOW}# Build Docker image for demos${NC}"
-  echo -e "  ./meet.sh build-docker openvidu-meet-ce --demos"
   echo
 }
 
