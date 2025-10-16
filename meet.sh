@@ -139,6 +139,9 @@ show_help() {
   echo -e "  ${BLUE}help${NC}"
   echo "    Show this help message"
   echo
+  echo -e "  ${BLUE}clone-pro${NC}"
+  echo "    Clone the private 'meet-pro' repository into ./meet-pro if you have access"
+  echo
   echo -e "${GREEN}CI/CD Optimized Examples:${NC}"
   echo -e "  ${YELLOW}# Install once${NC}"
   echo -e "  ./meet.sh install"
@@ -499,6 +502,44 @@ build_rest_api_doc() {
   echo -e "${GREEN}✓ REST API documentation generated successfully!${NC}"
 }
 
+# Clone private meet-pro repository into repository root
+clone_meet_pro() {
+  # Allow override of repo URL via environment variable
+  REPO_URL=${MEET_PRO_REPO_URL:-git@github.com:OpenVidu/openvidu-meet-pro.git}
+  TARGET_DIR="meet-pro"
+
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Cloning meet-pro (private)${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  if [ -d "$TARGET_DIR" ]; then
+    echo -e "${YELLOW}Directory '$TARGET_DIR' already exists. Skipping clone.${NC}"
+    return 0
+  fi
+
+  echo -e "${GREEN}Attempting to clone '$REPO_URL' into ./$TARGET_DIR...${NC}"
+  # Use shallow clone to be quicker by default
+  if git clone --depth 1 "$REPO_URL" "$TARGET_DIR"; then
+    echo
+    echo -e "${GREEN}✓ Repository cloned into ./$TARGET_DIR${NC}"
+    return 0
+  else
+    echo
+    echo -e "${RED}✗ Failed to clone repository '$REPO_URL'.${NC}"
+    echo -e "${YELLOW}This repository is private and requires appropriate access (SSH key or HTTPS credentials).${NC}"
+    echo
+    echo -e "${BLUE}Suggestions:${NC}"
+    echo -e "  - Ensure your SSH key is added to your GitHub account and ssh-agent is running (for SSH URL)."
+    echo -e "    Example: ssh-add ~/.ssh/id_rsa"
+    echo -e "  - Or set MEET_PRO_REPO_URL to an HTTPS URL that contains credentials (not recommended for security)."
+    echo -e "    Example: export MEET_PRO_REPO_URL=\"https://<token>@github.com/OpenVidu/openvidu-meet-pro.git\""
+    echo -e "  - If you still can't clone, verify you have access to 'OpenVidu/openvidu-meet-pro' on GitHub.${NC}"
+    echo
+    return 1
+  fi
+}
+
 # Build Docker image
 build_docker() {
   local image_name="$1"
@@ -609,6 +650,9 @@ main() {
       ;;
     build-docker)
       build_docker "$@"
+      ;;
+    clone-pro)
+      clone_meet_pro
       ;;
     help|--help|-h)
       show_help

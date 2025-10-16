@@ -46,3 +46,5 @@ pnpm-debug.log*
 **/**/docs/webcomponent-attributes.md
 **/**/docs/webcomponent-commands.md
 **/**/docs/webcomponent-events.md
+
+**/**/meet-pro
