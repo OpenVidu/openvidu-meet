@@ -307,10 +307,10 @@ dev() {
   COMPONENTS_PATH="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
 
   # Define concurrent commands
-  COMPONENTS_CMD="npm --prefix ../openvidu/openvidu-components-angular run lib:serve"
+  COMPONENTS_CMD="npm --prefix ../openvidu/openvidu-components-angular install && npm --prefix ../openvidu/openvidu-components-angular run lib:serve"
   TYPINGS_CMD="./scripts/dev/watch-typings.sh"
   BACKEND_CMD="node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'"
-  FRONTEND_CMD="sleep 3 && wait-on ${COMPONENTS_PATH} && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'"
+  FRONTEND_CMD="wait-on ${COMPONENTS_PATH} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'"
   REST_API_DOCS_CMD="pnpm run dev:rest-api-docs"
   BROWSERSYNC_CMD="node --input-type=module -e \"
     import browserSync from 'browser-sync';
@@ -345,6 +345,9 @@ dev() {
 
   echo -e "${YELLOW}⏳ Launching all development watchers...${NC}"
   echo
+
+  # Clean up openvidu-components-angular dist package.json to ensure fresh install
+  rm -rf ${COMPONENTS_PATH}
 
   # Run processes concurrently
   pnpm exec concurrently -k \
