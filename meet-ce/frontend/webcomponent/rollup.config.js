@@ -5,8 +5,12 @@ import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 import postcss from 'rollup-plugin-postcss'
 import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 const production = !process.env.ROLLUP_WATCH
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default {
   input: 'src/index.ts',
@@ -71,13 +75,39 @@ export default {
     {
       name: 'copy-bundle',
       writeBundle () {
-        const dir = '../../backend/public/webcomponent'
         const bundleName = 'openvidu-meet.bundle.min.js'
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true })
+        const sourcePath = path.resolve(__dirname, './dist', bundleName)
+
+        if (!fs.existsSync(sourcePath)) {
+          console.warn(`⚠️ Bundle not found at ${sourcePath}, skipping copy.`)
+          return
         }
-        fs.copyFileSync(`./dist/${bundleName}`, `${dir}/${bundleName}`)
-        console.log(`✅ Bundle copied to ${dir}/${bundleName}`)
+
+        // 1. Copy to CE backend
+        const ceDir = path.resolve(__dirname, '../../backend/public/webcomponent')
+        try {
+          if (!fs.existsSync(ceDir)) fs.mkdirSync(ceDir, { recursive: true })
+          fs.copyFileSync(sourcePath, path.join(ceDir, bundleName))
+          console.log(`✅ Bundle copied to CE: ${ceDir}/${bundleName}`)
+        } catch (err) {
+          console.error(`❌ Failed to copy bundle to CE: ${err}`)
+        }
+
+        // 2. Copy to Pro backend if it exists
+        const proDir = path.resolve(__dirname, '../../../meet-pro')
+        const webcomponentProDir = path.join(proDir, 'backend/public/webcomponent')
+
+        try {
+          if (fs.existsSync(proDir) && fs.lstatSync(proDir).isDirectory()) {
+            if (!fs.existsSync(webcomponentProDir)) fs.mkdirSync(webcomponentProDir, { recursive: true })
+            fs.copyFileSync(sourcePath, path.join(webcomponentProDir, bundleName))
+            console.log(`✅ Bundle copied to PRO: ${webcomponentProDir}/${bundleName}`)
+          } else {
+            console.log(`ℹ️ PRO directory does not exist, skipping copy: ${proDir}`)
+          }
+        } catch (err) {
+          console.error(`❌ Failed to copy bundle to PRO: ${err}`)
+        }
       }
     }
   ]
