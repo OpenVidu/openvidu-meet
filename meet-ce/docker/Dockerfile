@@ -79,7 +79,7 @@ COPY --from=builder --chown=node:node /app/meet-ce/typings/package.json ./meet-c
 # Copy entrypoint script
 COPY meet-ce/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-RUN pnpm install --prod --filter openvidu-meet-backend --filter @openvidu-meet/typings
+RUN pnpm install --prod --filter @openvidu-meet/backend --filter @openvidu-meet/typings
 
 # Set permissions
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
