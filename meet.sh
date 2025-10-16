@@ -245,6 +245,31 @@ test_unit_backend() {
   pnpm run test:unit-backend
 }
 
+# Check if meet-pro directory exists and is a valid git repository
+check_meet_pro_exists() {
+  local pro_dir="meet-pro"
+
+  # Check if directory exists
+  if [ ! -d "$pro_dir" ]; then
+    return 1
+  fi
+
+  # Check if it's a git repository
+  if [ ! -d "$pro_dir/.git" ]; then
+    return 1
+  fi
+
+  # Check if the git remote matches the expected repository
+  local remote_url
+  remote_url=$(git -C "$pro_dir" config --get remote.origin.url 2>/dev/null || echo "")
+
+  if echo "$remote_url" | grep -q "OpenVidu/openvidu-meet-pro"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 # Run e2e tests for webcomponent
 test_e2e_webcomponent() {
   echo -e "${BLUE}=====================================${NC}"
