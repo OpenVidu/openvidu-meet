@@ -3,6 +3,8 @@ packages:
   - meet-ce/frontend
   - meet-ce/frontend/webcomponent
   - meet-ce/backend
+  - meet-pro/frontend
+  - meet-pro/backend
   - testapp
 
 ignoredBuiltDependencies:

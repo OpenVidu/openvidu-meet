@@ -8,7 +8,7 @@
 			"name": "openvidu-meet (root)",
 			"path": ".",
 		},
-				{
+		{
 			"name": "openvidu-meet (CE)",
 			"path": "meet-ce",
 		},
@@ -27,7 +27,7 @@
 		{
 			"name": "meet-webcomponent",
 			"path": "meet-ce/frontend/webcomponent",
-		}
+		},
 	],
 	"settings": {
 		"files.exclude": {
