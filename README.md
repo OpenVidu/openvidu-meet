@@ -50,23 +50,42 @@ Before starting, ensure you have the following installed:
   curl -sSL https://get.livekit.io/cli | bash
   ```
 
+Claro 😄, aquí tienes una versión más simple, clara y directa de esa sección de tu README:
+
+---
+
 ## Getting Started
 
-The simplest way to get started is using the `meet.sh` script:
+Set up your local development environment by cloning the necessary repositories into a shared folder. This ensures the `openvidu-components-angular` library is available for development and linking.
+
+```
+your-dev-folder/
+├── openvidu/
+│   └── openvidu-components-angular/  # Core Angular components library
+└── openvidu-meet/                     # This repository
+```
+
+> **Note:** Clone the `openvidu` repository alongside `openvidu-meet` to enable proper linking.
+> If you haven't done so yet:
+>
+> ```bash
+> git clone https://github.com/OpenVidu/openvidu.git
+> ```
+
+### Clone and Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/OpenVidu/openvidu-meet.git
 cd openvidu-meet
 
-# Install all dependencies
-./meet.sh install
-
 # Start development mode with hot-reload
 ./meet.sh dev
 ```
 
-Access the application at [http://localhost:6080](http://localhost:6080)
+Then, the application will be available at [http://localhost:6080](http://localhost:6080).
+
+> **Note:** Livereload is also available at [http://localhost:5080](http://localhost:5080).
 
 ## Development
 
