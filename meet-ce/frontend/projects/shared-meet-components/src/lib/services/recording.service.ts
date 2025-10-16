@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ShareRecordingDialogComponent } from '@lib/components';
+import { ShareRecordingDialogComponent } from '@openvidu-meet/shared/components';
 import {
 	AuthService,
 	FeatureConfigurationService,
@@ -8,9 +8,9 @@ import {
 	HttpService,
 	TokenStorageService,
 	ParticipantService
-} from '@lib/services';
+} from '@openvidu-meet/shared/services';
 import { AuthTransportMode, MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@openvidu-meet/typings';
-import { getValidDecodedToken } from '@lib/utils';
+import { getValidDecodedToken } from '@openvidu-meet/shared/utils';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({

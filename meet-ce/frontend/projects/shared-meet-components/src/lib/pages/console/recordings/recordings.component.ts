@@ -2,8 +2,8 @@ import { Component, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { RecordingListsComponent, RecordingTableAction } from '@lib/components';
-import { NotificationService, RecordingService } from '@lib/services';
+import { RecordingListsComponent, RecordingTableAction } from '@openvidu-meet/shared/components';
+import { NotificationService, RecordingService } from '@openvidu-meet/shared/services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 

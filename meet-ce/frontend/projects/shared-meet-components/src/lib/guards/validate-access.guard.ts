@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '@lib/models';
-import { NavigationService, ParticipantService, RecordingService, RoomService } from '@lib/services';
+import { ErrorReason } from '@openvidu-meet/shared/models';
+import { NavigationService, ParticipantService, RecordingService, RoomService } from '@openvidu-meet/shared/services';
 
 /**
  * Guard to validate access to a room by generating a participant token.

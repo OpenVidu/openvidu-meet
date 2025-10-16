@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { HttpService, NavigationService, TokenStorageService } from '@lib/services';
+import { HttpService, NavigationService, TokenStorageService } from '@openvidu-meet/shared/services';
 import { MeetApiKey, User, UserRole } from '@openvidu-meet/typings';
 import { from, Observable } from 'rxjs';
 

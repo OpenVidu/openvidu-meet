@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { ProFeatureBadgeComponent } from '@lib/components';
+import { ProFeatureBadgeComponent } from '@openvidu-meet/shared/components';
 
 @Component({
     selector: 'ov-logo-selector',

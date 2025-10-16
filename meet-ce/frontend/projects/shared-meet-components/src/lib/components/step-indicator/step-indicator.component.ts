@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
-import { WizardStep } from '@lib/models';
+import { WizardStep } from '@openvidu-meet/shared/models';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 

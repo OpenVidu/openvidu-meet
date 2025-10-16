@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import type { WizardNavigationConfig, WizardNavigationEvent } from '@lib/models';
+import type { WizardNavigationConfig, WizardNavigationEvent } from '@openvidu-meet/shared/models';
 
 @Component({
     selector: 'ov-wizard-nav',

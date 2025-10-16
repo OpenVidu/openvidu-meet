@@ -7,10 +7,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { RecordingVideoPlayerComponent } from '@lib/components';
-import { NotificationService, RecordingService } from '@lib/services';
+import { RecordingVideoPlayerComponent } from '@openvidu-meet/shared/components';
+import { NotificationService, RecordingService } from '@openvidu-meet/shared/services';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { formatDurationToTime } from '@lib/utils';
+import { formatDurationToTime } from '@openvidu-meet/shared/utils';
 import { ViewportService } from 'openvidu-components-angular';
 
 @Component({

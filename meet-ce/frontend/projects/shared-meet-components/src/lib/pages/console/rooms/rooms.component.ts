@@ -15,10 +15,10 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { RoomsListsComponent, RoomTableAction } from '@lib/components';
-import { DeleteRoomDialogComponent } from '@lib/components/dialogs/delete-room-dialog/delete-room-dialog.component';
-import { DeleteRoomDialogOptions } from '@lib/models';
-import { NavigationService, NotificationService, RoomService } from '@lib/services';
+import { RoomsListsComponent, RoomTableAction } from '@openvidu-meet/shared/components';
+import { DeleteRoomDialogComponent } from '@openvidu-meet/shared/components/dialogs/delete-room-dialog/delete-room-dialog.component';
+import { DeleteRoomDialogOptions } from '@openvidu-meet/shared/models';
+import { NavigationService, NotificationService, RoomService } from '@openvidu-meet/shared/services';
 import {
 	MeetRoom,
 	MeetRoomDeletionErrorCode,

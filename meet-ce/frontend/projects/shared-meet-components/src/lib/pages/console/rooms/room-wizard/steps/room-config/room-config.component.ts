@@ -3,7 +3,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { RoomWizardStateService } from '@lib/services';
+import { RoomWizardStateService } from '@openvidu-meet/shared/services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({

@@ -30,7 +30,7 @@
       "@app/*": [
         "src/app/*"
       ],
-      "@lib/*": [
+      "@openvidu-meet/shared/*": [
         "projects/shared-meet-components/src/lib/*"
       ]
     },

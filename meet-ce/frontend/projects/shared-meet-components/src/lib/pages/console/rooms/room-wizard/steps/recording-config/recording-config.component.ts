@@ -7,8 +7,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-import { SelectableCardComponent, SelectableOption, SelectionEvent } from '@lib/components';
-import { RoomWizardStateService } from '@lib/services';
+import { SelectableCardComponent, SelectableOption, SelectionEvent } from '@openvidu-meet/shared/components';
+import { RoomWizardStateService } from '@openvidu-meet/shared/services';
 import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 

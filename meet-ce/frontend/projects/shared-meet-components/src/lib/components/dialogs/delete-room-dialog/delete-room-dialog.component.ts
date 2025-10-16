@@ -10,7 +10,7 @@ import {
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
-import type { DeleteRoomDialogOptions } from '@lib/models';
+import type { DeleteRoomDialogOptions } from '@openvidu-meet/shared/models';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 
 @Component({

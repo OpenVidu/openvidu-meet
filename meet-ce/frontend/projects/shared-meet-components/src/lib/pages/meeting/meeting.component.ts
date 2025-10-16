@@ -12,9 +12,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { ShareMeetingLinkComponent } from '@lib/components/share-meeting-link/share-meeting-link.component';
-import { ErrorReason } from '@lib/models';
-import { CustomParticipantModel } from '@lib/models/custom-participant.model';
+import { ShareMeetingLinkComponent } from '@openvidu-meet/shared/components/share-meeting-link/share-meeting-link.component';
+import { ErrorReason } from '@openvidu-meet/shared/models';
+import { CustomParticipantModel } from '@openvidu-meet/shared/models/custom-participant.model';
 import {
 	AppDataService,
 	ApplicationFeatures,
@@ -30,7 +30,7 @@ import {
 	SessionStorageService,
 	TokenStorageService,
 	WebComponentManagerService
-} from '@lib/services';
+} from '@openvidu-meet/shared/services';
 import {
 	LeftEventReason,
 	MeetRoom,

@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { GlobalConfigService, NotificationService } from '@lib/services';
+import { GlobalConfigService, NotificationService } from '@openvidu-meet/shared/services';
 import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 'openvidu-components-angular';
 

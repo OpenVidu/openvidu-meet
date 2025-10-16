@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { AuthService, NavigationService } from '@lib/services';
+import { AuthService, NavigationService } from '@openvidu-meet/shared/services';
 
 @Component({
     selector: 'ov-login',

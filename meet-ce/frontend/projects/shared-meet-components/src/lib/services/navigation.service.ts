@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
-import { ErrorReason } from '@lib/models';
-import { AppDataService, SessionStorageService } from '@lib/services';
+import { ErrorReason } from '@openvidu-meet/shared/models';
+import { AppDataService, SessionStorageService } from '@openvidu-meet/shared/services';
 
 @Injectable({
 	providedIn: 'root'

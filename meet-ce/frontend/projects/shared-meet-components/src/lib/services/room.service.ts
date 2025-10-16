@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '@lib/services';
+import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '@openvidu-meet/shared/services';
 import {
 	MeetRoom,
 	MeetRoomConfig,

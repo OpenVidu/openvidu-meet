@@ -10,7 +10,7 @@ import {
 	MatDialogTitle
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import type { DialogOptions } from '@lib/models';
+import type { DialogOptions } from '@openvidu-meet/shared/models';
 
 @Component({
     selector: 'ov-dialog',

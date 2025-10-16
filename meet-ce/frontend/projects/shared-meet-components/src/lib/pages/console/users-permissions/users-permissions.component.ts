@@ -17,8 +17,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-// import { ProFeatureBadgeComponent } from '@lib/components';
-import { AuthService, GlobalConfigService, NotificationService } from '@lib/services';
+// import { ProFeatureBadgeComponent } from '@openvidu-meet/shared/components';
+import { AuthService, GlobalConfigService, NotificationService } from '@openvidu-meet/shared/services';
 import { AuthMode } from '@openvidu-meet/typings';
 
 @Component({

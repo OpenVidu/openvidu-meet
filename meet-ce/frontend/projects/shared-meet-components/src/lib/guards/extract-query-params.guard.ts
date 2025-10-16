@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { ErrorReason } from '@lib/models';
+import { ErrorReason } from '@openvidu-meet/shared/models';
 import {
 	AppDataService,
 	NavigationService,
 	ParticipantService,
 	RoomService,
 	SessionStorageService
-} from '@lib/services';
+} from '@openvidu-meet/shared/services';
 import { WebComponentProperty } from '@openvidu-meet/typings';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
