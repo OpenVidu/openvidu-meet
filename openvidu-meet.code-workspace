@@ -40,6 +40,7 @@
 			"**/node_modules": true,
 			"**/test-results": true,
 			"**/webhooks-snippets": true,
+			"**/testapp": true,
 		},
 		"jest.disabledWorkspaceFolders": ["openvidu-meet", "typings", "frontend"],
 		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
