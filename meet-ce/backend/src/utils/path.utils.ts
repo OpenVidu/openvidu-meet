@@ -9,46 +9,86 @@ import { fileURLToPath } from 'url';
  */
 const isDevEnvironment = (): boolean => {
 	const isDev = process.env.NODE_ENV === 'development';
-	console.log('[PATH-UTILS] Environment:', isDev ? 'development' : 'production');
+	// Log only in development to avoid noisy production logs
+	if (isDev) {
+		console.log('[PATH-UTILS] Environment:', 'development');
+	}
 	return isDev;
 };
 
 /**
- * Gets the current directory of the module.
- * @returns The current directory of the module
+ * Gets the root directory where the backend lives (one level above /src).
  */
-const getCurrentDir = (): string => {
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-	console.log('[PATH-UTILS] Current directory:', __dirname);
-	return __dirname;
+// Helper: walk up the directory tree looking for a predicate
+const findUp = (startDir: string, predicate: (d: string) => boolean): string | null => {
+	let dir = path.resolve(startDir);
+	while (true) {
+		try {
+			if (predicate(dir)) {
+				return dir;
+			}
+		} catch (err) {
+			// ignore fs errors and continue climbing
+		}
+		const parent = path.dirname(dir);
+		if (parent === dir) return null;
+		dir = parent;
+	}
 };
 
-/**
- * Gets the project root directory based on the current directory and environment.
- * It first tries to resolve the project root based on the environment (development or production).
- * If the public folder is not found in the expected location, it tries to find it in an alternative location.
- * @param isDev
- * @param currentDir
- * @returns
- */
-const getProjectRoot = (isDev: boolean, currentDir: string): string => {
-	// Find the project root directory using NODE_ENV
-	let projectRoot = isDev ? path.resolve(currentDir, '../../../backend') : path.resolve(currentDir, '../..');
+const getBackendRoot = (): string => {
+	// Try to detect backend root from current working directory first.
+	const cwd = process.cwd();
 
-	// Check if the public folder exists in the expected location
-	const publicPath = path.join(projectRoot, 'public');
-
-	if (!fs.existsSync(publicPath)) {
-		console.log('[PATH-UTILS] Public path not found at primary location:', publicPath);
-
-		// Try to find the project root in an alternative location
-		projectRoot = isDev ? path.resolve(currentDir, '../..') : path.resolve(currentDir, '../../../');
-
-		console.log('[PATH-UTILS] Trying alternative project root:', projectRoot);
+	// If cwd is 'src', return its parent
+	if (path.basename(cwd) === 'src') {
+		return path.resolve(cwd, '..');
 	}
 
-	return projectRoot;
+	// If cwd contains a 'src' folder, treat cwd as backend root
+	if (fs.existsSync(path.join(cwd, 'src'))) {
+		return cwd;
+	}
+
+	// Otherwise, try to find upward a directory containing package.json and src
+	const pkgRoot = findUp(cwd, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+	if (pkgRoot) return pkgRoot;
+
+	// Try using the file's directory as a fallback starting point
+	const fileDir = path.dirname(fileURLToPath(import.meta.url));
+	const pkgRootFromFile = findUp(fileDir, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+	if (pkgRootFromFile) return pkgRootFromFile;
+
+	// Last resort: assume two levels up from this file (previous behaviour)
+	return path.resolve(fileDir, '../..');
+};
+
+
+/**
+ * Resolves the project root dynamically based on current environment.
+ * It assumes the backend directory exists in the current project (CE or PRO).
+ */
+const getProjectRoot = (): string => {
+	// Prefer an explicit 'public' folder as sign of project root
+	const cwd = process.cwd();
+	const fileDir = path.dirname(fileURLToPath(import.meta.url));
+
+	const publicFromCwd = findUp(cwd, (d) => fs.existsSync(path.join(d, 'public')));
+	if (publicFromCwd) {
+		if (isDevEnvironment()) console.log('[PATH-UTILS] Project root (public) found from CWD:', publicFromCwd);
+		return publicFromCwd;
+	}
+
+	const publicFromFile = findUp(fileDir, (d) => fs.existsSync(path.join(d, 'public')));
+	if (publicFromFile) {
+		if (isDevEnvironment()) console.log('[PATH-UTILS] Project root (public) found from file dir:', publicFromFile);
+		return publicFromFile;
+	}
+
+	// If no public folder found, fallback to backend root heuristics
+	const backendRoot = getBackendRoot();
+	if (isDevEnvironment()) console.log('[PATH-UTILS] Falling back to backend root as project root:', backendRoot);
+	return backendRoot;
 };
 
 /**
@@ -58,19 +98,23 @@ const getProjectRoot = (isDev: boolean, currentDir: string): string => {
  */
 const verifyPathExists = (pathToVerify: string, description: string): void => {
 	const exists = fs.existsSync(pathToVerify);
-	console.log(`[PATH-UTILS] ${description}: ${pathToVerify} (${exists ? 'EXISTS' : 'MISSING'})`);
+	if (isDevEnvironment()) {
+		console.log(`[PATH-UTILS] ${description}: ${pathToVerify} (${exists ? 'EXISTS' : 'MISSING'})`);
+	}
 
 	if (!exists) {
 		console.warn(`[PATH-UTILS] WARNING: ${description} not found at ${pathToVerify}`);
 	}
 };
 
-console.log('---------------------------------------------------------');
-console.log('[PATH-UTILS] Initializing path utilities...');
-// Initialize the path utilities
+// Initialize the path utilities (only verbose logs in development)
 const isDev = isDevEnvironment();
-const currentDir = getCurrentDir();
-const projectRoot = getProjectRoot(isDev, currentDir);
+if (isDev) {
+	console.log('---------------------------------------------------------');
+	console.log('[PATH-UTILS] Initializing path utilities...');
+}
+// Determine project root
+const projectRoot = getProjectRoot();
 
 // Export the paths for public files and webcomponent bundle
 export const publicDirectoryPath = path.join(projectRoot, 'public');
@@ -84,11 +128,15 @@ export const publicApiHtmlFilePath = path.join(openApiDirectoryPath, 'public.htm
 export const internalApiHtmlFilePath = path.join(openApiDirectoryPath, 'internal.html');
 
 // Verify the existence of the paths
-console.log('[PATH-UTILS] Project root resolved to:', projectRoot);
+if (isDev) {
+	console.log('[PATH-UTILS] Project root resolved to:', projectRoot);
+}
 verifyPathExists(publicDirectoryPath, 'Public files directory');
 verifyPathExists(webcomponentBundlePath, 'Webcomponent bundle');
 verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
 verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
-console.log('---------------------------------------------------------');
-console.log('');
+if (isDev) {
+	console.log('---------------------------------------------------------');
+	console.log('');
+}
