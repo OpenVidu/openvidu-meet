@@ -43,7 +43,7 @@
 		"test:integration-participants": "node --experimental-vm-modules ../../node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/participants\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-meetings": "node --experimental-vm-modules ../../node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/meetings\" --ci --reporters=default --reporters=jest-junit",
 		"test:integration-users": "node --experimental-vm-modules ../../node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/integration/api/users\" --ci --reporters=default --reporters=jest-junit",
-		"test:unit": "pnpm exec jest --runInBand --forceExit --testPathPattern \"tests/unit\" --ci --reporters=default --reporters=jest-junit",
+		"test:unit": "node --experimental-vm-modules ../../node_modules/.bin/jest --runInBand --forceExit --testPathPattern \"tests/unit\" --ci --reporters=default --reporters=jest-junit",
 		"lint:fix": "eslint src --fix",
 		"format:code": "prettier --ignore-path .gitignore --write '**/*.{ts,js,json,md}'"
 	},

@@ -3,28 +3,29 @@ import { createDefaultEsmPreset } from 'ts-jest';
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 const jestConfig = {
 	displayName: 'backend',
-	...createDefaultEsmPreset({
-		tsconfig: 'tsconfig.json'
-	}),
+	...createDefaultEsmPreset(),
 	testTimeout: 60000,
 	resolver: 'ts-jest-resolver',
 	testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
 	moduleFileExtensions: ['js', 'ts', 'json', 'node'],
 	testEnvironment: 'node',
-	globals: {
-		'ts-jest': {
-			tsconfig: 'tsconfig.json'
-		}
-	},
+	extensionsToTreatAsEsm: ['.ts'],
 	moduleNameMapper: {
-		'^@openvidu-meet/typings$': '<rootDir>/../typings/src/index.ts'
+		'^@openvidu-meet/typings$': '<rootDir>/../typings/src/index.ts',
+		'^(\\.{1,2}/.*)\\.js$': '$1' // Permite importar .js que resuelven a .ts
 	},
-	// transform: {
-	// 	'^.+\\.tsx?$': ['ts-jest', {
-	// 	  // Opcionalmente, especifica el archivo tsconfig si es necesario
-	// 	  tsconfig: 'tsconfig.json',
-	// 	}],
-	//   },
+	transform: {
+		'^.+\\.tsx?$': ['ts-jest', {
+			tsconfig: {
+				module: 'esnext',
+				moduleResolution: 'node16',
+				esModuleInterop: true,
+				allowSyntheticDefaultImports: true,
+				isolatedModules: true
+			},
+			useESM: true
+		}]
+	}
 };
 
 export default jestConfig;
