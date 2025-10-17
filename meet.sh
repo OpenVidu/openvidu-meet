@@ -549,32 +549,36 @@ clone_meet_pro() {
 # Build Docker image
 build_docker() {
   local image_name="$1"
-  local is_demos=false
+  # Remove first argument (image name)
+  shift || true
 
+  # Validate arguments
   if [ -z "$image_name" ]; then
     echo -e "${RED}Error: You need to specify an image name${NC}"
     echo -e "${YELLOW}Usage: ./meet.sh build-docker <image-name> [--demos]${NC}"
     exit 1
   fi
 
-  # Parse remaining arguments for flags
-  shift # Remove image_name from arguments
-  for arg in "$@"; do
-    case "$arg" in
+  # Parse flags
+  local is_demos=false
+  local use_latest_components=false
+  for _arg in "$@"; do
+    case "$_arg" in
       --demos)
         is_demos=true
+        ;;
+      --with-latest-components)
+        use_latest_components=true
+        ;;
+      *)
+        # ignore unknown flags for forward compatibility
         ;;
     esac
   done
 
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Building Docker Image${NC}"
-  echo -e "${BLUE}=====================================${NC}"
-  echo
-
+  # Prepare metadata
   local final_image_name="$image_name"
   local base_href="/"
-
   if [ "$is_demos" = true ]; then
     final_image_name="${image_name}-demos"
     base_href="/openvidu-meet/"
@@ -583,17 +587,33 @@ build_docker() {
     echo -e "${GREEN}Building production image: $final_image_name${NC}"
   fi
 
-  echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
-  export BUILDKIT_PROGRESS=plain && \
-  docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Building Docker Image${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
 
-  if [ $? -eq 0 ]; then
+  # Optionally install latest components to avoid local dist symlink inside image
+  if [ "$use_latest_components" = true ]; then
+    echo "🔧 Installing latest openvidu-components-angular..."
+    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@next
+  fi
+
+  echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
+
+  export BUILDKIT_PROGRESS=plain
+  if docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .; then
     echo
     echo -e "${GREEN}✓ Docker image '$final_image_name' built successfully!${NC}"
   else
     echo
     echo -e "${RED}✗ Failed to build Docker image '$final_image_name'${NC}"
     exit 1
+  fi
+
+  # Restore local link if we temporarily installed latest components
+  if [ "$use_latest_components" = true ]; then
+    echo "🔧 Restoring openvidu-components-angular to local dist link..."
+    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@link:../../../openvidu/openvidu-components-angular/dist/openvidu-components-angular
   fi
 }
 
