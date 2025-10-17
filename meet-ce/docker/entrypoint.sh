@@ -35,8 +35,10 @@ if [ -n "${MODULES_FILE}" ]; then
     . "${MODULES_FILE}"
 fi
 
+PNPM_VERSION=${PNPM_VERSION:-10.18.3}
+
 corepack enable
-corepack prepare pnpm@10.18.2 --activate
+corepack prepare pnpm@${PNPM_VERSION} --activate
 cd /opt/openvidu-meet || { echo "Can't cd into /opt/openvidu-meet"; exit 1; }
 ./meet.sh start --prod &
 

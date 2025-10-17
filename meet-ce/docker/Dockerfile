@@ -3,8 +3,11 @@
 # ====================================================
 FROM node:22.19.0 AS builder
 
+# Define pnpm version as build argument with default value
+ARG PNPM_VERSION=10.18.3
+
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.18.2 --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
@@ -23,16 +26,12 @@ COPY --chown=node:node meet-ce/frontend/package.json ./meet-ce/frontend/
 COPY --chown=node:node meet-ce/frontend/webcomponent/package.json ./meet-ce/frontend/webcomponent/
 COPY --chown=node:node meet-ce/backend/package.json ./meet-ce/backend/
 
-# Install all dependencies using workspace
-# RUN pnpm install --frozen-lockfile
-
 # Copy the source code for all packages
 COPY --chown=node:node meet-ce/typings/ ./meet-ce/typings/
 COPY --chown=node:node meet-ce/frontend/ ./meet-ce/frontend/
 COPY --chown=node:node meet-ce/backend/ ./meet-ce/backend/
 
 # Copy additional necessary files
-# COPY --chown=node:node scripts/ ./scripts/
 COPY --chown=node:node meet.sh .
 
 ARG BASE_HREF=/
@@ -56,8 +55,17 @@ RUN rm -rf node_modules \
 # ====================================================
 FROM node:22.19.0-alpine3.21 AS production
 
+# Define pnpm version as build argument with default value
+ARG PNPM_VERSION=10.18.3
+
+# Set pnpm version as environment variable (available at runtime)
+ENV PNPM_VERSION=${PNPM_VERSION}
+
+# Install bash (required by meet.sh which uses bash arrays)
+RUN apk add --no-cache bash
+
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.18.2 --activate && ls -al .
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate && ls -al .
 
 WORKDIR /opt/openvidu-meet
 
