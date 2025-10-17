@@ -319,25 +319,105 @@ test_e2e_webcomponent() {
   pnpm run test:e2e-webcomponent
 }
 
+# Helper: Prompt user to select edition (CE or PRO)
+select_edition() {
+  # This function performs interactive selection and stores the
+  # result in the global variable SELECTED_EDITION. It intentionally
+  # does not write the selection to stdout so callers can invoke it
+  # directly (not via command substitution) and see prompts in the terminal.
+  if ! check_meet_pro_exists; then
+    SELECTED_EDITION="ce"
+    return
+  fi
 
-dev() {
-  echo -e "${BLUE}=============================================${NC}"
-  echo -e "${BLUE}  🚀 Starting OpenVidu Meet in dev mode...${NC}"
-  echo -e "${BLUE}=============================================${NC}"
+  echo -e "${YELLOW}Meet PRO repository detected!${NC}"
+  echo -e "${GREEN}Which edition do you want to run?${NC}"
+  echo -e "  ${BLUE}1)${NC} Community Edition (CE)"
+  echo -e "  ${BLUE}2)${NC} Professional Edition (PRO)"
+  echo
+  printf "Enter your choice (1 or 2): "
+  read CHOICE
   echo
 
-  install_dependencies
+  case "$CHOICE" in
+    1)
+      echo -e "${GREEN}Starting Community Edition (CE)...${NC}"
+      SELECTED_EDITION="ce"
+      ;;
+    2)
+      echo -e "${GREEN}Starting Professional Edition (PRO)...${NC}"
+      SELECTED_EDITION="pro"
+      ;;
+    *)
+      echo -e "${YELLOW}Invalid choice. Defaulting to Community Edition (CE)...${NC}"
+      SELECTED_EDITION="ce"
+      ;;
+  esac
+}
 
-  # Paths
-  COMPONENTS_PATH="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
+# Helper: Add common commands (components, typings, docs)
+add_common_dev_commands() {
+  local components_path="$1"
 
-  # Define concurrent commands
-  COMPONENTS_CMD="npm --prefix ../openvidu/openvidu-components-angular install && npm --prefix ../openvidu/openvidu-components-angular run lib:serve"
-  TYPINGS_CMD="./scripts/dev/watch-typings.sh"
-  BACKEND_CMD="node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'"
-  FRONTEND_CMD="wait-on ${COMPONENTS_PATH} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'"
-  REST_API_DOCS_CMD="pnpm run dev:rest-api-docs"
-  BROWSERSYNC_CMD="node --input-type=module -e \"
+  # Components watcher
+  CMD_NAMES+=("components")
+  CMD_COLORS+=("red")
+  CMD_COMMANDS+=("npm --prefix ../openvidu/openvidu-components-angular install && npm --prefix ../openvidu/openvidu-components-angular run lib:serve")
+
+  # Typings watcher
+  CMD_NAMES+=("typings")
+  CMD_COLORS+=("green")
+  CMD_COMMANDS+=("./scripts/dev/watch-typings.sh")
+}
+
+# Helper: Add CE-specific commands (backend, frontend)
+add_ce_commands() {
+  local components_path="$1"
+
+  # Run backend
+  CMD_NAMES+=("backend")
+  CMD_COLORS+=("cyan")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'")
+
+  # Run frontend after components are ready
+  CMD_NAMES+=("frontend")
+  CMD_COLORS+=("magenta")
+  CMD_COMMANDS+=("wait-on ${components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
+}
+
+# Helper: Add PRO-specific commands (backend-pro, backend-ce-watch, frontend-pro)
+add_pro_commands() {
+  local components_path="$1"
+
+  # Run backend-pro
+  CMD_NAMES+=("backend-pro")
+  CMD_COLORS+=("cyan")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-backend'")
+
+  # Watch backend-ce
+  CMD_NAMES+=("backend-ce-watch")
+  CMD_COLORS+=("blue")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run --filter @openvidu-meet/backend build:watch'")
+
+  # Run frontend-pro after components are ready
+  CMD_NAMES+=("frontend-pro")
+  CMD_COLORS+=("magenta")
+  CMD_COMMANDS+=("wait-on ${components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
+}
+
+# Helper: Add REST API docs and browser-sync commands
+add_docs_and_browsersync_commands() {
+  local browsersync_path="$1"
+
+  # REST API docs watcher
+  CMD_NAMES+=("rest-api-docs")
+  CMD_COLORS+=("yellow")
+  CMD_COMMANDS+=("pnpm run dev:rest-api-docs")
+
+  # Browser-sync for live reload
+  CMD_NAMES+=("browser-sync")
+  CMD_COLORS+=("white")
+  CMD_COMMANDS+=("node --input-type=module -e \"
     import browserSync from 'browser-sync';
     import chalk from 'chalk';
 
@@ -346,7 +426,7 @@ dev() {
 
     bs.init({
       proxy: 'http://localhost:6080',
-      files: ['meet-ce/backend/public/**/*'],
+      files: ['${browsersync_path}'],
       open: false,
       reloadDelay: 500,
       port
@@ -366,24 +446,73 @@ dev() {
 
       console.log(chalk.gray('---------------------------------------------'));
     });
-    \""
+    \"")
+}
+
+# Helper: Launch all development watchers using concurrently
+launch_dev_watchers() {
+  local edition="$1"
+  local components_path="$2"
 
   echo -e "${YELLOW}⏳ Launching all development watchers...${NC}"
+  echo -e "${BLUE}Edition: ${edition}${NC}"
+  echo -e "${BLUE}Processes: ${#CMD_NAMES[@]}${NC}"
   echo
 
-  # Clean up openvidu-components-angular dist package.json to ensure fresh install
-  rm -rf ${COMPONENTS_PATH}
+  # Clean up components package.json to ensure fresh install
+  rm -rf "${components_path}"
 
-  # Run processes concurrently
+  # Build concurrently arguments from arrays
+  local names_arg=$(IFS=,; echo "${CMD_NAMES[*]}")
+  local colors_arg=$(IFS=,; echo "${CMD_COLORS[*]}")
+
+  # Execute all commands concurrently
   pnpm exec concurrently -k \
-    --names "components,typings,backend,frontend,rest-api-docs,browser-sync" \
-    --prefix-colors "red,green,cyan,magenta,yellow,blue" \
-    "$COMPONENTS_CMD" \
-    "$TYPINGS_CMD" \
-    "$BACKEND_CMD" \
-    "$FRONTEND_CMD" \
-    "$REST_API_DOCS_CMD" \
-    "$BROWSERSYNC_CMD"
+    --names "$names_arg" \
+    --prefix-colors "$colors_arg" \
+    "${CMD_COMMANDS[@]}"
+}
+
+# Start development mode with watchers
+dev() {
+  echo -e "${BLUE}=============================================${NC}"
+  echo -e "${BLUE}  🚀 Starting OpenVidu Meet in dev mode...${NC}"
+  echo -e "${BLUE}=============================================${NC}"
+  echo
+
+  install_dependencies
+
+  # Determine which edition to run (CE or PRO)
+  select_edition
+  local edition=${SELECTED_EDITION:-ce}
+  echo
+
+  # Define paths
+  local components_path="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
+  local browsersync_path
+
+  # Initialize command arrays
+  CMD_NAMES=()
+  CMD_COLORS=()
+  CMD_COMMANDS=()
+
+  # Add common commands (components, typings)
+  add_common_dev_commands "$components_path"
+
+  # Add edition-specific commands and set paths
+  if [ "$edition" = "pro" ]; then
+    browsersync_path="meet-pro/backend/public/**/*"
+    add_pro_commands "$components_path"
+  else
+    browsersync_path="meet-ce/backend/public/**/*"
+    add_ce_commands "$components_path"
+  fi
+
+  # Add docs and browser-sync commands
+  add_docs_and_browsersync_commands "$browsersync_path"
+
+  # Launch all watchers
+  launch_dev_watchers "$edition" "$components_path"
 }
 
 # Start services
