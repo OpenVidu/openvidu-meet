@@ -22,7 +22,7 @@
 		},
 		{
 			"name": "shared-meet-components",
-			"path": "frontend/projects/shared-meet-components",
+			"path": "meet-ce/frontend/projects/shared-meet-components",
 		},
 		{
 			"name": "meet-webcomponent",
