@@ -15,75 +15,122 @@ if (process.env.MEET_CONFIG_DIR) {
 
 dotenv.config(envPath ? { path: envPath } : {});
 
-export const {
-	SERVER_PORT = 6080,
-	SERVER_CORS_ORIGIN = '*',
-	MEET_LOG_LEVEL = 'info',
-	MEET_NAME_ID = 'openviduMeet',
-	MEET_BASE_URL = '',
-	MEET_EDITION = 'CE',
+// Extract environment variables with defaults
+const envVars = {
+	SERVER_PORT: process.env.SERVER_PORT || '6080',
+	SERVER_CORS_ORIGIN: process.env.SERVER_CORS_ORIGIN || '*',
+	MEET_LOG_LEVEL: process.env.MEET_LOG_LEVEL || 'info',
+	MEET_NAME_ID: process.env.MEET_NAME_ID || 'openviduMeet',
+	MEET_BASE_URL: process.env.MEET_BASE_URL || '',
+	MEET_EDITION: process.env.MEET_EDITION || 'CE',
 
-	/**
-	 * Authentication configuration
-	 *
-	 * IMPORTANT:
-	 * - These variables are only used the first time the server starts, storing their values in the database.
-	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
-	 */
-	MEET_INITIAL_ADMIN_USER = 'admin',
-	MEET_INITIAL_ADMIN_PASSWORD = 'admin',
-	MEET_INITIAL_API_KEY = '',
+	// Authentication configuration
+	MEET_INITIAL_ADMIN_USER: process.env.MEET_INITIAL_ADMIN_USER || 'admin',
+	MEET_INITIAL_ADMIN_PASSWORD: process.env.MEET_INITIAL_ADMIN_PASSWORD || 'admin',
+	MEET_INITIAL_API_KEY: process.env.MEET_INITIAL_API_KEY || '',
 
-	/**
-	 * Webhook configuration
-	 *
-	 * IMPORTANT:
-	 * - These variables are only used the first time the server starts, storing their values in the database.
-	 * - To change them after the initial start, use the OpenVidu Meet API instead of modifying these environment variables.
-	 */
-	MEET_INITIAL_WEBHOOK_ENABLED = 'false',
-	MEET_INITIAL_WEBHOOK_URL = '',
+	// Webhook configuration
+	MEET_INITIAL_WEBHOOK_ENABLED: process.env.MEET_INITIAL_WEBHOOK_ENABLED || 'false',
+	MEET_INITIAL_WEBHOOK_URL: process.env.MEET_INITIAL_WEBHOOK_URL || '',
 
 	// LiveKit configuration
-	LIVEKIT_URL = 'ws://localhost:7880',
-	LIVEKIT_URL_PRIVATE = LIVEKIT_URL, // Uses LIVEKIT_URL if not explicitly set
-	LIVEKIT_API_KEY = 'devkey',
-	LIVEKIT_API_SECRET = 'secret',
+	LIVEKIT_URL: process.env.LIVEKIT_URL || 'ws://localhost:7880',
+	LIVEKIT_URL_PRIVATE: process.env.LIVEKIT_URL_PRIVATE || process.env.LIVEKIT_URL || 'ws://localhost:7880',
+	LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY || 'devkey',
+	LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET || 'secret',
 
-	MEET_BLOB_STORAGE_MODE = 's3', // Options: 's3', 'abs', 'gcs'
+	MEET_BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
 	// S3 or GCS configuration
-	MEET_S3_BUCKET = 'openvidu-appdata',
-	MEET_S3_SUBBUCKET = 'openvidu-meet',
-	MEET_S3_SERVICE_ENDPOINT = 'http://localhost:9000',
-	MEET_S3_ACCESS_KEY = 'minioadmin',
-	MEET_S3_SECRET_KEY = 'minioadmin',
-	MEET_AWS_REGION = 'us-east-1',
-	MEET_S3_WITH_PATH_STYLE_ACCESS = 'true',
+	MEET_S3_BUCKET: process.env.MEET_S3_BUCKET || 'openvidu-appdata',
+	MEET_S3_SUBBUCKET: process.env.MEET_S3_SUBBUCKET || 'openvidu-meet',
+	MEET_S3_SERVICE_ENDPOINT: process.env.MEET_S3_SERVICE_ENDPOINT || 'http://localhost:9000',
+	MEET_S3_ACCESS_KEY: process.env.MEET_S3_ACCESS_KEY || 'minioadmin',
+	MEET_S3_SECRET_KEY: process.env.MEET_S3_SECRET_KEY || 'minioadmin',
+	MEET_AWS_REGION: process.env.MEET_AWS_REGION || 'us-east-1',
+	MEET_S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS || 'true',
 
-	//Azure Blob storage configuration
-	MEET_AZURE_CONTAINER_NAME = 'openvidu-appdata',
-	MEET_AZURE_SUBCONTAINER_NAME = 'openvidu-meet',
-	MEET_AZURE_ACCOUNT_NAME = '',
-	MEET_AZURE_ACCOUNT_KEY = '',
+	// Azure Blob storage configuration
+	MEET_AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME || 'openvidu-appdata',
+	MEET_AZURE_SUBCONTAINER_NAME: process.env.MEET_AZURE_SUBCONTAINER_NAME || 'openvidu-meet',
+	MEET_AZURE_ACCOUNT_NAME: process.env.MEET_AZURE_ACCOUNT_NAME || '',
+	MEET_AZURE_ACCOUNT_KEY: process.env.MEET_AZURE_ACCOUNT_KEY || '',
 
 	// Redis configuration
-	MEET_REDIS_HOST: REDIS_HOST = 'localhost',
-	MEET_REDIS_PORT: REDIS_PORT = 6379,
-	MEET_REDIS_USERNAME: REDIS_USERNAME = '',
-	MEET_REDIS_PASSWORD: REDIS_PASSWORD = 'redispassword',
-	MEET_REDIS_DB: REDIS_DB = '0',
+	REDIS_HOST: process.env.MEET_REDIS_HOST || 'localhost',
+	REDIS_PORT: process.env.MEET_REDIS_PORT || '6379',
+	REDIS_USERNAME: process.env.MEET_REDIS_USERNAME || '',
+	REDIS_PASSWORD: process.env.MEET_REDIS_PASSWORD || 'redispassword',
+	REDIS_DB: process.env.MEET_REDIS_DB || '0',
 
 	// Redis Sentinel configuration
-	MEET_REDIS_SENTINEL_HOST_LIST: REDIS_SENTINEL_HOST_LIST = '',
-	MEET_REDIS_SENTINEL_PASSWORD: REDIS_SENTINEL_PASSWORD = '',
-	MEET_REDIS_SENTINEL_MASTER_NAME: REDIS_SENTINEL_MASTER_NAME = 'openvidu',
+	REDIS_SENTINEL_HOST_LIST: process.env.MEET_REDIS_SENTINEL_HOST_LIST || '',
+	REDIS_SENTINEL_PASSWORD: process.env.MEET_REDIS_SENTINEL_PASSWORD || '',
+	REDIS_SENTINEL_MASTER_NAME: process.env.MEET_REDIS_SENTINEL_MASTER_NAME || 'openvidu',
 
 	// Deployment configuration
-	MODULES_FILE = undefined,
-	MODULE_NAME = 'openviduMeet',
-	ENABLED_MODULES = ''
-} = process.env;
+	MODULES_FILE: process.env.MODULES_FILE || undefined,
+	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
+	ENABLED_MODULES: process.env.ENABLED_MODULES || ''
+};
+
+// Export environment as an object for extensibility
+export const environment = envVars;
+
+/**
+ * Helper function to create individual exports from an environment object.
+ * This is used to maintain backward compatibility with code that imports individual variables.
+ */
+export const createEnvironmentExports = <T extends Record<string, any>>(env: T): T => {
+	return env;
+};
+
+// Export individual variables for backward compatibility
+export const {
+	SERVER_PORT,
+	SERVER_CORS_ORIGIN,
+	MEET_LOG_LEVEL,
+	MEET_NAME_ID,
+	MEET_BASE_URL,
+	MEET_EDITION,
+	MEET_INITIAL_ADMIN_USER,
+	MEET_INITIAL_ADMIN_PASSWORD,
+	MEET_INITIAL_API_KEY,
+	MEET_INITIAL_WEBHOOK_ENABLED,
+	MEET_INITIAL_WEBHOOK_URL,
+	LIVEKIT_URL,
+	LIVEKIT_URL_PRIVATE,
+	LIVEKIT_API_KEY,
+	LIVEKIT_API_SECRET,
+	MEET_BLOB_STORAGE_MODE,
+	MEET_S3_BUCKET,
+	MEET_S3_SUBBUCKET,
+	MEET_S3_SERVICE_ENDPOINT,
+	MEET_S3_ACCESS_KEY,
+	MEET_S3_SECRET_KEY,
+	MEET_AWS_REGION,
+	MEET_S3_WITH_PATH_STYLE_ACCESS,
+	MEET_AZURE_CONTAINER_NAME,
+	MEET_AZURE_SUBCONTAINER_NAME,
+	MEET_AZURE_ACCOUNT_NAME,
+	MEET_AZURE_ACCOUNT_KEY,
+	REDIS_HOST,
+	REDIS_PORT,
+	REDIS_USERNAME,
+	REDIS_PASSWORD,
+	REDIS_DB,
+	REDIS_SENTINEL_HOST_LIST,
+	REDIS_SENTINEL_PASSWORD,
+	REDIS_SENTINEL_MASTER_NAME,
+	MODULES_FILE,
+	MODULE_NAME,
+	ENABLED_MODULES
+} = envVars;
+
+
+export const getExportedEnvironment = () => {
+	return { ...envVars };
+};
 
 export function checkModuleEnabled() {
 	if (MODULES_FILE) {
