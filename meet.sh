@@ -120,7 +120,7 @@ show_help() {
   echo "    Start development mode with watchers"
   echo
   echo -e "  ${BLUE}start${NC}"
-  echo "    Start services in production or CI mode"
+  echo "    Start OpenVidu Meet in production or CI mode"
   echo -e "    ${YELLOW}Options:${NC} --prod    Start in production mode"
   echo -e "            ${NC} --ci      Start in CI mode"
   echo
@@ -376,10 +376,10 @@ add_common_dev_commands() {
   CMD_COLORS+=("bgRed.white")
   CMD_COMMANDS+=("npm --prefix $OV_COMPONENTS_DIR install && npm --prefix $OV_COMPONENTS_DIR run lib:serve")
 
-  # Typings watcher
+  # Typings watcher. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-ce")
   CMD_COLORS+=("bgGreen.black")
-  CMD_COMMANDS+=("./scripts/dev/watch-typings.sh")
+  CMD_COMMANDS+=("./scripts/dev/watch-typings-ce.sh")
 
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
@@ -410,12 +410,12 @@ add_pro_commands() {
 
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
-  CMD_COLORS+=("blue")
+  CMD_COLORS+=("cyan")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-backend'")
 
   # Watch backend-ce
   CMD_NAMES+=("backend-ce-watch")
-  CMD_COLORS+=("cyan")
+  CMD_COLORS+=("bgCyan.white")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run --filter @openvidu-meet/backend build:watch'")
 
   # Run frontend-pro after components-angular and shared-meet-components are ready
@@ -423,10 +423,10 @@ add_pro_commands() {
   CMD_COLORS+=("magenta")
   CMD_COMMANDS+=("wait-on ${components_path} && wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
 
-  # Run @openvidu-meet-pro/typings watcher
+  # Typings watcher for PRO edition. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-pro")
-  CMD_COLORS+=("brightGreen")
-  CMD_COMMANDS+=("pnpm --filter @openvidu-meet-pro/typings run build:watch")
+  CMD_COLORS+=("bgGreen.black")
+  CMD_COMMANDS+=("./scripts/dev/watch-typings-pro.sh")
 }
 
 # Helper: Add REST API docs and browser-sync commands
@@ -543,8 +543,8 @@ dev() {
   launch_dev_watchers "$edition" "$components_path"
 }
 
-# Start services
-start_services() {
+# Start OpenVidu Meet services in prod or ci mode
+start() {
   MODE=""
   for arg in "$@"; do
     case "$arg" in
@@ -820,7 +820,7 @@ main() {
       dev
       ;;
     start)
-      start_services "$@"
+      start "$@"
       ;;
     start-testapp)
       start_testapp

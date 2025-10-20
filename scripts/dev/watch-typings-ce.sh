@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Path to the flag file indicating typings are ready
 FLAG_PATH="./meet-ce/typings/dist/typings-ready.flag"
 
 # Remove the flag file if it exists

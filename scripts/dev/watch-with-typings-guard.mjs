@@ -12,8 +12,11 @@ const __dirname = dirname(__filename);
 // Configuration
 const CE_TYPINGS_FLAG_PATH = resolve(__dirname, '../../meet-ce/typings/dist/typings-ready.flag');
 const CE_TYPINGS_DIST = resolve(__dirname, '../../meet-ce/typings/dist');
+const PRO_TYPINGS_FLAG_PATH = resolve(__dirname, '../../meet-pro/typings/dist/typings-ready.flag');
+const PRO_TYPINGS_DIST = resolve(__dirname, '../../meet-pro/typings/dist');
 const DEBOUNCE_MS = 500; // Wait 500ms after flag appears before restarting
 const KILL_TIMEOUT_MS = 5000; // Max time to wait for process to die
+const POLL_DIR_MS = 1000; // Polling interval for directories that don't yet exist
 
 // Get command from arguments
 const command = process.argv.slice(2).join(' ');
@@ -25,7 +28,8 @@ if (!command) {
 }
 
 let childProcess = null;
-let isTypingsReady = false;
+// We'll support multiple targets (CE and PRO). Each target has its own ready state.
+const targets = [];
 let pendingRestart = null;
 let hasStartedOnce = false;
 let isKilling = false;
@@ -34,9 +38,12 @@ let isKilling = false;
  * Start the child process
  */
 async function startProcess() {
-	if (!isTypingsReady) {
+	// Process should start only when all required targets report ready
+	const allReady = targets.length > 0 && targets.every((t) => t.isReady);
+	if (!allReady) {
 		if (!hasStartedOnce) {
-			console.log('Waiting for typings to be ready...');
+			const names = targets.map((t) => t.name).join(', ');
+			console.log(`Waiting for typings to be ready for: ${names}...`);
 		}
 		return;
 	}
@@ -155,86 +162,174 @@ function scheduleRestart() {
  * Check if typings are ready
  */
 function checkTypingsReady() {
-	const wasReady = isTypingsReady;
-	isTypingsReady = existsSync(CE_TYPINGS_FLAG_PATH);
-
-	if (!wasReady && isTypingsReady) {
-		console.log('✅ Typings are ready!');
-		scheduleRestart();
-	} else if (wasReady && !isTypingsReady) {
-		console.log('Typings recompiling... (process will restart when ready)');
+	let changed = false;
+	for (const t of targets) {
+		const wasReady = t.isReady;
+		t.isReady = existsSync(t.flagPath);
+		if (!wasReady && t.isReady) {
+			console.log(`✅ Typings ready for ${t.name}!`);
+			changed = true;
+		} else if (wasReady && !t.isReady) {
+			console.log(`Typings recompiling for ${t.name}... (process will restart when ready)`);
+			changed = true;
+		}
 	}
 
-	return isTypingsReady;
+	if (changed) {
+		scheduleRestart();
+	}
+
+	return targets.every((t) => t.isReady);
 }
 
 /**
  * Watch the flag file
  */
-function watchFlag() {
-	console.log(`Watching typings flag: ${CE_TYPINGS_FLAG_PATH}`);
+/**
+ * Create a watcher for a single target that watches its flag dir and dist dir.
+ * If the directories don't exist yet, we poll until they appear then create watchers.
+ */
+function watchTarget(target) {
+	console.log(`Setting up watchers for ${target.name}`);
 
 	// Initial check
 	checkTypingsReady();
 
-	// Watch the parent directory of the flag
-	const flagDir = dirname(CE_TYPINGS_FLAG_PATH);
+	const flagDir = dirname(target.flagPath);
+	const distDir = target.distPath;
 
-	const watcher = watch(flagDir, { recursive: false }, (eventType, filename) => {
-		if (filename === 'typings-ready.flag') {
-			checkTypingsReady();
+	function createWatchers() {
+		try {
+			if (!target.flagWatcher && existsSync(flagDir)) {
+				target.flagWatcher = watch(flagDir, { recursive: false }, (eventType, filename) => {
+					if (filename === 'typings-ready.flag') {
+						checkTypingsReady();
+					}
+				});
+
+				target.flagWatcher.on('error', (error) => {
+					console.error(`❌ Watcher error for ${target.name} flag:`, error);
+				});
+			}
+
+			if (!target.distWatcher && existsSync(distDir)) {
+				target.distWatcher = watch(distDir, { recursive: true }, (eventType, filename) => {
+					if (filename === 'typings-ready.flag') return;
+					if (childProcess && target.isReady) {
+						console.log(`Detected change in ${target.name} typings: ${filename} (will restart when compilation finishes)`);
+					}
+				});
+
+				target.distWatcher.on('error', (error) => {
+					console.error(`❌ Watcher error for ${target.name} dist:`, error);
+				});
+			}
+
+			// If we have at least one watcher, stop polling
+			if ((target.flagWatcher || target.distWatcher) && target.poller) {
+				clearInterval(target.poller);
+				target.poller = null;
+			}
+		} catch (err) {
+			// Rare race - ignore and keep polling
+			// console.error(`Error creating watcher for ${target.name}:`, err.message);
 		}
-	});
+	}
 
-	watcher.on('error', (error) => {
-		console.error('❌ Watcher error:', error);
-	});
+	// If directories are already present, create watchers immediately
+	if (existsSync(flagDir) || existsSync(distDir)) {
+		createWatchers();
+	}
 
-	return watcher;
+	// Start polling for directory creation if watchers not yet created
+	if (!target.flagWatcher && !target.distWatcher) {
+		target.poller = setInterval(() => {
+			createWatchers();
+		}, POLL_DIR_MS);
+	}
+
+	return () => {
+		if (target.flagWatcher) {
+			try { target.flagWatcher.close(); } catch (e) {}
+			target.flagWatcher = null;
+		}
+		if (target.distWatcher) {
+			try { target.distWatcher.close(); } catch (e) {}
+			target.distWatcher = null;
+		}
+		if (target.poller) {
+			clearInterval(target.poller);
+			target.poller = null;
+		}
+	};
 }
 
 /**
  * Watch typings/dist for changes (to trigger restart when ready)
  */
-function watchTypingsDist() {
-	console.log(`Watching typings dist: ${CE_TYPINGS_DIST}`);
+// Setup targets depending on the provided command. If command mentions meet-pro we include PRO
+function setupTargetsFromCommand(cmd) {
+	const normalized = (cmd || '').toLowerCase();
+	const usePro = /\b(?:meet-pro|pro)\b/.test(normalized);
 
-	const watcher = watch(CE_TYPINGS_DIST, { recursive: true }, (eventType, filename) => {
-		// Ignore the flag file itself (handled by watchFlag)
-		if (filename === 'typings-ready.flag') {
-			return;
-		}
+	// Always include CE by default unless the command explicitly targets only pro and not CE.
+	// If both are mentioned include both.
+	const includeCE = true; // keep CE by default
 
-		// Only log changes, but don't restart yet
-		// Restart will happen when flag is recreated (via checkTypingsReady)
-		if (childProcess && isTypingsReady) {
-			console.log(`Detected change in typings: ${filename} (will restart when compilation finishes)`);
-		}
-	});
+	if (includeCE) {
+		targets.push({
+			name: 'CE',
+			flagPath: CE_TYPINGS_FLAG_PATH,
+			distPath: CE_TYPINGS_DIST,
+			isReady: false,
+			flagWatcher: null,
+			distWatcher: null,
+			poller: null,
+		});
+	}
 
-	watcher.on('error', (error) => {
-		console.error('❌ Watcher error:', error);
-	});
+	if (usePro) {
+		targets.push({
+			name: 'PRO',
+			flagPath: PRO_TYPINGS_FLAG_PATH,
+			distPath: PRO_TYPINGS_DIST,
+			isReady: false,
+			flagWatcher: null,
+			distWatcher: null,
+			poller: null,
+		});
+	}
 
-	return watcher;
+	// If the command only mentions PRO and you don't want CE, you could tweak logic here.
 }
 
-// Start watching
-const flagWatcher = watchFlag();
-const distWatcher = watchTypingsDist();
+// Setup targets based on command
+setupTargetsFromCommand(command);
+
+// Create watchers for each target and keep cleanup functions
+const cleanupFns = [];
+for (const t of targets) {
+	const cleanup = watchTarget(t);
+	cleanupFns.push(cleanup);
+}
+
+// Kick an initial check/start attempt (in case flags already ready)
+checkTypingsReady();
 
 // Cleanup on exit
-process.on('SIGINT', async () => {
+async function doCleanupAndExit(code = 0) {
 	console.log('\n🛑 Stopping...');
 	await killProcess();
-	flagWatcher.close();
-	distWatcher.close();
-	process.exit(0);
+	for (const fn of cleanupFns) {
+		try { fn(); } catch (e) {}
+	}
+	process.exit(code);
+}
+
+process.on('SIGINT', async () => {
+	await doCleanupAndExit(0);
 });
 
 process.on('SIGTERM', async () => {
-	await killProcess();
-	flagWatcher.close();
-	distWatcher.close();
-	process.exit(0);
+	await doCleanupAndExit(0);
 });

@@ -6,6 +6,7 @@ packages:
   - meet-ce/backend
   - meet-pro/frontend
   - meet-pro/backend
+  - meet-pro/typings
   - testapp
 
 ignoredBuiltDependencies:
