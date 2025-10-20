@@ -357,6 +357,20 @@ select_edition() {
 
 # Helper: Add common commands (components, typings, docs)
 add_common_dev_commands() {
+  OV_COMPONENTS_DIR="../openvidu/openvidu-components-angular"
+  OV_PACKAGE_JSON="$OV_COMPONENTS_DIR/package.json"
+
+  # Check if the OpenVidu Angular components directory exists
+  if [ ! -d "$OV_COMPONENTS_DIR" ] || [ ! -f "$OV_PACKAGE_JSON" ]; then
+    echo -e "${RED}Error: OpenVidu Angular components not found or incomplete at:${NC} $OV_COMPONENTS_DIR"
+    echo -e "${YELLOW}Please clone the OpenVidu repository alongside meet to enable development mode.${NC}"
+    echo
+    echo -e "  ${YELLOW}Run this command:${NC}"
+    echo -e "    git clone https://github.com/OpenVidu/openvidu.git ../openvidu${NC}"
+    echo
+    exit 1
+  fi
+
   # Components watcher
   CMD_NAMES+=("components")
   CMD_COLORS+=("red")

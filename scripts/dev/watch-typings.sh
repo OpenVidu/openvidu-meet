@@ -4,6 +4,9 @@ FLAG_PATH="./meet-ce/typings/dist/typings-ready.flag"
 # Remove the flag file if it exists
 rm -f $FLAG_PATH
 
+# Create an empty directory for the flag file if it doesn't exist
+mkdir -p "$(dirname "$FLAG_PATH")"
+
 echo "Starting typings watch mode..."
 echo "Waiting for initial compilation..."
 
