@@ -372,18 +372,18 @@ add_common_dev_commands() {
   fi
 
   # Components watcher
-  CMD_NAMES+=("components")
-  CMD_COLORS+=("bgRed")
+  CMD_NAMES+=("components-angular")
+  CMD_COLORS+=("bgRed.white")
   CMD_COMMANDS+=("npm --prefix $OV_COMPONENTS_DIR install && npm --prefix $OV_COMPONENTS_DIR run lib:serve")
 
   # Typings watcher
-  CMD_NAMES+=("typings")
-  CMD_COLORS+=("bgGreen")
+  CMD_NAMES+=("typings-ce")
+  CMD_COLORS+=("bgGreen.black")
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh")
 
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
-  CMD_COLORS+=("bgYellow")
+  CMD_COLORS+=("bgYellow.dark")
   CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 }
 
@@ -440,7 +440,7 @@ add_docs_and_browsersync_commands() {
 
   # Browser-sync for live reload
   CMD_NAMES+=("browser-sync")
-  CMD_COLORS+=("bgWhite")
+  CMD_COLORS+=("bgWhite.black")
   CMD_COMMANDS+=("node --input-type=module -e \"
     import browserSync from 'browser-sync';
     import chalk from 'chalk';
