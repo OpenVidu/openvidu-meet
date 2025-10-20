@@ -50,9 +50,6 @@ Before starting, ensure you have the following installed:
   curl -sSL https://get.livekit.io/cli | bash
   ```
 
-Claro 😄, aquí tienes una versión más simple, clara y directa de esa sección de tu README:
-
----
 
 ## Getting Started
 
