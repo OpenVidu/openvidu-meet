@@ -1,7 +1,7 @@
 import { ParticipantPermissions, ParticipantRole } from './participant.js';
 import { MeetRoomConfig } from './room-config.js';
 
-interface BaseRoomOptions {
+export interface BaseRoomOptions {
     roomName?: string;
     autoDeletionDate?: number;
     autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
