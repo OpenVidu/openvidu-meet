@@ -373,17 +373,17 @@ add_common_dev_commands() {
 
   # Components watcher
   CMD_NAMES+=("components")
-  CMD_COLORS+=("red")
-  CMD_COMMANDS+=("npm --prefix ../openvidu/openvidu-components-angular install && npm --prefix ../openvidu/openvidu-components-angular run lib:serve")
+  CMD_COLORS+=("bgRed")
+  CMD_COMMANDS+=("npm --prefix $OV_COMPONENTS_DIR install && npm --prefix $OV_COMPONENTS_DIR run lib:serve")
 
   # Typings watcher
   CMD_NAMES+=("typings")
-  CMD_COLORS+=("green")
+  CMD_COLORS+=("bgGreen")
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh")
 
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
-  CMD_COLORS+=("yellow")
+  CMD_COLORS+=("bgYellow")
   CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 }
 
@@ -406,21 +406,27 @@ add_ce_commands() {
 # Helper: Add PRO-specific commands (backend-pro, backend-ce-watch, frontend-pro)
 add_pro_commands() {
   local components_path="$1"
+  local shared_meet_components_path="$2"
 
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
-  CMD_COLORS+=("cyan")
+  CMD_COLORS+=("blue")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-backend'")
 
   # Watch backend-ce
   CMD_NAMES+=("backend-ce-watch")
-  CMD_COLORS+=("blue")
+  CMD_COLORS+=("cyan")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run --filter @openvidu-meet/backend build:watch'")
 
-  # Run frontend-pro after components are ready
+  # Run frontend-pro after components-angular and shared-meet-components are ready
   CMD_NAMES+=("frontend-pro")
   CMD_COLORS+=("magenta")
-  CMD_COMMANDS+=("wait-on ${components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
+  CMD_COMMANDS+=("wait-on ${components_path} && wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
+
+  # Run @openvidu-meet-pro/typings watcher
+  CMD_NAMES+=("typings-pro")
+  CMD_COLORS+=("brightGreen")
+  CMD_COMMANDS+=("pnpm --filter @openvidu-meet-pro/typings run build:watch")
 }
 
 # Helper: Add REST API docs and browser-sync commands
@@ -429,12 +435,12 @@ add_docs_and_browsersync_commands() {
 
   # REST API docs watcher
   CMD_NAMES+=("rest-api-docs")
-  CMD_COLORS+=("yellow")
+  CMD_COLORS+=("bgGray")
   CMD_COMMANDS+=("pnpm run dev:rest-api-docs")
 
   # Browser-sync for live reload
   CMD_NAMES+=("browser-sync")
-  CMD_COLORS+=("white")
+  CMD_COLORS+=("bgWhite")
   CMD_COMMANDS+=("node --input-type=module -e \"
     import browserSync from 'browser-sync';
     import chalk from 'chalk';
@@ -524,7 +530,7 @@ dev() {
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then
     browsersync_path="meet-pro/backend/public/**/*"
-    add_pro_commands "$components_path"
+    add_pro_commands "$components_path" "$shared_meet_components_path"
   else
     browsersync_path="meet-ce/backend/public/**/*"
     add_ce_commands "$components_path" "$shared_meet_components_path"
