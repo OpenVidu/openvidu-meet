@@ -357,8 +357,6 @@ select_edition() {
 
 # Helper: Add common commands (components, typings, docs)
 add_common_dev_commands() {
-  local components_path="$1"
-
   # Components watcher
   CMD_NAMES+=("components")
   CMD_COLORS+=("red")
@@ -368,21 +366,27 @@ add_common_dev_commands() {
   CMD_NAMES+=("typings")
   CMD_COLORS+=("green")
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh")
+
+  # shared-meet-components watcher
+  CMD_NAMES+=("shared-meet-components")
+  CMD_COLORS+=("yellow")
+  CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
 add_ce_commands() {
   local components_path="$1"
+  local shared_meet_components_path="$2"
 
   # Run backend
   CMD_NAMES+=("backend")
   CMD_COLORS+=("cyan")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'")
 
-  # Run frontend after components are ready
+  # Run frontend after components-angular and shared-meet-components are ready
   CMD_NAMES+=("frontend")
   CMD_COLORS+=("magenta")
-  CMD_COMMANDS+=("wait-on ${components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
+  CMD_COMMANDS+=("wait-on ${components_path} && wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
 }
 
 # Helper: Add PRO-specific commands (backend-pro, backend-ce-watch, frontend-pro)
@@ -459,8 +463,11 @@ launch_dev_watchers() {
   echo -e "${BLUE}Processes: ${#CMD_NAMES[@]}${NC}"
   echo
 
-  # Clean up components package.json to ensure fresh install
+  # Clean up components package.json to ensure wait-on works
   rm -rf "${components_path}"
+
+  # Clean up shared-meet-components package.json to ensure wait-on works
+  rm -rf "${shared_meet_components_path}"
 
   # Build concurrently arguments from arrays
   local names_arg=$(IFS=,; echo "${CMD_NAMES[*]}")
@@ -489,6 +496,7 @@ dev() {
 
   # Define paths
   local components_path="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
+  local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
   local browsersync_path
 
   # Initialize command arrays
@@ -496,8 +504,8 @@ dev() {
   CMD_COLORS=()
   CMD_COMMANDS=()
 
-  # Add common commands (components, typings)
-  add_common_dev_commands "$components_path"
+  # Add common commands (components-angular, typings, shared-meet-components)
+  add_common_dev_commands
 
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then
@@ -505,7 +513,7 @@ dev() {
     add_pro_commands "$components_path"
   else
     browsersync_path="meet-ce/backend/public/**/*"
-    add_ce_commands "$components_path"
+    add_ce_commands "$components_path" "$shared_meet_components_path"
   fi
 
   # Add docs and browser-sync commands

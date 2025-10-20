@@ -1,13 +1,17 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection, inject, provideAppInitializer } from '@angular/core';
+import {
+	ApplicationConfig,
+	importProvidersFrom,
+	provideZoneChangeDetection,
+	inject,
+	provideAppInitializer
+} from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { routes } from '@app/app.routes';
 import { environment } from '@environment/environment';
-import { httpInterceptor } from '@openvidu-meet/shared/interceptors';
-import { CustomParticipantModel } from '@openvidu-meet/shared/models';
-import { ThemeService } from '@openvidu-meet/shared/services';
+import { CustomParticipantModel, httpInterceptor, ThemeService } from '@openvidu-meet/shared-components';
 import { OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
@@ -18,9 +22,12 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideAppInitializer(() => {
-        const initializerFn = ((themeService: ThemeService) => () => themeService.initializeTheme())(inject(ThemeService));
-        return initializerFn();
-      }),
+			const initializerFn = (
+				(themeService: ThemeService) => () =>
+					themeService.initializeTheme()
+			)(inject(ThemeService));
+			return initializerFn();
+		}),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(routes),
