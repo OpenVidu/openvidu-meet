@@ -379,7 +379,7 @@ add_common_dev_commands() {
   # Typings watcher. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-ce")
   CMD_COLORS+=("bgGreen.black")
-  CMD_COMMANDS+=("./scripts/dev/watch-typings-ce.sh")
+  CMD_COMMANDS+=("./scripts/dev/watch-typings.sh ce")
 
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
@@ -426,7 +426,7 @@ add_pro_commands() {
   # Typings watcher for PRO edition. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-pro")
   CMD_COLORS+=("bgGreen.black")
-  CMD_COMMANDS+=("./scripts/dev/watch-typings-pro.sh")
+  CMD_COMMANDS+=("./scripts/dev/watch-typings.sh pro")
 }
 
 # Helper: Add REST API docs and browser-sync commands
