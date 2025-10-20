@@ -36,6 +36,10 @@ export class AppDataService {
 		return this.appData.mode === ApplicationMode.STANDALONE;
 	}
 
+	setEdition(edition: Edition): void {
+		this.appData.edition = edition;
+	}
+
 	getEdition(): Edition {
 		return this.appData.edition;
 	}
