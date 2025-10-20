@@ -29,9 +29,6 @@
       ],
       "@app/*": [
         "src/app/*"
-      ],
-      "@openvidu-meet/shared/*": [
-        "projects/shared-meet-components/src/lib/*"
       ]
     },
     "importHelpers": true,

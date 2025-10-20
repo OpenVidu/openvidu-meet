@@ -10,7 +10,7 @@ import {
 	runGuardsSerially,
 	validateRecordingAccessGuard,
 	validateRoomAccessGuard
-} from '@openvidu-meet/shared/guards';
+} from '../guards';
 import {
 	ConsoleComponent,
 	EmbeddedComponent,
@@ -26,7 +26,7 @@ import {
 	UsersPermissionsComponent,
 	ViewRecordingComponent,
 	ConfigComponent
-} from '@openvidu-meet/shared/pages';
+} from '../pages';
 
 export const baseRoutes: Routes = [
 	{

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, GlobalConfigService, HttpService, TokenStorageService } from '@openvidu-meet/shared/services';
+import { FeatureConfigurationService, GlobalConfigService, HttpService, TokenStorageService } from '../services';
 import {
 	AuthTransportMode,
 	MeetTokenMetadata,
@@ -7,7 +7,7 @@ import {
 	ParticipantPermissions,
 	ParticipantRole
 } from '@openvidu-meet/typings';
-import { getValidDecodedToken } from '@openvidu-meet/shared/utils';
+import { getValidDecodedToken } from '../utils';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({

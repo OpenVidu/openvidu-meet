@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
-import { WizardNavigationConfig, WizardStep } from '@openvidu-meet/shared/models';
+import { WizardNavigationConfig, WizardStep } from '../models';
 import {
 	MeetRecordingAccess,
 	MeetRoomConfig,

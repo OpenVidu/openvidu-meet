@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppDataService } from '@openvidu-meet/shared/services';
+import { AppDataService } from '@openvidu-meet/shared-components';
 import packageInfo from '../../package.json';
 
 @Component({

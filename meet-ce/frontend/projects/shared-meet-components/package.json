@@ -1,6 +1,9 @@
 {
 	"name": "@openvidu-meet/shared-components",
 	"version": "0.0.1",
+	"main": "dist/fesm2022/openvidu-meet-shared-components.mjs",
+	"module": "dist/fesm2022/openvidu-meet-shared-components.mjs",
+	"typings": "dist/index.d.ts",
 	"peerDependencies": {
 		"@angular/animations": "^20.0.0",
 		"@angular/cdk": "^20.0.0",

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpService, ParticipantService } from '@openvidu-meet/shared/services';
+import { HttpService, ParticipantService } from '../services';
 import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MeetingService, ParticipantService, RoomService } from '@openvidu-meet/shared/services';
+import { MeetingService, ParticipantService, RoomService } from '../services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,

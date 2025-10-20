@@ -7,8 +7,8 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { ConsoleNavLink } from '@openvidu-meet/shared/models';
-import { AppDataService, ThemeService } from '@openvidu-meet/shared/services';
+import { ConsoleNavLink } from '../../models';
+import { AppDataService, ThemeService } from '../../services';
 
 @Component({
     selector: 'ov-console-nav',

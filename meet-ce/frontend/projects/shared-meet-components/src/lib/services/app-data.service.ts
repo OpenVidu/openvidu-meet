@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { AppData, ApplicationMode, Edition } from '@openvidu-meet/shared/models';
-import { WebComponentManagerService } from '@openvidu-meet/shared/services';
+import { AppData, ApplicationMode, Edition } from '../models';
+import { WebComponentManagerService } from '../services';
 
 @Injectable({
 	providedIn: 'root'

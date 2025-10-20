@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, NavigationEnd, Router } from '@angular/router';
-import { NavigationService } from '@openvidu-meet/shared/services';
+import { NavigationService } from '../services';
 import { filter, take } from 'rxjs';
 
 /**

@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RoomWizardStateService } from '@openvidu-meet/shared/services';
+import { RoomWizardStateService } from '../../../../../../services';
 import {
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomDeletionPolicyWithMeeting,

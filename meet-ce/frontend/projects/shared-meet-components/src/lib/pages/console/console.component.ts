@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
-import { ConsoleNavComponent } from '@openvidu-meet/shared/components';
-import { ConsoleNavLink } from '@openvidu-meet/shared/models';
-import { AuthService } from '@openvidu-meet/shared/services';
+import { ConsoleNavComponent } from '../../components';
+import { ConsoleNavLink } from '../../models';
+import { AuthService } from '../../services';
 
 @Component({
     selector: 'ov-console',

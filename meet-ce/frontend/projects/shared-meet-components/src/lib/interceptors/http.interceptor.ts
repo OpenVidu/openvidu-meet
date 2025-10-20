@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, ParticipantService, RecordingService, RoomService, TokenStorageService } from '@openvidu-meet/shared/services';
+import { AuthService, ParticipantService, RecordingService, RoomService, TokenStorageService } from '../services';
 import { catchError, from, Observable, switchMap } from 'rxjs';
 
 /**

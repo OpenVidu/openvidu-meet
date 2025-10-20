@@ -5,8 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
-import { SelectableCardComponent, SelectableOption, SelectionEvent } from '@openvidu-meet/shared/components';
-import { RoomWizardStateService } from '@openvidu-meet/shared/services';
+import { SelectableCardComponent, SelectableOption, SelectionEvent } from '../../../../../../components';
+import { RoomWizardStateService } from '../../../../../../services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({

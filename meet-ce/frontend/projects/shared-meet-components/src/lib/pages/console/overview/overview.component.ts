@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { NavigationService, RecordingService, RoomService } from '@openvidu-meet/shared/services';
+import { NavigationService, RecordingService, RoomService } from '../../../services';
 import { MeetRecordingStatus, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 
 interface OverviewStats {

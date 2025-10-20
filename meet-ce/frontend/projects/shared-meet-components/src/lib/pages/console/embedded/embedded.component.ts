@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService, GlobalConfigService, NotificationService } from '@openvidu-meet/shared/services';
+import { AuthService, GlobalConfigService, NotificationService } from '../../../services';
 import { MeetApiKey } from '@openvidu-meet/typings';
 
 @Component({

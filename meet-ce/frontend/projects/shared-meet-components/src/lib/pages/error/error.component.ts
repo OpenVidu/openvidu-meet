@@ -3,8 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { ErrorReason } from '@openvidu-meet/shared/models';
-import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '@openvidu-meet/shared/services';
+import { ErrorReason } from '../../models';
+import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '../../services';
 
 @Component({
     selector: 'ov-error',

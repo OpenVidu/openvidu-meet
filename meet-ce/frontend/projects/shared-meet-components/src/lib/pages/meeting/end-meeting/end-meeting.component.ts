@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '@openvidu-meet/shared/services';
+import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '../../../services';
 import { LeftEventReason } from '@openvidu-meet/typings';
 
 @Component({

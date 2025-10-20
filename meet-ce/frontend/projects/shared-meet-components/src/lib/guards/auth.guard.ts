@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { ErrorReason } from '@openvidu-meet/shared/models';
+import { ErrorReason } from '../models';
 import {
 	AuthService,
 	GlobalConfigService,
@@ -8,7 +8,7 @@ import {
 	ParticipantService,
 	RecordingService,
 	RoomService
-} from '@openvidu-meet/shared/services';
+} from '../services';
 import { AuthMode, ParticipantRole } from '@openvidu-meet/typings';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (

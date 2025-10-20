@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { ProFeatureBadgeComponent } from '@openvidu-meet/shared/components';
+import { ProFeatureBadgeComponent } from '../../components';
 
 /**
  * Interface for selectable card option data

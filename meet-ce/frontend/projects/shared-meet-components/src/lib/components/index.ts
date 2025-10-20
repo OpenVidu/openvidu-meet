@@ -10,3 +10,8 @@ export * from './selectable-card/selectable-card.component';
 export * from './spinner/spinner.component';
 export * from './step-indicator/step-indicator.component';
 export * from './wizard-nav/wizard-nav.component';
+export * from './share-meeting-link/share-meeting-link.component';
+
+export * from './dialogs/basic-dialog/dialog.component';
+export * from './dialogs/share-recording-dialog/share-recording-dialog.component';
+export * from './dialogs/delete-room-dialog/delete-room-dialog.component';
