@@ -8,6 +8,7 @@
 			"name": "openvidu-meet (root)",
 			"path": ".",
 		},
+
 		{
 			"name": "openvidu-meet (CE)",
 			"path": "meet-ce",
@@ -17,12 +18,12 @@
 			"path": "meet-pro",
 		},
 		{
-			"name": "testapp",
-			"path": "testapp",
-		},
-		{
 			"name": "shared-meet-components",
 			"path": "meet-ce/frontend/projects/shared-meet-components",
+		},
+		{
+			"name": "meet-testapp",
+			"path": "testapp",
 		},
 		{
 			"name": "meet-webcomponent",
@@ -34,13 +35,13 @@
 			"**/meet-ce": true,
 			"**/meet-pro": true,
 			"**/webcomponent": true,
+			"**/webhooks-snippets": true,
+			"**/testapp": true,
 			"**/.angular": true,
 			"**/public": true,
 			"**/dist": true,
 			"**/node_modules": true,
 			"**/test-results": true,
-			"**/webhooks-snippets": true,
-			"**/testapp": true,
 		},
 		"jest.disabledWorkspaceFolders": ["openvidu-meet", "typings", "frontend"],
 		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
