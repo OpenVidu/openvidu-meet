@@ -1,5 +1,5 @@
 {
-	"name": "shared-meet-components",
+	"name": "@openvidu-meet/shared-components",
 	"version": "0.0.1",
 	"peerDependencies": {
 		"@angular/animations": "^20.0.0",
