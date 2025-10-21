@@ -34,7 +34,7 @@ deployment/
 2. **Build the Docker image**: Build and push the Docker image to your registry if needed.
 
 ```bash
-docker build -t openvidu/openvidu-meet-demo:{version} ..
+docker build -t openvidu/openvidu-meet-demo:{version} -f Dockerfile ..
 docker push openvidu/openvidu-meet-demo:{version}
 ```
 
