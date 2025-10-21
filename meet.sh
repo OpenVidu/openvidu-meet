@@ -392,6 +392,11 @@ add_ce_commands() {
   local components_path="$1"
   local shared_meet_components_path="$2"
 
+  # REST API docs watcher
+  CMD_NAMES+=("rest-api-docs")
+  CMD_COLORS+=("bgGray")
+  CMD_COMMANDS+=("pnpm run dev:rest-api-docs")
+
   # Run backend
   CMD_NAMES+=("backend")
   CMD_COLORS+=("cyan")
@@ -407,6 +412,11 @@ add_ce_commands() {
 add_pro_commands() {
   local components_path="$1"
   local shared_meet_components_path="$2"
+
+  # REST API docs watcher
+  CMD_NAMES+=("rest-api-docs")
+  CMD_COLORS+=("bgGray")
+  CMD_COMMANDS+=("pnpm run dev:pro-rest-api-docs")
 
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
@@ -430,13 +440,8 @@ add_pro_commands() {
 }
 
 # Helper: Add REST API docs and browser-sync commands
-add_docs_and_browsersync_commands() {
+add_browsersync_commands() {
   local browsersync_path="$1"
-
-  # REST API docs watcher
-  CMD_NAMES+=("rest-api-docs")
-  CMD_COLORS+=("bgGray")
-  CMD_COMMANDS+=("pnpm run dev:rest-api-docs")
 
   # Browser-sync for live reload
   CMD_NAMES+=("browser-sync")
@@ -536,8 +541,8 @@ dev() {
     add_ce_commands "$components_path" "$shared_meet_components_path"
   fi
 
-  # Add docs and browser-sync commands
-  add_docs_and_browsersync_commands "$browsersync_path"
+  # Add browser-sync commands
+  add_browsersync_commands "$browsersync_path"
 
   # Launch all watchers
   launch_dev_watchers "$edition" "$components_path"

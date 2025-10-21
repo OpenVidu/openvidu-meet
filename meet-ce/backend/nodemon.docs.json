@@ -1,5 +1,5 @@
 {
-	"watch": ["openapi/**/*.yaml", "openapi/**/*.yml"],
+	"watch": ["meet-ce/**/**/openapi/**/*.yaml", "meet-ce/**/**/openapi/**/*.yml"],
 	"ext": "yaml,yml",
 	"ignore": [],
 	"exec": "pnpm --filter @openvidu-meet/backend run doc:api && pnpm --filter @openvidu-meet/backend run doc:internal-api && echo '✅ OpenVidu Meet REST API docs updated successfully!'"

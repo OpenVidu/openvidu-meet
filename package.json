@@ -20,6 +20,7 @@
 		"dev:testapp": "pnpm --filter testapp run dev",
 		"dev:typings": "pnpm --filter @openvidu-meet/typings run dev",
 		"dev:rest-api-docs": "nodemon --config meet-ce/backend/nodemon.docs.json",
+		"dev:pro-rest-api-docs": "nodemon --config meet-pro/backend/nodemon.docs.json",
 		"start:testapp": "pnpm --filter testapp run start",
 		"test:integration-backend": "pnpm --filter @openvidu-meet/backend run test:integration",
 		"test:integration-backend-rooms": "pnpm --filter @openvidu-meet/backend run test:integration-rooms",
