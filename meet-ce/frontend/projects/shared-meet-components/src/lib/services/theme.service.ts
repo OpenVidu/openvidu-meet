@@ -1,4 +1,3 @@
-
 import { computed, Inject, Injectable, signal, DOCUMENT } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from 'openvidu-components-angular';
 
@@ -36,8 +35,8 @@ export class ThemeService {
 		const systemPreference = this.getSystemPreference();
 		const initialTheme = savedTheme || systemPreference || 'light';
 
-		this.setTheme(initialTheme);
-		this.ovComponentsThemeService.setTheme(initialTheme as OpenViduThemeMode);
+		// Only save if there's a saved preference, otherwise use system preference without saving
+		this.setTheme(initialTheme, !!savedTheme);
 		this.listenToSystemChanges();
 	}
 
@@ -46,16 +45,20 @@ export class ThemeService {
 	 */
 	public toggleTheme(): void {
 		const newTheme: Theme = this._currentTheme() === 'light' ? 'dark' : 'light';
-		this.setTheme(newTheme);
+		this.setTheme(newTheme, true);
 	}
 
 	/**
 	 * Changes the current theme
+	 * @param theme The theme to set
+	 * @param saveToStorage Whether to save the theme to localStorage (default: true)
 	 */
-	private setTheme(theme: Theme): void {
+	private setTheme(theme: Theme, saveToStorage: boolean = true): void {
 		this._currentTheme.set(theme);
 		this.applyThemeToDocument(theme);
-		this.saveThemePreference(theme);
+		if (saveToStorage) {
+			this.saveThemePreference(theme);
+		}
 		this.ovComponentsThemeService.setTheme(theme as OpenViduThemeMode);
 	}
 
@@ -116,7 +119,7 @@ export class ThemeService {
 			// Only update if there's no saved preference
 			mediaQuery.addEventListener('change', (e) => {
 				if (!this.getSavedTheme()) {
-					this.setTheme(e.matches ? 'dark' : 'light');
+					this.setTheme(e.matches ? 'dark' : 'light', false);
 				}
 			});
 		}
@@ -133,6 +136,6 @@ export class ThemeService {
 		}
 
 		const systemTheme = this.getSystemPreference();
-		this.setTheme(systemTheme);
+		this.setTheme(systemTheme, false);
 	}
 }
