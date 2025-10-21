@@ -36,6 +36,10 @@ app.post('/rooms', async (req, res) => {
         const room = await httpRequest('POST', 'rooms', {
             roomName,
             autoDeletionDate: Date.now() + 2 * 60 * 60 * 1000, // Room will be deleted after 2 hours
+            autoDeletionPolicy: {
+                withMeeting: 'force', // Force deletion of room even if meeting is ongoing
+                withRecordings: 'force' // Force deletion of room and its recordings
+            },
             config: {
                 chat: {
                     enabled: true
