@@ -9,10 +9,12 @@ import { fileURLToPath } from 'url';
  */
 const isDevEnvironment = (): boolean => {
 	const isDev = process.env.NODE_ENV === 'development';
+
 	// Log only in development to avoid noisy production logs
 	if (isDev) {
 		console.log('[PATH-UTILS] Environment:', 'development');
 	}
+
 	return isDev;
 };
 
@@ -22,6 +24,7 @@ const isDevEnvironment = (): boolean => {
 // Helper: walk up the directory tree looking for a predicate
 const findUp = (startDir: string, predicate: (d: string) => boolean): string | null => {
 	let dir = path.resolve(startDir);
+
 	while (true) {
 		try {
 			if (predicate(dir)) {
@@ -30,8 +33,11 @@ const findUp = (startDir: string, predicate: (d: string) => boolean): string | n
 		} catch (err) {
 			// ignore fs errors and continue climbing
 		}
+
 		const parent = path.dirname(dir);
+
 		if (parent === dir) return null;
+
 		dir = parent;
 	}
 };
@@ -52,11 +58,13 @@ const getBackendRoot = (): string => {
 
 	// Otherwise, try to find upward a directory containing package.json and src
 	const pkgRoot = findUp(cwd, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+
 	if (pkgRoot) return pkgRoot;
 
 	// Try using the file's directory as a fallback starting point
 	const fileDir = path.dirname(fileURLToPath(import.meta.url));
 	const pkgRootFromFile = findUp(fileDir, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+
 	if (pkgRootFromFile) return pkgRootFromFile;
 
 	// Last resort: assume two levels up from this file (previous behaviour)
@@ -74,20 +82,26 @@ const getProjectRoot = (): string => {
 	const fileDir = path.dirname(fileURLToPath(import.meta.url));
 
 	const publicFromCwd = findUp(cwd, (d) => fs.existsSync(path.join(d, 'public')));
+
 	if (publicFromCwd) {
 		if (isDevEnvironment()) console.log('[PATH-UTILS] Project root (public) found from CWD:', publicFromCwd);
+
 		return publicFromCwd;
 	}
 
 	const publicFromFile = findUp(fileDir, (d) => fs.existsSync(path.join(d, 'public')));
+
 	if (publicFromFile) {
 		if (isDevEnvironment()) console.log('[PATH-UTILS] Project root (public) found from file dir:', publicFromFile);
+
 		return publicFromFile;
 	}
 
 	// If no public folder found, fallback to backend root heuristics
 	const backendRoot = getBackendRoot();
+
 	if (isDevEnvironment()) console.log('[PATH-UTILS] Falling back to backend root as project root:', backendRoot);
+
 	return backendRoot;
 };
 
@@ -98,6 +112,7 @@ const getProjectRoot = (): string => {
  */
 const verifyPathExists = (pathToVerify: string, description: string): void => {
 	const exists = fs.existsSync(pathToVerify);
+
 	if (isDevEnvironment()) {
 		console.log(`[PATH-UTILS] ${description}: ${pathToVerify} (${exists ? 'EXISTS' : 'MISSING'})`);
 	}
@@ -109,10 +124,12 @@ const verifyPathExists = (pathToVerify: string, description: string): void => {
 
 // Initialize the path utilities (only verbose logs in development)
 const isDev = isDevEnvironment();
+
 if (isDev) {
 	console.log('---------------------------------------------------------');
 	console.log('[PATH-UTILS] Initializing path utilities...');
 }
+
 // Determine project root
 const projectRoot = getProjectRoot();
 
@@ -131,11 +148,13 @@ export const internalApiHtmlFilePath = path.join(openApiDirectoryPath, 'internal
 if (isDev) {
 	console.log('[PATH-UTILS] Project root resolved to:', projectRoot);
 }
+
 verifyPathExists(publicDirectoryPath, 'Public files directory');
 verifyPathExists(webcomponentBundlePath, 'Webcomponent bundle');
 verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
 verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
+
 if (isDev) {
 	console.log('---------------------------------------------------------');
 	console.log('');
