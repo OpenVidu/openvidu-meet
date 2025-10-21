@@ -12,10 +12,20 @@
 		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
 		<script>
-			// Apply the saved theme on initial load to prevent flickering
+			// Apply the correct theme on initial load to prevent flickering
 			(function () {
-				const savedTheme = localStorage.getItem('ovMeet-theme') || 'light';
-				if (savedTheme === 'dark') {
+				const savedTheme = localStorage.getItem('ovMeet-theme');
+				let theme = 'light';
+
+				if (savedTheme) {
+					// Use saved preference
+					theme = savedTheme;
+				} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					// Use system preference
+					theme = 'dark';
+				}
+
+				if (theme === 'dark') {
 					document.documentElement.setAttribute('data-theme', 'dark');
 				}
 			})();
