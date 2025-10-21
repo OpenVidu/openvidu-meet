@@ -1,27 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>OpenVidu Meet Demo</title>
         <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
         <link rel="stylesheet" href="css/styles.css" />
     </head>
     <body>
         <div class="container">
             <header class="header">
-                <img src="images/meet_logo.png" alt="OpenVidu Meet Logo" class="logo" />
+                <picture>
+                    <source srcset="images/meet_logo_light.png" media="(prefers-color-scheme: light)" />
+                    <img src="images/meet_logo_dark.png" alt="OpenVidu Meet Logo" class="logo" />
+                </picture>
                 <p class="subtitle">Create video-call rooms with a single click and test OpenVidu Meet features</p>
             </header>
 
-            <main class="card">
-                <h2>Create Room</h2>
-                <form id="create-room-form" novalidate>
-                    <label for="roomName">Room Name <span class="required">*</span></label>
-                    <input type="text" id="roomName" name="roomName" placeholder="Enter room name" required />
-                    <p class="error-message" id="error-message" hidden></p>
-                    <button type="submit" id="createRoomBtn" disabled>+ Create Room</button>
-                </form>
+            <main class="content-wrapper">
+                <section class="info-card">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> Demo Limitations</h3>
+                    <ul class="info-list">
+                        <li>
+                            This demo provides access to the <strong>room view</strong> only, which includes the
+                            <strong>meeting</strong> and <strong>its recordings</strong>. The administration console is
+                            not available.
+                        </li>
+                        <li>
+                            The <strong>room creator</strong> joins as a <strong>moderator</strong>. Other participants
+                            join as <strong>speakers</strong>, but can be promoted to moderator during the meeting.
+                        </li>
+                        <li>
+                            Rooms are <strong>automatically deleted 2 hours</strong> after creation, along with all
+                            their <strong>recordings</strong>.
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="card">
+                    <h2>Create Room</h2>
+                    <form id="create-room-form" novalidate>
+                        <label for="roomName">Room Name <span class="required">*</span></label>
+                        <input type="text" id="roomName" name="roomName" placeholder="Enter room name" required />
+                        <p class="error-message" id="error-message" hidden></p>
+                        <button type="submit" id="createRoomBtn" class="btn-create" disabled>+ Create Room</button>
+                    </form>
+                </section>
             </main>
 
             <footer class="footer">
