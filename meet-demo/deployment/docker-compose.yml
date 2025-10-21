@@ -1,0 +1,29 @@
+services:
+  meet-demo:
+    image: openvidu/openvidu-meet-demo:3.4.1
+    container_name: meet-demo
+    environment:
+      - SERVER_PORT=6080
+      - OV_MEET_SERVER_URL=${OV_MEET_SERVER_URL:-https://meet-demo.openvidu.io}
+      - OV_MEET_API_KEY=${OV_MEET_API_KEY:-meet-api-key}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-meet-demo-app.openvidu.io}
+    restart: unless-stopped
+    depends_on:
+      - meet-demo
+
+volumes:
+  caddy_data:
+  caddy_config:

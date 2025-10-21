@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
--   [Node](https://nodejs.org/en/download) (for local development)
--   [Docker](https://docs.docker.com/get-docker/) (for containerized deployment)
+- [Node](https://nodejs.org/en/download) (for local development)
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose (for containerized deployment)
 
 ## Run Locally
 
@@ -31,28 +31,9 @@ npm start
 
 4. Access the application at `http://localhost:6080`
 
-## Run with Docker
+## Deploy with Docker
 
-### Using Docker CLI
-
-1. Build the Docker image
-
-```bash
-docker build -t openvidu/openvidu-meet-demo .
-```
-
-2. Run the container
-
-```bash
-docker run -d \
-  --name meet-demo \
-  -p 6080:6080 \
-  -e OV_MEET_SERVER_URL=https://meet.openvidu.io \
-  -e OV_MEET_API_KEY=meet-api-key \
-  openvidu/openvidu-meet-demo
-```
-
-3. Access the application at `http://localhost:6080`
+For production deployment with Docker and HTTPS support via Caddy, see the [deployment directory](./deployment/README.md).
 
 ## Configuration
 
