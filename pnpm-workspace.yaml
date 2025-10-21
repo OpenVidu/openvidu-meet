@@ -1,4 +1,5 @@
 packages:
+  - ../openvidu/openvidu-components-angular/projects/openvidu-components-angular
   - meet-ce/typings
   - meet-ce/frontend
   - meet-ce/frontend/webcomponent
@@ -10,12 +11,9 @@ packages:
   - testapp
 
 ignoredBuiltDependencies:
-  - '@parcel/watcher'
   - chromedriver
   - core-js
   - esbuild
-  - lmdb
-  - msgpackr-extract
 
 onlyBuiltDependencies:
   - bcrypt

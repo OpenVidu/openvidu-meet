@@ -357,6 +357,8 @@ select_edition() {
 
 # Helper: Add common commands (components, typings, docs)
 add_common_dev_commands() {
+  local components_path="$1"
+
   OV_COMPONENTS_DIR="../openvidu/openvidu-components-angular"
   OV_PACKAGE_JSON="$OV_COMPONENTS_DIR/package.json"
 
@@ -384,7 +386,7 @@ add_common_dev_commands() {
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
   CMD_COLORS+=("bgYellow.dark")
-  CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
+  CMD_COMMANDS+=("wait-on ${components_path} && pnpm --filter @openvidu-meet/frontend run lib:serve")
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
@@ -520,7 +522,7 @@ dev() {
   echo
 
   # Define paths
-  local components_path="../openvidu/openvidu-components-angular/dist/openvidu-components-angular/package.json"
+  local components_path="../openvidu/openvidu-components-angular/projects/openvidu-components-angular/dist/package.json"
   local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
   local browsersync_path
 
@@ -530,7 +532,7 @@ dev() {
   CMD_COMMANDS=()
 
   # Add common commands (components-angular, typings, shared-meet-components)
-  add_common_dev_commands
+  add_common_dev_commands "$components_path"
 
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then
