@@ -8,7 +8,6 @@
 			"name": "openvidu-meet (root)",
 			"path": ".",
 		},
-
 		{
 			"name": "openvidu-meet (CE)",
 			"path": "meet-ce",
@@ -39,14 +38,13 @@
 			"**/testapp": true,
 			"**/.angular": true,
 			"**/public": true,
-			"**/dist": true,
+			"**/dist": false,
 			"**/node_modules": true,
 			"**/test-results": true,
 		},
 		"jest.disabledWorkspaceFolders": ["openvidu-meet", "typings", "frontend"],
 		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
 		"mochaExplorer.require": ".mocharc.js",
-
 		"files.watcherExclude": {
 			"**/node_modules/**": true,
 			"**/dist/**": true,

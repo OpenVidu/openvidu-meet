@@ -415,11 +415,6 @@ add_pro_commands() {
   local components_path="$1"
   local shared_meet_components_path="$2"
 
-  # REST API docs watcher
-  CMD_NAMES+=("rest-api-docs")
-  CMD_COLORS+=("bgGray")
-  CMD_COMMANDS+=("pnpm run dev:pro-rest-api-docs")
-
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
   CMD_COLORS+=("cyan")
