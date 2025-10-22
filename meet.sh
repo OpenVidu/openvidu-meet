@@ -708,8 +708,9 @@ clone_meet_pro() {
 # Build Docker image
 build_docker() {
   local image_name="$1"
-  # Remove first argument (image name)
-  shift || true
+  local components_next_version
+  components_next_version=$(pnpm view openvidu-components-angular@next version | tr -d '\r\n')
+  shift || true  # Remove first argument (image name)
 
   # Validate arguments
   if [ -z "$image_name" ]; then
@@ -754,7 +755,8 @@ build_docker() {
   # Optionally install latest components to avoid local dist symlink inside image
   if [ "$use_latest_components" = true ]; then
     echo "🔧 Installing latest openvidu-components-angular..."
-    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@next
+    sed -i 's|"openvidu-components-angular": "workspace:\*"|"openvidu-components-angular": "^3.0.0"|g' meet-ce/frontend/projects/shared-meet-components/package.json
+    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@${components_next_version}
   fi
 
   echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
@@ -772,7 +774,9 @@ build_docker() {
   # Restore local link if we temporarily installed latest components
   if [ "$use_latest_components" = true ]; then
     echo "🔧 Restoring openvidu-components-angular to local dist link..."
-    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@link:../../../openvidu/openvidu-components-angular/dist/openvidu-components-angular
+    sed -i 's|"openvidu-components-angular": "^3.0.0"|"openvidu-components-angular": "workspace:*"|g' meet-ce/frontend/projects/shared-meet-components/package.json
+    sed -i 's|"openvidu-components-angular": "'"${components_next_version}"'"|"openvidu-components-angular": "workspace:*"|g' meet-ce/frontend/package.json
+    pnpm install --no-frozen-lockfile
   fi
 }
 

@@ -18,7 +18,9 @@ RUN mkdir -p meet-ce/typings meet-ce/frontend/webcomponent meet-ce/backend && \
 USER node
 
 # Copy workspace configuration files
-COPY --chown=node:node pnpm-workspace.yaml .npmrc package.json pnpm-lock.yaml ./
+# Use Docker-specific workspace file that excludes external packages
+COPY --chown=node:node pnpm-workspace.docker.yaml ./pnpm-workspace.yaml
+COPY --chown=node:node .npmrc package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages
 COPY --chown=node:node meet-ce/typings/package.json ./meet-ce/typings/
@@ -37,7 +39,7 @@ COPY --chown=node:node meet.sh .
 ARG BASE_HREF=/
 
 # Build OpenVidu Meet project
-RUN pnpm install --frozen-lockfile && \
+RUN pnpm install --no-frozen-lockfile && \
     ./meet.sh build --skip-install --base-href=${BASE_HREF}
 
 # Clean up development dependencies and unnecessary files
@@ -65,7 +67,7 @@ ENV PNPM_VERSION=${PNPM_VERSION}
 RUN apk add --no-cache bash
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate && ls -al .
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /opt/openvidu-meet
 
