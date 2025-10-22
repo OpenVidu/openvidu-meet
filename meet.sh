@@ -453,13 +453,13 @@ add_browsersync_commands() {
     import chalk from 'chalk';
 
     const bs = browserSync.create();
-    const port = 5080;
+    const port = 6081;
 
     bs.init({
       proxy: 'http://localhost:6080',
       files: ['${browsersync_path}'],
       open: false,
-      reloadDelay: 500,
+      reloadDelay: 200,
       port
     });
 

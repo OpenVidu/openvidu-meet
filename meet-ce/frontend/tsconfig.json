@@ -33,9 +33,7 @@
       // path mappings for avoiding build the shared-meet-components library
       "@openvidu-meet/shared-components": [
         "projects/shared-meet-components/src/public-api.ts"
-      ],
-
-
+      ]
     },
     "importHelpers": true,
     "target": "ES2022",

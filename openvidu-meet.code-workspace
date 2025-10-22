@@ -35,7 +35,7 @@
 			"**/meet-ce": true,
 			"**/meet-pro": true,
 			"**/webcomponent": true,
-			"**/webhooks-snippets": true,
+			"**/webhooks-snippets": false,
 			"**/testapp": true,
 			"**/.angular": true,
 			"**/public": true,
