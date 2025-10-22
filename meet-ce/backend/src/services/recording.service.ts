@@ -740,7 +740,7 @@ export class RecordingService {
 					roomId,
 					roomName: roomId,
 					status: MeetRecordingStatus.FAILED,
-					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 4 CPUs for each room.`
+					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 2 CPUs for each room.`
 				};
 
 				// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
