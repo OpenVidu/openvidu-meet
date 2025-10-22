@@ -226,6 +226,7 @@ jobs:
               --source openvidu-appdata-recordings \
               --pattern "openvidu-meet/*" \
               --delete-snapshots include || echo "No files found to delete or container doesn't exist"
+            echo "Existing blobs deleted from Azure Blob Storage container."
               
           elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
             echo "Installing Google Cloud CLI..."
