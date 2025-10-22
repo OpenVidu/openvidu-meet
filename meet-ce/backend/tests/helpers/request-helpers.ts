@@ -5,7 +5,7 @@ import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
 import { container } from '../../src/config/index.js';
-import INTERNAL_CONFIG from '../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import {
 	LIVEKIT_API_KEY,
 	LIVEKIT_API_SECRET,

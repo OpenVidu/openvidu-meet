@@ -11,7 +11,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 
 describe('Recording API Tests', () => {
 	let app: Express;

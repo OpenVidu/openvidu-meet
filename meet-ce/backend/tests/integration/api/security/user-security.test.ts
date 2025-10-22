@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_ADMIN_PASSWORD } from '../../../../src/environment.js';
 import { AuthTransportMode } from '@openvidu-meet/typings';
 import {

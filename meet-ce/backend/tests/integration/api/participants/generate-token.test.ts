@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { AuthTransportMode, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {

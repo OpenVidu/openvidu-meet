@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MeetStorageService } from '../../../../src/services/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {

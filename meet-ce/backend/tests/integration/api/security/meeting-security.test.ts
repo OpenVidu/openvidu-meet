@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { LIVEKIT_URL, MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { AuthTransportMode, MeetTokenMetadata, ParticipantRole } from '@openvidu-meet/typings';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';

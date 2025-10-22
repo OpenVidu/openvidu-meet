@@ -1,6 +1,6 @@
 import { expect } from '@jest/globals';
 import { container } from '../../src/config/dependency-injector.config';
-import INTERNAL_CONFIG from '../../src/config/internal-config';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config';
 import { TokenService } from '../../src/services';
 import {
 	MeetingEndAction,

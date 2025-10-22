@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
-import INTERNAL_CONFIG from '../../../../src/config/internal-config.js';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
