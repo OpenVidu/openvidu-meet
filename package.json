@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "OpenVidu Meet Monorepo",
 	"scripts": {
-		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:frontend && pnpm run build:webcomponent",
+		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
 		"build:frontend": "pnpm --filter @openvidu-meet/frontend run build ${BASE_HREF:-/}",
 		"build:backend": "pnpm --filter @openvidu-meet/backend run build",
 		"build:webcomponent": "pnpm --filter openvidu-meet-webcomponent run build",
@@ -12,6 +12,7 @@
 		"build:testapp": "pnpm --filter testapp run build",
 		"build:webcomponent-doc": "node scripts/generate-webcomponent-docs.js docs",
 		"build:rest-api-docs": "pnpm --filter @openvidu-meet/backend run doc:api && pnpm --filter @openvidu-meet/backend run doc:internal-api",
+		"build:shared-components": "pnpm --filter @openvidu-meet/frontend run lib:build",
 		"dev:frontend": "pnpm --filter @openvidu-meet/frontend run dev",
 		"dev:pro-frontend": "pnpm --filter openvidu-meet-pro-frontend run dev",
 		"dev:backend": "pnpm --filter @openvidu-meet/backend run start:dev",

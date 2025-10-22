@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       components_angular_version:
-        description: 'Version of openvidu-components-angular to test against (e.g., 3.4.0)'
+        description: 'openvidu-components-angular published version (leave empty for using the main branch)'
         required: false
         default: ''
 
