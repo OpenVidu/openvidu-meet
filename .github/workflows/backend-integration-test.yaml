@@ -207,13 +207,38 @@ jobs:
           version: 10
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
-
       - name: Save GCP credentials
         if: matrix.storage-provider == 'gcs'
         run: |
           echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /tmp/credentials.json
           chmod 600 /tmp/credentials.json
-
+      - name: Remove existing rooms or recordings in buckets
+        if: matrix.storage-provider == 'abs' || matrix.storage-provider == 'gcs'
+        run: |
+          if [[ "${{ matrix.storage-provider }}" == "abs" ]]; then
+            echo "Installing Azure CLI..."
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+            
+            echo "Logging into Azure..."
+            az storage blob delete-batch \
+              --account-name "${{ vars.MEET_AZURE_ACCOUNT_NAME }}" \
+              --account-key "${{ secrets.MEET_AZURE_ACCOUNT_KEY }}" \
+              --source openvidu-appdata-recordings \
+              --pattern "openvidu-meet/*" \
+              --delete-snapshots include || echo "No files found to delete or container doesn't exist"
+              
+          elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
+            echo "Installing Google Cloud CLI..."
+            curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar -xz
+            ./google-cloud-sdk/install.sh --quiet
+            export PATH=$PATH:$(pwd)/google-cloud-sdk/bin
+            
+            echo "Authenticating with Google Cloud..."
+            gcloud auth activate-service-account --key-file=/tmp/credentials.json
+            
+            echo "Removing openvidu-meet folder from GCS bucket..."
+            gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
+          fi
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
