@@ -3,11 +3,6 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-    inputs:
-      components_angular_version:
-        description: 'openvidu-components-angular published version (leave empty for using the main branch)'
-        required: false
-        default: ''
 
 jobs:
   e2e-tests:
