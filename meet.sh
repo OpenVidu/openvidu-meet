@@ -136,6 +136,12 @@ show_help() {
   echo -e "  ${BLUE}build-docker${NC} <image-name> [--demos]"
   echo "    Build Docker image (use --demos for demo deployment)"
   echo
+  echo -e "  ${BLUE}prepare-ci-build${NC} [--components-angular-version <version> | --components-angular-tarball <path>]"
+  echo "    Prepare workspace for CI/Docker builds by installing specific openvidu-components-angular version"
+  echo
+  echo -e "  ${BLUE}restore-dev-config${NC}"
+  echo "    Restore development workspace configuration after CI builds"
+  echo
   echo -e "  ${BLUE}help${NC}"
   echo "    Show this help message"
   echo
@@ -705,6 +711,41 @@ clone_meet_pro() {
   fi
 }
 
+# Prepare CI build workspace
+prepare_ci_build() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Preparing CI Build Workspace${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  # Check if any arguments were provided
+  if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}No arguments provided. Running with default settings...${NC}"
+    echo -e "${BLUE}This will install the latest version from npm registry.${NC}"
+    echo
+    ./scripts/prepare-ci-build.sh --components-angular-version latest
+  else
+    ./scripts/prepare-ci-build.sh "$@"
+  fi
+
+  echo
+  echo -e "${GREEN}✓ CI build workspace prepared successfully!${NC}"
+  echo -e "${YELLOW}Note: Run './meet.sh restore-dev-config' to restore development configuration.${NC}"
+}
+
+# Restore development configuration
+restore_dev_config() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Restoring Development Configuration${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  ./scripts/restore-dev-config.sh
+
+  echo
+  echo -e "${GREEN}✓ Development configuration restored successfully!${NC}"
+}
+
 # Build Docker image
 build_docker() {
   local image_name="$1"
@@ -851,6 +892,12 @@ main() {
       ;;
     build-docker)
       build_docker "$@"
+      ;;
+    prepare-ci-build)
+      prepare_ci_build "$@"
+      ;;
+    restore-dev-config)
+      restore_dev_config
       ;;
     clone-pro)
       clone_meet_pro
