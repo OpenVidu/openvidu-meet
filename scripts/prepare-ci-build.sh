@@ -185,7 +185,7 @@ elif [ -n "$TARBALL_PATH" ]; then
 
   # Update package.json files before installation
   update_package_json "meet-ce/frontend/package.json" "file:./$TARBALL_NAME"
-  update_package_json "meet-ce/frontend/projects/shared-meet-components/package.json" "file:../../$TARBALL_NAME"
+  update_package_json "meet-ce/frontend/projects/shared-meet-components/package.json" "^3.0.0"
 
   # Install in both packages
   # echo "Installing in meet-ce/frontend..."
