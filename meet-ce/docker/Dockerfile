@@ -48,14 +48,6 @@ COPY --chown=node:node meet-ce/frontend/package.json ./meet-ce/frontend/
 COPY --chown=node:node meet-ce/frontend/webcomponent/package.json ./meet-ce/frontend/webcomponent/
 COPY --chown=node:node meet-ce/frontend/projects/shared-meet-components/package.json ./meet-ce/frontend/projects/shared-meet-components/
 COPY --chown=node:node meet-ce/backend/package.json ./meet-ce/backend/
-
-# Install dependencies
-# Note: openvidu-components-angular will be installed from:
-#   1. Local tarball (if exists in meet-ce/frontend/openvidu-components-angular*.tgz)
-#   2. npm registry (if specified in package.json)
-# The tarball should be placed in meet-ce/frontend/ by CI before docker build
-RUN pnpm install --no-frozen-lockfile
-
 # Copy the source code for all packages
 COPY --chown=node:node meet-ce/typings/ ./meet-ce/typings/
 COPY --chown=node:node meet-ce/frontend/ ./meet-ce/frontend/
@@ -67,7 +59,7 @@ COPY --chown=node:node meet.sh .
 ARG BASE_HREF=/
 
 # Build OpenVidu Meet project
-RUN pnpm install --no-frozen-lockfile && \
+RUN pnpm install --frozen-lockfile && \
     ./meet.sh build --skip-install --base-href=${BASE_HREF}
 
 # Clean up development dependencies and unnecessary files
