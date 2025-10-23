@@ -6,12 +6,9 @@ packages:
   - meet-ce/backend
 
 ignoredBuiltDependencies:
-  - '@parcel/watcher'
   - chromedriver
   - core-js
   - esbuild
-  - lmdb
-  - msgpackr-extract
 
 onlyBuiltDependencies:
   - bcrypt
