@@ -16,6 +16,7 @@ packages:
   - meet-ce/frontend/webcomponent
   - meet-ce/frontend/projects/shared-meet-components
   - meet-ce/backend
+  - testapp
 
 ignoredBuiltDependencies:
   - chromedriver
