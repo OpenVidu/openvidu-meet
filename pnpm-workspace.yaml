@@ -1,3 +1,15 @@
+# =============================================================================
+# Development Workspace Configuration
+# =============================================================================
+# This workspace configuration is used for LOCAL DEVELOPMENT.
+# It INCLUDES external packages (like openvidu-components-angular) that
+# are located in sibling repositories for fast development with hot-reload.
+#
+# For Docker builds and CI, use pnpm-workspace.docker.yaml instead.
+#
+# See docs/ci-docker-dependencies-strategy.md for more information.
+# =============================================================================
+
 packages:
   - ../openvidu/openvidu-components-angular/projects/openvidu-components-angular
   - meet-ce/typings

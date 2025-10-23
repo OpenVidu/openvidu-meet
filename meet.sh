@@ -708,8 +708,6 @@ clone_meet_pro() {
 # Build Docker image
 build_docker() {
   local image_name="$1"
-  local components_next_version
-  components_next_version=$(pnpm view openvidu-components-angular@next version | tr -d '\r\n')
   shift || true  # Remove first argument (image name)
 
   # Validate arguments
@@ -721,17 +719,26 @@ build_docker() {
 
   # Parse flags
   local is_demos=false
-  local use_latest_components=false
-  for _arg in "$@"; do
-    case "$_arg" in
+  local components_version=""
+  local components_tarball=""
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
       --demos)
         is_demos=true
+        shift
         ;;
-      --with-latest-components)
-        use_latest_components=true
+      --components-angular-version)
+        components_version="$2"
+        shift 2
+        ;;
+      --components-angular-tarball)
+        components_tarball="$2"
+        shift 2
         ;;
       *)
         # ignore unknown flags for forward compatibility
+        shift
         ;;
     esac
   done
@@ -752,11 +759,16 @@ build_docker() {
   echo -e "${BLUE}=====================================${NC}"
   echo
 
-  # Optionally install latest components to avoid local dist symlink inside image
-  if [ "$use_latest_components" = true ]; then
-    echo "🔧 Installing latest openvidu-components-angular..."
-    sed -i 's|"openvidu-components-angular": "workspace:\*"|"openvidu-components-angular": "^3.0.0"|g' meet-ce/frontend/projects/shared-meet-components/package.json
-    pnpm --filter @openvidu-meet/frontend install openvidu-components-angular@${components_next_version}
+  # Optionally install specific components version
+  if [ -n "$components_tarball" ]; then
+    echo -e "${BLUE}🔧 Installing OpenVidu Components Angular from tarball: $components_tarball${NC}"
+    ./scripts/prepare-ci-build.sh --components-angular-tarball "$components_tarball"
+  elif [ -n "$components_version" ]; then
+    echo -e "${BLUE}🔧 Installing OpenVidu Components Angular version: $components_version${NC}"
+    ./scripts/prepare-ci-build.sh --components-angular-version "$components_version"
+  else
+    echo -e "${YELLOW}⚠️  No specific components version specified, using latest from registry${NC}"
+    ./scripts/prepare-ci-build.sh --components-angular-version latest
   fi
 
   echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
@@ -765,19 +777,19 @@ build_docker() {
   if docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .; then
     echo
     echo -e "${GREEN}✓ Docker image '$final_image_name' built successfully!${NC}"
+     # Restore dev config
+    echo "🔧 Restoring dev config ..."
+    ./scripts/restore-dev-config.sh > /dev/null
   else
     echo
     echo -e "${RED}✗ Failed to build Docker image '$final_image_name'${NC}"
+     # Restore dev config
+    echo "🔧 Restoring dev config ..."
+    ./scripts/restore-dev-config.sh > /dev/null
     exit 1
   fi
 
-  # Restore local link if we temporarily installed latest components
-  if [ "$use_latest_components" = true ]; then
-    echo "🔧 Restoring openvidu-components-angular to local dist link..."
-    sed -i 's|"openvidu-components-angular": "^3.0.0"|"openvidu-components-angular": "workspace:*"|g' meet-ce/frontend/projects/shared-meet-components/package.json
-    sed -i 's|"openvidu-components-angular": "'"${components_next_version}"'"|"openvidu-components-angular": "workspace:*"|g' meet-ce/frontend/package.json
-    pnpm install --no-frozen-lockfile
-  fi
+
 }
 
 # Main script logic

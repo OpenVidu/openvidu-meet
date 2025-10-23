@@ -1,0 +1,22 @@
+# Docker/CI specific npm configuration
+# This configuration is used during Docker builds and CI workflows
+# to prevent linking workspace packages and use published versions instead
+
+# Disable workspace package linking
+# This forces pnpm to install packages from registry or local tarballs
+link-workspace-packages=false
+
+# Strict peer dependencies
+strict-peer-dependencies=false
+
+# Auto install peers
+auto-install-peers=true
+
+# Shamefully hoist - necessary for some packages
+shamefully-hoist=true
+
+# Node linker - use hoisted for full compatibility
+node-linker=hoisted
+
+# Lockfile settings
+lockfile=true

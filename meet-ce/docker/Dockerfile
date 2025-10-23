@@ -17,16 +17,44 @@ RUN mkdir -p meet-ce/typings meet-ce/frontend/webcomponent meet-ce/backend && \
 
 USER node
 
+# =============================================================================
+# Workspace Configuration for Docker/CI
+# =============================================================================
+# We use Docker-specific configuration files to handle external dependencies:
+#
+# 1. pnpm-workspace.docker.yaml: Excludes external packages (openvidu-components-angular)
+# 2. .npmrc.docker: Disables workspace linking, forces registry/tarball installation
+#
+# This allows openvidu-components-angular to be installed from:
+#   - npm registry (e.g., openvidu-components-angular@3.4.0)
+#   - Local tarball (e.g., ./meet-ce/frontend/openvidu-components-angular-3.4.0.tgz)
+#
+# The package.json should already have the correct dependency specified by CI
+# before docker build is executed.
+#
+# See docs/ci-docker-dependencies-strategy.md for more information.
+# =============================================================================
+
 # Copy workspace configuration files
 # Use Docker-specific workspace file that excludes external packages
 COPY --chown=node:node pnpm-workspace.docker.yaml ./pnpm-workspace.yaml
-COPY --chown=node:node .npmrc package.json pnpm-lock.yaml ./
+# Use Docker-specific npmrc that disables workspace linking
+COPY --chown=node:node .npmrc.docker ./.npmrc
+COPY --chown=node:node package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages
 COPY --chown=node:node meet-ce/typings/package.json ./meet-ce/typings/
 COPY --chown=node:node meet-ce/frontend/package.json ./meet-ce/frontend/
 COPY --chown=node:node meet-ce/frontend/webcomponent/package.json ./meet-ce/frontend/webcomponent/
+COPY --chown=node:node meet-ce/frontend/projects/shared-meet-components/package.json ./meet-ce/frontend/projects/shared-meet-components/
 COPY --chown=node:node meet-ce/backend/package.json ./meet-ce/backend/
+
+# Install dependencies
+# Note: openvidu-components-angular will be installed from:
+#   1. Local tarball (if exists in meet-ce/frontend/openvidu-components-angular*.tgz)
+#   2. npm registry (if specified in package.json)
+# The tarball should be placed in meet-ce/frontend/ by CI before docker build
+RUN pnpm install --no-frozen-lockfile
 
 # Copy the source code for all packages
 COPY --chown=node:node meet-ce/typings/ ./meet-ce/typings/

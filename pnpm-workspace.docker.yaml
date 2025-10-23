@@ -1,3 +1,15 @@
+# =============================================================================
+# Docker/CI Workspace Configuration
+# =============================================================================
+# This workspace configuration is used for Docker builds and CI workflows.
+# It EXCLUDES external packages (like openvidu-components-angular) that
+# are not part of this repository.
+#
+# For local development, use pnpm-workspace.yaml instead.
+#
+# See docs/ci-docker-dependencies-strategy.md for more information.
+# =============================================================================
+
 packages:
   - meet-ce/typings
   - meet-ce/frontend
