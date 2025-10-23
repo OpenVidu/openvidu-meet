@@ -200,7 +200,7 @@ echo ""
 
 # Step 4: Install all dependencies
 echo -e "${YELLOW}[4/4] Installing all dependencies...${NC}"
-pnpm install --recursive
+pnpm install --no-frozen-lockfile
 echo -e "${GREEN}✓ All dependencies installed${NC}"
 echo ""
 
