@@ -39,6 +39,12 @@ const envVars = {
 	LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY || 'devkey',
 	LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET || 'secret',
 
+	// MongoDB configuration
+	MEET_MONGODB_URI:
+		process.env.MEET_MONGODB_URI ||
+		'mongodb://mongoadmin:mongoadmin@localhost:27017/?replicaSet=rs0&readPreference=primaryPreferred&directConnection=true',
+	MEET_MONGODB_DB_NAME: process.env.MEET_MONGODB_DB_NAME || 'openvidu-meet',
+
 	MEET_BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
 	// S3 or GCS configuration
@@ -102,6 +108,8 @@ export const {
 	LIVEKIT_URL_PRIVATE,
 	LIVEKIT_API_KEY,
 	LIVEKIT_API_SECRET,
+	MEET_MONGODB_URI,
+	MEET_MONGODB_DB_NAME,
 	MEET_BLOB_STORAGE_MODE,
 	MEET_S3_BUCKET,
 	MEET_S3_SUBBUCKET,
@@ -126,7 +134,6 @@ export const {
 	MODULE_NAME,
 	ENABLED_MODULES
 } = envVars;
-
 
 export const getExportedEnvironment = () => {
 	return { ...envVars };
@@ -178,6 +185,12 @@ export const logEnvVars = () => {
 	console.log('LIVEKIT URL PRIVATE: ', text(LIVEKIT_URL_PRIVATE));
 	console.log('LIVEKIT API SECRET: ', credential('****' + LIVEKIT_API_SECRET.slice(-3)));
 	console.log('LIVEKIT API KEY: ', credential('****' + LIVEKIT_API_KEY.slice(-3)));
+	console.log('---------------------------------------------------------');
+
+	console.log('MongoDB Configuration');
+	console.log('---------------------------------------------------------');
+	console.log('MONGODB URI: ', text(MEET_MONGODB_URI));
+	console.log('MONGODB DB NAME: ', text(MEET_MONGODB_DB_NAME));
 	console.log('---------------------------------------------------------');
 
 	if (MEET_BLOB_STORAGE_MODE === 's3') {
