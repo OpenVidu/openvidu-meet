@@ -723,7 +723,7 @@ export class RoomService {
 		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			const expiredRooms = await this.getExpiredRooms();
+			const expiredRooms = await this.roomRepository.findExpiredRooms();
 
 			if (expiredRooms.length === 0) {
 				this.logger.verbose(`No expired rooms found.`);
@@ -736,31 +736,6 @@ export class RoomService {
 			await this.bulkDeleteMeetRooms(expiredRooms);
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);
-		}
-	}
-
-	/**
-	 * Retrieves a list of expired rooms that are eligible for deletion.
-	 * @returns A promise that resolves to an array of expired MeetRoom objects.
-	 */
-	protected async getExpiredRooms(): Promise<MeetRoom[]> {
-		const now = Date.now();
-		const expiredRooms: MeetRoom[] = [];
-		let nextPageToken: string | undefined;
-
-		try {
-			do {
-				const { rooms, nextPageToken: token } = await this.getAllMeetRooms({ maxItems: 100, nextPageToken });
-				nextPageToken = token;
-
-				const expired = rooms.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now);
-				expiredRooms.push(...expired);
-			} while (nextPageToken);
-
-			return expiredRooms;
-		} catch (error) {
-			this.logger.error('Error getting expired rooms:', error);
-			throw error;
 		}
 	}
 }
