@@ -2,14 +2,14 @@ name: Backend Integration Tests
 on:
   push:
     paths:
-      - 'backend/src/**'
-      - 'backend/package.json'
-      - 'backend/pnpm-lock.yaml'
-      - 'backend/tests/**'
+      - 'meet-ce/backend/src/**'
+      - 'meet-ce/backend/package.json'
+      - 'pnpm-lock.yaml'
+      - 'meet-ce/backend/tests/**'
       - '.github/workflows/backend-integration-test.yaml'
   pull_request:
     paths:
-      - 'backend/src/**'
+      - 'meet-ce/backend/src/**'
   workflow_dispatch:
     inputs:
       use-aws:
