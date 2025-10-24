@@ -67,6 +67,27 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	}
 
 	/**
+	 * Finds all documents matching the given filter without pagination.
+	 * Useful for queries where you need all matching documents.
+	 *
+	 * WARNING: Use with caution on large collections. Consider using findMany() with pagination instead.
+	 *
+	 * @param filter - Base MongoDB query filter
+	 * @returns Array of domain objects matching the filter
+	 */
+	protected async findAll(filter: FilterQuery<TDocument> = {}): Promise<TDomain[]> {
+		try {
+			const documents = await this.model.find(filter).exec();
+
+			// Transform documents to domain objects
+			return documents.map((doc) => this.toDomain(doc));
+		} catch (error) {
+			this.logger.error('Error finding all documents with filter:', filter, error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Finds all documents matching the given filter with optional pagination and sorting.
 	 *
 	 * @param filter - Base MongoDB query filter
