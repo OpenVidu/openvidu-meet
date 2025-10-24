@@ -13,6 +13,7 @@ import {
 	LivekitWebhookService,
 	LoggerService,
 	MeetStorageService,
+	MongoDBService,
 	MutexService,
 	OpenViduWebhookService,
 	ParticipantNameService,
@@ -102,6 +103,11 @@ const configureStorage = (storageMode: string) => {
 export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
+
+	// Connect to MongoDB and check health
+	const mongoService = container.get(MongoDBService);
+	await mongoService.connect();
+	await mongoService.checkHealth();
 
 	// Perform comprehensive health checks before initializing other services
 	const storageService = container.get(MeetStorageService);
