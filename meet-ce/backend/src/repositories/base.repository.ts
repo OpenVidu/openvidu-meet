@@ -232,14 +232,18 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	/**
 	 * Encodes a cursor for pagination.
 	 * Creates a base64-encoded token containing the last document's sort field value and _id.
+	 * Handles undefined/null values by converting them to null for consistent serialization.
 	 *
 	 * @param document - The last document from the current page
 	 * @param sortField - The field used for sorting
 	 * @returns Base64-encoded cursor token
 	 */
 	protected encodeCursor(document: TDocument, sortField: string): string {
+		const fieldValue = document.get(sortField);
+
 		const cursor: PaginationCursor = {
-			fieldValue: document.get(sortField),
+			// Convert undefined to null for JSON serialization
+			fieldValue: fieldValue === undefined ? null : fieldValue,
 			id: String(document._id)
 		};
 
@@ -275,12 +279,18 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	/**
 	 * Applies cursor-based pagination to the MongoDB filter.
 	 * Uses compound comparison to handle non-unique sort fields correctly.
+	 * Handles missing/undefined fields properly in MongoDB queries.
 	 *
 	 * For ascending order:
 	 *   (sortField > cursor.fieldValue) OR (sortField = cursor.fieldValue AND _id > cursor.id)
 	 *
 	 * For descending order:
 	 *   (sortField < cursor.fieldValue) OR (sortField = cursor.fieldValue AND _id < cursor.id)
+	 *
+	 * Special handling for null/undefined values (missing fields):
+	 * - In ascending order, missing fields come first in MongoDB's sort order
+	 * - In descending order, missing fields come last
+	 * - We use $exists: false to check for missing fields instead of comparing with null
 	 *
 	 * @param filter - The MongoDB filter to modify
 	 * @param cursor - The decoded cursor
@@ -298,15 +308,41 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 		// Build compound filter for pagination
 		// This ensures correct ordering even when sortField values are not unique
-		const orConditions: FilterQuery<TDocument>[] = [
-			{
-				[sortField]: { [comparison]: cursor.fieldValue }
-			} as FilterQuery<TDocument>,
-			{
-				[sortField]: cursor.fieldValue,
+		const orConditions: FilterQuery<TDocument>[] = [];
+
+		// If cursor field value is null (field doesn't exist in the document)
+		if (cursor.fieldValue === null) {
+			// For missing fields, we filter by _id among documents where the field doesn't exist
+			orConditions.push({
+				[sortField]: { $exists: false },
 				_id: { [equalComparison]: cursor.id }
-			} as FilterQuery<TDocument>
-		];
+			} as FilterQuery<TDocument>);
+
+			// In ascending order, also include documents where the field exists (they come after missing fields)
+			if (sortOrder === 'asc') {
+				orConditions.push({
+					[sortField]: { $exists: true }
+				} as FilterQuery<TDocument>);
+			}
+		} else {
+			// Normal case: field has a value
+			orConditions.push(
+				{
+					[sortField]: { [comparison]: cursor.fieldValue }
+				} as FilterQuery<TDocument>,
+				{
+					[sortField]: cursor.fieldValue,
+					_id: { [equalComparison]: cursor.id }
+				} as FilterQuery<TDocument>
+			);
+
+			// In descending order, also include documents where the field doesn't exist (they come after all values)
+			if (sortOrder === 'desc') {
+				orConditions.push({
+					[sortField]: { $exists: false }
+				} as FilterQuery<TDocument>);
+			}
+		}
 
 		Object.assign(filter, { $or: orConditions });
 	}
