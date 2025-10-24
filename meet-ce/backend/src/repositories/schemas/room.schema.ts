@@ -111,19 +111,15 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 	{
 		roomId: {
 			type: String,
-			required: true,
-			unique: true,
-			index: true
+			required: true
 		},
 		roomName: {
 			type: String,
-			required: true,
-			index: true
+			required: true
 		},
 		creationDate: {
 			type: Number,
-			required: true,
-			index: true
+			required: true
 		},
 		autoDeletionDate: {
 			type: Number,
@@ -168,6 +164,13 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		}
 	}
 );
+
+// Create indexes for efficient querying
+MeetRoomSchema.index({ roomId: 1 }, { unique: true });
+MeetRoomSchema.index({ creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ roomName: 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ autoDeletionDate: 1 });
 
 /**
  * Mongoose model for MeetRoom.
