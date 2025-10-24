@@ -1,6 +1,6 @@
 import { Container } from 'inversify';
 import { MEET_BLOB_STORAGE_MODE } from '../environment.js';
-import { BaseRepository, RoomRepository } from '../repositories/index.js';
+import { BaseRepository, RoomRepository, UserRepository } from '../repositories/index.js';
 import {
 	ABSService,
 	ABSStorageProvider,
@@ -64,6 +64,7 @@ export const registerDependencies = () => {
 	container.bind(MongoDBService).toSelf().inSingletonScope();
 	container.bind(BaseRepository).toSelf().inSingletonScope();
 	container.bind(RoomRepository).toSelf().inSingletonScope();
+	container.bind(UserRepository).toSelf().inSingletonScope();
 
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(UserService).toSelf().inSingletonScope();
