@@ -5,6 +5,7 @@ import ms from 'ms';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
 import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
+import { RoomRepository } from '../repositories/index.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import {
 	DistributedEventService,
@@ -26,6 +27,7 @@ export class LivekitWebhookService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
@@ -217,7 +219,7 @@ export class LivekitWebhookService {
 
 			// Update Meet room status to ACTIVE_MEETING
 			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
-			await this.storageService.saveMeetRoom(meetRoom);
+			await this.roomRepository.update(meetRoom);
 
 			// Send webhook notification
 			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
@@ -259,7 +261,7 @@ export class LivekitWebhookService {
 						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
 					await this.recordingService.deleteAllRoomRecordings(roomId); // This operation must complete before deleting the room
-					tasks.push(this.storageService.deleteMeetRooms([roomId]));
+					tasks.push(this.roomRepository.deleteByRoomId(roomId));
 					break;
 				case MeetingEndAction.CLOSE:
 					this.logger.info(
@@ -267,12 +269,12 @@ export class LivekitWebhookService {
 					);
 					meetRoom.status = MeetRoomStatus.CLOSED;
 					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(this.storageService.saveMeetRoom(meetRoom));
+					tasks.push(this.roomRepository.update(meetRoom));
 					break;
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.storageService.saveMeetRoom(meetRoom));
+					tasks.push(this.roomRepository.update(meetRoom));
 			}
 
 			// Send webhook notification
