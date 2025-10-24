@@ -1,4 +1,14 @@
-import { AuthMode, AuthTransportMode, AuthType, GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, User, UserRole } from '@openvidu-meet/typings';
+import {
+	AuthMode,
+	AuthTransportMode,
+	AuthType,
+	GlobalConfig,
+	MeetApiKey,
+	MeetRecordingInfo,
+	MeetRoom,
+	User,
+	UserRole
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { Readable } from 'stream';
@@ -19,6 +29,7 @@ import {
 	OpenViduMeetError,
 	RedisKeyName
 } from '../../models/index.js';
+import { RoomRepository } from '../../repositories/index.js';
 import { getBaseUrl } from '../../utils/index.js';
 import { LoggerService, MutexService, RedisService } from '../index.js';
 import { StorageFactory } from './storage.factory.js';
@@ -52,6 +63,7 @@ export class MeetStorageService<
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(StorageFactory) protected storageFactory: StorageFactory,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(RedisService) protected redisService: RedisService
 	) {
@@ -303,7 +315,7 @@ export class MeetStorageService<
 		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
 		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
 
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.roomRepository.findByRoomId(roomId);
 
 		if (!room) {
 			this.logger.warn(`Room ${roomId} not found, cannot archive metadata`);

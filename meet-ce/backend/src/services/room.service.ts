@@ -30,6 +30,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { RoomRepository } from '../repositories/index.js';
 import {
 	DistributedEventService,
 	FrontendEventService,
@@ -53,6 +54,7 @@ export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
@@ -96,7 +98,7 @@ export class RoomService {
 			status: MeetRoomStatus.OPEN,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		return await this.storageService.saveMeetRoom(meetRoom);
+		return await this.roomRepository.create(meetRoom);
 	}
 
 	/**
@@ -142,7 +144,7 @@ export class RoomService {
 		const room = await this.getMeetRoom(roomId);
 		room.config = config;
 
-		await this.storageService.saveMeetRoom(room);
+		await this.roomRepository.update(room);
 		// Update the archived room metadata if it exists
 		await Promise.all([
 			this.storageService.archiveRoomMetadata(roomId, true),
@@ -172,7 +174,7 @@ export class RoomService {
 			room.meetingEndAction = MeetingEndAction.NONE;
 		}
 
-		await this.storageService.saveMeetRoom(room);
+		await this.roomRepository.update(room);
 		return { room, updated };
 	}
 
@@ -204,8 +206,10 @@ export class RoomService {
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { maxItems, nextPageToken, roomName, fields } = filters;
-		const response = await this.storageService.getMeetRooms(roomName, maxItems, nextPageToken);
+		const { fields, ...findOptions } = filters;
+		const response = await this.roomRepository.find({
+			...findOptions
+		});
 
 		if (fields) {
 			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));
@@ -222,7 +226,7 @@ export class RoomService {
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
 	async getMeetRoom(roomId: string, fields?: string, participantRole?: ParticipantRole): Promise<MeetRoom> {
-		const meetRoom = await this.storageService.getMeetRoom(roomId);
+		const meetRoom = await this.roomRepository.findByRoomId(roomId);
 
 		if (!meetRoom) {
 			this.logger.error(`Meet room with ID ${roomId} not found.`);
@@ -312,7 +316,8 @@ export class RoomService {
 
 		// No meeting, no recordings: simple deletion
 		if (!hasActiveMeeting && !hasRecordings) {
-			await this.storageService.deleteMeetRooms([roomId]);
+			// await this.storageService.deleteMeetRooms([roomId]);
+			await this.roomRepository.deleteByRoomId(roomId);
 			return undefined;
 		}
 
@@ -325,7 +330,7 @@ export class RoomService {
 		if (hasActiveMeeting) {
 			// Set meeting end action (DELETE or CLOSE) depending on recording policy
 			room.meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
-			await this.storageService.saveMeetRoom(room);
+			await this.roomRepository.update(room);
 
 			if (shouldForceEndMeeting) {
 				// Force end meeting by deleting the LiveKit room
@@ -338,14 +343,14 @@ export class RoomService {
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
 			room.status = MeetRoomStatus.CLOSED;
-			await this.storageService.saveMeetRoom(room);
+			await this.roomRepository.update(room);
 			return room;
 		}
 
 		// Force delete: delete room and all recordings
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
-			this.storageService.deleteMeetRooms([roomId])
+			this.roomRepository.deleteByRoomId(roomId)
 		]);
 		return undefined;
 	}

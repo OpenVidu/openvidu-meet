@@ -22,6 +22,7 @@ import {
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/index.js';
+import { RoomRepository } from '../repositories/index.js';
 import {
 	DistributedEventService,
 	FrontendEventService,
@@ -42,6 +43,7 @@ export class RecordingService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
 		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
@@ -598,7 +600,7 @@ export class RecordingService {
 	}
 
 	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
-		const room = await this.storageService.getMeetRoom(roomId);
+		const room = await this.roomRepository.findByRoomId(roomId);
 
 		if (!room) throw errorRoomNotFound(roomId);
 
