@@ -10,11 +10,12 @@ import {
 import {
 	ABSService,
 	ABSStorageProvider,
-	AuthService,
+	ApiKeyService,
 	DistributedEventService,
 	FrontendEventService,
 	GCSService,
 	GCSStorageProvider,
+	GlobalConfigService,
 	HttpContextService,
 	LiveKitService,
 	LivekitWebhookService,
@@ -76,7 +77,8 @@ export const registerDependencies = () => {
 
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(UserService).toSelf().inSingletonScope();
-	container.bind(AuthService).toSelf().inSingletonScope();
+	container.bind(ApiKeyService).toSelf().inSingletonScope();
+	container.bind(GlobalConfigService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
