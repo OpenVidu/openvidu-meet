@@ -215,7 +215,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param filter - MongoDB query filter
 	 * @throws Error if no documents were found or deleted
 	 */
-	protected async deleteMany(filter: FilterQuery<TDocument>): Promise<void> {
+	protected async deleteMany(filter: FilterQuery<TDocument> = {}): Promise<void> {
 		try {
 			const result = await this.model.deleteMany(filter).exec();
 			const deletedCount = result.deletedCount || 0;
