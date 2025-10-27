@@ -4,7 +4,7 @@ import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
-import { container } from '../../src/config/index.js';
+import { container, initializeEagerServices } from '../../src/config/index.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import {
 	LIVEKIT_API_KEY,
@@ -43,13 +43,14 @@ export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
 };
 
-export const startTestServer = (): Express => {
+export const startTestServer = async (): Promise<Express> => {
 	if (app) {
 		return app;
 	}
 
 	registerDependencies();
 	app = createApp();
+	await initializeEagerServices();
 	return app;
 };
 
