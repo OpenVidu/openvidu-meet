@@ -2,7 +2,7 @@ import { User } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
-import { UserDocument, UserModel } from './schemas/user.schema.js';
+import { MeetUserDocument, MeetUserModel } from './schemas/user.schema.js';
 
 /**
  * Repository for managing User entities in MongoDB.
@@ -11,9 +11,9 @@ import { UserDocument, UserModel } from './schemas/user.schema.js';
  * @template TUser - The domain type extending User (default: User)
  */
 @injectable()
-export class UserRepository<TUser extends User = User> extends BaseRepository<TUser, UserDocument> {
+export class UserRepository<TUser extends User = User> extends BaseRepository<TUser, MeetUserDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
-		super(logger, UserModel);
+		super(logger, MeetUserModel);
 	}
 
 	/**
@@ -22,7 +22,7 @@ export class UserRepository<TUser extends User = User> extends BaseRepository<TU
 	 * @param document - The MongoDB document
 	 * @returns User domain object
 	 */
-	protected toDomain(document: UserDocument): TUser {
+	protected toDomain(document: MeetUserDocument): TUser {
 		return document.toObject() as TUser;
 	}
 

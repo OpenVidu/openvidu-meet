@@ -5,13 +5,13 @@ import { Document, model, Schema } from 'mongoose';
  * Mongoose Document interface for User.
  * Extends the User interface with MongoDB Document functionality.
  */
-export interface UserDocument extends User, Document {}
+export interface MeetUserDocument extends User, Document {}
 
 /**
  * Mongoose schema for User entity.
  * Defines the structure and validation rules for user documents in MongoDB.
  */
-const UserSchema = new Schema<UserDocument>(
+const MeetUserSchema = new Schema<MeetUserDocument>(
 	{
 		username: {
 			type: String,
@@ -31,7 +31,7 @@ const UserSchema = new Schema<UserDocument>(
 	{
 		toObject: {
 			versionKey: false,
-			transform: (doc, ret) => {
+			transform: (_doc, ret) => {
 				delete ret._id;
 				return ret;
 			}
@@ -40,9 +40,9 @@ const UserSchema = new Schema<UserDocument>(
 );
 
 // Create indexes for efficient querying
-UserSchema.index({ username: 1 }, { unique: true });
+MeetUserSchema.index({ username: 1 }, { unique: true });
 
 /**
  * Mongoose model for User entity.
  */
-export const UserModel = model<UserDocument>('MeetUser', UserSchema);
+export const MeetUserModel = model<MeetUserDocument>('MeetUser', MeetUserSchema);

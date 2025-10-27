@@ -157,7 +157,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 	{
 		toObject: {
 			versionKey: false,
-			transform: (doc, ret) => {
+			transform: (_doc, ret) => {
 				delete ret._id;
 				return ret;
 			}
