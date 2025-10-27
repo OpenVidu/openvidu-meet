@@ -11,7 +11,7 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { AuthService, LoggerService, TokenService, UserService } from '../services/index.js';
+import { ApiKeyService, LoggerService, TokenService, UserService } from '../services/index.js';
 import { getAuthTransportMode, getCookieOptions, getRefreshToken } from '../utils/index.js';
 
 export const login = async (req: Request, res: Response) => {
@@ -19,8 +19,8 @@ export const login = async (req: Request, res: Response) => {
 	logger.verbose('Login request received');
 	const { username, password } = req.body as { username: string; password: string };
 
-	const authService = container.get(AuthService);
-	const user = await authService.authenticateUser(username, password);
+	const userService = container.get(UserService);
+	const user = await userService.authenticateUser(username, password);
 
 	if (!user) {
 		logger.warn('Login failed');
@@ -144,10 +144,10 @@ export const createApiKey = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Create API key request received');
 
-	const authService = container.get(AuthService);
+	const apiKeyService = container.get(ApiKeyService);
 
 	try {
-		const apiKey = await authService.createApiKey();
+		const apiKey = await apiKeyService.createApiKey();
 		return res.status(201).json(apiKey);
 	} catch (error) {
 		handleError(res, error, 'creating API key');
@@ -158,10 +158,10 @@ export const getApiKeys = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Get API keys request received');
 
-	const authService = container.get(AuthService);
+	const apiKeyService = container.get(ApiKeyService);
 
 	try {
-		const apiKeys = await authService.getApiKeys();
+		const apiKeys = await apiKeyService.getApiKeys();
 		return res.status(200).json(apiKeys);
 	} catch (error) {
 		handleError(res, error, 'getting API keys');
@@ -172,10 +172,10 @@ export const deleteApiKeys = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Delete API keys request received');
 
-	const authService = container.get(AuthService);
+	const apiKeyService = container.get(ApiKeyService);
 
 	try {
-		await authService.deleteApiKeys();
+		await apiKeyService.deleteApiKeys();
 		return res.status(200).json({ message: 'API keys deleted successfully' });
 	} catch (error) {
 		handleError(res, error, 'deleting API keys');

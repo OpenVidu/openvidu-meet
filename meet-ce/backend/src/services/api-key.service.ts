@@ -1,25 +1,34 @@
-import { MeetApiKey, User } from '@openvidu-meet/typings';
+import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { MEET_INITIAL_API_KEY } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';
 import { ApiKeyRepository } from '../repositories/index.js';
-import { UserService } from './index.js';
+import { LoggerService, UserService } from './index.js';
 
 @injectable()
-export class AuthService {
+export class ApiKeyService {
 	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
 		@inject(UserService) protected userService: UserService,
 		@inject(ApiKeyRepository) protected apiKeyRepository: ApiKeyRepository
 	) {}
 
-	async authenticateUser(username: string, password: string): Promise<User | null> {
-		const user = await this.userService.getUser(username);
+	/**
+	 * Initializes the API key if configured
+	 */
+	async initializeApiKey(): Promise<void> {
+		// Check if initial API key is configured
+		const initialApiKey = MEET_INITIAL_API_KEY;
 
-		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
-			return null;
+		if (!initialApiKey) {
+			this.logger.info('No initial API key configured, skipping API key initialization');
+			return;
 		}
 
-		return user;
+		const apiKeyData: MeetApiKey = PasswordHelper.generateApiKey(initialApiKey);
+		await this.apiKeyRepository.create(apiKeyData);
+		this.logger.info('API key initialized');
 	}
 
 	async createApiKey(): Promise<MeetApiKey> {

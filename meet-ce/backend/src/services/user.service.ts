@@ -1,13 +1,42 @@
 import { User, UserDTO, UserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MEET_INITIAL_ADMIN_PASSWORD, MEET_INITIAL_ADMIN_USER } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, internalError } from '../models/error.model.js';
 import { UserRepository } from '../repositories/index.js';
+import { LoggerService } from './index.js';
 
 @injectable()
 export class UserService {
-	constructor(@inject(UserRepository) protected userRepository: UserRepository) {}
+	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(UserRepository) protected userRepository: UserRepository
+	) {}
+
+	/**
+	 * Initializes the default admin user
+	 */
+	async initializeAdminUser(): Promise<void> {
+		const admin: User = {
+			username: MEET_INITIAL_ADMIN_USER,
+			passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
+			roles: [UserRole.ADMIN, UserRole.USER]
+		};
+
+		await this.userRepository.create(admin);
+		this.logger.info(`Admin user initialized with default credentials`);
+	}
+
+	async authenticateUser(username: string, password: string): Promise<User | null> {
+		const user = await this.getUser(username);
+
+		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
+			return null;
+		}
+
+		return user;
+	}
 
 	async getUser(username: string): Promise<User | null> {
 		return this.userRepository.findByUsername(username);

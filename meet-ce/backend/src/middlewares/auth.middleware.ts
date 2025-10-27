@@ -19,7 +19,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/index.js';
 import {
-	AuthService,
+	ApiKeyService,
 	LoggerService,
 	ParticipantService,
 	RoomService,
@@ -185,8 +185,8 @@ export const apiKeyValidator = async (req: Request) => {
 	}
 
 	try {
-		const authService = container.get(AuthService);
-		const isValidApiKey = await authService.validateApiKey(apiKey as string);
+		const apiKeyService = container.get(ApiKeyService);
+		const isValidApiKey = await apiKeyService.validateApiKey(apiKey as string);
 
 		if (!isValidApiKey) {
 			throw errorInvalidApiKey();
