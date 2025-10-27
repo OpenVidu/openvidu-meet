@@ -46,4 +46,16 @@ export class DialogComponent {
 			this.data.cancelCallback();
 		}
 	}
+
+	shouldShowActions(): boolean {
+		return this.data.showActions !== false;
+	}
+
+	shouldShowConfirmButton(): boolean {
+		return this.data.showConfirmButton !== false;
+	}
+
+	shouldShowCancelButton(): boolean {
+		return this.data.showCancelButton !== false;
+	}
 }

@@ -1,0 +1,13 @@
+@if (showOverlay) {
+	<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed-more OV_big">
+		<ov-share-meeting-link
+			class="main-share-meeting-link"
+			[title]="title"
+			[subtitle]="subtitle"
+			[titleSize]="titleSize"
+			[titleWeight]="titleWeight"
+			[meetingUrl]="meetingUrl"
+			(copyClicked)="onCopyClicked()"
+		></ov-share-meeting-link>
+	</div>
+}

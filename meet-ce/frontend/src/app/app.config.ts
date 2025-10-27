@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
-import { routes } from '@app/app.routes';
+import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
 import { CustomParticipantModel, httpInterceptor, ThemeService } from '@openvidu-meet/shared-components';
 import { OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
 		}),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		provideZoneChangeDetection({ eventCoalescing: true }),
-		provideRouter(routes),
+		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
 		provideHttpClient(withInterceptors([httpInterceptor])),
 		{

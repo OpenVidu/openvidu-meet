@@ -21,19 +21,25 @@
 			</div>
 		}
 	</mat-dialog-content>
-	<mat-dialog-actions class="dialog-action">
-		<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">
-			{{ data.cancelText ?? 'Cancel' }}
-		</button>
-		<button
-			mat-flat-button
-			mat-dialog-close
-			cdkFocusInitial
-			(click)="close('confirm')"
-			class="confirm-button"
-			[class.force]="force"
-		>
-			{{ data.confirmText ?? 'Confirm' }}
-		</button>
-	</mat-dialog-actions>
+	@if (shouldShowActions()) {
+		<mat-dialog-actions class="dialog-action">
+			@if (shouldShowCancelButton()) {
+				<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">
+					{{ data.cancelText ?? 'Cancel' }}
+				</button>
+			}
+			@if (shouldShowConfirmButton()) {
+				<button
+					mat-flat-button
+					mat-dialog-close
+					cdkFocusInitial
+					(click)="close('confirm')"
+					class="confirm-button"
+					[class.force]="force"
+				>
+					{{ data.confirmText ?? 'Confirm' }}
+				</button>
+			}
+		</mat-dialog-actions>
+	}
 </div>

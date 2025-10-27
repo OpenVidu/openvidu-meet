@@ -401,3 +401,148 @@ export const closeMoreOptionsMenu = async (page: Page) => {
 	await interactWithElementInIframe(page, 'body', { action: 'click' });
 	await page.waitForTimeout(500); // Wait for menu to close
 };
+
+// ==========================================
+// MODERATION HELPER FUNCTIONS
+// ==========================================
+
+/**
+ * Gets the participant ID (sid) of a participant by name from a specific page view
+ * @param page - Playwright page object
+ * @param participantName - Name of the participant to find
+ * @returns Promise resolving to the participant ID (sid) or empty string if not found
+ */
+export const getParticipantIdByName = async (page: Page, participantName: string): Promise<string> => {
+	// Get iframe using the proper Playwright method
+	const frameLocator = await getIframeInShadowDom(page);
+
+	// Find all participant containers
+	const participantContainers = frameLocator.locator('[data-participant-id]');
+	const count = await participantContainers.count();
+	console.log(`🔍 Found ${count} participant containers`);
+
+	// Iterate through participants to find the matching name
+	for (let i = 0; i < count; i++) {
+		const container = participantContainers.nth(i);
+		const nameElement = container.locator('.participant-name-text');
+		const pName = await nameElement.textContent();
+		const pId = await container.getAttribute('data-participant-id');
+
+		console.log(`👤 Participant: "${pName?.trim()}" with ID: ${pId}`);
+
+		if (pName?.trim() === participantName) {
+			console.log(`✅ Found matching participant: ${participantName} with ID: ${pId}`);
+			return pId || '';
+		}
+	}
+
+	console.log(`❌ Could not find participant with name: ${participantName}`);
+	return '';
+};
+
+/**
+ * Gets the current user's own participant ID (sid)
+ * @param page - Playwright page object
+ * @returns Promise resolving to the local participant's ID (sid) or empty string if not found
+ */
+export const getLocalParticipantId = async (page: Page): Promise<string> => {
+	// Get iframe using the proper Playwright method
+	const frameLocator = await getIframeInShadowDom(page);
+
+	// Find all participant containers
+	const participantContainers = frameLocator.locator('[data-participant-id]');
+	const count = await participantContainers.count();
+	console.log(`🔍 Found ${count} participant containers`);
+
+	// Iterate through participants to find the local one (has .local-indicator)
+	for (let i = 0; i < count; i++) {
+		const container = participantContainers.nth(i);
+		const youLabel = container.locator('.local-indicator');
+		const hasYouLabel = (await youLabel.count()) > 0;
+
+		if (hasYouLabel) {
+			const nameElement = container.locator('.participant-name-text');
+			const participantName = await nameElement.textContent();
+			const pId = await container.getAttribute('data-participant-id');
+
+			console.log(`✅ Found local participant: "${participantName?.trim()}" with ID: ${pId}`);
+			return pId || '';
+		}
+	}
+
+	console.log('❌ Could not find local participant');
+	return '';
+};
+
+/**
+ * Opens the participants panel and waits for it to be visible
+ * @param page - Playwright page object
+ */
+export const openParticipantsPanel = async (page: Page): Promise<void> => {
+	await waitForElementInIframe(page, '#participants-panel-btn');
+	await interactWithElementInIframe(page, '#participants-panel-btn', { action: 'click' });
+	await waitForElementInIframe(page, 'ov-participants-panel', { state: 'visible' });
+	await page.waitForTimeout(1000); // Wait for panel to fully load
+};
+
+/**
+ * Makes a participant a moderator by clicking the make-moderator button
+ * @param page - Playwright page object (moderator's page)
+ * @param participantId - The participant ID (sid) to promote
+ */
+export const makeParticipantModerator = async (page: Page, participantId: string): Promise<void> => {
+	const makeModeratorbtn = await waitForElementInIframe(page, `#make-moderator-btn-${participantId}`, {
+		state: 'visible',
+		timeout: 10000
+	});
+	await makeModeratorbtn.click();
+	await page.waitForTimeout(2000); // Wait for role change to propagate
+};
+
+/**
+ * Removes moderator role from a participant by clicking the remove-moderator button
+ * @param page - Playwright page object (moderator's page)
+ * @param participantId - The participant ID (sid) to demote
+ */
+export const removeParticipantModerator = async (page: Page, participantId: string): Promise<void> => {
+	const removeModeratorbtn = await waitForElementInIframe(page, `#remove-moderator-btn-${participantId}`, {
+		state: 'visible',
+		timeout: 10000
+	});
+	await removeModeratorbtn.click();
+	await page.waitForTimeout(2000); // Wait for role change to propagate
+};
+
+/**
+ * Checks if an overlay element is hidden in the iframe
+ * An element is considered hidden if:
+ * - It doesn't exist in the DOM (removed)
+ * - Has display: none
+ * - Has visibility: hidden
+ * - Has opacity: 0
+ * @param page - Playwright page object
+ * @param overlaySelector - CSS selector for the overlay element
+ * @returns Promise resolving to true if the overlay is hidden, false otherwise
+ */
+export const isShareLinkOverlayyHidden = async (page: Page, overlaySelector: string): Promise<boolean> => {
+	const frameLocator = await getIframeInShadowDom(page);
+	const overlay = frameLocator.locator(overlaySelector);
+	const count = await overlay.count();
+
+	// Element doesn't exist in the DOM
+	if (count === 0) {
+		console.log('✅ Overlay element not found in DOM (removed)');
+		return true;
+	}
+
+	// Check if element is hidden via CSS
+	const isVisible = await overlay.isVisible().catch(() => false);
+
+	if (!isVisible) {
+		console.log('✅ Overlay is hidden (display: none, visibility: hidden, or opacity: 0)');
+		return true;
+	}
+
+	console.log('❌ Overlay is still visible');
+	return false;
+};

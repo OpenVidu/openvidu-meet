@@ -1,0 +1,34 @@
+@use '../../../../../../src/assets/styles/design-tokens';
+
+.main-share-meeting-link-container {
+	background-color: var(--ov-surface-color); // Use ov-components variable
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--ov-meet-radius-md);
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	z-index: 1;
+
+	.main-share-meeting-link {
+		pointer-events: all;
+		max-width: 100%;
+	}
+}
+
+.fade-in-delayed-more {
+	animation: fadeIn 0.5s ease-in 0.9s both;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
