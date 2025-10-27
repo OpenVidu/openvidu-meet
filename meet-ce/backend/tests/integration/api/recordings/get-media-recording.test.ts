@@ -15,7 +15,7 @@ describe('Recording API Tests', () => {
 	let room: MeetRoom, recordingId: string;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 
 		const testContext = await setupMultiRecordingsTestContext(1, 1, 1, '3s');

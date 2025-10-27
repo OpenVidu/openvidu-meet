@@ -35,8 +35,8 @@ describe('Recording Cleanup Tests', () => {
 		noUpdatedAt: 'room-no-updated-at'
 	};
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 		recordingService = container.get(RecordingService);
 		mutexService = container.get(MutexService);
 		livekitService = container.get(LiveKitService);

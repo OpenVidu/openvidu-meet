@@ -11,8 +11,8 @@ import { createRoom, deleteAllRooms, getRoom, startTestServer } from '../../../h
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

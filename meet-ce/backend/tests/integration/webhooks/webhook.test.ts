@@ -26,7 +26,7 @@ describe('Webhook Integration Tests', () => {
 	let storageService: MeetStorageService;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		storageService = container.get(MeetStorageService);
 
 		// Start test server for webhooks

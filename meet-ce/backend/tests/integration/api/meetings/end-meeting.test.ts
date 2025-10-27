@@ -17,7 +17,7 @@ describe('Meetings API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		roomData = await setupSingleRoom(true);
 		livekitService = container.get(LiveKitService);
 	});

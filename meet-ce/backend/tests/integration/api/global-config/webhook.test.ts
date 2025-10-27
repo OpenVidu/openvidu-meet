@@ -13,8 +13,8 @@ import {
 import { startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
 
 describe('Webhook Config API Tests', () => {
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

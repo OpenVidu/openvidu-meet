@@ -17,7 +17,7 @@ describe('Recording API Tests', () => {
 	let room: MeetRoom, recordingId: string;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 
 		// Create a room and join a participant

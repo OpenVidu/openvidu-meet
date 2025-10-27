@@ -17,7 +17,7 @@ import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 

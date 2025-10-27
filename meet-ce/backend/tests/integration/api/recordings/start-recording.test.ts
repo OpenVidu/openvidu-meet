@@ -26,7 +26,7 @@ describe('Recording API Tests', () => {
 	let room: MeetRoom, moderatorToken: string;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 

@@ -14,8 +14,8 @@ describe('Room API Tests', () => {
 		virtualBackground: { enabled: true }
 	};
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

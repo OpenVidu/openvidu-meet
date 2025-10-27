@@ -22,7 +22,7 @@ const restoreDefaultGlobalConfig = async () => {
 
 describe('Security Config API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 	});
 
 	afterEach(async () => {

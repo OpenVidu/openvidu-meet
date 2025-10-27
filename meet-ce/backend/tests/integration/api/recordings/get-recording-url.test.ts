@@ -18,7 +18,7 @@ describe('Recording API Tests', () => {
 	let recordingId: string;
 
 	beforeAll(async () => {
-		app = startTestServer();
+		app = await startTestServer();
 		await deleteAllRecordings();
 
 		const roomData = await setupSingleRoomWithRecording(true);

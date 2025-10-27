@@ -20,8 +20,8 @@ const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 describe('Authentication API Tests', () => {
 	let app: Express;
 
-	beforeAll(() => {
-		app = startTestServer();
+	beforeAll(async () => {
+		app = await startTestServer();
 	});
 
 	describe('Login Tests', () => {

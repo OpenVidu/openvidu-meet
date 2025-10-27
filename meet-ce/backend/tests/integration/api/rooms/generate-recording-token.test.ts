@@ -18,7 +18,7 @@ describe('Room API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		roomData = await setupSingleRoomWithRecording(true);
 	});
 

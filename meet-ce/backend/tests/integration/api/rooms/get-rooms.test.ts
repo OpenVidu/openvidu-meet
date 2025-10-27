@@ -12,8 +12,8 @@ import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

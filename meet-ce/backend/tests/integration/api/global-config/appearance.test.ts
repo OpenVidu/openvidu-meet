@@ -11,7 +11,7 @@ import {
 
 describe('Rooms Appearance Config API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 	});
 
 	afterEach(async () => {

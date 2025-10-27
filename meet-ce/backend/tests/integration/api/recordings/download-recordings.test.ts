@@ -14,7 +14,7 @@ import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '.
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 
