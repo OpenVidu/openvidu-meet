@@ -29,7 +29,7 @@ import {
 	OpenViduMeetError,
 	RedisKeyName
 } from '../../models/index.js';
-import { RoomRepository, UserRepository } from '../../repositories/index.js';
+import { ApiKeyRepository, RoomRepository, UserRepository } from '../../repositories/index.js';
 import { getBaseUrl } from '../../utils/index.js';
 import { LoggerService, MutexService, RedisService } from '../index.js';
 import { StorageFactory } from './storage.factory.js';
@@ -65,6 +65,7 @@ export class MeetStorageService<
 		@inject(StorageFactory) protected storageFactory: StorageFactory,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(UserRepository) protected userRepository: UserRepository,
+		@inject(ApiKeyRepository) protected apiKeyRepository: ApiKeyRepository,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(RedisService) protected redisService: RedisService
 	) {
@@ -778,7 +779,7 @@ export class MeetStorageService<
 		}
 
 		const apiKeyData: MeetApiKey = PasswordHelper.generateApiKey(initialApiKey);
-		await this.saveApiKey(apiKeyData);
+		await this.apiKeyRepository.create(apiKeyData);
 		this.logger.info('API key initialized');
 	}
 
