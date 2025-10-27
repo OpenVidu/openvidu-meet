@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { CommandsManager } from '../../src/components/CommandsManager';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';

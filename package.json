@@ -39,6 +39,7 @@
 	"devDependencies": {
 		"browser-sync": "3.0.4",
 		"concurrently": "9.2.1",
+		"identity-obj-proxy": "3.0.0",
 		"tree-kill": "1.2.2",
 		"wait-on": "9.0.1"
 	}

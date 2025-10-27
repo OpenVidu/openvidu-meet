@@ -1,0 +1,8 @@
+{
+	"jest.jestCommandLine": "node --experimental-vm-modules ../../node_modules/.bin/jest",
+	"jest.rootPath": "backend",
+	"jest.nodeEnv": {
+		"NODE_OPTIONS": "--experimental-vm-modules"
+	},
+	"jest.runMode": "on-demand"
+}

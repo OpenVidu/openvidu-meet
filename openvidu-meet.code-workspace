@@ -42,20 +42,146 @@
 			"**/node_modules": true,
 			"**/test-results": true,
 		},
-		"jest.disabledWorkspaceFolders": ["openvidu-meet", "typings", "frontend"],
+		"jest.disabledWorkspaceFolders": ["openvidu-meet (root)", "openvidu-components-angular", "shared-meet-components", "meet-testapp"],
 		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
 		"mochaExplorer.require": ".mocharc.js",
 		"files.watcherExclude": {
 			"**/node_modules/**": true,
 			"**/dist/**": true,
 		},
-		// "mochaExplorer.files": "./frontend/tests/e2e/**/*.test.ts",
-		// "mochaExplorer.mochaPath": "./frontend/node_modules/mocha",
-		// "mochaExplorer.require": "ts-node/register",
-		// "mochaExplorer.configFile": "./frontend/.mocharc.js",
-		// "mochaExplorer.timeout": 30000,
-		// "mochaExplorer.env": {
-		//   "NODE_ENV": "test"
-		// }
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Debug Jest Test (CE Backend)",
+				"type": "node",
+				"request": "launch",
+				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"args": [
+					"--config",
+					"${workspaceFolder:openvidu-meet (CE)}/backend/jest.config.mjs",
+					"--runInBand",
+					"--no-cache",
+					"${file}"
+				],
+				"console": "integratedTerminal",
+				"internalConsoleOptions": "neverOpen",
+				"windows": {
+					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
+				},
+				"runtimeArgs": [
+					"--experimental-vm-modules"
+				],
+				"env": {
+					"NODE_ENV": "test"
+				},
+				"cwd": "${workspaceFolder:openvidu-meet (CE)}/backend"
+			},
+			{
+				"name": "Debug Jest Test (PRO Backend)",
+				"type": "node",
+				"request": "launch",
+				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"args": [
+					"--config",
+					"${workspaceFolder:openvidu-meet (PRO)}/backend/jest.config.mjs",
+					"--runInBand",
+					"--no-cache",
+					"${file}"
+				],
+				"console": "integratedTerminal",
+				"internalConsoleOptions": "neverOpen",
+				"windows": {
+					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
+				},
+				"runtimeArgs": [
+					"--experimental-vm-modules"
+				],
+				"env": {
+					"NODE_ENV": "test"
+				},
+				"cwd": "${workspaceFolder:openvidu-meet (PRO)}/backend"
+			},
+			{
+				"name": "Debug Jest Test (Webcomponent)",
+				"type": "node",
+				"request": "launch",
+				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"args": [
+					"--config",
+					"${workspaceFolder:meet-webcomponent}/jest.config.mjs",
+					"--runInBand",
+					"--no-cache",
+					"${file}"
+				],
+				"console": "integratedTerminal",
+				"internalConsoleOptions": "neverOpen",
+				"windows": {
+					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
+				},
+				"runtimeArgs": [
+					"--experimental-vm-modules"
+				],
+				"env": {
+					"NODE_ENV": "test"
+				},
+				"cwd": "${workspaceFolder:meet-webcomponent}"
+			},
+			{
+				"name": "Debug Current Jest Test (CE Backend)",
+				"type": "node",
+				"request": "launch",
+				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"args": [
+					"--config",
+					"${workspaceFolder:openvidu-meet (CE)}/backend/jest.config.mjs",
+					"--runInBand",
+					"--testNamePattern",
+					"${input:testName}",
+					"${file}"
+				],
+				"console": "integratedTerminal",
+				"internalConsoleOptions": "neverOpen",
+				"runtimeArgs": [
+					"--experimental-vm-modules"
+				],
+				"env": {
+					"NODE_ENV": "test"
+				},
+				"cwd": "${workspaceFolder:openvidu-meet (CE)}/backend"
+			},
+			{
+				"name": "Debug Current Jest Test (PRO Backend)",
+				"type": "node",
+				"request": "launch",
+				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"args": [
+					"--config",
+					"${workspaceFolder:openvidu-meet (PRO)}/backend/jest.config.mjs",
+					"--runInBand",
+					"--testNamePattern",
+					"${input:testName}",
+					"${file}"
+				],
+				"console": "integratedTerminal",
+				"internalConsoleOptions": "neverOpen",
+				"runtimeArgs": [
+					"--experimental-vm-modules"
+				],
+				"env": {
+					"NODE_ENV": "test"
+				},
+				"cwd": "${workspaceFolder:openvidu-meet (PRO)}/backend"
+			}
+		],
+		"inputs": [
+			{
+				"id": "testName",
+				"description": "Test name pattern (optional, leave empty to run all tests in file)",
+				"default": "",
+				"type": "promptString"
+			}
+		]
 	},
 }

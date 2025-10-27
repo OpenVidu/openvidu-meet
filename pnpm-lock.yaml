@@ -14,6 +14,9 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      identity-obj-proxy:
+        specifier: 3.0.0
+        version: 3.0.0
       tree-kill:
         specifier: 1.2.2
         version: 1.2.2

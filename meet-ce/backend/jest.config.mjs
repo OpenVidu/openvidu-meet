@@ -12,7 +12,7 @@ const jestConfig = {
 	extensionsToTreatAsEsm: ['.ts'],
 	moduleNameMapper: {
 		'^@openvidu-meet/typings$': '<rootDir>/../typings/src/index.ts',
-		'^(\\.{1,2}/.*)\\.js$': '$1' // Permite importar .js que resuelven a .ts
+		'^(\\.{1,2}/.*)\\.js$': '$1' // Allow importing js files and resolving to ts files
 	},
 	transform: {
 		'^.+\\.tsx?$': ['ts-jest', {

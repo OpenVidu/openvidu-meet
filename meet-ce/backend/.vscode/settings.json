@@ -1,5 +1,0 @@
-{
-	"jest.jestCommandLine": "node --experimental-vm-modules ./node_modules/.bin/jest --config jest.config.mjs",
-	"jest.rootPath": "./",
-	"jest.runMode": "on-demand"
-}
