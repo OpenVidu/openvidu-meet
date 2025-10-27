@@ -1,6 +1,6 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { LoggerService } from '../services/logger.service.js';
+import { LoggerService } from '../services/index.js';
 import { BaseRepository } from './base.repository.js';
 import { MeetApiKeyDocument, MeetApiKeyModel } from './schemas/api-key.schema.js';
 

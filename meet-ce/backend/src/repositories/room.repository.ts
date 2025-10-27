@@ -1,7 +1,7 @@
 import { MeetRoom } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { LoggerService } from '../services/logger.service.js';
-import { getBaseUrl } from '../utils/url.utils.js';
+import { LoggerService } from '../services/index.js';
+import { getBaseUrl } from '../utils/index.js';
 import { BaseRepository } from './base.repository.js';
 import { MeetRoomDocument, MeetRoomModel } from './schemas/room.schema.js';
 

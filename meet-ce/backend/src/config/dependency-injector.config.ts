@@ -1,6 +1,12 @@
 import { Container } from 'inversify';
 import { MEET_BLOB_STORAGE_MODE } from '../environment.js';
-import { ApiKeyRepository, BaseRepository, RoomRepository, UserRepository } from '../repositories/index.js';
+import {
+	ApiKeyRepository,
+	BaseRepository,
+	GlobalConfigRepository,
+	RoomRepository,
+	UserRepository
+} from '../repositories/index.js';
 import {
 	ABSService,
 	ABSStorageProvider,
@@ -66,6 +72,7 @@ export const registerDependencies = () => {
 	container.bind(RoomRepository).toSelf().inSingletonScope();
 	container.bind(UserRepository).toSelf().inSingletonScope();
 	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
+	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();
 
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(UserService).toSelf().inSingletonScope();

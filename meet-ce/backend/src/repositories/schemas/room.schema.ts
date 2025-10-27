@@ -174,6 +174,5 @@ MeetRoomSchema.index({ autoDeletionDate: 1 });
 
 /**
  * Mongoose model for MeetRoom.
- * Provides methods for CRUD operations on room documents.
  */
 export const MeetRoomModel = model<MeetRoomDocument>('MeetRoom', MeetRoomSchema);
