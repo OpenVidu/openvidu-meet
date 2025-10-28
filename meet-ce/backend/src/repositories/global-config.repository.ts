@@ -69,15 +69,4 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 		const document = await this.findOne({});
 		return document ? this.toDomain(document) : null;
 	}
-
-	/**
-	 * Deletes the global configuration.
-	 *
-	 * WARNING: This should only be used in testing or system reset scenarios.
-	 *
-	 * @throws Error if no global config exists
-	 */
-	async delete(): Promise<void> {
-		await this.deleteOne({});
-	}
 }

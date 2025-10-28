@@ -19,11 +19,11 @@ export const updateRoomsAppearanceConfig = async (req: Request, res: Response) =
 			const existingTheme = globalConfig.roomsConfig.appearance.themes[0];
 			const newTheme = appearanceConfig.appearance.themes[0];
 
-			newTheme.backgroundColor = newTheme.backgroundColor || existingTheme.backgroundColor;
-			newTheme.primaryColor = newTheme.primaryColor || existingTheme.primaryColor;
-			newTheme.secondaryColor = newTheme.secondaryColor || existingTheme.secondaryColor;
-			newTheme.accentColor = newTheme.accentColor || existingTheme.accentColor;
-			newTheme.surfaceColor = newTheme.surfaceColor || existingTheme.surfaceColor;
+			newTheme.backgroundColor = newTheme.backgroundColor ?? existingTheme.backgroundColor;
+			newTheme.primaryColor = newTheme.primaryColor ?? existingTheme.primaryColor;
+			newTheme.secondaryColor = newTheme.secondaryColor ?? existingTheme.secondaryColor;
+			newTheme.accentColor = newTheme.accentColor ?? existingTheme.accentColor;
+			newTheme.surfaceColor = newTheme.surfaceColor ?? existingTheme.surfaceColor;
 		}
 
 		globalConfig.roomsConfig = appearanceConfig;

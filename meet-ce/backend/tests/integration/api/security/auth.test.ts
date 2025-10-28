@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
+import { ApiKeyService } from '../../../../src/services/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	changeAuthTransportMode,
@@ -13,7 +14,6 @@ import {
 	loginUser,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { AuthTransportMode } from '@openvidu-meet/typings';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
@@ -232,8 +232,16 @@ describe('Authentication API Tests', () => {
 
 		afterAll(async () => {
 			// Restore API key
-			const storageService = container.get(MeetStorageService);
-			await storageService['initializeApiKey']();
+			const apiKeyService = container.get(ApiKeyService);
+
+			// Check if there are existing API keys and delete them
+			const existingKeys = await apiKeyService.getApiKeys();
+
+			if (existingKeys.length > 0) {
+				await apiKeyService.deleteApiKeys();
+			}
+
+			await apiKeyService.initializeApiKey();
 		});
 
 		const getRoomsWithApiKey = async (apiKey: string) => {

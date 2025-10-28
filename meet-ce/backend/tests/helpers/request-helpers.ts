@@ -1,5 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
+import {
+	AuthMode,
+	AuthTransportMode,
+	MeetRecordingAccess,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRoom,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomOptions,
+	ParticipantRole,
+	WebhookConfig
+} from '@openvidu-meet/typings';
 import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
@@ -14,20 +27,7 @@ import {
 	MEET_INITIAL_API_KEY
 } from '../../src/environment.js';
 import { createApp, registerDependencies } from '../../src/server.js';
-import { RecordingService, RoomService } from '../../src/services/index.js';
-import {
-	AuthMode,
-	AuthTransportMode,
-	MeetRecordingAccess,
-	MeetRecordingInfo,
-	MeetRecordingStatus,
-	MeetRoom,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomOptions,
-	ParticipantRole,
-	WebhookConfig
-} from '@openvidu-meet/typings';
+import { GlobalConfigService, RecordingService, RoomService } from '../../src/services/index.js';
 
 const CREDENTIALS = {
 	admin: {
@@ -173,6 +173,12 @@ export const changeAuthTransportMode = async (authTransportMode: AuthTransportMo
 const getAuthTransportMode = async (): Promise<AuthTransportMode> => {
 	const response = await getSecurityConfig();
 	return response.body.authentication.authTransportMode;
+};
+
+export const restoreDefaultGlobalConfig = async () => {
+	const configService = container.get(GlobalConfigService);
+	const defaultGlobalConfig = configService['getDefaultConfig']();
+	await configService.saveGlobalConfig(defaultGlobalConfig);
 };
 
 /**
