@@ -14,13 +14,13 @@ import {
 	errorInvalidWebhookUrl,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { ApiKeyService, LoggerService, MeetStorageService } from './index.js';
+import { ApiKeyService, GlobalConfigService, LoggerService } from './index.js';
 
 @injectable()
 export class OpenViduWebhookService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(GlobalConfigService) protected configService: GlobalConfigService,
 		@inject(ApiKeyService) protected apiKeyService: ApiKeyService
 	) {}
 
@@ -311,7 +311,7 @@ export class OpenViduWebhookService {
 
 	protected async getWebhookConfig(): Promise<WebhookConfig> {
 		try {
-			const { webhooksConfig } = await this.storageService.getGlobalConfig();
+			const { webhooksConfig } = await this.configService.getGlobalConfig();
 			return webhooksConfig;
 		} catch (error) {
 			this.logger.error('Error getting webhook config:', error);

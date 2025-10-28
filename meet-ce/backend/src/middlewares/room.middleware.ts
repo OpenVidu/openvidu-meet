@@ -7,7 +7,7 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { MeetStorageService, RoomService } from '../services/index.js';
+import { GlobalConfigService, MeetStorageService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -48,6 +48,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
  */
 export const configureRecordingTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const storageService = container.get(MeetStorageService);
+	const configService = container.get(GlobalConfigService);
 	const roomService = container.get(RoomService);
 
 	let role: ParticipantRole;
@@ -77,7 +78,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityConfig } = await storageService.getGlobalConfig();
+		const { securityConfig } = await configService.getGlobalConfig();
 		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication config');

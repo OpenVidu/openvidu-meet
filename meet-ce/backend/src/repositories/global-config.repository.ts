@@ -1,6 +1,6 @@
 import { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { LoggerService } from '../services/index.js';
+import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from './schemas/global-config.schema.js';
 
