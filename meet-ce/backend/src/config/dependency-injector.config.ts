@@ -33,6 +33,7 @@ import {
 	S3Service,
 	S3StorageProvider,
 	StorageFactory,
+	StorageInitService,
 	StorageKeyBuilder,
 	StorageProvider,
 	TaskSchedulerService,
@@ -64,10 +65,6 @@ export const registerDependencies = () => {
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 	container.bind(HttpContextService).toSelf().inSingletonScope();
 
-	configureStorage(MEET_BLOB_STORAGE_MODE);
-	container.bind(StorageFactory).toSelf().inSingletonScope();
-	container.bind(MeetStorageService).toSelf().inSingletonScope();
-
 	container.bind(MongoDBService).toSelf().inSingletonScope();
 	container.bind(BaseRepository).toSelf().inSingletonScope();
 	container.bind(RoomRepository).toSelf().inSingletonScope();
@@ -79,6 +76,11 @@ export const registerDependencies = () => {
 	container.bind(UserService).toSelf().inSingletonScope();
 	container.bind(ApiKeyService).toSelf().inSingletonScope();
 	container.bind(GlobalConfigService).toSelf().inSingletonScope();
+
+	configureStorage(MEET_BLOB_STORAGE_MODE);
+	container.bind(StorageFactory).toSelf().inSingletonScope();
+	container.bind(MeetStorageService).toSelf().inSingletonScope();
+	container.bind(StorageInitService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
@@ -125,10 +127,11 @@ export const initializeEagerServices = async () => {
 	await mongoService.connect();
 	await mongoService.checkHealth();
 
+	// Initialize storage
+	const storageInitService = container.get(StorageInitService);
+	await storageInitService.initializeStorage();
+
 	// Perform comprehensive health checks before initializing other services
 	const storageService = container.get(MeetStorageService);
 	await storageService.checkStartupHealth();
-
-	// Initialize storage after health checks pass
-	await storageService.initializeStorage();
 };
