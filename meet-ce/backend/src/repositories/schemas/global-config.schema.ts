@@ -167,7 +167,6 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		}
 	},
 	{
-		collection: 'globalconfig',
 		toObject: {
 			versionKey: false,
 			transform: (_doc, ret) => {
@@ -177,6 +176,9 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		}
 	}
 );
+
+// Create indexes for efficient querying
+MeetGlobalConfigSchema.index({ projectId: 1 }, { unique: true });
 
 /**
  * Mongoose model for GlobalConfig entity.

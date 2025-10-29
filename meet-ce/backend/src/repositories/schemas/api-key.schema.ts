@@ -23,4 +23,7 @@ const MeetApiKeySchema = new Schema<MeetApiKeyDocument>(
 	}
 );
 
+// Create indexes for efficient querying
+MeetApiKeySchema.index({ key: 1 }, { unique: true });
+
 export const MeetApiKeyModel = model<MeetApiKeyDocument>('MeetApiKey', MeetApiKeySchema);
