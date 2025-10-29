@@ -2,7 +2,7 @@ import { MeetRecordingFilters } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
-import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
+import { nonEmptySanitizedRoomId, sanitizeRoomName } from './room-validator.middleware.js';
 
 const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
@@ -115,6 +115,7 @@ const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
 		.default(10),
 	// status: z.string().optional(),
 	roomId: nonEmptySanitizedRoomId('roomId').optional(),
+	roomName: z.string().transform(sanitizeRoomName).optional(),
 	nextPageToken: z.string().optional(),
 	fields: z.string().optional()
 });

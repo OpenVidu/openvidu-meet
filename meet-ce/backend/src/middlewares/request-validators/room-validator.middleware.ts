@@ -26,7 +26,7 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
  * @param val The string to sanitize
  * @returns A sanitized string safe for use as a room name
  */
-const sanitizeRoomName = (val: string): string => {
+export const sanitizeRoomName = (val: string): string => {
 	return val
 		.trim() // Remove leading/trailing spaces
 		.replace(/[^a-zA-Z0-9_-\s]/g, '') // Allow alphanumeric, underscores, hyphens and spaces

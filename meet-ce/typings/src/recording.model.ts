@@ -35,5 +35,6 @@ export type MeetRecordingFilters = {
     maxItems?: number;
     nextPageToken?: string;
     roomId?: string;
+    roomName?: string;
     fields?: string;
 };
