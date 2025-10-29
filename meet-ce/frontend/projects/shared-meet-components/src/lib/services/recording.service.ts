@@ -9,7 +9,12 @@ import {
 	TokenStorageService,
 	ParticipantService
 } from '../services';
-import { AuthTransportMode, MeetRecordingFilters, MeetRecordingInfo, RecordingPermissions } from '@openvidu-meet/typings';
+import {
+	AuthTransportMode,
+	MeetRecordingFilters,
+	MeetRecordingInfo,
+	RecordingPermissions
+} from '@openvidu-meet/typings';
 import { getValidDecodedToken } from '../utils';
 import { LoggerService } from 'openvidu-components-angular';
 
@@ -103,6 +108,9 @@ export class RecordingService {
 			}
 			if (filters.roomId) {
 				params.append('roomId', filters.roomId);
+			}
+			if (filters.roomName) {
+				params.append('roomName', filters.roomName);
 			}
 			if (filters.fields) {
 				params.append('fields', filters.fields);
