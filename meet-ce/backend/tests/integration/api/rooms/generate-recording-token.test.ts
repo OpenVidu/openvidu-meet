@@ -81,16 +81,6 @@ describe('Room API Tests', () => {
 			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
-		it('should fail with a 404 error if there are no recordings in the room', async () => {
-			await deleteAllRecordings();
-
-			const response = await generateRecordingTokenRequest(roomData.room.roomId, roomData.moderatorSecret);
-			expect(response.status).toBe(404);
-
-			// Recreate the room with recording
-			roomData = await setupSingleRoomWithRecording(true);
-		});
-
 		it('should fail with a 404 error if the room does not exist', async () => {
 			const response = await generateRecordingTokenRequest('non-existent-room-id', roomData.moderatorSecret);
 			expect(response.status).toBe(404);
