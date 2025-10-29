@@ -4,6 +4,7 @@ import {
 	ApiKeyRepository,
 	BaseRepository,
 	GlobalConfigRepository,
+	RecordingRepository,
 	RoomRepository,
 	UserRepository
 } from '../repositories/index.js';
@@ -71,6 +72,7 @@ export const registerDependencies = () => {
 	container.bind(UserRepository).toSelf().inSingletonScope();
 	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
 	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();
+	container.bind(RecordingRepository).toSelf().inSingletonScope();
 
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(UserService).toSelf().inSingletonScope();
