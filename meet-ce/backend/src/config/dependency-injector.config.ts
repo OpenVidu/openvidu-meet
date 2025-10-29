@@ -12,6 +12,7 @@ import {
 	ABSService,
 	ABSStorageProvider,
 	ApiKeyService,
+	BlobStorageService,
 	DistributedEventService,
 	FrontendEventService,
 	GCSService,
@@ -81,7 +82,7 @@ export const registerDependencies = () => {
 
 	configureStorage(MEET_BLOB_STORAGE_MODE);
 	container.bind(StorageFactory).toSelf().inSingletonScope();
-	container.bind(MeetStorageService).toSelf().inSingletonScope();
+	container.bind(BlobStorageService).toSelf().inSingletonScope();
 	container.bind(StorageInitService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
