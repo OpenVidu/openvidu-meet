@@ -19,10 +19,10 @@ import {
 	GCSStorageProvider,
 	GlobalConfigService,
 	HttpContextService,
+	LegacyStorageService,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
-	MeetStorageService,
 	MongoDBService,
 	MutexService,
 	OpenViduWebhookService,
@@ -84,6 +84,7 @@ export const registerDependencies = () => {
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 	container.bind(BlobStorageService).toSelf().inSingletonScope();
 	container.bind(StorageInitService).toSelf().inSingletonScope();
+	container.bind(LegacyStorageService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
@@ -134,7 +135,7 @@ export const initializeEagerServices = async () => {
 	const storageInitService = container.get(StorageInitService);
 	await storageInitService.initializeStorage();
 
-	// Perform comprehensive health checks before initializing other services
-	const storageService = container.get(MeetStorageService);
-	await storageService.checkStartupHealth();
+	// Perform blob storage health check
+	const blobStorageService = container.get(BlobStorageService);
+	await blobStorageService.checkHealth();
 };

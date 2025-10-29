@@ -11,4 +11,4 @@ export * from './storage-init.service.js';
 export * from './storage.interface.js';
 export * from './storage.factory.js';
 export * from './blob-storage.service.js';
-export * from './storage.service.js';
+export * from './legacy-storage.service.js';
