@@ -25,7 +25,6 @@ import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
 	errorDeletingRoom,
 	errorInvalidRoomSecret,
-	errorRoomMetadataNotFound,
 	errorRoomNotFound,
 	internalError,
 	OpenViduMeetError
@@ -37,7 +36,6 @@ import {
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
-	MeetStorageService,
 	RecordingService,
 	TaskSchedulerService,
 	TokenService
@@ -53,7 +51,6 @@ import {
 export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(MeetStorageService) protected storageService: MeetStorageService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
@@ -145,11 +142,8 @@ export class RoomService {
 		room.config = config;
 
 		await this.roomRepository.update(room);
-		// Update the archived room metadata if it exists
-		await Promise.all([
-			this.storageService.archiveRoomMetadata(roomId, true),
-			this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room)
-		]);
+		// Send signal to frontend
+		await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
 		return room;
 	}
 
@@ -186,12 +180,9 @@ export class RoomService {
 	 */
 	async meetRoomExists(roomName: string): Promise<boolean> {
 		try {
-			const meetRoom = await this.getMeetRoom(roomName);
-
-			if (meetRoom) return true;
-
-			return false;
-		} catch (err: unknown) {
+			await this.getMeetRoom(roomName);
+			return true;
+		} catch (err) {
 			return false;
 		}
 	}
@@ -316,7 +307,6 @@ export class RoomService {
 
 		// No meeting, no recordings: simple deletion
 		if (!hasActiveMeeting && !hasRecordings) {
-			// await this.storageService.deleteMeetRooms([roomId]);
 			await this.roomRepository.deleteByRoomId(roomId);
 			return undefined;
 		}
@@ -648,10 +638,6 @@ export class RoomService {
 	 */
 	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
 		const room = await this.getMeetRoom(roomId);
-		return this.getRoomRoleBySecretFromRoom(room, secret);
-	}
-
-	getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
 		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
@@ -673,19 +659,13 @@ export class RoomService {
 	 * @throws An error if the room with the given `roomId` is not found.
 	 */
 	async generateRecordingToken(roomId: string, secret: string): Promise<string> {
-		const room = await this.storageService.getArchivedRoomMetadata(roomId);
-
-		if (!room) {
-			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
-			throw errorRoomMetadataNotFound(roomId);
-		}
-
-		const role = this.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);
-		const permissions = this.getRecordingPermissions(room, role);
+		const role = await this.getRoomRoleBySecret(roomId, secret);
+		const permissions = await this.getRecordingPermissions(roomId, role);
 		return await this.tokenService.generateRecordingToken(roomId, role, permissions);
 	}
 
-	protected getRecordingPermissions(room: Partial<MeetRoom>, role: ParticipantRole): RecordingPermissions {
+	protected async getRecordingPermissions(roomId: string, role: ParticipantRole): Promise<RecordingPermissions> {
+		const room = await this.getMeetRoom(roomId);
 		const recordingAccess = room.config?.recording.allowAccessTo;
 
 		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
