@@ -1,4 +1,9 @@
-import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantOptions, ParticipantRole } from '@openvidu-meet/typings';
+import {
+	MeetTokenMetadata,
+	OpenViduMeetPermissions,
+	ParticipantOptions,
+	ParticipantRole
+} from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
@@ -12,7 +17,7 @@ const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
 });
 
 const UpdateParticipantRequestSchema = z.object({
-	role: z.enum([ParticipantRole.MODERATOR, ParticipantRole.SPEAKER])
+	role: z.nativeEnum(ParticipantRole)
 });
 
 const OpenViduMeetPermissionsSchema: z.ZodType<OpenViduMeetPermissions> = z.object({
@@ -25,11 +30,11 @@ const MeetTokenMetadataSchema: z.ZodType<MeetTokenMetadata> = z.object({
 	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
 	roles: z.array(
 		z.object({
-			role: z.enum([ParticipantRole.MODERATOR, ParticipantRole.SPEAKER]),
+			role: z.nativeEnum(ParticipantRole),
 			permissions: OpenViduMeetPermissionsSchema
 		})
 	),
-	selectedRole: z.enum([ParticipantRole.MODERATOR, ParticipantRole.SPEAKER])
+	selectedRole: z.nativeEnum(ParticipantRole)
 });
 
 export const validateParticipantTokenRequest = (req: Request, res: Response, next: NextFunction) => {

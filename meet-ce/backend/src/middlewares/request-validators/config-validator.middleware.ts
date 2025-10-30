@@ -40,11 +40,11 @@ const WebhookTestSchema = z.object({
 		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
 });
 
-const AuthTransportModeSchema = z.enum([AuthTransportMode.COOKIE, AuthTransportMode.HEADER]);
+const AuthTransportModeSchema: z.ZodType<AuthTransportMode> = z.nativeEnum(AuthTransportMode);
 
-const AuthModeSchema: z.ZodType<AuthMode> = z.enum([AuthMode.NONE, AuthMode.MODERATORS_ONLY, AuthMode.ALL_USERS]);
+const AuthModeSchema: z.ZodType<AuthMode> = z.nativeEnum(AuthMode);
 
-const AuthTypeSchema: z.ZodType<AuthType> = z.enum([AuthType.SINGLE_USER]);
+const AuthTypeSchema: z.ZodType<AuthType> = z.nativeEnum(AuthType);
 
 const SingleUserAuthSchema: z.ZodType<SingleUserAuth> = z.object({
 	type: AuthTypeSchema
