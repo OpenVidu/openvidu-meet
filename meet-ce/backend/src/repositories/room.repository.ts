@@ -194,6 +194,20 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Counts the total number of rooms.
+	 */
+	async countTotal(): Promise<number> {
+		return await this.count();
+	}
+
+	/**
+	 * Counts the number of rooms with active meetings.
+	 */
+	async countActiveRooms(): Promise<number> {
+		return await this.count({ status: 'active_meeting' });
+	}
+
+	/**
 	 * Enriches room data by adding the base URL to URLs.
 	 * Converts MongoDB document to domain object.
 	 *

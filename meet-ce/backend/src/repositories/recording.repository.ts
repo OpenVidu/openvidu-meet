@@ -181,4 +181,18 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	async deleteByRecordingIds(recordingIds: string[]): Promise<void> {
 		await this.deleteMany({ recordingId: { $in: recordingIds } });
 	}
+
+	/**
+	 * Counts the total number of recordings.
+	 */
+	async countTotal(): Promise<number> {
+		return await this.count();
+	}
+
+	/**
+	 * Counts the number of recordings with status 'complete'.
+	 */
+	async countCompleteRecordings(): Promise<number> {
+		return await this.count({ status: 'complete' });
+	}
 }

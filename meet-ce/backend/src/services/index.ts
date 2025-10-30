@@ -20,3 +20,4 @@ export * from './participant-name.service.js';
 export * from './participant.service.js';
 export * from './openvidu-webhook.service.js';
 export * from './livekit-webhook.service.js';
+export * from './analytics.service.js';

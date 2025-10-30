@@ -7,6 +7,7 @@ import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
 import { httpContextMiddleware, jsonSyntaxErrorHandler } from './middlewares/index.js';
 import {
+	analyticsRouter,
 	authRouter,
 	configRouter,
 	internalMeetingRouter,
@@ -72,6 +73,7 @@ const createApp = () => {
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
+	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);
 
 	app.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 

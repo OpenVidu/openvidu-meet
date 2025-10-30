@@ -11,6 +11,7 @@ import {
 import {
 	ABSService,
 	ABSStorageProvider,
+	AnalyticsService,
 	ApiKeyService,
 	BlobStorageService,
 	DistributedEventService,
@@ -94,6 +95,7 @@ export const registerDependencies = () => {
 	container.bind(ParticipantService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
+	container.bind(AnalyticsService).toSelf().inSingletonScope();
 };
 
 const configureStorage = (storageMode: string) => {
