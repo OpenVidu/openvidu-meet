@@ -840,6 +840,18 @@ export const deleteAllRecordings = async () => {
 	} while (nextPageToken);
 };
 
+export const getAnalytics = async () => {
+	checkAppIsRunning();
+
+	const accessToken = await loginUser();
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
+		.send();
+
+	return response;
+};
+
 // PRIVATE METHODS
 
 const checkAppIsRunning = () => {
