@@ -25,6 +25,7 @@ import {
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
+	MigrationService,
 	MongoDBService,
 	MutexService,
 	OpenViduWebhookService,
@@ -88,6 +89,7 @@ export const registerDependencies = () => {
 	container.bind(BlobStorageService).toSelf().inSingletonScope();
 	container.bind(StorageInitService).toSelf().inSingletonScope();
 	container.bind(LegacyStorageService).toSelf().inSingletonScope();
+	container.bind(MigrationService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
@@ -135,11 +137,15 @@ export const initializeEagerServices = async () => {
 	await mongoService.connect();
 	await mongoService.checkHealth();
 
-	// Initialize storage
-	const storageInitService = container.get(StorageInitService);
-	await storageInitService.initializeStorage();
-
 	// Perform blob storage health check
 	const blobStorageService = container.get(BlobStorageService);
 	await blobStorageService.checkHealth();
+
+	// Run migrations
+	const migrationService = container.get(MigrationService);
+	await migrationService.runMigrations();
+
+	// Initialize storage
+	const storageInitService = container.get(StorageInitService);
+	await storageInitService.initializeStorage();
 };

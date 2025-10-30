@@ -141,24 +141,6 @@ export class LegacyStorageService {
 		await this.deleteFromCacheAndStorageBatch(redisKeys, roomKeys);
 	}
 
-	// ==========================================
-	// ARCHIVED ROOM METADATA DOMAIN LOGIC
-	// ==========================================
-
-	/**
-	 * Checks if archived room metadata exists for a given roomId in legacy storage.
-	 *
-	 * @param roomId - The unique room identifier
-	 * @returns Promise that resolves to true if archived metadata exists, false otherwise
-	 */
-	async hasArchivedRoomMetadata(roomId: string): Promise<boolean> {
-		const redisKey = RedisKeyName.ARCHIVED_ROOM + roomId;
-		const storageKey = this.keyBuilder.buildArchivedMeetRoomKey(roomId);
-
-		const archivedRoom = await this.getFromCacheAndStorage<Partial<MeetRoom>>(redisKey, storageKey);
-		return archivedRoom !== null;
-	}
-
 	/**
 	 * Deletes archived room metadata for a given roomId from legacy storage.
 	 *

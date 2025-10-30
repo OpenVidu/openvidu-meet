@@ -27,9 +27,12 @@ export class StorageInitService {
 	 * This includes global config, admin user and API key.
 	 */
 	async initializeStorage(): Promise<void> {
+		const lockKey = MeetLock.getStorageInitializationLock();
+		let lockAcquired = false;
+
 		try {
 			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
-			const lock = await this.mutexService.acquire(MeetLock.getStorageInitializationLock(), ms('30s'));
+			const lock = await this.mutexService.acquire(lockKey, ms('30s'));
 
 			if (!lock) {
 				this.logger.warn(
@@ -37,6 +40,8 @@ export class StorageInitService {
 				);
 				return;
 			}
+
+			lockAcquired = true;
 
 			const isInitialized = await this.checkStorageInitialization();
 
@@ -58,6 +63,12 @@ export class StorageInitService {
 		} catch (error) {
 			this.logger.error('Error initializing storage with default data:', error);
 			throw internalError('Failed to initialize storage');
+		} finally {
+			// Always release the lock after initialization completes or fails
+			if (lockAcquired) {
+				await this.mutexService.release(lockKey);
+				this.logger.debug('Storage initialization lock released');
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@ export * from './global-config.service.js';
 
 export * from './storage/index.js';
 
+export * from './migration.service.js';
 export * from './livekit.service.js';
 export * from './frontend-event.service.js';
 export * from './recording.service.js';

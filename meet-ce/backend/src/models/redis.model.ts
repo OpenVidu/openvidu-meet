@@ -27,5 +27,6 @@ export const enum RedisLockName {
 	RECORDING_ACTIVE = 'recording_active',
 	SCHEDULED_TASK = 'scheduled_task',
 	STORAGE_INITIALIZATION = 'storage_initialization',
+	MIGRATION = 'migration',
 	WEBHOOK = 'webhook'
 }

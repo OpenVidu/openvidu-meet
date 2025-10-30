@@ -28,19 +28,29 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 
 	/**
 	 * Creates a new recording document in the database.
-	 * Automatically generates access secrets before saving.
+	 * Automatically generates access secrets if not provided.
 	 *
-	 * @param recording - The recording information to create
+	 * @param recording - The recording information to create (optionally includes accessSecrets)
 	 * @returns The created recording (without access secrets)
 	 */
 	async create(recording: TRecording): Promise<TRecording> {
-		// Generate access secrets using RecordingHelper
+		// Check if recording already includes accessSecrets
+		const hasAccessSecrets =
+			'accessSecrets' in recording &&
+			recording.accessSecrets &&
+			typeof recording.accessSecrets === 'object' &&
+			'public' in recording.accessSecrets &&
+			'private' in recording.accessSecrets;
+
+		// Generate access secrets only if not provided
 		const recordingDoc = {
 			...recording,
-			accessSecrets: {
-				public: secureUid(10),
-				private: secureUid(10)
-			}
+			accessSecrets: hasAccessSecrets
+				? recording.accessSecrets
+				: {
+						public: secureUid(10),
+						private: secureUid(10)
+					}
 		};
 
 		const result = await this.createDocument(recordingDoc);
