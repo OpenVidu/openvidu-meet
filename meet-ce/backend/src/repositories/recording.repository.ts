@@ -51,11 +51,12 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * Updates an existing recording.
 	 *
 	 * @param recording - The recording data to update
-	 * @returns The updated recording (without access secrets), or null if not found
+	 * @returns The updated recording (without access secrets)
+	 * @throws Error if recording not found
 	 */
-	async update(recording: TRecording): Promise<TRecording | null> {
+	async update(recording: TRecording): Promise<TRecording> {
 		const document = await this.updateOne({ recordingId: recording.recordingId }, { $set: recording });
-		return document ? this.toDomain(document) : null;
+		return this.toDomain(document);
 	}
 
 	/**

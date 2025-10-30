@@ -51,12 +51,13 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 * Since there's only one document, this updates the first (and only) document in the collection.
 	 *
 	 * @param config - The complete updated global configuration data
-	 * @returns The updated global configuration, or null if no config exists
+	 * @returns The updated global configuration
+	 * @throws Error if no config exists
 	 */
-	async update(config: TGlobalConfig): Promise<TGlobalConfig | null> {
+	async update(config: TGlobalConfig): Promise<TGlobalConfig> {
 		// Update the first document in the collection (there should only be one)
 		const document = await this.updateOne({}, config);
-		return document ? this.toDomain(document) : null;
+		return this.toDomain(document);
 	}
 
 	/**

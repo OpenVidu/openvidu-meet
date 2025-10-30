@@ -46,12 +46,13 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * URLs are stored in the database without the base URL.
 	 *
 	 * @param room - The complete updated room data
-	 * @returns The updated room with enriched URLs, or null if not found
+	 * @returns The updated room with enriched URLs
+	 * @throws Error if room not found
 	 */
-	async update(room: TRoom): Promise<TRoom | null> {
+	async update(room: TRoom): Promise<TRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
 		const document = await this.updateOne({ roomId: room.roomId }, normalizedRoom);
-		return document ? this.enrichRoomWithBaseUrls(document) : null;
+		return this.enrichRoomWithBaseUrls(document);
 	}
 
 	/**
@@ -153,6 +154,20 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 		});
 	}
 
+	/**
+	 * Counts the total number of rooms.
+	 */
+	async countTotal(): Promise<number> {
+		return await this.count();
+	}
+
+	/**
+	 * Counts the number of rooms with active meetings.
+	 */
+	async countActiveRooms(): Promise<number> {
+		return await this.count({ status: 'active_meeting' });
+	}
+
 	// ==========================================
 	// PRIVATE HELPER METHODS
 	// ==========================================
@@ -191,20 +206,6 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 			// If URL parsing fails, assume it's already a path
 			return url;
 		}
-	}
-
-	/**
-	 * Counts the total number of rooms.
-	 */
-	async countTotal(): Promise<number> {
-		return await this.count();
-	}
-
-	/**
-	 * Counts the number of rooms with active meetings.
-	 */
-	async countActiveRooms(): Promise<number> {
-		return await this.count({ status: 'active_meeting' });
 	}
 
 	/**

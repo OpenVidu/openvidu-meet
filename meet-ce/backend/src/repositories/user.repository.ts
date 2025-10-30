@@ -41,11 +41,12 @@ export class UserRepository<TUser extends User = User> extends BaseRepository<TU
 	 * Updates an existing user.
 	 *
 	 * @param user - The complete updated user data (must include username)
-	 * @returns The updated user, or null if not found
+	 * @returns The updated user
+	 * @throws Error if user not found
 	 */
-	async update(user: TUser): Promise<TUser | null> {
+	async update(user: TUser): Promise<TUser> {
 		const document = await this.updateOne({ username: user.username }, user);
-		return document ? this.toDomain(document) : null;
+		return this.toDomain(document);
 	}
 
 	/**

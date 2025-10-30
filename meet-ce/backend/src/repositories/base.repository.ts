@@ -164,12 +164,10 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * Updates a document by a custom filter.
 	 * @param filter - MongoDB query filter
 	 * @param updateData - The data to update
-	 * @returns The updated document or null if not found
+	 * @returns The updated document
+	 * @throws Error if document not found or update fails
 	 */
-	protected async updateOne(
-		filter: FilterQuery<TDocument>,
-		updateData: UpdateQuery<TDocument>
-	): Promise<TDocument | null> {
+	protected async updateOne(filter: FilterQuery<TDocument>, updateData: UpdateQuery<TDocument>): Promise<TDocument> {
 		try {
 			const document = await this.model
 				.findOneAndUpdate(filter, updateData, {
@@ -178,13 +176,15 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 				})
 				.exec();
 
-			if (document) {
-				this.logger.debug('Document updated with filter');
+			if (!document) {
+				this.logger.error('No document found to update with filter:', filter);
+				throw new Error('Document not found for update');
 			}
 
+			this.logger.debug('Document updated');
 			return document;
 		} catch (error) {
-			this.logger.error('Error updating document with filter:', error);
+			this.logger.error('Error updating document:', error);
 			throw error;
 		}
 	}
@@ -203,9 +203,9 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 				throw new Error('Document not found for deletion');
 			}
 
-			this.logger.debug('Document deleted with filter');
+			this.logger.debug('Document deleted');
 		} catch (error) {
-			this.logger.error('Error deleting document with filter:', error);
+			this.logger.error('Error deleting document:', error);
 			throw error;
 		}
 	}
@@ -227,7 +227,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 			this.logger.debug(`Deleted ${deletedCount} documents`);
 		} catch (error) {
-			this.logger.error('Error deleting documents with filter:', error);
+			this.logger.error('Error deleting documents:', error);
 			throw error;
 		}
 	}

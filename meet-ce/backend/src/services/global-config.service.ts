@@ -66,14 +66,8 @@ export class GlobalConfigService {
 	 */
 	async saveGlobalConfig(config: GlobalConfig): Promise<GlobalConfig> {
 		try {
-			// Update existing config
+			// Update existing config (will throw if not found)
 			const updated = await this.globalConfigRepository.update(config);
-
-			if (!updated) {
-				this.logger.error('Global config not found, cannot update');
-				throw new Error('Global config not found. Please initialize it first.');
-			}
-
 			this.logger.info('Global config updated successfully');
 			return updated;
 		} catch (error) {
