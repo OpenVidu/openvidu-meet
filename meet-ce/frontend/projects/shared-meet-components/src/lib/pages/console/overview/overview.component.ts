@@ -1,40 +1,30 @@
-
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
-import { NavigationService, RecordingService, RoomService } from '../../../services';
-import { MeetRecordingStatus, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
-
-interface OverviewStats {
-	totalRooms: number;
-	activeRooms: number;
-	totalRecordings: number;
-	playableRecordings: number;
-	hasData: boolean;
-	isLoading: boolean;
-}
+import { MeetAnalytics } from '@openvidu-meet/typings';
+import { AnalyticsService, NavigationService } from '../../../services';
 
 @Component({
-    selector: 'ov-overview',
-    imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
-    templateUrl: './overview.component.html',
-    styleUrl: './overview.component.scss'
+	selector: 'ov-overview',
+	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
+	templateUrl: './overview.component.html',
+	styleUrl: './overview.component.scss'
 })
 export class OverviewComponent implements OnInit {
-	stats: OverviewStats = {
+	stats: MeetAnalytics = {
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
-		playableRecordings: 0,
-		hasData: false,
-		isLoading: true
+		completeRecordings: 0
 	};
 
+	isLoading = true;
+	hasData = false;
+
 	constructor(
-		private roomService: RoomService,
-		private recordingService: RecordingService,
+		private analyticsService: AnalyticsService,
 		private navigationService: NavigationService
 	) {}
 
@@ -43,34 +33,15 @@ export class OverviewComponent implements OnInit {
 	}
 
 	private async loadStats() {
+		this.isLoading = true;
+
 		try {
-			this.stats.isLoading = true;
-
-			const [roomsResp, recordingsResp] = await Promise.all([
-				this.roomService.listRooms({ maxItems: 100 }),
-				this.recordingService.listRecordings({ maxItems: 100 })
-			]);
-			const rooms = roomsResp.rooms;
-			const recordings = recordingsResp.recordings;
-
-			this.stats = {
-				totalRooms: rooms.length,
-				activeRooms: rooms.filter((room: MeetRoom) => room.status === MeetRoomStatus.ACTIVE_MEETING).length,
-				totalRecordings: recordings.length,
-				playableRecordings: recordings.filter((recording) => recording.status === MeetRecordingStatus.COMPLETE)
-					.length,
-				hasData: rooms.length > 0 || recordings.length > 0,
-				isLoading: false
-			};
+			this.stats = await this.analyticsService.getAnalytics();
+			this.hasData = this.stats.totalRooms > 0 || this.stats.totalRecordings > 0;
 		} catch {
-			this.stats = {
-				totalRooms: 0,
-				activeRooms: 0,
-				totalRecordings: 0,
-				playableRecordings: 0,
-				hasData: false,
-				isLoading: false
-			};
+			console.error('Error loading analytics data');
+		} finally {
+			this.isLoading = false;
 		}
 	}
 

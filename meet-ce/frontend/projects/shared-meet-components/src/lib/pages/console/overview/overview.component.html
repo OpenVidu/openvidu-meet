@@ -1,5 +1,5 @@
 <div class="ov-page-container ov-mb-xxl">
-	@if (stats.isLoading) {
+	@if (isLoading) {
 		<!-- Loading State -->
 		<div class="loading-state">
 			<div class="page-header">
@@ -10,7 +10,7 @@
 				<p class="subtitle">Loading your dashboard...</p>
 			</div>
 		</div>
-	} @else if (stats.hasData) {
+	} @else if (hasData) {
 		<div class="page-header">
 			<div class="title">
 				<mat-icon>dashboard</mat-icon>
@@ -58,7 +58,7 @@
 						<div class="stat-content">
 							<div class="stat-number">{{ stats.totalRecordings }}</div>
 							<div class="stat-label">Total Recordings</div>
-							<div class="stat-detail">{{ stats.playableRecordings }} available for playback</div>
+							<div class="stat-detail">{{ stats.completeRecordings }} available for playback</div>
 						</div>
 					</mat-card-content>
 					<mat-card-actions>

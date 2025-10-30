@@ -14,3 +14,4 @@ export * from './session-storage.service';
 export * from './theme.service';
 export * from './token-storage.service';
 export * from './wizard-state.service';
+export * from './analytics.service';
