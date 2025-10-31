@@ -48,3 +48,4 @@ pnpm-debug.log*
 **/**/docs/webcomponent-events.md
 
 **/**/meet-pro
+**/**/test_localstorage_state.json

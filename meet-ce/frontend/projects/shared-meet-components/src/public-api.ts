@@ -9,3 +9,4 @@ export * from './lib/interceptors/index';
 export * from './lib/guards/index';
 export * from './lib/routes/base-routes';
 export * from './lib/utils/index';
+export * from './lib/customization/index';

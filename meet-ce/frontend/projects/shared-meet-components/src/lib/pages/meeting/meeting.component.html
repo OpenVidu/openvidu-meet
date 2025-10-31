@@ -1,4 +1,19 @@
-@if (showMeeting) {
+@if (showPrejoin) {
+	<!-- Prejoin screen (Lobby) -->
+	@if (prejoinReady && plugins.lobby) {
+		<ng-container [ngComponentOutlet]="plugins.lobby" [ngComponentOutletInputs]="lobbyInputs()"> </ng-container>
+	} @else if (!prejoinReady) {
+		<div class="prejoin-loading-container">
+			<mat-spinner diameter="30"></mat-spinner>
+			<p class="prejoin-loading-text">Preparing your meeting...</p>
+		</div>
+	} @else {
+		<div class="prejoin-error-container">
+			<mat-icon class="prejoin-error-icon">error_outline</mat-icon>
+			<p class="prejoin-error-text">Unable to load the pre-join screen. Please try reloading the page.</p>
+		</div>
+	}
+} @else {
 	<ov-videoconference
 		[token]="participantToken"
 		[prejoin]="true"
@@ -33,305 +48,62 @@
 		[showThemeSelector]="features().showThemeSelector"
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"
-		(onParticipantConnected)="onParticipantConnected($event)"
-		(onParticipantLeft)="onParticipantLeft($event)"
-		(onRecordingStartRequested)="onRecordingStartRequested($event)"
-		(onRecordingStopRequested)="onRecordingStopRequested($event)"
+		(onParticipantConnected)="eventHandler.onParticipantConnected($event)"
+		(onParticipantLeft)="eventHandler.onParticipantLeft($event)"
+		(onRecordingStartRequested)="eventHandler.onRecordingStartRequested($event)"
+		(onRecordingStopRequested)="eventHandler.onRecordingStopRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
-		<ng-container *ovToolbarAdditionalButtons>
-			<!-- Copy Link Button -->
-			@if (features().canModerateRoom) {
-				@if (isMobile) {
-					<button id="copy-speaker-link" mat-menu-item (click)="copySpeakerLink()" [disableRipple]="true">
-						<mat-icon>link</mat-icon>
-						<span class="button-text">Copy meeting link</span>
-					</button>
-				} @else {
-					<button
-						id="copy-speaker-link"
-						mat-icon-button
-						(click)="copySpeakerLink()"
-						[disableRipple]="true"
-						matTooltip="Copy the meeting link"
-					>
-						<mat-icon>link</mat-icon>
-					</button>
+		<!-- Toolbar Additional Buttons Plugin -->
+		@if (plugins.toolbar?.additionalButtons) {
+			<ng-container *ovToolbarAdditionalButtons>
+				<ng-container
+					[ngComponentOutlet]="plugins.toolbar!.additionalButtons!"
+					[ngComponentOutletInputs]="toolbarAdditionalButtonsInputs()"
+				></ng-container>
+			</ng-container>
+		}
+
+		<!-- Toolbar Leave Button Plugin -->
+		@if (plugins.toolbar?.leaveButton) {
+			<ng-container *ovToolbarLeaveButton>
+				<ng-container
+					[ngComponentOutlet]="plugins.toolbar!.leaveButton!"
+					[ngComponentOutletInputs]="toolbarLeaveButtonInputs()"
+				></ng-container>
+			</ng-container>
+		}
+
+		<!-- Participant Panel After Local Participant Plugin -->
+		@if (plugins.participantPanel?.afterLocalParticipant) {
+			<ng-container *ovParticipantPanelAfterLocalParticipant>
+				<ng-container
+					[ngComponentOutlet]="plugins.participantPanel!.afterLocalParticipant!"
+					[ngComponentOutletInputs]="participantPanelAfterLocalInputs()"
+				></ng-container>
+			</ng-container>
+		}
+
+		<!-- Layout Additional Elements Plugin -->
+		@if (plugins.layout?.additionalElements) {
+			<ng-container *ovLayoutAdditionalElements>
+				@if (onlyModeratorIsPresent) {
+					<ng-container
+						[ngComponentOutlet]="plugins.layout!.additionalElements!"
+						[ngComponentOutletInputs]="layoutAdditionalElementsInputs()"
+					></ng-container>
 				}
-			}
-		</ng-container>
+			</ng-container>
+		}
 
-		<ng-container *ovToolbarLeaveButton>
-			@if (features().canModerateRoom) {
-				<!-- Leave Button -->
-				<button
-					id="leave-btn"
-					mat-icon-button
-					[matMenuTriggerFor]="leaveMenu"
-					matTooltip="Leave options"
-					[disableRipple]="true"
-					class="custom-leave-btn"
-					[class.mobile-btn]="isMobile"
-				>
-					<mat-icon>call_end</mat-icon>
-				</button>
-				<mat-menu #leaveMenu="matMenu">
-					<button mat-menu-item (click)="leaveMeeting()" id="leave-option">
-						<mat-icon>logout</mat-icon>
-						<span>Leave meeting</span>
-					</button>
-					<mat-divider></mat-divider>
-					<button mat-menu-item (click)="endMeeting()" id="end-meeting-option">
-						<mat-icon>no_meeting_room</mat-icon>
-						<span>End meeting for all</span>
-					</button>
-				</mat-menu>
-			}
-		</ng-container>
-
-		<ng-container *ovParticipantPanelAfterLocalParticipant>
-			@if (features().canModerateRoom) {
-				<div class="share-meeting-link-container">
-					<ov-share-meeting-link
-						[meetingUrl]="hostname + '/room/' + roomId"
-						(copyClicked)="copySpeakerLink()"
-					></ov-share-meeting-link>
-				</div>
-			}
-		</ng-container>
-
-		<ng-container *ovLayoutAdditionalElements>
-			@if (features().canModerateRoom && remoteParticipants.length === 0) {
-				<div class="main-share-meeting-link-container fade-in-delayed-more OV_big">
-					<ov-share-meeting-link
-						class="main-share-meeting-link"
-						[title]="'Start collaborating'"
-						[subtitle]="'Share this link to bring others into the meeting'"
-						[titleSize]="'xl'"
-						[titleWeight]="'bold'"
-						[meetingUrl]="hostname + '/room/' + roomId"
-						(copyClicked)="copySpeakerLink()"
-					></ov-share-meeting-link>
-				</div>
-			}
-		</ng-container>
-
-		<ng-container *ovParticipantPanelItem="let participant">
-			<!-- If Meet participant is moderator -->
-			@if (features().canModerateRoom) {
-				<div class="participant-item-container">
-					<!-- Local participant -->
-					@if (participant.isLocal) {
-						<ov-participant-panel-item [participant]="participant">
-							<ng-container *ovParticipantPanelParticipantBadge>
-								<span class="moderator-badge">
-									<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
-										shield_person
-									</mat-icon>
-								</span>
-							</ng-container>
-						</ov-participant-panel-item>
-					} @else {
-						<!-- Remote participant -->
-						<ov-participant-panel-item [participant]="participant">
-							@if (participant.isModerator()) {
-								<ng-container *ovParticipantPanelParticipantBadge>
-									<span class="moderator-badge">
-										<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
-											shield_person
-										</mat-icon>
-									</span>
-								</ng-container>
-							}
-							<div *ovParticipantPanelItemElements>
-								<!-- Button to make moderator if not -->
-								@if (localParticipant!.isOriginalModerator()) {
-									@if (participant.isModerator() && !participant.isOriginalModerator()) {
-										<button
-											mat-icon-button
-											(click)="unmakeModerator(participant)"
-											matTooltip="Unmake participant moderator"
-											class="remove-moderator-btn"
-										>
-											<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
-										</button>
-									} @else {
-										@if (!participant.isModerator()) {
-											<button
-												mat-icon-button
-												(click)="makeModerator(participant)"
-												matTooltip="Make participant moderator"
-												class="make-moderator-btn"
-											>
-												<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
-											</button>
-										}
-									}
-								} @else {
-									@if (!participant.isModerator()) {
-										<button
-											mat-icon-button
-											(click)="makeModerator(participant)"
-											matTooltip="Make participant moderator"
-											class="make-moderator-btn"
-										>
-											<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
-										</button>
-									}
-								}
-
-								<!-- Button to kick participant -->
-								@if (!participant.isOriginalModerator()) {
-									<button
-										mat-icon-button
-										(click)="kickParticipant(participant)"
-										matTooltip="Kick participant"
-										class="force-disconnect-btn"
-									>
-										<mat-icon>call_end</mat-icon>
-									</button>
-								}
-							</div>
-						</ov-participant-panel-item>
-					}
-				</div>
-			} @else {
-				<!-- If I can't moderate the room -->
-				<div class="participant-item-container">
-					<ov-participant-panel-item [participant]="participant">
-						@if (participant.isModerator()) {
-							<ng-container *ovParticipantPanelParticipantBadge>
-								<span class="moderator-badge">
-									<mat-icon matTooltip="Moderator" class="material-symbols-outlined">
-										shield_person
-									</mat-icon>
-								</span>
-							</ng-container>
-						}
-					</ov-participant-panel-item>
-				</div>
-			}
-		</ng-container>
+		<!-- Participant Panel Item Plugin -->
+		@if (plugins.participantPanel?.item) {
+			<ng-container *ovParticipantPanelItem="let participant">
+				<ng-container
+					[ngComponentOutlet]="plugins.participantPanel!.item!"
+					[ngComponentOutletInputs]="participantPanelItemInputsMap().get(participant.identity)"
+				></ng-container>
+			</ng-container>
+		}
 	</ov-videoconference>
-} @else {
-	<!-- Move this logic to lobby meeting page -->
-	<div class="ov-page-container">
-		<div class="room-access-container fade-in">
-			<!-- Header Section -->
-			<div class="room-header">
-				<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
-				<div class="room-info">
-					<h1 class="room-title">{{ roomName }}</h1>
-				</div>
-			</div>
-
-			<!-- Action Cards Grid -->
-			<div class="action-cards-grid">
-				<!-- Join Room Card -->
-				<mat-card class="action-card primary-card fade-in" [ngClass]="{ 'room-closed-card': roomClosed }">
-					<mat-card-header class="card-header">
-						<mat-icon class="ov-room-icon card-icon">{{ roomClosed ? 'lock' : 'meeting_room' }}</mat-icon>
-						<div class="card-title-group">
-							<mat-card-title>{{ roomClosed ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
-							<mat-card-subtitle>{{
-								roomClosed
-									? 'This room is not available for meetings'
-									: 'Enter the room and start connecting'
-							}}</mat-card-subtitle>
-						</div>
-					</mat-card-header>
-
-					<mat-card-content class="card-content">
-						@if (!roomClosed) {
-							<form [formGroup]="participantForm" (ngSubmit)="submitAccessMeeting()" class="join-form">
-								<mat-form-field appearance="outline" class="name-field">
-									<mat-label>Your display name</mat-label>
-									<input
-										id="participant-name-input"
-										matInput
-										placeholder="Enter your name"
-										formControlName="name"
-										required
-									/>
-									<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
-									@if (participantForm.get('name')?.hasError('required')) {
-										<mat-error> The name is <strong>required</strong> </mat-error>
-									}
-								</mat-form-field>
-
-								<button
-									mat-raised-button
-									color="primary"
-									id="participant-name-submit"
-									type="submit"
-									class="join-button"
-									[disabled]="participantForm.invalid"
-								>
-									<span>Join Meeting</span>
-								</button>
-							</form>
-						} @else {
-							<div class="room-closed-message">
-								<mat-icon class="warning-icon">warning</mat-icon>
-								<p>
-									Sorry, this room is closed. You cannot join at this time. Please contact the meeting
-									organizer for more information.
-								</p>
-							</div>
-						}
-					</mat-card-content>
-				</mat-card>
-
-				<!-- View Recordings Card -->
-				@if (showRecordingCard) {
-					<mat-card class="action-card secondary-card fade-in-delayed">
-						<mat-card-header class="card-header">
-							<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
-							<div class="card-title-group">
-								<mat-card-title>View Recordings</mat-card-title>
-								<mat-card-subtitle>Browse and manage past recordings</mat-card-subtitle>
-							</div>
-						</mat-card-header>
-
-						<mat-card-content class="card-content">
-							<div class="recordings-info">
-								<p class="recordings-description">
-									Access previously recorded meetings from this room. You can watch, download, or
-									manage existing recordings.
-								</p>
-							</div>
-
-							<button
-								id="view-recordings-btn"
-								mat-stroked-button
-								color="accent"
-								(click)="goToRecordings()"
-								class="recordings-button"
-							>
-								<span>Browse Recordings</span>
-							</button>
-						</mat-card-content>
-					</mat-card>
-				}
-			</div>
-
-			<!-- Room URL Badge -->
-			@if (!roomClosed && features().canModerateRoom) {
-				<ov-share-meeting-link
-					[meetingUrl]="hostname + '/room/' + roomId"
-					(copyClicked)="copySpeakerLink()"
-				></ov-share-meeting-link>
-			}
-
-			<!-- Quick Actions -->
-			@if (showBackButton) {
-				<div class="quick-actions fade-in-delayed-more">
-					<button mat-button class="quick-action-button" (click)="goBack()">
-						<mat-icon>arrow_back</mat-icon>
-						<span>{{ backButtonText }}</span>
-					</button>
-				</div>
-			}
-		</div>
-	</div>
 }

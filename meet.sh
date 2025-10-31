@@ -393,6 +393,12 @@ add_common_dev_commands() {
   CMD_NAMES+=("shared-meet-components")
   CMD_COLORS+=("bgYellow.dark")
   CMD_COMMANDS+=("wait-on ${components_path} && pnpm --filter @openvidu-meet/frontend run lib:serve")
+
+  # Testapp
+  CMD_NAMES+=("testapp")
+  CMD_COLORS+=("blue")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
+
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
@@ -473,6 +479,7 @@ add_browsersync_commands() {
       const local = urls?.get('local') ?? 'undefined';
       const external = urls?.get('external') ?? 'undefined';
       console.log(chalk.cyanBright('   OpenVidu Meet:    http://localhost:6080'));
+      console.log(chalk.cyanBright('   OpenVidu Meet Testapp:    http://localhost:5080'));
       console.log(chalk.cyanBright('   Live reload Local:    ' + local));
       console.log(chalk.cyanBright('   Live reload LAN: ' + external));
 

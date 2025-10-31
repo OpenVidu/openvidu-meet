@@ -13,6 +13,10 @@ export interface DialogOptions {
 	forceCheckboxText?: string;
 	forceCheckboxDescription?: string;
 	forceConfirmCallback?: () => void;
+	// Action buttons visibility
+	showConfirmButton?: boolean;
+	showCancelButton?: boolean;
+	showActions?: boolean;
 }
 
 export interface DeleteRoomDialogOptions {

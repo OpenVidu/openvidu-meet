@@ -1,65 +1,36 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { CommonModule } from '@angular/common';
-import { Component, effect, OnInit, Signal } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule, MatIconButton } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatRippleModule } from '@angular/material/core';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
-import { ShareMeetingLinkComponent } from '../../components';
-import { CustomParticipantModel, ErrorReason } from '../../models';
+import { CommonModule, NgComponentOutlet } from '@angular/common';
+import { Component, computed, effect, inject, OnInit, Signal, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CustomParticipantModel } from '../../models';
+import { MeetingComponentsPlugins, MEETING_COMPONENTS_TOKEN, MEETING_ACTION_HANDLER_TOKEN } from '../../customization';
 import {
-	AppDataService,
 	ApplicationFeatures,
-	AuthService,
 	FeatureConfigurationService,
 	GlobalConfigService,
 	MeetingService,
-	NavigationService,
 	NotificationService,
 	ParticipantService,
-	RecordingService,
-	RoomService,
-	SessionStorageService,
-	TokenStorageService,
-	WebComponentManagerService
+	WebComponentManagerService,
+	MeetingEventHandlerService
 } from '../../services';
-import {
-	LeftEventReason,
-	MeetRoom,
-	MeetRoomStatus,
-	ParticipantRole,
-	WebComponentEvent,
-	WebComponentOutboundEventMessage,
-	MeetParticipantRoleUpdatedPayload,
-	MeetRoomConfigUpdatedPayload,
-	MeetSignalType
-} from '@openvidu-meet/typings';
+import { MeetRoom, ParticipantRole } from '@openvidu-meet/typings';
 import {
 	ParticipantService as ComponentParticipantService,
-	DataPacket_Kind,
 	OpenViduComponentsUiModule,
 	OpenViduService,
 	OpenViduThemeMode,
 	OpenViduThemeService,
-	ParticipantLeftEvent,
-	ParticipantLeftReason,
-	ParticipantModel,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent,
-	RemoteParticipant,
 	Room,
-	RoomEvent,
 	Track,
 	ViewportService
 } from 'openvidu-components-angular';
 import { combineLatest, Subject, takeUntil } from 'rxjs';
+import { MeetingLobbyService } from '../../services/meeting/meeting-lobby.service';
+import { MeetingPluginManagerService } from '../../services/meeting/meeting-plugin-manager.service';
+import { LobbyState } from '../../models/lobby.model';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
 	selector: 'ov-meeting',
@@ -67,71 +38,56 @@ import { combineLatest, Subject, takeUntil } from 'rxjs';
 	styleUrls: ['./meeting.component.scss'],
 	imports: [
 		OpenViduComponentsUiModule,
-		// ApiDirectiveModule,
 		CommonModule,
-		MatFormFieldModule,
-		MatInputModule,
 		FormsModule,
 		ReactiveFormsModule,
-		MatCardModule,
-		MatButtonModule,
+		NgComponentOutlet,
 		MatIconModule,
-		MatIconButton,
-		MatMenuModule,
-		MatDividerModule,
-		MatTooltipModule,
-		MatRippleModule,
-		ShareMeetingLinkComponent
-	]
+		MatProgressSpinnerModule
+	],
+	providers: [MeetingLobbyService, MeetingPluginManagerService, MeetingEventHandlerService]
 })
 export class MeetingComponent implements OnInit {
-	participantForm = new FormGroup({
-		name: new FormControl('', [Validators.required])
-	});
+	lobbyState?: LobbyState;
+	protected localParticipant = signal<CustomParticipantModel | undefined>(undefined);
 
-	hasRecordings = false;
-	showRecordingCard = false;
-	roomClosed = false;
+	// Reactive signal for remote participants to trigger computed updates
+	protected remoteParticipants = signal<CustomParticipantModel[]>([]);
 
-	showBackButton = true;
-	backButtonText = 'Back';
+	// Signal to track participant updates (role changes, etc.) that don't change array references
+	protected participantsVersion = signal<number>(0);
 
-	room?: MeetRoom;
-	roomId = '';
-	roomSecret = '';
-	participantName = '';
-	participantToken = '';
-	localParticipant?: CustomParticipantModel;
-	remoteParticipants: CustomParticipantModel[] = [];
-
-	showMeeting = false;
+	showPrejoin = true;
+	prejoinReady = false;
 	features: Signal<ApplicationFeatures>;
-	meetingEndedByMe = false;
 
-	private destroy$ = new Subject<void>();
+	// Injected plugins
+	plugins: MeetingComponentsPlugins;
 
-	constructor(
-		protected route: ActivatedRoute,
-		protected roomService: RoomService,
-		protected meetingService: MeetingService,
-		protected participantService: ParticipantService,
-		protected recordingService: RecordingService,
-		protected featureConfService: FeatureConfigurationService,
-		protected authService: AuthService,
-		protected appDataService: AppDataService,
-		protected sessionStorageService: SessionStorageService,
-		protected wcManagerService: WebComponentManagerService,
-		protected openviduService: OpenViduService,
-		protected ovComponentsParticipantService: ComponentParticipantService,
-		protected navigationService: NavigationService,
-		protected notificationService: NotificationService,
-		protected clipboard: Clipboard,
-		protected viewportService: ViewportService,
-		protected ovThemeService: OpenViduThemeService,
-		protected configService: GlobalConfigService,
-		protected tokenStorageService: TokenStorageService
-	) {
+	protected meetingService = inject(MeetingService);
+	protected participantService = inject(ParticipantService);
+	protected featureConfService = inject(FeatureConfigurationService);
+	protected wcManagerService = inject(WebComponentManagerService);
+	protected openviduService = inject(OpenViduService);
+	protected ovComponentsParticipantService = inject(ComponentParticipantService);
+	protected viewportService = inject(ViewportService);
+	protected ovThemeService = inject(OpenViduThemeService);
+	protected configService = inject(GlobalConfigService);
+	protected clipboard = inject(Clipboard);
+	protected notificationService = inject(NotificationService);
+	protected lobbyService = inject(MeetingLobbyService);
+	protected pluginManager = inject(MeetingPluginManagerService);
+
+	// Public for direct template binding (uses arrow functions to preserve 'this' context)
+	public eventHandler = inject(MeetingEventHandlerService);
+
+	// Injected action handler (optional - falls back to default implementation)
+	protected actionHandler = inject(MEETING_ACTION_HANDLER_TOKEN, { optional: true });
+	protected destroy$ = new Subject<void>();
+
+	constructor() {
 		this.features = this.featureConfService.features;
+		this.plugins = inject(MEETING_COMPONENTS_TOKEN, { optional: true }) || {};
 
 		// Change theme variables when custom theme is enabled
 		effect(() => {
@@ -151,8 +107,125 @@ export class MeetingComponent implements OnInit {
 		});
 	}
 
+	// Computed signals for plugin inputs
+	protected toolbarAdditionalButtonsInputs = computed(() =>
+		this.pluginManager.getToolbarAdditionalButtonsInputs(this.features().canModerateRoom, this.isMobile, () =>
+			this.handleCopySpeakerLink()
+		)
+	);
+
+	protected toolbarLeaveButtonInputs = computed(() =>
+		this.pluginManager.getToolbarLeaveButtonInputs(
+			this.features().canModerateRoom,
+			this.isMobile,
+			() => this.openviduService.disconnectRoom(),
+			() => this.endMeeting()
+		)
+	);
+
+	protected participantPanelAfterLocalInputs = computed(() =>
+		this.pluginManager.getParticipantPanelAfterLocalInputs(
+			this.features().canModerateRoom,
+			`${this.hostname}/room/${this.roomId}`,
+			() => this.handleCopySpeakerLink()
+		)
+	);
+
+	protected layoutAdditionalElementsInputs = computed(() => {
+		const showOverlay = this.onlyModeratorIsPresent;
+		return this.pluginManager.getLayoutAdditionalElementsInputs(
+			showOverlay,
+			`${this.hostname}/room/${this.roomId}`,
+			() => this.handleCopySpeakerLink()
+		);
+	});
+
+	protected lobbyInputs = computed(() => {
+		if (!this.lobbyState) return {};
+		return this.pluginManager.getLobbyInputs(
+			this.roomName,
+			`${this.hostname}/room/${this.roomId}`,
+			this.lobbyState.roomClosed,
+			this.lobbyState.showRecordingCard,
+			!this.lobbyState.roomClosed && this.features().canModerateRoom,
+			this.lobbyState.showBackButton,
+			this.lobbyState.backButtonText,
+			this.lobbyState.participantForm,
+			() => this.submitAccessMeeting(),
+			() => this.lobbyService.goToRecordings(),
+			() => this.lobbyService.goBack(),
+			() => this.handleCopySpeakerLink()
+		);
+	});
+
+	protected participantPanelItemInputsMap = computed(() => {
+		const local = this.localParticipant();
+		const remotes = this.remoteParticipants();
+		// Force reactivity by reading participantsVersion signal
+		this.participantsVersion();
+		const allParticipants: CustomParticipantModel[] = local ? [local, ...remotes] : remotes;
+
+		const inputsMap = new Map<string, any>();
+		for (const participant of allParticipants) {
+			const inputs = this.pluginManager.getParticipantPanelItemInputs(
+				participant,
+				allParticipants,
+				(p) => this.handleMakeModerator(p),
+				(p) => this.handleUnmakeModerator(p),
+				(p) => this.handleKickParticipant(p)
+			);
+			inputsMap.set(participant.identity, inputs);
+		}
+
+		return inputsMap;
+	});
+
+	get participantName(): string {
+		return this.lobbyService.participantName;
+	}
+
+	get participantToken(): string {
+		return this.lobbyState!.participantToken;
+	}
+
+	get room(): MeetRoom | undefined {
+		return this.lobbyState?.room;
+	}
+
 	get roomName(): string {
-		return this.room?.roomName || 'Room';
+		return this.lobbyState?.room?.roomName || 'Room';
+	}
+
+	get roomId(): string {
+		return this.lobbyState?.roomId || '';
+	}
+
+	get roomSecret(): string {
+		return this.lobbyState?.roomSecret || '';
+	}
+
+	set roomSecret(value: string) {
+		if (this.lobbyState) {
+			this.lobbyState.roomSecret = value;
+		}
+	}
+
+	get onlyModeratorIsPresent(): boolean {
+		return this.features().canModerateRoom && !this.hasRemoteParticipants;
+	}
+
+	get hasRemoteParticipants(): boolean {
+		return this.remoteParticipants().length > 0;
+	}
+
+	get hasRecordings(): boolean {
+		return this.lobbyState?.hasRecordings || false;
+	}
+
+	set hasRecordings(value: boolean) {
+		if (this.lobbyState) {
+			this.lobbyState.hasRecordings = value;
+		}
 	}
 
 	get hostname(): string {
@@ -164,14 +237,18 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.roomId = this.roomService.getRoomId();
-		this.roomSecret = this.roomService.getRoomSecret();
-		this.room = await this.roomService.getRoom(this.roomId);
-		this.roomClosed = this.room.status === MeetRoomStatus.CLOSED;
-
-		await this.setBackButtonText();
-		await this.checkForRecordings();
-		await this.initializeParticipantName();
+		try {
+			this.lobbyState = await this.lobbyService.initialize();
+			this.prejoinReady = true;
+		} catch (error) {
+			console.error('Error initializing lobby state:', error);
+			this.notificationService.showDialog({
+				title: 'Error',
+				message: 'An error occurred while initializing the meeting lobby. Please try again later.',
+				showCancelButton: false,
+				confirmText: 'OK'
+			});
+		}
 	}
 
 	ngOnDestroy() {
@@ -179,129 +256,14 @@ export class MeetingComponent implements OnInit {
 		this.destroy$.complete();
 	}
 
-	/**
-	 * Sets the back button text based on the application mode and user role
-	 */
-	private async setBackButtonText() {
-		const isStandaloneMode = this.appDataService.isStandaloneMode();
-		const redirection = this.navigationService.getLeaveRedirectURL();
-		const isAdmin = await this.authService.isAdmin();
-
-		if (isStandaloneMode && !redirection && !isAdmin) {
-			// If in standalone mode, no redirection URL and not an admin, hide the back button
-			this.showBackButton = false;
-			return;
-		}
-
-		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Rooms' : 'Back';
-	}
-
-	/**
-	 * Checks if there are recordings in the room and updates the visibility of the recordings card.
-	 *
-	 * It is necessary to previously generate a recording token in order to list the recordings.
-	 * If token generation fails or the user does not have sufficient permissions to list recordings,
-	 * the error will be caught and the recordings card will be hidden (`showRecordingCard` will be set to `false`).
-	 *
-	 * If recordings exist, sets `showRecordingCard` to `true`; otherwise, to `false`.
-	 */
-	private async checkForRecordings() {
-		try {
-			const { canRetrieveRecordings } = await this.recordingService.generateRecordingToken(
-				this.roomId,
-				this.roomSecret
-			);
-
-			if (!canRetrieveRecordings) {
-				this.showRecordingCard = false;
-				return;
-			}
-
-			const { recordings } = await this.recordingService.listRecordings({
-				maxItems: 1,
-				roomId: this.roomId,
-				fields: 'recordingId'
-			});
-			this.hasRecordings = recordings.length > 0;
-			this.showRecordingCard = this.hasRecordings;
-		} catch (error) {
-			console.error('Error checking for recordings:', error);
-			this.showRecordingCard = false;
-		}
-	}
-
-	/**
-	 * Initializes the participant name in the form control.
-	 *
-	 * Retrieves the participant name from the ParticipantTokenService first, and if not available,
-	 * falls back to the authenticated username. Sets the retrieved name value in the
-	 * participant form's 'name' control if a valid name is found.
-	 *
-	 * @returns A promise that resolves when the participant name has been initialized
-	 */
-	private async initializeParticipantName() {
-		// Apply participant name from ParticipantTokenService if set, otherwise use authenticated username
-		const currentParticipantName = this.participantService.getParticipantName();
-		const username = await this.authService.getUsername();
-		const participantName = currentParticipantName || username;
-
-		if (participantName) {
-			this.participantForm.get('name')?.setValue(participantName);
-		}
-	}
-
-	async goToRecordings() {
-		try {
-			await this.navigationService.navigateTo(`room/${this.roomId}/recordings`, { secret: this.roomSecret });
-		} catch (error) {
-			console.error('Error navigating to recordings:', error);
-		}
-	}
-
-	/**
-	 * Handles the back button click event and navigates accordingly
-	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the rooms page
-	 */
-	async goBack() {
-		if (this.appDataService.isEmbeddedMode()) {
-			this.wcManagerService.close();
-		}
-
-		const redirectTo = this.navigationService.getLeaveRedirectURL();
-		if (redirectTo) {
-			// Navigate to the specified redirect URL
-			await this.navigationService.redirectToLeaveUrl();
-			return;
-		}
-
-		if (this.appDataService.isStandaloneMode()) {
-			// Navigate to rooms page
-			await this.navigationService.navigateTo('/rooms');
-		}
-	}
-
 	async submitAccessMeeting() {
-		const { valid, value } = this.participantForm;
-		if (!valid || !value.name?.trim()) {
-			// If the form is invalid, do not proceed
-			console.warn('Participant form is invalid. Cannot access meeting.');
-			return;
-		}
-
-		this.participantName = value.name.trim();
-
 		try {
-			await this.generateParticipantToken();
-			await this.addParticipantNameToUrl();
-			await this.roomService.loadRoomConfig(this.roomId);
+			await this.lobbyService.submitAccess();
 
 			// The meeting view must be shown before loading the appearance config,
 			// as it contains theme information that might be applied immediately
 			// when the meeting view is rendered
-			this.showMeeting = true;
+			this.showPrejoin = false;
 			await this.configService.loadRoomsAppearanceConfig();
 
 			combineLatest([
@@ -310,8 +272,15 @@ export class MeetingComponent implements OnInit {
 			])
 				.pipe(takeUntil(this.destroy$))
 				.subscribe(([participants, local]) => {
-					this.remoteParticipants = participants as CustomParticipantModel[];
-					this.localParticipant = local as CustomParticipantModel;
+					this.remoteParticipants.set(participants as CustomParticipantModel[]);
+					this.localParticipant.set(local as CustomParticipantModel);
+
+					// Update action handler context if provided
+					if (this.actionHandler) {
+						this.actionHandler.roomId = this.roomId;
+						this.actionHandler.roomSecret = this.roomSecret;
+						this.actionHandler.localParticipant = this.localParticipant();
+					}
 
 					this.updateVideoPinState();
 				});
@@ -320,205 +289,24 @@ export class MeetingComponent implements OnInit {
 		}
 	}
 
-	/**
-	 * Centralized logic for managing video pinning based on
-	 * remote participants and local screen sharing state.
-	 */
-	private updateVideoPinState(): void {
-		if (!this.localParticipant) return;
-
-		const hasRemote = this.remoteParticipants.length > 0;
-		const isSharing = this.localParticipant.isScreenShareEnabled;
-
-		if (hasRemote && isSharing) {
-			// Pin the local screen share to appear bigger
-			this.localParticipant.setVideoPinnedBySource(Track.Source.ScreenShare, true);
-		} else {
-			// Unpin everything if no remote participants or not sharing
-			this.localParticipant.setAllVideoPinned(false);
-		}
-	}
-
-	/**
-	 * Generates a participant token for joining a meeting.
-	 *
-	 * @throws When participant already exists in the room (status 409)
-	 * @returns Promise that resolves when token is generated
-	 */
-	private async generateParticipantToken() {
-		try {
-			this.participantToken = await this.participantService.generateToken({
-				roomId: this.roomId,
-				secret: this.roomSecret,
-				participantName: this.participantName
-			});
-			this.participantName = this.participantService.getParticipantName()!;
-		} catch (error: any) {
-			console.error('Error generating participant token:', error);
-			switch (error.status) {
-				case 400:
-					// Invalid secret
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET, true);
-					break;
-				case 404:
-					// Room not found
-					await this.navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM, true);
-					break;
-				case 409:
-					// Room is closed
-					await this.navigationService.redirectToErrorPage(ErrorReason.CLOSED_ROOM, true);
-					break;
-				default:
-					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);
-			}
-
-			throw new Error('Error generating participant token');
-		}
-	}
-
-	/**
-	 * Add participant name as a query parameter to the URL
-	 */
-	private async addParticipantNameToUrl() {
-		await this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
-			'participant-name': this.participantName
-		});
-	}
-
 	onRoomCreated(room: Room) {
-		room.on(
-			RoomEvent.DataReceived,
-			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
-				const event = JSON.parse(new TextDecoder().decode(payload));
-
-				switch (topic) {
-					case 'recordingStopped': {
-						// If a 'recordingStopped' event is received and there was no previous recordings,
-						// update the hasRecordings flag and refresh the recording token
-						if (this.hasRecordings) return;
-
-						this.hasRecordings = true;
-
-						try {
-							await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
-						} catch (error) {
-							console.error('Error refreshing recording token:', error);
-						}
-
-						break;
-					}
-					case MeetSignalType.MEET_ROOM_CONFIG_UPDATED: {
-						// Update room config
-						const { config } = event as MeetRoomConfigUpdatedPayload;
-						this.featureConfService.setRoomConfig(config);
-
-						// Refresh recording token if recording is enabled
-						if (config.recording.enabled) {
-							try {
-								await this.recordingService.generateRecordingToken(this.roomId, this.roomSecret);
-							} catch (error) {
-								console.error('Error refreshing recording token:', error);
-							}
-						}
-						break;
-					}
-					case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED: {
-						// Update participant role
-						const { participantIdentity, newRole, secret } = event as MeetParticipantRoleUpdatedPayload;
-
-						if (participantIdentity === this.localParticipant!.identity) {
-							if (!secret) return;
-
-							this.roomSecret = secret;
-							this.roomService.setRoomSecret(secret, false);
-
-							try {
-								await this.participantService.refreshParticipantToken({
-									roomId: this.roomId,
-									secret,
-									participantName: this.participantName,
-									participantIdentity
-								});
-
-								this.localParticipant!.meetRole = newRole;
-								this.notificationService.showSnackbar(`You have been assigned the role of ${newRole}`);
-							} catch (error) {
-								console.error('Error refreshing participant token to update role:', error);
-							}
-						} else {
-							const participant = this.remoteParticipants.find((p) => p.identity === participantIdentity);
-							if (participant) {
-								participant.meetRole = newRole;
-							}
-						}
-
-						break;
-					}
-				}
+		this.eventHandler.setupRoomListeners(room, {
+			roomId: this.roomId,
+			roomSecret: this.roomSecret,
+			participantName: this.participantName,
+			localParticipant: () => this.localParticipant(),
+			remoteParticipants: () => this.remoteParticipants(),
+			onHasRecordingsChanged: (hasRecordings) => {
+				this.hasRecordings = hasRecordings;
+			},
+			onRoomSecretChanged: (secret) => {
+				this.roomSecret = secret;
+			},
+			onParticipantRoleUpdated: () => {
+				// Increment version to trigger reactivity in participant panel items
+				this.participantsVersion.update((v) => v + 1);
 			}
-		);
-	}
-
-	onParticipantConnected(event: ParticipantModel) {
-		const message: WebComponentOutboundEventMessage<WebComponentEvent.JOINED> = {
-			event: WebComponentEvent.JOINED,
-			payload: {
-				roomId: event.getProperties().room?.name || '',
-				participantIdentity: event.identity
-			}
-		};
-		this.wcManagerService.sendMessageToParent(message);
-	}
-
-	async onParticipantLeft(event: ParticipantLeftEvent) {
-		let leftReason = this.getReasonParamFromEvent(event.reason);
-		if (leftReason === LeftEventReason.MEETING_ENDED && this.meetingEndedByMe) {
-			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
-		}
-
-		// Send LEFT event to the parent component
-		const message: WebComponentOutboundEventMessage<WebComponentEvent.LEFT> = {
-			event: WebComponentEvent.LEFT,
-			payload: {
-				roomId: event.roomName,
-				participantIdentity: event.participantName,
-				reason: leftReason
-			}
-		};
-		this.wcManagerService.sendMessageToParent(message);
-
-		// Remove the moderator secret (and stored tokens) from session storage
-		// if the participant left for a reason other than browser unload
-		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
-			this.sessionStorageService.removeRoomSecret();
-			this.tokenStorageService.clearParticipantToken();
-			this.tokenStorageService.clearRecordingToken();
-		}
-
-		// Navigate to the disconnected page with the reason
-		await this.navigationService.navigateTo('disconnected', { reason: leftReason }, true);
-	}
-
-	/**
-	 * Maps ParticipantLeftReason to LeftEventReason.
-	 * This method translates the technical reasons for a participant leaving the room
-	 * into user-friendly reasons that can be used in the UI or for logging purposes.
-	 * @param reason The technical reason for the participant leaving the room.
-	 * @returns The corresponding LeftEventReason.
-	 */
-	private getReasonParamFromEvent(reason: ParticipantLeftReason): LeftEventReason {
-		const reasonMap: Record<ParticipantLeftReason, LeftEventReason> = {
-			[ParticipantLeftReason.LEAVE]: LeftEventReason.VOLUNTARY_LEAVE,
-			[ParticipantLeftReason.BROWSER_UNLOAD]: LeftEventReason.VOLUNTARY_LEAVE,
-			[ParticipantLeftReason.NETWORK_DISCONNECT]: LeftEventReason.NETWORK_DISCONNECT,
-			[ParticipantLeftReason.SIGNAL_CLOSE]: LeftEventReason.NETWORK_DISCONNECT,
-			[ParticipantLeftReason.SERVER_SHUTDOWN]: LeftEventReason.SERVER_SHUTDOWN,
-			[ParticipantLeftReason.PARTICIPANT_REMOVED]: LeftEventReason.PARTICIPANT_KICKED,
-			[ParticipantLeftReason.ROOM_DELETED]: LeftEventReason.MEETING_ENDED,
-			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.UNKNOWN,
-			[ParticipantLeftReason.OTHER]: LeftEventReason.UNKNOWN
-		};
-		return reasonMap[reason] ?? LeftEventReason.UNKNOWN;
+		});
 	}
 
 	async leaveMeeting() {
@@ -528,96 +316,125 @@ export class MeetingComponent implements OnInit {
 	async endMeeting() {
 		if (!this.participantService.isModeratorParticipant()) return;
 
-		this.meetingEndedByMe = true;
+		this.eventHandler.setMeetingEndedByMe(true);
 
 		try {
 			await this.meetingService.endMeeting(this.roomId);
 		} catch (error) {
 			console.error('Error ending meeting:', error);
-			this.notificationService.showSnackbar('Failed to end meeting');
-		}
-	}
-
-	async kickParticipant(participant: CustomParticipantModel) {
-		if (!this.participantService.isModeratorParticipant()) return;
-
-		try {
-			await this.meetingService.kickParticipant(this.roomId, participant.identity);
-		} catch (error) {
-			console.error('Error kicking participant:', error);
-			this.notificationService.showSnackbar('Failed to kick participant');
-		}
-	}
-
-	/**
-	 * Makes a participant as moderator.
-	 * @param participant The participant to make as moderator.
-	 */
-	async makeModerator(participant: CustomParticipantModel) {
-		if (!this.participantService.isModeratorParticipant()) return;
-
-		try {
-			await this.meetingService.changeParticipantRole(
-				this.roomId,
-				participant.identity,
-				ParticipantRole.MODERATOR
-			);
-		} catch (error) {
-			console.error('Error making participant moderator:', error);
-			this.notificationService.showSnackbar('Failed to make participant moderator');
-		}
-	}
-
-	/**
-	 * Unmakes a participant as moderator.
-	 * @param participant The participant to unmake as moderator.
-	 */
-	async unmakeModerator(participant: CustomParticipantModel) {
-		if (!this.participantService.isModeratorParticipant()) return;
-
-		try {
-			await this.meetingService.changeParticipantRole(this.roomId, participant.identity, ParticipantRole.SPEAKER);
-		} catch (error) {
-			console.error('Error unmaking participant moderator:', error);
-			this.notificationService.showSnackbar('Failed to unmake participant moderator');
-		}
-	}
-
-	async copyModeratorLink() {
-		this.clipboard.copy(this.room!.moderatorUrl);
-		this.notificationService.showSnackbar('Moderator link copied to clipboard');
-	}
-
-	async copySpeakerLink() {
-		this.clipboard.copy(this.room!.speakerUrl);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
-	}
-
-	async onRecordingStartRequested(event: RecordingStartRequestedEvent) {
-		try {
-			await this.recordingService.startRecording(event.roomName);
-		} catch (error: unknown) {
-			if ((error as any).status === 503) {
-				console.error(
-					`No egress service was able to register a request.
-Check your CPU usage or if there's any Media Node with enough CPU.
-Remember that by default, a recording uses 4 CPUs for each room.`
-				);
-			} else {
-				console.error(error);
-			}
-		}
-	}
-
-	async onRecordingStopRequested(event: RecordingStopRequestedEvent) {
-		try {
-			await this.recordingService.stopRecording(event.recordingId);
-		} catch (error) {
-			console.error(error);
 		}
 	}
 
 	async onViewRecordingsClicked() {
 		window.open(`/room/${this.roomId}/recordings?secret=${this.roomSecret}`, '_blank');
+	}
+
+	/**
+	 * Centralized logic for managing video pinning based on
+	 * remote participants and local screen sharing state.
+	 */
+	protected updateVideoPinState(): void {
+		if (!this.localParticipant) return;
+
+		const isSharing = this.localParticipant()?.isScreenShareEnabled;
+
+		if (this.hasRemoteParticipants && isSharing) {
+			// Pin the local screen share to appear bigger
+			this.localParticipant()?.setVideoPinnedBySource(Track.Source.ScreenShare, true);
+		} else {
+			// Unpin everything if no remote participants or not sharing
+			this.localParticipant()?.setAllVideoPinned(false);
+		}
+	}
+
+	/**
+	 * Event handler wrappers - delegates to actionHandler if provided, otherwise uses default implementation
+	 */
+	protected async handleKickParticipant(participant: CustomParticipantModel) {
+		if (this.actionHandler) {
+			await this.actionHandler.kickParticipant(participant);
+		} else {
+			// Default implementation
+			if (!this.participantService.isModeratorParticipant()) return;
+
+			try {
+				await this.meetingService.kickParticipant(this.roomId, participant.identity);
+				console.log('Participant kicked successfully');
+			} catch (error) {
+				console.error('Error kicking participant:', error);
+			}
+		}
+	}
+
+	protected async handleMakeModerator(participant: CustomParticipantModel) {
+		if (this.actionHandler) {
+			await this.actionHandler.makeModerator(participant);
+		} else {
+			// Default implementation
+			if (!this.participantService.isModeratorParticipant()) return;
+
+			try {
+				await this.meetingService.changeParticipantRole(
+					this.roomId,
+					participant.identity,
+					ParticipantRole.MODERATOR
+				);
+				console.log('Moderator assigned successfully');
+			} catch (error) {
+				console.error('Error assigning moderator:', error);
+			}
+		}
+	}
+
+	protected async handleUnmakeModerator(participant: CustomParticipantModel) {
+		if (this.actionHandler) {
+			await this.actionHandler.unmakeModerator(participant);
+		} else {
+			// Default implementation
+			if (!this.participantService.isModeratorParticipant()) return;
+
+			try {
+				await this.meetingService.changeParticipantRole(
+					this.roomId,
+					participant.identity,
+					ParticipantRole.SPEAKER
+				);
+				console.log('Moderator unassigned successfully');
+			} catch (error) {
+				console.error('Error unassigning moderator:', error);
+			}
+		}
+	}
+
+	// private async handleCopyModeratorLink() {
+	// 	if (this.actionHandler) {
+	// 		await this.actionHandler.copyModeratorLink();
+	// 	} else {
+	// 		// Default implementation
+	// 		try {
+	// 			this.clipboard.copy(this.room!.moderatorUrl);
+	// 			this.notificationService.showSnackbar('Moderator link copied to clipboard');
+
+	// 			console.log('Moderator link copied to clipboard');
+	// 		} catch (error) {
+	// 			console.error('Failed to copy moderator link:', error);
+	// 		}
+	// 	}
+	// }
+
+	protected async handleCopySpeakerLink() {
+		if (this.actionHandler) {
+			await this.actionHandler.copySpeakerLink();
+		} else {
+			// Default implementation
+			try {
+				const speakerLink = this.room!.speakerUrl;
+				this.clipboard.copy(speakerLink);
+				this.notificationService.showSnackbar('Speaker link copied to clipboard');
+				console.log('Speaker link copied to clipboard');
+			} catch (error) {
+				console.error('Failed to copy speaker link:', error);
+			}
+		}
 	}
 }

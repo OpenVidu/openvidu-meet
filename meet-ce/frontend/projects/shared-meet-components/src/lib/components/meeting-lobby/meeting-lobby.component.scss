@@ -1,0 +1,276 @@
+@use '../../../../../../src/assets/styles/design-tokens';
+
+// Room Access Container - Main layout using design tokens
+.room-access-container {
+	@include design-tokens.ov-container;
+	@include design-tokens.ov-page-content;
+	padding-top: var(--ov-meet-spacing-xxl);
+	background: var(--ov-meet-background-color);
+	gap: 0;
+}
+
+// Room Header - Clean title section
+.room-header {
+	@include design-tokens.ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	margin-bottom: var(--ov-meet-spacing-xxl);
+	text-align: center;
+
+	.room-icon {
+		@include design-tokens.ov-icon(xl);
+		color: var(--ov-meet-icon-rooms);
+		margin-bottom: var(--ov-meet-spacing-sm);
+	}
+
+	.room-info {
+		.room-title {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-hero);
+			font-weight: var(--ov-meet-font-weight-light);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+		}
+	}
+}
+
+// Action Cards Grid - Responsive layout
+.action-cards-grid {
+	@include design-tokens.ov-grid-responsive(320px);
+	gap: var(--ov-meet-spacing-xl);
+	margin-bottom: var(--ov-meet-spacing-xxl);
+	justify-content: center;
+
+	// When there's only one card, limit its width to maintain visual consistency
+	&:has(.action-card:only-child) {
+		display: flex;
+		justify-content: center;
+
+		.action-card {
+			max-width: 400px;
+			width: 100%;
+		}
+	}
+
+	@include design-tokens.ov-tablet-down {
+		grid-template-columns: 1fr;
+		gap: var(--ov-meet-spacing-lg);
+
+		// On tablets and mobile, single cards should use full width
+		&:has(.action-card:only-child) {
+			.action-card {
+				max-width: none;
+			}
+		}
+	}
+}
+
+// Action Card Base - Consistent card styling
+.action-card {
+	@include design-tokens.ov-card;
+	@include design-tokens.ov-hover-lift(-4px);
+	@include design-tokens.ov-theme-transition;
+	padding: 0;
+	overflow: hidden;
+	min-height: 300px;
+	display: flex;
+	flex-direction: column;
+
+	// Card Header
+	.card-header {
+		padding: var(--ov-meet-spacing-lg);
+		border-bottom: 1px solid var(--ov-meet-border-color-light);
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-md);
+		flex-shrink: 0;
+
+		.card-icon {
+			@include design-tokens.ov-icon(lg);
+			flex-shrink: 0;
+		}
+
+		.card-title-group {
+			flex: 1;
+
+			.mat-mdc-card-title {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-semibold);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.mat-mdc-card-subtitle {
+				margin: var(--ov-meet-spacing-xs) 0 0 0;
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	// Card Content
+	.card-content {
+		padding: var(--ov-meet-spacing-lg);
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+}
+
+// Primary Card - Join meeting styling
+.primary-card {
+	.card-header {
+		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-primary-light) 180%);
+		color: var(--ov-meet-text-on-primary);
+	}
+
+	&.room-closed-card {
+		.card-header {
+			background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-warning) 180%);
+
+			.mat-icon {
+				color: var(--ov-meet-color-warning) !important;
+			}
+		}
+	}
+}
+
+.room-closed-message {
+	@include design-tokens.ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	text-align: center;
+
+	.warning-icon {
+		@include design-tokens.ov-icon(xl);
+		color: var(--ov-meet-color-warning);
+	}
+
+	p {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-relaxed);
+	}
+}
+
+// Secondary Card - Recordings styling
+.secondary-card {
+	.card-header {
+		background: linear-gradient(135deg, var(--ov-meet-surface-color) 0%, var(--ov-meet-color-accent) 180%);
+	}
+
+	.card-content {
+		text-align: center;
+	}
+}
+
+// Join Form - Form styling
+.join-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+	flex: 1;
+
+	.name-field {
+		width: 100%;
+
+		.mat-mdc-form-field-icon-suffix {
+			color: var(--ov-meet-text-hint);
+		}
+	}
+
+	.join-button {
+		@include design-tokens.ov-button-base;
+		height: 56px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--ov-meet-spacing-sm);
+		margin-top: auto;
+		background-color: var(--ov-meet-color-secondary);
+		color: var(--ov-meet-text-on-secondary);
+	}
+}
+
+// Recordings Info - Content for recordings card
+.recordings-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+
+	.recordings-description {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-relaxed);
+	}
+}
+
+.recordings-button {
+	@include design-tokens.ov-button-base;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ov-meet-spacing-sm);
+	margin-top: auto;
+}
+
+// Quick Actions - Footer actions
+.quick-actions {
+	@include design-tokens.ov-flex-center;
+	margin-top: var(--ov-meet-spacing-xl);
+
+	.quick-action-button {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		color: var(--ov-meet-text-secondary);
+		@include design-tokens.ov-theme-transition;
+
+		&:hover {
+			color: var(--ov-meet-text-primary);
+			background-color: var(--ov-meet-surface-hover);
+		}
+	}
+}
+
+// Responsive adjustments
+@include design-tokens.ov-mobile-down {
+	.room-access-container {
+		padding: 0;
+		padding-top: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-xxl);
+	}
+
+	.room-header {
+		margin-bottom: var(--ov-meet-spacing-xl);
+
+		.room-info .room-title {
+			font-size: var(--ov-meet-font-size-xxl);
+		}
+	}
+
+	.action-card {
+		min-height: auto;
+
+		.card-header {
+			padding: var(--ov-meet-spacing-md);
+
+			.card-title-group {
+				.mat-mdc-card-title {
+					font-size: var(--ov-meet-font-size-lg);
+				}
+			}
+		}
+
+		.card-content {
+			padding: var(--ov-meet-spacing-md);
+		}
+	}
+}

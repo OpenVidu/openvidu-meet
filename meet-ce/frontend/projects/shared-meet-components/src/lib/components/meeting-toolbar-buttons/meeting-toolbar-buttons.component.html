@@ -1,0 +1,45 @@
+<!-- Copy Link Button -->
+@if (showCopyLinkButton) {
+	@if (isMobile) {
+		<button id="copy-speaker-link" mat-menu-item (click)="onCopyLinkClick()" [disableRipple]="true">
+			<mat-icon>link</mat-icon>
+			<span class="button-text">{{ copyLinkText }}</span>
+		</button>
+	} @else {
+		<button
+			id="copy-speaker-link"
+			mat-icon-button
+			(click)="onCopyLinkClick()"
+			[disableRipple]="true"
+			[matTooltip]="copyLinkTooltip"
+		>
+			<mat-icon>link</mat-icon>
+		</button>
+	}
+}
+
+<!-- Leave Menu -->
+@if (showLeaveMenu) {
+	<button
+		id="leave-btn"
+		mat-icon-button
+		[matMenuTriggerFor]="leaveMenu"
+		[matTooltip]="leaveMenuTooltip"
+		[disableRipple]="true"
+		class="custom-leave-btn"
+		[class.mobile-btn]="isMobile"
+	>
+		<mat-icon>call_end</mat-icon>
+	</button>
+	<mat-menu #leaveMenu="matMenu">
+		<button mat-menu-item (click)="onLeaveMeetingClick()" id="leave-option">
+			<mat-icon>logout</mat-icon>
+			<span>{{ leaveOptionText }}</span>
+		</button>
+		<mat-divider></mat-divider>
+		<button mat-menu-item (click)="onEndMeetingClick()" id="end-meeting-option">
+			<mat-icon>no_meeting_room</mat-icon>
+			<span>{{ endMeetingOptionText }}</span>
+		</button>
+	</mat-menu>
+}
