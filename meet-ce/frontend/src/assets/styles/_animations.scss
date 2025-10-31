@@ -24,6 +24,22 @@
 	}
 }
 
+// Animations
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+		max-height: 0;
+		margin: 0;
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+		max-height: 150px;
+		margin: var(--ov-meet-spacing-lg) 0 0 0;
+	}
+}
+
 @keyframes slideInFromTop {
 	from {
 		opacity: 0;

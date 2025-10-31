@@ -63,7 +63,8 @@ describe('Room API Tests', () => {
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: false },
-					virtualBackground: { enabled: true }
+					virtualBackground: { enabled: true },
+					e2ee: { enabled: true }
 				}
 			};
 

@@ -22,6 +22,7 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
+	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions,
@@ -284,7 +285,7 @@ export const getRoom = async (roomId: string, fields?: string, participantToken?
 	return await req;
 };
 
-export const getRoomConfig = async (roomId: string) => {
+export const getRoomConfig = async (roomId: string): Promise<Response> => {
 	checkAppIsRunning();
 
 	return await request(app)
@@ -293,7 +294,7 @@ export const getRoomConfig = async (roomId: string) => {
 		.send();
 };
 
-export const updateRoomConfig = async (roomId: string, config: any) => {
+export const updateRoomConfig = async (roomId: string, config: MeetRoomConfig) => {
 	checkAppIsRunning();
 
 	return await request(app)

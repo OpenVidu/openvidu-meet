@@ -5,6 +5,12 @@
 			<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
 			<div class="room-info">
 				<h1 class="room-title">{{ roomName }}</h1>
+				@if (isE2EEEnabled) {
+					<span class="encryption-badge" matTooltip="End-to-end encrypted">
+						<mat-icon class="badge-icon">lock</mat-icon>
+						This meeting is end-to-end encrypted
+					</span>
+				}
 			</div>
 		</div>
 
@@ -27,6 +33,7 @@
 				<mat-card-content class="card-content">
 					@if (!roomClosed) {
 						<form [formGroup]="participantForm" (ngSubmit)="onFormSubmit()" class="join-form">
+							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
 								<mat-label>Your display name</mat-label>
 								<input
@@ -42,13 +49,33 @@
 								}
 							</mat-form-field>
 
+							<!-- E2EE Key Input (shown when E2EE is enabled) -->
+							@if (isE2EEEnabled) {
+								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
+									<mat-label>Encryption Key</mat-label>
+									<input
+										id="participant-e2eekey-input"
+										matInput
+										type="password"
+										placeholder="Enter room encryption key"
+										formControlName="e2eeKey"
+										required
+									/>
+									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
+									@if (participantForm.get('e2eeKey')?.hasError('required')) {
+										<mat-error> The encryption key is <strong>required</strong> </mat-error>
+									}
+									<mat-hint>This room requires an encryption key to join</mat-hint>
+								</mat-form-field>
+							}
+
 							<button
 								mat-raised-button
 								color="primary"
 								id="participant-name-submit"
 								type="submit"
 								class="join-button"
-								[disabled]="participantForm.invalid"
+								[disabled]="!participantForm.valid"
 							>
 								<span>Join Meeting</span>
 							</button>
@@ -66,7 +93,7 @@
 			</mat-card>
 
 			<!-- View Recordings Card -->
-			@if (showRecordingsCard) {
+			@if (showRecordingCard) {
 				<mat-card class="action-card secondary-card fade-in-delayed">
 					<mat-card-header class="card-header">
 						<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>

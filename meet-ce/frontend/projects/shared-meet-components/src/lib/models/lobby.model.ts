@@ -13,6 +13,7 @@ export interface LobbyState {
 	showRecordingCard: boolean;
 	showBackButton: boolean;
 	backButtonText: string;
+	isE2EEEnabled: boolean;
 	participantForm: FormGroup;
 	participantToken: string;
 }

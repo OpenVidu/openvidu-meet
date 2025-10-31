@@ -6,7 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ShareMeetingLinkComponent } from '../share-meeting-link/share-meeting-link.component';
+import { ShareMeetingLinkComponent } from '../../components';
 
 /**
  * Reusable component for the meeting lobby page.
@@ -45,9 +45,9 @@ export class MeetingLobbyComponent {
 	@Input() roomClosed = false;
 
 	/**
-	 * Whether to show the recordings card
+	 * Whether to show the recording card
 	 */
-	@Input() showRecordingsCard = false;
+	@Input() showRecordingCard = false;
 
 	/**
 	 * Whether to show the share meeting link component
@@ -63,6 +63,11 @@ export class MeetingLobbyComponent {
 	 * Back button text
 	 */
 	@Input() backButtonText = 'Back';
+
+	/**
+	 * Whether E2EE is enabled for the meeting
+	 */
+	@Input() isE2EEEnabled = false;
 
 	/**
 	 * The participant form group

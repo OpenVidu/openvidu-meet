@@ -21,6 +21,8 @@ content:
                             enabled: false
                         virtualBackground:
                             enabled: true
+                        e2ee:
+                            enabled: false
                     moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                     speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
                     status: open
@@ -45,6 +47,8 @@ content:
                             enabled: false
                         virtualBackground:
                             enabled: true
+                        e2ee:
+                            enabled: false
 
             fields=moderatorUrl,speakerUrl:
                 summary: Response containing only moderator and speaker URLs

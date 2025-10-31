@@ -2,6 +2,8 @@ import { expect } from '@jest/globals';
 import { container } from '../../src/config/dependency-injector.config';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config';
 import { TokenService } from '../../src/services';
+import { Response } from 'supertest';
+
 import {
 	MeetingEndAction,
 	MeetRecordingAccess,
@@ -18,7 +20,7 @@ import {
 } from '@openvidu-meet/typings';
 
 export const expectErrorResponse = (
-	response: any,
+	response: Response,
 	status = 422,
 	error = 'Unprocessable Entity',
 	message = 'Invalid request',
@@ -51,7 +53,7 @@ export const expectErrorResponse = (
 	);
 };
 
-export const expectValidationError = (response: any, field: string, message: string) => {
+export const expectValidationError = (response: Response, field: string, message: string) => {
 	expectErrorResponse(response, 422, 'Unprocessable Entity', 'Invalid request', [{ field, message }]);
 };
 
@@ -68,7 +70,7 @@ export const expectValidationError = (response: any, field: string, message: str
  *                                if false, expects nextPageToken to be undefined)
  */
 export const expectSuccessRoomsResponse = (
-	response: any,
+	response: Response,
 	expectedRoomLength: number,
 	expectedMaxItems: number,
 	expectedTruncated: boolean,
@@ -90,7 +92,7 @@ export const expectSuccessRoomsResponse = (
 };
 
 export const expectSuccessRoomResponse = (
-	response: any,
+	response: Response,
 	roomName: string,
 	autoDeletionDate?: number,
 	config?: MeetRoomConfig
@@ -99,7 +101,7 @@ export const expectSuccessRoomResponse = (
 	expectValidRoom(response.body, roomName, config, autoDeletionDate);
 };
 
-export const expectSuccessRoomConfigResponse = (response: any, config: MeetRoomConfig) => {
+export const expectSuccessRoomConfigResponse = (response: Response, config: MeetRoomConfig) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toBeDefined();
 	expect(response.body).toEqual(config);
@@ -151,7 +153,8 @@ export const expectValidRoom = (
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
 			chat: { enabled: true },
-			virtualBackground: { enabled: true }
+			virtualBackground: { enabled: true },
+			e2ee: { enabled: false }
 		});
 	}
 
@@ -197,7 +200,7 @@ export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: s
 	expectObjectFields(rec, fields);
 };
 
-const expectObjectFields = (obj: any, present: string[] = [], absent: string[] = []) => {
+const expectObjectFields = (obj: unknown, present: string[] = [], absent: string[] = []) => {
 	present.forEach((key) => {
 		expect(obj).toHaveProperty(key);
 		expect((obj as any)[key]).not.toBeUndefined();
@@ -209,7 +212,7 @@ const expectObjectFields = (obj: any, present: string[] = [], absent: string[] =
 };
 
 // Validate recording location header in the response
-export const expectValidRecordingLocationHeader = (response: any) => {
+export const expectValidRecordingLocationHeader = (response: Response) => {
 	const locationHeader = response.headers.location;
 	expect(locationHeader).toBeDefined();
 	const locationHeaderUrl = new URL(locationHeader);
@@ -230,7 +233,7 @@ export const expectValidRecordingLocationHeader = (response: any) => {
  *   - expectedStatus: Override the expected status code (default: auto-determined based on range)
  */
 export const expectSuccessRecordingMediaResponse = (
-	response: any,
+	response: Response,
 	range?: string,
 	fullSize?: number,
 	options?: {
@@ -348,7 +351,7 @@ export const expectSuccessRecordingMediaResponse = (
 	}
 };
 
-export const expectValidStartRecordingResponse = (response: any, roomId: string, roomName: string) => {
+export const expectValidStartRecordingResponse = (response: Response, roomId: string, roomName: string) => {
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('recordingId');
 
@@ -369,7 +372,7 @@ export const expectValidStartRecordingResponse = (response: any, roomId: string,
 };
 
 export const expectValidStopRecordingResponse = (
-	response: any,
+	response: Response,
 	recordingId: string,
 	roomId: string,
 	roomName: string
@@ -388,7 +391,7 @@ export const expectValidStopRecordingResponse = (
 };
 
 export const expectValidGetRecordingResponse = (
-	response: any,
+	response: Response,
 	recordingId: string,
 	roomId: string,
 	roomName: string,
@@ -444,7 +447,7 @@ export const expectValidGetRecordingResponse = (
 };
 
 export const expectSuccessListRecordingResponse = (
-	response: any,
+	response: Response,
 	recordingLength: number,
 	isTruncated: boolean,
 	nextPageToken: boolean,
@@ -470,7 +473,7 @@ export const expectSuccessListRecordingResponse = (
 	expect(response.body.pagination.maxItems).toBe(maxItems);
 };
 
-export const expectValidGetRecordingUrlResponse = (response: any, recordingId: string) => {
+export const expectValidGetRecordingUrlResponse = (response: Response, recordingId: string) => {
 	expect(response.status).toBe(200);
 	const recordingUrl = response.body.url;
 	expect(recordingUrl).toBeDefined();
@@ -480,7 +483,7 @@ export const expectValidGetRecordingUrlResponse = (response: any, recordingId: s
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };
 
-export const expectValidRoomRolesAndPermissionsResponse = (response: any, roomId: string) => {
+export const expectValidRoomRolesAndPermissionsResponse = (response: Response, roomId: string) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toEqual(
 		expect.arrayContaining([
@@ -497,7 +500,7 @@ export const expectValidRoomRolesAndPermissionsResponse = (response: any, roomId
 };
 
 export const expectValidRoomRoleAndPermissionsResponse = (
-	response: any,
+	response: Response,
 	roomId: string,
 	participantRole: ParticipantRole
 ) => {
@@ -552,7 +555,7 @@ export const getPermissions = (
 };
 
 export const expectValidParticipantTokenResponse = (
-	response: any,
+	response: Response,
 	roomId: string,
 	participantRole: ParticipantRole,
 	participantName?: string,
@@ -601,7 +604,7 @@ export const expectValidParticipantTokenResponse = (
 };
 
 export const expectValidRecordingTokenResponse = (
-	response: any,
+	response: Response,
 	roomId: string,
 	participantRole: ParticipantRole,
 	canRetrieveRecordings: boolean,

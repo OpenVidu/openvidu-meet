@@ -38,7 +38,8 @@ describe('Room API Tests', () => {
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
-					virtualBackground: { enabled: true }
+					virtualBackground: { enabled: true },
+					e2ee: { enabled: false }
 				}
 			});
 
@@ -49,7 +50,8 @@ describe('Room API Tests', () => {
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
 				chat: { enabled: false },
-				virtualBackground: { enabled: false }
+				virtualBackground: { enabled: false },
+				e2ee: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
@@ -86,7 +88,8 @@ describe('Room API Tests', () => {
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
-					virtualBackground: { enabled: true }
+					virtualBackground: { enabled: true },
+					e2ee: { enabled: false }
 				}
 			});
 
@@ -97,7 +100,8 @@ describe('Room API Tests', () => {
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chat: { enabled: true },
-				virtualBackground: { enabled: true }
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, partialConfig);
 

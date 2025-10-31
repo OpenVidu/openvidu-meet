@@ -1,5 +1,6 @@
 import {
 	MeetChatConfig,
+	MeetE2EEConfig,
 	MeetRecordingAccess,
 	MeetRecordingConfig,
 	MeetRoomAutoDeletionPolicy,
@@ -90,6 +91,10 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 	enabled: z.boolean()
 });
 
+const E2EEConfigSchema: z.ZodType<MeetE2EEConfig> = z.object({
+	enabled: z.boolean()
+});
+
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK]);
 
 const hexColorSchema = z
@@ -118,12 +123,28 @@ export const AppearanceConfigSchema = z.object({
 	themes: z.array(RoomThemeSchema).length(1, 'There must be exactly one theme defined')
 });
 
-const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z.object({
-	recording: RecordingConfigSchema,
-	chat: ChatConfigSchema,
-	virtualBackground: VirtualBackgroundConfigSchema
-	// appearance: AppearanceConfigSchema,
-});
+const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z
+	.object({
+		recording: RecordingConfigSchema,
+		chat: ChatConfigSchema,
+		virtualBackground: VirtualBackgroundConfigSchema,
+		e2ee: E2EEConfigSchema.optional().default({ enabled: false }),
+		// appearance: AppearanceConfigSchema,
+	})
+	.transform((data) => {
+		// Automatically disable recording when E2EE is enabled
+		if (data.e2ee?.enabled && data.recording.enabled) {
+			return {
+				...data,
+				recording: {
+					...data.recording,
+					enabled: false
+				}
+			};
+		}
+
+		return data;
+	});
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([
 	MeetRoomDeletionPolicyWithMeeting.FORCE,
@@ -183,7 +204,8 @@ const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	config: RoomConfigSchema.optional().default({
 		recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
 		chat: { enabled: true },
-		virtualBackground: { enabled: true }
+		virtualBackground: { enabled: true },
+		e2ee: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()
