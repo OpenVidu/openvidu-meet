@@ -13,6 +13,7 @@
 		"test:e2e-core-events": "playwright test tests/e2e/core/events.test.ts",
 		"test:e2e-core-webhooks": "playwright test tests/e2e/core/webhooks.test.ts",
 		"test:e2e-ui-features": "playwright test tests/e2e/ui-feature-config.test.ts",
+		"test:e2e-e2ee-ui": "playwright test tests/e2e/e2ee-ui.test.ts",
 		"test:e2e-recording-access": "playwright test tests/e2e/recording-access.test.ts",
 		"lint": "eslint 'src/**/*.ts'"
 	},

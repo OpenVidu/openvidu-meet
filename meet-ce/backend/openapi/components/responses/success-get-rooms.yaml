@@ -30,6 +30,8 @@ content:
                                   enabled: false
                               virtualBackground:
                                   enabled: true
+                              e2ee:
+                                  enabled: false
                           moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
                           speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
                           status: open
@@ -47,6 +49,8 @@ content:
                               recording:
                                   enabled: true
                               virtualBackground:
+                                  enabled: false
+                              e2ee:
                                   enabled: false
                           moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
                           speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
@@ -80,6 +84,8 @@ content:
                                   enabled: false
                               virtualBackground:
                                   enabled: true
+                              e2ee:
+                                  enabled: false
                         - roomId: 'room-456'
                           roomName: 'room'
                           creationDate: 1620001000000
@@ -90,6 +96,8 @@ content:
                               recording:
                                   enabled: true
                               virtualBackground:
+                                  enabled: false
+                              e2ee:
                                   enabled: false
                     pagination:
                         isTruncated: true

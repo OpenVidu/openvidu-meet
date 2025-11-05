@@ -46,7 +46,7 @@
 					@if (isBasicCreation()) {
 						<!-- Basic Room Creation -->
 						<ov-room-basic-creation
-							(createRoom)="createRoom($event)"
+							(createRoom)="createRoomBasic($event)"
 							(openAdvancedMode)="onOpenAdvancedMode()"
 						></ov-room-basic-creation>
 					} @else {
@@ -93,7 +93,7 @@
 					(next)="onNext()"
 					(cancel)="onCancel()"
 					(back)="onBack()"
-					(finish)="onFinish()"
+					(finish)="createRoomAdvance()"
 				>
 				</ov-wizard-nav>
 			}

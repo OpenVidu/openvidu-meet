@@ -143,14 +143,9 @@ export class MeetingComponent implements OnInit {
 	protected lobbyInputs = computed(() => {
 		if (!this.lobbyState) return {};
 		return this.pluginManager.getLobbyInputs(
-			this.roomName,
-			`${this.hostname}/room/${this.roomId}`,
-			this.lobbyState.roomClosed,
-			this.lobbyState.showRecordingCard,
-			!this.lobbyState.roomClosed && this.features().canModerateRoom,
-			this.lobbyState.showBackButton,
-			this.lobbyState.backButtonText,
-			this.lobbyState.participantForm,
+			this.lobbyState,
+			this.hostname,
+			this.features().canModerateRoom,
 			() => this.submitAccessMeeting(),
 			() => this.lobbyService.goToRecordings(),
 			() => this.lobbyService.goBack(),
@@ -182,6 +177,9 @@ export class MeetingComponent implements OnInit {
 
 	get participantName(): string {
 		return this.lobbyService.participantName;
+	}
+	get e2eeKey(): string {
+		return this.lobbyService.e2eeKey;
 	}
 
 	get participantToken(): string {

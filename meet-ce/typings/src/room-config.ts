@@ -5,6 +5,7 @@ export interface MeetRoomConfig {
     chat: MeetChatConfig;
     recording: MeetRecordingConfig;
     virtualBackground: MeetVirtualBackgroundConfig;
+    e2ee?: MeetE2EEConfig;
     // appearance: MeetAppearanceConfig;
 }
 
@@ -27,6 +28,10 @@ export interface MeetChatConfig {
 }
 
 export interface MeetVirtualBackgroundConfig {
+    enabled: boolean;
+}
+
+export interface MeetE2EEConfig {
     enabled: boolean;
 }
 

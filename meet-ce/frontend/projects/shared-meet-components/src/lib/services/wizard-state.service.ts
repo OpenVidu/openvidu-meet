@@ -16,7 +16,8 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
 	chat: { enabled: true },
-	virtualBackground: { enabled: true }
+	virtualBackground: { enabled: true },
+	e2ee: { enabled: false }
 };
 
 /**
@@ -188,7 +189,8 @@ export class RoomWizardStateService {
 				isVisible: true,
 				formGroup: this.formBuilder.group({
 					chatEnabled: initialRoomOptions.config!.chat.enabled,
-					virtualBackgroundsEnabled: initialRoomOptions.config!.virtualBackground.enabled
+					virtualBackgroundsEnabled: initialRoomOptions.config!.virtualBackground.enabled,
+					e2eeEnabled: initialRoomOptions.config!.e2ee?.enabled ?? false
 				})
 			}
 		];
@@ -259,9 +261,16 @@ export class RoomWizardStateService {
 							...currentOptions.config?.virtualBackground,
 							...stepData.config?.virtualBackground
 						},
+						e2ee: {
+							...currentOptions.config?.e2ee,
+							...stepData.config?.e2ee
+						},
 						recording: {
 							...currentOptions.config?.recording,
-							...stepData.config?.recording
+							// If recording is explicitly set in stepData, use it
+							...(stepData.config?.recording?.enabled !== undefined && {
+								enabled: stepData.config.recording.enabled
+							})
 						}
 					} as MeetRoomConfig
 				};

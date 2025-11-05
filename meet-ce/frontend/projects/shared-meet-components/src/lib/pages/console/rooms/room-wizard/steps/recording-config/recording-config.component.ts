@@ -1,4 +1,3 @@
-
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,30 +17,33 @@ interface RecordingAccessOption {
 }
 
 @Component({
-    selector: 'ov-recording-config',
-    imports: [
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule,
-    MatRadioModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    SelectableCardComponent
-],
-    templateUrl: './recording-config.component.html',
-    styleUrl: './recording-config.component.scss'
+	selector: 'ov-recording-config',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatCardModule,
+		MatRadioModule,
+		MatSelectModule,
+		MatFormFieldModule,
+		SelectableCardComponent
+	],
+	templateUrl: './recording-config.component.html',
+	styleUrl: './recording-config.component.scss'
 })
 export class RecordingConfigComponent implements OnDestroy {
 	recordingForm: FormGroup;
 	isAnimatingOut = false;
+
+	// Store the previous E2EE state before recording disables it
+	private e2eeStateBeforeRecording: boolean | null = null;
 
 	recordingOptions: SelectableOption[] = [
 		{
 			id: 'enabled',
 			title: 'Allow Recording',
 			description:
-				'Enable recording capabilities for this room. Recordings can be started manually or automatically.',
+				'Enable recording features for this room, allowing authorized participants to start and manage recordings.',
 			icon: 'video_library'
 			// recommended: true
 		},
@@ -102,7 +104,43 @@ export class RecordingConfigComponent implements OnDestroy {
 		const previouslyEnabled = this.isRecordingEnabled;
 		const willBeEnabled = event.optionId === 'enabled';
 
-		// If we are disabling the recording, we want to animate out
+		const configStep = this.wizardState.steps().find((step) => step.id === 'config');
+
+		// Handle E2EE state when recording changes
+		if (configStep) {
+			if (!previouslyEnabled && willBeEnabled) {
+				// Enabling recording: save E2EE state and disable it if needed
+				const e2eeEnabled = configStep.formGroup.get('e2eeEnabled')?.value;
+
+				if (e2eeEnabled) {
+					// Save the E2EE state before disabling it
+					this.e2eeStateBeforeRecording = true;
+
+					// Disable E2EE when enabling recording
+					configStep.formGroup.patchValue(
+						{
+							e2eeEnabled: false
+						},
+						{ emitEvent: true }
+					);
+				}
+			} else if (previouslyEnabled && !willBeEnabled) {
+				// Disabling recording: restore E2EE state if it was saved
+				if (this.e2eeStateBeforeRecording !== null) {
+					configStep.formGroup.patchValue(
+						{
+							e2eeEnabled: this.e2eeStateBeforeRecording
+						},
+						{ emitEvent: true }
+					);
+
+					// Clear the saved state
+					this.e2eeStateBeforeRecording = null;
+				}
+			}
+		}
+
+		// Handle recording form update with animation
 		if (previouslyEnabled && !willBeEnabled) {
 			this.isAnimatingOut = true;
 			// Wait for the animation to finish before updating the form

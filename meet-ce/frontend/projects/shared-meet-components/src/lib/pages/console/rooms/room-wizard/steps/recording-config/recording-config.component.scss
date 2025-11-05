@@ -41,9 +41,39 @@
 		margin-bottom: var(--ov-meet-spacing-md);
 
 		.recording-form {
+			.e2ee-warning {
+				display: flex;
+				align-items: flex-start;
+				gap: var(--ov-meet-spacing-sm);
+				padding: var(--ov-meet-spacing-md);
+				margin-bottom: var(--ov-meet-spacing-lg);
+				background: linear-gradient(135deg, var(--ov-meet-color-info-alpha-10) 0%, var(--ov-meet-color-info-alpha-5) 100%);
+				border: 1px solid var(--ov-meet-color-info-alpha-30);
+				border-radius: var(--ov-meet-border-radius-md);
+
+				.warning-icon {
+					@include design-tokens.ov-icon(md);
+					color: var(--ov-meet-color-info);
+					margin-top: 2px;
+				}
+
+				.warning-text {
+					flex: 1;
+					margin: 0;
+					font-size: var(--ov-meet-font-size-sm);
+					color: var(--ov-meet-text-primary);
+					line-height: var(--ov-meet-line-height-normal);
+				}
+			}
+
 			.options-grid {
 				@include design-tokens.ov-grid-responsive(260px);
 				gap: var(--ov-meet-spacing-md);
+
+				&.disabled-grid {
+					pointer-events: none;
+					opacity: 0.5;
+				}
 			}
 
 			.access-selection-section {

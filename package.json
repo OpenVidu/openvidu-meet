@@ -5,6 +5,7 @@
 	"description": "OpenVidu Meet Monorepo",
 	"scripts": {
 		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
+		"clean": "pnpm --filter @openvidu-meet/backend run clean && pnpm --filter @openvidu-meet/frontend run clean",
 		"build:frontend": "pnpm --filter @openvidu-meet/frontend run build ${BASE_HREF:-/}",
 		"build:backend": "pnpm --filter @openvidu-meet/backend run build",
 		"build:webcomponent": "pnpm --filter openvidu-meet-webcomponent run build",

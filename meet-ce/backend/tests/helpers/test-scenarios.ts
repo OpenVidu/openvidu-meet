@@ -76,11 +76,11 @@ export const setupSingleRoom = async (
  * @param withParticipants Whether to join fake participants in the rooms.
  * @returns                Test context with created rooms and their data.
  */
-export const setupMultiRoomTestContext = async (numRooms: number, withParticipants: boolean): Promise<TestContext> => {
+export const setupMultiRoomTestContext = async (numRooms: number, withParticipants: boolean, roomConfig?: MeetRoomConfig): Promise<TestContext> => {
 	const rooms: RoomData[] = [];
 
 	for (let i = 0; i < numRooms; i++) {
-		const roomData = await setupSingleRoom(withParticipants, 'TEST_ROOM');
+		const roomData = await setupSingleRoom(withParticipants, 'TEST_ROOM', roomConfig);
 		rooms.push(roomData);
 	}
 

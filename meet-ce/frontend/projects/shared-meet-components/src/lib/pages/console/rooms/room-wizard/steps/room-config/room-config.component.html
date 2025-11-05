@@ -13,6 +13,55 @@
 		<form [formGroup]="configForm" class="config-form">
 			<!-- Config Cards Grid -->
 			<div class="config-grid">
+				<!-- End-to-End Encryption Card -->
+				<mat-card class="config-card e2ee-card">
+					<mat-card-content>
+						<div class="card-header">
+							<div class="icon-title-group">
+								<mat-icon class="feature-icon">lock</mat-icon>
+								<div class="title-group">
+									<h4 class="card-title">End-to-End Encryption</h4>
+									<p class="card-description">
+										Add an extra layer of security to your meetings. No one outside the meeting, not
+										even anyone with server access, can see or hear the conversation.
+									</p>
+								</div>
+							</div>
+							<mat-slide-toggle
+								[checked]="e2eeEnabled"
+								(change)="onE2EEToggleChange($event)"
+								color="primary"
+								class="feature-toggle"
+							>
+							</mat-slide-toggle>
+						</div>
+
+						<!-- E2EE Info Section -->
+						@if (e2eeEnabled) {
+							<div class="e2ee-info-section fade-in">
+								<div class="warning-card">
+									<mat-icon class="warning-icon">warning</mat-icon>
+									<div class="warning-content">
+										<p class="warning-title">Restrictions</p>
+										<ul class="restrictions-list">
+											<li>
+												All participants must use the same encryption key to see and hear each
+												other.
+												<span class="restriction-detail">
+													Participants who enter an incorrect key will not receive an error
+													message but will be unable to see or hear others.
+												</span>
+											</li>
+											<li>Recording is unavailable while encryption is enabled.</li>
+											<li>Chat messages are not protected by end-to-end encryption.</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						}
+					</mat-card-content>
+				</mat-card>
+
 				<!-- Chat Settings Card -->
 				<mat-card class="config-card">
 					<mat-card-content>

@@ -8,7 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 import { StepIndicatorComponent, WizardNavComponent } from '../../../../components';
 import { WizardNavigationConfig, WizardStep } from '../../../../models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '../../../../services';
-import { MeetRoomOptions } from '@openvidu-meet/typings';
+import { BaseRoomOptions, MeetRoomOptions } from '@openvidu-meet/typings';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
@@ -125,9 +125,18 @@ export class RoomWizardComponent implements OnInit {
 		await this.navigationService.navigateTo('rooms', undefined, true);
 	}
 
-	async createRoom(roomName?: string) {
+	async createRoomBasic(roomName?: string) {
 		try {
-			const { moderatorUrl } = await this.roomService.createRoom({ roomName });
+			// Create room with basic config including e2ee: false (default settings)
+			const { moderatorUrl } = await this.roomService.createRoom({
+				roomName,
+				config: {
+					chat: { enabled: true },
+					recording: { enabled: true },
+					virtualBackground: { enabled: true },
+					e2ee: { enabled: false }
+				}
+			});
 
 			// Extract the path and query parameters from the moderator URL and navigate to it
 			const url = new URL(moderatorUrl);
@@ -144,8 +153,8 @@ export class RoomWizardComponent implements OnInit {
 		}
 	}
 
-	async onFinish() {
-		const roomOptions = this.wizardService.roomOptions();
+	async createRoomAdvance() {
+		const roomOptions: BaseRoomOptions = this.wizardService.roomOptions();
 		console.log('Wizard completed with data:', roomOptions);
 
 		// Activate loading state

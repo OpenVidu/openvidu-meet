@@ -36,8 +36,10 @@ export class MeetingLobbyService {
 		showRecordingCard: false,
 		showBackButton: true,
 		backButtonText: 'Back',
+		isE2EEEnabled: false,
 		participantForm: new FormGroup({
-			name: new FormControl('', [Validators.required])
+			name: new FormControl('', [Validators.required]),
+			e2eeKey: new FormControl('')
 		}),
 		participantToken: ''
 	};
@@ -70,6 +72,14 @@ export class MeetingLobbyService {
 		return value.name.trim();
 	}
 
+	get e2eeKey(): string {
+		const { valid, value } = this.state.participantForm;
+		if (!valid || !value.e2eeKey?.trim()) {
+			return '';
+		}
+		return value.e2eeKey.trim();
+	}
+
 	/**
 	 * Initializes the lobby state by fetching room data and configuring UI
 	 */
@@ -78,6 +88,13 @@ export class MeetingLobbyService {
 		this.state.roomSecret = this.roomService.getRoomSecret();
 		this.state.room = await this.roomService.getRoom(this.state.roomId);
 		this.state.roomClosed = this.state.room.status === MeetRoomStatus.CLOSED;
+		this.state.isE2EEEnabled = this.state.room.config.e2ee?.enabled || false;
+
+		// If E2EE is enabled, require e2eeKey
+		if (this.state.isE2EEEnabled) {
+			this.state.participantForm.get('e2eeKey')?.setValidators([Validators.required]);
+			this.state.participantForm.get('e2eeKey')?.updateValueAndValidity();
+		}
 
 		await this.setBackButtonText();
 		await this.checkForRecordings();
@@ -85,7 +102,6 @@ export class MeetingLobbyService {
 
 		return this.state;
 	}
-
 
 	/**
 	 * Handles the back button click event and navigates accordingly
@@ -132,6 +148,12 @@ export class MeetingLobbyService {
 		if (!this.participantName) {
 			console.error('Participant form is invalid. Cannot access meeting.');
 			throw new Error('Participant form is invalid');
+		}
+
+		// For E2EE rooms, validate passkey
+		if (this.state.isE2EEEnabled && !this.e2eeKey) {
+			console.warn('E2EE key is required for encrypted rooms.');
+			return;
 		}
 
 		await this.generateParticipantToken();

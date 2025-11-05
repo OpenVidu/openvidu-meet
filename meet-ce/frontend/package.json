@@ -2,6 +2,7 @@
 	"name": "@openvidu-meet/frontend",
 	"version": "3.4.1",
 	"scripts": {
+		"clean": "rm -rf node_modules dist test-results",
 		"dev": "pnpm exec ng build --configuration development --watch",
 		"build": "func() { pnpm exec ng build --configuration production --base-href=\"${1:-/}\"; }; func",
 		"lib:serve": "ng build shared-meet-components --watch",

@@ -58,6 +58,24 @@ export async function waitForElementInIframe(
 	return elementLocator;
 }
 
+export async function countElementsInIframe(
+	page: Page,
+	elementSelector: string,
+	options: {
+		componentSelector?: string;
+		iframeSelector?: string;
+		timeout?: number;
+		state?: 'attached' | 'visible';
+	} = {}
+): Promise<number> {
+	const { componentSelector = 'openvidu-meet', iframeSelector = 'iframe' } = options;
+
+	const frameLocator = await getIframeInShadowDom(page, componentSelector, iframeSelector);
+	const elements = frameLocator.locator(elementSelector);
+
+	return await elements.count();
+}
+
 // Interact with an element inside an iframe within Shadow DOM
 export async function interactWithElementInIframe(
 	page: Page,

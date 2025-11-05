@@ -14,7 +14,7 @@
 	@include design-tokens.ov-flex-center;
 	flex-direction: column;
 	gap: var(--ov-meet-spacing-md);
-	margin-bottom: var(--ov-meet-spacing-xxl);
+	margin-bottom: var(--ov-meet-spacing-lg);
 	text-align: center;
 
 	.room-icon {
@@ -24,14 +24,56 @@
 	}
 
 	.room-info {
+		flex: 1;
 		.room-title {
 			margin: 0;
 			font-size: var(--ov-meet-font-size-hero);
 			font-weight: var(--ov-meet-font-weight-light);
 			color: var(--ov-meet-text-primary);
 			line-height: var(--ov-meet-line-height-tight);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: var(--ov-meet-spacing-md);
+			flex-wrap: wrap;
+
+			@include design-tokens.ov-tablet-down {
+				font-size: var(--ov-meet-font-size-xxl);
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-sm);
+
+				.encryption-badge {
+					font-size: var(--ov-meet-font-size-xs);
+				}
+			}
+		}
+
+		.encryption-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+			background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%);
+			border: 1px solid rgba(33, 150, 243, 0.3);
+			border-radius: var(--ov-meet-radius-lg);
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-color-info);
+
+			.badge-icon {
+				@include design-tokens.ov-icon(sm);
+				color: var(--ov-meet-color-info);
+			}
 		}
 	}
+}
+
+// E2EE Warning Container
+.e2ee-warning-container {
+	margin-bottom: var(--ov-meet-spacing-lg);
+	max-width: 800px;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 // Action Cards Grid - Responsive layout
@@ -172,15 +214,21 @@
 .join-form {
 	display: flex;
 	flex-direction: column;
-	gap: var(--ov-meet-spacing-lg);
+	gap: var(--ov-meet-spacing-sm);
 	flex: 1;
 
 	.name-field {
 		width: 100%;
+		transition: all 0.3s ease;
+	}
 
-		.mat-mdc-form-field-icon-suffix {
-			color: var(--ov-meet-text-hint);
-		}
+	.e2eeey-field {
+		width: 100%;
+		animation: slideDown 0.3s ease-out;
+	}
+
+	.mat-mdc-form-field-icon-suffix {
+		color: var(--ov-meet-text-hint);
 	}
 
 	.join-button {

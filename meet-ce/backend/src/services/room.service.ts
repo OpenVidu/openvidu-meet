@@ -132,7 +132,7 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the config of a specific meeting room.
+	 * Updates the configuration of a specific meeting room.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
 	 * @param config - The new config to apply to the meeting room

@@ -170,6 +170,9 @@ const processFormConfig = (body: any): any => {
         },
         virtualBackground: {
             enabled: body['config.virtualBackground.enabled'] === 'on'
+        },
+        e2ee: {
+            enabled: body['config.e2ee.enabled'] === 'on'
         }
     };
 

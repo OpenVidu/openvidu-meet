@@ -3,6 +3,7 @@ import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import { expectSuccessRoomConfigResponse } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getRoomConfig, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { Response } from 'supertest';
 
 describe('Room API Tests', () => {
 	const DEFAULT_CONFIG = {
@@ -11,7 +12,8 @@ describe('Room API Tests', () => {
 			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		},
 		chat: { enabled: true },
-		virtualBackground: { enabled: true }
+		virtualBackground: { enabled: true },
+		e2ee: { enabled: false }
 	};
 
 	beforeAll(() => {
@@ -28,7 +30,7 @@ describe('Room API Tests', () => {
 			const roomData = await setupSingleRoom();
 			const roomId = roomData.room.roomId;
 
-			const response = await getRoomConfig(roomId);
+			const response: Response = await getRoomConfig(roomId);
 			expectSuccessRoomConfigResponse(response, DEFAULT_CONFIG);
 		});
 
@@ -41,7 +43,8 @@ describe('Room API Tests', () => {
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
-					virtualBackground: { enabled: false }
+					virtualBackground: { enabled: false },
+					e2ee: { enabled: false }
 				}
 			};
 

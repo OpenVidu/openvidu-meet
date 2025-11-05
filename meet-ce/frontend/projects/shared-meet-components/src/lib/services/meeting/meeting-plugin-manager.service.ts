@@ -1,6 +1,5 @@
 import { Injectable, Optional, Inject } from '@angular/core';
-import { FormGroup } from '@angular/forms';
-import { CustomParticipantModel } from '../../models';
+import { CustomParticipantModel, LobbyState } from '../../models';
 import { MeetingActionHandler, MEETING_ACTION_HANDLER_TOKEN, ParticipantControls } from '../../customization';
 import { ParticipantService } from '../participant.service';
 
@@ -27,11 +26,7 @@ export class MeetingPluginManagerService {
 	/**
 	 * Prepares inputs for the toolbar additional buttons plugin
 	 */
-	getToolbarAdditionalButtonsInputs(
-		canModerateRoom: boolean,
-		isMobile: boolean,
-		onCopyLink: () => void
-	) {
+	getToolbarAdditionalButtonsInputs(canModerateRoom: boolean, isMobile: boolean, onCopyLink: () => void) {
 		return {
 			showCopyLinkButton: canModerateRoom,
 			showLeaveMenu: false,
@@ -61,11 +56,7 @@ export class MeetingPluginManagerService {
 	/**
 	 * Prepares inputs for the participant panel "after local participant" plugin
 	 */
-	getParticipantPanelAfterLocalInputs(
-		canModerateRoom: boolean,
-		meetingUrl: string,
-		onCopyLink: () => void
-	) {
+	getParticipantPanelAfterLocalInputs(canModerateRoom: boolean, meetingUrl: string, onCopyLink: () => void) {
 		return {
 			showShareLink: canModerateRoom,
 			meetingUrl,
@@ -76,11 +67,7 @@ export class MeetingPluginManagerService {
 	/**
 	 * Prepares inputs for the layout additional elements plugin
 	 */
-	getLayoutAdditionalElementsInputs(
-		showOverlay: boolean,
-		meetingUrl: string,
-		onCopyLink: () => void
-	) {
+	getLayoutAdditionalElementsInputs(showOverlay: boolean, meetingUrl: string, onCopyLink: () => void) {
 		return {
 			showOverlay,
 			meetingUrl,
@@ -118,27 +105,36 @@ export class MeetingPluginManagerService {
 	 * Prepares inputs for the lobby plugin
 	 */
 	getLobbyInputs(
-		roomName: string,
-		meetingUrl: string,
-		roomClosed: boolean,
-		showRecordingCard: boolean,
-		showShareLink: boolean,
-		showBackButton: boolean,
-		backButtonText: string,
-		participantForm: FormGroup,
+		lobbyState: LobbyState,
+		hostname: string,
+		canModerateRoom: boolean,
 		onFormSubmit: () => void,
 		onViewRecordings: () => void,
 		onBack: () => void,
 		onCopyLink: () => void
 	) {
+		const {
+			room,
+			roomId,
+			roomClosed,
+			showRecordingCard,
+			showBackButton,
+			backButtonText,
+			isE2EEEnabled,
+			participantForm
+		} = lobbyState;
+		const meetingUrl = `${hostname}/room/${roomId}`;
+		const showShareLink = !roomClosed && canModerateRoom;
+
 		return {
-			roomName,
+			roomName: room?.roomName || 'Room',
 			meetingUrl,
 			roomClosed,
-			showRecordingsCard: showRecordingCard,
+			showRecordingCard,
 			showShareLink,
 			showBackButton,
 			backButtonText,
+			isE2EEEnabled,
 			participantForm,
 			formSubmittedFn: onFormSubmit,
 			viewRecordingsClickedFn: onViewRecordings,
@@ -177,7 +173,8 @@ export class MeetingPluginManagerService {
 
 		// Calculate if current moderator can revoke the moderator role from the target participant
 		// Only allow if target is not an original moderator
-		const canRevokeModeratorRole = currentUserIsModerator && !isCurrentUser && participantIsModerator && !participantIsOriginalModerator;
+		const canRevokeModeratorRole =
+			currentUserIsModerator && !isCurrentUser && participantIsModerator && !participantIsOriginalModerator;
 
 		// Calculate if current moderator can kick the target participant
 		// Only allow if target is not an original moderator

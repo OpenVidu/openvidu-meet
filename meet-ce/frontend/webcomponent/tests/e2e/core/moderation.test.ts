@@ -15,7 +15,7 @@ import {
 	openParticipantsPanel,
 	prepareForJoiningRoom,
 	removeParticipantModerator,
-	waitForElementInIframe
+	waitForElementInIframe,
 } from '../../helpers/function-helpers.js';
 
 let subscribedToAppErrors = false;
@@ -37,6 +37,16 @@ test.describe('Moderation Functionality Tests', () => {
 	test.beforeAll(async () => {
 		// Create a test room before all tests
 		roomId = await createTestRoom('moderation-test-room');
+	});
+
+	test.afterAll(async ({ browser }) => {
+		const tempContext = await browser.newContext();
+		const tempPage = await tempContext.newPage();
+		await deleteAllRooms(tempPage);
+		await deleteAllRecordings(tempPage);
+
+		await tempContext.close();
+		await tempPage.close();
 	});
 
 	test.beforeEach(async ({ page }) => {
