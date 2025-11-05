@@ -1,4 +1,3 @@
-
 import { Component, computed, OnInit, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,23 +16,23 @@ import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 
 @Component({
-    selector: 'ov-room-wizard',
-    imports: [
-    StepIndicatorComponent,
-    WizardNavComponent,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatSlideToggleModule,
-    RoomBasicCreationComponent,
-    RoomWizardRoomDetailsComponent,
-    RecordingConfigComponent,
-    RecordingTriggerComponent,
-    RecordingLayoutComponent,
-    RoomConfigComponent
-],
-    templateUrl: './room-wizard.component.html',
-    styleUrl: './room-wizard.component.scss'
+	selector: 'ov-room-wizard',
+	imports: [
+		StepIndicatorComponent,
+		WizardNavComponent,
+		MatButtonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		MatSlideToggleModule,
+		RoomBasicCreationComponent,
+		RoomWizardRoomDetailsComponent,
+		RecordingConfigComponent,
+		RecordingTriggerComponent,
+		RecordingLayoutComponent,
+		RoomConfigComponent
+	],
+	templateUrl: './room-wizard.component.html',
+	styleUrl: './room-wizard.component.scss'
 })
 export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;
@@ -128,15 +127,7 @@ export class RoomWizardComponent implements OnInit {
 	async createRoomBasic(roomName?: string) {
 		try {
 			// Create room with basic config including e2ee: false (default settings)
-			const { moderatorUrl } = await this.roomService.createRoom({
-				roomName,
-				config: {
-					chat: { enabled: true },
-					recording: { enabled: true },
-					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
-				}
-			});
+			const { moderatorUrl } = await this.roomService.createRoom({ roomName });
 
 			// Extract the path and query parameters from the moderator URL and navigate to it
 			const url = new URL(moderatorUrl);
