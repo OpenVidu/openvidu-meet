@@ -12,8 +12,8 @@ import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {
@@ -69,20 +69,21 @@ describe('Room API Tests', () => {
 		});
 
 		it('should return a list of rooms with pagination', async () => {
-			const promises = [0, 1, 2, 3, 4, 5].map((i) => {
-				return createRoom({
+			// Create rooms sequentially to ensure different creation dates
+			for (let i = 0; i < 6; i++) {
+				await createRoom({
 					roomName: `test-room-${i}`,
 					autoDeletionDate: validAutoDeletionDate
 				});
-			});
-			await Promise.all(promises);
+			}
 
 			let response = await getRooms({ maxItems: 3 });
 			let { pagination, rooms } = response.body;
 
 			expectSuccessRoomsResponse(response, 3, 3, true, true);
+			// Rooms are ordered by creation date descending (newest first)
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${i}`, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${5 - i}`, undefined, validAutoDeletionDate);
 			});
 
 			const nextPageToken = pagination.nextPageToken;
@@ -90,7 +91,7 @@ describe('Room API Tests', () => {
 			({ pagination, rooms } = response.body);
 			expectSuccessRoomsResponse(response, 3, 3, false, false);
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${i + 3}`, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${2 - i}`, undefined, validAutoDeletionDate);
 			});
 		});
 

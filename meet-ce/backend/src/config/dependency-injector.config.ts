@@ -1,18 +1,32 @@
 import { Container } from 'inversify';
 import { MEET_BLOB_STORAGE_MODE } from '../environment.js';
 import {
+	ApiKeyRepository,
+	BaseRepository,
+	GlobalConfigRepository,
+	MigrationRepository,
+	RecordingRepository,
+	RoomRepository,
+	UserRepository
+} from '../repositories/index.js';
+import {
 	ABSService,
 	ABSStorageProvider,
-	AuthService,
+	AnalyticsService,
+	ApiKeyService,
+	BlobStorageService,
 	DistributedEventService,
 	FrontendEventService,
 	GCSService,
 	GCSStorageProvider,
+	GlobalConfigService,
 	HttpContextService,
+	LegacyStorageService,
 	LiveKitService,
 	LivekitWebhookService,
 	LoggerService,
-	MeetStorageService,
+	// MigrationService,
+	MongoDBService,
 	MutexService,
 	OpenViduWebhookService,
 	ParticipantNameService,
@@ -24,12 +38,14 @@ import {
 	S3Service,
 	S3StorageProvider,
 	StorageFactory,
+	StorageInitService,
 	StorageKeyBuilder,
 	StorageProvider,
 	TaskSchedulerService,
 	TokenService,
 	UserService
 } from '../services/index.js';
+import { MigrationService } from '../services/migration.service.js';
 
 export const container: Container = new Container();
 
@@ -55,13 +71,26 @@ export const registerDependencies = () => {
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
 	container.bind(HttpContextService).toSelf().inSingletonScope();
 
-	configureStorage(MEET_BLOB_STORAGE_MODE);
-	container.bind(StorageFactory).toSelf().inSingletonScope();
-	container.bind(MeetStorageService).toSelf().inSingletonScope();
+	container.bind(MongoDBService).toSelf().inSingletonScope();
+	container.bind(BaseRepository).toSelf().inSingletonScope();
+	container.bind(RoomRepository).toSelf().inSingletonScope();
+	container.bind(UserRepository).toSelf().inSingletonScope();
+	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
+	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();
+	container.bind(RecordingRepository).toSelf().inSingletonScope();
+	container.bind(MigrationRepository).toSelf().inSingletonScope();
 
 	container.bind(TokenService).toSelf().inSingletonScope();
 	container.bind(UserService).toSelf().inSingletonScope();
-	container.bind(AuthService).toSelf().inSingletonScope();
+	container.bind(ApiKeyService).toSelf().inSingletonScope();
+	container.bind(GlobalConfigService).toSelf().inSingletonScope();
+
+	configureStorage(MEET_BLOB_STORAGE_MODE);
+	container.bind(StorageFactory).toSelf().inSingletonScope();
+	container.bind(BlobStorageService).toSelf().inSingletonScope();
+	container.bind(StorageInitService).toSelf().inSingletonScope();
+	container.bind(LegacyStorageService).toSelf().inSingletonScope();
+	container.bind(MigrationService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
 	container.bind(LiveKitService).toSelf().inSingletonScope();
@@ -71,6 +100,7 @@ export const registerDependencies = () => {
 	container.bind(ParticipantService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
+	container.bind(AnalyticsService).toSelf().inSingletonScope();
 };
 
 const configureStorage = (storageMode: string) => {
@@ -103,10 +133,20 @@ export const initializeEagerServices = async () => {
 	// Force the creation of services that need to be initialized at startup
 	container.get(RecordingService);
 
-	// Perform comprehensive health checks before initializing other services
-	const storageService = container.get(MeetStorageService);
-	await storageService.checkStartupHealth();
+	// Connect to MongoDB and check health
+	const mongoService = container.get(MongoDBService);
+	await mongoService.connect();
+	await mongoService.checkHealth();
 
-	// Initialize storage after health checks pass
-	await storageService.initializeStorage();
+	// Perform blob storage health check
+	const blobStorageService = container.get(BlobStorageService);
+	await blobStorageService.checkHealth();
+
+	// Run migrations
+	const migrationService = container.get(MigrationService);
+	await migrationService.runMigrations();
+
+	// Initialize storage
+	const storageInitService = container.get(StorageInitService);
+	await storageInitService.initializeStorage();
 };

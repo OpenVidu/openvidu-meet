@@ -4,6 +4,10 @@
   description: Operations related to managing OpenVidu Meet recordings
 - name: Internal API - Authentication
   description: Authentication operations
+- name: Internal API - API Keys
+  description: Operations related to managing API keys in OpenVidu Meet
+- name: Internal API - Analytics
+  description: Operations related to usage analytics in OpenVidu Meet
 - name: Internal API - Users
   description: Operations related to managing users in OpenVidu Meet
 - name: Internal API - Global Config

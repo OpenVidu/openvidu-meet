@@ -18,7 +18,7 @@ describe('Room API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		roomData = await setupSingleRoomWithRecording(true);
 	});
 
@@ -79,16 +79,6 @@ describe('Room API Tests', () => {
 
 			// Revert auth transport mode to header
 			await changeAuthTransportMode(AuthTransportMode.HEADER);
-		});
-
-		it('should fail with a 404 error if there are no recordings in the room', async () => {
-			await deleteAllRecordings();
-
-			const response = await generateRecordingTokenRequest(roomData.room.roomId, roomData.moderatorSecret);
-			expect(response.status).toBe(404);
-
-			// Recreate the room with recording
-			roomData = await setupSingleRoomWithRecording(true);
 		});
 
 		it('should fail with a 404 error if the room does not exist', async () => {

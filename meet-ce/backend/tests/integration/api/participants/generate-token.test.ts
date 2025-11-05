@@ -21,7 +21,7 @@ describe('Participant API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 	});
 
 	beforeEach(async () => {

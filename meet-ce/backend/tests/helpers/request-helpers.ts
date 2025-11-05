@@ -1,20 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
-import { ChildProcess, spawn } from 'child_process';
-import { Express } from 'express';
-import ms, { StringValue } from 'ms';
-import request, { Response } from 'supertest';
-import { container } from '../../src/config/index.js';
-import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
-import {
-	LIVEKIT_API_KEY,
-	LIVEKIT_API_SECRET,
-	MEET_INITIAL_ADMIN_PASSWORD,
-	MEET_INITIAL_ADMIN_USER,
-	MEET_INITIAL_API_KEY
-} from '../../src/environment.js';
-import { createApp, registerDependencies } from '../../src/server.js';
-import { RecordingService, RoomService } from '../../src/services/index.js';
 import {
 	AuthMode,
 	AuthTransportMode,
@@ -29,6 +14,21 @@ import {
 	ParticipantRole,
 	WebhookConfig
 } from '@openvidu-meet/typings';
+import { ChildProcess, spawn } from 'child_process';
+import { Express } from 'express';
+import ms, { StringValue } from 'ms';
+import request, { Response } from 'supertest';
+import { container, initializeEagerServices } from '../../src/config/index.js';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
+import {
+	LIVEKIT_API_KEY,
+	LIVEKIT_API_SECRET,
+	MEET_INITIAL_ADMIN_PASSWORD,
+	MEET_INITIAL_ADMIN_USER,
+	MEET_INITIAL_API_KEY
+} from '../../src/environment.js';
+import { createApp, registerDependencies } from '../../src/server.js';
+import { ApiKeyService, GlobalConfigService, RecordingService, RoomService } from '../../src/services/index.js';
 
 const CREDENTIALS = {
 	admin: {
@@ -44,13 +44,14 @@ export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
 };
 
-export const startTestServer = (): Express => {
+export const startTestServer = async (): Promise<Express> => {
 	if (app) {
 		return app;
 	}
 
 	registerDependencies();
 	app = createApp();
+	await initializeEagerServices();
 	return app;
 };
 
@@ -59,7 +60,7 @@ export const generateApiKey = async (): Promise<string> => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 	expect(response.status).toBe(201);
@@ -72,10 +73,34 @@ export const getApiKeys = async () => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/api-keys`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
 		.send();
 	return response;
+};
+
+export const deleteApiKeys = async () => {
+	checkAppIsRunning();
+
+	const accessToken = await loginUser();
+	const response = await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
+		.send();
+	return response;
+};
+
+export const restoreDefaultApiKeys = async () => {
+	const apiKeyService = container.get(ApiKeyService);
+
+	// Check if there are existing API keys and delete them
+	const existingKeys = await apiKeyService.getApiKeys();
+
+	if (existingKeys.length > 0) {
+		await apiKeyService.deleteApiKeys();
+	}
+
+	await apiKeyService.initializeApiKey();
 };
 
 export const getRoomsAppearanceConfig = async () => {
@@ -173,6 +198,12 @@ export const changeAuthTransportMode = async (authTransportMode: AuthTransportMo
 const getAuthTransportMode = async (): Promise<AuthTransportMode> => {
 	const response = await getSecurityConfig();
 	return response.body.authentication.authTransportMode;
+};
+
+export const restoreDefaultGlobalConfig = async () => {
+	const configService = container.get(GlobalConfigService);
+	const defaultGlobalConfig = configService['getDefaultConfig']();
+	await configService.saveGlobalConfig(defaultGlobalConfig);
 };
 
 /**
@@ -832,6 +863,18 @@ export const deleteAllRecordings = async () => {
 
 		await bulkDeleteRecordings(recordingIds);
 	} while (nextPageToken);
+};
+
+export const getAnalytics = async () => {
+	checkAppIsRunning();
+
+	const accessToken = await loginUser();
+	const response = await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`)
+		.set(selectHeaderBasedOnToken(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken), accessToken)
+		.send();
+
+	return response;
 };
 
 // PRIVATE METHODS

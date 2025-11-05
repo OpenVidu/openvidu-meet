@@ -22,8 +22,8 @@ import {
 import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterAll(async () => {

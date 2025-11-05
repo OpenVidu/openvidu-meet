@@ -11,8 +11,8 @@ import {
 } from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

@@ -27,7 +27,7 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
  * @param val The string to sanitize
  * @returns A sanitized string safe for use as a room name
  */
-const sanitizeRoomName = (val: string): string => {
+export const sanitizeRoomName = (val: string): string => {
 	return val
 		.trim() // Remove leading/trailing spaces
 		.replace(/[^a-zA-Z0-9_-\s]/g, '') // Allow alphanumeric, underscores, hyphens and spaces
@@ -61,11 +61,7 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
-const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.enum([
-	MeetRecordingAccess.ADMIN,
-	MeetRecordingAccess.ADMIN_MODERATOR,
-	MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-]);
+const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.nativeEnum(MeetRecordingAccess);
 
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z
 	.object({
@@ -95,7 +91,7 @@ const E2EEConfigSchema: z.ZodType<MeetE2EEConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum([MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK]);
+const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.nativeEnum(MeetRoomThemeMode);
 
 const hexColorSchema = z
 	.string()
@@ -128,7 +124,7 @@ const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z
 		recording: RecordingConfigSchema,
 		chat: ChatConfigSchema,
 		virtualBackground: VirtualBackgroundConfigSchema,
-		e2ee: E2EEConfigSchema.optional().default({ enabled: false }),
+		e2ee: E2EEConfigSchema.optional().default({ enabled: false })
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -146,17 +142,13 @@ const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z
 		return data;
 	});
 
-const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum([
-	MeetRoomDeletionPolicyWithMeeting.FORCE,
-	MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-	MeetRoomDeletionPolicyWithMeeting.FAIL
-]);
+const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.nativeEnum(
+	MeetRoomDeletionPolicyWithMeeting
+);
 
-const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWithRecordings> = z.enum([
-	MeetRoomDeletionPolicyWithRecordings.FORCE,
-	MeetRoomDeletionPolicyWithRecordings.CLOSE,
-	MeetRoomDeletionPolicyWithRecordings.FAIL
-]);
+const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWithRecordings> = z.nativeEnum(
+	MeetRoomDeletionPolicyWithRecordings
+);
 
 const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.object({
 	withMeeting: RoomDeletionPolicyWithMeetingSchema,
@@ -280,7 +272,7 @@ const UpdateRoomConfigSchema = z.object({
 });
 
 const UpdateRoomStatusSchema = z.object({
-	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
+	status: z.nativeEnum(MeetRoomStatus)
 });
 
 const RecordingTokenRequestSchema = z.object({
@@ -293,7 +285,7 @@ const RecordingPermissionsSchema: z.ZodType<RecordingPermissions> = z.object({
 });
 
 const RecordingTokenMetadataSchema = z.object({
-	role: z.enum([ParticipantRole.MODERATOR, ParticipantRole.SPEAKER]),
+	role: z.nativeEnum(ParticipantRole),
 	recordingPermissions: RecordingPermissionsSchema
 });
 

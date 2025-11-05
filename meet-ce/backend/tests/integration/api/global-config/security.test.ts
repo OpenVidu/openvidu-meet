@@ -1,28 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
 import { AuthMode, AuthTransportMode, AuthType } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { getSecurityConfig, startTestServer, updateSecurityConfig } from '../../../helpers/request-helpers.js';
-
-const defaultConfig = {
-	authentication: {
-		authMethod: {
-			type: AuthType.SINGLE_USER
-		},
-		authTransportMode: AuthTransportMode.HEADER,
-		authModeToAccessRoom: AuthMode.NONE
-	}
-};
-
-const restoreDefaultGlobalConfig = async () => {
-	const defaultGlobalConfig = await container.get(MeetStorageService)['getDefaultConfig']();
-	await container.get(MeetStorageService).saveGlobalConfig(defaultGlobalConfig);
-};
+import {
+	getSecurityConfig,
+	restoreDefaultGlobalConfig,
+	startTestServer,
+	updateSecurityConfig
+} from '../../../helpers/request-helpers.js';
 
 describe('Security Config API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 	});
 
 	afterEach(async () => {
@@ -145,8 +133,17 @@ describe('Security Config API Tests', () => {
 
 	describe('Get security config', () => {
 		it('should return security config when authenticated as admin', async () => {
-			const response = await getSecurityConfig();
+			const defaultConfig = {
+				authentication: {
+					authMethod: {
+						type: AuthType.SINGLE_USER
+					},
+					authTransportMode: AuthTransportMode.HEADER,
+					authModeToAccessRoom: AuthMode.NONE
+				}
+			};
 
+			const response = await getSecurityConfig();
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual(defaultConfig);
 		});

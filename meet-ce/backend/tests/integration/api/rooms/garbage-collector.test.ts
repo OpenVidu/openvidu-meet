@@ -22,11 +22,11 @@ import {
 } from '../../../helpers/request-helpers.js';
 
 describe('Room Garbage Collector Tests', () => {
-	beforeAll(() => {
+	beforeAll(async () => {
 		setInternalConfig({
 			MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '0s'
 		});
-		startTestServer();
+		await startTestServer();
 	});
 
 	afterAll(async () => {

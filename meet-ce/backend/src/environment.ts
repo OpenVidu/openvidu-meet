@@ -39,6 +39,16 @@ const envVars = {
 	LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY || 'devkey',
 	LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET || 'secret',
 
+	// MongoDB configuration
+	MEET_MONGO_ENABLED: process.env.MEET_MONGO_ENABLED || 'true',
+	MEET_MONGO_URI: process.env.MEET_MONGO_URI || '',
+	MEET_MONGO_NODES: process.env.MEET_MONGO_NODES || 'localhost',
+	MEET_MONGO_PORT: process.env.MEET_MONGO_PORT || '27017',
+	MEET_MONGO_ADMIN_USERNAME: process.env.MEET_MONGO_ADMIN_USERNAME || 'mongoadmin',
+	MEET_MONGO_ADMIN_PASSWORD: process.env.MEET_MONGO_ADMIN_PASSWORD || 'mongoadmin',
+	MEET_MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME || 'rs0',
+	MEET_MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME || 'openvidu-meet',
+
 	MEET_BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
 	// S3 or GCS configuration
@@ -81,7 +91,7 @@ export const environment = envVars;
  * Helper function to create individual exports from an environment object.
  * This is used to maintain backward compatibility with code that imports individual variables.
  */
-export const createEnvironmentExports = <T extends Record<string, any>>(env: T): T => {
+export const createEnvironmentExports = <T extends Record<string, unknown>>(env: T): T => {
 	return env;
 };
 
@@ -102,6 +112,14 @@ export const {
 	LIVEKIT_URL_PRIVATE,
 	LIVEKIT_API_KEY,
 	LIVEKIT_API_SECRET,
+	MEET_MONGO_ENABLED,
+	MEET_MONGO_URI,
+	MEET_MONGO_NODES,
+	MEET_MONGO_PORT,
+	MEET_MONGO_ADMIN_USERNAME,
+	MEET_MONGO_ADMIN_PASSWORD,
+	MEET_MONGO_REPLICA_SET_NAME,
+	MEET_MONGO_DB_NAME,
 	MEET_BLOB_STORAGE_MODE,
 	MEET_S3_BUCKET,
 	MEET_S3_SUBBUCKET,
@@ -127,7 +145,6 @@ export const {
 	ENABLED_MODULES
 } = envVars;
 
-
 export const getExportedEnvironment = () => {
 	return { ...envVars };
 };
@@ -141,6 +158,12 @@ export function checkModuleEnabled() {
 			console.error(`Module ${moduleName} is not enabled`);
 			process.exit(0);
 		}
+	}
+
+	// If MongoDB is not enabled, exit the process
+	if (environment.MEET_MONGO_ENABLED.toLowerCase() !== 'true') {
+		console.error('MongoDB integration is not enabled. Exiting the process.');
+		process.exit(0);
 	}
 }
 
@@ -179,6 +202,18 @@ export const logEnvVars = () => {
 	console.log('LIVEKIT API SECRET: ', credential('****' + LIVEKIT_API_SECRET.slice(-3)));
 	console.log('LIVEKIT API KEY: ', credential('****' + LIVEKIT_API_KEY.slice(-3)));
 	console.log('---------------------------------------------------------');
+
+	if (MEET_MONGO_URI === '') {
+		console.log('MongoDB Configuration');
+		console.log('---------------------------------------------------------');
+		console.log('MONGODB NODES: ', text(MEET_MONGO_NODES));
+		console.log('MONGODB PORT: ', text(MEET_MONGO_PORT));
+		console.log('MONGODB ADMIN USERNAME: ', credential('****' + MEET_MONGO_ADMIN_USERNAME.slice(-3)));
+		console.log('MONGODB ADMIN PASSWORD: ', credential('****' + MEET_MONGO_ADMIN_PASSWORD.slice(-3)));
+		console.log('MONGODB REPLICA SET NAME: ', text(MEET_MONGO_REPLICA_SET_NAME));
+		console.log('MONGODB DB NAME: ', text(MEET_MONGO_DB_NAME));
+		console.log('---------------------------------------------------------');
+	}
 
 	if (MEET_BLOB_STORAGE_MODE === 's3') {
 		console.log('S3 Configuration');

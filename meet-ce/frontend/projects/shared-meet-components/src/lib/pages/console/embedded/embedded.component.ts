@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AuthService, GlobalConfigService, NotificationService } from '../../../services';
+import { ApiKeyService, GlobalConfigService, NotificationService } from '../../../services';
 import { MeetApiKey } from '@openvidu-meet/typings';
 
 @Component({
@@ -49,7 +49,7 @@ export class EmbeddedComponent implements OnInit {
 	private initialWebhookFormValue: any = null;
 
 	constructor(
-		protected authService: AuthService,
+		protected apiKeyService: ApiKeyService,
 		protected configService: GlobalConfigService,
 		protected notificationService: NotificationService,
 		protected clipboard: Clipboard
@@ -93,7 +93,7 @@ export class EmbeddedComponent implements OnInit {
 
 	private async loadApiKeyData() {
 		try {
-			const apiKeys = await this.authService.getApiKeys();
+			const apiKeys = await this.apiKeyService.getApiKeys();
 			if (apiKeys.length > 0) {
 				const apiKey = apiKeys[0]; // Assuming we only handle one API key
 				this.apiKeyData.set(apiKey);
@@ -109,7 +109,7 @@ export class EmbeddedComponent implements OnInit {
 
 	async generateApiKey() {
 		try {
-			const newApiKey = await this.authService.generateApiKey();
+			const newApiKey = await this.apiKeyService.generateApiKey();
 			this.apiKeyData.set(newApiKey);
 			this.showApiKey.set(true);
 			this.notificationService.showSnackbar('API Key generated successfully');
@@ -137,7 +137,7 @@ export class EmbeddedComponent implements OnInit {
 
 	async revokeApiKey() {
 		try {
-			await this.authService.deleteApiKeys();
+			await this.apiKeyService.deleteApiKeys();
 			this.apiKeyData.set(undefined);
 			this.showApiKey.set(false);
 

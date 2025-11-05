@@ -205,14 +205,6 @@ export const errorRoomClosed = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' is closed and cannot be joined`, 409);
 };
 
-export const errorRoomMetadataNotFound = (roomId: string): OpenViduMeetError => {
-	return new OpenViduMeetError(
-		'Room Error',
-		`Room metadata for '${roomId}' not found. Room '${roomId}' does not exist or has no recordings associated`,
-		404
-	);
-};
-
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };

@@ -2,7 +2,7 @@ import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@openvi
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { MeetStorageService, RoomService } from '../services/index.js';
+import { GlobalConfigService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -13,7 +13,7 @@ import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middlewa
  * - Otherwise, allow anonymous access.
  */
 export const configureParticipantTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const storageService = container.get(MeetStorageService);
+	const configService = container.get(GlobalConfigService);
 	const roomService = container.get(RoomService);
 
 	let role: ParticipantRole;
@@ -28,7 +28,7 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityConfig } = await storageService.getGlobalConfig();
+		const { securityConfig } = await configService.getGlobalConfig();
 		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication config');

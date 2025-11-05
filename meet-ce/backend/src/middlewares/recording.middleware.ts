@@ -10,7 +10,8 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { LoggerService, MeetStorageService, ParticipantService, RoomService } from '../services/index.js';
+import { RecordingRepository } from '../repositories/index.js';
+import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
@@ -125,8 +126,6 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
  * - If no secret is provided, the default authentication logic is applied, i.e., API key, admin and recording token access.
  */
 export const configureRecordingAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const storageService = container.get(MeetStorageService);
-
 	const secret = req.query.secret as string;
 
 	// If a secret is provided, validate it against the stored secrets
@@ -134,7 +133,9 @@ export const configureRecordingAuth = async (req: Request, res: Response, next: 
 	if (secret) {
 		try {
 			const recordingId = req.params.recordingId as string;
-			const recordingSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+
+			const recordingRepository = container.get(RecordingRepository);
+			const recordingSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
 
 			if (!recordingSecrets) {
 				const error = errorRecordingNotFound(recordingId);

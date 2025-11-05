@@ -1,14 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { container } from '../../../../src/config';
-import { MeetStorageService } from '../../../../src/services';
 import { MeetRoom } from '@openvidu-meet/typings';
-import { expectValidationError, expectValidStartRecordingResponse } from '../../../helpers/assertion-helpers';
+import { expectValidationError } from '../../../helpers/assertion-helpers';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
 	disconnectFakeParticipants,
-	startRecording,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
@@ -17,7 +14,7 @@ import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 
@@ -27,13 +24,13 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Delete Recording Tests', () => {
-		let room: MeetRoom, recordingId: string, moderatorToken: string;
+		let recordingId: string, moderatorToken: string;
 
 		beforeEach(async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
-			({ room, recordingId = '', moderatorToken } = roomData);
+			({ recordingId = '', moderatorToken } = roomData);
 		});
 
 		afterAll(async () => {
@@ -49,57 +46,6 @@ describe('Recording API Tests', () => {
 			// Verify that the recording is deleted
 			const getResponse = await deleteRecording(recordingId);
 			expect(getResponse.status).toBe(404);
-		});
-
-		it('should secrets be deleted when recording is deleted', async () => {
-			const storageService = container.get(MeetStorageService);
-
-			let recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
-			expect(recSecrets).toBeDefined();
-			expect(recSecrets?.publicAccessSecret).toBeDefined();
-			expect(recSecrets?.privateAccessSecret).toBeDefined();
-
-			// Check that the room metadata still exists after deleteing the first recording
-			const deleteResponse = await deleteRecording(recordingId!);
-			expect(deleteResponse.status).toBe(200);
-
-			recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
-			expect(recSecrets).toBe(null);
-		});
-
-		it('should delete room metadata when deleting the last recording', async () => {
-			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
-
-			// Check that the room metadata exists after starting the first recording
-			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
-
-			// Generate a new recording
-			const response = await startRecording(room.roomId, moderatorToken);
-			console.log('Start recording response:', response.body);
-			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			const secondRecordingId = response.body.recordingId;
-			await stopRecording(secondRecordingId, moderatorToken);
-
-			// Check that the room metadata still exists after deleteing the first recording
-			let deleteResponse = await deleteRecording(recordingId!);
-			expect(deleteResponse.status).toBe(200);
-
-			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-
-			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
-
-			// Delete the second recording
-			deleteResponse = await deleteRecording(secondRecordingId!);
-			expect(deleteResponse.status).toBe(200);
-
-			// Verify that the room metadata is deleted after deleting the last recording
-			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-			expect(roomMetadata).toBe(null);
 		});
 	});
 
@@ -117,6 +63,7 @@ describe('Recording API Tests', () => {
 			await stopAllRecordings(moderatorToken);
 			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
 		});
+
 		it('should fail when recordingId has incorrect format', async () => {
 			const response = await deleteRecording('incorrect-format');
 			expectValidationError(response, 'recordingId', 'does not follow the expected format');

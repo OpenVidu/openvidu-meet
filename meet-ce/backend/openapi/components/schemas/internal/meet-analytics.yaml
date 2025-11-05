@@ -1,0 +1,24 @@
+type: object
+description: Usage analytics data for OpenVidu Meet
+properties:
+    totalRooms:
+        type: integer
+        description: Total number of rooms created
+        example: 42
+    activeRooms:
+        type: integer
+        description: Number of rooms currently with an active meeting
+        example: 3
+    totalRecordings:
+        type: integer
+        description: Total number of recordings created
+        example: 128
+    completeRecordings:
+        type: integer
+        description: Number of recordings that are complete and playable
+        example: 125
+required:
+    - totalRooms
+    - activeRooms
+    - totalRecordings
+    - completeRecordings

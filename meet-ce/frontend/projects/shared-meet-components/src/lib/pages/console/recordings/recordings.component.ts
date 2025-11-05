@@ -98,6 +98,7 @@ export class RecordingsComponent implements OnInit {
 			// Apply room ID filter if provided
 			if (filters?.nameFilter) {
 				recordingFilters.roomId = filters.nameFilter;
+				recordingFilters.roomName = filters.nameFilter;
 			}
 
 			const response = await this.recordingService.listRecordings(recordingFilters);

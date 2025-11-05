@@ -5,12 +5,12 @@ import ms from 'ms';
 import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
 import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
+import { RecordingRepository, RoomRepository } from '../repositories/index.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import {
 	DistributedEventService,
 	LiveKitService,
 	LoggerService,
-	MeetStorageService,
 	MutexService,
 	OpenViduWebhookService,
 	ParticipantService,
@@ -23,9 +23,10 @@ export class LivekitWebhookService {
 	protected webhookReceiver: WebhookReceiver;
 	constructor(
 		@inject(RecordingService) protected recordingService: RecordingService,
+		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
-		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
@@ -217,7 +218,7 @@ export class LivekitWebhookService {
 
 			// Update Meet room status to ACTIVE_MEETING
 			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
-			await this.storageService.saveMeetRoom(meetRoom);
+			await this.roomRepository.update(meetRoom);
 
 			// Send webhook notification
 			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
@@ -259,7 +260,7 @@ export class LivekitWebhookService {
 						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
 					await this.recordingService.deleteAllRoomRecordings(roomId); // This operation must complete before deleting the room
-					tasks.push(this.storageService.deleteMeetRooms([roomId]));
+					tasks.push(this.roomRepository.deleteByRoomId(roomId));
 					break;
 				case MeetingEndAction.CLOSE:
 					this.logger.info(
@@ -267,12 +268,12 @@ export class LivekitWebhookService {
 					);
 					meetRoom.status = MeetRoomStatus.CLOSED;
 					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(this.storageService.saveMeetRoom(meetRoom));
+					tasks.push(this.roomRepository.update(meetRoom));
 					break;
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.storageService.saveMeetRoom(meetRoom));
+					tasks.push(this.roomRepository.update(meetRoom));
 			}
 
 			// Send webhook notification
@@ -289,7 +290,7 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Processes a recording egress event by updating metadata, sending webhook notifications,
+	 * Processes a recording egress event by updating metadata in MongoDB, sending webhook notifications,
 	 * and performing necessary cleanup actions based on the webhook action type.
 	 *
 	 * @param egressInfo - The information about the egress event to process.
@@ -310,18 +311,23 @@ export class LivekitWebhookService {
 
 			this.logger.debug(`Recording '${recordingId}' in room '${roomId}' status: '${status}'`);
 
-			// Common tasks for all webhook types
-			const commonTasks = [this.storageService.saveRecordingMetadata(recordingInfo)];
+			// Common task for all webhook types: save/update recording metadata in MongoDB
+			let recordingTask: Promise<unknown>;
 
+			if (webhookAction === 'started') {
+				// Create new recording with auto-generated access secrets
+				recordingTask = this.recordingRepository.create(recordingInfo);
+			} else {
+				// Update existing recording
+				recordingTask = this.recordingRepository.update(recordingInfo);
+			}
+
+			const commonTasks = [recordingTask];
 			const specificTasks: Promise<unknown>[] = [];
 
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
-					specificTasks.push(
-						this.storageService.archiveRoomMetadata(roomId),
-						this.storageService.saveAccessRecordingSecrets(recordingId)
-					);
 					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':

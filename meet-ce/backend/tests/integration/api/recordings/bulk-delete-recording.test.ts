@@ -1,7 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { container } from '../../../../src/config';
-import { MeetStorageService } from '../../../../src/services';
-import { expectValidationError, expectValidStartRecordingResponse } from '../../../helpers/assertion-helpers';
+import { expectValidationError } from '../../../helpers/assertion-helpers';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
@@ -9,7 +7,6 @@ import {
 	disconnectFakeParticipants,
 	generateRecordingToken,
 	getAllRecordings,
-	startRecording,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
@@ -17,7 +14,7 @@ import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '.
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 
@@ -146,21 +143,6 @@ describe('Recording API Tests', () => {
 			});
 		});
 
-		it('should delete all recordings and their secrets', async () => {
-			const response = await setupMultiRecordingsTestContext(3, 3, 3);
-			const recordingIds = response.rooms.map((room) => room.recordingId);
-			const deleteResponse = await bulkDeleteRecordings(recordingIds);
-
-			expect(deleteResponse.status).toBe(200);
-
-			const storageService = container.get(MeetStorageService);
-
-			for (const recordingId of recordingIds) {
-				const recSecrets = await storageService.getAccessRecordingSecrets(recordingId!);
-				expect(recSecrets).toBeNull();
-			}
-		});
-
 		it('should handle single recording deletion correctly', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const recordingId = testContext.rooms[0].recordingId;
@@ -175,53 +157,6 @@ describe('Recording API Tests', () => {
 			const deleteResponse = await bulkDeleteRecordings([recordingId, recordingId]);
 
 			expect(deleteResponse.status).toBe(200);
-		});
-
-		it('should delete room metadata when deleting the last recording', async () => {
-			const meetStorageService = container.get<MeetStorageService>(MeetStorageService);
-			// Create two recordings in the same room
-			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
-			const { room, recordingId: firstRecordingId, moderatorToken } = testContext.rooms[0];
-
-			let roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-
-			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
-
-			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-
-			expect(roomMetadata).toBeDefined();
-			expect(roomMetadata!.moderatorUrl).toContain(room.roomId);
-			expect(roomMetadata!.speakerUrl).toContain(room.roomId);
-
-			const response = await startRecording(room.roomId, moderatorToken);
-			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			const secondRecordingId = response.body.recordingId;
-
-			await stopRecording(secondRecordingId, moderatorToken);
-			// Delete first recording - room metadata should remain
-			const bulkResponse = await bulkDeleteRecordings([firstRecordingId, secondRecordingId]);
-			expect(bulkResponse.status).toBe(200);
-
-			// // Verify second recording still exists
-			// const secondRecordingResponse = await getRecording(secondRecordingId);
-			// console.log('Second recording response:', secondRecordingId);
-			// console.log('Second recording response:', secondRecordingResponse.body);
-			// expectValidGetRecordingResponse(
-			// 	secondRecordingResponse,
-			// 	secondRecordingId,
-			// 	room.roomId,
-			// 	room.roomName,
-			// 	MeetRecordingStatus.COMPLETE,
-			// 	3
-			// );
-
-			// // Delete second recording - room metadata should be deleted
-			// await bulkDeleteRecordings([secondRecordingId]);
-
-			roomMetadata = await meetStorageService.getArchivedRoomMetadata(room.roomId);
-			expect(roomMetadata).toBe(null);
 		});
 	});
 

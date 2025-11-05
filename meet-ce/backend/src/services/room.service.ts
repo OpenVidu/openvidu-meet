@@ -25,18 +25,17 @@ import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
 	errorDeletingRoom,
 	errorInvalidRoomSecret,
-	errorRoomMetadataNotFound,
 	errorRoomNotFound,
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { RoomRepository } from '../repositories/index.js';
 import {
 	DistributedEventService,
 	FrontendEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
-	MeetStorageService,
 	RecordingService,
 	TaskSchedulerService,
 	TokenService
@@ -52,7 +51,7 @@ import {
 export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
@@ -96,7 +95,7 @@ export class RoomService {
 			status: MeetRoomStatus.OPEN,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		return await this.storageService.saveMeetRoom(meetRoom);
+		return await this.roomRepository.create(meetRoom);
 	}
 
 	/**
@@ -142,12 +141,9 @@ export class RoomService {
 		const room = await this.getMeetRoom(roomId);
 		room.config = config;
 
-		await this.storageService.saveMeetRoom(room);
-		// Update the archived room metadata if it exists
-		await Promise.all([
-			this.storageService.archiveRoomMetadata(roomId, true),
-			this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room)
-		]);
+		await this.roomRepository.update(room);
+		// Send signal to frontend
+		await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
 		return room;
 	}
 
@@ -172,7 +168,7 @@ export class RoomService {
 			room.meetingEndAction = MeetingEndAction.NONE;
 		}
 
-		await this.storageService.saveMeetRoom(room);
+		await this.roomRepository.update(room);
 		return { room, updated };
 	}
 
@@ -184,12 +180,9 @@ export class RoomService {
 	 */
 	async meetRoomExists(roomName: string): Promise<boolean> {
 		try {
-			const meetRoom = await this.getMeetRoom(roomName);
-
-			if (meetRoom) return true;
-
-			return false;
-		} catch (err: unknown) {
+			await this.getMeetRoom(roomName);
+			return true;
+		} catch (err) {
 			return false;
 		}
 	}
@@ -204,8 +197,10 @@ export class RoomService {
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { maxItems, nextPageToken, roomName, fields } = filters;
-		const response = await this.storageService.getMeetRooms(roomName, maxItems, nextPageToken);
+		const { fields, ...findOptions } = filters;
+		const response = await this.roomRepository.find({
+			...findOptions
+		});
 
 		if (fields) {
 			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));
@@ -222,7 +217,7 @@ export class RoomService {
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
 	async getMeetRoom(roomId: string, fields?: string, participantRole?: ParticipantRole): Promise<MeetRoom> {
-		const meetRoom = await this.storageService.getMeetRoom(roomId);
+		const meetRoom = await this.roomRepository.findByRoomId(roomId);
 
 		if (!meetRoom) {
 			this.logger.error(`Meet room with ID ${roomId} not found.`);
@@ -312,7 +307,7 @@ export class RoomService {
 
 		// No meeting, no recordings: simple deletion
 		if (!hasActiveMeeting && !hasRecordings) {
-			await this.storageService.deleteMeetRooms([roomId]);
+			await this.roomRepository.deleteByRoomId(roomId);
 			return undefined;
 		}
 
@@ -325,7 +320,7 @@ export class RoomService {
 		if (hasActiveMeeting) {
 			// Set meeting end action (DELETE or CLOSE) depending on recording policy
 			room.meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
-			await this.storageService.saveMeetRoom(room);
+			await this.roomRepository.update(room);
 
 			if (shouldForceEndMeeting) {
 				// Force end meeting by deleting the LiveKit room
@@ -338,14 +333,14 @@ export class RoomService {
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
 			room.status = MeetRoomStatus.CLOSED;
-			await this.storageService.saveMeetRoom(room);
+			await this.roomRepository.update(room);
 			return room;
 		}
 
 		// Force delete: delete room and all recordings
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
-			this.storageService.deleteMeetRooms([roomId])
+			this.roomRepository.deleteByRoomId(roomId)
 		]);
 		return undefined;
 	}
@@ -643,10 +638,6 @@ export class RoomService {
 	 */
 	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
 		const room = await this.getMeetRoom(roomId);
-		return this.getRoomRoleBySecretFromRoom(room, secret);
-	}
-
-	getRoomRoleBySecretFromRoom(room: MeetRoom, secret: string): ParticipantRole {
 		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
@@ -668,19 +659,13 @@ export class RoomService {
 	 * @throws An error if the room with the given `roomId` is not found.
 	 */
 	async generateRecordingToken(roomId: string, secret: string): Promise<string> {
-		const room = await this.storageService.getArchivedRoomMetadata(roomId);
-
-		if (!room) {
-			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
-			throw errorRoomMetadataNotFound(roomId);
-		}
-
-		const role = this.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);
-		const permissions = this.getRecordingPermissions(room, role);
+		const role = await this.getRoomRoleBySecret(roomId, secret);
+		const permissions = await this.getRecordingPermissions(roomId, role);
 		return await this.tokenService.generateRecordingToken(roomId, role, permissions);
 	}
 
-	protected getRecordingPermissions(room: Partial<MeetRoom>, role: ParticipantRole): RecordingPermissions {
+	protected async getRecordingPermissions(roomId: string, role: ParticipantRole): Promise<RecordingPermissions> {
+		const room = await this.getMeetRoom(roomId);
 		const recordingAccess = room.config?.recording.allowAccessTo;
 
 		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
@@ -718,7 +703,7 @@ export class RoomService {
 		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			const expiredRooms = await this.getExpiredRooms();
+			const expiredRooms = await this.roomRepository.findExpiredRooms();
 
 			if (expiredRooms.length === 0) {
 				this.logger.verbose(`No expired rooms found.`);
@@ -731,31 +716,6 @@ export class RoomService {
 			await this.bulkDeleteMeetRooms(expiredRooms);
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);
-		}
-	}
-
-	/**
-	 * Retrieves a list of expired rooms that are eligible for deletion.
-	 * @returns A promise that resolves to an array of expired MeetRoom objects.
-	 */
-	protected async getExpiredRooms(): Promise<MeetRoom[]> {
-		const now = Date.now();
-		const expiredRooms: MeetRoom[] = [];
-		let nextPageToken: string | undefined;
-
-		try {
-			do {
-				const { rooms, nextPageToken: token } = await this.getAllMeetRooms({ maxItems: 100, nextPageToken });
-				nextPageToken = token;
-
-				const expired = rooms.filter((room) => room.autoDeletionDate && room.autoDeletionDate < now);
-				expiredRooms.push(...expired);
-			} while (nextPageToken);
-
-			return expiredRooms;
-		} catch (error) {
-			this.logger.error('Error getting expired rooms:', error);
-			throw error;
 		}
 	}
 }

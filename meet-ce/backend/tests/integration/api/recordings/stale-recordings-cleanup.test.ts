@@ -1,24 +1,17 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { EgressInfo, EgressStatus, Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../../../../src/config/index.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MeetLock } from '../../../../src/helpers/index.js';
-import {
-	LiveKitService,
-	LoggerService,
-	MeetStorageService,
-	MutexService,
-	RecordingService
-} from '../../../../src/services/index.js';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { LiveKitService, LoggerService, MutexService, RecordingService } from '../../../../src/services/index.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Recording Cleanup Tests', () => {
 	let recordingService: RecordingService;
 	let mutexService: MutexService;
 	let livekitService: LiveKitService;
-	let storageService: MeetStorageService;
 
 	const getRecordingLock = (roomId: string) => MeetLock.getRecordingActiveLock(roomId);
 
@@ -35,12 +28,11 @@ describe('Recording Cleanup Tests', () => {
 		noUpdatedAt: 'room-no-updated-at'
 	};
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 		recordingService = container.get(RecordingService);
 		mutexService = container.get(MutexService);
 		livekitService = container.get(LiveKitService);
-		storageService = container.get(MeetStorageService);
 
 		// Mute logs for the test
 		const logger = container.get(LoggerService);
@@ -70,8 +62,6 @@ describe('Recording Cleanup Tests', () => {
 		jest.spyOn(livekitService, 'getRoom');
 		jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
 		jest.spyOn(livekitService, 'stopEgress');
-		jest.spyOn(storageService, 'getRecordingMetadata');
-		jest.spyOn(storageService, 'saveRecordingMetadata');
 		jest.spyOn(recordingService as never, 'performRecordingLocksGarbageCollection');
 		jest.spyOn(recordingService as never, 'evaluateAndReleaseOrphanedLock');
 		jest.spyOn(recordingService as never, 'performStaleRecordingsCleanup');

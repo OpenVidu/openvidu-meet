@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
-import { MeetRoom } from '@openvidu-meet/typings';
+import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import {
 	expectValidationError,
 	expectValidStartRecordingResponse,
@@ -26,7 +26,7 @@ describe('Recording API Tests', () => {
 	let room: MeetRoom, moderatorToken: string;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		await deleteAllRecordings();
 	});
 
@@ -57,26 +57,20 @@ describe('Recording API Tests', () => {
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 
-		it('should secrets and archived room files be created when recording starts', async () => {
+		it('should create secrets when recording starts', async () => {
 			const response = await startRecording(room.roomId, moderatorToken);
 			const recordingId = response.body.recordingId;
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
 
-			const storageService = container.get(MeetStorageService);
+			const recordingRepository = container.get(RecordingRepository);
 
-			const recSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+			const recSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
 			expect(recSecrets).toBeDefined();
 			expect(recSecrets?.publicAccessSecret).toBeDefined();
 			expect(recSecrets?.privateAccessSecret).toBeDefined();
 
-			const archivedRoom = await storageService.getArchivedRoomMetadata(room.roomId);
-			expect(archivedRoom).toBeDefined();
-			expect(archivedRoom?.moderatorUrl).toBeDefined();
-			expect(archivedRoom?.speakerUrl).toBeDefined();
-			expect(archivedRoom?.config).toBeDefined();
-
-			const secretsResponse = await stopRecording(recordingId, moderatorToken);
-			expectValidStopRecordingResponse(secretsResponse, recordingId, room.roomId, room.roomName);
+			const stopResponse = await stopRecording(recordingId, moderatorToken);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 
 		it('should successfully start recording, stop it, and start again (sequential operations)', async () => {

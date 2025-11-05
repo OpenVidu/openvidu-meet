@@ -30,8 +30,8 @@ describe('Recording Garbage Collector Tests', () => {
 		nonExistentNoRecording: 'room-non-existent-no-recording'
 	};
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 		recordingService = container.get(RecordingService);
 		mutexService = container.get(MutexService);
 		livekitService = container.get(LiveKitService);

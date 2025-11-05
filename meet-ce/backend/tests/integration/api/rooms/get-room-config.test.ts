@@ -16,8 +16,8 @@ describe('Room API Tests', () => {
 		e2ee: { enabled: false }
 	};
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {

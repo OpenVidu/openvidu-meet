@@ -1,13 +1,12 @@
-import { AuthMode, MeetRecordingAccess, MeetRoom, ParticipantRole, UserRole } from '@openvidu-meet/typings';
+import { AuthMode, MeetRecordingAccess, ParticipantRole, UserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import {
 	errorInsufficientPermissions,
-	errorRoomMetadataNotFound,
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { MeetStorageService, RoomService } from '../services/index.js';
+import { GlobalConfigService, RoomService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
@@ -47,7 +46,7 @@ export const configureRoomAuthorization = async (req: Request, res: Response, ne
  * - Otherwise, allow anonymous access.
  */
 export const configureRecordingTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
-	const storageService = container.get(MeetStorageService);
+	const configService = container.get(GlobalConfigService);
 	const roomService = container.get(RoomService);
 
 	let role: ParticipantRole;
@@ -55,21 +54,16 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 	try {
 		const roomId = req.params.roomId;
 		const { secret } = req.body;
-		const room = await storageService.getArchivedRoomMetadata(roomId);
+		const room = await roomService.getMeetRoom(roomId);
 
-		if (!room) {
-			// If the room is not found, it means that there are no recordings for that room or the room doesn't exist
-			throw errorRoomMetadataNotFound(roomId);
-		}
-
-		const recordingAccess = room.config?.recording.allowAccessTo;
+		const recordingAccess = room.config.recording.allowAccessTo;
 
 		if (!recordingAccess || recordingAccess === MeetRecordingAccess.ADMIN) {
 			// Deny request if the room is configured to allow access to recordings only for admins
 			throw errorInsufficientPermissions();
 		}
 
-		role = roomService.getRoomRoleBySecretFromRoom(room as MeetRoom, secret);
+		role = await roomService.getRoomRoleBySecret(roomId, secret);
 	} catch (error) {
 		return handleError(res, error, 'getting room role by secret');
 	}
@@ -77,7 +71,7 @@ export const configureRecordingTokenAuth = async (req: Request, res: Response, n
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityConfig } = await storageService.getGlobalConfig();
+		const { securityConfig } = await configService.getGlobalConfig();
 		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication config');

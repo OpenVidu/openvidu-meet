@@ -33,7 +33,7 @@ describe('Recording API Race Conditions Tests', () => {
 	let recordingService: RecordingService;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		recordingService = container.get(RecordingService);
 
 		await deleteAllRecordings();

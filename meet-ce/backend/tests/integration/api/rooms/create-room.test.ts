@@ -20,7 +20,7 @@ describe('Room API Tests', () => {
 	let app: Express;
 
 	beforeAll(async () => {
-		app = startTestServer();
+		app = await startTestServer();
 	});
 
 	afterAll(async () => {

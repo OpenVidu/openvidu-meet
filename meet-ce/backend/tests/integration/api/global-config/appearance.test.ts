@@ -1,22 +1,20 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
 import { MeetAppearanceConfig, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getRoomsAppearanceConfig,
+	restoreDefaultGlobalConfig,
 	startTestServer,
 	updateRoomsAppearanceConfig
 } from '../../../helpers/request-helpers.js';
 
 describe('Rooms Appearance Config API Tests', () => {
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 	});
 
 	afterEach(async () => {
-		const storageService = container.get(MeetStorageService);
-		await storageService['initializeGlobalConfig']();
+		await restoreDefaultGlobalConfig();
 	});
 
 	describe('Update rooms appearance config', () => {

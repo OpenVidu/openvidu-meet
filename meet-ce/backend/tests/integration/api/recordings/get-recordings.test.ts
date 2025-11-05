@@ -26,8 +26,8 @@ describe('Recordings API Tests', () => {
 	let context: TestContext | null = null;
 	let room: MeetRoom;
 
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	describe('List Recordings Tests', () => {

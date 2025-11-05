@@ -2,7 +2,7 @@ import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Request } from 'express';
 import { container } from '../config/index.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { LoggerService, MeetStorageService } from '../services/index.js';
+import { GlobalConfigService, LoggerService } from '../services/index.js';
 
 /**
  * Gets the current authentication transport mode from global config.
@@ -11,8 +11,8 @@ import { LoggerService, MeetStorageService } from '../services/index.js';
  */
 export const getAuthTransportMode = async (): Promise<AuthTransportMode> => {
 	try {
-		const storageService = container.get(MeetStorageService);
-		const globalConfig = await storageService.getGlobalConfig();
+		const configService = container.get(GlobalConfigService);
+		const globalConfig = await configService.getGlobalConfig();
 		return globalConfig.securityConfig.authentication.authTransportMode;
 	} catch (error) {
 		const logger = container.get(LoggerService);

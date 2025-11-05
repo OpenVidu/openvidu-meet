@@ -23,7 +23,7 @@ describe('Participant API Security Tests', () => {
 	let adminAccessToken: string;
 
 	beforeAll(async () => {
-		app = startTestServer();
+		app = await startTestServer();
 		adminAccessToken = await loginUser();
 	});
 

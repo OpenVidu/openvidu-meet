@@ -18,6 +18,7 @@
             # - $ref: '../components/parameters/recording-status.yaml'
             - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/room-id-query.yaml'
+            - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
         responses:

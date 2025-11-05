@@ -11,7 +11,8 @@ import {
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { LoggerService, MeetStorageService, RecordingService } from '../services/index.js';
+import { RecordingRepository } from '../repositories/index.js';
+import { LoggerService, RecordingService } from '../services/index.js';
 import { getBaseUrl } from '../utils/index.js';
 
 export const startRecording = async (req: Request, res: Response) => {
@@ -83,10 +84,7 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 
 	try {
 		const recordingIdsArray = (recordingIds as string).split(',');
-		const { deleted, failed } = await recordingService.bulkDeleteRecordingsAndAssociatedFiles(
-			recordingIdsArray,
-			roomId
-		);
+		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIdsArray, roomId);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && failed.length === 0) {
@@ -239,8 +237,8 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	logger.info(`Getting URL for recording '${recordingId}'`);
 
 	try {
-		const storageService = container.get(MeetStorageService);
-		const recordingSecrets = await storageService.getAccessRecordingSecrets(recordingId);
+		const recordingRepository = container.get(RecordingRepository);
+		const recordingSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
 
 		if (!recordingSecrets) {
 			const error = errorRecordingNotFound(recordingId);

@@ -23,7 +23,7 @@ describe('Meeting API Security Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		app = startTestServer();
+		app = await startTestServer();
 		adminAccessToken = await loginUser();
 	});
 

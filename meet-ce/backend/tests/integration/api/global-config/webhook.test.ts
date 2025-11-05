@@ -1,11 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { Request } from 'express';
-import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_INITIAL_WEBHOOK_ENABLED, MEET_INITIAL_WEBHOOK_URL } from '../../../../src/environment.js';
-import { MeetStorageService } from '../../../../src/services/index.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getWebbhookConfig,
+	restoreDefaultGlobalConfig,
 	startTestServer,
 	testWebhookUrl,
 	updateWebbhookConfig
@@ -13,13 +12,12 @@ import {
 import { startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
 
 describe('Webhook Config API Tests', () => {
-	beforeAll(() => {
-		startTestServer();
+	beforeAll(async () => {
+		await startTestServer();
 	});
 
 	afterEach(async () => {
-		const storageService = container.get(MeetStorageService);
-		await storageService['initializeGlobalConfig']();
+		await restoreDefaultGlobalConfig();
 	});
 
 	describe('Update webhook config', () => {

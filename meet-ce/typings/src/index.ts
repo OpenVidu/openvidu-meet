@@ -12,6 +12,7 @@ export * from './room-config.js';
 export * from './room.js';
 export * from './recording.model.js';
 export * from './webhook.model.js';
+export * from './analytics.js';
 
 // Webcomponent types
 export * from './webcomponent/command.model.js';

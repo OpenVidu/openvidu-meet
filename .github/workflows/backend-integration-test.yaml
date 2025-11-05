@@ -2,14 +2,14 @@ name: Backend Integration Tests
 on:
   push:
     paths:
-      - 'backend/src/**'
-      - 'backend/package.json'
-      - 'backend/pnpm-lock.yaml'
-      - 'backend/tests/**'
+      - 'meet-ce/backend/src/**'
+      - 'meet-ce/backend/package.json'
+      - 'pnpm-lock.yaml'
+      - 'meet-ce/backend/tests/**'
       - '.github/workflows/backend-integration-test.yaml'
   pull_request:
     paths:
-      - 'backend/src/**'
+      - 'meet-ce/backend/src/**'
   workflow_dispatch:
     inputs:
       use-aws:
@@ -38,21 +38,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - test-name: 'Rooms API Tests'
-            test-script: 'test:integration-backend-rooms'
+          - test-name: 'Room Management API Tests (Rooms, Meetings, Participants)'
+            test-script: 'test:integration-backend-room-management'
           - test-name: 'Webhook Tests'
             test-script: 'test:integration-backend-webhooks'
-          - test-name: 'Security API Tests'
-            test-script: 'test:integration-backend-security'
-            azure-container: 'openvidu-appdata-security'
-          - test-name: 'Global Config API Tests'
-            test-script: 'test:integration-backend-global-config'
-          - test-name: 'Participants API Tests'
-            test-script: 'test:integration-backend-participants'
-          - test-name: 'Meetings API Tests'
-            test-script: 'test:integration-backend-meetings'
-          - test-name: 'Users API Tests'
-            test-script: 'test:integration-backend-users'
+          - test-name: 'Auth & Security API Tests (Security, Auth, API Keys, Users)'
+            test-script: 'test:integration-backend-auth-security'
+          - test-name: 'Config & Analytics API Tests (Global Config, Analytics)'
+            test-script: 'test:integration-backend-config-analytics'
     steps:
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
@@ -85,8 +78,6 @@ jobs:
         with:
           build_components_angular: 'true'
           components_artifact_name: ${{ needs.build-components.outputs.artifact_name }}
-        env:
-          MEET_AZURE_CONTAINER_NAME: ${{ matrix.azure-container || '' }}
 
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}

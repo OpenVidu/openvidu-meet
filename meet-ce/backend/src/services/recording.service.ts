@@ -22,13 +22,14 @@ import {
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/index.js';
+import { RecordingRepository, RoomRepository } from '../repositories/index.js';
 import {
+	BlobStorageService,
 	DistributedEventService,
 	FrontendEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
-	MeetStorageService,
 	MutexService,
 	RedisLock,
 	TaskSchedulerService
@@ -41,7 +42,9 @@ export class RecordingService {
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
-		@inject(MeetStorageService) protected storageService: MeetStorageService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
+		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
@@ -215,31 +218,30 @@ export class RecordingService {
 	}
 
 	/**
-	 * Deletes a recording and its associated metadata from the S3 bucket.
-	 * If this was the last recording for this room, the room_metadata.json file is also deleted.
+	 * Deletes a recording and its associated metadata from MongoDB and blob storage.
 	 *
 	 * @param recordingId - The unique identifier of the recording to delete.
 	 * @returns The recording information that was deleted.
 	 */
 	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
 		try {
-			// Get the recording metada and recording info from the S3 bucket
-			const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
+			// Get the recording metadata from MongoDB
+			const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+
+			if (!recordingInfo) {
+				throw errorRecordingNotFound(recordingId);
+			}
 
 			// Validate the recording status
 			if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
 
-			await this.storageService.deleteRecording(recordingId);
+			// Delete recording metadata from MongoDB and media file from blob storage
+			await Promise.all([
+				this.recordingRepository.deleteByRecordingId(recordingId),
+				this.blobStorageService.deleteRecordingMedia(recordingId)
+			]);
 
 			this.logger.info(`Successfully deleted recording ${recordingId}`);
-
-			const { roomId } = recordingInfo;
-			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
-
-			if (shouldDeleteRoomMetadata) {
-				this.logger.verbose(`Deleting room_metadata.json for rooms: ${roomId}}`);
-				await this.storageService.deleteArchivedRoomMetadata(roomId);
-			}
 
 			return recordingInfo;
 		} catch (error) {
@@ -322,7 +324,7 @@ export class RecordingService {
 					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
 				}
 
-				const { failed } = await this.bulkDeleteRecordingsAndAssociatedFiles(remainingRecordings, roomId);
+				const { failed } = await this.bulkDeleteRecordings(remainingRecordings, roomId);
 
 				if (failed.length === 0) {
 					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
@@ -365,22 +367,14 @@ export class RecordingService {
 	 * @returns Array of all recording IDs for the room
 	 */
 	protected async getAllRecordingIdsForRoom(roomId: string): Promise<string[]> {
-		const allRecordingIds: string[] = [];
-		let nextPageToken: string | undefined;
-
-		do {
-			const response = await this.storageService.getAllRecordings(roomId, 100, nextPageToken);
-			const recordingIds = response.recordings.map((recording) => recording.recordingId);
-			allRecordingIds.push(...recordingIds);
-			nextPageToken = response.nextContinuationToken;
-		} while (nextPageToken);
-
-		return allRecordingIds;
+		const recordings = await this.recordingRepository.findAllByRoomId(roomId);
+		const recordingIds = recordings.map((recording) => recording.recordingId);
+		return recordingIds;
 	}
 
 	/**
-	 * Deletes multiple recordings in bulk from S3.
-	 * For each provided egressId, the metadata and recording file are deleted (only if the status is stopped).
+	 * Deletes multiple recordings in bulk from MongoDB and blob storage.
+	 * For each provided recordingId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
 	 * @param recordingIds Array of recording identifiers.
 	 * @param roomId Optional room identifier to delete only recordings from a specific room.
@@ -388,14 +382,13 @@ export class RecordingService {
 	 * - `deleted`: An array of successfully deleted recording IDs.
 	 * - `notDeleted`: An array of objects containing recording IDs and error messages for those that could not be deleted.
 	 */
-	async bulkDeleteRecordingsAndAssociatedFiles(
+	async bulkDeleteRecordings(
 		recordingIds: string[],
 		roomId?: string
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
-		const roomsToCheck: Set<string> = new Set();
 
 		for (const recordingId of recordingIds) {
 			// If a roomId is provided, only process recordings from that room
@@ -413,8 +406,12 @@ export class RecordingService {
 			}
 
 			try {
-				// Check if the recording is in progress
-				const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
+				// Check if the recording exists and can be deleted
+				const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+
+				if (!recordingInfo) {
+					throw errorRecordingNotFound(recordingId);
+				}
 
 				if (!RecordingHelper.canBeDeleted(recordingInfo)) {
 					throw errorRecordingNotStopped(recordingId);
@@ -422,9 +419,6 @@ export class RecordingService {
 
 				validRecordingIds.add(recordingId);
 				deletedRecordings.add(recordingId);
-
-				// Track room for metadata cleanup
-				roomsToCheck.add(recordingInfo.roomId);
 			} catch (error) {
 				this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
 				failedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
@@ -436,37 +430,13 @@ export class RecordingService {
 			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
 		}
 
-		// Delete recordings and its metadata from S3
+		// Delete recordings metadata from MongoDB and media files from blob storage
 		try {
-			await this.storageService.deleteRecordings(Array.from(validRecordingIds));
+			await Promise.all([
+				this.recordingRepository.deleteByRecordingIds(Array.from(validRecordingIds)),
+				this.blobStorageService.deleteRecordingMediaBatch(Array.from(validRecordingIds))
+			]);
 			this.logger.info(`BulkDelete: Successfully deleted ${validRecordingIds.size} recordings.`);
-		} catch (error) {
-			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
-			throw error;
-		}
-
-		// Check if the room metadata file should be deleted
-		const roomMetadataToDelete: string[] = [];
-
-		for (const roomId of roomsToCheck) {
-			const shouldDeleteRoomMetadata = await this.shouldDeleteRoomMetadata(roomId);
-
-			if (shouldDeleteRoomMetadata) {
-				roomMetadataToDelete.push(roomId);
-			}
-		}
-
-		if (roomMetadataToDelete.length === 0) {
-			this.logger.verbose(`BulkDelete: No room metadata files to delete.`);
-			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
-		}
-
-		// Perform bulk deletion of room metadata files
-		try {
-			await Promise.all(
-				roomMetadataToDelete.map((roomId) => this.storageService.deleteArchivedRoomMetadata(roomId))
-			);
-			this.logger.verbose(`BulkDelete: Successfully deleted ${roomMetadataToDelete.length} room metadata files.`);
 		} catch (error) {
 			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
 			throw error;
@@ -479,37 +449,22 @@ export class RecordingService {
 	}
 
 	/**
-	 * Checks if a room's metadata file should be deleted by determining if there
-	 * are any remaining recording metadata files for the room.
-	 *
-	 * @param roomId - The identifier of the room to check
-	 * @returns A promise that resolves to a boolean indicating whether the room metadata should be deleted.
-	 */
-	protected async shouldDeleteRoomMetadata(roomId: string): Promise<boolean | null> {
-		try {
-			const { recordings } = await this.storageService.getAllRecordings(roomId, 1);
-
-			// If no recordings exist or the list is empty, the room metadata should be deleted
-			return !recordings || recordings.length === 0;
-		} catch (error) {
-			this.logger.warn(`Error checking room metadata for deletion (room ${roomId}): ${error}`);
-			return null;
-		}
-	}
-
-	/**
 	 * Retrieves the recording information for a given recording ID.
 	 * @param recordingId - The unique identifier of the recording.
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
 	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
-		const { recordingInfo } = await this.storageService.getRecordingMetadata(recordingId);
+		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+
+		if (!recordingInfo) {
+			throw errorRecordingNotFound(recordingId);
+		}
 
 		return UtilsHelper.filterObjectFields(recordingInfo, fields) as MeetRecordingInfo;
 	}
 
 	/**
-	 * Retrieves a paginated list of all recordings stored in the S3 bucket.
+	 * Retrieves a paginated list of all recordings stored in MongoDB.
 	 *
 	 * @param maxItems - The maximum number of items to retrieve in a single request.
 	 * @param nextPageToken - (Optional) A token to retrieve the next page of results.
@@ -525,24 +480,31 @@ export class RecordingService {
 		nextPageToken?: string;
 	}> {
 		try {
-			const { maxItems, nextPageToken, roomId, fields } = filters;
-			const response = await this.storageService.getAllRecordings(roomId, maxItems, nextPageToken);
+			const { maxItems, nextPageToken, roomId, roomName, fields } = filters;
+
+			const response = await this.recordingRepository.find({
+				roomId,
+				roomName,
+				maxItems,
+				nextPageToken
+			});
 
 			// Apply field filtering if specified
+			let recordings = response.recordings;
+
 			if (fields) {
-				response.recordings = response.recordings.map((rec) =>
+				recordings = recordings.map((rec: MeetRecordingInfo) =>
 					UtilsHelper.filterObjectFields(rec, fields)
 				) as MeetRecordingInfo[];
 			}
 
-			const { recordings, isTruncated, nextContinuationToken } = response;
-
 			this.logger.info(`Retrieved ${recordings.length} recordings.`);
+
 			// Return the paginated list of recordings
 			return {
 				recordings,
-				isTruncated: Boolean(isTruncated),
-				nextPageToken: nextContinuationToken
+				isTruncated: response.isTruncated,
+				nextPageToken: response.nextPageToken
 			};
 		} catch (error) {
 			this.logger.error(`Error getting recordings: ${error}`);
@@ -558,7 +520,10 @@ export class RecordingService {
 	 */
 	async hasRoomRecordings(roomId: string): Promise<boolean> {
 		try {
-			const response = await this.storageService.getAllRecordings(roomId, 1);
+			const response = await this.recordingRepository.find({
+				roomId,
+				maxItems: 1
+			});
 			return response.recordings.length > 0;
 		} catch (error) {
 			this.logger.warn(`Error checking recordings for room '${roomId}': ${error}`);
@@ -594,11 +559,11 @@ export class RecordingService {
 			this.logger.debug(`Streaming full content for recording '${recordingId}'.`);
 		}
 
-		return this.storageService.getRecordingMedia(recordingId, validatedRange);
+		return this.blobStorageService.getRecordingMedia(recordingId, validatedRange);
 	}
 
 	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
-		const room = await this.storageService.getMeetRoom(roomId);
+		const room = await this.roomRepository.findByRoomId(roomId);
 
 		if (!room) throw errorRoomNotFound(roomId);
 
@@ -790,7 +755,7 @@ export class RecordingService {
 	protected async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
 		const recordingInfo = await this.getRecording(recordingId);
 		recordingInfo.status = status;
-		await this.storageService.saveRecordingMetadata(recordingInfo);
+		await this.recordingRepository.update(recordingInfo);
 	}
 
 	/**

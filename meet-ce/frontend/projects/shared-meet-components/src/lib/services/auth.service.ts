@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { User, UserRole } from '@openvidu-meet/typings';
 import { HttpService, NavigationService, TokenStorageService } from '../services';
-import { MeetApiKey, User, UserRole } from '@openvidu-meet/typings';
 
 @Injectable({
 	providedIn: 'root'
@@ -114,20 +114,5 @@ export class AuthService {
 	async changePassword(currentPassword: string, newPassword: string): Promise<any> {
 		const path = `${this.USERS_API}/change-password`;
 		return this.httpService.postRequest(path, { currentPassword, newPassword });
-	}
-
-	async generateApiKey(): Promise<MeetApiKey> {
-		const path = `${this.AUTH_API}/api-keys`;
-		return this.httpService.postRequest<MeetApiKey>(path);
-	}
-
-	async getApiKeys(): Promise<MeetApiKey[]> {
-		const path = `${this.AUTH_API}/api-keys`;
-		return this.httpService.getRequest<MeetApiKey[]>(path);
-	}
-
-	async deleteApiKeys(): Promise<any> {
-		const path = `${this.AUTH_API}/api-keys`;
-		return this.httpService.deleteRequest(path);
 	}
 }

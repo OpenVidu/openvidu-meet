@@ -1,15 +1,14 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
 import { Request } from 'express';
 import http from 'http';
-import { container } from '../../../src/config/dependency-injector.config.js';
-import { MeetStorageService } from '../../../src/services/index.js';
-import { MeetRecordingInfo, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
 	disconnectFakeParticipants,
 	endMeeting,
+	restoreDefaultGlobalConfig,
 	sleep,
 	startTestServer,
 	updateWebbhookConfig
@@ -23,11 +22,9 @@ import {
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
-	let storageService: MeetStorageService;
 
 	beforeAll(async () => {
-		startTestServer();
-		storageService = container.get(MeetStorageService);
+		await startTestServer();
 
 		// Start test server for webhooks
 		await startWebhookServer(5080, (req: Request) => {
@@ -49,7 +46,7 @@ describe('Webhook Integration Tests', () => {
 
 	afterAll(async () => {
 		await stopWebhookServer();
-		await storageService['initializeGlobalConfig']();
+		await restoreDefaultGlobalConfig();
 
 		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);

@@ -19,7 +19,7 @@ describe('Participant API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 
 		// Set short expiration for testing
 		const initialTokenExpiration = INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION;

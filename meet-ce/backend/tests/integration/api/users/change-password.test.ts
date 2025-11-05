@@ -7,7 +7,7 @@ describe('Users API Tests', () => {
 	let adminAccessToken: string;
 
 	beforeAll(async () => {
-		startTestServer();
+		await startTestServer();
 		adminAccessToken = await loginUser();
 	});
 
