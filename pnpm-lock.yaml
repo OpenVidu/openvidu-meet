@@ -501,6 +501,365 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  meet-pro/backend:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.846.0
+        version: 3.846.0
+      '@azure/storage-blob':
+        specifier: 12.27.0
+        version: 12.27.0
+      '@google-cloud/storage':
+        specifier: 7.17.1
+        version: 7.17.1(encoding@0.1.13)
+      '@openvidu-meet-pro/typings':
+        specifier: workspace:*
+        version: link:../typings
+      '@openvidu-meet/backend':
+        specifier: workspace:*
+        version: link:../../meet-ce/backend
+      '@sesamecare-oss/redlock':
+        specifier: 1.4.0
+        version: 1.4.0(ioredis@5.6.1)
+      archiver:
+        specifier: 7.0.1
+        version: 7.0.1
+      bcrypt:
+        specifier: 5.1.1
+        version: 5.1.1(encoding@0.1.13)
+      body-parser:
+        specifier: 2.2.0
+        version: 2.2.0
+      chalk:
+        specifier: 5.6.2
+        version: 5.6.2
+      cookie-parser:
+        specifier: 1.4.7
+        version: 1.4.7
+      cors:
+        specifier: 2.8.5
+        version: 2.8.5
+      cron:
+        specifier: 4.3.3
+        version: 4.3.3
+      dotenv:
+        specifier: 16.6.1
+        version: 16.6.1
+      express:
+        specifier: 4.21.2
+        version: 4.21.2
+      express-rate-limit:
+        specifier: 7.5.1
+        version: 7.5.1(express@4.21.2)
+      inversify:
+        specifier: 6.2.2
+        version: 6.2.2(reflect-metadata@0.2.2)
+      ioredis:
+        specifier: 5.6.1
+        version: 5.6.1
+      jwt-decode:
+        specifier: 4.0.0
+        version: 4.0.0
+      livekit-server-sdk:
+        specifier: 2.13.1
+        version: 2.13.1
+      ms:
+        specifier: 2.1.3
+        version: 2.1.3
+      uid:
+        specifier: 2.0.2
+        version: 2.0.2
+      winston:
+        specifier: 3.18.3
+        version: 3.18.3
+      yamljs:
+        specifier: 0.3.0
+        version: 0.3.0
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/archiver':
+        specifier: 6.0.3
+        version: 6.0.3
+      '@types/bcrypt':
+        specifier: 5.0.2
+        version: 5.0.2
+      '@types/cookie-parser':
+        specifier: 1.4.9
+        version: 1.4.9(@types/express@4.17.23)
+      '@types/cors':
+        specifier: 2.8.19
+        version: 2.8.19
+      '@types/express':
+        specifier: 4.17.23
+        version: 4.17.23
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      '@types/ms':
+        specifier: 2.1.0
+        version: 2.1.0
+      '@types/node':
+        specifier: 22.16.4
+        version: 22.16.4
+      '@types/supertest':
+        specifier: 6.0.3
+        version: 6.0.3
+      '@types/unzipper':
+        specifier: 0.10.11
+        version: 0.10.11
+      '@types/validator':
+        specifier: 13.15.2
+        version: 13.15.2
+      '@types/yamljs':
+        specifier: 0.2.34
+        version: 0.2.34
+      '@typescript-eslint/eslint-plugin':
+        specifier: 6.21.0
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.2))(eslint@8.57.1)(typescript@5.9.2)
+      '@typescript-eslint/parser':
+        specifier: 6.21.0
+        version: 6.21.0(eslint@8.57.1)(typescript@5.9.2)
+      cross-env:
+        specifier: 7.0.3
+        version: 7.0.3
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      eslint-config-prettier:
+        specifier: 9.1.0
+        version: 9.1.0(eslint@8.57.1)
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.16.4)(ts-node@10.9.2(@types/node@22.16.4)(typescript@5.9.2))
+      jest-fetch-mock:
+        specifier: 3.0.3
+        version: 3.0.3(encoding@0.1.13)
+      jest-junit:
+        specifier: 16.0.0
+        version: 16.0.0
+      nodemon:
+        specifier: 3.1.10
+        version: 3.1.10
+      openapi-generate-html:
+        specifier: 0.5.3
+        version: 0.5.3(@types/node@22.16.4)
+      prettier:
+        specifier: 3.6.2
+        version: 3.6.2
+      supertest:
+        specifier: 7.1.3
+        version: 7.1.3
+      ts-jest:
+        specifier: 29.4.0
+        version: 29.4.0(@babel/core@7.28.4)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.4))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.16.4)(ts-node@10.9.2(@types/node@22.16.4)(typescript@5.9.2)))(typescript@5.9.2)
+      ts-jest-resolver:
+        specifier: 2.0.1
+        version: 2.0.1
+      tsx:
+        specifier: 4.20.3
+        version: 4.20.3
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+      unzipper:
+        specifier: 0.12.3
+        version: 0.12.3
+
+  meet-pro/frontend:
+    dependencies:
+      '@angular/animations':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/cdk':
+        specifier: 20.2.9
+        version: 20.2.9(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@angular/common':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@angular/compiler':
+        specifier: 20.3.4
+        version: 20.3.4
+      '@angular/core':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)
+      '@angular/forms':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+      '@angular/material':
+        specifier: 20.2.9
+        version: 20.2.9(b517547b325ffc8400ae4cda6a618bfd)
+      '@angular/platform-browser':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))
+      '@angular/platform-browser-dynamic':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))
+      '@angular/router':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+      '@livekit/track-processors':
+        specifier: 0.6.1
+        version: 0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.11(@types/dom-mediacapture-record@1.0.22))
+      '@openvidu-meet/shared-components':
+        specifier: workspace:*
+        version: link:../../meet-ce/frontend/projects/shared-meet-components
+      '@openvidu-meet/typings':
+        specifier: workspace:*
+        version: link:../../meet-ce/typings
+      autolinker:
+        specifier: 4.1.5
+        version: 4.1.5
+      core-js:
+        specifier: 3.45.1
+        version: 3.45.1
+      jwt-decode:
+        specifier: 4.0.0
+        version: 4.0.0
+      livekit-client:
+        specifier: 2.15.11
+        version: 2.15.11(@types/dom-mediacapture-record@1.0.22)
+      openvidu-components-angular:
+        specifier: workspace:*
+        version: link:../../../openvidu/openvidu-components-angular/projects/openvidu-components-angular
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
+      tslib:
+        specifier: 2.8.1
+        version: 2.8.1
+      unique-names-generator:
+        specifier: 4.7.1
+        version: 4.7.1
+      zone.js:
+        specifier: 0.15.1
+        version: 0.15.1
+    devDependencies:
+      '@angular-builders/custom-webpack':
+        specifier: 20.0.0
+        version: 20.0.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(browser-sync@3.0.4)(chokidar@4.0.3)(jest-environment-jsdom@29.7.0)(jest@29.7.0(@types/node@22.18.8)(ts-node@10.9.2(@types/node@22.18.8)(typescript@5.9.2)))(jiti@1.21.7)(karma@6.4.4)(less@4.4.2)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(postcss@8.5.6)(terser@5.44.0)(tslib@2.8.1)(tsx@4.20.3)(typescript@5.9.2)
+      '@angular-devkit/build-angular':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(browser-sync@3.0.4)(chokidar@4.0.3)(jest-environment-jsdom@29.7.0)(jest@29.7.0(@types/node@22.18.8)(ts-node@10.9.2(@types/node@22.18.8)(typescript@5.9.2)))(jiti@1.21.7)(karma@6.4.4)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(tsx@4.20.3)(typescript@5.9.2)
+      '@angular-eslint/builder':
+        specifier: 20.3.0
+        version: 20.3.0(chokidar@4.0.3)(eslint@8.57.1)(typescript@5.9.2)
+      '@angular-eslint/eslint-plugin':
+        specifier: 20.3.0
+        version: 20.3.0(@typescript-eslint/utils@8.46.1(eslint@8.57.1)(typescript@5.9.2))(eslint@8.57.1)(typescript@5.9.2)
+      '@angular-eslint/eslint-plugin-template':
+        specifier: 20.3.0
+        version: 20.3.0(@angular-eslint/template-parser@20.3.0(eslint@8.57.1)(typescript@5.9.2))(@typescript-eslint/types@8.46.1)(@typescript-eslint/utils@8.46.1(eslint@8.57.1)(typescript@5.9.2))(eslint@8.57.1)(typescript@5.9.2)
+      '@angular-eslint/schematics':
+        specifier: 20.3.0
+        version: 20.3.0(@angular-eslint/template-parser@20.3.0(eslint@8.57.1)(typescript@5.9.2))(@typescript-eslint/types@8.46.1)(@typescript-eslint/utils@8.46.1(eslint@8.57.1)(typescript@5.9.2))(chokidar@4.0.3)(eslint@8.57.1)(typescript@5.9.2)
+      '@angular-eslint/template-parser':
+        specifier: 20.3.0
+        version: 20.3.0(eslint@8.57.1)(typescript@5.9.2)
+      '@angular/cli':
+        specifier: 20.3.4
+        version: 20.3.4(@types/node@22.18.8)(chokidar@4.0.3)
+      '@angular/compiler-cli':
+        specifier: 20.3.4
+        version: 20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2)
+      '@types/chai':
+        specifier: 4.3.20
+        version: 4.3.20
+      '@types/fluent-ffmpeg':
+        specifier: 2.1.27
+        version: 2.1.27
+      '@types/jasmine':
+        specifier: 5.1.9
+        version: 5.1.9
+      '@types/mocha':
+        specifier: 9.1.1
+        version: 9.1.1
+      '@types/node':
+        specifier: 22.18.8
+        version: 22.18.8
+      '@types/pixelmatch':
+        specifier: 5.2.6
+        version: 5.2.6
+      '@types/pngjs':
+        specifier: 6.0.5
+        version: 6.0.5
+      '@types/selenium-webdriver':
+        specifier: 4.35.1
+        version: 4.35.1
+      '@typescript-eslint/eslint-plugin':
+        specifier: 8.46.1
+        version: 8.46.1(@typescript-eslint/parser@8.46.1(eslint@8.57.1)(typescript@5.9.2))(eslint@8.57.1)(typescript@5.9.2)
+      '@typescript-eslint/parser':
+        specifier: 8.46.1
+        version: 8.46.1(eslint@8.57.1)(typescript@5.9.2)
+      chai:
+        specifier: 4.5.0
+        version: 4.5.0
+      chromedriver:
+        specifier: 141.0.0
+        version: 141.0.0
+      cross-env:
+        specifier: 7.0.3
+        version: 7.0.3
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      eslint-config-prettier:
+        specifier: 9.1.0
+        version: 9.1.0(eslint@8.57.1)
+      fluent-ffmpeg:
+        specifier: 2.1.3
+        version: 2.1.3
+      jasmine-core:
+        specifier: 5.6.0
+        version: 5.6.0
+      jasmine-spec-reporter:
+        specifier: 7.0.0
+        version: 7.0.0
+      karma:
+        specifier: 6.4.4
+        version: 6.4.4
+      karma-chrome-launcher:
+        specifier: 3.2.0
+        version: 3.2.0
+      karma-coverage:
+        specifier: 2.2.1
+        version: 2.2.1
+      karma-jasmine:
+        specifier: 5.1.0
+        version: 5.1.0(karma@6.4.4)
+      karma-jasmine-html-reporter:
+        specifier: 2.1.0
+        version: 2.1.0(jasmine-core@5.6.0)(karma-jasmine@5.1.0(karma@6.4.4))(karma@6.4.4)
+      mocha:
+        specifier: 10.7.3
+        version: 10.7.3
+      ng-packagr:
+        specifier: 20.3.0
+        version: 20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2)
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
+      selenium-webdriver:
+        specifier: 4.25.0
+        version: 4.25.0
+      ts-node:
+        specifier: 10.9.2
+        version: 10.9.2(@types/node@22.18.8)(typescript@5.9.2)
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  meet-pro/typings:
+    devDependencies:
+      '@openvidu-meet/typings':
+        specifier: workspace:*
+        version: link:../../meet-ce/typings
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
   testapp:
     dependencies:
       '@openvidu-meet/typings':
@@ -6570,6 +6929,7 @@ packages:
 
   livekit-client@2.15.11:
     resolution: {integrity: sha512-9cHdAbSibPGyt7wWM+GAUswIOuklQHF9y561Oruzh0nNFNvRzMsE10oqJvjs0k6s2Jl+j/Z5Ar90bzVwLpu1yg==}
+    deprecated: Compatibility issue around AbortSignal.any usage, use >=2.15.12 instead
     peerDependencies:
       '@types/dom-mediacapture-record': ^1
 
@@ -9322,6 +9682,59 @@ snapshots:
       - webpack-cli
       - yaml
 
+  '@angular-builders/custom-webpack@20.0.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(browser-sync@3.0.4)(chokidar@4.0.3)(jest-environment-jsdom@29.7.0)(jest@29.7.0(@types/node@22.18.8)(ts-node@10.9.2(@types/node@22.18.8)(typescript@5.9.2)))(jiti@1.21.7)(karma@6.4.4)(less@4.4.2)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(postcss@8.5.6)(terser@5.44.0)(tslib@2.8.1)(tsx@4.20.3)(typescript@5.9.2)':
+    dependencies:
+      '@angular-builders/common': 4.0.0(@types/node@22.18.8)(chokidar@4.0.3)(typescript@5.9.2)
+      '@angular-devkit/architect': 0.2003.5(chokidar@4.0.3)
+      '@angular-devkit/build-angular': 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(browser-sync@3.0.4)(chokidar@4.0.3)(jest-environment-jsdom@29.7.0)(jest@29.7.0(@types/node@22.18.8)(ts-node@10.9.2(@types/node@22.18.8)(typescript@5.9.2)))(jiti@1.21.7)(karma@6.4.4)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(tsx@4.20.3)(typescript@5.9.2)
+      '@angular-devkit/core': 20.3.5(chokidar@4.0.3)
+      '@angular/build': 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(chokidar@4.0.3)(jiti@1.21.7)(karma@6.4.4)(less@4.4.2)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(postcss@8.5.6)(terser@5.44.0)(tslib@2.8.1)(tsx@4.20.3)(typescript@5.9.2)
+      '@angular/compiler-cli': 20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2)
+      lodash: 4.17.21
+      webpack-merge: 6.0.1
+    transitivePeerDependencies:
+      - '@angular/compiler'
+      - '@angular/core'
+      - '@angular/localize'
+      - '@angular/platform-browser'
+      - '@angular/platform-server'
+      - '@angular/service-worker'
+      - '@angular/ssr'
+      - '@rspack/core'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - '@web/test-runner'
+      - browser-sync
+      - bufferutil
+      - chokidar
+      - debug
+      - html-webpack-plugin
+      - jest
+      - jest-environment-jsdom
+      - jiti
+      - karma
+      - less
+      - lightningcss
+      - ng-packagr
+      - node-sass
+      - postcss
+      - protractor
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - tailwindcss
+      - terser
+      - tslib
+      - tsx
+      - typescript
+      - uglify-js
+      - utf-8-validate
+      - vitest
+      - webpack-cli
+      - yaml
+
   '@angular-devkit/architect@0.2003.4(chokidar@4.0.3)':
     dependencies:
       '@angular-devkit/core': 20.3.4(chokidar@4.0.3)
@@ -9340,7 +9753,7 @@ snapshots:
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2003.4(chokidar@4.0.3)
-      '@angular-devkit/build-webpack': 0.2003.4(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.101.2))(webpack@5.101.2)
+      '@angular-devkit/build-webpack': 0.2003.4(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.101.2(esbuild@0.25.9)))(webpack@5.101.2(esbuild@0.25.9))
       '@angular-devkit/core': 20.3.4(chokidar@4.0.3)
       '@angular/build': 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(@angular/compiler@20.3.4)(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@types/node@22.18.8)(chokidar@4.0.3)(jiti@1.21.7)(karma@6.4.4)(less@4.4.0)(ng-packagr@20.3.0(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(tslib@2.8.1)(typescript@5.9.2))(postcss@8.5.6)(terser@5.43.1)(tslib@2.8.1)(tsx@4.20.3)(typescript@5.9.2)
       '@angular/compiler-cli': 20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2)
@@ -9354,13 +9767,13 @@ snapshots:
       '@babel/preset-env': 7.28.3(@babel/core@7.28.3)
       '@babel/runtime': 7.28.3
       '@discoveryjs/json-ext': 0.6.3
-      '@ngtools/webpack': 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(typescript@5.9.2)(webpack@5.101.2)
+      '@ngtools/webpack': 20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(typescript@5.9.2)(webpack@5.101.2(esbuild@0.25.9))
       ansi-colors: 4.1.3
       autoprefixer: 10.4.21(postcss@8.5.6)
-      babel-loader: 10.0.0(@babel/core@7.28.3)(webpack@5.101.2)
+      babel-loader: 10.0.0(@babel/core@7.28.3)(webpack@5.101.2(esbuild@0.25.9))
       browserslist: 4.26.3
-      copy-webpack-plugin: 13.0.1(webpack@5.101.2)
-      css-loader: 7.1.2(webpack@5.101.2)
+      copy-webpack-plugin: 13.0.1(webpack@5.101.2(esbuild@0.25.9))
+      css-loader: 7.1.2(webpack@5.101.2(esbuild@0.25.9))
       esbuild-wasm: 0.25.9
       fast-glob: 3.3.3
       http-proxy-middleware: 3.0.5
@@ -9368,32 +9781,32 @@ snapshots:
       jsonc-parser: 3.3.1
       karma-source-map-support: 1.4.0
       less: 4.4.0
-      less-loader: 12.3.0(less@4.4.0)(webpack@5.101.2)
-      license-webpack-plugin: 4.0.2(webpack@5.101.2)
+      less-loader: 12.3.0(less@4.4.0)(webpack@5.101.2(esbuild@0.25.9))
+      license-webpack-plugin: 4.0.2(webpack@5.101.2(esbuild@0.25.9))
       loader-utils: 3.3.1
-      mini-css-extract-plugin: 2.9.4(webpack@5.101.2)
+      mini-css-extract-plugin: 2.9.4(webpack@5.101.2(esbuild@0.25.9))
       open: 10.2.0
       ora: 8.2.0
       picomatch: 4.0.3
       piscina: 5.1.3
       postcss: 8.5.6
-      postcss-loader: 8.1.1(postcss@8.5.6)(typescript@5.9.2)(webpack@5.101.2)
+      postcss-loader: 8.1.1(postcss@8.5.6)(typescript@5.9.2)(webpack@5.101.2(esbuild@0.25.9))
       resolve-url-loader: 5.0.0
       rxjs: 7.8.2
       sass: 1.90.0
-      sass-loader: 16.0.5(sass@1.90.0)(webpack@5.101.2)
+      sass-loader: 16.0.5(sass@1.90.0)(webpack@5.101.2(esbuild@0.25.9))
       semver: 7.7.2
-      source-map-loader: 5.0.0(webpack@5.101.2)
+      source-map-loader: 5.0.0(webpack@5.101.2(esbuild@0.25.9))
       source-map-support: 0.5.21
       terser: 5.43.1
       tree-kill: 1.2.2
       tslib: 2.8.1
       typescript: 5.9.2
       webpack: 5.101.2(esbuild@0.25.9)
-      webpack-dev-middleware: 7.4.2(webpack@5.101.2)
-      webpack-dev-server: 5.2.2(webpack@5.101.2)
+      webpack-dev-middleware: 7.4.2(webpack@5.101.2(esbuild@0.25.9))
+      webpack-dev-server: 5.2.2(webpack@5.101.2(esbuild@0.25.9))
       webpack-merge: 6.0.1
-      webpack-subresource-integrity: 5.1.0(webpack@5.101.2)
+      webpack-subresource-integrity: 5.1.0(webpack@5.101.2(esbuild@0.25.9))
     optionalDependencies:
       '@angular/core': 20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)
       '@angular/platform-browser': 20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))
@@ -9426,12 +9839,12 @@ snapshots:
       - webpack-cli
       - yaml
 
-  '@angular-devkit/build-webpack@0.2003.4(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.101.2))(webpack@5.101.2)':
+  '@angular-devkit/build-webpack@0.2003.4(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.101.2(esbuild@0.25.9)))(webpack@5.101.2(esbuild@0.25.9))':
     dependencies:
       '@angular-devkit/architect': 0.2003.4(chokidar@4.0.3)
       rxjs: 7.8.2
       webpack: 5.101.2(esbuild@0.25.9)
-      webpack-dev-server: 5.2.2(webpack@5.101.2)
+      webpack-dev-server: 5.2.2(webpack@5.101.2(esbuild@0.25.9))
     transitivePeerDependencies:
       - chokidar
 
@@ -12197,7 +12610,7 @@ snapshots:
       '@napi-rs/nice-win32-x64-msvc': 1.1.1
     optional: true
 
-  '@ngtools/webpack@20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(typescript@5.9.2)(webpack@5.101.2)':
+  '@ngtools/webpack@20.3.4(@angular/compiler-cli@20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2))(typescript@5.9.2)(webpack@5.101.2(esbuild@0.25.9))':
     dependencies:
       '@angular/compiler-cli': 20.3.4(@angular/compiler@20.3.4)(typescript@5.9.2)
       typescript: 5.9.2
@@ -13528,6 +13941,10 @@ snapshots:
     dependencies:
       vite: 7.1.5(@types/node@22.18.8)(jiti@1.21.7)(less@4.4.0)(sass@1.90.0)(terser@5.44.0)(tsx@4.20.3)
 
+  '@vitejs/plugin-basic-ssl@2.1.0(vite@7.1.5(@types/node@22.18.8)(jiti@1.21.7)(less@4.4.2)(sass@1.90.0)(terser@5.44.0)(tsx@4.20.3))':
+    dependencies:
+      vite: 7.1.5(@types/node@22.18.8)(jiti@1.21.7)(less@4.4.2)(sass@1.90.0)(terser@5.44.0)(tsx@4.20.3)
+
   '@webassemblyjs/ast@1.14.1':
     dependencies:
       '@webassemblyjs/helper-numbers': 1.13.2
@@ -13899,7 +14316,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-loader@10.0.0(@babel/core@7.28.3)(webpack@5.101.2):
+  babel-loader@10.0.0(@babel/core@7.28.3)(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       '@babel/core': 7.28.3
       find-up: 5.0.0
@@ -14486,7 +14903,7 @@ snapshots:
     dependencies:
       is-what: 3.14.1
 
-  copy-webpack-plugin@13.0.1(webpack@5.101.2):
+  copy-webpack-plugin@13.0.1(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       glob-parent: 6.0.2
       normalize-path: 3.0.0
@@ -14597,7 +15014,7 @@ snapshots:
     dependencies:
       postcss: 8.5.6
 
-  css-loader@7.1.2(webpack@5.101.2):
+  css-loader@7.1.2(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       postcss: 8.5.6
@@ -17148,7 +17565,7 @@ snapshots:
     dependencies:
       readable-stream: 2.3.8
 
-  less-loader@12.3.0(less@4.4.0)(webpack@5.101.2):
+  less-loader@12.3.0(less@4.4.0)(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       less: 4.4.0
     optionalDependencies:
@@ -17189,7 +17606,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  license-webpack-plugin@4.0.2(webpack@5.101.2):
+  license-webpack-plugin@4.0.2(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       webpack-sources: 3.3.3
     optionalDependencies:
@@ -17445,7 +17862,7 @@ snapshots:
 
   mimic-function@5.0.1: {}
 
-  mini-css-extract-plugin@2.9.4(webpack@5.101.2):
+  mini-css-extract-plugin@2.9.4(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       schema-utils: 4.3.3
       tapable: 2.3.0
@@ -18153,7 +18570,7 @@ snapshots:
       postcss: 8.5.6
       ts-node: 10.9.2(@types/node@22.18.8)(typescript@5.7.3)
 
-  postcss-loader@8.1.1(postcss@8.5.6)(typescript@5.9.2)(webpack@5.101.2):
+  postcss-loader@8.1.1(postcss@8.5.6)(typescript@5.9.2)(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       cosmiconfig: 9.0.0(typescript@5.9.2)
       jiti: 1.21.7
@@ -18730,7 +19147,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  sass-loader@16.0.5(sass@1.90.0)(webpack@5.101.2):
+  sass-loader@16.0.5(sass@1.90.0)(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       neo-async: 2.6.2
     optionalDependencies:
@@ -19038,7 +19455,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  source-map-loader@5.0.0(webpack@5.101.2):
+  source-map-loader@5.0.0(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       iconv-lite: 0.6.3
       source-map-js: 1.2.1
@@ -19812,6 +20229,23 @@ snapshots:
       terser: 5.44.0
       tsx: 4.20.3
 
+  vite@7.1.5(@types/node@22.18.8)(jiti@1.21.7)(less@4.4.2)(sass@1.90.0)(terser@5.44.0)(tsx@4.20.3):
+    dependencies:
+      esbuild: 0.25.10
+      fdir: 6.5.0(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.52.3
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 22.18.8
+      fsevents: 2.3.3
+      jiti: 1.21.7
+      less: 4.4.2
+      sass: 1.90.0
+      terser: 5.44.0
+      tsx: 4.20.3
+
   void-elements@2.0.1: {}
 
   w3c-xmlserializer@4.0.0:
@@ -19848,7 +20282,7 @@ snapshots:
 
   webidl-conversions@7.0.0: {}
 
-  webpack-dev-middleware@7.4.2(webpack@5.101.2):
+  webpack-dev-middleware@7.4.2(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       colorette: 2.0.20
       memfs: 4.49.0
@@ -19859,7 +20293,7 @@ snapshots:
     optionalDependencies:
       webpack: 5.101.2(esbuild@0.25.9)
 
-  webpack-dev-server@5.2.2(webpack@5.101.2):
+  webpack-dev-server@5.2.2(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       '@types/bonjour': 3.5.13
       '@types/connect-history-api-fallback': 1.5.4
@@ -19887,7 +20321,7 @@ snapshots:
       serve-index: 1.9.1
       sockjs: 0.3.24
       spdy: 4.0.2
-      webpack-dev-middleware: 7.4.2(webpack@5.101.2)
+      webpack-dev-middleware: 7.4.2(webpack@5.101.2(esbuild@0.25.9))
       ws: 8.18.3
     optionalDependencies:
       webpack: 5.101.2(esbuild@0.25.9)
@@ -19905,7 +20339,7 @@ snapshots:
 
   webpack-sources@3.3.3: {}
 
-  webpack-subresource-integrity@5.1.0(webpack@5.101.2):
+  webpack-subresource-integrity@5.1.0(webpack@5.101.2(esbuild@0.25.9)):
     dependencies:
       typed-assert: 1.0.9
       webpack: 5.101.2(esbuild@0.25.9)

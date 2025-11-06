@@ -1,25 +1,21 @@
-import { createDefaultEsmPreset } from 'ts-jest'
-
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-const jestConfig = {
+/** @type {import('jest').Config} */
+const config = {
   displayName: 'webcomponent',
-  ...createDefaultEsmPreset({
-    tsconfig: 'tsconfig.json'
-  }),
-  // Set the root directory to the webcomponent folder
-  rootDir: './',
+  preset: 'ts-jest/presets/default-esm',
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: 'tsconfig.json'
+    }
+  },
   resolver: 'ts-jest-resolver',
   testEnvironment: 'jsdom',
   testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
   moduleFileExtensions: ['js', 'ts', 'json', 'node'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/tests/e2e/'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json' }]
-  },
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json'
-    }
+    '^.+\\.tsx?$': ['ts-jest', { useESM: true }]
   },
   moduleNameMapper: {
     '^@openvidu-meet/typings$': '<rootDir>/../../typings/src/index.ts',
@@ -27,4 +23,4 @@ const jestConfig = {
   }
 }
 
-export default jestConfig
+export default config

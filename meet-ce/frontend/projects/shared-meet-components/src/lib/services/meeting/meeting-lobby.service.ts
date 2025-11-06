@@ -72,6 +72,10 @@ export class MeetingLobbyService {
 		return value.name.trim();
 	}
 
+	set e2eeKey(key: string) {
+		this.state.participantForm.get('e2eeKey')?.setValue(key);
+	}
+
 	get e2eeKey(): string {
 		const { valid, value } = this.state.participantForm;
 		if (!valid || !value.e2eeKey?.trim()) {
@@ -93,6 +97,12 @@ export class MeetingLobbyService {
 		// If E2EE is enabled, require e2eeKey
 		if (this.state.isE2EEEnabled) {
 			this.state.participantForm.get('e2eeKey')?.setValidators([Validators.required]);
+			this.e2eeKey = this.roomService.getE2EEKey();
+
+			if (this.e2eeKey) {
+				// when e2eeKey is already set (e.g., from URL or webcomponent), populate and disable field
+				this.state.participantForm.get('e2eeKey')?.disable();
+			}
 			this.state.participantForm.get('e2eeKey')?.updateValueAndValidity();
 		}
 
@@ -145,10 +155,16 @@ export class MeetingLobbyService {
 	}
 
 	async submitAccess(): Promise<void> {
-		if (!this.participantName) {
+		const sanitized = this.participantName
+			.replace(/[^a-zA-Z0-9 _-]/g, '') // remove invalid chars
+			.replace(/\s+/g, ' ') // normalize spaces
+			.trim(); // remove leading/trailing spaces
+
+		if (!sanitized) {
 			console.error('Participant form is invalid. Cannot access meeting.');
 			throw new Error('Participant form is invalid');
 		}
+		this.participantName = sanitized;
 
 		// For E2EE rooms, validate passkey
 		if (this.state.isE2EEEnabled && !this.e2eeKey) {
@@ -243,11 +259,14 @@ export class MeetingLobbyService {
 	 */
 	protected async generateParticipantToken() {
 		try {
-			this.state.participantToken = await this.participantService.generateToken({
-				roomId: this.state.roomId,
-				secret: this.state.roomSecret,
-				participantName: this.participantName
-			});
+			this.state.participantToken = await this.participantService.generateToken(
+				{
+					roomId: this.state.roomId,
+					secret: this.state.roomSecret,
+					participantName: this.participantName
+				},
+				this.e2eeKey
+			);
 			this.participantName = this.participantService.getParticipantName()!;
 		} catch (error: any) {
 			console.error('Error generating participant token:', error);

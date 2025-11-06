@@ -6,7 +6,7 @@ import {
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
 	extractRoomQueryParamsGuard,
-	removeRoomSecretGuard,
+	removeQueryParamsGuard,
 	runGuardsSerially,
 	validateRecordingAccessGuard,
 	validateRoomAccessGuard
@@ -27,6 +27,7 @@ import {
 	ViewRecordingComponent,
 	ConfigComponent
 } from '../pages';
+import { WebComponentProperty } from '@openvidu-meet/typings';
 
 export const baseRoutes: Routes = [
 	{
@@ -40,9 +41,9 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRoomQueryParamsGuard,
+				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY]),
 				checkParticipantRoleAndAuthGuard,
-				validateRoomAccessGuard,
-				removeRoomSecretGuard
+				validateRoomAccessGuard
 			)
 		]
 	},
@@ -52,9 +53,9 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRecordingQueryParamsGuard,
+				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY]),
 				checkParticipantRoleAndAuthGuard,
-				validateRecordingAccessGuard,
-				removeRoomSecretGuard
+				validateRecordingAccessGuard
 			)
 		]
 	},

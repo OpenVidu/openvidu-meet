@@ -92,38 +92,48 @@ export class MeetingEventHandlerService {
 	): void {
 		room.on(
 			RoomEvent.DataReceived,
-			async (
-				payload: Uint8Array,
-				_participant?: RemoteParticipant,
-				_kind?: DataPacket_Kind,
-				topic?: string
-			) => {
-				const event = JSON.parse(new TextDecoder().decode(payload));
+			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
+				// Only process topics that this handler is responsible for
+				const relevantTopics = [
+					'recordingStopped',
+					MeetSignalType.MEET_ROOM_CONFIG_UPDATED,
+					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
+				];
 
-				switch (topic) {
-					case 'recordingStopped':
-						await this.handleRecordingStopped(
-							context.roomId,
-							context.roomSecret,
-							context.onHasRecordingsChanged
-						);
-						break;
+				if (!topic || !relevantTopics.includes(topic)) {
+					return;
+				}
 
-					case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
-						await this.handleRoomConfigUpdated(event, context.roomId, context.roomSecret);
-						break;
+				try {
+					const event = JSON.parse(new TextDecoder().decode(payload));
 
-					case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-						await this.handleParticipantRoleUpdated(
-							event,
-							context.roomId,
-							context.participantName,
-							context.localParticipant,
-							context.remoteParticipants,
-							context.onRoomSecretChanged,
-							context.onParticipantRoleUpdated
-						);
-						break;
+					switch (topic) {
+						case 'recordingStopped':
+							await this.handleRecordingStopped(
+								context.roomId,
+								context.roomSecret,
+								context.onHasRecordingsChanged
+							);
+							break;
+
+						case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
+							await this.handleRoomConfigUpdated(event, context.roomId, context.roomSecret);
+							break;
+
+						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
+							await this.handleParticipantRoleUpdated(
+								event,
+								context.roomId,
+								context.participantName,
+								context.localParticipant,
+								context.remoteParticipants,
+								context.onRoomSecretChanged,
+								context.onParticipantRoleUpdated
+							);
+							break;
+					}
+				} catch (error) {
+					console.warn(`Failed to parse data message for topic: ${topic}`, error);
 				}
 			}
 		);
@@ -203,7 +213,7 @@ export class MeetingEventHandlerService {
 			if (error.status === 503) {
 				console.error(
 					'No egress service available. Check CPU usage or Media Node capacity. ' +
-					'By default, a recording uses 2 CPUs per room.'
+						'By default, a recording uses 2 CPUs per room.'
 				);
 			} else {
 				console.error('Error starting recording:', error);

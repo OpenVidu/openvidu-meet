@@ -8,7 +8,7 @@ import {
 	ParticipantRole
 } from '@openvidu-meet/typings';
 import { getValidDecodedToken } from '../utils';
-import { LoggerService } from 'openvidu-components-angular';
+import { E2eeService, LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
 	providedIn: 'root'
@@ -29,7 +29,8 @@ export class ParticipantService {
 		protected httpService: HttpService,
 		protected featureConfService: FeatureConfigurationService,
 		protected globalConfigService: GlobalConfigService,
-		protected tokenStorageService: TokenStorageService
+		protected tokenStorageService: TokenStorageService,
+		protected e2eeService: E2eeService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ParticipantTokenService');
 	}
@@ -53,8 +54,15 @@ export class ParticipantService {
 	 * @param participantOptions - The options for the participant, including room ID, participant name, and secret
 	 * @return A promise that resolves to the participant token
 	 */
-	async generateToken(participantOptions: ParticipantOptions): Promise<string> {
+	async generateToken(participantOptions: ParticipantOptions, e2EEKey = ''): Promise<string> {
 		const path = `${this.PARTICIPANTS_API}/token`;
+
+		if (participantOptions.participantName && !!e2EEKey) {
+			// Asign E2EE key and encrypt participant name
+			await this.e2eeService.setE2EEKey(e2EEKey);
+			participantOptions.participantName = await this.e2eeService.encrypt(participantOptions.participantName);
+		}
+
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, participantOptions);
 
 		// Store token in sessionStorage for header mode
@@ -63,7 +71,7 @@ export class ParticipantService {
 			this.tokenStorageService.setParticipantToken(token);
 		}
 
-		this.updateParticipantTokenInfo(token);
+		await this.updateParticipantTokenInfo(token);
 		return token;
 	}
 
@@ -83,7 +91,7 @@ export class ParticipantService {
 			this.tokenStorageService.setParticipantToken(token);
 		}
 
-		this.updateParticipantTokenInfo(token);
+		await this.updateParticipantTokenInfo(token);
 		return token;
 	}
 
@@ -93,13 +101,14 @@ export class ParticipantService {
 	 * @param token - The JWT token to set.
 	 * @throws Error if the token is invalid or expired.
 	 */
-	protected updateParticipantTokenInfo(token: string): void {
+	protected async updateParticipantTokenInfo(token: string): Promise<void> {
 		try {
 			const decodedToken = getValidDecodedToken(token);
 			const metadata = decodedToken.metadata as MeetTokenMetadata;
 
 			if (decodedToken.sub && decodedToken.name) {
-				this.setParticipantName(decodedToken.name);
+				const decryptedName = await this.e2eeService.decryptOrMask(decodedToken.name);
+				this.setParticipantName(decryptedName);
 				this.participantIdentity = decodedToken.sub;
 			}
 

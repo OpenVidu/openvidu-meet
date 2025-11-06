@@ -24,12 +24,43 @@ export async function getIframeInShadowDom(
 }
 
 /**
- * Waits for an element inside an iframe within Shadow DOM
- * @param page - Playwright page object
- * @param elementSelector - Selector for the element inside the iframe
- * @param options - Optional configuration
- * @returns Locator for the found element
+ * Waits for one or more elements inside an iframe within a Shadow DOM.
+ *
+ * By default, waits for the first matching element.
+ * If `options.all` is set to `true`, waits for all matching elements and returns an array.
+ *
+ * @param page - Playwright `Page` instance.
+ * @param elementSelector - CSS selector for the target element(s) inside the iframe.
+ * @param options - Optional configuration object.
+ * @param options.componentSelector - Selector for the shadow DOM component that contains the iframe. Defaults to `'openvidu-meet'`.
+ * @param options.iframeSelector - Selector for the iframe inside the shadow DOM. Defaults to `'iframe'`.
+ * @param options.timeout - Maximum time in milliseconds to wait. Defaults to `30000`.
+ * @param options.state - Wait condition: `'attached' | 'detached' | 'visible' | 'hidden'`. Defaults to `'visible'`.
+ * @param options.index - Element index to return when multiple elements match. Defaults to `0`.
+ * @param options.all - If `true`, waits for all matching elements and returns an array of locators. Defaults to `false`.
+ *
+ * @returns A single `Locator` by default, or an array of `Locator[]` when `options.all` is `true`.
+ *
+ * @example
+ * // Wait for the first visible element
+ * const element = await waitForElementInIframe(page, '.participant');
+ *
+ * @example
+ * // Wait for all visible elements
+ * const elements = await waitForElementInIframe(page, '.participant', { all: true });
  */
+export async function waitForElementInIframe(
+	page: Page,
+	elementSelector: string,
+	options?: {
+		componentSelector?: string;
+		iframeSelector?: string;
+		timeout?: number;
+		state?: 'attached' | 'detached' | 'visible' | 'hidden';
+		index?: number;
+		all?: false;
+	}
+): Promise<Locator>;
 export async function waitForElementInIframe(
 	page: Page,
 	elementSelector: string,
@@ -38,24 +69,42 @@ export async function waitForElementInIframe(
 		iframeSelector?: string;
 		timeout?: number;
 		state?: 'attached' | 'detached' | 'visible' | 'hidden';
+		all: true;
+	}
+): Promise<Locator[]>;
+export async function waitForElementInIframe(
+	page: Page,
+	elementSelector: string,
+	options: {
+		componentSelector?: string;
+		iframeSelector?: string;
+		timeout?: number;
+		state?: 'attached' | 'detached' | 'visible' | 'hidden';
+		index?: number;
+		all?: boolean;
 	} = {}
-): Promise<Locator> {
+): Promise<Locator | Locator[]> {
 	const {
 		componentSelector = 'openvidu-meet',
 		iframeSelector = 'iframe',
 		timeout = 30000,
-		state = 'visible'
+		state = 'visible',
+		index = 0,
+		all = false
 	} = options;
 
-	// Get the iframe
 	const frameLocator = await getIframeInShadowDom(page, componentSelector, iframeSelector);
+	const baseLocator = frameLocator.locator(elementSelector);
 
-	// Get element locator
-	const elementLocator = frameLocator.locator(elementSelector);
+	if (all) {
+		const locators = await baseLocator.all();
+		await Promise.all(locators.map((l) => l.waitFor({ state, timeout })));
+		return locators;
+	}
 
-	// Wait for the element with the specified state
-	await elementLocator.waitFor({ state, timeout });
-	return elementLocator;
+	const target = baseLocator.nth(index);
+	await target.waitFor({ state, timeout });
+	return target;
 }
 
 export async function countElementsInIframe(
