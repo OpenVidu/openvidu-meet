@@ -9,14 +9,10 @@ userRouter.use(bodyParser.urlencoded({ extended: true }));
 userRouter.use(bodyParser.json());
 
 // Users Routes
-userRouter.get(
-	'/profile',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN), tokenAndRoleValidator(UserRole.USER)),
-	userCtrl.getProfile
-);
+userRouter.get('/profile', withAuth(tokenAndRoleValidator(UserRole.ADMIN, UserRole.USER)), userCtrl.getProfile);
 userRouter.post(
 	'/change-password',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN), tokenAndRoleValidator(UserRole.USER)),
+	withAuth(tokenAndRoleValidator(UserRole.ADMIN, UserRole.USER)),
 	validateChangePasswordRequest,
 	userCtrl.changePassword
 );
