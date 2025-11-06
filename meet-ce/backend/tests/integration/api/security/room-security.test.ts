@@ -12,6 +12,7 @@ import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	loginUser,
+	sleep,
 	startTestServer,
 	updateRecordingAccessConfigInRoom
 } from '../../../helpers/request-helpers.js';
@@ -216,6 +217,25 @@ describe('Room API Security Tests', () => {
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
 				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
 				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated but has expired token, and has valid participant token', async () => {
+			// Set short access token expiration
+			const initialTokenExpiration = INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION;
+			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = '1s';
+
+			const expiredAccessToken = await loginUser();
+			await sleep('2s'); // Ensure the token is expired
+
+			// Restore original expiration after setup
+			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, expiredAccessToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
+				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
 			expect(response.status).toBe(200);
 		});
 	});
