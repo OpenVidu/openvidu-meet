@@ -29,7 +29,7 @@ describe('Recording API Tests', () => {
 	describe('Bulk Delete Recording Tests', () => {
 		it('should return 400 when mixed valid and non-existent IDs are provided', async () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 3);
-			const recordingIds = testContext.rooms.map((room) => room.recordingId);
+			const recordingIds = testContext.rooms.map((room) => room.recordingId!);
 			const nonExistentIds = ['nonExistent--EG_000--1234', 'nonExistent--EG_111--5678'];
 			const mixedIds = [...recordingIds, ...nonExistentIds];
 
@@ -52,10 +52,10 @@ describe('Recording API Tests', () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 2);
 			const activeRecordingRoom = testContext.getLastRoom();
 			const recordingIds = testContext.rooms
-				.map((room) => room.recordingId)
-				.filter((id) => id !== activeRecordingRoom!.recordingId);
+				.map((room) => room.recordingId!)
+				.filter((id) => id !== activeRecordingRoom!.recordingId!);
 
-			const activeRecordingId = activeRecordingRoom?.recordingId;
+			const activeRecordingId = activeRecordingRoom!.recordingId!;
 			let deleteResponse = await bulkDeleteRecordings([...recordingIds, activeRecordingId]);
 
 			expect(deleteResponse.status).toBe(400);
@@ -83,7 +83,7 @@ describe('Recording API Tests', () => {
 
 		it('should not delete any recordings and return 400', async () => {
 			const testContext = await setupMultiRecordingsTestContext(2, 2, 0);
-			const recordingIds = testContext.rooms.map((room) => room.recordingId);
+			const recordingIds = testContext.rooms.map((room) => room.recordingId!);
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
 			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({
@@ -106,7 +106,7 @@ describe('Recording API Tests', () => {
 
 		it('should delete all recordings and return 200 when all operations succeed', async () => {
 			const response = await setupMultiRecordingsTestContext(5, 5, 5);
-			const recordingIds = response.rooms.map((room) => room.recordingId);
+			const recordingIds = response.rooms.map((room) => room.recordingId!);
 			const deleteResponse = await bulkDeleteRecordings(recordingIds);
 
 			expect(deleteResponse.status).toBe(200);
@@ -116,14 +116,14 @@ describe('Recording API Tests', () => {
 			// Create a room and start a recording
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
-			const recordingId = roomData.recordingId;
+			const recordingId = roomData.recordingId!;
 
 			// Generate a recording token for the room
 			const recordingToken = await generateRecordingToken(roomId, roomData.moderatorSecret);
 
 			// Create another room and start a recording
 			const otherRoomData = await setupSingleRoomWithRecording(true);
-			const otherRecordingId = otherRoomData.recordingId;
+			const otherRecordingId = otherRoomData.recordingId!;
 
 			// Intenta eliminar ambas grabaciones usando el token de la primera sala
 			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingToken);
@@ -145,7 +145,7 @@ describe('Recording API Tests', () => {
 
 		it('should handle single recording deletion correctly', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
-			const recordingId = testContext.rooms[0].recordingId;
+			const recordingId = testContext.rooms[0].recordingId!;
 			const deleteResponse = await bulkDeleteRecordings([recordingId]);
 
 			expect(deleteResponse.status).toBe(200);
@@ -153,7 +153,7 @@ describe('Recording API Tests', () => {
 
 		it('should handle duplicate recording IDs by treating them as a single delete', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
-			const recordingId = testContext.getRoomByIndex(0)!.recordingId;
+			const recordingId = testContext.getRoomByIndex(0)!.recordingId!;
 			const deleteResponse = await bulkDeleteRecordings([recordingId, recordingId]);
 
 			expect(deleteResponse.status).toBe(200);

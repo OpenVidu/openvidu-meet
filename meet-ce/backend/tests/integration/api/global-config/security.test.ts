@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthTransportMode, AuthType } from '@openvidu-meet/typings';
+import { AuthMode, AuthTransportMode, AuthType, SecurityConfig } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getSecurityConfig,
@@ -48,7 +48,7 @@ describe('Security Config API Tests', () => {
 					},
 					authModeToAccessRoom: 'invalid'
 				}
-			});
+			} as unknown as SecurityConfig);
 
 			expectValidationError(
 				response,
@@ -65,7 +65,7 @@ describe('Security Config API Tests', () => {
 					},
 					authModeToAccessRoom: AuthMode.ALL_USERS
 				}
-			});
+			} as unknown as SecurityConfig);
 
 			expectValidationError(
 				response,
@@ -83,7 +83,7 @@ describe('Security Config API Tests', () => {
 					authModeToAccessRoom: AuthMode.ALL_USERS,
 					authTransportMode: 'invalid'
 				}
-			});
+			} as unknown as SecurityConfig);
 
 			expectValidationError(
 				response,
@@ -98,7 +98,7 @@ describe('Security Config API Tests', () => {
 					authMode: AuthMode.NONE,
 					authTransportMode: AuthTransportMode.HEADER
 				}
-			});
+			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.authMethod', 'Required');
 
 			response = await updateSecurityConfig({
@@ -108,7 +108,7 @@ describe('Security Config API Tests', () => {
 					},
 					authModeToAccessRoom: AuthMode.NONE
 				}
-			});
+			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.authTransportMode', 'Required');
 
 			response = await updateSecurityConfig({
@@ -118,14 +118,14 @@ describe('Security Config API Tests', () => {
 					},
 					authTransportMode: AuthTransportMode.HEADER
 				}
-			});
+			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.authModeToAccessRoom', 'Required');
 		});
 
 		it('should reject when authentication is not an object', async () => {
 			const response = await updateSecurityConfig({
 				authentication: 'invalid'
-			});
+			} as unknown as SecurityConfig);
 
 			expectValidationError(response, 'authentication', 'Expected object, received string');
 		});

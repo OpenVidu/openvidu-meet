@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { MeetRecordingAccess, MeetRoomConfig, MeetSignalType } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/index.js';
 import { FrontendEventService } from '../../../../src/services/index.js';
-import { MeetSignalType, MeetRecordingAccess } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -114,6 +114,23 @@ describe('Room API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual(partialConfig);
 		});
+
+		it('should return 404 when updating non-existent room', async () => {
+			const nonExistentRoomId = 'non-existent-room';
+
+			const config = {
+				recording: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
+			};
+			const response = await updateRoomConfig(nonExistentRoomId, config);
+
+			expect(response.status).toBe(404);
+			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
+		});
 	});
 
 	describe('Update Room Config Validation failures', () => {
@@ -130,7 +147,7 @@ describe('Room API Tests', () => {
 				// Missing chat config
 				virtualBackground: { enabled: false }
 			};
-			const response = await updateRoomConfig(roomId, invalidConfig);
+			const response = await updateRoomConfig(roomId, invalidConfig as unknown as MeetRoomConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
@@ -151,7 +168,7 @@ describe('Room API Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: false }
 			};
-			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig);
+			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig as unknown as MeetRoomConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
@@ -164,7 +181,7 @@ describe('Room API Tests', () => {
 			});
 
 			const emptyConfig = {};
-			const response = await updateRoomConfig(createdRoom.roomId, emptyConfig);
+			const response = await updateRoomConfig(createdRoom.roomId, emptyConfig as unknown as MeetRoomConfig);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
@@ -187,23 +204,6 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.allowAccessTo');
-		});
-
-		it('should return 404 when updating non-existent room', async () => {
-			const nonExistentRoomId = 'non-existent-room';
-
-			const config = {
-				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				chat: { enabled: false },
-				virtualBackground: { enabled: false }
-			};
-			const response = await updateRoomConfig(nonExistentRoomId, config);
-
-			expect(response.status).toBe(404);
-			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
 		});
 	});
 });

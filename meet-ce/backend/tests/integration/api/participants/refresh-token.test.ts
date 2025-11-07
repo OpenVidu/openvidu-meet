@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { AuthTransportMode, ParticipantOptions, ParticipantRole } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { AuthTransportMode, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidParticipantTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	changeAuthTransportMode,
@@ -191,7 +191,7 @@ describe('Participant API Tests', () => {
 					secret: roomData.moderatorSecret,
 					participantName,
 					participantIdentity: participantName
-				},
+				} as unknown as ParticipantOptions,
 				roomData.moderatorToken
 			);
 			expectValidationError(response, 'roomId', 'Required');
@@ -203,7 +203,7 @@ describe('Participant API Tests', () => {
 					roomId: roomData.room.roomId,
 					participantName,
 					participantIdentity: participantName
-				},
+				} as unknown as ParticipantOptions,
 				roomData.moderatorToken
 			);
 			expectValidationError(response, 'secret', 'Required');

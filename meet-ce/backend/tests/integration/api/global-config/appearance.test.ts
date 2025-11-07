@@ -218,7 +218,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 
 			expectValidationError(response, 'appearance.themes.0.enabled', 'Expected boolean, received string');
 		});
@@ -233,7 +233,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 
 			expectValidationError(
 				response,
@@ -253,7 +253,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.backgroundColor', 'Must be a valid hex color code');
 
 			response = await updateRoomsAppearanceConfig({
@@ -266,7 +266,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.primaryColor', 'Must be a valid hex color code');
 
 			response = await updateRoomsAppearanceConfig({
@@ -279,7 +279,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.secondaryColor', 'Must be a valid hex color code');
 
 			response = await updateRoomsAppearanceConfig({
@@ -292,7 +292,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.surfaceColor', 'Must be a valid hex color code');
 		});
 
@@ -326,7 +326,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.name', 'Required');
 
 			response = await updateRoomsAppearanceConfig({
@@ -338,7 +338,7 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.enabled', 'Required');
 
 			response = await updateRoomsAppearanceConfig({
@@ -350,14 +350,14 @@ describe('Rooms Appearance Config API Tests', () => {
 						}
 					]
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 			expectValidationError(response, 'appearance.themes.0.baseTheme', 'Required');
 		});
 
 		it('should reject when appearance is not an object', async () => {
 			const response = await updateRoomsAppearanceConfig({
 				appearance: 'invalid'
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 
 			expectValidationError(response, 'appearance', 'Expected object, received string');
 		});
@@ -367,7 +367,7 @@ describe('Rooms Appearance Config API Tests', () => {
 				appearance: {
 					themes: 'invalid'
 				}
-			});
+			} as unknown as { appearance: MeetAppearanceConfig });
 
 			expectValidationError(response, 'appearance.themes', 'Expected array, received string');
 		});

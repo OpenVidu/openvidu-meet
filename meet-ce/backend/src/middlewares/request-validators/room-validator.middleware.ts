@@ -1,4 +1,5 @@
 import {
+	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
 	MeetRecordingAccess,
@@ -10,6 +11,7 @@ import {
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomStatus,
+	MeetRoomTheme,
 	MeetRoomThemeMode,
 	MeetVirtualBackgroundConfig,
 	ParticipantRole,
@@ -100,7 +102,7 @@ const hexColorSchema = z
 		'Must be a valid hex color code (with or without alpha)'
 	);
 
-const RoomThemeSchema = z.object({
+const RoomThemeSchema: z.ZodType<MeetRoomTheme> = z.object({
 	name: z
 		.string()
 		.min(1, 'Theme name cannot be empty')
@@ -115,7 +117,7 @@ const RoomThemeSchema = z.object({
 	surfaceColor: hexColorSchema.optional()
 });
 
-export const AppearanceConfigSchema = z.object({
+export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object({
 	themes: z.array(RoomThemeSchema).length(1, 'There must be exactly one theme defined')
 });
 

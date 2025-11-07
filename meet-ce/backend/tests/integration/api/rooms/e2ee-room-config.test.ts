@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingAccess, MeetRoom } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import { MeetRecordingAccess, MeetRoom } from '@openvidu-meet/typings';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
@@ -22,7 +22,7 @@ describe('E2EE Room Configuration Tests', () => {
 	let app: Express;
 
 	beforeAll(async () => {
-		app = startTestServer();
+		app = await startTestServer();
 	});
 
 	afterAll(async () => {

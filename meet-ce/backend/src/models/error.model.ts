@@ -55,11 +55,11 @@ export const errorLivekitNotAvailable = (): OpenViduMeetError => {
 	return new OpenViduMeetError('LiveKit Error', 'LiveKit is not available', 503);
 };
 
-export const errorS3NotAvailable = (error: any): OpenViduMeetError => {
+export const errorS3NotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('S3 Error', `S3 is not available ${error}`, 503);
 };
 
-export const errorAzureNotAvailable = (error: any): OpenViduMeetError => {
+export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 

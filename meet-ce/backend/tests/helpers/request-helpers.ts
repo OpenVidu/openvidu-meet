@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@jest/globals';
 import {
 	AuthMode,
 	AuthTransportMode,
+	MeetAppearanceConfig,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
@@ -11,7 +11,10 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions,
+	MeetTokenMetadata,
+	ParticipantOptions,
 	ParticipantRole,
+	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
 import { ChildProcess, spawn } from 'child_process';
@@ -112,7 +115,7 @@ export const getRoomsAppearanceConfig = async () => {
 	return response;
 };
 
-export const updateRoomsAppearanceConfig = async (config: any) => {
+export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppearanceConfig }) => {
 	checkAppIsRunning();
 
 	const accessToken = await loginUser();
@@ -162,7 +165,7 @@ export const getSecurityConfig = async () => {
 	return response;
 };
 
-export const updateSecurityConfig = async (config: any) => {
+export const updateSecurityConfig = async (config: SecurityConfig) => {
 	checkAppIsRunning();
 
 	const accessToken = await loginUser();
@@ -282,7 +285,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 	return response.body;
 };
 
-export const getRooms = async (query: Record<string, any> = {}) => {
+export const getRooms = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	return await request(app)
@@ -359,7 +362,7 @@ export const updateRoomStatus = async (roomId: string, status: string) => {
 		.send({ status });
 };
 
-export const deleteRoom = async (roomId: string, query: Record<string, any> = {}) => {
+export const deleteRoom = async (roomId: string, query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	const result = await request(app)
@@ -370,7 +373,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, any> = {}
 	return result;
 };
 
-export const bulkDeleteRooms = async (roomIds: any[], withMeeting?: string, withRecordings?: string) => {
+export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, withRecordings?: string) => {
 	checkAppIsRunning();
 
 	const result = await request(app)
@@ -445,7 +448,10 @@ export const getRoomRoleBySecret = async (roomId: string, secret: string) => {
 	return response;
 };
 
-export const generateParticipantTokenRequest = async (participantOptions: any, previousToken?: string) => {
+export const generateParticipantTokenRequest = async (
+	participantOptions: ParticipantOptions,
+	previousToken?: string
+) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -489,7 +495,7 @@ export const generateParticipantToken = async (
 	return `Bearer ${response.body.token}`;
 };
 
-export const refreshParticipantToken = async (participantOptions: any, previousToken: string) => {
+export const refreshParticipantToken = async (participantOptions: ParticipantOptions, previousToken: string) => {
 	checkAppIsRunning();
 
 	// Disable authentication to generate the token
@@ -534,7 +540,11 @@ export const joinFakeParticipant = async (roomId: string, participantIdentity: s
  * @param participantIdentity The identity of the participant
  * @param metadata The metadata to update
  */
-export const updateParticipantMetadata = async (roomId: string, participantIdentity: string, metadata: any) => {
+export const updateParticipantMetadata = async (
+	roomId: string,
+	participantIdentity: string,
+	metadata: MeetTokenMetadata
+) => {
 	await ensureLivekitCliInstalled();
 	spawn('lk', [
 		'room',
@@ -748,7 +758,7 @@ export const deleteRecording = async (recordingId: string) => {
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
 };
 
-export const bulkDeleteRecordings = async (recordingIds: any[], recordingToken?: string): Promise<Response> => {
+export const bulkDeleteRecordings = async (recordingIds: string[], recordingToken?: string): Promise<Response> => {
 	checkAppIsRunning();
 
 	const req = request(app)
@@ -822,7 +832,7 @@ export const stopAllRecordings = async (moderatorToken: string) => {
 	await sleep('1s');
 };
 
-export const getAllRecordings = async (query: Record<string, any> = {}) => {
+export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	return await request(app)
@@ -845,7 +855,7 @@ export const deleteAllRecordings = async () => {
 	let nextPageToken: string | undefined;
 
 	do {
-		const response: any = await getAllRecordings({
+		const response = await getAllRecordings({
 			fields: 'recordingId',
 			maxItems: 100,
 			nextPageToken
