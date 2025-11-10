@@ -143,19 +143,24 @@ export class OpenViduMeet extends HTMLElement {
 			return;
 		}
 
-		const url = new URL(baseUrl);
-		this.targetIframeOrigin = url.origin;
-		this.commandsManager.setTargetOrigin(this.targetIframeOrigin);
-		this.eventsManager.setTargetOrigin(this.targetIframeOrigin);
+		try {
+			const url = new URL(baseUrl);
+			this.targetIframeOrigin = url.origin;
+			this.commandsManager.setTargetOrigin(this.targetIframeOrigin);
+			this.eventsManager.setTargetOrigin(this.targetIframeOrigin);
 
-		// Update query params
-		Array.from(this.attributes).forEach((attr) => {
-			if (attr.name !== WebComponentProperty.ROOM_URL && attr.name !== WebComponentProperty.RECORDING_URL) {
-				url.searchParams.set(attr.name, attr.value);
-			}
-		});
+			// Update query params
+			Array.from(this.attributes).forEach((attr) => {
+				if (attr.name !== WebComponentProperty.ROOM_URL && attr.name !== WebComponentProperty.RECORDING_URL) {
+					url.searchParams.set(attr.name, attr.value);
+				}
+			});
 
-		this.iframe.src = url.toString();
+			this.iframe.src = url.toString();
+		} catch (error) {
+			console.error(`Invalid URL provided: ${baseUrl}`, error);
+			alert(`Invalid URL provided: ${baseUrl}`);
+		}
 	}
 
 	/**

@@ -2,42 +2,42 @@
 	"folders": [
 		{
 			"name": "openvidu-components-angular",
-			"path": "../openvidu/openvidu-components-angular",
+			"path": "../openvidu/openvidu-components-angular"
 		},
 		{
 			"name": "openvidu-meet (root)",
-			"path": ".",
+			"path": "."
 		},
 		{
 			"name": "openvidu-meet (CE)",
-			"path": "meet-ce",
+			"path": "meet-ce"
 		},
 		{
 			"name": "openvidu-meet (PRO)",
-			"path": "meet-pro",
+			"path": "meet-pro"
 		},
 		{
 			"name": "shared-meet-components",
-			"path": "meet-ce/frontend/projects/shared-meet-components",
+			"path": "meet-ce/frontend/projects/shared-meet-components"
 		},
 		{
 			"name": "meet-testapp",
-			"path": "testapp",
+			"path": "testapp"
 		},
 		{
 			"name": "meet-webcomponent",
-			"path": "meet-ce/frontend/webcomponent",
-		},
+			"path": "meet-ce/frontend/webcomponent"
+		}
 	],
 	"settings": {
 		"files.exclude": {
 			"**/meet-ce": true,
 			"**/meet-pro": true,
-			"**/webcomponent": true,
+			"**/frontend/webcomponent": true,
 			"**/webhooks-snippets": false,
 			"**/testapp": true,
 			"**/.angular": true,
-			"**/public": true,
+			"**/public": false,
 			"**/dist": false,
 			"**/node_modules": true,
 			"**/test-results": true,

@@ -622,30 +622,42 @@ build_webcomponent_doc() {
       mkdir -p "$output_dir"
     fi
 
-    if [ -f "docs/webcomponent-events.md" ] && [ -f "docs/webcomponent-commands.md" ] && [ -f "docs/webcomponent-attributes.md" ]; then
+    if [ -f "docs/webcomponent-events.md" ] && \
+       [ -f "docs/webcomponent-commands.md" ] && \
+       [ -f "docs/webcomponent-attributes.md" ]; then
       echo -e "${GREEN}Copying documentation to: $output_dir${NC}"
-      cp docs/webcomponent-events.md "$output_dir/webcomponent-events.md"
-      cp docs/webcomponent-commands.md "$output_dir/webcomponent-commands.md"
-      cp docs/webcomponent-attributes.md "$output_dir/webcomponent-attributes.md"
+      cp docs/webcomponent-{events,commands,attributes}.md "$output_dir"/
       echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
+      rm -f docs/webcomponent-{events,commands,attributes}.md
     else
       echo -e "${RED}Error: Documentation files not found in docs/ directory${NC}"
       exit 1
     fi
   else
     echo -e "${YELLOW}No output directory specified. Documentation remains in docs/ directory.${NC}"
+    output_dir="docs"
+  fi
+
+  local abs_path
+  if command -v realpath >/dev/null 2>&1; then
+    abs_path=$(realpath "$output_dir")
+  elif command -v readlink >/dev/null 2>&1; then
+    abs_path=$(readlink -f "$output_dir" 2>/dev/null || (cd "$output_dir" && pwd))
+  else
+    abs_path=$(cd "$output_dir" && pwd)
   fi
 
   echo
   echo -e "${GREEN}✓ Webcomponent documentation generated successfully!${NC}"
-  echo -e "${YELLOW}Output directory: $output_dir${NC}"
-  rm -f docs/webcomponent-events.md docs/webcomponent-commands.md docs/webcomponent-attributes.md
+  echo -e "${YELLOW}Output directory: ${abs_path}${NC}"
 }
+
 
 # Build REST API documentation
 build_rest_api_doc() {
-  local output_dir="$1"
+  local output_target="$1"
   CE_REST_API_DOC_PATH="meet-ce/backend/public/openapi/"
+
   echo -e "${BLUE}=====================================${NC}"
   echo -e "${BLUE}   Building REST API Docs${NC}"
   echo -e "${BLUE}=====================================${NC}"
@@ -653,31 +665,56 @@ build_rest_api_doc() {
 
   check_pnpm
 
+  # Solo instalar si no existen dependencias locales del backend
+  if [ ! -d "node_modules" ] || [ ! -d "meet-ce/backend/node_modules" ]; then
+    echo -e "${YELLOW}Backend dependencies not found. Installing minimal backend deps...${NC}"
+    pnpm --filter @openvidu-meet/backend install
+  else
+    echo -e "${GREEN}Backend dependencies already present. Skipping install.${NC}"
+  fi
+
   echo -e "${GREEN}Generating REST API documentation...${NC}"
   pnpm run build:rest-api-docs
 
-  if [ -n "$output_dir" ]; then
-    output_dir="${output_dir%/}"
+  # Determinar si el parámetro es archivo o directorio
+  local output_dir output_file
+  if [[ "$output_target" =~ \.html$ ]]; then
+    output_dir=$(dirname "$output_target")
+    output_file="$output_target"
+  else
+    output_dir="${output_target%/}"
+    output_file="$output_dir/public.html"
+  fi
 
-    if [ ! -d "$output_dir" ]; then
-      echo -e "${YELLOW}Creating output directory: $output_dir${NC}"
-      mkdir -p "$output_dir"
-    fi
+  # Crear carpeta contenedora si no existe
+  if [ ! -d "$output_dir" ]; then
+    echo -e "${YELLOW}Creating output directory: $output_dir${NC}"
+    mkdir -p "$output_dir"
+  fi
 
-    if [ -f "$CE_REST_API_DOC_PATH/public.html" ]; then
-      echo -e "${GREEN}Copying REST API documentation to: $output_dir${NC}"
-      cp "$CE_REST_API_DOC_PATH/public.html" "$output_dir/public.html"
-      echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
-    else
-      echo -e "${RED}Error: REST API documentation files not found${NC}"
+  # Preguntar si el archivo ya existe
+  if [ -f "$output_file" ]; then
+    echo -e "${YELLOW}Warning: '$output_file' already exists.${NC}"
+    read -rp "Do you want to overwrite it? [y/N]: " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+      echo -e "${RED}Operation cancelled by user.${NC}"
       exit 1
     fi
+  fi
+
+  # Copiar documentación
+  if [ -f "$CE_REST_API_DOC_PATH/public.html" ]; then
+    echo -e "${GREEN}Copying REST API documentation to: $output_file${NC}"
+    cp "$CE_REST_API_DOC_PATH/public.html" "$output_file"
+    echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
   else
-    echo -e "${YELLOW}No output directory specified. Documentation remains in backend/ directory.${NC}"
+    echo -e "${RED}Error: REST API documentation files not found${NC}"
+    exit 1
   fi
 
   echo
   echo -e "${GREEN}✓ REST API documentation generated successfully!${NC}"
+  echo -e "${YELLOW}Output file: $(cd "$(dirname "$output_file")" && pwd)/$(basename "$output_file")${NC}"
 }
 
 # Clone private meet-pro repository into repository root

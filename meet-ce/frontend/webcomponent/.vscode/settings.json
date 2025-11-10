@@ -1,8 +1,5 @@
 {
-	"jest.jestCommandLine": "node --experimental-vm-modules ../../../node_modules/.bin/jest --config jest.config.mjs",
+	"jest.jestCommandLine": "pnpm run test:unit",
 	"jest.rootPath": ".",
-	"jest.nodeEnv": {
-		"NODE_OPTIONS": "--experimental-vm-modules"
-	},
 	"jest.runMode": "on-demand"
 }

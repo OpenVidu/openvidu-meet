@@ -37,7 +37,7 @@ pnpm-debug.log*
 
 
 **/**/test-results
-**/**/public/
+**/backend/public/
 
 **/*/coverage
 **/**/test-results

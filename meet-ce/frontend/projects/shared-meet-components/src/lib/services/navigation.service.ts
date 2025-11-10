@@ -177,8 +177,25 @@ export class NavigationService {
 	 * @param param - The parameter to remove
 	 */
 	async removeQueryParamFromUrl(queryParams: Params, param: string): Promise<void> {
+		await this.removeQueryParamsFromUrl(queryParams, [param]);
+	}
+
+	/**
+	 * Removes multiple query parameters from the URL in a single navigation operation.
+	 * This is more efficient than removing params one by one, as it only triggers one navigation.
+	 *
+	 * @param queryParams - The current query parameters
+	 * @param params - Array of parameter names to remove
+	 */
+	async removeQueryParamsFromUrl(queryParams: Params, params: string[]): Promise<void> {
+		if (!params || params.length === 0) {
+			return;
+		}
+
 		const updatedParams = { ...queryParams };
-		delete updatedParams[param];
+		params.forEach((param) => {
+			delete updatedParams[param];
+		});
 
 		await this.router.navigate([], {
 			queryParams: updatedParams,

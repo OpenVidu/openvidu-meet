@@ -1,13 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { ErrorReason } from '../models';
-import {
-	AppDataService,
-	NavigationService,
-	ParticipantService,
-	RoomService,
-	SessionStorageService
-} from '../services';
+import { AppDataService, NavigationService, ParticipantService, RoomService, SessionStorageService } from '../services';
 import { WebComponentProperty } from '@openvidu-meet/typings';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
@@ -16,7 +10,14 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const participantService = inject(ParticipantService);
 	const sessionStorageService = inject(SessionStorageService);
 
-	const { roomId, secret: querySecret, participantName, leaveRedirectUrl, showOnlyRecordings } = extractParams(route);
+	const {
+		roomId,
+		secret: querySecret,
+		participantName,
+		leaveRedirectUrl,
+		showOnlyRecordings,
+		e2eeKey
+	} = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret();
 
 	// Handle leave redirect URL logic
@@ -29,6 +30,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	roomService.setRoomId(roomId);
 	roomService.setRoomSecret(secret);
+	roomService.setE2EEKey(e2eeKey);
 
 	if (participantName) {
 		participantService.setParticipantName(participantName);
@@ -66,7 +68,8 @@ const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
 	secret: queryParams['secret'] as string,
 	participantName: queryParams[WebComponentProperty.PARTICIPANT_NAME] as string,
 	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL] as string,
-	showOnlyRecordings: (queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] as string) || 'false'
+	showOnlyRecordings: (queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] as string) || 'false',
+	e2eeKey: queryParams[WebComponentProperty.E2EE_KEY] as string
 });
 
 /**

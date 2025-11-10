@@ -22,6 +22,7 @@ export class RoomService {
 
 	protected roomId: string = '';
 	protected roomSecret: string = '';
+	protected e2eeKey: string = '';
 
 	protected log;
 
@@ -48,6 +49,14 @@ export class RoomService {
 		if (updateStorage) {
 			this.sessionStorageService.setRoomSecret(secret);
 		}
+	}
+
+	setE2EEKey(e2eeKey: string) {
+		this.e2eeKey = e2eeKey;
+	}
+
+	getE2EEKey(): string {
+		return this.e2eeKey;
 	}
 
 	getRoomSecret(): string {
