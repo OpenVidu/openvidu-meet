@@ -76,6 +76,58 @@ describe('ParticipantNameService', () => {
 			expect(thirdReservation).toBe(`${requestedName}_2`);
 		});
 
+		it('should not concatenate "_1" infinitely when user requests a name ending with "_number"', async () => {
+			// This test detects the bug where requesting "BOB_1" when "BOB_1" is taken
+			// results in "BOB_1_1" instead of finding the next available number
+
+			const baseName = 'BOB';
+
+			// Reserve BOB
+			const name1 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			expect(name1).toBe('BOB');
+
+			// Reserve BOB again -> should get BOB_1
+			const name2 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			expect(name2).toBe('BOB_1');
+
+			// Now a user explicitly requests "BOB_1" (which is already taken)
+			// Should get BOB_2, NOT BOB_1_1
+			const name3 = await participantNameService.reserveUniqueName(testRoomId, 'BOB_1');
+			expect(name3).toBe('BOB_2');
+
+			// Request BOB again -> should get BOB_3
+			const name4 = await participantNameService.reserveUniqueName(testRoomId, baseName);
+			expect(name4).toBe('BOB_3');
+
+			// Request BOB_2 (already taken) -> should get BOB_4
+			const name5 = await participantNameService.reserveUniqueName(testRoomId, 'BOB_2');
+			expect(name5).toBe('BOB_4');
+		});
+
+		it('should handle complex name patterns with underscores correctly', async () => {
+			// Test with names that already have underscores in them
+
+			// Reserve "John_Doe"
+			const name1 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			expect(name1).toBe('John_Doe');
+
+			// Reserve "John_Doe" again -> should get "John_Doe_1"
+			const name2 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			expect(name2).toBe('John_Doe_1');
+
+			// Request "John_Doe_1" (already taken) -> should get "John_Doe_2"
+			const name3 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe_1');
+			expect(name3).toBe('John_Doe_2');
+
+			// Request "John_Doe_5" (not taken yet) -> should reserve "John_Doe_5"
+			const name4 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe_5');
+			expect(name4).toBe('John_Doe_5');
+
+			// Request "John_Doe" again -> should get "John_Doe_3" (next available)
+			const name5 = await participantNameService.reserveUniqueName(testRoomId, 'John_Doe');
+			expect(name5).toBe('John_Doe_3');
+		});
+
 		it('should handle concurrent reservations properly', async () => {
 			const requestedName = 'Participant';
 			const concurrentRequests = 5;
