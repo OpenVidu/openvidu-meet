@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { AuthTransportMode, MeetRecordingAccess, ParticipantRole} from '@openvidu-meet/typings';
+import { INTERNAL_CONFIG, setInternalConfig } from '../../../../src/config/internal-config.js';
+import { AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidRecordingTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	changeAuthTransportMode,
@@ -9,6 +9,7 @@ import {
 	disconnectFakeParticipants,
 	extractCookieFromHeaders,
 	generateRecordingTokenRequest,
+	sleep,
 	startTestServer,
 	updateRecordingAccessConfigInRoom
 } from '../../../helpers/request-helpers.js';
@@ -18,8 +19,15 @@ describe('Room API Tests', () => {
 	let roomData: RoomData;
 
 	beforeAll(async () => {
+		setInternalConfig({
+			// MEETING_EMPTY_TIMEOUT: '1s'
+			MEETING_DEPARTURE_TIMEOUT: '1s'
+		});
 		await startTestServer();
 		roomData = await setupSingleRoomWithRecording(true);
+		// Disconnect all participants to allow the room updates request to succeed
+		await disconnectFakeParticipants();
+		await sleep('1s'); // Wait for the meeting to be closed after all participants have left
 	});
 
 	afterAll(async () => {
