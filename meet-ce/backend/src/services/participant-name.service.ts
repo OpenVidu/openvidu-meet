@@ -26,11 +26,14 @@ export class ParticipantNameService {
 	async reserveUniqueName(roomId: string, requestedName: string): Promise<string> {
 		const participantsKey = `${RedisKeyName.ROOM_PARTICIPANTS}${roomId}`;
 
-		// Normalize the base name for case-insensitive comparisons
-		const normalizedBaseName = requestedName.toLowerCase();
+		// Extract the base name without any numeric suffix
+		// This prevents infinite concatenation of "_1" when user requests "BOB_1" and it's taken
+		const { baseName: extractedBaseName, originalCaseBase } = this.extractBaseName(requestedName);
+		const normalizedBaseName = extractedBaseName.toLowerCase();
 
 		// First, try to reserve the exact requested name
-		const reservedOriginal = await this.tryReserveName(participantsKey, normalizedBaseName);
+		const normalizedRequestedName = requestedName.toLowerCase();
+		const reservedOriginal = await this.tryReserveName(participantsKey, normalizedRequestedName);
 
 		if (reservedOriginal) {
 			this.logger.verbose(`Reserved original name '${requestedName}' for room '${roomId}'`);
@@ -38,6 +41,7 @@ export class ParticipantNameService {
 		}
 
 		// If original name is taken, generate alternatives with atomic counter
+		// Use the extracted base name to avoid concatenating suffixes
 		for (let attempt = 1; attempt <= this.MAX_CONCURRENT_NAME_REQUESTS; attempt++) {
 			const alternativeName = await this.generateAlternativeName(roomId, normalizedBaseName, attempt);
 			const reserved = await this.tryReserveName(participantsKey, alternativeName);
@@ -46,9 +50,9 @@ export class ParticipantNameService {
 				this.logger.verbose(
 					`Reserved alternative name '${alternativeName}' for room '${roomId}' (attempt ${attempt})`
 				);
-				// Return alternative name with original case
+				// Return alternative name with original case from the base name
 				const suffix = alternativeName.replace(`${normalizedBaseName}_`, '');
-				return `${requestedName}_${suffix}`;
+				return `${originalCaseBase}_${suffix}`;
 			}
 		}
 
@@ -310,5 +314,39 @@ export class ParticipantNameService {
 		} catch (error) {
 			this.logger.warn(`Error returning number to pool:`, error);
 		}
+	}
+
+	/**
+	 * Extracts the base name from a participant name that may have a numeric suffix.
+	 * This prevents infinite concatenation of suffixes (e.g., "BOB_1_1_1...").
+	 * 
+	 * Examples:
+	 * - "BOB" -> { baseName: "BOB", originalCaseBase: "BOB" }
+	 * - "BOB_1" -> { baseName: "BOB", originalCaseBase: "BOB" }
+	 * - "Alice_42" -> { baseName: "Alice", originalCaseBase: "Alice" }
+	 * - "John_Doe_5" -> { baseName: "John_Doe", originalCaseBase: "John_Doe" }
+	 *
+	 * @private
+	 * @param name - The participant name to extract base from
+	 * @returns Object with baseName (lowercase) and originalCaseBase (original case)
+	 */
+	private extractBaseName(name: string): { baseName: string; originalCaseBase: string } {
+		// Match pattern: anything ending with underscore followed by one or more digits
+		const match = name.match(/^(.+)_(\d+)$/);
+
+		if (match) {
+			// Name has a numeric suffix, extract the base name
+			const originalCaseBase = match[1];
+			return {
+				baseName: originalCaseBase.toLowerCase(),
+				originalCaseBase: originalCaseBase
+			};
+		}
+
+		// No numeric suffix, the whole name is the base
+		return {
+			baseName: name.toLowerCase(),
+			originalCaseBase: name
+		};
 	}
 }
