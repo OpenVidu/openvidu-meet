@@ -260,7 +260,7 @@ importers:
         version: 20.3.4(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@livekit/track-processors':
         specifier: 0.6.1
-        version: 0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.11(@types/dom-mediacapture-record@1.0.22))
+        version: 0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:projects/shared-meet-components
@@ -277,8 +277,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0
       livekit-client:
-        specifier: 2.15.11
-        version: 2.15.11(@types/dom-mediacapture-record@1.0.22)
+        specifier: 2.15.15
+        version: 2.15.15(@types/dom-mediacapture-record@1.0.22)
       openvidu-components-angular:
         specifier: workspace:*
         version: link:../../../openvidu/openvidu-components-angular/projects/openvidu-components-angular
@@ -701,7 +701,7 @@ importers:
         version: 20.3.4(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.4(@angular/animations@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.4(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.4(@angular/compiler@20.3.4)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@livekit/track-processors':
         specifier: 0.6.1
-        version: 0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.11(@types/dom-mediacapture-record@1.0.22))
+        version: 0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:../../meet-ce/frontend/projects/shared-meet-components
@@ -718,8 +718,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0
       livekit-client:
-        specifier: 2.15.11
-        version: 2.15.11(@types/dom-mediacapture-record@1.0.22)
+        specifier: 2.15.15
+        version: 2.15.15(@types/dom-mediacapture-record@1.0.22)
       openvidu-components-angular:
         specifier: workspace:*
         version: link:../../../openvidu/openvidu-components-angular/projects/openvidu-components-angular
@@ -6933,6 +6933,11 @@ packages:
     peerDependencies:
       '@types/dom-mediacapture-record': ^1
 
+  livekit-client@2.15.15:
+    resolution: {integrity: sha512-z1mrGIyn6BZhCf4VDFcIuvHkbWftihwO6Y9+Kicr4VWQ2TH8pb1PIF97OsS1TiLD2QlhIFp2HNYfuvv6Kz2fVA==}
+    peerDependencies:
+      '@types/dom-mediacapture-record': ^1
+
   livekit-server-sdk@2.13.1:
     resolution: {integrity: sha512-k4qFvqjHUR0s9lMMueZ1CMDLw/IngOmL/wsh/zq0+6bIg3rMzns9s3ECOf7XuT56esEuu8LGlrw0+inL86QiqQ==}
     engines: {node: '>=18'}
@@ -12459,6 +12464,12 @@ snapshots:
       '@types/dom-mediacapture-transform': 0.1.11
       livekit-client: 2.15.11(@types/dom-mediacapture-record@1.0.22)
 
+  '@livekit/track-processors@0.6.1(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22))':
+    dependencies:
+      '@mediapipe/tasks-vision': 0.10.14
+      '@types/dom-mediacapture-transform': 0.1.11
+      livekit-client: 2.15.15(@types/dom-mediacapture-record@1.0.22)
+
   '@lmdb/lmdb-darwin-arm64@3.4.2':
     optional: true
 
@@ -17632,6 +17643,20 @@ snapshots:
       wrap-ansi: 9.0.2
 
   livekit-client@2.15.11(@types/dom-mediacapture-record@1.0.22):
+    dependencies:
+      '@livekit/mutex': 1.1.1
+      '@livekit/protocol': 1.42.2
+      '@types/dom-mediacapture-record': 1.0.22
+      events: 3.3.0
+      jose: 6.1.0
+      loglevel: 1.9.2
+      sdp-transform: 2.15.0
+      ts-debounce: 4.0.0
+      tslib: 2.8.1
+      typed-emitter: 2.1.0
+      webrtc-adapter: 9.0.3
+
+  livekit-client@2.15.15(@types/dom-mediacapture-record@1.0.22):
     dependencies:
       '@livekit/mutex': 1.1.1
       '@livekit/protocol': 1.42.2
