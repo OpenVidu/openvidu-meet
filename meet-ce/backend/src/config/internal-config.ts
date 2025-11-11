@@ -53,8 +53,8 @@ export const INTERNAL_CONFIG = {
 	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
 	// Additional intervals
 	MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '1h' as StringValue, // Minimum time for room auto-deletion date
-	MEETING_EMPTY_TIMEOUT: '20s' as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
-	MEETING_DEPARTURE_TIMEOUT: '20s' as StringValue // Seconds to keep the meeting (LK room) open after the last participant leaves
+	MEETING_EMPTY_TIMEOUT: (process.env.MEETING_EMPTY_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
+	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue // Seconds to keep the meeting (LK room) open after the last participant leaves
 };
 
 // This function is used to set private configuration values for testing purposes.
