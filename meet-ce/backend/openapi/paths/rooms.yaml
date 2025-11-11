@@ -56,10 +56,10 @@
         description: |
             Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
 
-            If any of the rooms have active meetings or recordings, 
+            If any of the rooms have active meetings or recordings,
             deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
 
-            Depending on these policies, the rooms may be deleted/closed immediately, scheduled to be deleted/closed once the meetings end, 
+            Depending on these policies, the rooms may be deleted/closed immediately, scheduled to be deleted/closed once the meetings end,
             or the operation may fail if deletion is not permitted.
         tags:
             - OpenVidu Meet - Rooms
@@ -120,10 +120,10 @@
         description: |
             Deletes the specified OpenVidu Meet room by its room ID.
 
-            If the room has an active meeting or existing recordings, 
+            If the room has an active meeting or existing recordings,
             deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
 
-            Depending on these policies, the room may be deleted/closed immediately, scheduled to be deleted/closed once the meeting ends, 
+            Depending on these policies, the room may be deleted/closed immediately, scheduled to be deleted/closed once the meeting ends,
             or the operation may fail if deletion is not permitted.
         tags:
             - OpenVidu Meet - Rooms
@@ -204,6 +204,8 @@
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-room-active-meeting.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':

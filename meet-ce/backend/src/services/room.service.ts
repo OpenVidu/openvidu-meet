@@ -25,6 +25,7 @@ import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
 	errorDeletingRoom,
 	errorInvalidRoomSecret,
+	errorRoomActiveMeeting,
 	errorRoomNotFound,
 	internalError,
 	OpenViduMeetError
@@ -139,6 +140,12 @@ export class RoomService {
 	 */
 	async updateMeetRoomConfig(roomId: string, config: MeetRoomConfig): Promise<MeetRoom> {
 		const room = await this.getMeetRoom(roomId);
+
+		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
+			// Reject config updates during active meetings
+			throw errorRoomActiveMeeting(roomId);
+		}
+
 		room.config = config;
 
 		await this.roomRepository.update(room);

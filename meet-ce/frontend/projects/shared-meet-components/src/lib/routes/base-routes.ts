@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import {
 	checkParticipantRoleAndAuthGuard,
 	checkRecordingAuthGuard,
+	checkRoomEditGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
@@ -90,7 +91,8 @@ export const baseRoutes: Routes = [
 			},
 			{
 				path: 'rooms/:roomId/edit',
-				component: RoomWizardComponent
+				component: RoomWizardComponent,
+				canActivate: [checkRoomEditGuard]
 			},
 			{
 				path: 'recordings',

@@ -205,6 +205,10 @@ export const errorRoomClosed = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' is closed and cannot be joined`, 409);
 };
 
+export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
+};
+
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };

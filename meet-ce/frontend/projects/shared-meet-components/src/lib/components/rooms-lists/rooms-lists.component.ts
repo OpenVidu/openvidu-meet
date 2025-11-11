@@ -323,8 +323,8 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		return room.status !== MeetRoomStatus.CLOSED;
 	}
 
-	canEditRoom(_room: MeetRoom): boolean {
-		return true;
+	canEditRoom(room: MeetRoom): boolean {
+		return room.status !== MeetRoomStatus.ACTIVE_MEETING;
 	}
 
 	// ===== UI HELPER METHODS =====
