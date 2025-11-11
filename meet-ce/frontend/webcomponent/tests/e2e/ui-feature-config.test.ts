@@ -63,7 +63,7 @@ test.describe('UI Feature Config Tests', () => {
 	test.describe('Chat Feature', () => {
 		test.afterEach(async ({ page }) => {
 			try {
-				await leaveRoom(page);
+				await leaveRoom(page, 'speaker', true);
 			} catch (error) {}
 		});
 
@@ -138,7 +138,7 @@ test.describe('UI Feature Config Tests', () => {
 			await interactWithElementInIframe(page, '#activities-panel-btn', { action: 'click' });
 			await page.waitForTimeout(500);
 			await waitForElementInIframe(page, 'ov-recording-activity', { state: 'visible' });
-			await leaveRoom(page, 'moderator');
+			await leaveRoom(page, 'moderator', true);
 		});
 
 		test('should not show recording button for speaker', async ({ page }) => {
@@ -157,7 +157,7 @@ test.describe('UI Feature Config Tests', () => {
 			// Check that recording button is not visible for speaker
 			const recordingButton = await waitForElementInIframe(page, '#recording-btn', { state: 'hidden' });
 			await expect(recordingButton).toBeHidden();
-			await leaveRoom(page);
+			await leaveRoom(page, 'speaker', true);
 		});
 
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
@@ -182,7 +182,7 @@ test.describe('UI Feature Config Tests', () => {
 			await waitForElementInIframe(page, '#activities-panel-btn', {
 				state: 'hidden'
 			});
-			await leaveRoom(page, 'moderator');
+			await leaveRoom(page, 'moderator', true);
 		});
 	});
 
@@ -193,7 +193,7 @@ test.describe('UI Feature Config Tests', () => {
 	test.describe('Virtual Background Feature', () => {
 		test.afterEach(async ({ page }) => {
 			try {
-				await leaveRoom(page);
+				await leaveRoom(page, 'speaker', true);
 			} catch (error) {}
 		});
 
@@ -263,7 +263,7 @@ test.describe('UI Feature Config Tests', () => {
 			await applyVirtualBackground(page, '2');
 			await waitForVirtualBackgroundToApply(page);
 
-			await leaveRoom(page);
+			await leaveRoom(page, 'speaker', true);
 			await page.reload();
 
 			// Now disable virtual backgrounds

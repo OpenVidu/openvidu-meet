@@ -50,7 +50,7 @@ test.describe('Recording Access Tests', () => {
 			await startStopRecording(tempPage, 'stop');
 			recordingCreated = true;
 
-			await leaveRoom(tempPage, 'moderator');
+			await leaveRoom(tempPage, 'moderator', true);
 			await tempContext.close();
 			await tempPage.close();
 		}

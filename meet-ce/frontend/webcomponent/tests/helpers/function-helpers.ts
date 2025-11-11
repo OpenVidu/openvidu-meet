@@ -290,7 +290,7 @@ export const viewRecordingsAs = async (role: 'moderator' | 'speaker', page: Page
 	await interactWithElementInIframe(page, '#view-recordings-btn', { action: 'click' });
 };
 
-export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker') => {
+export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker', waitForMeetingEnded = false) => {
 	await interactWithElementInIframe(page, '#leave-btn', { action: 'click' });
 
 	if (role === 'moderator') {
@@ -299,7 +299,9 @@ export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'spe
 	}
 
 	await page.waitForSelector('.event-left');
-	await page.waitForSelector('.webhook-meetingEnded', { timeout: 10000 });
+	if (waitForMeetingEnded) {
+		await page.waitForSelector('.webhook-meetingEnded', { timeout: 10000 });
+	}
 };
 
 export const startScreenSharing = async (page: Page) => {
