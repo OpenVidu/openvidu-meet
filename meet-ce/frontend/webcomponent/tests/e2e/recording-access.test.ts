@@ -46,7 +46,7 @@ test.describe('Recording Access Tests', () => {
 			await joinRoomAs('moderator', participantName, tempPage);
 
 			await startStopRecording(tempPage, 'start');
-			await tempPage.waitForTimeout(2000);
+			await tempPage.waitForTimeout(1000);
 			await startStopRecording(tempPage, 'stop');
 			recordingCreated = true;
 
@@ -59,11 +59,9 @@ test.describe('Recording Access Tests', () => {
 	test.afterAll(async ({ browser }) => {
 		const tempContext = await browser.newContext();
 		const tempPage = await tempContext.newPage();
-		await deleteAllRooms(tempPage);
 		await deleteAllRecordings(tempPage);
-
-		await tempContext.close();
-		await tempPage.close();
+		await deleteAllRooms(tempPage);
+		await Promise.all([tempContext.close(), tempPage.close()]);
 	});
 
 	test('should moderator not be able to access recording when access level is set to admin', async ({ page }) => {
@@ -76,7 +74,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('moderator', page);
 
@@ -93,7 +90,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('speaker', page);
 
@@ -110,7 +106,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
@@ -127,7 +122,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await accessRoomAs('speaker', page);
 
@@ -144,7 +138,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('moderator', page);
 
@@ -161,7 +154,6 @@ test.describe('Recording Access Tests', () => {
 			virtualBackground: { enabled: true }
 		});
 
-		await page.goto(MEET_TESTAPP_URL);
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		await viewRecordingsAs('speaker', page);
 

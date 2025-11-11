@@ -122,7 +122,6 @@ test.describe('UI Feature Config Tests', () => {
 				virtualBackground: { enabled: true }
 			});
 
-			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, page);
 
@@ -152,7 +151,6 @@ test.describe('UI Feature Config Tests', () => {
 				virtualBackground: { enabled: true }
 			});
 
-			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('speaker', participantName, page);
 
@@ -173,7 +171,6 @@ test.describe('UI Feature Config Tests', () => {
 				virtualBackground: { enabled: true }
 			});
 
-			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, page);
 
@@ -199,6 +196,7 @@ test.describe('UI Feature Config Tests', () => {
 				await leaveRoom(page);
 			} catch (error) {}
 		});
+
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
 			await updateRoomConfig(roomId, {
@@ -210,7 +208,6 @@ test.describe('UI Feature Config Tests', () => {
 				virtualBackground: { enabled: true }
 			});
 
-			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('speaker', participantName, page);
 
@@ -260,12 +257,14 @@ test.describe('UI Feature Config Tests', () => {
 				virtualBackground: { enabled: true }
 			});
 
-			await page.goto(MEET_TESTAPP_URL);
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('speaker', participantName, page);
 
 			await applyVirtualBackground(page, '2');
 			await waitForVirtualBackgroundToApply(page);
+
+			await leaveRoom(page);
+			await page.reload();
 
 			// Now disable virtual backgrounds
 			await updateRoomConfig(roomId, {
@@ -276,9 +275,6 @@ test.describe('UI Feature Config Tests', () => {
 				},
 				virtualBackground: { enabled: false }
 			});
-
-			await leaveRoom(page);
-			await page.reload();
 
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('speaker', participantName, page);

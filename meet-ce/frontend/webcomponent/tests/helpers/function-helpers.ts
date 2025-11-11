@@ -299,6 +299,7 @@ export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'spe
 	}
 
 	await page.waitForSelector('.event-left');
+	await page.waitForSelector('.webhook-meetingEnded', { timeout: 10000 });
 };
 
 export const startScreenSharing = async (page: Page) => {
