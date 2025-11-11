@@ -20,7 +20,6 @@ describe('Room API Tests', () => {
 
 	beforeAll(async () => {
 		setInternalConfig({
-			// MEETING_EMPTY_TIMEOUT: '1s'
 			MEETING_DEPARTURE_TIMEOUT: '1s'
 		});
 		await startTestServer();
