@@ -399,6 +399,11 @@ add_common_dev_commands() {
   CMD_COLORS+=("blue")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
 
+  # Webcomponent bundle watcher
+  CMD_NAMES+=("webcomponent")
+  CMD_COLORS+=("bgMagenta.black")
+  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
+
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
