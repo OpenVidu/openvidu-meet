@@ -130,7 +130,7 @@ test.describe('E2EE UI Tests', () => {
 	test.describe('E2EE in Meeting', () => {
 		test.afterEach(async ({ page }) => {
 			try {
-				await leaveRoom(page);
+				await leaveRoom(page, 'speaker', true);
 			} catch (error) {
 				// Ignore errors if already left
 			}
@@ -816,7 +816,7 @@ test.describe('E2EE UI Tests', () => {
 	test.describe('E2EE and Recording', () => {
 		test.afterEach(async ({ page }) => {
 			try {
-				await leaveRoom(page, 'moderator');
+				await leaveRoom(page, 'moderator', true);
 			} catch (error) {
 				// Ignore errors if already left
 			}
