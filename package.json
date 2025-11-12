@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "OpenVidu Meet Monorepo",
 	"scripts": {
-		"build": "pnpm run build:ov-components && pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
+		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
 		"clean": "rm -f pnpm-lock.yaml && pnpm --filter @openvidu-meet/backend run clean && pnpm --filter @openvidu-meet/frontend run clean && pnpm run clean:ov-components",
 		"clean:ov-components": "cd ../openvidu/openvidu-components-angular && rm -rf node_modules package-lock.json dist && rm -f projects/openvidu-components-angular/package-lock.json && cd ../../openvidu-meet",
 		"build:frontend": "pnpm --filter @openvidu-meet/frontend run build ${BASE_HREF:-/}",
