@@ -42,5 +42,10 @@
 		"identity-obj-proxy": "3.0.0",
 		"tree-kill": "1.2.2",
 		"wait-on": "9.0.1"
+	},
+	"pnpm": {
+		"overrides": {
+			"livekit-client": "2.15.15"
+		}
 	}
 }
