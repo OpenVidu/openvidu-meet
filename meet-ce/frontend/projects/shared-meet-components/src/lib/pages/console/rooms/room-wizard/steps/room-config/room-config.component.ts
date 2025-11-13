@@ -103,7 +103,7 @@ export class RoomConfigComponent implements OnDestroy {
 	}
 
 	get virtualBackgroundsEnabled(): boolean {
-		return this.configForm.value.virtualBackgroundEnabled ?? false;
+		return this.configForm.value.virtualBackgroundsEnabled ?? false;
 	}
 
 	get e2eeEnabled(): boolean {
