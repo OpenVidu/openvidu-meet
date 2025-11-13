@@ -962,11 +962,15 @@ export class RecordingService {
 	}
 
 	/**
-	 * Evaluates a single recording and aborts it if it's considered stale.
+	 * Evaluates whether a recording is stale and aborts it if necessary.
+	 * A recording is considered stale if it has not been updated within the configured stale period
+	 * and either the associated LiveKit room does not exist or has no publishers.
+	 * If the recording is already aborted or has no updatedAt timestamp, it is kept as fresh.
 	 *
-	 * @param egressInfo - The egress information for the recording to evaluate
-	 * @returns {Promise<boolean>} True if the recording was aborted, false if it's still fresh
-	 * @protected
+	 * @param egressInfo - The egress information containing details about the recording.
+	 * @returns A promise that resolves to `true` if the recording was aborted, `false` otherwise.
+	 * @throws Will throw an error if there is an issue retrieving recording status, checking room existence,
+	 *         or aborting the recording.
 	 */
 	protected async evaluateAndAbortStaleRecording(egressInfo: EgressInfo): Promise<boolean> {
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
@@ -1001,7 +1005,6 @@ export class RecordingService {
 			}
 
 			// Check if recording has not been updated recently
-
 			this.logger.debug(`Recording ${recordingId} last updated at ${new Date(updatedAt).toISOString()}`);
 
 			if (!isRecordingStale) {
