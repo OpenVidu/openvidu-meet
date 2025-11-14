@@ -34,9 +34,7 @@ export const MEETING_CE_PROVIDERS: Provider[] = [
 				item: MeetingParticipantPanelComponent,
 				afterLocalParticipant: MeetingShareLinkPanelComponent
 			},
-			layout: {
-				additionalElements: MeetingShareLinkOverlayComponent
-			},
+			layoutAdditionalElements: MeetingShareLinkOverlayComponent,
 			lobby: MeetingLobbyComponent
 		}
 	}

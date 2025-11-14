@@ -131,13 +131,16 @@ export class MeetingComponent implements OnInit {
 		)
 	);
 
-	protected layoutAdditionalElementsInputs = computed(() => {
+	/**
+	 * Inputs for custom layout component (CE or PRO)
+	 * Includes additionalElementsComponent if provided via plugin
+	 */
+	protected layoutInputs = computed(() => {
 		const showOverlay = this.onlyModeratorIsPresent;
-		return this.pluginManager.getLayoutAdditionalElementsInputs(
-			showOverlay,
-			`${this.hostname}/room/${this.roomId}`,
-			() => this.handleCopySpeakerLink()
-		);
+		const meetingUrl = `${this.hostname}/room/${this.roomId}`;
+		const onCopyLinkFn = () => this.handleCopySpeakerLink();
+		const additionalElementsComponent = this.plugins.layoutAdditionalElements;
+		return this.pluginManager.getLayoutInputs(showOverlay, meetingUrl, onCopyLinkFn, additionalElementsComponent);
 	});
 
 	protected lobbyInputs = computed(() => {

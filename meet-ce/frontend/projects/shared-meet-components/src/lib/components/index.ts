@@ -19,6 +19,7 @@ export * from './meeting-participant-panel/meeting-participant-panel.component';
 export * from './meeting-share-link-panel/meeting-share-link-panel.component';
 export * from './meeting-share-link-overlay/meeting-share-link-overlay.component';
 export * from './meeting-lobby/meeting-lobby.component';
+export * from './meeting-layout/meeting-layout.component';
 
 
 // Meeting components

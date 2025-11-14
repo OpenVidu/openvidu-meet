@@ -65,13 +65,25 @@ export class MeetingPluginManagerService {
 	}
 
 	/**
-	 * Prepares inputs for the layout additional elements plugin
+	 * Prepares inputs for the layout component (CE or PRO)
+	 *
+	 * This method prepares all inputs needed by the layout component including:
+	 * - Additional elements component to be rendered inside the layout
+	 * - Inputs object to pass to the additional elements component
 	 */
-	getLayoutAdditionalElementsInputs(showOverlay: boolean, meetingUrl: string, onCopyLink: () => void) {
+	getLayoutInputs(
+		showOverlay: boolean,
+		meetingUrl: string,
+		onCopyLink: () => void,
+		additionalElementsComponent?: any
+	) {
 		return {
-			showOverlay,
-			meetingUrl,
-			copyClickedFn: onCopyLink
+			additionalElementsComponent,
+			additionalElementsInputs: {
+				showOverlay,
+				meetingUrl,
+				copyClickedFn: onCopyLink
+			}
 		};
 	}
 

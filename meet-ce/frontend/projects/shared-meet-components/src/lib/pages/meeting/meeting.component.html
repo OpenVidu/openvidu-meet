@@ -85,17 +85,13 @@
 			</ng-container>
 		}
 
-		<!-- Layout Additional Elements Plugin -->
-		@if (plugins.layout?.additionalElements) {
-			<ng-container *ovLayoutAdditionalElements>
-				@if (onlyModeratorIsPresent) {
-					<ng-container
-						[ngComponentOutlet]="plugins.layout!.additionalElements!"
-						[ngComponentOutletInputs]="layoutAdditionalElementsInputs()"
-					></ng-container>
-				}
-			</ng-container>
-		}
+		<!-- Custom layout component (CE uses MeetingLayoutComponent directly) -->
+		<ng-container *ovLayout>
+			<ov-meeting-layout
+				[additionalElementsComponent]="layoutInputs().additionalElementsComponent"
+				[additionalElementsInputs]="layoutInputs().additionalElementsInputs"
+			></ov-meeting-layout>
+		</ng-container>
 
 		<!-- Participant Panel Item Plugin -->
 		@if (plugins.participantPanel?.item) {

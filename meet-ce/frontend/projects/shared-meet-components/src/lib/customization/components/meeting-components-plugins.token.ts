@@ -8,45 +8,54 @@ export interface MeetingComponentsPlugins {
 	/**
 	 * Toolbar-related plugin components
 	 */
-	toolbar?: {
-		/**
-		 * Additional buttons to show in the toolbar (e.g., copy link, settings)
-		 */
-		additionalButtons?: Type<any>;
-		/**
-		 * Custom leave button component (only shown for moderators)
-		 */
-		leaveButton?: Type<any>;
-	};
+	toolbar?: MeetingComponentsToolbarPlugins;
 
 	/**
 	 * Participant panel-related plugin components
 	 */
-	participantPanel?: {
-		/**
-		 * Custom component to render each participant item in the panel
-		 */
-		item?: Type<any>;
-		/**
-		 * Component to show after the local participant in the panel
-		 */
-		afterLocalParticipant?: Type<any>;
-	};
+	participantPanel?: MeetingComponentsParticipantPanelPlugins;
 
 	/**
-	 * Layout-related plugin components
+	 * Complete custom layout component that replaces the entire default layout.
+	 * This component will receive all necessary inputs including additionalElements plugin.
 	 */
-	layout?: {
-		/**
-		 * Additional elements to show in the main layout (e.g., overlays, banners)
-		 */
-		additionalElements?: Type<any>;
-	};
+	layout?: Type<any>;
+
+	/**
+	 * Additional elements to inject within the layout component.
+	 * The layout component should provide an injection point for these elements.
+	 *
+	 * @example
+	 * layoutAdditionalElements: ShareLinkOverlayComponent
+	 */
+	layoutAdditionalElements?: Type<any>;
 
 	/**
 	 * Lobby-related plugin components
 	 */
 	lobby?: Type<any>;
+}
+
+export interface MeetingComponentsToolbarPlugins {
+	/**
+	 * Additional buttons to show in the toolbar (e.g., copy link, settings)
+	 */
+	additionalButtons?: Type<any>;
+	/**
+	 * Custom leave button component (only shown for moderators)
+	 */
+	leaveButton?: Type<any>;
+}
+
+export interface MeetingComponentsParticipantPanelPlugins {
+	/**
+	 * Custom component to render each participant item in the panel
+	 */
+	item?: Type<any>;
+	/**
+	 * Component to show after the local participant in the panel
+	 */
+	afterLocalParticipant?: Type<any>;
 }
 
 /**

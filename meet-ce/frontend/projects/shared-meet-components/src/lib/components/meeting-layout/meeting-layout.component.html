@@ -1,0 +1,17 @@
+<ov-layout [ovRemoteParticipants]="filteredRemoteParticipants()">
+	<ov-layout>
+		@if (additionalElementsInputs().showOverlay) {
+			<!-- Additional elements plugin injection point -->
+			<ng-template #layoutAdditionalElements>
+				<ng-container
+					[ngComponentOutlet]="plugins.layoutAdditionalElements!"
+					[ngComponentOutletInputs]="additionalElementsInputs()"
+				></ng-container>
+			</ng-template>
+		}
+
+		<ng-template #stream let-track>
+			<ov-stream [track]="track"></ov-stream>
+		</ng-template>
+	</ov-layout>
+</ov-layout>
