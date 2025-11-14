@@ -306,7 +306,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: recordings-test-${{ matrix.storage-provider }}-openvidu-meet-logs
-          path: backend/meet_backend.log
+          path: meet_backend.log
           retention-days: 2
 
       - name: Clean up credentials
