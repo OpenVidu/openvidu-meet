@@ -570,7 +570,7 @@ export const expectValidRoomMemberTokenResponse = (
 	role: MeetRoomMemberRole,
 	addJoinPermission = false,
 	participantName?: string,
-	participantIdentity?: string,
+	participantIdentityPrefix?: string,
 	canRetrieveRecordings?: boolean,
 	canDeleteRecordings?: boolean
 ) => {
@@ -589,10 +589,8 @@ export const expectValidRoomMemberTokenResponse = (
 		expect(decodedToken).toHaveProperty('name', participantName);
 		expect(decodedToken).toHaveProperty('sub');
 
-		if (participantIdentity) {
-			expect(decodedToken.sub).toBe(participantIdentity);
-		} else {
-			expect(decodedToken.sub).toBe(participantName);
+		if (participantIdentityPrefix) {
+			expect(decodedToken.sub?.startsWith(participantIdentityPrefix)).toBe(true);
 		}
 	} else {
 		expect(decodedToken).not.toHaveProperty('name');

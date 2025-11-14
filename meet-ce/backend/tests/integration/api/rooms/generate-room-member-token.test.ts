@@ -61,7 +61,14 @@ describe('Room API Tests', () => {
 				grantJoinMeetingPermission: true,
 				participantName
 			});
-			expectValidRoomMemberTokenResponse(response, roomId, MeetRoomMemberRole.MODERATOR, true, participantName);
+			expectValidRoomMemberTokenResponse(
+				response,
+				roomId,
+				MeetRoomMemberRole.MODERATOR,
+				true,
+				participantName,
+				'test_participant'
+			);
 
 			// End the meeting for further tests
 			await endMeeting(roomId, roomData.moderatorToken);
@@ -76,7 +83,14 @@ describe('Room API Tests', () => {
 				grantJoinMeetingPermission: true,
 				participantName
 			});
-			expectValidRoomMemberTokenResponse(response, roomId, MeetRoomMemberRole.MODERATOR, true, participantName);
+			expectValidRoomMemberTokenResponse(
+				response,
+				roomId,
+				MeetRoomMemberRole.MODERATOR,
+				true,
+				participantName,
+				'test_participant'
+			);
 
 			// Create token for the second participant with the same name
 			response = await generateRoomMemberTokenRequest(roomId, {
@@ -89,7 +103,8 @@ describe('Room API Tests', () => {
 				roomId,
 				MeetRoomMemberRole.MODERATOR,
 				true,
-				participantName + '_1' // Participant name should be unique
+				participantName + '_1', // Participant name should be unique
+				'test_participant_1'
 			);
 
 			// End the meeting for further tests
