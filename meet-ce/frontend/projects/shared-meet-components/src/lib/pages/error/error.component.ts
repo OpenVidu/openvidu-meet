@@ -54,24 +54,26 @@ export class ErrorComponent implements OnInit {
 				message: 'The room you are trying to access is closed'
 			},
 			[ErrorReason.MISSING_ROOM_SECRET]: {
-				title: 'Missing secret',
-				message: 'You need to provide a secret to join the room as a moderator or speaker'
+				title: 'Invalid link',
+				message:
+					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
 			},
 			[ErrorReason.MISSING_RECORDING_SECRET]: {
-				title: 'Missing secret',
-				message: 'You need to provide a secret to access the recording'
+				title: 'Invalid link',
+				message: 'The link you used to access this recording is not valid'
 			},
 			[ErrorReason.INVALID_ROOM_SECRET]: {
-				title: 'Invalid secret',
-				message: 'The secret provided to join the room is neither valid for moderators nor speakers'
+				title: 'Invalid link',
+				message:
+					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
 			},
 			[ErrorReason.INVALID_RECORDING_SECRET]: {
-				title: 'Invalid secret',
-				message: 'The secret provided to access the recording is invalid'
+				title: 'Invalid link',
+				message: 'The link you used to access this recording is not valid'
 			},
 			[ErrorReason.INVALID_ROOM]: {
 				title: 'Invalid room',
-				message: 'The room you are trying to join does not exist or has been deleted'
+				message: 'The room you are trying to access does not exist or has been deleted'
 			},
 			[ErrorReason.INVALID_RECORDING]: {
 				title: 'Invalid recording',
