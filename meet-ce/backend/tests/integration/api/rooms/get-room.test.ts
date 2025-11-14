@@ -29,7 +29,7 @@ describe('Room API Tests', () => {
 			expectValidRoom(createdRoom, 'test-room');
 
 			const response = await getRoom(createdRoom.roomId);
-			expectSuccessRoomResponse(response, 'test-room');
+			expectSuccessRoomResponse(response, 'test-room', 'test_room');
 		});
 
 		it('should retrieve a room with custom config', async () => {
@@ -51,7 +51,7 @@ describe('Room API Tests', () => {
 			// Retrieve the room by its ID
 			const response = await getRoom(roomId);
 
-			expectSuccessRoomResponse(response, 'custom-config', undefined, payload.config);
+			expectSuccessRoomResponse(response, 'custom-config', 'custom_config', undefined, payload.config);
 		});
 
 		it('should retrieve only specified fields when using fields parameter', async () => {
@@ -79,7 +79,7 @@ describe('Room API Tests', () => {
 
 			const response = await getRoom(dirtyRoomId);
 
-			expectSuccessRoomResponse(response, 'test-room');
+			expectSuccessRoomResponse(response, 'test-room', 'test_room');
 		});
 
 		it('should retrieve a room with autoDeletionDate', async () => {
@@ -95,7 +95,7 @@ describe('Room API Tests', () => {
 			// Get the room
 			const response = await getRoom(createdRoom.roomId);
 
-			expectSuccessRoomResponse(response, 'deletion-date', validAutoDeletionDate);
+			expectSuccessRoomResponse(response, 'deletion-date', 'deletion_date', validAutoDeletionDate);
 		});
 
 		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
@@ -115,7 +115,7 @@ describe('Room API Tests', () => {
 
 	describe('Get Room Validation failures', () => {
 		it('should fail when roomId becomes empty after sanitization', async () => {
-			const response = await getRoom('!!-*!@#$%^&*()_+{}|:"<>?');
+			const response = await getRoom('!!*!@#$%^&*()+{}|:"<>?');
 
 			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
 		});

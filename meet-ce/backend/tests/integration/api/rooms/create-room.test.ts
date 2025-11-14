@@ -1,14 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { Express } from 'express';
-import ms from 'ms';
-import request from 'supertest';
-import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import {
 	MeetRecordingAccess,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
 } from '@openvidu-meet/typings';
+import { Express } from 'express';
+import ms from 'ms';
+import request from 'supertest';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -35,7 +35,7 @@ describe('Room API Tests', () => {
 
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
 			const room = await createRoom({
-				roomName: '   Test Room   '
+				roomName: 'Test Room'
 			});
 			expectValidRoom(room, 'Test Room');
 		});
@@ -43,15 +43,15 @@ describe('Room API Tests', () => {
 		it('Should create a room with a valid autoDeletionDate', async () => {
 			const room = await createRoom({
 				autoDeletionDate: validAutoDeletionDate,
-				roomName: '   .,-------}{¡$#<+My Room *123  '
+				roomName: 'Room'
 			});
 
-			expectValidRoom(room, 'My Room 123', undefined, validAutoDeletionDate);
+			expectValidRoom(room, 'Room', 'room', undefined, validAutoDeletionDate);
 		});
 
 		it('Should create a room when sending full valid payload', async () => {
 			const payload = {
-				roomName: ' =Example Room&/ ',
+				roomName: 'Example Room',
 				autoDeletionDate: validAutoDeletionDate,
 				autoDeletionPolicy: {
 					withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE,
@@ -70,7 +70,156 @@ describe('Room API Tests', () => {
 
 			const room = await createRoom(payload);
 
-			expectValidRoom(room, 'Example Room', payload.config, validAutoDeletionDate, payload.autoDeletionPolicy);
+			expectValidRoom(
+				room,
+				'Example Room',
+				'example_room',
+				payload.config,
+				validAutoDeletionDate,
+				payload.autoDeletionPolicy
+			);
+		});
+	});
+
+	describe('Room Name Sanitization Tests', () => {
+		it('should create room with Spanish characters and generate sanitized roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Habitación José'
+			});
+			expectValidRoom(room, 'Habitación José', 'habitacion_jose');
+		});
+
+		it('should create room with German umlauts and generate sanitized roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Café Müller'
+			});
+			expectValidRoom(room, 'Café Müller', 'cafe_muller');
+		});
+
+		it('should create room with French accents and generate sanitized roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Réunion François'
+			});
+			expectValidRoom(room, 'Réunion François', 'reunion_francois');
+		});
+
+		it('should create room with uppercase letters and convert to lowercase in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'MY ROOM'
+			});
+			expectValidRoom(room, 'MY ROOM', 'my_room');
+		});
+
+		it('should create room with mixed case and convert to lowercase in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'MyRoom123'
+			});
+			expectValidRoom(room, 'MyRoom123', 'myroom123');
+		});
+
+		it('should create room with hyphens and convert to underscores in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'my-test-room'
+			});
+			expectValidRoom(room, 'my-test-room', 'my_test_room');
+		});
+
+		it('should create room with spaces and convert to underscores in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'My Test Room'
+			});
+			expectValidRoom(room, 'My Test Room', 'my_test_room');
+		});
+
+		it('should create room with multiple consecutive spaces and normalize in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'My    Test    Room'
+			});
+			expectValidRoom(room, 'My Test Room', 'my_test_room');
+		});
+
+		it('should create room with special characters and remove them in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Room@#$%^&*()123'
+			});
+			expectValidRoom(room, 'Room@#$%^&*()123', 'room123');
+		});
+
+		it('should create room with emojis and remove them in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Meeting 🎉 Room'
+			});
+			expectValidRoom(room, 'Meeting 🎉 Room', 'meeting_room');
+		});
+
+		it('should create room with leading/trailing underscores and remove them in roomId', async () => {
+			const room = await createRoom({
+				roomName: '__test_room__'
+			});
+			expectValidRoom(room, '__test_room__', 'test_room');
+		});
+
+		it('should create room with leading/trailing hyphens and remove them in roomId', async () => {
+			const room = await createRoom({
+				roomName: '--test-room--'
+			});
+			expectValidRoom(room, '--test-room--', 'test_room');
+		});
+
+		it('should create room with multiple consecutive hyphens/underscores and normalize in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'test___---room'
+			});
+			expectValidRoom(room, 'test___---room', 'test_room');
+		});
+
+		it('should create room with numbers and preserve them in roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Room 123 456'
+			});
+			expectValidRoom(room, 'Room 123 456', 'room_123_456');
+		});
+
+		it('should create room with mix of all sanitization rules', async () => {
+			const room = await createRoom({
+				roomName: 'SALA--Médica  #2024  (Niños)'
+			});
+			expectValidRoom(room, 'SALA--Médica #2024 (Niños)', 'sala_medica_2024_ninos');
+		});
+
+		it('should create room with Portuguese characters and generate sanitized roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Reunião São Paulo'
+			});
+			expectValidRoom(room, 'Reunião São Paulo', 'reuniao_sao_paulo');
+		});
+
+		it('should create room with Scandinavian characters and generate sanitized roomId', async () => {
+			const room = await createRoom({
+				roomName: 'Møde Åse'
+			});
+			expectValidRoom(room, 'Møde Åse', 'mde_ase');
+		});
+
+		it('should create room with Chinese characters and use default "room" prefix', async () => {
+			const room = await createRoom({
+				roomName: '会议室'
+			});
+			expectValidRoom(room, '会议室', 'room');
+		});
+
+		it('should create room with only special characters and use default "room" prefix', async () => {
+			const room = await createRoom({
+				roomName: '@#$%^&*()'
+			});
+			expectValidRoom(room, '@#$%^&*()', 'room');
+		});
+
+		it('should create room with emojis only and use default "room" prefix', async () => {
+			const room = await createRoom({
+				roomName: '🎉🎊🎈'
+			});
+			expectValidRoom(room, '🎉🎊🎈', 'room');
 		});
 	});
 

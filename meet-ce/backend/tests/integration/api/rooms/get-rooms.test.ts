@@ -83,7 +83,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 3, 3, true, true);
 			// Rooms are ordered by creation date descending (newest first)
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${5 - i}`, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${5 - i}`, undefined, undefined, validAutoDeletionDate);
 			});
 
 			const nextPageToken = pagination.nextPageToken;
@@ -91,7 +91,7 @@ describe('Room API Tests', () => {
 			({ pagination, rooms } = response.body);
 			expectSuccessRoomsResponse(response, 3, 3, false, false);
 			rooms.forEach((room: MeetRoom, i: number) => {
-				expectValidRoom(room, `test-room-${2 - i}`, undefined, validAutoDeletionDate);
+				expectValidRoom(room, `test-room-${2 - i}`, undefined, undefined, validAutoDeletionDate);
 			});
 		});
 

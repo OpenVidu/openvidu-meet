@@ -91,6 +91,7 @@ describe('Room API Tests', () => {
 					undefined,
 					undefined,
 					undefined,
+					undefined,
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.DELETE
 				);
@@ -148,6 +149,7 @@ describe('Room API Tests', () => {
 				expectValidRoom(
 					response.body.room,
 					roomName,
+					undefined,
 					undefined,
 					undefined,
 					undefined,
@@ -215,6 +217,7 @@ describe('Room API Tests', () => {
 					undefined,
 					undefined,
 					undefined,
+					undefined,
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.CLOSE
 				);
@@ -225,6 +228,7 @@ describe('Room API Tests', () => {
 				expectValidRoom(
 					roomResponse.body,
 					roomName,
+					undefined,
 					undefined,
 					undefined,
 					undefined,
@@ -264,6 +268,7 @@ describe('Room API Tests', () => {
 					undefined,
 					undefined,
 					undefined,
+					undefined,
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.DELETE
 				);
@@ -292,6 +297,7 @@ describe('Room API Tests', () => {
 					undefined,
 					undefined,
 					undefined,
+					undefined,
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.CLOSE
 				);
@@ -303,6 +309,7 @@ describe('Room API Tests', () => {
 				expectValidRoom(
 					roomResponse.body,
 					roomName,
+					undefined,
 					undefined,
 					undefined,
 					undefined,
@@ -342,7 +349,7 @@ describe('Room API Tests', () => {
 
 	describe('Delete Room Validation failures', () => {
 		it('should fail when roomId becomes empty after sanitization', async () => {
-			const response = await deleteRoom('!!-*!@#$%^&*()_+{}|:"<>?');
+			const response = await deleteRoom('!!*!@#$%^&*()+{}|:"<>?');
 
 			expect(response.status).toBe(422);
 			// Expect an error message indicating the resulting roomId is empty.

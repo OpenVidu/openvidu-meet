@@ -216,6 +216,7 @@ describe('Room API Tests', () => {
 				undefined,
 				undefined,
 				undefined,
+				undefined,
 				MeetRoomStatus.ACTIVE_MEETING,
 				MeetingEndAction.DELETE
 			);
@@ -229,6 +230,7 @@ describe('Room API Tests', () => {
 				undefined,
 				undefined,
 				undefined,
+				undefined,
 				MeetRoomStatus.ACTIVE_MEETING,
 				MeetingEndAction.CLOSE
 			);
@@ -239,6 +241,7 @@ describe('Room API Tests', () => {
 			expectValidRoom(
 				successfulRoom4.room,
 				successfulRoom4.room.roomName,
+				undefined,
 				undefined,
 				undefined,
 				undefined,
