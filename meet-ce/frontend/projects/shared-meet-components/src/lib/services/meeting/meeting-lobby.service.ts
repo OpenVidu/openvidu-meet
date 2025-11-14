@@ -155,10 +155,7 @@ export class MeetingLobbyService {
 	}
 
 	async submitAccess(): Promise<void> {
-		const sanitized = this.participantName
-			.replace(/[^a-zA-Z0-9 _-]/g, '') // remove invalid chars
-			.replace(/\s+/g, ' ') // normalize spaces
-			.trim(); // remove leading/trailing spaces
+		const sanitized = this.participantName.trim(); // remove leading/trailing spaces
 
 		if (!sanitized) {
 			console.error('Participant form is invalid. Cannot access meeting.');

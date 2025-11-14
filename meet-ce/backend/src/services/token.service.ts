@@ -40,7 +40,8 @@ export class TokenService {
 	async generateRoomMemberToken(
 		role: MeetRoomMemberRole,
 		permissions: MeetRoomMemberPermissions,
-		participantName?: string
+		participantName?: string,
+		participantIdentity?: string
 	): Promise<string> {
 		const metadata: MeetRoomMemberTokenMetadata = {
 			livekitUrl: LIVEKIT_URL,
@@ -49,7 +50,7 @@ export class TokenService {
 		};
 
 		const tokenOptions: AccessTokenOptions = {
-			identity: participantName,
+			identity: participantIdentity,
 			name: participantName,
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(metadata)

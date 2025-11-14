@@ -8,6 +8,7 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
+import { uid } from 'uid/single';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/index.js';
 import { errorInvalidRoomSecret, errorParticipantNotFound, errorRoomClosed } from '../models/error.model.js';
@@ -113,6 +114,10 @@ export class RoomMemberService {
 				this.logger.error(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
 				throw error;
 			}
+
+			// Create a unique participant identity based on the participant name
+			const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
+			participantIdentity = `${identityPrefix}-${uid(15)}`;
 		} else {
 			// REFRESH MODE
 			this.logger.verbose(
@@ -120,11 +125,11 @@ export class RoomMemberService {
 			);
 
 			// Check if participant exists in the room
-			const participantExists = await this.existsParticipantInMeeting(roomId, participantIdentity);
+			const participantExists = await this.existsParticipantInMeeting(roomId, participantIdentity!);
 
 			if (!participantExists) {
 				this.logger.verbose(`Participant '${participantIdentity}' does not exist in room '${roomId}'`);
-				throw errorParticipantNotFound(participantIdentity, roomId);
+				throw errorParticipantNotFound(participantIdentity!, roomId);
 			}
 		}
 
@@ -132,7 +137,7 @@ export class RoomMemberService {
 		const permissions = await this.getRoomMemberPermissions(roomId, role, true);
 
 		// Generate token with participant name
-		return this.tokenService.generateRoomMemberToken(role, permissions, participantName);
+		return this.tokenService.generateRoomMemberToken(role, permissions, participantName, participantIdentity);
 	}
 
 	/**
@@ -329,6 +334,31 @@ export class RoomMemberService {
 	protected async getParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
 		this.logger.verbose(`Fetching participant '${participantIdentity}'`);
 		return this.livekitService.getParticipant(roomId, participantIdentity);
+	}
+
+	/**
+	 * Creates a sanitized participant identity prefix from the given participant name.
+	 *
+	 * This method normalizes the participant name by:
+	 * - Decomposing combined characters (e.g., á -> a + ´)
+	 * - Converting to lowercase
+	 * - Replacing hyphens and spaces with underscores
+	 * - Allowing only lowercase letters, numbers, and underscores
+	 * - Replacing multiple consecutive underscores with a single underscore
+	 * - Removing leading and trailing underscores
+	 *
+	 * @param participantName The original participant name.
+	 * @returns A sanitized string suitable for use as a participant identity prefix.
+	 */
+	protected createParticipantIdentityPrefixFromName(participantName: string): string {
+		return participantName
+			.normalize('NFD') // Decompose combined characters (e.g., á -> a + ´)
+			.toLowerCase() // Convert to lowercase
+			.replace(/[-\s]/g, '_') // Replace hyphens and spaces with underscores
+			.replace(/[^a-z0-9_]/g, '') // Allow only lowercase letters, numbers and underscores
+			.replace(/_+/g, '_') // Replace multiple consecutive underscores with a single underscore
+			.replace(/_+$/, '') // Remove trailing underscores
+			.replace(/^_+/, ''); // Remove leading underscores
 	}
 
 	/**
