@@ -229,7 +229,7 @@ jobs:
             gcloud auth activate-service-account --key-file=/tmp/credentials.json
             
             echo "Removing openvidu-meet folder from GCS bucket..."
-            gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
+            gsutil -m rm -r gs://openvidu-appdata-gcp/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
           fi
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
@@ -254,7 +254,7 @@ jobs:
 
               yq e -i '
                 del(.storage.s3) |
-                .storage.gcp.bucket = "openvidu-appdata"
+                .storage.gcp.bucket = "openvidu-appdata-gcp"
               ' egress.yaml
             fi
 
@@ -278,7 +278,7 @@ jobs:
           MEET_AZURE_CONTAINER_NAME: ${{ matrix.storage-provider == 'abs' && 'openvidu-appdata-recordings' || '' }}
           # GCS variables
           GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/tmp/credentials.json' || '' }}
-          MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata' || 'openvidu-appdata' }}
+          MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata-gcp' || 'openvidu-appdata' }}
 
       - name: Run tests
         run: pnpm run test:integration-backend-recordings
@@ -291,7 +291,7 @@ jobs:
           MEET_AZURE_CONTAINER_NAME: ${{ matrix.storage-provider == 'abs' && 'openvidu-appdata-recordings' || '' }}
           # GCS variables
           GOOGLE_APPLICATION_CREDENTIALS: ${{ matrix.storage-provider == 'gcs' && '/tmp/credentials.json' || '' }}
-          MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata' || 'openvidu-appdata' }}
+          MEET_S3_BUCKET: ${{ matrix.storage-provider == 'gcs' && 'openvidu-appdata-gcp' || 'openvidu-appdata' }}
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
