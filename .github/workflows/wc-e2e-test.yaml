@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: room-test-results
-          path: frontend/webcomponent/test-results/
+          path: meet-ce/frontend/webcomponent/test-results/
           retention-days: 2
 
       - name: Upload TestApp logs on failure
@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: room-test-testapp-logs
-          path: testapp/testapp.log
+          path: testapp.log
           retention-days: 2
 
       - name: Upload OpenVidu Meet logs on failure
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: room-test-openvidu-meet-logs
-          path: backend/meet_backend.log
+          path: meet_backend.log
           retention-days: 2
 
       - name: Clean up

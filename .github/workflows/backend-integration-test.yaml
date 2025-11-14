@@ -82,7 +82,7 @@ jobs:
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}
         env:
-          JEST_JUNIT_OUTPUT_DIR: './backend/reports/'
+          JEST_JUNIT_OUTPUT_DIR: './meet-ce/backend/reports/'
 
       - name: Upload OpenVidu Meet logs
         if: failure()
@@ -283,7 +283,7 @@ jobs:
       - name: Run tests
         run: pnpm run test:integration-backend-recordings
         env:
-          JEST_JUNIT_OUTPUT_DIR: './backend/reports/'
+          JEST_JUNIT_OUTPUT_DIR: './meet-ce/backend/reports/'
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
           MEET_AZURE_ACCOUNT_NAME: ${{ matrix.storage-provider == 'abs' && vars.MEET_AZURE_ACCOUNT_NAME || '' }}
