@@ -23,33 +23,25 @@ import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 
 /**
- * Sanitizes a room name by removing invalid characters and normalizing format.
+ * Sanitizes a room name by normalizing format.
  *
  * @param val The string to sanitize
  * @returns A sanitized string safe for use as a room name
  */
-export const sanitizeRoomName = (val: string): string => {
+const sanitizeRoomName = (val: string): string => {
 	return val
 		.trim() // Remove leading/trailing spaces
-		.replace(/[^a-zA-Z0-9_-\s]/g, '') // Allow alphanumeric, underscores, hyphens and spaces
-		.replace(/\s+/g, ' ') // Replace multiple consecutive spaces with a single space
-		.replace(/-+/g, '-') // Replace multiple consecutive hyphens with a single hyphen
-		.replace(/_+/g, '_') // Replace multiple consecutive underscores with a single underscore
-		.replace(/-+$/, '') // Remove trailing hyphens
-		.replace(/_+$/, '') // Remove trailing underscores
-		.replace(/^-+/, '') // Remove leading hyphens
-		.replace(/^_+/, ''); // Remove leading underscores
+		.replace(/\s+/g, ' '); // Replace multiple consecutive spaces with a single space
 };
 
 /**
- * Sanitizes an identifier by removing/replacing invalid characters
- * and normalizing format.
+ * Sanitizes an identifier by removing invalid characters
  *
  * @param val The string to sanitize
  * @returns A sanitized string safe for use as an identifier
  */
-const sanitizeRoomId = (val: string): string => {
-	return sanitizeRoomName(val).replace(/\s+/g, ''); // Remove all spaces
+export const sanitizeRoomId = (val: string): string => {
+	return val.replace(/[^a-z0-9_-]/g, ''); // Allow only lowercase letters, numbers and underscores
 };
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
@@ -220,7 +212,7 @@ const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	roomName: z.string().transform(sanitizeRoomName).optional(),
+	roomName: z.string().optional(),
 	fields: z.string().optional()
 });
 

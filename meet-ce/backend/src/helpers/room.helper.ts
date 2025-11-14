@@ -7,6 +7,31 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Creates a sanitized room ID prefix from the given room name.
+	 *
+	 * This method normalizes the room name by:
+	 * - Decomposing combined characters (e.g., á -> a + ´)
+	 * - Converting to lowercase
+	 * - Replacing hyphens and spaces with underscores
+	 * - Allowing only lowercase letters, numbers, and underscores
+	 * - Replacing multiple consecutive underscores with a single underscore
+	 * - Removing leading and trailing underscores
+	 *
+	 * @param roomName The original room name.
+	 * @returns A sanitized string suitable for use as a room ID prefix.
+	 */
+	static createRoomIdPrefixFromRoomName(roomName: string): string {
+		return roomName
+			.normalize('NFD') // Decompose combined characters (e.g., á -> a + ´)
+			.toLowerCase() // Convert to lowercase
+			.replace(/[-\s]/g, '_') // Replace hyphens and spaces with underscores
+			.replace(/[^a-z0-9_]/g, '') // Allow only lowercase letters, numbers and underscores
+			.replace(/_+/g, '_') // Replace multiple consecutive underscores with a single underscore
+			.replace(/_+$/, '') // Remove trailing underscores
+			.replace(/^_+/, ''); // Remove leading underscores
+	}
+
+	/**
 	 * Converts an MeetRoom object to an MeetRoomOptions object.
 	 *
 	 * @param room - The MeetRoom object to convert.

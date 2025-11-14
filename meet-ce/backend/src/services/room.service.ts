@@ -74,8 +74,10 @@ export class RoomService {
 	 */
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
-		const roomIdPrefix = roomName!.replace(/\s+/g, ''); // Remove all spaces
-		const roomId = `${roomIdPrefix}-${uid(15)}`; // Generate a unique room ID based on the room name
+
+		// Generate a unique room ID based on the room name
+		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
+		const roomId = `${roomIdPrefix}-${uid(15)}`;
 
 		const meetRoom: MeetRoom = {
 			roomId,
