@@ -1,11 +1,8 @@
 import {
-	LiveKitPermissions,
-	MeetTokenMetadata,
-	OpenViduMeetPermissions,
-	ParticipantOptions,
-	ParticipantRole,
-	RecordingPermissions,
-	User
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
+	MeetUser
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
@@ -18,7 +15,7 @@ import { LoggerService } from './index.js';
 export class TokenService {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {}
 
-	async generateAccessToken(user: User): Promise<string> {
+	async generateAccessToken(user: MeetUser): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.username,
 			ttl: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
@@ -29,7 +26,7 @@ export class TokenService {
 		return await this.generateJwtToken(tokenOptions);
 	}
 
-	async generateRefreshToken(user: User): Promise<string> {
+	async generateRefreshToken(user: MeetUser): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.username,
 			ttl: INTERNAL_CONFIG.REFRESH_TOKEN_EXPIRATION,
@@ -40,54 +37,24 @@ export class TokenService {
 		return await this.generateJwtToken(tokenOptions);
 	}
 
-	async generateParticipantToken(
-		participantOptions: ParticipantOptions,
-		lkPermissions: LiveKitPermissions,
-		roles: { role: ParticipantRole; permissions: OpenViduMeetPermissions }[],
-		selectedRole: ParticipantRole
+	async generateRoomMemberToken(
+		role: MeetRoomMemberRole,
+		permissions: MeetRoomMemberPermissions,
+		participantName?: string
 	): Promise<string> {
-		const { roomId, participantName } = participantOptions;
-		this.logger.info(
-			`Generating token for room '${roomId}'` + (participantName ? ` and participant '${participantName}'` : '')
-		);
-
-		let { participantIdentity } = participantOptions;
-
-		if (participantName && !participantIdentity) {
-			participantIdentity = participantName;
-		}
-
-		const metadata: MeetTokenMetadata = {
+		const metadata: MeetRoomMemberTokenMetadata = {
 			livekitUrl: LIVEKIT_URL,
-			roles,
-			selectedRole
+			role,
+			permissions: permissions.meet
 		};
+
 		const tokenOptions: AccessTokenOptions = {
-			identity: participantIdentity,
+			identity: participantName,
 			name: participantName,
-			ttl: INTERNAL_CONFIG.PARTICIPANT_TOKEN_EXPIRATION,
+			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(metadata)
 		};
-		return await this.generateJwtToken(tokenOptions, lkPermissions as VideoGrant);
-	}
-
-	async generateRecordingToken(
-		roomId: string,
-		role: ParticipantRole,
-		permissions: RecordingPermissions
-	): Promise<string> {
-		this.logger.info(`Generating recording token for room ${roomId}`);
-		const tokenOptions: AccessTokenOptions = {
-			ttl: INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION,
-			metadata: JSON.stringify({
-				role,
-				recordingPermissions: permissions
-			})
-		};
-		const grants: VideoGrant = {
-			room: roomId
-		};
-		return await this.generateJwtToken(tokenOptions, grants);
+		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
 	}
 
 	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {

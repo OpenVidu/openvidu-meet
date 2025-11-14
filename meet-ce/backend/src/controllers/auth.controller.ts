@@ -1,8 +1,6 @@
-import { AuthTransportMode } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../config/index.js';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,
@@ -12,7 +10,7 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService, TokenService, UserService } from '../services/index.js';
-import { getAuthTransportMode, getCookieOptions, getRefreshToken } from '../utils/index.js';
+import { getRefreshToken } from '../utils/index.js';
 
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -34,49 +32,19 @@ export const login = async (req: Request, res: Response) => {
 		const refreshToken = await tokenService.generateRefreshToken(user);
 
 		logger.info(`Login succeeded for user '${username}'`);
-		const transportMode = await getAuthTransportMode();
-
-		if (transportMode === AuthTransportMode.HEADER) {
-			// Send tokens in response body for header mode
-			return res.status(200).json({
-				message: `User '${username}' logged in successfully`,
-				accessToken,
-				refreshToken
-			});
-		} else {
-			// Send tokens as cookies for cookie mode
-			res.cookie(
-				INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME,
-				accessToken,
-				getCookieOptions('/', INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION)
-			);
-			res.cookie(
-				INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME,
-				refreshToken,
-				getCookieOptions(
-					`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`,
-					INTERNAL_CONFIG.REFRESH_TOKEN_EXPIRATION
-				)
-			);
-			return res.status(200).json({ message: `User '${username}' logged in successfully` });
-		}
+		return res.status(200).json({
+			message: `User '${username}' logged in successfully`,
+			accessToken,
+			refreshToken
+		});
 	} catch (error) {
 		handleError(res, error, 'generating access and refresh tokens');
 	}
 };
 
 export const logout = async (_req: Request, res: Response) => {
-	const transportMode = await getAuthTransportMode();
-
-	if (transportMode === AuthTransportMode.COOKIE) {
-		// Clear cookies only in cookie mode
-		res.clearCookie(INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME);
-		res.clearCookie(INTERNAL_CONFIG.REFRESH_TOKEN_COOKIE_NAME, {
-			path: `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`
-		});
-	}
-
-	// In header mode, the client is responsible for clearing localStorage
+	// The client is responsible for clearing tokens from localStorage,
+	// so just respond with success
 	return res.status(200).json({ message: 'Logout successful' });
 };
 
@@ -118,23 +86,10 @@ export const refreshToken = async (req: Request, res: Response) => {
 		const accessToken = await tokenService.generateAccessToken(user);
 
 		logger.info(`Access token refreshed for user '${username}'`);
-		const transportMode = await getAuthTransportMode();
-
-		if (transportMode === AuthTransportMode.HEADER) {
-			// Send access token in response body for header mode
-			return res.status(200).json({
-				message: `Access token for user '${username}' successfully refreshed`,
-				accessToken
-			});
-		} else {
-			// Send access token as cookie for cookie mode
-			res.cookie(
-				INTERNAL_CONFIG.ACCESS_TOKEN_COOKIE_NAME,
-				accessToken,
-				getCookieOptions('/', INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION)
-			);
-			return res.status(200).json({ message: `Access token for user '${username}' successfully refreshed` });
-		}
+		return res.status(200).json({
+			message: `Access token for user '${username}' successfully refreshed`,
+			accessToken
+		});
 	} catch (error) {
 		handleError(res, error, 'refreshing token');
 	}

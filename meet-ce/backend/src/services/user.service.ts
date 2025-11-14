@@ -1,4 +1,4 @@
-import { User, UserDTO, UserRole } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_INITIAL_ADMIN_PASSWORD, MEET_INITIAL_ADMIN_USER } from '../environment.js';
@@ -18,17 +18,17 @@ export class UserService {
 	 * Initializes the default admin user
 	 */
 	async initializeAdminUser(): Promise<void> {
-		const admin: User = {
+		const admin: MeetUser = {
 			username: MEET_INITIAL_ADMIN_USER,
 			passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
-			roles: [UserRole.ADMIN, UserRole.USER]
+			roles: [MeetUserRole.ADMIN, MeetUserRole.USER]
 		};
 
 		await this.userRepository.create(admin);
 		this.logger.info(`Admin user initialized with default credentials`);
 	}
 
-	async authenticateUser(username: string, password: string): Promise<User | null> {
+	async authenticateUser(username: string, password: string): Promise<MeetUser | null> {
 		const user = await this.getUser(username);
 
 		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
@@ -38,23 +38,23 @@ export class UserService {
 		return user;
 	}
 
-	async getUser(username: string): Promise<User | null> {
+	async getUser(username: string): Promise<MeetUser | null> {
 		return this.userRepository.findByUsername(username);
 	}
 
-	getAnonymousUser(): User {
+	getAnonymousUser(): MeetUser {
 		return {
 			username: INTERNAL_CONFIG.ANONYMOUS_USER,
 			passwordHash: '',
-			roles: [UserRole.USER]
+			roles: [MeetUserRole.USER]
 		};
 	}
 
-	getApiUser(): User {
+	getApiUser(): MeetUser {
 		return {
 			username: INTERNAL_CONFIG.API_USER,
 			passwordHash: '',
-			roles: [UserRole.APP]
+			roles: [MeetUserRole.APP]
 		};
 	}
 
@@ -76,7 +76,7 @@ export class UserService {
 	}
 
 	// Convert user to UserDTO to remove sensitive information
-	convertToDTO(user: User): UserDTO {
+	convertToDTO(user: MeetUser): MeetUserDTO {
 		const { passwordHash, ...userDTO } = user;
 		return userDTO;
 	}

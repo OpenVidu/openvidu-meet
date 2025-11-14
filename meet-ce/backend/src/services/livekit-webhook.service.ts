@@ -13,8 +13,8 @@ import {
 	LoggerService,
 	MutexService,
 	OpenViduWebhookService,
-	ParticipantService,
 	RecordingService,
+	RoomMemberService,
 	RoomService
 } from './index.js';
 
@@ -31,7 +31,7 @@ export class LivekitWebhookService {
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
-		@inject(ParticipantService) protected participantService: ParticipantService,
+		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
@@ -189,7 +189,7 @@ export class LivekitWebhookService {
 
 		try {
 			// Release the participant's reserved name
-			await this.participantService.releaseParticipantName(room.name, participant.name);
+			await this.roomMemberService.releaseParticipantName(room.name, participant.name);
 			this.logger.verbose(`Released name for participant '${participant.name}' in room '${room.name}'`);
 		} catch (error) {
 			this.logger.error('Error releasing participant name on participant left:', error);
@@ -280,7 +280,7 @@ export class LivekitWebhookService {
 			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
 
 			tasks.push(
-				this.participantService.cleanupParticipantNames(roomId),
+				this.roomMemberService.cleanupParticipantNames(roomId),
 				this.recordingService.releaseRecordingLockIfNoEgress(roomId)
 			);
 			await Promise.all(tasks);

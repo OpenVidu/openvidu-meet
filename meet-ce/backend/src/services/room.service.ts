@@ -1,6 +1,5 @@
 import {
 	MeetingEndAction,
-	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
@@ -8,10 +7,9 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
+	MeetRoomMemberRole,
 	MeetRoomOptions,
-	MeetRoomStatus,
-	ParticipantRole,
-	RecordingPermissions
+	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
@@ -21,10 +19,8 @@ import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_NAME_ID } from '../environment.js';
 import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
-import { validateRecordingTokenMetadata } from '../middlewares/index.js';
 import {
 	errorDeletingRoom,
-	errorInvalidRoomSecret,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
 	internalError,
@@ -32,14 +28,13 @@ import {
 } from '../models/error.model.js';
 import { RoomRepository } from '../repositories/index.js';
 import {
-	DistributedEventService,
 	FrontendEventService,
 	IScheduledTask,
 	LiveKitService,
 	LoggerService,
 	RecordingService,
-	TaskSchedulerService,
-	TokenService
+	RequestSessionService,
+	TaskSchedulerService
 } from './index.js';
 
 /**
@@ -55,10 +50,9 @@ export class RoomService {
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
-		@inject(TokenService) protected tokenService: TokenService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {
 		const roomGarbageCollectorTask: IScheduledTask = {
 			name: 'roomGarbageCollector',
@@ -223,7 +217,7 @@ export class RoomService {
 	 * @param roomId - The name of the room to retrieve.
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
-	async getMeetRoom(roomId: string, fields?: string, participantRole?: ParticipantRole): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
 		const meetRoom = await this.roomRepository.findByRoomId(roomId);
 
 		if (!meetRoom) {
@@ -233,8 +227,10 @@ export class RoomService {
 
 		const filteredRoom = UtilsHelper.filterObjectFields(meetRoom, fields);
 
-		// Remove moderatorUrl if the participant is a speaker to prevent access to moderator links
-		if (participantRole === ParticipantRole.SPEAKER) {
+		// Remove moderatorUrl if the room member is a speaker to prevent access to moderator links
+		const role = this.requestSessionService.getRoomMemberRole();
+
+		if (role === MeetRoomMemberRole.SPEAKER) {
 			delete filteredRoom.moderatorUrl;
 		}
 
@@ -632,74 +628,6 @@ export class RoomService {
 			`Bulk deletion completed: ${successful.length}/${rooms.length} successful, ${failed.length}/${rooms.length} failed`
 		);
 		return { successful, failed };
-	}
-
-	/**
-	 * Validates a secret against a room's moderator and speaker secrets and returns the corresponding role.
-	 *
-	 * @param roomId - The unique identifier of the room to check
-	 * @param secret - The secret to validate against the room's moderator and speaker secrets
-	 * @returns A promise that resolves to the participant role (MODERATOR or SPEAKER) if the secret is valid
-	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
-	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
-	 */
-	async getRoomRoleBySecret(roomId: string, secret: string): Promise<ParticipantRole> {
-		const room = await this.getMeetRoom(roomId);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-
-		switch (secret) {
-			case moderatorSecret:
-				return ParticipantRole.MODERATOR;
-			case speakerSecret:
-				return ParticipantRole.SPEAKER;
-			default:
-				throw errorInvalidRoomSecret(room.roomId, secret);
-		}
-	}
-
-	/**
-	 * Generates a token with recording permissions for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the room for which the recording token is being generated.
-	 * @param secret - The secret associated with the room, used to determine the user's role.
-	 * @returns A promise that resolves to the generated recording token as a string.
-	 * @throws An error if the room with the given `roomId` is not found.
-	 */
-	async generateRecordingToken(roomId: string, secret: string): Promise<string> {
-		const role = await this.getRoomRoleBySecret(roomId, secret);
-		const permissions = await this.getRecordingPermissions(roomId, role);
-		return await this.tokenService.generateRecordingToken(roomId, role, permissions);
-	}
-
-	protected async getRecordingPermissions(roomId: string, role: ParticipantRole): Promise<RecordingPermissions> {
-		const room = await this.getMeetRoom(roomId);
-		const recordingAccess = room.config?.recording.allowAccessTo;
-
-		// A participant can delete recordings if they are a moderator and the recording access is not set to admin
-		const canDeleteRecordings = role === ParticipantRole.MODERATOR && recordingAccess !== MeetRecordingAccess.ADMIN;
-
-		/* A participant can retrieve recordings if
-			- they can delete recordings
-			- they are a speaker and the recording access includes speakers
-		*/
-		const canRetrieveRecordings =
-			canDeleteRecordings ||
-			(role === ParticipantRole.SPEAKER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
-
-		return {
-			canRetrieveRecordings,
-			canDeleteRecordings
-		};
-	}
-
-	parseRecordingTokenMetadata(metadata: string) {
-		try {
-			const parsedMetadata = JSON.parse(metadata);
-			return validateRecordingTokenMetadata(parsedMetadata);
-		} catch (error) {
-			this.logger.error('Failed to parse recording token metadata:', error);
-			throw new Error('Invalid recording token metadata format');
-		}
 	}
 
 	/**

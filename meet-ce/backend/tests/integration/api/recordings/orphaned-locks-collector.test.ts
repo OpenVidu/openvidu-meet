@@ -254,7 +254,7 @@ describe('Recording Garbage Collector Tests', () => {
 			const now = 1_000_000;
 			jest.setSystemTime(now);
 
-			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((now - ms('5m')) as never); // 5 minutos ago
+			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((now - ms('5m')) as never); // 5 minutes ago
 
 			// Configure mocks específicos para este test
 			(livekitService.roomExists as jest.Mock).mockResolvedValue(true as never);
@@ -302,7 +302,7 @@ describe('Recording Garbage Collector Tests', () => {
 			(mutexService.lockExists as jest.Mock).mockResolvedValueOnce(true as never);
 			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((Date.now() - ms('5m')) as never);
 
-			// Configure mocks específicos para este test
+			// Configure specific mocks for this test
 			(livekitService.roomExists as jest.Mock).mockResolvedValueOnce(true as never);
 			(livekitService.getRoom as jest.Mock).mockResolvedValueOnce({
 				numParticipants: 0,
@@ -348,7 +348,7 @@ describe('Recording Garbage Collector Tests', () => {
 			(mutexService.lockExists as jest.Mock).mockResolvedValue(true as never);
 			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((Date.now() - ms('5m')) as never);
 
-			// Configure mocks específicos para este test
+			// Configure specific mocks for this test
 			(livekitService.roomExists as jest.Mock).mockResolvedValueOnce(false as never);
 			(livekitService.getInProgressRecordingsEgress as jest.Mock).mockResolvedValueOnce([
 				{
@@ -378,7 +378,7 @@ describe('Recording Garbage Collector Tests', () => {
 			(mutexService.lockExists as jest.Mock).mockResolvedValue(true as never);
 			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((Date.now() - ms('5m')) as never);
 
-			// Configure mocks específicos para este test
+			// Configure specific mocks for this test
 			(livekitService.roomExists as jest.Mock).mockResolvedValueOnce(false as never);
 			(livekitService.getInProgressRecordingsEgress as jest.Mock).mockResolvedValueOnce([] as never);
 

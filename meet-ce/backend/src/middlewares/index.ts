@@ -1,5 +1,6 @@
 export * from './content-type.middleware.js';
-export * from './http-context.middleware.js';
+export * from './base-url.middleware.js';
+export * from './request-context.middleware.js';
 export * from './auth.middleware.js';
 export * from './room.middleware.js';
 export * from './participant.middleware.js';

@@ -15,5 +15,5 @@ export interface LobbyState {
 	backButtonText: string;
 	isE2EEEnabled: boolean;
 	participantForm: FormGroup;
-	participantToken: string;
+	roomMemberToken: string;
 }

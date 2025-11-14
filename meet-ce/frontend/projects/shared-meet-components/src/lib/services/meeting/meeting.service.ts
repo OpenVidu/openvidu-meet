@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpService, ParticipantService } from '..';
 import { LoggerService } from 'openvidu-components-angular';
+import { HttpService } from '..';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,8 +12,7 @@ export class MeetingService {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected httpService: HttpService,
-		protected participantService: ParticipantService
+		protected httpService: HttpService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - MeetingService');
 	}
@@ -26,8 +25,7 @@ export class MeetingService {
 	 */
 	async endMeeting(roomId: string): Promise<any> {
 		const path = `${this.MEETINGS_API}/${roomId}`;
-		const headers = this.participantService.getParticipantRoleHeader();
-		return this.httpService.deleteRequest(path, headers);
+		return this.httpService.deleteRequest(path);
 	}
 
 	/**
@@ -39,8 +37,7 @@ export class MeetingService {
 	 */
 	async kickParticipant(roomId: string, participantIdentity: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}`;
-		const headers = this.participantService.getParticipantRoleHeader();
-		await this.httpService.deleteRequest(path, headers);
+		await this.httpService.deleteRequest(path);
 		this.log.d(`Participant '${participantIdentity}' kicked from room '${roomId}'`);
 	}
 
@@ -53,9 +50,8 @@ export class MeetingService {
 	 */
 	async changeParticipantRole(roomId: string, participantIdentity: string, newRole: string): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}/role`;
-		const headers = this.participantService.getParticipantRoleHeader();
 		const body = { role: newRole };
-		await this.httpService.putRequest(path, body, headers);
+		await this.httpService.putRequest(path, body);
 		this.log.d(`Changed role of participant '${participantIdentity}' to '${newRole}' in room '${roomId}'`);
 	}
 }

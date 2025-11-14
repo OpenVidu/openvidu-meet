@@ -1,4 +1,4 @@
-import { AuthMode, AuthTransportMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
+import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import {
 	MEET_INITIAL_API_KEY,
@@ -93,8 +93,7 @@ export class GlobalConfigService {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authModeToAccessRoom: AuthMode.NONE,
-					authTransportMode: AuthTransportMode.HEADER
+					authModeToAccessRoom: AuthMode.NONE
 				}
 			},
 			roomsConfig: {

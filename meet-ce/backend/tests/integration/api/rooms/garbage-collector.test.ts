@@ -2,17 +2,14 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import {
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings
-} from '@openvidu-meet/typings';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
 	endMeeting,
-	generateParticipantToken,
+	generateRoomMemberToken,
 	getRoom,
 	joinFakeParticipant,
 	runRoomGarbageCollector,
@@ -102,7 +99,7 @@ describe('Room Garbage Collector Tests', () => {
 
 		// End the meeting
 		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
-		const moderatorToken = await generateParticipantToken(room.roomId, moderatorSecret, 'moderator');
+		const moderatorToken = await generateRoomMemberToken(room.roomId, { secret: moderatorSecret });
 		await endMeeting(room.roomId, moderatorToken);
 
 		// Verify that the room is deleted
@@ -180,7 +177,7 @@ describe('Room Garbage Collector Tests', () => {
 
 		// Start recording
 		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room1);
-		const moderatorToken = await generateParticipantToken(room1.roomId, moderatorSecret, 'moderator');
+		const moderatorToken = await generateRoomMemberToken(room1.roomId, { secret: moderatorSecret });
 		await startRecording(room1.roomId, moderatorToken);
 
 		await runRoomGarbageCollector();

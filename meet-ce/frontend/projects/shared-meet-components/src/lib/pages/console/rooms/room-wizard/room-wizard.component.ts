@@ -4,10 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
+import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { StepIndicatorComponent, WizardNavComponent } from '../../../../components';
 import { WizardNavigationConfig, WizardStep } from '../../../../models';
 import { NavigationService, NotificationService, RoomService, RoomWizardStateService } from '../../../../services';
-import { BaseRoomOptions, MeetRoomOptions } from '@openvidu-meet/typings';
 import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-creation.component';
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
@@ -145,7 +145,7 @@ export class RoomWizardComponent implements OnInit {
 	}
 
 	async createRoomAdvance() {
-		const roomOptions: BaseRoomOptions = this.wizardService.roomOptions();
+		const roomOptions = this.wizardService.roomOptions();
 		console.log('Wizard completed with data:', roomOptions);
 
 		// Activate loading state

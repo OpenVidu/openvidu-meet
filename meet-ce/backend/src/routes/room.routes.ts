@@ -1,13 +1,13 @@
-import { UserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as roomCtrl from '../controllers/room.controller.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
-	configureRecordingTokenAuth,
 	configureRoomAuthorization,
-	participantTokenValidator,
+	configureRoomMemberTokenAuth,
+	roomMemberTokenValidator,
 	tokenAndRoleValidator,
 	withAuth,
 	withValidRoomBulkDeleteRequest,
@@ -15,8 +15,8 @@ import {
 	withValidRoomDeleteRequest,
 	withValidRoomFiltersRequest,
 	withValidRoomId,
+	withValidRoomMemberTokenRequest,
 	withValidRoomOptions,
-	withValidRoomSecret,
 	withValidRoomStatus
 } from '../middlewares/index.js';
 
@@ -27,47 +27,47 @@ roomRouter.use(bodyParser.json());
 // Room Routes
 roomRouter.post(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomOptions,
 	roomCtrl.createRoom
 );
 roomRouter.get(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomFiltersRequest,
 	roomCtrl.getRooms
 );
 roomRouter.delete(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomBulkDeleteRequest,
 	roomCtrl.bulkDeleteRooms
 );
 
 roomRouter.get(
 	'/:roomId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidRoomId,
 	configureRoomAuthorization,
 	roomCtrl.getRoom
 );
 roomRouter.delete(
 	'/:roomId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomDeleteRequest,
 	roomCtrl.deleteRoom
 );
 
 roomRouter.get(
 	'/:roomId/config',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), participantTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidRoomId,
 	configureRoomAuthorization,
 	roomCtrl.getRoomConfig
 );
 roomRouter.put(
 	'/:roomId/config',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomId,
 	withValidRoomConfig,
 	roomCtrl.updateRoomConfig
@@ -75,7 +75,7 @@ roomRouter.put(
 
 roomRouter.put(
 	'/:roomId/status',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomId,
 	withValidRoomStatus,
 	roomCtrl.updateRoomStatus
@@ -87,21 +87,21 @@ internalRoomRouter.use(bodyParser.urlencoded({ extended: true }));
 internalRoomRouter.use(bodyParser.json());
 
 internalRoomRouter.post(
-	'/:roomId/recording-token',
-	configureRecordingTokenAuth,
+	'/:roomId/token',
 	withValidRoomId,
-	withValidRoomSecret,
-	roomCtrl.generateRecordingToken
+	withValidRoomMemberTokenRequest,
+	configureRoomMemberTokenAuth,
+	roomCtrl.generateRoomMemberToken
 );
 internalRoomRouter.get(
 	'/:roomId/roles',
 	withAuth(allowAnonymous),
 	withValidRoomId,
-	roomCtrl.getRoomRolesAndPermissions
+	roomCtrl.getRoomMemberRolesAndPermissions
 );
 internalRoomRouter.get(
 	'/:roomId/roles/:secret',
 	withAuth(allowAnonymous),
 	withValidRoomId,
-	roomCtrl.getRoomRoleAndPermissions
+	roomCtrl.getRoomMemberRoleAndPermissions
 );

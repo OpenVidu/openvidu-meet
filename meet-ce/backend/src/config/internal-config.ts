@@ -5,25 +5,16 @@ export const INTERNAL_CONFIG = {
 	API_BASE_PATH_V1: '/api/v1',
 	INTERNAL_API_BASE_PATH_V1: '/internal-api/v1',
 
-	// Cookie names
-	ACCESS_TOKEN_COOKIE_NAME: 'OvMeetAccessToken',
-	REFRESH_TOKEN_COOKIE_NAME: 'OvMeetRefreshToken',
-	PARTICIPANT_TOKEN_COOKIE_NAME: 'OvMeetParticipantToken',
-	RECORDING_TOKEN_COOKIE_NAME: 'OvMeetRecordingToken',
-
 	// Headers names
 	API_KEY_HEADER: 'x-api-key',
 	ACCESS_TOKEN_HEADER: 'authorization',
 	REFRESH_TOKEN_HEADER: 'x-refresh-token',
-	PARTICIPANT_TOKEN_HEADER: 'x-participant-token',
-	PARTICIPANT_ROLE_HEADER: 'x-participant-role',
-	RECORDING_TOKEN_HEADER: 'x-recording-token',
+	ROOM_MEMBER_TOKEN_HEADER: 'x-room-member-token',
 
 	// Token expiration times
 	ACCESS_TOKEN_EXPIRATION: '2h',
 	REFRESH_TOKEN_EXPIRATION: '1d',
-	PARTICIPANT_TOKEN_EXPIRATION: '2h',
-	RECORDING_TOKEN_EXPIRATION: '2h',
+	ROOM_MEMBER_TOKEN_EXPIRATION: '2h',
 
 	// Participant name reservations
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed

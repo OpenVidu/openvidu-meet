@@ -14,8 +14,6 @@
   description: Operations related to managing global config in OpenVidu Meet
 - name: Internal API - Rooms
   description: Operations related to managing OpenVidu Meet rooms
-- name: Internal API - Participant
-  description: Operations related to managing participants in OpenVidu Meet rooms
 - name: Internal API - Meetings
   description: Operations related to managing meetings in OpenVidu Meet rooms
 - name: Internal API - Recordings

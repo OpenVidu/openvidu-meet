@@ -10,6 +10,7 @@ import { Injectable } from '@angular/core';
 export class SessionStorageService {
 	private readonly ROOM_SECRET_KEY = 'ovMeet-roomSecret';
 	private readonly REDIRECT_URL_KEY = 'ovMeet-redirectUrl';
+	private readonly E2EE_KEY = 'ovMeet-e2eeKey';
 
 	/**
 	 * Stores the room secret.
@@ -52,6 +53,31 @@ export class SessionStorageService {
 	 */
 	public getRedirectUrl(): string | null {
 		return this.get<string>(this.REDIRECT_URL_KEY);
+	}
+
+	/**
+	 * Stores the E2EE key.
+	 *
+	 * @param e2eeKey The E2EE key to store.
+	 */
+	public setE2EEKey(e2eeKey: string): void {
+		this.set(this.E2EE_KEY, e2eeKey);
+	}
+
+	/**
+	 * Retrieves the E2EE key.
+	 *
+	 * @returns The stored E2EE key or null if not found.
+	 */
+	public getE2EEKey(): string | null {
+		return this.get<string>(this.E2EE_KEY);
+	}
+
+	/**
+	 * Removes the E2EE key.
+	 */
+	public removeE2EEKey(): void {
+		this.remove(this.E2EE_KEY);
 	}
 
 	/**

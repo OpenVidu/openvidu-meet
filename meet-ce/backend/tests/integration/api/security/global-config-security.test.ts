@@ -1,15 +1,10 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthTransportMode, AuthType, MeetRoomThemeMode } from '@openvidu-meet/typings';
+import { AuthMode, AuthType, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import {
-	changeAuthTransportMode,
-	loginUser,
-	restoreDefaultGlobalConfig,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
+import { loginUser, restoreDefaultGlobalConfig, startTestServer } from '../../../helpers/request-helpers.js';
 
 const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
 
@@ -46,23 +41,6 @@ describe('Global Config API Security Tests', () => {
 			await restoreDefaultGlobalConfig();
 		});
 
-		it('should succeed when user is authenticated as admin in cookie mode', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Login as admin to get access token cookie
-			const adminCookie = await loginUser();
-
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/webhooks`)
-				.set('Cookie', adminCookie)
-				.send(webhookConfig);
-			expect(response.status).toBe(200);
-
-			// This method already restores the config to default (header mode)
-			await restoreDefaultGlobalConfig();
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${CONFIG_PATH}/webhooks`).send(webhookConfig);
 			expect(response.status).toBe(401);
@@ -84,20 +62,6 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin in cookie mode', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Login as admin to get access token cookie
-			const adminCookie = await loginUser();
-
-			const response = await request(app).get(`${CONFIG_PATH}/webhooks`).set('Cookie', adminCookie);
-			expect(response.status).toBe(200);
-
-			// Revert auth transport mode to header
-			await changeAuthTransportMode(AuthTransportMode.HEADER);
-		});
-
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).get(`${CONFIG_PATH}/webhooks`);
 			expect(response.status).toBe(401);
@@ -110,7 +74,6 @@ describe('Global Config API Security Tests', () => {
 				authMethod: {
 					type: AuthType.SINGLE_USER
 				},
-				authTransportMode: AuthTransportMode.HEADER,
 				authModeToAccessRoom: AuthMode.ALL_USERS
 			}
 		};
@@ -130,23 +93,6 @@ describe('Global Config API Security Tests', () => {
 				.send(securityConfig);
 			expect(response.status).toBe(200);
 
-			await restoreDefaultGlobalConfig();
-		});
-
-		it('should succeed when user is authenticated as admin in cookie mode', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Login as admin to get access token cookie
-			const adminCookie = await loginUser();
-
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/security`)
-				.set('Cookie', adminCookie)
-				.send(securityConfig);
-			expect(response.status).toBe(200);
-
-			// This method already restores the config to default (header mode)
 			await restoreDefaultGlobalConfig();
 		});
 
@@ -188,22 +134,6 @@ describe('Global Config API Security Tests', () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/rooms/appearance`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
-				.send(appearanceConfig);
-			expect(response.status).toBe(200);
-
-			await restoreDefaultGlobalConfig();
-		});
-
-		it('should succeed when user is authenticated as admin in cookie mode', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Login as admin to get access token cookie
-			const adminCookie = await loginUser();
-
-			const response = await request(app)
-				.put(`${CONFIG_PATH}/rooms/appearance`)
-				.set('Cookie', adminCookie)
 				.send(appearanceConfig);
 			expect(response.status).toBe(200);
 

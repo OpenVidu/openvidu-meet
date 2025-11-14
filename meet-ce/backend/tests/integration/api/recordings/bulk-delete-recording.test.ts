@@ -5,7 +5,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	generateRecordingToken,
+	generateRoomMemberToken,
 	getAllRecordings,
 	startTestServer,
 	stopRecording
@@ -119,14 +119,14 @@ describe('Recording API Tests', () => {
 			const recordingId = roomData.recordingId!;
 
 			// Generate a recording token for the room
-			const recordingToken = await generateRecordingToken(roomId, roomData.moderatorSecret);
+			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 
 			// Create another room and start a recording
 			const otherRoomData = await setupSingleRoomWithRecording(true);
 			const otherRecordingId = otherRoomData.recordingId!;
 
 			// Intenta eliminar ambas grabaciones usando el token de la primera sala
-			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], recordingToken);
+			const deleteResponse = await bulkDeleteRecordings([recordingId, otherRecordingId], roomMemberToken);
 
 			expect(deleteResponse.status).toBe(400);
 			expect(deleteResponse.body).toEqual({

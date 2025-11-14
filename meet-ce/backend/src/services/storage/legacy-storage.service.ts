@@ -1,4 +1,4 @@
-import { GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, User } from '@openvidu-meet/typings';
+import { GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { OpenViduMeetError, RedisKeyName } from '../../models/index.js';
 import { LoggerService, RedisService } from '../index.js';
@@ -289,11 +289,11 @@ export class LegacyStorageService {
 	 * @param username - The username of the user to retrieve
 	 * @returns A promise that resolves to the user data, or null if not found
 	 */
-	async getUser(username: string): Promise<User | null> {
+	async getUser(username: string): Promise<MeetUser | null> {
 		const redisKey = RedisKeyName.USER + username;
 		const storageKey = this.keyBuilder.buildUserKey(username);
 
-		const user = await this.getFromCacheAndStorage<User>(redisKey, storageKey);
+		const user = await this.getFromCacheAndStorage<MeetUser>(redisKey, storageKey);
 		return user;
 	}
 

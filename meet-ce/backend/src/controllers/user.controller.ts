@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { errorUnauthorized, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { UserService } from '../services/index.js';
+import { RequestSessionService, UserService } from '../services/index.js';
 
 export const getProfile = (req: Request, res: Response) => {
-	const user = req.session?.user;
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getUser();
 
 	if (!user) {
 		const error = errorUnauthorized();
@@ -17,7 +18,8 @@ export const getProfile = (req: Request, res: Response) => {
 };
 
 export const changePassword = async (req: Request, res: Response) => {
-	const user = req.session?.user;
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getUser();
 
 	if (!user) {
 		const error = errorUnauthorized();

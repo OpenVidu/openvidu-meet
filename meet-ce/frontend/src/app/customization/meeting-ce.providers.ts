@@ -1,11 +1,11 @@
 import { Provider } from '@angular/core';
 import {
 	MEETING_COMPONENTS_TOKEN,
-	MeetingToolbarButtonsComponent,
+	MeetingLobbyComponent,
 	MeetingParticipantPanelComponent,
-	MeetingShareLinkPanelComponent,
 	MeetingShareLinkOverlayComponent,
-	MeetingLobbyComponent
+	MeetingShareLinkPanelComponent,
+	MeetingToolbarButtonsComponent
 } from '@openvidu-meet/shared-components';
 
 /**
@@ -39,7 +39,7 @@ export const MEETING_CE_PROVIDERS: Provider[] = [
 			},
 			lobby: MeetingLobbyComponent
 		}
-	},
+	}
 	// {
 	// 	provide: MEETING_ACTION_HANDLER,
 	// 	useValue: {

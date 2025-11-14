@@ -4,7 +4,7 @@ export * from './auth.service';
 export * from './api-key.service';
 export * from './global-config.service';
 export * from './room.service';
-export * from './participant.service';
+export * from './room-member.service';
 export * from './meeting/meeting.service';
 export * from './meeting/meeting-lobby.service';
 export * from './meeting/meeting-plugin-manager.service';

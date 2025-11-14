@@ -1,22 +1,15 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
+import { LoggerService } from 'openvidu-components-angular';
 import { ShareRecordingDialogComponent } from '../components';
 import {
 	AuthService,
 	FeatureConfigurationService,
 	GlobalConfigService,
 	HttpService,
-	TokenStorageService,
-	ParticipantService
+	TokenStorageService
 } from '../services';
-import {
-	AuthTransportMode,
-	MeetRecordingFilters,
-	MeetRecordingInfo,
-	RecordingPermissions
-} from '@openvidu-meet/typings';
-import { getValidDecodedToken } from '../utils';
-import { LoggerService } from 'openvidu-components-angular';
 
 @Injectable({
 	providedIn: 'root'
@@ -25,17 +18,11 @@ export class RecordingService {
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
 	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 
-	protected recordingPermissions: RecordingPermissions = {
-		canRetrieveRecordings: false,
-		canDeleteRecordings: false
-	};
-
 	protected log;
 
 	constructor(
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
-		protected participantService: ParticipantService,
 		protected authService: AuthService,
 		protected featureConfService: FeatureConfigurationService,
 		protected globalConfigService: GlobalConfigService,
@@ -53,8 +40,7 @@ export class RecordingService {
 	 */
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		try {
-			const headers = this.participantService.getParticipantRoleHeader();
-			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId }, headers);
+			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId });
 		} catch (error) {
 			console.error('Error starting recording:', error);
 			throw error;
@@ -74,8 +60,7 @@ export class RecordingService {
 
 		try {
 			const path = `${this.INTERNAL_RECORDINGS_API}/${recordingId}/stop`;
-			const headers = this.participantService.getParticipantRoleHeader();
-			return this.httpService.postRequest(path, {}, headers);
+			return this.httpService.postRequest(path, {});
 		} catch (error) {
 			console.error('Error stopping recording:', error);
 			throw error;
@@ -152,15 +137,15 @@ export class RecordingService {
 		if (secret) {
 			params.append('secret', secret);
 		} else {
-			// Otherwise, try to use access and/or recording token from sessionStorage (header mode)
+			// Otherwise, try to use access and/or room member token from sessionStorage
 			const accessToken = this.tokenStorageService.getAccessToken();
 			if (accessToken) {
 				params.append('accessToken', accessToken);
 			}
 
-			const recordingToken = this.tokenStorageService.getRecordingToken();
-			if (recordingToken) {
-				params.append('recordingToken', recordingToken);
+			const roomMemberToken = this.tokenStorageService.getRoomMemberToken();
+			if (roomMemberToken) {
+				params.append('roomMemberToken', roomMemberToken);
 			}
 		}
 
@@ -179,62 +164,6 @@ export class RecordingService {
 	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<{ url: string }> {
 		const path = `${this.RECORDINGS_API}/${recordingId}/url?privateAccess=${privateAccess}`;
 		return this.httpService.getRequest(path);
-	}
-
-	/**
-	 * Generates a token for accessing recordings in a room
-	 *
-	 * @param roomId - The ID of the room for which the token is generated
-	 * @param secret - The secret for the room
-	 * @return A promise that resolves to an object containing the recording permissions
-	 */
-	async generateRecordingToken(roomId: string, secret: string): Promise<RecordingPermissions> {
-		const path = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/recording-token`;
-
-		try {
-			const { token } = await this.httpService.postRequest<{ token: string }>(path, { secret });
-
-			// Store token in sessionStorage for header mode
-			const authTransportMode = await this.globalConfigService.getAuthTransportMode();
-			if (authTransportMode === AuthTransportMode.HEADER) {
-				this.tokenStorageService.setRecordingToken(token);
-			}
-
-			this.setRecordingPermissionsFromToken(token);
-			return this.recordingPermissions;
-		} catch (error) {
-			this.featureConfService.setRecordingPermissions({
-				canRetrieveRecordings: false,
-				canDeleteRecordings: false
-			});
-			throw error;
-		}
-	}
-
-	/**
-	 * Sets recording permissions from a token
-	 *
-	 * @param token - The JWT token containing recording permissions
-	 */
-	protected setRecordingPermissionsFromToken(token: string) {
-		try {
-			const decodedToken = getValidDecodedToken(token);
-			this.recordingPermissions = decodedToken.metadata.recordingPermissions;
-
-			// Update feature configuration
-			this.featureConfService.setRecordingPermissions(this.recordingPermissions);
-		} catch (error) {
-			this.log.e('Error setting recording permissions from token', error);
-			throw new Error('Error setting recording permissions from token');
-		}
-	}
-
-	canRetrieveRecordings(): boolean {
-		return this.recordingPermissions.canRetrieveRecordings;
-	}
-
-	canDeleteRecordings(): boolean {
-		return this.recordingPermissions.canDeleteRecordings;
 	}
 
 	/**
@@ -310,9 +239,9 @@ export class RecordingService {
 			params.append('accessToken', accessToken);
 		}
 
-		const recordingToken = this.tokenStorageService.getRecordingToken();
-		if (recordingToken) {
-			params.append('recordingToken', recordingToken);
+		const roomMemberToken = this.tokenStorageService.getRoomMemberToken();
+		if (roomMemberToken) {
+			params.append('roomMemberToken', roomMemberToken);
 		}
 
 		const downloadUrl = `${this.RECORDINGS_API}/download?${params.toString()}`;

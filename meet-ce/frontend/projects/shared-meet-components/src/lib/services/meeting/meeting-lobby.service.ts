@@ -1,18 +1,18 @@
 import { inject, Injectable } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { MeetRoomStatus } from '@openvidu-meet/typings';
 import {
-	AuthService,
-	RecordingService,
-	RoomService,
-	ParticipantService,
-	NavigationService,
 	AppDataService,
+	AuthService,
+	NavigationService,
+	RecordingService,
+	RoomMemberService,
+	RoomService,
 	WebComponentManagerService
 } from '..';
-import { MeetRoomStatus } from '@openvidu-meet/typings';
-import { LobbyState } from '../../models/lobby.model';
 import { ErrorReason } from '../../models';
-import { ActivatedRoute } from '@angular/router';
+import { LobbyState } from '../../models/lobby.model';
 
 /**
  * Service that manages the meeting lobby state and operations.
@@ -41,13 +41,13 @@ export class MeetingLobbyService {
 			name: new FormControl('', [Validators.required]),
 			e2eeKey: new FormControl('')
 		}),
-		participantToken: ''
+		roomMemberToken: ''
 	};
 
 	protected roomService: RoomService = inject(RoomService);
 	protected recordingService: RecordingService = inject(RecordingService);
 	protected authService: AuthService = inject(AuthService);
-	protected participantService: ParticipantService = inject(ParticipantService);
+	protected roomMemberService: RoomMemberService = inject(RoomMemberService);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected appDataService: AppDataService = inject(AppDataService);
 	protected wcManagerService: WebComponentManagerService = inject(WebComponentManagerService);
@@ -172,7 +172,7 @@ export class MeetingLobbyService {
 			return;
 		}
 
-		await this.generateParticipantToken();
+		await this.generateRoomMemberToken();
 		await this.addParticipantNameToUrl();
 		await this.roomService.loadRoomConfig(this.state.roomId);
 	}
@@ -199,18 +199,14 @@ export class MeetingLobbyService {
 	/**
 	 * Checks if there are recordings in the room and updates the visibility of the recordings card.
 	 *
-	 * It is necessary to previously generate a recording token in order to list the recordings.
-	 * If token generation fails or the user does not have sufficient permissions to list recordings,
-	 * the error will be caught and the recordings card will be hidden (`showRecordingCard` will be set to `false`).
+	 * If the user does not have sufficient permissions to list recordings,
+	 * the recordings card will be hidden (`showRecordingCard` will be set to `false`).
 	 *
 	 * If recordings exist, sets `showRecordingCard` to `true`; otherwise, to `false`.
 	 */
 	protected async checkForRecordings(): Promise<void> {
 		try {
-			const { canRetrieveRecordings } = await this.recordingService.generateRecordingToken(
-				this.state.roomId,
-				this.state.roomSecret
-			);
+			const canRetrieveRecordings = this.roomMemberService.canRetrieveRecordings();
 
 			if (!canRetrieveRecordings) {
 				this.state.showRecordingCard = false;
@@ -234,15 +230,15 @@ export class MeetingLobbyService {
 	/**
 	 * Initializes the participant name in the form control.
 	 *
-	 * Retrieves the participant name from the ParticipantTokenService first, and if not available,
+	 * Retrieves the participant name from the RoomMemberService first, and if not available,
 	 * falls back to the authenticated username. Sets the retrieved name value in the
 	 * participant form's 'name' control if a valid name is found.
 	 *
 	 * @returns A promise that resolves when the participant name has been initialized
 	 */
 	protected async initializeParticipantName(): Promise<void> {
-		// Apply participant name from ParticipantTokenService if set, otherwise use authenticated username
-		const currentParticipantName = this.participantService.getParticipantName();
+		// Apply participant name from RoomMemberService if set, otherwise use authenticated username
+		const currentParticipantName = this.roomMemberService.getParticipantName();
 		const username = await this.authService.getUsername();
 		const participantName = currentParticipantName || username;
 
@@ -252,24 +248,24 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Generates a participant token for joining a meeting.
+	 * Generates a room member token for joining a meeting.
 	 *
-	 * @throws When participant already exists in the room (status 409)
 	 * @returns Promise that resolves when token is generated
 	 */
-	protected async generateParticipantToken() {
+	protected async generateRoomMemberToken() {
 		try {
-			this.state.participantToken = await this.participantService.generateToken(
+			this.state.roomMemberToken = await this.roomMemberService.generateToken(
+				this.state.roomId,
 				{
-					roomId: this.state.roomId,
 					secret: this.state.roomSecret,
+					grantJoinMeetingPermission: true,
 					participantName: this.participantName
 				},
 				this.e2eeKey
 			);
-			this.participantName = this.participantService.getParticipantName()!;
+			this.participantName = this.roomMemberService.getParticipantName()!;
 		} catch (error: any) {
-			console.error('Error generating participant token:', error);
+			console.error('Error generating room member token:', error);
 			switch (error.status) {
 				case 400:
 					// Invalid secret
@@ -287,7 +283,7 @@ export class MeetingLobbyService {
 					await this.navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR, true);
 			}
 
-			throw new Error('Error generating participant token');
+			throw new Error('Error generating room member token');
 		}
 	}
 

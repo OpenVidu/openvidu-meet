@@ -1,10 +1,9 @@
-/rooms/{roomId}/recording-token:
+/rooms/{roomId}/token:
     post:
-        operationId: generateRecordingToken
-        summary: Generate recording token
+        operationId: generateRoomMemberToken
+        summary: Generate room member token
         description: >
-            Generates a token with recording permissions for a specified OpenVidu Meet room.
-            This token can be used to access the recordings in a room.
+            Generates a token for a user to access an OpenVidu Meet room and its resources.
         tags:
             - Internal API - Rooms
         security:
@@ -12,10 +11,10 @@
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
         requestBody:
-            $ref: '../../components/requestBodies/internal/recording-token-request.yaml'
+            $ref: '../../components/requestBodies/internal/room-member-token-request.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-generate-recording-token.yaml'
+                $ref: '../../components/responses/internal/success-generate-room-member-token.yaml'
             '400':
                 $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
             '401':
@@ -23,24 +22,26 @@
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
-                $ref: '../../components/responses/internal/error-room-metadata-not-found.yaml'
+                $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-room-closed.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
 /rooms/{roomId}/roles:
     get:
-        operationId: getRoomRolesAndPermissions
-        summary: Get room roles and permissions
+        operationId: getRoomMemberRolesAndPermissions
+        summary: Get room member roles and permissions
         description: >
-            Retrieves the roles and associated permissions that a participant can have in a specified OpenVidu Meet room.
+            Retrieves the roles and associated permissions that a user can have as a member of a specified OpenVidu Meet room.
         tags:
             - Internal API - Rooms
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-get-room-roles.yaml'
+                $ref: '../../components/responses/internal/success-get-room-member-roles.yaml'
             '404':
                 $ref: '../../components/responses/error-room-not-found.yaml'
             '422':
@@ -52,10 +53,10 @@
         operationId: getRoomRoleAndPermissions
         summary: Get room role and permissions
         description: |
-            Retrieves the role and associated permissions that a participant will have in a specified OpenVidu Meet room
-            when using the URL thant contains the given secret value.
+            Retrieves the role and associated permissions that a user will have as a member of a specified OpenVidu Meet room
+            when using the URL that contains the given secret value.
 
-            This endpoint is useful for checking the participant's role and permissions before joining the room.
+            This endpoint is useful for checking the user's role and permissions before accessing the room.
         tags:
             - Internal API - Rooms
         parameters:
@@ -63,7 +64,7 @@
             - $ref: '../../components/parameters/internal/secret.yaml'
         responses:
             '200':
-                $ref: '../../components/responses/internal/success-get-room-role.yaml'
+                $ref: '../../components/responses/internal/success-get-room-member-role.yaml'
             '400':
                 $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
             '404':

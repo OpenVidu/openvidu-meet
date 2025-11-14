@@ -1,4 +1,3 @@
-import { AuthTransportMode, GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { MeetLock } from '../helpers/index.js';
@@ -135,11 +134,8 @@ export class MigrationService {
 				return;
 			}
 
-			// Add missing fields for backwards compatibility
-			const updatedConfig = this.addMissingFieldToGlobalConfig(legacyConfig);
-
 			// Save to MongoDB
-			await this.configRepository.create(updatedConfig);
+			await this.configRepository.create(legacyConfig);
 			this.logger.info('Global config migrated successfully');
 
 			// Delete from legacy storage
@@ -391,22 +387,5 @@ export class MigrationService {
 			this.logger.error('Error migrating recordings from legacy storage to MongoDB:', error);
 			throw error;
 		}
-	}
-
-	/**
-	 * Adds authTransportMode field to existing global config if missing.
-	 */
-	protected addMissingFieldToGlobalConfig(config: GlobalConfig): GlobalConfig {
-		// Check if authTransportMode is missing
-		const authConfig = config.securityConfig.authentication;
-
-		if (!('authTransportMode' in authConfig)) {
-			// Directly add the missing field to the existing object
-			Object.assign(config.securityConfig.authentication, {
-				authTransportMode: AuthTransportMode.HEADER
-			});
-		}
-
-		return config;
 	}
 }

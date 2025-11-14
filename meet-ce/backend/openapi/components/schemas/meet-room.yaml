@@ -71,14 +71,14 @@ properties:
         type: string
         example: 'http://localhost:6080/room/room-123?secret=123456'
         description: >
-            The URL for the moderator participants to join the room. The moderator role has special permissions to manage the
-            room and participants.
+            The URL for moderator room members to access the room. The moderator role has special permissions to manage the
+            room resources and meeting participants.
     speakerUrl:
         type: string
         example: 'http://localhost:6080/room/room-123?secret=654321'
         description: >
-            The URL for the speaker participants to join the room. The speaker role has permissions to publish audio and
-            video streams to the room.
+            The URL for speaker room members to access the room. The speaker role has permissions to publish audio and
+            video streams to the meeting.
     status:
         type: string
         enum:

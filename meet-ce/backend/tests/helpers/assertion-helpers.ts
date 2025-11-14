@@ -1,8 +1,8 @@
 import { expect } from '@jest/globals';
+import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config';
 import { TokenService } from '../../src/services';
-import { Response } from 'supertest';
 
 import {
 	MeetingEndAction,
@@ -14,9 +14,9 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomStatus,
-	ParticipantPermissions,
-	ParticipantRole
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomStatus
 } from '@openvidu-meet/typings';
 
 export const expectErrorResponse = (
@@ -483,41 +483,43 @@ export const expectValidGetRecordingUrlResponse = (response: Response, recording
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };
 
-export const expectValidRoomRolesAndPermissionsResponse = (response: Response, roomId: string) => {
+export const expectValidRoomMemberRolesAndPermissionsResponse = (response: Response, roomId: string) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toEqual(
 		expect.arrayContaining([
 			{
-				role: ParticipantRole.MODERATOR,
-				permissions: getPermissions(roomId, ParticipantRole.MODERATOR)
+				role: MeetRoomMemberRole.MODERATOR,
+				permissions: getPermissions(roomId, MeetRoomMemberRole.MODERATOR, true, true)
 			},
 			{
-				role: ParticipantRole.SPEAKER,
-				permissions: getPermissions(roomId, ParticipantRole.SPEAKER)
+				role: MeetRoomMemberRole.SPEAKER,
+				permissions: getPermissions(roomId, MeetRoomMemberRole.SPEAKER, true, false)
 			}
 		])
 	);
 };
 
-export const expectValidRoomRoleAndPermissionsResponse = (
+export const expectValidRoomMemberRoleAndPermissionsResponse = (
 	response: Response,
 	roomId: string,
-	participantRole: ParticipantRole
+	role: MeetRoomMemberRole
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toEqual({
-		role: participantRole,
-		permissions: getPermissions(roomId, participantRole)
+		role: role,
+		permissions: getPermissions(roomId, role, true, role === MeetRoomMemberRole.MODERATOR)
 	});
 };
 
 export const getPermissions = (
 	roomId: string,
-	role: ParticipantRole,
+	role: MeetRoomMemberRole,
+	canRetrieveRecordings: boolean,
+	canDeleteRecordings: boolean,
 	addJoinPermission = true
-): ParticipantPermissions => {
+): MeetRoomMemberPermissions => {
 	switch (role) {
-		case ParticipantRole.MODERATOR:
+		case MeetRoomMemberRole.MODERATOR:
 			return {
 				livekit: {
 					roomJoin: addJoinPermission,
@@ -527,13 +529,15 @@ export const getPermissions = (
 					canPublishData: true,
 					canUpdateOwnMetadata: true
 				},
-				openvidu: {
+				meet: {
 					canRecord: true,
+					canRetrieveRecordings,
+					canDeleteRecordings,
 					canChat: true,
 					canChangeVirtualBackground: true
 				}
 			};
-		case ParticipantRole.SPEAKER:
+		case MeetRoomMemberRole.SPEAKER:
 			return {
 				livekit: {
 					roomJoin: addJoinPermission,
@@ -543,24 +547,26 @@ export const getPermissions = (
 					canPublishData: true,
 					canUpdateOwnMetadata: true
 				},
-				openvidu: {
+				meet: {
 					canRecord: false,
+					canRetrieveRecordings,
+					canDeleteRecordings,
 					canChat: true,
 					canChangeVirtualBackground: true
 				}
 			};
-		default:
-			throw new Error(`Unknown role ${role}`);
 	}
 };
 
-export const expectValidParticipantTokenResponse = (
+export const expectValidRoomMemberTokenResponse = (
 	response: Response,
 	roomId: string,
-	participantRole: ParticipantRole,
+	role: MeetRoomMemberRole,
+	addJoinPermission = false,
 	participantName?: string,
 	participantIdentity?: string,
-	otherRoles: ParticipantRole[] = []
+	canRetrieveRecordings?: boolean,
+	canDeleteRecordings?: boolean
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
@@ -568,27 +574,19 @@ export const expectValidParticipantTokenResponse = (
 	const token = response.body.token;
 	const decodedToken = decodeJWTToken(token);
 
-	const permissions = getPermissions(roomId, participantRole, !!participantName);
-	const rolesAndPermissions = otherRoles.map((role) => ({
-		role,
-		permissions: getPermissions(roomId, role, !!participantName).openvidu
-	}));
+	canRetrieveRecordings = canRetrieveRecordings ?? true;
+	canDeleteRecordings = canDeleteRecordings ?? role === MeetRoomMemberRole.MODERATOR;
+	const permissions = getPermissions(roomId, role, canRetrieveRecordings, canDeleteRecordings, addJoinPermission);
 
-	if (!rolesAndPermissions.some((r) => r.role === participantRole)) {
-		rolesAndPermissions.push({
-			role: participantRole,
-			permissions: permissions.openvidu
-		});
-	}
-
-	if (participantName) {
+	if (addJoinPermission) {
+		expect(participantName).toBeDefined();
 		expect(decodedToken).toHaveProperty('name', participantName);
 		expect(decodedToken).toHaveProperty('sub');
 
 		if (participantIdentity) {
 			expect(decodedToken.sub).toBe(participantIdentity);
 		} else {
-			expect(decodedToken.sub).toContain(participantName.replace(/\s+/g, '')); // Ensure sub contains the name without spaces
+			expect(decodedToken.sub).toBe(participantName);
 		}
 	} else {
 		expect(decodedToken).not.toHaveProperty('name');
@@ -598,34 +596,9 @@ export const expectValidParticipantTokenResponse = (
 	expect(decodedToken).toHaveProperty('video', permissions.livekit);
 	expect(decodedToken).toHaveProperty('metadata');
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
-	expect(metadata).toHaveProperty('roles');
-	expect(metadata.roles).toEqual(expect.arrayContaining(rolesAndPermissions));
-	expect(metadata).toHaveProperty('selectedRole', participantRole);
-};
-
-export const expectValidRecordingTokenResponse = (
-	response: Response,
-	roomId: string,
-	participantRole: ParticipantRole,
-	canRetrieveRecordings: boolean,
-	canDeleteRecordings: boolean
-) => {
-	expect(response.status).toBe(200);
-	expect(response.body).toHaveProperty('token');
-
-	const token = response.body.token;
-	const decodedToken = decodeJWTToken(token);
-
-	expect(decodedToken).toHaveProperty('video', {
-		room: roomId
-	});
-	expect(decodedToken).toHaveProperty('metadata');
-	const metadata = JSON.parse(decodedToken.metadata || '{}');
-	expect(metadata).toHaveProperty('role', participantRole);
-	expect(metadata).toHaveProperty('recordingPermissions', {
-		canRetrieveRecordings,
-		canDeleteRecordings
-	});
+	expect(metadata).toHaveProperty('livekitUrl');
+	expect(metadata).toHaveProperty('role', role);
+	expect(metadata).toHaveProperty('permissions', permissions.meet);
 };
 
 const decodeJWTToken = (token: string) => {

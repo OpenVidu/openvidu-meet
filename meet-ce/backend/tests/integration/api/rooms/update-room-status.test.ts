@@ -9,6 +9,7 @@ import {
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { MeetRoomStatus } from '@openvidu-meet/typings';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -27,7 +28,7 @@ describe('Room API Tests', () => {
 			});
 
 			// Update the room status
-			const response = await updateRoomStatus(createdRoom.roomId, 'open');
+			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.OPEN);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
 
@@ -43,7 +44,7 @@ describe('Room API Tests', () => {
 			});
 
 			// Update the room status
-			const response = await updateRoomStatus(createdRoom.roomId, 'closed');
+			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.CLOSED);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
 
@@ -57,7 +58,7 @@ describe('Room API Tests', () => {
 			const roomData = await setupSingleRoom(true);
 
 			// Update the room status
-			const response = await updateRoomStatus(roomData.room.roomId, 'closed');
+			const response = await updateRoomStatus(roomData.room.roomId, MeetRoomStatus.CLOSED);
 			expect(response.status).toBe(202);
 			expect(response.body).toHaveProperty('message');
 
@@ -79,7 +80,7 @@ describe('Room API Tests', () => {
 		it('should fail with 404 when updating non-existent room', async () => {
 			const nonExistentRoomId = 'non-existent-room';
 
-			const response = await updateRoomStatus(nonExistentRoomId, 'closed');
+			const response = await updateRoomStatus(nonExistentRoomId, MeetRoomStatus.CLOSED);
 
 			expect(response.status).toBe(404);
 			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
@@ -87,17 +88,27 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Update Room Status Validation failures', () => {
-		it('should fail when status is invalid', async () => {
-			const { roomId } = await createRoom({
-				roomName: 'validation-test'
-			});
+		let roomId: string;
 
-			// Invalid status
-			const response = await updateRoomStatus(roomId, 'invalid_status');
+		beforeAll(async () => {
+			const room = await createRoom();
+			roomId = room.roomId;
+		});
+
+		it('should fail when status is invalid', async () => {
+			const response = await updateRoomStatus(roomId, 'invalid_status' as MeetRoomStatus);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('Invalid enum value');
+		});
+
+		it('should fail when status is active_meeting', async () => {
+			const response = await updateRoomStatus(roomId, MeetRoomStatus.ACTIVE_MEETING);
+
+			expect(response.status).toBe(422);
+			expect(response.body.error).toContain('Unprocessable Entity');
+			expect(JSON.stringify(response.body.details)).toContain("Invalid enum value. Expected 'open' | 'closed'");
 		});
 	});
 });

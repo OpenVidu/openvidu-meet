@@ -28,8 +28,8 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1security'
     /config/rooms/appearance:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
-    /rooms/{roomId}/recording-token:
-        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1recording-token'
+    /rooms/{roomId}/token:
+        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1token'
     /rooms/{roomId}/roles:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles'
     /rooms/{roomId}/roles/{secret}:
@@ -38,10 +38,6 @@ paths:
         $ref: './paths/internal/recordings.yaml#/~1recordings'
     /recordings/{recordingId}/stop:
         $ref: './paths/internal/recordings.yaml#/~1recordings~1{recordingId}~1stop'
-    /participants/token:
-        $ref: './paths/internal/participants.yaml#/~1participants~1token'
-    /participants/token/refresh:
-        $ref: './paths/internal/participants.yaml#/~1participants~1token~1refresh'
     /meetings/{roomId}:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
     /meetings/{roomId}/participants/{participantIdentity}:
@@ -55,8 +51,10 @@ components:
     securitySchemes:
         $ref: components/security.yaml
     schemas:
-        User:
-            $ref: components/schemas/internal/user.yaml
+        MeetApiKey:
+            $ref: components/schemas/internal/meet-api-key.yaml
+        MeetUser:
+            $ref: components/schemas/internal/meet-user.yaml
         WebhooksConfig:
             $ref: components/schemas/internal/webhooks-config.yaml
         SecurityConfig:
@@ -67,8 +65,8 @@ components:
             $ref: components/schemas/meet-room-options.yaml
         MeetRoomConfig:
             $ref: components/schemas/meet-room-config.yaml#/MeetRoomConfig
-        MeetRoomRoleAndPermissions:
-            $ref: components/schemas/internal/meet-room-role-permissions.yaml
+        MeetRoomMemberRoleAndPermissions:
+            $ref: components/schemas/internal/room-member-role-permissions.yaml
         MeetAnalytics:
             $ref: components/schemas/internal/meet-analytics.yaml
         MeetRecording:

@@ -1,34 +1,34 @@
 import { Injectable, inject } from '@angular/core';
 import {
-	Room,
-	RoomEvent,
-	DataPacket_Kind,
-	RemoteParticipant,
-	ParticipantLeftEvent,
-	ParticipantLeftReason,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent,
-	ParticipantModel
-} from 'openvidu-components-angular';
-import {
-	FeatureConfigurationService,
-	RecordingService,
-	ParticipantService,
-	RoomService,
-	SessionStorageService,
-	TokenStorageService,
-	WebComponentManagerService,
-	NavigationService
-} from '../../services';
-import {
 	LeftEventReason,
-	MeetSignalType,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRoomConfigUpdatedPayload,
+	MeetSignalType,
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
+import {
+	DataPacket_Kind,
+	ParticipantLeftEvent,
+	ParticipantLeftReason,
+	ParticipantModel,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent,
+	RemoteParticipant,
+	Room,
+	RoomEvent
+} from 'openvidu-components-angular';
 import { CustomParticipantModel } from '../../models';
+import {
+	FeatureConfigurationService,
+	NavigationService,
+	RecordingService,
+	RoomMemberService,
+	RoomService,
+	SessionStorageService,
+	TokenStorageService,
+	WebComponentManagerService
+} from '../../services';
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.
@@ -56,7 +56,7 @@ export class MeetingEventHandlerService {
 	// Injected services
 	protected featureConfService = inject(FeatureConfigurationService);
 	protected recordingService = inject(RecordingService);
-	protected participantService = inject(ParticipantService);
+	protected roomMemberService = inject(RoomMemberService);
 	protected roomService = inject(RoomService);
 	protected sessionStorageService = inject(SessionStorageService);
 	protected tokenStorageService = inject(TokenStorageService);
@@ -109,11 +109,8 @@ export class MeetingEventHandlerService {
 
 					switch (topic) {
 						case 'recordingStopped':
-							await this.handleRecordingStopped(
-								context.roomId,
-								context.roomSecret,
-								context.onHasRecordingsChanged
-							);
+							// Notify that recordings are now available
+							context.onHasRecordingsChanged(true);
 							break;
 
 						case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
@@ -188,11 +185,14 @@ export class MeetingEventHandlerService {
 		};
 		this.wcManagerService.sendMessageToParent(message);
 
-		// Clean up storage (except on browser unload)
+		// Clear participant identity and token
+		this.roomMemberService.clearParticipantIdentity();
+		this.tokenStorageService.clearRoomMemberToken();
+
+		// Clean up room secret and e2ee key (if any), except on browser unload)
 		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
 			this.sessionStorageService.removeRoomSecret();
-			this.tokenStorageService.clearParticipantToken();
-			this.tokenStorageService.clearRecordingToken();
+			this.sessionStorageService.removeE2EEKey();
 		}
 
 		// Navigate to disconnected page
@@ -251,28 +251,8 @@ export class MeetingEventHandlerService {
 	// ============================================
 
 	/**
-	 * Handles recording stopped event.
-	 * Updates hasRecordings flag and refreshes recording token.
-	 */
-	private async handleRecordingStopped(
-		roomId: string,
-		roomSecret: string,
-		onHasRecordingsChanged: (hasRecordings: boolean) => void
-	): Promise<void> {
-		// Notify that recordings are now available
-		onHasRecordingsChanged(true);
-
-		try {
-			// Refresh recording token to view recordings
-			await this.recordingService.generateRecordingToken(roomId, roomSecret);
-		} catch (error) {
-			console.error('Error refreshing recording token:', error);
-		}
-	}
-
-	/**
 	 * Handles room config updated event.
-	 * Updates feature config and refreshes recording token if needed.
+	 * Updates feature config and refreshes room member token if needed.
 	 */
 	private async handleRoomConfigUpdated(
 		event: MeetRoomConfigUpdatedPayload,
@@ -284,19 +264,26 @@ export class MeetingEventHandlerService {
 		// Update feature configuration
 		this.featureConfService.setRoomConfig(config);
 
-		// Refresh recording token if recording is enabled
+		// Refresh room member token if recording is enabled
 		if (config.recording.enabled) {
 			try {
-				await this.recordingService.generateRecordingToken(roomId, roomSecret);
+				const participantName = this.roomMemberService.getParticipantName();
+				const participantIdentity = this.roomMemberService.getParticipantIdentity();
+				await this.roomMemberService.generateToken(roomId, {
+					secret: roomSecret,
+					grantJoinMeetingPermission: true,
+					participantName,
+					participantIdentity
+				});
 			} catch (error) {
-				console.error('Error refreshing recording token:', error);
+				console.error('Error refreshing room member token:', error);
 			}
 		}
 	}
 
 	/**
 	 * Handles participant role updated event.
-	 * Updates local or remote participant role and refreshes token if needed.
+	 * Updates local or remote participant role and refreshes room member token if needed.
 	 */
 	private async handleParticipantRoleUpdated(
 		event: MeetParticipantRoleUpdatedPayload,
@@ -320,9 +307,9 @@ export class MeetingEventHandlerService {
 
 			try {
 				// Refresh participant token with new role
-				await this.participantService.refreshParticipantToken({
-					roomId,
+				await this.roomMemberService.generateToken(roomId, {
 					secret,
+					grantJoinMeetingPermission: true,
 					participantName,
 					participantIdentity
 				});
@@ -334,7 +321,7 @@ export class MeetingEventHandlerService {
 				// Notify component that participant role was updated
 				onParticipantRoleUpdated?.();
 			} catch (error) {
-				console.error('Error refreshing participant token:', error);
+				console.error('Error refreshing room member token:', error);
 			}
 		} else {
 			// Update remote participant role

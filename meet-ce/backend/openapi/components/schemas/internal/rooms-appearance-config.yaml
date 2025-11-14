@@ -26,6 +26,10 @@ MeetRoomTheme:
             minLength: 1
             maxLength: 50
             example: "Default Theme"
+        enabled:
+            type: boolean
+            description: Whether the theme is enabled
+            example: true
         baseTheme:
             $ref: '#/MeetRoomThemeMode'
             description: Base theme mode (light or dark)
@@ -51,6 +55,7 @@ MeetRoomTheme:
             example: "#CCCCCC"
     required:
         - name
+        - enabled
         - baseTheme
 
 MeetRoomThemeMode:

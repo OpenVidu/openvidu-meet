@@ -1,6 +1,6 @@
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_BASE_URL } from '../environment.js';
-import { HttpContextService } from '../services/http-context.service.js';
+import { BaseUrlService } from '../services/base-url.service.js';
 
 /**
  * Returns the base URL for the application.
@@ -28,6 +28,6 @@ export const getBaseUrl = (): string => {
 		return baseUrl;
 	}
 
-	const httpContextService = container.get(HttpContextService);
-	return httpContextService.getBaseUrl();
+	const baseUrlService = container.get(BaseUrlService);
+	return baseUrlService.getBaseUrl();
 };

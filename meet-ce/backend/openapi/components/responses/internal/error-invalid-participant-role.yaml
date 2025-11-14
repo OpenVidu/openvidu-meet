@@ -1,8 +1,0 @@
-description: Invalid participant role provided
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/error.yaml'
-        example:
-            error: Participant Error
-            message: 'No valid participant role provided'

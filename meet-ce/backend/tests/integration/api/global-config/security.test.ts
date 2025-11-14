@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthTransportMode, AuthType, SecurityConfig } from '@openvidu-meet/typings';
+import { AuthMode, AuthType, SecurityConfig } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getSecurityConfig,
@@ -24,7 +24,6 @@ describe('Security Config API Tests', () => {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authTransportMode: AuthTransportMode.HEADER,
 					authModeToAccessRoom: AuthMode.ALL_USERS
 				}
 			};
@@ -74,29 +73,10 @@ describe('Security Config API Tests', () => {
 			);
 		});
 
-		it('should reject when authTransportMode is not a valid enum value', async () => {
-			const response = await updateSecurityConfig({
-				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.ALL_USERS,
-					authTransportMode: 'invalid'
-				}
-			} as unknown as SecurityConfig);
-
-			expectValidationError(
-				response,
-				'authentication.authTransportMode',
-				"Invalid enum value. Expected 'cookie' | 'header', received 'invalid'"
-			);
-		});
-
-		it('should reject when authModeToAccessRoom, authTransportMode or authMethod are not provided', async () => {
+		it('should reject when authModeToAccessRoom or authMethod are not provided', async () => {
 			let response = await updateSecurityConfig({
 				authentication: {
-					authMode: AuthMode.NONE,
-					authTransportMode: AuthTransportMode.HEADER
+					authModeToAccessRoom: AuthMode.NONE
 				}
 			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.authMethod', 'Required');
@@ -105,18 +85,7 @@ describe('Security Config API Tests', () => {
 				authentication: {
 					authMethod: {
 						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.NONE
-				}
-			} as unknown as SecurityConfig);
-			expectValidationError(response, 'authentication.authTransportMode', 'Required');
-
-			response = await updateSecurityConfig({
-				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authTransportMode: AuthTransportMode.HEADER
+					}
 				}
 			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.authModeToAccessRoom', 'Required');
@@ -138,7 +107,6 @@ describe('Security Config API Tests', () => {
 					authMethod: {
 						type: AuthType.SINGLE_USER
 					},
-					authTransportMode: AuthTransportMode.HEADER,
 					authModeToAccessRoom: AuthMode.NONE
 				}
 			};

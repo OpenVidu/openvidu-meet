@@ -1,40 +1,71 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
-import { NavigationService, ParticipantService, RecordingService, RoomService } from '../services';
+import { NavigationService, RecordingService, RoomMemberService, RoomService } from '../services';
 
 /**
- * Guard to validate access to a room by generating a participant token.
+ * Guard to validate access to a room by generating a room member token.
  */
 export const validateRoomAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
-	_state: RouterStateSnapshot
+	state: RouterStateSnapshot
 ) => {
+	return validateRoomAccessInternal(state.url);
+};
+
+/**
+ * Guard to validate the access to recordings of a room by generating a room member token and checking permissions.
+ */
+export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
+	_route: ActivatedRouteSnapshot,
+	state: RouterStateSnapshot
+) => {
+	return validateRoomAccessInternal(state.url, true);
+};
+
+/**
+ * Internal helper function to validate room access by generating a room member token.
+ *
+ * @param pageUrl - The URL of the page being accessed
+ * @param validateRecordingPermissions - Whether to validate recording access permissions
+ * @returns True if access is granted, or UrlTree for redirection
+ */
+const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPermissions = false) => {
 	const roomService = inject(RoomService);
-	const participantTokenService = inject(ParticipantService);
+	const roomMemberService = inject(RoomMemberService);
 	const navigationService = inject(NavigationService);
 
 	const roomId = roomService.getRoomId();
 	const secret = roomService.getRoomSecret();
 
 	try {
-		await participantTokenService.generateToken({
-			roomId,
-			secret
+		await roomMemberService.generateToken(roomId, {
+			secret,
+			grantJoinMeetingPermission: false
 		});
+
+		// Perform recording validation if requested
+		if (validateRecordingPermissions) {
+			if (!roomMemberService.canRetrieveRecordings()) {
+				// If the user does not have permission to retrieve recordings, redirect to the error page
+				return navigationService.redirectToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
+			}
+		}
+
 		return true;
 	} catch (error: any) {
-		console.error('Error generating participant token:', error);
+		console.error('Error generating room member token:', error);
 		switch (error.status) {
 			case 400:
 				// Invalid secret
 				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
+			case 401:
+				// Unauthorized access
+				// Redirect to the login page with query param to redirect back to the page
+				return navigationService.redirectToLoginPage(pageUrl);
 			case 404:
 				// Room not found
 				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
-			case 409:
-				// Room is closed
-				return navigationService.redirectToErrorPage(ErrorReason.CLOSED_ROOM);
 			default:
 				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
@@ -42,42 +73,42 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 };
 
 /**
- * Guard to validate the access to recordings of a room by generating a recording token.
+ * Guard to validate access to a recording by checking the recording secret.
  */
 export const validateRecordingAccessGuard: CanActivateFn = async (
-	_route: ActivatedRouteSnapshot,
-	_state: RouterStateSnapshot
+	route: ActivatedRouteSnapshot,
+	state: RouterStateSnapshot
 ) => {
-	const roomService = inject(RoomService);
 	const recordingService = inject(RecordingService);
 	const navigationService = inject(NavigationService);
 
-	const roomId = roomService.getRoomId();
-	const secret = roomService.getRoomSecret();
+	const recordingId = route.params['recording-id'];
+	const secret = route.queryParams['secret'];
+
+	if (!secret) {
+		// If no secret is provided, redirect to the error page
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_RECORDING_SECRET);
+	}
 
 	try {
-		// Generate a token to access recordings in the room
-		await recordingService.generateRecordingToken(roomId, secret);
-
-		if (!recordingService.canRetrieveRecordings()) {
-			// If the user does not have permission to retrieve recordings, redirect to the error page
-			return navigationService.redirectToErrorPage(ErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
-		}
-
+		// Attempt to access the recording to check if the secret is valid
+		await recordingService.getRecording(recordingId, secret);
 		return true;
 	} catch (error: any) {
-		console.error('Error generating recording token:', error);
+		console.error('Error checking recording access:', error);
 		switch (error.status) {
 			case 400:
 				// Invalid secret
-				return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM_SECRET);
-			case 403:
-				// Recording access is configured for admins only
-				return navigationService.redirectToErrorPage(ErrorReason.RECORDINGS_ADMIN_ONLY_ACCESS);
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING_SECRET);
+			case 401:
+				// Unauthorized access
+				// Redirect to the login page with query param to redirect back to the recording
+				return navigationService.redirectToLoginPage(state.url);
 			case 404:
-				// There are no recordings in the room or the room does not exist
-				return navigationService.redirectToErrorPage(ErrorReason.NO_RECORDINGS);
+				// Recording not found
+				return navigationService.redirectToErrorPage(ErrorReason.INVALID_RECORDING);
 			default:
+				// Internal error
 				return navigationService.redirectToErrorPage(ErrorReason.INTERNAL_ERROR);
 		}
 	}

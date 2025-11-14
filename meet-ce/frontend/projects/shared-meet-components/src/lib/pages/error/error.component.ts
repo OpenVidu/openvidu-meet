@@ -7,10 +7,10 @@ import { ErrorReason } from '../../models';
 import { AppDataService, AuthService, NavigationService, WebComponentManagerService } from '../../services';
 
 @Component({
-    selector: 'ov-error',
-    imports: [MatCardModule, MatIconModule, MatButtonModule],
-    templateUrl: './error.component.html',
-    styleUrl: './error.component.scss'
+	selector: 'ov-error',
+	imports: [MatCardModule, MatIconModule, MatButtonModule],
+	templateUrl: './error.component.html',
+	styleUrl: './error.component.scss'
 })
 export class ErrorComponent implements OnInit {
 	errorName = 'Error';
@@ -77,17 +77,9 @@ export class ErrorComponent implements OnInit {
 				title: 'Invalid recording',
 				message: 'The recording you are trying to access does not exist or has been deleted'
 			},
-			[ErrorReason.NO_RECORDINGS]: {
-				title: 'No recordings',
-				message: 'There are no recordings in this room or the room does not exist'
-			},
 			[ErrorReason.UNAUTHORIZED_RECORDING_ACCESS]: {
 				title: 'Unauthorized recording access',
 				message: 'You are not authorized to access the recordings in this room'
-			},
-			[ErrorReason.RECORDINGS_ADMIN_ONLY_ACCESS]: {
-				title: 'Unauthorized recording access',
-				message: 'Recordings access is configured for admins only in this room'
 			},
 			[ErrorReason.INTERNAL_ERROR]: {
 				title: 'Internal error',

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import ms from 'ms';
-import { MeetRecordingAccess, ParticipantRole } from'@openvidu-meet/typings';
 import {
 	expectSuccessRoomResponse,
 	expectValidationError,
@@ -100,12 +100,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
 			const roomData = await setupSingleRoom();
-			const response = await getRoom(
-				roomData.room.roomId,
-				undefined,
-				roomData.speakerToken,
-				ParticipantRole.SPEAKER
-			);
+			const response = await getRoom(roomData.room.roomId, undefined, roomData.speakerToken);
 			expect(response.status).toBe(200);
 			expect(response.body.moderatorUrl).toBeUndefined();
 		});

@@ -58,6 +58,6 @@ MeetE2EEConfig:
             default: false
             example: false
             description: >
-              If true, the room will have End-to-End Encryption (E2EE) enabled.<br/>
-              This ensures that the media streams are encrypted from the sender to the receiver, providing enhanced privacy and security for the participants.<br/>
-              **Enabling E2EE will disable the recording feature for the room**.
+                If true, the room will have End-to-End Encryption (E2EE) enabled.<br/>
+                This ensures that the media streams are encrypted from the sender to the receiver, providing enhanced privacy and security for the participants.<br/>
+                **Enabling E2EE will disable the recording feature for the room**.

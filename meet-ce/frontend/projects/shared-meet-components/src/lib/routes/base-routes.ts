@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
+import { WebComponentProperty } from '@openvidu-meet/typings';
 import {
-	checkParticipantRoleAndAuthGuard,
-	checkRecordingAuthGuard,
 	checkRoomEditGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
@@ -10,9 +9,11 @@ import {
 	removeQueryParamsGuard,
 	runGuardsSerially,
 	validateRecordingAccessGuard,
-	validateRoomAccessGuard
+	validateRoomAccessGuard,
+	validateRoomRecordingsAccessGuard
 } from '../guards';
 import {
+	ConfigComponent,
 	ConsoleComponent,
 	EmbeddedComponent,
 	EndMeetingComponent,
@@ -25,10 +26,8 @@ import {
 	RoomsComponent,
 	RoomWizardComponent,
 	UsersPermissionsComponent,
-	ViewRecordingComponent,
-	ConfigComponent
+	ViewRecordingComponent
 } from '../pages';
-import { WebComponentProperty } from '@openvidu-meet/typings';
 
 export const baseRoutes: Routes = [
 	{
@@ -42,9 +41,8 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRoomQueryParamsGuard,
-				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY]),
-				checkParticipantRoleAndAuthGuard,
-				validateRoomAccessGuard
+				validateRoomAccessGuard,
+				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY])
 			)
 		]
 	},
@@ -54,16 +52,15 @@ export const baseRoutes: Routes = [
 		canActivate: [
 			runGuardsSerially(
 				extractRecordingQueryParamsGuard,
-				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY]),
-				checkParticipantRoleAndAuthGuard,
-				validateRecordingAccessGuard
+				validateRoomRecordingsAccessGuard,
+				removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY])
 			)
 		]
 	},
 	{
 		path: 'recording/:recording-id',
 		component: ViewRecordingComponent,
-		canActivate: [checkRecordingAuthGuard]
+		canActivate: [validateRecordingAccessGuard]
 	},
 	{ path: 'disconnected', component: EndMeetingComponent },
 	{ path: 'error', component: ErrorComponent },

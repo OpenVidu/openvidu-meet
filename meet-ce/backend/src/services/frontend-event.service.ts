@@ -1,9 +1,9 @@
 import {
+	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRoom,
-	ParticipantRole,
-	MeetParticipantRoleUpdatedPayload,
 	MeetRoomConfigUpdatedPayload,
+	MeetRoomMemberRole,
 	MeetSignalPayload,
 	MeetSignalType
 } from '@openvidu-meet/typings';
@@ -97,7 +97,7 @@ export class FrontendEventService {
 	async sendParticipantRoleUpdatedSignal(
 		roomId: string,
 		participantIdentity: string,
-		newRole: ParticipantRole,
+		newRole: MeetRoomMemberRole,
 		secret: string
 	): Promise<void> {
 		this.logger.debug(

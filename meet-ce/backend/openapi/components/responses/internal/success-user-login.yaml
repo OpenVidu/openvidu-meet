@@ -1,9 +1,4 @@
 description: Successfully logged in
-# headers:
-#     Set-Cookie:
-#         $ref: '../../headers/set-cookie-access-token.yaml'
-#     Set-Cookie*:
-#         $ref: '../../headers/set-cookie-refresh-token.yaml'
 content:
     application/json:
         schema:

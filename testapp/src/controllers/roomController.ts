@@ -1,10 +1,10 @@
+import { MeetRoomMemberRole, MeetWebhookEvent } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { Server as IOServer } from 'socket.io';
-import { ParticipantRole, MeetWebhookEvent } from '@openvidu-meet/typings';
 import { configService } from '../services/configService';
 
 interface JoinRoomRequest {
-    participantRole: ParticipantRole;
+    participantRole: MeetRoomMemberRole;
     roomUrl: string;
     roomId: string;
     participantName?: string;

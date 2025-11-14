@@ -2,19 +2,9 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { Component, computed, effect, inject, OnInit, Signal, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CustomParticipantModel } from '../../models';
-import { MeetingComponentsPlugins, MEETING_COMPONENTS_TOKEN, MEETING_ACTION_HANDLER_TOKEN } from '../../customization';
-import {
-	ApplicationFeatures,
-	FeatureConfigurationService,
-	GlobalConfigService,
-	MeetingService,
-	NotificationService,
-	ParticipantService,
-	WebComponentManagerService,
-	MeetingEventHandlerService
-} from '../../services';
-import { MeetRoom, ParticipantRole } from '@openvidu-meet/typings';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MeetRoom, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import {
 	ParticipantService as ComponentParticipantService,
 	OpenViduComponentsUiModule,
@@ -26,11 +16,21 @@ import {
 	ViewportService
 } from 'openvidu-components-angular';
 import { combineLatest, Subject, takeUntil } from 'rxjs';
-import { MeetingLobbyService } from '../../services/meeting/meeting-lobby.service';
-import { MeetingPluginManagerService } from '../../services/meeting/meeting-plugin-manager.service';
+import { MEETING_ACTION_HANDLER_TOKEN, MEETING_COMPONENTS_TOKEN, MeetingComponentsPlugins } from '../../customization';
+import { CustomParticipantModel } from '../../models';
 import { LobbyState } from '../../models/lobby.model';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import {
+	ApplicationFeatures,
+	FeatureConfigurationService,
+	GlobalConfigService,
+	MeetingEventHandlerService,
+	MeetingLobbyService,
+	MeetingPluginManagerService,
+	MeetingService,
+	NotificationService,
+	RoomMemberService,
+	WebComponentManagerService
+} from '../../services';
 
 @Component({
 	selector: 'ov-meeting',
@@ -65,7 +65,7 @@ export class MeetingComponent implements OnInit {
 	plugins: MeetingComponentsPlugins;
 
 	protected meetingService = inject(MeetingService);
-	protected participantService = inject(ParticipantService);
+	protected participantService = inject(RoomMemberService);
 	protected featureConfService = inject(FeatureConfigurationService);
 	protected wcManagerService = inject(WebComponentManagerService);
 	protected openviduService = inject(OpenViduService);
@@ -182,8 +182,8 @@ export class MeetingComponent implements OnInit {
 		return this.lobbyService.e2eeKey;
 	}
 
-	get participantToken(): string {
-		return this.lobbyState!.participantToken;
+	get roomMemberToken(): string {
+		return this.lobbyState!.roomMemberToken;
 	}
 
 	get room(): MeetRoom | undefined {
@@ -312,7 +312,7 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async endMeeting() {
-		if (!this.participantService.isModeratorParticipant()) return;
+		if (!this.participantService.isModerator()) return;
 
 		this.eventHandler.setMeetingEndedByMe(true);
 
@@ -353,7 +353,7 @@ export class MeetingComponent implements OnInit {
 			await this.actionHandler.kickParticipant(participant);
 		} else {
 			// Default implementation
-			if (!this.participantService.isModeratorParticipant()) return;
+			if (!this.participantService.isModerator()) return;
 
 			try {
 				await this.meetingService.kickParticipant(this.roomId, participant.identity);
@@ -369,13 +369,13 @@ export class MeetingComponent implements OnInit {
 			await this.actionHandler.makeModerator(participant);
 		} else {
 			// Default implementation
-			if (!this.participantService.isModeratorParticipant()) return;
+			if (!this.participantService.isModerator()) return;
 
 			try {
 				await this.meetingService.changeParticipantRole(
 					this.roomId,
 					participant.identity,
-					ParticipantRole.MODERATOR
+					MeetRoomMemberRole.MODERATOR
 				);
 				console.log('Moderator assigned successfully');
 			} catch (error) {
@@ -389,13 +389,13 @@ export class MeetingComponent implements OnInit {
 			await this.actionHandler.unmakeModerator(participant);
 		} else {
 			// Default implementation
-			if (!this.participantService.isModeratorParticipant()) return;
+			if (!this.participantService.isModerator()) return;
 
 			try {
 				await this.meetingService.changeParticipantRole(
 					this.roomId,
 					participant.identity,
-					ParticipantRole.SPEAKER
+					MeetRoomMemberRole.SPEAKER
 				);
 				console.log('Moderator unassigned successfully');
 			} catch (error) {

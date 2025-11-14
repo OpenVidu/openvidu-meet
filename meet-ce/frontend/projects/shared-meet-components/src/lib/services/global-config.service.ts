@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, HttpService } from '../services';
-import { AuthMode, AuthTransportMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
+import { FeatureConfigurationService, HttpService } from '../services';
 
 @Injectable({
 	providedIn: 'root'
@@ -41,11 +41,6 @@ export class GlobalConfigService {
 		return this.securityConfig!.authentication.authModeToAccessRoom;
 	}
 
-	async getAuthTransportMode(): Promise<AuthTransportMode> {
-		await this.getSecurityConfig();
-		return this.securityConfig!.authentication.authTransportMode;
-	}
-
 	async saveSecurityConfig(config: SecurityConfig) {
 		const path = `${this.GLOBAL_CONFIG_API}/security`;
 		await this.httpService.putRequest(path, config);
@@ -74,12 +69,12 @@ export class GlobalConfigService {
 
 	async loadRoomsAppearanceConfig(): Promise<void> {
 		try {
-            const config = await this.getRoomsAppearanceConfig();
-            this.featureConfService.setAppearanceConfig(config.appearance);
-        } catch (error) {
-            this.log.e('Error loading rooms appearance config:', error);
-            throw error;
-        }
+			const config = await this.getRoomsAppearanceConfig();
+			this.featureConfService.setAppearanceConfig(config.appearance);
+		} catch (error) {
+			this.log.e('Error loading rooms appearance config:', error);
+			throw error;
+		}
 	}
 
 	async saveRoomsAppearanceConfig(config: MeetAppearanceConfig) {

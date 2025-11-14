@@ -1,12 +1,7 @@
 name: status
 in: query
 required: false
-description: |
-    Filter recordings by their status.
-
-    You can provide multiple statuses as a comma-separated list (e.g., `status=active,failed`).
-
-    > ⚠️ **Note:** Using this filter may impact performance for large datasets.
+description: Filter recordings by their status.
 schema:
     type: string
     enum:

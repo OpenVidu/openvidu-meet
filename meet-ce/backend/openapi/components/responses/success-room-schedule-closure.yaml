@@ -1,0 +1,10 @@
+description: Success response for scheduling room closure
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: Room 'room-123' scheduled to be closed when the meeting ends

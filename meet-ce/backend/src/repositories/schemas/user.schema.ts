@@ -1,11 +1,11 @@
-import { User, UserRole } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
 
 /**
  * Mongoose Document interface for User.
  * Extends the User interface with MongoDB Document functionality.
  */
-export interface MeetUserDocument extends User, Document {}
+export interface MeetUserDocument extends MeetUser, Document {}
 
 /**
  * Mongoose schema for User entity.
@@ -23,9 +23,9 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 		},
 		roles: {
 			type: [String],
-			enum: Object.values(UserRole),
+			enum: Object.values(MeetUserRole),
 			required: true,
-			default: [UserRole.USER]
+			default: [MeetUserRole.USER]
 		}
 	},
 	{

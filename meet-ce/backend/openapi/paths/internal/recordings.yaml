@@ -7,16 +7,12 @@
         tags:
             - Internal API - Recordings
         security:
-            - participantTokenHeader: []
-        parameters:
-            - $ref: '../../components/parameters/internal/x-participant-role.yaml'
+            - roomMemberTokenHeader: []
         requestBody:
             $ref: '../../components/requestBodies/internal/start-recording-request.yaml'
         responses:
             '201':
                 $ref: '../../components/responses/internal/success-start-recording.yaml'
-            '400':
-                $ref: '../../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -42,15 +38,12 @@
         tags:
             - Internal API - Recordings
         security:
-            - participantTokenHeader: []
+            - roomMemberTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/recording-id.yaml'
-            - $ref: '../../components/parameters/internal/x-participant-role.yaml'
         responses:
             '202':
                 $ref: '../../components/responses/internal/success-stop-recording.yaml'
-            '400':
-                $ref: '../../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':

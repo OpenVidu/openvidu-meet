@@ -4,51 +4,21 @@ apiKeyHeader:
     in: header
     description: >
         The API key to authenticate the request. This key is required to access the OpenVidu Meet API.
-# accessTokenCookie:
-#     type: apiKey
-#     name: OvMeetAccessToken
-#     in: cookie
-#     description: >
-#         The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
 accessTokenHeader:
     type: apiKey
     name: Authorization
     in: header
     description: >
         The JWT token to authenticate the request in case of consuming the API from the OpenVidu Meet frontend.
-# refreshTokenCookie:
-#     type: apiKey
-#     name: OvMeetRefreshToken
-#     in: cookie
-#     description: >
-#         The JWT token to refresh the access token when it expires.
 refreshTokenHeader:
     type: apiKey
     name: X-Refresh-Token
     in: header
     description: >
         The JWT token to refresh the access token when it expires.
-# participantTokenCookie:
-#     type: apiKey
-#     name: OvMeetParticipantToken
-#     in: cookie
-#     description: >
-#         The JWT token to authenticate the participant when entering the room.
-participantTokenHeader:
+roomMemberTokenHeader:
     type: apiKey
-    name: X-Participant-Token
+    name: X-Room-Member-Token
     in: header
     description: >
-        The JWT token to authenticate the participant when entering the room.
-# recordingTokenCookie:
-#     type: apiKey
-#     name: OvMeetRecordingToken
-#     in: cookie
-#     description: >
-#         The JWT token containing permissions to access the recordings in a room.
-recordingTokenHeader:
-    type: apiKey
-    name: X-Recording-Token
-    in: header
-    description: >
-        The JWT token containing permissions to access the recordings in a room.
+        The JWT token to authenticate a room member when accessing room and its resources.

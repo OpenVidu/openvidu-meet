@@ -1,0 +1,137 @@
+import { AsyncLocalStorage } from 'async_hooks';
+import {
+	LiveKitPermissions,
+	MeetPermissions,
+	MeetRoomMemberRole,
+	MeetRoomMemberRoleAndPermissions,
+	MeetUser
+} from '@openvidu-meet/typings';
+import { injectable } from 'inversify';
+
+/**
+ * Context stored per HTTP request using AsyncLocalStorage.
+ * This ensures that each concurrent request has its own isolated data.
+ */
+interface RequestContext {
+	user?: MeetUser;
+	roomMember?: MeetRoomMemberRoleAndPermissions;
+}
+
+/**
+ * Service that manages request-scoped session data using Node.js AsyncLocalStorage.
+ *
+ * This service provides isolated storage for each HTTP request without needing to pass
+ * the request object around or use Inversify's request scope. It works by leveraging
+ * Node.js's async_hooks module which tracks asynchronous execution contexts.
+ *
+ * IMPORTANT: This service is designed to work with HTTP requests, but it's also safe
+ * to use in other contexts (schedulers, webhooks, background jobs). When used outside
+ * an HTTP request context, all getters return undefined and setters are ignored.
+ */
+@injectable()
+export class RequestSessionService {
+	private asyncLocalStorage = new AsyncLocalStorage<RequestContext>();
+	private hasLoggedWarning = false;
+
+	/**
+	 * Initializes the request context. Must be called at the start of each HTTP request.
+	 * This method creates an isolated storage context for the duration of the request.
+	 *
+	 * @param callback - The function to execute within the request context
+	 * @returns The result of the callback
+	 */
+	run<T>(callback: () => T): T {
+		return this.asyncLocalStorage.run({}, callback);
+	}
+
+	/**
+	 * Gets the current request context.
+	 * Returns undefined if called outside of a request context (e.g., in schedulers, background jobs).
+	 * Logs a warning the first time this happens to help with debugging.
+	 */
+	private getContext(): RequestContext | undefined {
+		const context = this.asyncLocalStorage.getStore();
+
+		if (!context && !this.hasLoggedWarning) {
+			console.warn(
+				'RequestSessionService: No context found. ' +
+					'This service is being used outside of an HTTP request context (e.g., scheduler, webhook, background job). ' +
+					'All getters will return undefined and setters will be ignored. ' +
+					'This is expected behavior for non-HTTP contexts.'
+			);
+			this.hasLoggedWarning = true;
+		}
+
+		return context;
+	}
+
+	/**
+	 * Sets the authenticated user in the current request context.
+	 * If called outside a request context, this operation is silently ignored.
+	 */
+	setUser(user: MeetUser): void {
+		const context = this.getContext();
+
+		if (context) {
+			context.user = user;
+		}
+	}
+
+	/**
+	 * Gets the authenticated user from the current request context.
+	 */
+	getUser(): MeetUser | undefined {
+		return this.getContext()?.user;
+	}
+
+	/**
+	 * Sets the room member token information (role, permissions, and token claims)
+	 * in the current request context.
+	 * If called outside a request context, this operation is silently ignored.
+	 */
+	setRoomMemberTokenInfo(
+		role: MeetRoomMemberRole,
+		meetPermissions: MeetPermissions,
+		livekitPermissions: LiveKitPermissions
+	): void {
+		const context = this.getContext();
+
+		if (context) {
+			context.roomMember = {
+				role,
+				permissions: {
+					meet: meetPermissions,
+					livekit: livekitPermissions
+				}
+			};
+		}
+	}
+
+	/**
+	 * Gets the room member role from the current request context.
+	 */
+	getRoomMemberRole(): MeetRoomMemberRole | undefined {
+		return this.getContext()?.roomMember?.role;
+	}
+
+	/**
+	 * Gets the room member Meet permissions from the current request context.
+	 */
+	getRoomMemberMeetPermissions(): MeetPermissions | undefined {
+		return this.getContext()?.roomMember?.permissions.meet;
+	}
+
+	/**
+	 * Gets the room member LiveKit permissions from the current request context.
+	 */
+	getRoomMemberLivekitPermissions(): LiveKitPermissions | undefined {
+		return this.getContext()?.roomMember?.permissions.livekit;
+	}
+
+	/**
+	 * Gets the room ID from the token claims in the current request context.
+	 */
+	getRoomIdFromToken(): string | undefined {
+		return this.getContext()?.roomMember?.permissions.livekit.room;
+	}
+}

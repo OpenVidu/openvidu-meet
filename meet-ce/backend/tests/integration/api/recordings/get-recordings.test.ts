@@ -10,7 +10,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	generateRecordingToken,
+	generateRoomMemberToken,
 	getAllRecordings,
 	getAllRecordingsFromRoom,
 	startTestServer
@@ -63,12 +63,12 @@ describe('Recordings API Tests', () => {
 			const roomId = roomData.room.roomId;
 
 			// Generate a recording token for the room
-			const recordingToken = await generateRecordingToken(roomId, roomData.speakerSecret);
+			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.speakerSecret });
 
 			// Create a new room and start a recording
 			roomData = await setupSingleRoomWithRecording(true);
 
-			const response = await getAllRecordingsFromRoom(recordingToken);
+			const response = await getAllRecordingsFromRoom(roomMemberToken);
 			expectSuccessListRecordingResponse(response, 1, false, false);
 			expect(response.body.recordings[0].roomId).toBe(roomId);
 		});

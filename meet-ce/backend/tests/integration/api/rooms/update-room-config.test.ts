@@ -5,12 +5,11 @@ import { FrontendEventService } from '../../../../src/services/index.js';
 import {
 	createRoom,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getRoom,
 	startTestServer,
 	updateRoomConfig
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -117,34 +116,9 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.config).toEqual(partialConfig);
 		});
 
-		it('should return 404 when updating non-existent room', async () => {
-			const nonExistentRoomId = 'non-existent-room';
-
-			const config = {
-				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				chat: { enabled: false },
-				virtualBackground: { enabled: false }
-			};
-			const response = await updateRoomConfig(nonExistentRoomId, config);
-
-			expect(response.status).toBe(404);
-			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
-		});
-	});
-
-	describe('Update Room Config with Active Meeting Tests', () => {
-		let roomData: RoomData;
-
-		afterEach(async () => {
-			await disconnectFakeParticipants();
-		});
-
 		it('should reject room config update when there is an active meeting', async () => {
-			// Create a room and start a meeting
-			roomData = await setupSingleRoom(true);
+			// Create a room with active meeting
+			const roomData = await setupSingleRoom(true);
 
 			// Try to update room config
 			const newConfig = {
@@ -163,11 +137,26 @@ describe('Room API Tests', () => {
 			};
 
 			const response = await updateRoomConfig(roomData.room.roomId, newConfig);
-
-			// Should return 409 Conflict
 			expect(response.status).toBe(409);
 			expect(response.body.error).toBe('Room Error');
 			expect(response.body.message).toContain(`Room '${roomData.room.roomId}' has an active meeting`);
+		});
+
+		it('should return 404 when updating non-existent room', async () => {
+			const nonExistentRoomId = 'non-existent-room';
+
+			const config = {
+				recording: {
+					enabled: false,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: false },
+				virtualBackground: { enabled: false }
+			};
+			const response = await updateRoomConfig(nonExistentRoomId, config);
+
+			expect(response.status).toBe(404);
+			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
 		});
 	});
 

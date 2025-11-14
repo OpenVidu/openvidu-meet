@@ -1,4 +1,4 @@
-import { UserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as appearanceConfigCtrl from '../controllers/global-config/appearance-config.controller.js';
@@ -21,17 +21,17 @@ configRouter.use(bodyParser.json());
 // Webhook config
 configRouter.put(
 	'/webhooks',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	validateWebhookConfig,
 	webhookConfigCtrl.updateWebhookConfig
 );
-configRouter.get('/webhooks', withAuth(tokenAndRoleValidator(UserRole.ADMIN)), webhookConfigCtrl.getWebhookConfig);
+configRouter.get('/webhooks', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), webhookConfigCtrl.getWebhookConfig);
 configRouter.post('/webhooks/test', withValidWebhookTestRequest, webhookConfigCtrl.testWebhook);
 
 // Security config
 configRouter.put(
 	'/security',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	validateSecurityConfig,
 	securityConfigCtrl.updateSecurityConfig
 );
@@ -40,7 +40,7 @@ configRouter.get('/security', withAuth(allowAnonymous), securityConfigCtrl.getSe
 // Appearance config
 configRouter.put(
 	'/rooms/appearance',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN)),
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	validateRoomsAppearanceConfig,
 	appearanceConfigCtrl.updateRoomsAppearanceConfig
 );

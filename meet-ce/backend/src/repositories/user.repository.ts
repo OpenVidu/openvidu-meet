@@ -1,17 +1,17 @@
-import { User } from '@openvidu-meet/typings';
+import { MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 import { MeetUserDocument, MeetUserModel } from './schemas/user.schema.js';
 
 /**
- * Repository for managing User entities in MongoDB.
+ * Repository for managing MeetUser entities in MongoDB.
  * Provides CRUD operations and specialized queries for user data.
  *
- * @template TUser - The domain type extending User (default: User)
+ * @template TUser - The domain type extending MeetUser (default: MeetUser)
  */
 @injectable()
-export class UserRepository<TUser extends User = User> extends BaseRepository<TUser, MeetUserDocument> {
+export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepository<TUser, MeetUserDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetUserModel);
 	}

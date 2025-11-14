@@ -94,16 +94,13 @@
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
-            - participantTokenHeader: []
+            - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/internal/x-participant-role.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'
-            '400':
-                $ref: '../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -162,15 +159,12 @@
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
-            - participantTokenHeader: []
+            - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
-            - $ref: '../components/parameters/internal/x-participant-role.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room-config.yaml'
-            '400':
-                $ref: '../components/responses/internal/error-invalid-participant-role.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -206,6 +200,37 @@
                 $ref: '../components/responses/error-room-not-found.yaml'
             '409':
                 $ref: '../components/responses/error-room-active-meeting.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/status:
+    put:
+        operationId: updateRoomStatus
+        summary: Update room status
+        description: >
+            Updates the status of an OpenVidu Meet room with the specified room ID.
+            This can be used to open or close the room for new participants.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-status-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-status.yaml'
+            '202':
+                $ref: '../components/responses/success-room-schedule-closure.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':

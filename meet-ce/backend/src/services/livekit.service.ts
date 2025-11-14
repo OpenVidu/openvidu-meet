@@ -182,22 +182,11 @@ export class LiveKitService {
 		}
 	}
 
-	async participantExists(
-		roomName: string,
-		participantNameOrIdentity: string,
-		participantField: 'name' | 'identity' = 'identity'
-	): Promise<boolean> {
+	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
 		try {
 			const participants: ParticipantInfo[] = await this.listRoomParticipants(roomName);
 			return participants.some((participant) => {
-				let fieldValue = participant[participantField];
-
-				// If the field is empty or undefined, use identity as a fallback
-				if (!fieldValue && participantField === 'name') {
-					fieldValue = participant.identity;
-				}
-
-				return fieldValue === participantNameOrIdentity;
+				return participant.identity === participantIdentity;
 			});
 		} catch (error: any) {
 			this.logger.error(error);

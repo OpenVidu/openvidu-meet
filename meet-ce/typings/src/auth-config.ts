@@ -1,24 +1,15 @@
 export interface AuthenticationConfig {
     authMethod: ValidAuthMethod;
-    authTransportMode: AuthTransportMode;
     authModeToAccessRoom: AuthMode;
-}
-
-/**
- * Authentication transport modes for JWT tokens.
- */
-export enum AuthTransportMode {
-    COOKIE = 'cookie', // JWT sent via cookies
-    HEADER = 'header' // JWT sent via Authorization header
 }
 
 /**
  * Authentication modes available to enter a room.
  */
 export enum AuthMode {
-	NONE = 'none', // No authentication required
-	MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
-	ALL_USERS = 'all_users', // All users need authentication
+    NONE = 'none', // No authentication required
+    MODERATORS_ONLY = 'moderators_only', // Only moderators need authentication
+    ALL_USERS = 'all_users' // All users need authentication
 }
 
 /**
@@ -32,13 +23,13 @@ export interface AuthMethod {
  * Enum for authentication types.
  */
 export enum AuthType {
-	SINGLE_USER = 'single_user',
-	// MULTI_USER = 'multi_user',
-	// OAUTH_ONLY = 'oauth_only'
+    SINGLE_USER = 'single_user'
+    // MULTI_USER = 'multi_user',
+    // OAUTH_ONLY = 'oauth_only'
 }
 
 /**
- * Authentication method: Single user with fixed credentials.
+ * Authentication method: Single user.
  */
 export interface SingleUserAuth extends AuthMethod {
     type: AuthType.SINGLE_USER;

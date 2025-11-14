@@ -1,4 +1,4 @@
-import { MeetRoom, UserRole } from '@openvidu-meet/typings';
+import { MeetRoom, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { RecordingHelper } from '../helpers/index.js';
@@ -11,11 +11,11 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { RecordingRepository } from '../repositories/index.js';
-import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
+import { LoggerService, RequestSessionService, RoomService } from '../services/index.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
-	recordingTokenValidator,
+	roomMemberTokenValidator,
 	tokenAndRoleValidator,
 	withAuth
 } from './auth.middleware.js';
@@ -42,22 +42,17 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 
 export const withCanRecordPermission = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = extractRoomIdFromRequest(req);
-	const payload = req.session?.tokenClaims;
-	const role = req.session?.participantRole;
 
-	if (!payload || !role) {
+	const requestSessionService = container.get(RequestSessionService);
+	const tokenRoomId = requestSessionService.getRoomIdFromToken();
+	const permissions = requestSessionService.getRoomMemberMeetPermissions();
+
+	if (!tokenRoomId || !permissions) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const participantService = container.get(ParticipantService);
-	const metadata = participantService.parseMetadata(payload.metadata || '{}');
-
-	const sameRoom = payload.video?.room === roomId;
-	const permissions = metadata.roles.find((r) => r.role === role)?.permissions;
-	const canRecord = permissions?.canRecord;
-
-	if (!sameRoom || !canRecord) {
+	if (tokenRoomId !== roomId || !permissions.canRecord) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -67,7 +62,9 @@ export const withCanRecordPermission = async (req: Request, res: Response, next:
 
 export const withCanRetrieveRecordingsPermission = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = extractRoomIdFromRequest(req);
-	const payload = req.session?.tokenClaims;
+
+	const requestSessionService = container.get(RequestSessionService);
+	const tokenRoomId = requestSessionService.getRoomIdFromToken();
 
 	/**
 	 * If there is no token, the user is allowed to access the resource because one of the following reasons:
@@ -77,17 +74,20 @@ export const withCanRetrieveRecordingsPermission = async (req: Request, res: Res
 	 * - The user is anonymous and is using the public access secret.
 	 * - The user is using the private access secret and is authenticated.
 	 */
-	if (!payload) {
+	if (!tokenRoomId) {
 		return next();
 	}
 
-	const roomService = container.get(RoomService);
-	const metadata = roomService.parseRecordingTokenMetadata(payload.metadata || '{}');
+	const permissions = requestSessionService.getRoomMemberMeetPermissions();
 
-	const sameRoom = roomId ? payload.video?.room === roomId : true;
-	const canRetrieveRecordings = metadata.recordingPermissions.canRetrieveRecordings;
+	if (!permissions) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
 
-	if (!sameRoom || !canRetrieveRecordings) {
+	const sameRoom = roomId ? tokenRoomId === roomId : true;
+
+	if (!sameRoom || !permissions.canRetrieveRecordings) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -97,21 +97,26 @@ export const withCanRetrieveRecordingsPermission = async (req: Request, res: Res
 
 export const withCanDeleteRecordingsPermission = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = extractRoomIdFromRequest(req);
-	const payload = req.session?.tokenClaims;
+
+	const requestSessionService = container.get(RequestSessionService);
+	const tokenRoomId = requestSessionService.getRoomIdFromToken();
 
 	// If there is no token, the user is admin or it is invoked using the API key
 	// In this case, the user is allowed to access the resource
-	if (!payload) {
+	if (!tokenRoomId) {
 		return next();
 	}
 
-	const roomService = container.get(RoomService);
-	const metadata = roomService.parseRecordingTokenMetadata(payload.metadata || '{}');
+	const permissions = requestSessionService.getRoomMemberMeetPermissions();
 
-	const sameRoom = roomId ? payload.video?.room === roomId : true;
-	const canDeleteRecordings = metadata.recordingPermissions.canDeleteRecordings;
+	if (!permissions) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
 
-	if (!sameRoom || !canDeleteRecordings) {
+	const sameRoom = roomId ? tokenRoomId === roomId : true;
+
+	if (!sameRoom || !permissions.canDeleteRecordings) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -123,7 +128,7 @@ export const withCanDeleteRecordingsPermission = async (req: Request, res: Respo
  * Middleware to configure authentication for retrieving recording based on the provided secret.
  *
  * - If a valid secret is provided in the query, access is granted according to the secret type.
- * - If no secret is provided, the default authentication logic is applied, i.e., API key, admin and recording token access.
+ * - If no secret is provided, the default authentication logic is applied, i.e., API key, admin and room member token access.
  */
 export const configureRecordingAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const secret = req.query.secret as string;
@@ -151,7 +156,7 @@ export const configureRecordingAuth = async (req: Request, res: Response, next: 
 					break;
 				case recordingSecrets.privateAccessSecret:
 					// Private access secret requires authentication with user role
-					authValidators.push(tokenAndRoleValidator(UserRole.USER));
+					authValidators.push(tokenAndRoleValidator(MeetUserRole.USER));
 					break;
 				default:
 					// Invalid secret provided
@@ -165,8 +170,8 @@ export const configureRecordingAuth = async (req: Request, res: Response, next: 
 	}
 
 	// If no secret is provided, we proceed with the default authentication logic.
-	// This will allow API key, admin and recording token access.
-	const authValidators = [apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator];
+	// This will allow API key, admin and room member token access.
+	const authValidators = [apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator];
 	return withAuth(...authValidators)(req, res, next);
 };
 

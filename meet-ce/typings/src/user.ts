@@ -1,10 +1,10 @@
-export interface User {
+export interface MeetUser {
 	username: string;
 	passwordHash: string;
-	roles: UserRole[];
+	roles: MeetUserRole[];
 }
 
-export enum UserRole {
+export enum MeetUserRole {
 	// Represents a user with administrative privileges
 	ADMIN = 'admin',
 	// Represents a regular user with standard access
@@ -13,4 +13,4 @@ export enum UserRole {
 	APP = 'app',
 }
 
-export type UserDTO = Omit<User, 'passwordHash'>;
+export type MeetUserDTO = Omit<MeetUser, 'passwordHash'>;

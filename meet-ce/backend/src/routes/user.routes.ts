@@ -1,4 +1,4 @@
-import { UserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as userCtrl from '../controllers/user.controller.js';
@@ -9,10 +9,10 @@ userRouter.use(bodyParser.urlencoded({ extended: true }));
 userRouter.use(bodyParser.json());
 
 // Users Routes
-userRouter.get('/profile', withAuth(tokenAndRoleValidator(UserRole.ADMIN, UserRole.USER)), userCtrl.getProfile);
+userRouter.get('/profile', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)), userCtrl.getProfile);
 userRouter.post(
 	'/change-password',
-	withAuth(tokenAndRoleValidator(UserRole.ADMIN, UserRole.USER)),
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	validateChangePasswordRequest,
 	userCtrl.changePassword
 );

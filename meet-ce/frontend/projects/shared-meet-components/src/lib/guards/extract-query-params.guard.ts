@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { ErrorReason } from '../models';
-import { AppDataService, NavigationService, ParticipantService, RoomService, SessionStorageService } from '../services';
 import { WebComponentProperty } from '@openvidu-meet/typings';
+import { ErrorReason } from '../models';
+import { AppDataService, NavigationService, RoomMemberService, RoomService, SessionStorageService } from '../services';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const roomService = inject(RoomService);
-	const participantService = inject(ParticipantService);
+	const roomMemberService = inject(RoomMemberService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const {
@@ -16,9 +16,10 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 		participantName,
 		leaveRedirectUrl,
 		showOnlyRecordings,
-		e2eeKey
+		e2eeKey: queryE2eeKey
 	} = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret();
+	const e2eeKey = queryE2eeKey || sessionStorageService.getE2EEKey();
 
 	// Handle leave redirect URL logic
 	handleLeaveRedirectUrl(leaveRedirectUrl);
@@ -30,10 +31,13 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	roomService.setRoomId(roomId);
 	roomService.setRoomSecret(secret);
-	roomService.setE2EEKey(e2eeKey);
+
+	if (e2eeKey) {
+		roomService.setE2EEKey(e2eeKey);
+	}
 
 	if (participantName) {
-		participantService.setParticipantName(participantName);
+		roomMemberService.setParticipantName(participantName);
 	}
 
 	if (showOnlyRecordings === 'true') {

@@ -9,13 +9,12 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomFilters,
+	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
 	MeetRoomStatus,
 	MeetRoomTheme,
 	MeetRoomThemeMode,
-	MeetVirtualBackgroundConfig,
-	ParticipantRole,
-	RecordingPermissions
+	MeetVirtualBackgroundConfig
 } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import ms from 'ms';
@@ -274,22 +273,26 @@ const UpdateRoomConfigSchema = z.object({
 });
 
 const UpdateRoomStatusSchema = z.object({
-	status: z.nativeEnum(MeetRoomStatus)
+	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
 });
 
-const RecordingTokenRequestSchema = z.object({
-	secret: z.string().nonempty('Secret is required')
-});
-
-const RecordingPermissionsSchema: z.ZodType<RecordingPermissions> = z.object({
-	canRetrieveRecordings: z.boolean(),
-	canDeleteRecordings: z.boolean()
-});
-
-const RecordingTokenMetadataSchema = z.object({
-	role: z.nativeEnum(ParticipantRole),
-	recordingPermissions: RecordingPermissionsSchema
-});
+const RoomMemberTokenRequestSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
+	.object({
+		secret: z.string().nonempty('Secret is required'),
+		grantJoinMeetingPermission: z.boolean().optional().default(false),
+		participantName: z.string().optional(),
+		participantIdentity: z.string().optional()
+	})
+	.refine(
+		(data) => {
+			// If grantJoinMeetingPermission is true, participantName must be provided
+			return !data.grantJoinMeetingPermission || data.participantName;
+		},
+		{
+			message: 'participantName is required when grantJoinMeetingPermission is true',
+			path: ['participantName']
+		}
+	);
 
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);
@@ -380,8 +383,8 @@ export const withValidRoomStatus = (req: Request, res: Response, next: NextFunct
 	next();
 };
 
-export const withValidRoomSecret = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RecordingTokenRequestSchema.safeParse(req.body);
+export const withValidRoomMemberTokenRequest = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = RoomMemberTokenRequestSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -389,14 +392,4 @@ export const withValidRoomSecret = (req: Request, res: Response, next: NextFunct
 
 	req.body = data;
 	next();
-};
-
-export const validateRecordingTokenMetadata = (metadata: unknown) => {
-	const { success, error, data } = RecordingTokenMetadataSchema.safeParse(metadata);
-
-	if (!success) {
-		throw new Error(`Invalid metadata: ${error.message}`);
-	}
-
-	return data;
 };

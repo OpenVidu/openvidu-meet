@@ -4,8 +4,8 @@ export * from './global-config.js';
 export * from './event.model.js';
 
 export * from './permissions/livekit-permissions.js';
-export * from './permissions/openvidu-permissions.js';
-export * from './participant.js';
+export * from './permissions/meet-permissions.js';
+export * from './room-member.js';
 export * from './user.js';
 
 export * from './room-config.js';

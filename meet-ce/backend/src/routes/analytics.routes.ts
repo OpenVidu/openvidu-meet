@@ -1,4 +1,4 @@
-import { UserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as analyticsCtrl from '../controllers/analytics.controller.js';
@@ -9,4 +9,4 @@ analyticsRouter.use(bodyParser.urlencoded({ extended: true }));
 analyticsRouter.use(bodyParser.json());
 
 // Analytics Routes
-analyticsRouter.get('/', withAuth(tokenAndRoleValidator(UserRole.ADMIN)), analyticsCtrl.getAnalytics);
+analyticsRouter.get('/', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), analyticsCtrl.getAnalytics);

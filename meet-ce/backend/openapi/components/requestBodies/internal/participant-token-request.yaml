@@ -1,6 +1,0 @@
-description: Participant details
-required: true
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/meet-participant-options.yaml'

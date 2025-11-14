@@ -1,28 +1,30 @@
-import { AuthMode, ParticipantOptions, ParticipantRole, UserRole } from '@openvidu-meet/typings';
+import { AuthMode, MeetRoomMemberRole, MeetRoomMemberTokenOptions, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { GlobalConfigService, RoomService } from '../services/index.js';
+import { GlobalConfigService, RequestSessionService, RoomMemberService } from '../services/index.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**
- * Middleware to configure authentication based on participant role and authentication mode for entering a room.
+ * Middleware to configure authentication for generating token to access room and its resources
+ * based on room member role and authentication mode.
  *
- * - If the authentication mode is MODERATORS_ONLY and the participant role is MODERATOR, configure user authentication.
+ * - If the authentication mode is MODERATORS_ONLY and the room member role is MODERATOR, configure user authentication.
  * - If the authentication mode is ALL_USERS, configure user authentication.
  * - Otherwise, allow anonymous access.
  */
-export const configureParticipantTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
+export const configureRoomMemberTokenAuth = async (req: Request, res: Response, next: NextFunction) => {
 	const configService = container.get(GlobalConfigService);
-	const roomService = container.get(RoomService);
+	const roomMemberService = container.get(RoomMemberService);
 
-	let role: ParticipantRole;
+	let role: MeetRoomMemberRole;
 
 	try {
-		const { roomId, secret } = req.body as ParticipantOptions;
-		role = await roomService.getRoomRoleBySecret(roomId, secret);
+		const { roomId } = req.params;
+		const { secret } = req.body as MeetRoomMemberTokenOptions;
+		role = await roomMemberService.getRoomMemberRoleBySecret(roomId, secret);
 	} catch (error) {
-		return handleError(res, error, 'getting room role by secret');
+		return handleError(res, error, 'getting room member role by secret');
 	}
 
 	let authModeToAccessRoom: AuthMode;
@@ -40,11 +42,11 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 		authValidators.push(allowAnonymous);
 	} else {
 		const isModeratorsOnlyMode =
-			authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === ParticipantRole.MODERATOR;
+			authModeToAccessRoom === AuthMode.MODERATORS_ONLY && role === MeetRoomMemberRole.MODERATOR;
 		const isAllUsersMode = authModeToAccessRoom === AuthMode.ALL_USERS;
 
 		if (isModeratorsOnlyMode || isAllUsersMode) {
-			authValidators.push(tokenAndRoleValidator(UserRole.USER));
+			authValidators.push(tokenAndRoleValidator(MeetUserRole.USER));
 		} else {
 			authValidators.push(allowAnonymous);
 		}
@@ -55,17 +57,17 @@ export const configureParticipantTokenAuth = async (req: Request, res: Response,
 
 export const withModeratorPermissions = async (req: Request, res: Response, next: NextFunction) => {
 	const { roomId } = req.params;
-	const payload = req.session?.tokenClaims;
-	const role = req.session?.participantRole;
 
-	if (!payload || !role) {
+	const requestSessionService = container.get(RequestSessionService);
+	const tokenRoomId = requestSessionService.getRoomIdFromToken();
+	const role = requestSessionService.getRoomMemberRole();
+
+	if (!tokenRoomId || !role) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
 
-	const sameRoom = payload.video?.room === roomId;
-
-	if (!sameRoom || role !== ParticipantRole.MODERATOR) {
+	if (tokenRoomId !== roomId || role !== MeetRoomMemberRole.MODERATOR) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -75,16 +77,11 @@ export const withModeratorPermissions = async (req: Request, res: Response, next
 
 export const checkParticipantFromSameRoom = async (req: Request, res: Response, next: NextFunction) => {
 	const { roomId } = req.params;
-	const payload = req.session?.tokenClaims;
 
-	if (!payload) {
-		const error = errorInsufficientPermissions();
-		return rejectRequestFromMeetError(res, error);
-	}
+	const requestSessionService = container.get(RequestSessionService);
+	const tokenRoomId = requestSessionService.getRoomIdFromToken();
 
-	const sameRoom = payload.video?.room === roomId;
-
-	if (!sameRoom) {
+	if (!tokenRoomId || tokenRoomId !== roomId) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}

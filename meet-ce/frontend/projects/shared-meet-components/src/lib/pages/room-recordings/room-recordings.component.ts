@@ -4,16 +4,22 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
-import { RecordingListsComponent, RecordingTableAction } from '../../components';
-import { NavigationService, NotificationService, RecordingService, RoomService } from '../../services';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
+import { RecordingListsComponent, RecordingTableAction } from '../../components';
+import {
+	NavigationService,
+	NotificationService,
+	RecordingService,
+	RoomMemberService,
+	RoomService
+} from '../../services';
 
 @Component({
-    selector: 'ov-room-recordings',
-    templateUrl: './room-recordings.component.html',
-    styleUrls: ['./room-recordings.component.scss'],
-    imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule]
+	selector: 'ov-room-recordings',
+	templateUrl: './room-recordings.component.html',
+	styleUrls: ['./room-recordings.component.scss'],
+	imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule]
 })
 export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
@@ -36,6 +42,7 @@ export class RoomRecordingsComponent implements OnInit {
 		protected loggerService: LoggerService,
 		protected recordingService: RecordingService,
 		protected roomService: RoomService,
+		protected roomMemberService: RoomMemberService,
 		protected notificationService: NotificationService,
 		protected navigationService: NavigationService,
 		protected route: ActivatedRoute
@@ -45,7 +52,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
-		this.canDeleteRecordings = this.recordingService.canDeleteRecordings();
+		this.canDeleteRecordings = this.roomMemberService.canDeleteRecordings();
 
 		// Load recordings
 		const delayLoader = setTimeout(() => {

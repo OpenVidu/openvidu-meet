@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingAccess } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
-import { AuthTransportMode, MeetRecordingAccess, ParticipantRole } from '@openvidu-meet/typings';
 import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
-	changeAuthTransportMode,
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	generateRecordingToken,
+	endMeeting,
+	generateRoomMemberToken,
 	getRecordingUrl,
 	loginUser,
 	startTestServer,
@@ -64,8 +64,7 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(201);
 
 			// Stop recording to clean up
@@ -74,42 +73,13 @@ describe('Recording API Security Tests', () => {
 			expectValidStopRecordingResponse(stopResponse, recordingId, roomData.room.roomId, roomData.room.roomName);
 		});
 
-		it('should succeed when participant is moderator and token is sent in cookie', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Create a new room to obtain participant token in cookie mode
-			const newRoomData = await setupSingleRoom(true);
-
-			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
-				.send({ roomId: newRoomData.room.roomId })
-				.set('Cookie', newRoomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
-			expect(response.status).toBe(201);
-
-			// Stop recording to clean up
-			const recordingId = response.body.recordingId;
-			const stopResponse = await stopRecording(recordingId, newRoomData.moderatorToken);
-			expectValidStopRecordingResponse(
-				stopResponse,
-				recordingId,
-				newRoomData.room.roomId,
-				newRoomData.room.roomName
-			);
-
-			// Revert auth transport mode to header
-			await changeAuthTransportMode(AuthTransportMode.HEADER);
-		});
-
 		it('should fail when participant is moderator of a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
 		});
 
@@ -117,8 +87,7 @@ describe('Recording API Security Tests', () => {
 			const response = await request(app)
 				.post(INTERNAL_RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -152,26 +121,8 @@ describe('Recording API Security Tests', () => {
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(202);
-		});
-
-		it('should succeed when participant is moderator and token is sent in cookie', async () => {
-			// Set auth transport mode to cookie
-			await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-			// Create a new room to obtain participant token in cookie mode
-			const newRoomData = await setupSingleRoomWithRecording();
-
-			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${newRoomData.recordingId}/stop`)
-				.set('Cookie', newRoomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
-			expect(response.status).toBe(202);
-
-			// Revert auth transport mode to header
-			await changeAuthTransportMode(AuthTransportMode.HEADER);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
@@ -179,16 +130,14 @@ describe('Recording API Security Tests', () => {
 
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, newRoomData.moderatorToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.MODERATOR);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set(INTERNAL_CONFIG.PARTICIPANT_TOKEN_HEADER, roomData.speakerToken)
-				.set(INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER, ParticipantRole.SPEAKER);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -200,6 +149,9 @@ describe('Recording API Security Tests', () => {
 		beforeAll(async () => {
 			roomData = await setupSingleRoomWithRecording(true);
 			recordingId = roomData.recordingId!;
+
+			// End the meeting to be able to update the room config
+			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
 		});
 
 		describe('Get Recordings Tests', () => {
@@ -217,66 +169,57 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
-
-				const response = await request(app).get(RECORDINGS_PATH).set('Cookie', recordingToken);
-				expect(response.status).toBe(200);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 		});
@@ -296,66 +239,57 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
-
-				const response = await request(app).get(RECORDINGS_PATH).set('Cookie', recordingToken);
-				expect(response.status).toBe(200);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
@@ -430,68 +364,57 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(404);
 			});
 
-			it('should fail when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(404);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
-
-				const response = await request(app)
-					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set('Cookie', recordingToken);
-				expect(response.status).toBe(404);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${fakeRecordingId}`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(404);
 			});
 		});
@@ -524,73 +447,61 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(400);
 			});
 
-			it('should fail when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(400);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
-
-				const response = await request(app)
-					.delete(RECORDINGS_PATH)
-					.query({ recordingIds: fakeRecordingId })
-					.set('Cookie', recordingToken);
-				expect(response.status).toBe(400);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: fakeRecordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(400);
 			});
 		});
@@ -610,86 +521,77 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker, token in query param', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
-
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set('Cookie', recordingToken);
-				expect(response.status).toBe(200);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in query param', async () => {
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				let recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				let roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				// Remove the "Bearer " prefix if present
-				if (recordingToken.startsWith('Bearer ')) {
-					recordingToken = recordingToken.slice(7);
+				if (roomMemberToken.startsWith('Bearer ')) {
+					roomMemberToken = roomMemberToken.slice(7);
 				}
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.query({ recordingToken });
+					.query({ roomMemberToken });
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
@@ -759,68 +661,57 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set('Cookie', recordingToken);
-				expect(response.status).toBe(200);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
-
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 		});
@@ -842,91 +733,81 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in cookie', async () => {
-				// Set auth transport mode to cookie
-				await changeAuthTransportMode(AuthTransportMode.COOKIE);
-
+			it('should succeed when recording access is admin_moderator_speaker and user is speaker, token in query param', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
-
-				const response = await request(app)
-					.get(`${RECORDINGS_PATH}/download`)
-					.query({ recordingIds: recordingId })
-					.set('Cookie', recordingToken);
-				expect(response.status).toBe(200);
-
-				// Revert auth transport mode to header
-				await changeAuthTransportMode(AuthTransportMode.HEADER);
-			});
-
-			it('should succeed when recording access is admin_moderator_speaker and participant is speaker, token in query param', async () => {
-				await updateRecordingAccessConfigInRoom(
-					roomData.room.roomId,
-					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				);
-				let recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				let roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				// Remove the "Bearer " prefix if present
-				if (recordingToken.startsWith('Bearer ')) {
-					recordingToken = recordingToken.slice(7);
+				if (roomMemberToken.startsWith('Bearer ')) {
+					roomMemberToken = roomMemberToken.slice(7);
 				}
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
-					.query({ recordingIds: recordingId, recordingToken });
+					.query({ recordingIds: recordingId, roomMemberToken });
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when recording access is admin_moderator_speaker and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator_speaker and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(
 					roomData.room.roomId,
 					MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when recording access is admin_moderator and participant is speaker', async () => {
+			it('should fail when recording access is admin_moderator and user is speaker', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.speakerSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should succeed when recording access is admin_moderator and participant is moderator', async () => {
+			it('should succeed when recording access is admin_moderator and user is moderator', async () => {
 				await updateRecordingAccessConfigInRoom(roomData.room.roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-				const recordingToken = await generateRecordingToken(roomData.room.roomId, roomData.moderatorSecret);
+				const roomMemberToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.moderatorSecret
+				});
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.RECORDING_TOKEN_HEADER, recordingToken);
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 				expect(response.status).toBe(200);
 			});
 		});

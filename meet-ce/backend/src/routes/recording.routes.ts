@@ -1,12 +1,11 @@
-import { UserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
 	apiKeyValidator,
 	configureRecordingAuth,
-	participantTokenValidator,
-	recordingTokenValidator,
+	roomMemberTokenValidator,
 	tokenAndRoleValidator,
 	withAuth,
 	withCanDeleteRecordingsPermission,
@@ -29,21 +28,21 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.get(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withCanRetrieveRecordingsPermission,
 	withValidRecordingFiltersRequest,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidMultipleRecordingIds,
 	withCanDeleteRecordingsPermission,
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
 	'/download',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidMultipleRecordingIds,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.downloadRecordingsZip
@@ -57,7 +56,7 @@ recordingRouter.get(
 );
 recordingRouter.delete(
 	'/:recordingId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidRecordingId,
 	withCanDeleteRecordingsPermission,
 	recordingCtrl.deleteRecording
@@ -71,7 +70,7 @@ recordingRouter.get(
 );
 recordingRouter.get(
 	'/:recordingId/url',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(UserRole.ADMIN), recordingTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withValidGetRecordingUrlRequest,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingUrl
@@ -86,7 +85,7 @@ internalRecordingRouter.post(
 	'/',
 	withValidStartRecordingRequest,
 	withRecordingEnabled,
-	withAuth(participantTokenValidator),
+	withAuth(roomMemberTokenValidator),
 	withCanRecordPermission,
 	recordingCtrl.startRecording
 );
@@ -94,7 +93,7 @@ internalRecordingRouter.post(
 	'/:recordingId/stop',
 	withValidRecordingId,
 	withRecordingEnabled,
-	withAuth(participantTokenValidator),
+	withAuth(roomMemberTokenValidator),
 	withCanRecordPermission,
 	recordingCtrl.stopRecording
 );

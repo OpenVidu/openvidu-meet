@@ -1,4 +1,4 @@
-import { ParticipantRole } from './participant.js';
+import { MeetRoomMemberRole } from './room-member.js';
 import { MeetRoomConfig } from './room-config.js';
 
 export enum MeetSignalType {
@@ -15,7 +15,7 @@ export interface MeetRoomConfigUpdatedPayload {
 export interface MeetParticipantRoleUpdatedPayload {
     roomId: string;
     participantIdentity: string;
-    newRole: ParticipantRole;
+    newRole: MeetRoomMemberRole;
     secret?: string;
     timestamp: number;
 }

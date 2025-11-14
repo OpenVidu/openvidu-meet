@@ -167,10 +167,6 @@ export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetErro
 	);
 };
 
-export const errorInvalidRecordingToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Recording', 'Invalid recording token', 400);
-};
-
 const isMatchingError = (error: OpenViduMeetError, originalError: OpenViduMeetError): boolean => {
 	return (
 		error instanceof OpenViduMeetError &&
@@ -217,6 +213,14 @@ export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message:
 	return new OpenViduMeetError(errorCode, message, 409);
 };
 
+export const errorInvalidRoomMemberToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', 'Invalid room member token', 400);
+};
+
+export const errorInvalidRoomMemberRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', 'No valid room member role provided', 400);
+};
+
 // Participant errors
 
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
@@ -225,22 +229,6 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 		`Participant '${participantIdentity}' not found in room '${roomId}'`,
 		404
 	);
-};
-
-export const errorParticipantTokenNotPresent = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', 'No participant token provided', 400);
-};
-
-export const errorInvalidParticipantToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', 'Invalid participant token', 400);
-};
-
-export const errorInvalidParticipantRole = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', 'No valid participant role provided', 400);
-};
-
-export const errorParticipantIdentityNotProvided = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Participant Error', 'No participant identity provided', 400);
 };
 
 // Webhook errors

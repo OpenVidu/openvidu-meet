@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { MeetingService, ParticipantService, RoomService } from '../services';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -7,6 +6,7 @@ import {
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
+import { MeetingService, RoomMemberService, RoomService } from '../services';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
@@ -26,7 +26,7 @@ export class WebComponentManagerService {
 
 	constructor(
 		protected loggerService: LoggerService,
-		protected participantService: ParticipantService,
+		protected roomMemberService: RoomMemberService,
 		protected openviduService: OpenViduService,
 		protected roomService: RoomService,
 		protected meetingService: MeetingService
@@ -115,7 +115,7 @@ export class WebComponentManagerService {
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
 				// Only moderators can end the meeting
-				if (!this.participantService.isModeratorParticipant()) {
+				if (!this.roomMemberService.isModerator()) {
 					this.log.w('End meeting command received but participant is not a moderator');
 					return;
 				}
@@ -134,7 +134,7 @@ export class WebComponentManagerService {
 				break;
 			case WebComponentCommand.KICK_PARTICIPANT:
 				// Only moderators can kick participants
-				if (!this.participantService.isModeratorParticipant()) {
+				if (!this.roomMemberService.isModerator()) {
 					this.log.w('Kick participant command received but participant is not a moderator');
 					return;
 				}

@@ -1,12 +1,12 @@
+import { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers';
-import { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
-	generateParticipantToken,
+	generateRoomMemberToken,
 	joinFakeParticipant,
 	sleep,
 	startRecording,
@@ -48,11 +48,11 @@ export const setupSingleRoom = async (
 		config
 	});
 
-	// Extract the room secrets and generate participant tokens
+	// Extract the room secrets and generate room member tokens
 	const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 	const [moderatorToken, speakerToken] = await Promise.all([
-		generateParticipantToken(room.roomId, moderatorSecret, 'MODERATOR'),
-		generateParticipantToken(room.roomId, speakerSecret, 'SPEAKER')
+		generateRoomMemberToken(room.roomId, { secret: moderatorSecret, grantJoinMeetingPermission: false }),
+		generateRoomMemberToken(room.roomId, { secret: speakerSecret, grantJoinMeetingPermission: false })
 	]);
 
 	// Join participant if needed
@@ -76,7 +76,11 @@ export const setupSingleRoom = async (
  * @param withParticipants Whether to join fake participants in the rooms.
  * @returns                Test context with created rooms and their data.
  */
-export const setupMultiRoomTestContext = async (numRooms: number, withParticipants: boolean, roomConfig?: MeetRoomConfig): Promise<TestContext> => {
+export const setupMultiRoomTestContext = async (
+	numRooms: number,
+	withParticipants: boolean,
+	roomConfig?: MeetRoomConfig
+): Promise<TestContext> => {
 	const rooms: RoomData[] = [];
 
 	for (let i = 0; i < numRooms; i++) {

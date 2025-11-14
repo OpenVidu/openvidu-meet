@@ -1,0 +1,10 @@
+description: Success response for updating room status
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: Room 'room-123' closed successfully

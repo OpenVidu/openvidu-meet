@@ -1,4 +1,4 @@
-import { AuthMode, AuthTransportMode, AuthType, GlobalConfig, MeetRoomThemeMode } from '@openvidu-meet/typings';
+import { AuthMode, AuthType, GlobalConfig, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
 
 /**
@@ -29,11 +29,6 @@ const AuthenticationConfigSchema = new Schema(
 	{
 		authMethod: {
 			type: AuthMethodSchema,
-			required: true
-		},
-		authTransportMode: {
-			type: String,
-			enum: Object.values(AuthTransportMode),
 			required: true
 		},
 		authModeToAccessRoom: {

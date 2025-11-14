@@ -2,10 +2,9 @@ import { computed, Injectable, signal } from '@angular/core';
 import {
 	MeetAppearanceConfig,
 	MeetRoomConfig,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
 	MeetRoomTheme,
-	ParticipantPermissions,
-	ParticipantRole,
-	RecordingPermissions,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
@@ -78,18 +77,16 @@ export class FeatureConfigurationService {
 
 	// Signals to handle reactive
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
-	protected participantPermissions = signal<ParticipantPermissions | undefined>(undefined);
-	protected participantRole = signal<ParticipantRole | undefined>(undefined);
-	protected recordingPermissions = signal<RecordingPermissions | undefined>(undefined);
+	protected roomMemberRole = signal<MeetRoomMemberRole | undefined>(undefined);
+	protected roomMemberPermissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	protected appearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<ApplicationFeatures>(() =>
 		this.calculateFeatures(
 			this.roomConfig(),
-			this.participantPermissions(),
-			this.participantRole(),
-			this.recordingPermissions(),
+			this.roomMemberRole(),
+			this.roomMemberPermissions(),
 			this.appearanceConfig()
 		)
 	);
@@ -107,27 +104,19 @@ export class FeatureConfigurationService {
 	}
 
 	/**
-	 * Updates participant permissions
+	 * Updates room member role
 	 */
-	setParticipantPermissions(permissions: ParticipantPermissions): void {
-		this.log.d('Updating participant permissions', permissions);
-		this.participantPermissions.set(permissions);
+	setRoomMemberRole(role: MeetRoomMemberRole): void {
+		this.log.d('Updating room member role', role);
+		this.roomMemberRole.set(role);
 	}
 
 	/**
-	 * Updates participant role
+	 * Updates room member permissions
 	 */
-	setParticipantRole(role: ParticipantRole): void {
-		this.log.d('Updating participant role', role);
-		this.participantRole.set(role);
-	}
-
-	/**
-	 * Updates recording permissions
-	 */
-	setRecordingPermissions(permissions: RecordingPermissions): void {
-		this.log.d('Updating recording permissions', permissions);
-		this.recordingPermissions.set(permissions);
+	setRoomMemberPermissions(permissions: MeetRoomMemberPermissions): void {
+		this.log.d('Updating room member permissions', permissions);
+		this.roomMemberPermissions.set(permissions);
 	}
 
 	/**
@@ -143,9 +132,8 @@ export class FeatureConfigurationService {
 	 */
 	protected calculateFeatures(
 		roomConfig?: MeetRoomConfig,
-		participantPerms?: ParticipantPermissions,
-		role?: ParticipantRole,
-		recordingPerms?: RecordingPermissions,
+		role?: MeetRoomMemberRole,
+		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig
 	): ApplicationFeatures {
 		// Start with default configuration
@@ -158,22 +146,23 @@ export class FeatureConfigurationService {
 			features.showBackgrounds = roomConfig.virtualBackground.enabled;
 		}
 
-		// Apply participant permissions (these can restrict enabled features)
-		if (participantPerms) {
+		// Apply room member permissions (these can restrict enabled features)
+		if (permissions) {
 			// Only restrict if the feature is already enabled
 			if (features.showRecordingPanel) {
-				features.canRecordRoom = participantPerms.openvidu.canRecord;
+				features.canRecordRoom = permissions.meet.canRecord;
+				features.canRetrieveRecordings = permissions.meet.canRetrieveRecordings;
 			}
 			if (features.showChat) {
-				features.showChat = participantPerms.openvidu.canChat;
+				features.showChat = permissions.meet.canChat;
 			}
 			if (features.showBackgrounds) {
-				features.showBackgrounds = participantPerms.openvidu.canChangeVirtualBackground;
+				features.showBackgrounds = permissions.meet.canChangeVirtualBackground;
 			}
 
 			// Media features
-			const canPublish = participantPerms.livekit.canPublish;
-			const canPublishSources = participantPerms.livekit.canPublishSources ?? [];
+			const canPublish = permissions.livekit.canPublish;
+			const canPublishSources = permissions.livekit.canPublishSources ?? [];
 			features.videoEnabled = canPublish || canPublishSources.includes(TrackSource.CAMERA);
 			features.audioEnabled = canPublish || canPublishSources.includes(TrackSource.MICROPHONE);
 			features.showCamera = features.videoEnabled;
@@ -183,12 +172,7 @@ export class FeatureConfigurationService {
 
 		// Apply role-based configurations
 		if (role) {
-			features.canModerateRoom = role === ParticipantRole.MODERATOR;
-		}
-
-		// Apply recording permissions
-		if (recordingPerms) {
-			features.canRetrieveRecordings = recordingPerms.canRetrieveRecordings;
+			features.canModerateRoom = role === MeetRoomMemberRole.MODERATOR;
 		}
 
 		// Apply appearance configuration
@@ -213,9 +197,8 @@ export class FeatureConfigurationService {
 	 */
 	reset(): void {
 		this.roomConfig.set(undefined);
-		this.participantPermissions.set(undefined);
-		this.participantRole.set(undefined);
-		this.recordingPermissions.set(undefined);
+		this.roomMemberRole.set(undefined);
+		this.roomMemberPermissions.set(undefined);
 		this.appearanceConfig.set(undefined);
 	}
 }

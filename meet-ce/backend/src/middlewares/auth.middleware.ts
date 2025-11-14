@@ -1,4 +1,4 @@
-import { MeetTokenMetadata, OpenViduMeetPermissions, ParticipantRole, User, UserRole } from '@openvidu-meet/typings';
+import { LiveKitPermissions, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
@@ -8,9 +8,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
-	errorInvalidParticipantRole,
-	errorInvalidParticipantToken,
-	errorInvalidRecordingToken,
+	errorInvalidRoomMemberToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorUnauthorized,
@@ -20,12 +18,12 @@ import {
 import {
 	ApiKeyService,
 	LoggerService,
-	ParticipantService,
-	RoomService,
+	RequestSessionService,
+	RoomMemberService,
 	TokenService,
 	UserService
 } from '../services/index.js';
-import { getAccessToken, getParticipantToken, getRecordingToken } from '../utils/index.js';
+import { getAccessToken, getRoomMemberToken } from '../utils/index.js';
 
 /**
  * Interface for authentication validators.
@@ -82,15 +80,15 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
  *
  * @param roles One or more roles that are allowed to access the resource
  */
-export const tokenAndRoleValidator = (...roles: UserRole[]): AuthValidator => {
+export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator => {
 	return {
 		async isPresent(req: Request): Promise<boolean> {
-			const token = await getAccessToken(req);
+			const token = getAccessToken(req);
 			return !!token;
 		},
 
 		async validate(req: Request): Promise<void> {
-			const token = await getAccessToken(req);
+			const token = getAccessToken(req);
 
 			if (!token) {
 				throw errorUnauthorized();
@@ -120,104 +118,61 @@ export const tokenAndRoleValidator = (...roles: UserRole[]): AuthValidator => {
 				throw errorInsufficientPermissions();
 			}
 
-			req.session = req.session || {};
-			req.session.user = user;
+			const requestSessionService = container.get(RequestSessionService);
+			requestSessionService.setUser(user);
 		}
 	};
 };
 
 /**
- * Participant token validator for room access.
- * Validates participant tokens and checks role permissions.
+ * Room member token validator for room access.
+ * Validates room member tokens and checks role permissions.
  */
-export const participantTokenValidator: AuthValidator = {
+export const roomMemberTokenValidator: AuthValidator = {
 	async isPresent(req: Request): Promise<boolean> {
-		const token = await getParticipantToken(req);
+		const token = getRoomMemberToken(req);
 		return !!token;
 	},
 
 	async validate(req: Request): Promise<void> {
-		const token = await getParticipantToken(req);
-		await validateTokenAndSetSession(req, token);
+		const token = getRoomMemberToken(req);
 
-		// Check if the participant role is provided in the request headers
-		// This is required to distinguish roles when multiple are present in the token
-		const participantRole = req.headers[INTERNAL_CONFIG.PARTICIPANT_ROLE_HEADER];
-		const allRoles = [ParticipantRole.MODERATOR, ParticipantRole.SPEAKER];
-
-		if (!participantRole || !allRoles.includes(participantRole as ParticipantRole)) {
-			throw errorInvalidParticipantRole();
+		if (!token) {
+			throw errorUnauthorized();
 		}
 
-		// Check that the specified role is present in the token claims
-		let metadata: MeetTokenMetadata;
+		let tokenMetadata: string | undefined;
+		let livekitPermissions: LiveKitPermissions | undefined;
 
 		try {
-			const participantService = container.get(ParticipantService);
-			metadata = participantService.parseMetadata(req.session?.tokenClaims?.metadata || '{}');
+			const tokenService = container.get(TokenService);
+			({ metadata: tokenMetadata, video: livekitPermissions } = await tokenService.verifyToken(token));
+
+			if (!tokenMetadata || !livekitPermissions) {
+				throw new Error('Missing required token claims');
+			}
 		} catch (error) {
-			const logger = container.get(LoggerService);
-			logger.error('Invalid participant token:', error);
-			throw errorInvalidParticipantToken();
+			throw errorInvalidToken();
 		}
 
-		const roles = metadata.roles;
-		const hasRole = roles.some(
-			(r: { role: ParticipantRole; permissions: OpenViduMeetPermissions }) => r.role === participantRole
-		);
+		const requestSessionService = container.get(RequestSessionService);
 
-		if (!hasRole) {
-			throw errorInsufficientPermissions();
-		}
-
-		// Set the participant role in the session
-		req.session!.participantRole = participantRole as ParticipantRole;
-	}
-};
-
-/**
- * Recording token validator for recording access.
- * Validates recording tokens with specific metadata.
- */
-export const recordingTokenValidator: AuthValidator = {
-	async isPresent(req: Request): Promise<boolean> {
-		const token = await getRecordingToken(req);
-		return !!token;
-	},
-
-	async validate(req: Request): Promise<void> {
-		const token = await getRecordingToken(req);
-		await validateTokenAndSetSession(req, token);
-
-		// Validate the recording token metadata
+		// Validate the room member token metadata and extract role and permissions
 		try {
-			const roomService = container.get(RoomService);
-			roomService.parseRecordingTokenMetadata(req.session?.tokenClaims?.metadata || '{}');
+			const roomMemberService = container.get(RoomMemberService);
+			const { role, permissions: meetPermissions } =
+				roomMemberService.parseRoomMemberTokenMetadata(tokenMetadata);
+
+			requestSessionService.setRoomMemberTokenInfo(role, meetPermissions, livekitPermissions);
 		} catch (error) {
 			const logger = container.get(LoggerService);
-			logger.error('Invalid recording token:', error);
-			throw errorInvalidRecordingToken();
+			logger.error('Invalid room member token:', error);
+			throw errorInvalidRoomMemberToken();
 		}
-	}
-};
 
-const validateTokenAndSetSession = async (req: Request, token: string | undefined) => {
-	if (!token) {
-		throw errorUnauthorized();
-	}
-
-	const tokenService = container.get(TokenService);
-	let payload: ClaimGrants;
-
-	try {
-		payload = await tokenService.verifyToken(token);
+		// Set authenticated user if present, otherwise anonymous
 		const user = await getAuthenticatedUserOrAnonymous(req);
-
-		req.session = req.session || {};
-		req.session.tokenClaims = payload;
-		req.session.user = user;
-	} catch (error) {
-		throw errorInvalidToken();
+		requestSessionService.setUser(user);
 	}
 };
 
@@ -248,8 +203,8 @@ export const apiKeyValidator: AuthValidator = {
 		const userService = container.get(UserService);
 		const apiUser = userService.getApiUser();
 
-		req.session = req.session || {};
-		req.session.user = apiUser;
+		const requestSessionService = container.get(RequestSessionService);
+		requestSessionService.setUser(apiUser);
 	}
 };
 
@@ -266,18 +221,18 @@ export const allowAnonymous: AuthValidator = {
 	async validate(req: Request): Promise<void> {
 		const user = await getAuthenticatedUserOrAnonymous(req);
 
-		req.session = req.session || {};
-		req.session.user = user;
+		const requestSessionService = container.get(RequestSessionService);
+		requestSessionService.setUser(user);
 	}
 };
 
 // Return the authenticated user if available, otherwise return an anonymous user
-const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<User> => {
+const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<MeetUser> => {
 	const userService = container.get(UserService);
-	let user: User | null = null;
+	let user: MeetUser | null = null;
 
 	// Check if there is a user already authenticated
-	const token = await getAccessToken(req);
+	const token = getAccessToken(req);
 
 	if (token) {
 		try {

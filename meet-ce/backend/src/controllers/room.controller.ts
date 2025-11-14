@@ -1,19 +1,19 @@
 import {
-	AuthTransportMode,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomOptions,
-	MeetRoomRoleAndPermissions,
-	ParticipantRole
+	MeetRoomMemberRole,
+	MeetRoomMemberRoleAndPermissions,
+	MeetRoomMemberTokenOptions,
+	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/index.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
-import { LoggerService, ParticipantService, RoomService } from '../services/index.js';
-import { getAuthTransportMode, getBaseUrl, getCookieOptions } from '../utils/index.js';
+import { LoggerService, RoomMemberService, RoomService } from '../services/index.js';
+import { getBaseUrl } from '../utils/index.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -52,13 +52,12 @@ export const getRoom = async (req: Request, res: Response) => {
 
 	const { roomId } = req.params;
 	const fields = req.query.fields as string | undefined;
-	const role = req.session?.participantRole;
 
 	try {
 		logger.verbose(`Getting room '${roomId}'`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId, fields, role);
+		const room = await roomService.getMeetRoom(roomId, fields);
 
 		return res.status(200).json(room);
 	} catch (error) {
@@ -183,37 +182,26 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 	}
 };
 
-export const generateRecordingToken = async (req: Request, res: Response) => {
+export const generateRoomMemberToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const roomService = container.get(RoomService);
-	const { roomId } = req.params;
-	const { secret } = req.body;
+	const roomMemberTokenService = container.get(RoomMemberService);
 
-	logger.verbose(`Generating recording token for room '${roomId}'`);
+	const { roomId } = req.params;
+	const tokenOptions: MeetRoomMemberTokenOptions = req.body;
 
 	try {
-		const token = await roomService.generateRecordingToken(roomId, secret);
-		const authTransportMode = await getAuthTransportMode();
-
-		// Send recording token as cookie for cookie mode
-		if (authTransportMode === AuthTransportMode.COOKIE) {
-			res.cookie(
-				INTERNAL_CONFIG.RECORDING_TOKEN_COOKIE_NAME,
-				token,
-				getCookieOptions('/', INTERNAL_CONFIG.RECORDING_TOKEN_EXPIRATION)
-			);
-		}
-
+		logger.verbose(`Generating room member token for room '${roomId}'`);
+		const token = await roomMemberTokenService.generateOrRefreshRoomMemberToken(roomId, tokenOptions);
 		return res.status(200).json({ token });
 	} catch (error) {
-		handleError(res, error, `generating recording token for room '${roomId}'`);
+		handleError(res, error, `generating room member token for room '${roomId}'`);
 	}
 };
 
-export const getRoomRolesAndPermissions = async (req: Request, res: Response) => {
+export const getRoomMemberRolesAndPermissions = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const participantService = container.get(ParticipantService);
+	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId } = req.params;
 
@@ -224,41 +212,42 @@ export const getRoomRolesAndPermissions = async (req: Request, res: Response) =>
 		return handleError(res, error, `getting room '${roomId}'`);
 	}
 
-	logger.verbose(`Getting roles and associated permissions for room '${roomId}'`);
-	const moderatorPermissions = participantService.getParticipantPermissions(roomId, ParticipantRole.MODERATOR);
-	const speakerPermissions = participantService.getParticipantPermissions(roomId, ParticipantRole.SPEAKER);
+	logger.verbose(`Getting room member roles and associated permissions for room '${roomId}'`);
+	const moderatorPermissions = await roomMemberService.getRoomMemberPermissions(roomId, MeetRoomMemberRole.MODERATOR);
+	const speakerPermissions = await roomMemberService.getRoomMemberPermissions(roomId, MeetRoomMemberRole.SPEAKER);
 
-	const rolesAndPermissions = [
+	const rolesAndPermissions: MeetRoomMemberRoleAndPermissions[] = [
 		{
-			role: ParticipantRole.MODERATOR,
+			role: MeetRoomMemberRole.MODERATOR,
 			permissions: moderatorPermissions
 		},
 		{
-			role: ParticipantRole.SPEAKER,
+			role: MeetRoomMemberRole.SPEAKER,
 			permissions: speakerPermissions
 		}
 	];
 	res.status(200).json(rolesAndPermissions);
 };
 
-export const getRoomRoleAndPermissions = async (req: Request, res: Response) => {
+export const getRoomMemberRoleAndPermissions = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const roomService = container.get(RoomService);
-	const participantService = container.get(ParticipantService);
+	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId, secret } = req.params;
 
 	try {
-		logger.verbose(`Getting room role and associated permissions for room '${roomId}' and secret '${secret}'`);
+		logger.verbose(
+			`Getting room member role and associated permissions for room '${roomId}' and secret '${secret}'`
+		);
 
-		const role = await roomService.getRoomRoleBySecret(roomId, secret);
-		const permissions = participantService.getParticipantPermissions(roomId, role);
-		const roleAndPermissions: MeetRoomRoleAndPermissions = {
+		const role = await roomMemberService.getRoomMemberRoleBySecret(roomId, secret);
+		const permissions = await roomMemberService.getRoomMemberPermissions(roomId, role);
+		const roleAndPermissions: MeetRoomMemberRoleAndPermissions = {
 			role,
 			permissions
 		};
 		return res.status(200).json(roleAndPermissions);
 	} catch (error) {
-		handleError(res, error, `getting room role and permissions for room '${roomId}' and secret '${secret}'`);
+		handleError(res, error, `getting room member role and permissions for room '${roomId}' and secret '${secret}'`);
 	}
 };

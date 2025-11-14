@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { User, UserRole } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { HttpService, NavigationService, TokenStorageService } from '../services';
 
 @Injectable({
@@ -11,7 +11,7 @@ export class AuthService {
 	protected readonly USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
 
 	protected hasCheckAuth = false;
-	protected user: User | null = null;
+	protected user: MeetUserDTO | null = null;
 
 	constructor(
 		protected httpService: HttpService,
@@ -87,21 +87,21 @@ export class AuthService {
 		return this.user?.username;
 	}
 
-	async getUserRoles(): Promise<UserRole[] | undefined> {
+	async getUserRoles(): Promise<MeetUserRole[] | undefined> {
 		await this.getAuthenticatedUser();
 		return this.user?.roles;
 	}
 
 	async isAdmin(): Promise<boolean> {
 		const roles = await this.getUserRoles();
-		return roles ? roles.includes(UserRole.ADMIN) : false;
+		return roles ? roles.includes(MeetUserRole.ADMIN) : false;
 	}
 
 	private async getAuthenticatedUser(force = false) {
 		if (force || (!this.user && !this.hasCheckAuth)) {
 			try {
 				const path = `${this.USERS_API}/profile`;
-				const user = await this.httpService.getRequest<User>(path);
+				const user = await this.httpService.getRequest<MeetUserDTO>(path);
 				this.user = user;
 			} catch (error) {
 				this.user = null;

@@ -567,12 +567,6 @@ export class RecordingService {
 
 		if (!room) throw errorRoomNotFound(roomId);
 
-		//TODO: Check if the room has participants before starting the recording
-		//room.numParticipants === 0 ? throw errorNoParticipants(roomId);
-		const lkRoom = await this.livekitService.getRoom(roomId);
-
-		if (!lkRoom) throw errorRoomNotFound(roomId);
-
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);

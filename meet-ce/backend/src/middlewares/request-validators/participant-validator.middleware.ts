@@ -1,52 +1,25 @@
-import {
-	MeetTokenMetadata,
-	OpenViduMeetPermissions,
-	ParticipantOptions,
-	ParticipantRole
-} from '@openvidu-meet/typings';
+import { MeetPermissions, MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
-import { nonEmptySanitizedRoomId } from './room-validator.middleware.js';
-
-const ParticipantTokenRequestSchema: z.ZodType<ParticipantOptions> = z.object({
-	roomId: nonEmptySanitizedRoomId('roomId'),
-	secret: z.string().nonempty('Secret is required'),
-	participantName: z.string().optional(),
-	participantIdentity: z.string().optional()
-});
 
 const UpdateParticipantRequestSchema = z.object({
-	role: z.nativeEnum(ParticipantRole)
+	role: z.nativeEnum(MeetRoomMemberRole)
 });
 
-const OpenViduMeetPermissionsSchema: z.ZodType<OpenViduMeetPermissions> = z.object({
+const MeetPermissionsSchema: z.ZodType<MeetPermissions> = z.object({
 	canRecord: z.boolean(),
+	canRetrieveRecordings: z.boolean(),
+	canDeleteRecordings: z.boolean(),
 	canChat: z.boolean(),
 	canChangeVirtualBackground: z.boolean()
 });
 
-const MeetTokenMetadataSchema: z.ZodType<MeetTokenMetadata> = z.object({
+const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
-	roles: z.array(
-		z.object({
-			role: z.nativeEnum(ParticipantRole),
-			permissions: OpenViduMeetPermissionsSchema
-		})
-	),
-	selectedRole: z.nativeEnum(ParticipantRole)
+	role: z.nativeEnum(MeetRoomMemberRole),
+	permissions: MeetPermissionsSchema
 });
-
-export const validateParticipantTokenRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = ParticipantTokenRequestSchema.safeParse(req.body);
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.body = data;
-	next();
-};
 
 export const validateUpdateParticipantRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = UpdateParticipantRequestSchema.safeParse(req.body);
@@ -59,8 +32,8 @@ export const validateUpdateParticipantRequest = (req: Request, res: Response, ne
 	next();
 };
 
-export const validateMeetTokenMetadata = (metadata: unknown): MeetTokenMetadata => {
-	const { success, error, data } = MeetTokenMetadataSchema.safeParse(metadata);
+export const validateRoomMemberTokenMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata => {
+	const { success, error, data } = RoomMemberTokenMetadataSchema.safeParse(metadata);
 
 	if (!success) {
 		throw new Error(`Invalid metadata: ${error.message}`);

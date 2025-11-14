@@ -1,6 +1,0 @@
-description: >
-    The cookie containing the participant token.
-    This cookie is used to authenticate the participant in the room.
-schema:
-    type: string
-example: 'OvMeetParticipantToken=token_123456; Path=/; HttpOnly; SameSite=Strict'

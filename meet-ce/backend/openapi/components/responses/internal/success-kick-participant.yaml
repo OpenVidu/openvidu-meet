@@ -6,4 +6,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: Participant 'Alice' kicked successfully from room 'room-123'
+                    example: Participant 'Alice' kicked successfully from meeting in room 'room-123'

@@ -1,8 +1,0 @@
-description: Room metadata not found
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/error.yaml'
-        example:
-            error: 'Room Error'
-            message: 'Room metadata for "room_123" not found. Room "room_123" does not exist or has no recordings associated'

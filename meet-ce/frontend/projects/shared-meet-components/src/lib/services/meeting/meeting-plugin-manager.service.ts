@@ -1,7 +1,7 @@
-import { Injectable, Optional, Inject } from '@angular/core';
+import { Inject, Injectable, Optional } from '@angular/core';
+import { MEETING_ACTION_HANDLER_TOKEN, MeetingActionHandler, ParticipantControls } from '../../customization';
 import { CustomParticipantModel, LobbyState } from '../../models';
-import { MeetingActionHandler, MEETING_ACTION_HANDLER_TOKEN, ParticipantControls } from '../../customization';
-import { ParticipantService } from '../participant.service';
+import { RoomMemberService } from '../room-member.service';
 
 /**
  * Service that manages plugin inputs and configurations for the MeetingComponent.
@@ -19,7 +19,7 @@ import { ParticipantService } from '../participant.service';
 @Injectable()
 export class MeetingPluginManagerService {
 	constructor(
-		private participantService: ParticipantService,
+		private roomMemberService: RoomMemberService,
 		@Optional() @Inject(MEETING_ACTION_HANDLER_TOKEN) private actionHandler?: MeetingActionHandler
 	) {}
 
@@ -167,7 +167,7 @@ export class MeetingPluginManagerService {
 	 */
 	protected getDefaultParticipantControls(participant: CustomParticipantModel): ParticipantControls {
 		const isCurrentUser = participant.isLocal;
-		const currentUserIsModerator = this.participantService.isModeratorParticipant();
+		const currentUserIsModerator = this.roomMemberService.isModerator();
 		const participantIsModerator = participant.isModerator();
 		const participantIsOriginalModerator = participant.isOriginalModerator();
 

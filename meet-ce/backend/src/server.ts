@@ -5,14 +5,13 @@ import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
-import { httpContextMiddleware, jsonSyntaxErrorHandler } from './middlewares/index.js';
+import { initRequestContext, jsonSyntaxErrorHandler, setBaseUrlMiddleware } from './middlewares/index.js';
 import {
 	analyticsRouter,
 	apiKeyRouter,
 	authRouter,
 	configRouter,
 	internalMeetingRouter,
-	internalParticipantRouter,
 	internalRecordingRouter,
 	internalRoomRouter,
 	livekitWebhookRouter,
@@ -49,8 +48,13 @@ const createApp = () => {
 	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
 
-	// Middleware to set HTTP context
-	app.use(httpContextMiddleware);
+	// CRITICAL: Initialize request context FIRST
+	// This middleware creates an isolated AsyncLocalStorage context for each request
+	// Must be registered before any middleware that uses RequestSessionService
+	app.use(initRequestContext);
+
+	// Middleware to set base URL for each request
+	app.use(setBaseUrlMiddleware);
 
 	// Public API routes
 	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
@@ -72,7 +76,6 @@ const createApp = () => {
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/participants`, internalParticipantRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);

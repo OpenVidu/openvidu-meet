@@ -3,7 +3,7 @@ import { injectable } from 'inversify';
 import { SERVER_PORT } from '../environment.js';
 
 @injectable()
-export class HttpContextService {
+export class BaseUrlService {
 	private baseUrl: string;
 
 	constructor() {
@@ -11,9 +11,9 @@ export class HttpContextService {
 	}
 
 	/**
-	 * Sets the current HTTP context from the request
+	 * Sets the base URL from the request
 	 */
-	setContext(req: Request): void {
+	setBaseUrlFromRequest(req: Request): void {
 		const protocol = req.protocol;
 		const host = req.get('host');
 		this.baseUrl = `${protocol}://${host}`;
@@ -27,9 +27,9 @@ export class HttpContextService {
 	}
 
 	/**
-	 * Clears the current context
+	 * Clears the current base URL by resetting to default
 	 */
-	clearContext(): void {
+	clearBaseUrl(): void {
 		this.baseUrl = this.getDefaultBaseUrl();
 	}
 

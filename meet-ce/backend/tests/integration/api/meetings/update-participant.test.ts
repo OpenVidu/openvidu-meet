@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetSignalType } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/index.js';
 import { LIVEKIT_URL } from '../../../../src/environment.js';
 import { FrontendEventService, LiveKitService } from '../../../../src/services/index.js';
-import { MeetSignalType, MeetTokenMetadata, ParticipantRole } from '@openvidu-meet/typings';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
@@ -31,16 +31,11 @@ describe('Meetings API Tests', () => {
 	});
 
 	describe('Update Participant Tests', () => {
-		const setParticipantMetadata = async (roomId: string, role: ParticipantRole) => {
-			const metadata: MeetTokenMetadata = {
+		const setParticipantMetadata = async (roomId: string, role: MeetRoomMemberRole) => {
+			const metadata: MeetRoomMemberTokenMetadata = {
 				livekitUrl: LIVEKIT_URL,
-				roles: [
-					{
-						role: role,
-						permissions: getPermissions(roomId, role).openvidu
-					}
-				],
-				selectedRole: role
+				role,
+				permissions: getPermissions(roomId, role, true, true).meet
 			};
 			await updateParticipantMetadata(roomId, participantIdentity, metadata);
 		};
@@ -53,12 +48,12 @@ describe('Meetings API Tests', () => {
 			const frontendEventService = container.get(FrontendEventService);
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 
-			await setParticipantMetadata(roomData.room.roomId, ParticipantRole.SPEAKER);
+			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.SPEAKER);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				participantIdentity,
-				ParticipantRole.MODERATOR,
+				MeetRoomMemberRole.MODERATOR,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
@@ -68,9 +63,7 @@ describe('Meetings API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('roles');
-			expect(metadata.roles).toContainEqual(expect.objectContaining({ role: ParticipantRole.MODERATOR }));
-			expect(metadata).toHaveProperty('selectedRole', ParticipantRole.MODERATOR);
+			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.MODERATOR);
 
 			// Verify sendSignal method has been called twice
 			expect(sendSignalSpy).toHaveBeenCalledTimes(2);
@@ -81,7 +74,7 @@ describe('Meetings API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					participantIdentity,
-					newRole: ParticipantRole.MODERATOR,
+					newRole: MeetRoomMemberRole.MODERATOR,
 					secret: expect.any(String),
 					timestamp: expect.any(Number)
 				},
@@ -97,7 +90,7 @@ describe('Meetings API Tests', () => {
 				{
 					roomId: roomData.room.roomId,
 					participantIdentity,
-					newRole: ParticipantRole.MODERATOR,
+					newRole: MeetRoomMemberRole.MODERATOR,
 					secret: undefined,
 					timestamp: expect.any(Number)
 				},
@@ -109,12 +102,12 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should update participant role from moderator to speaker', async () => {
-			await setParticipantMetadata(roomData.room.roomId, ParticipantRole.MODERATOR);
+			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.MODERATOR);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				participantIdentity,
-				ParticipantRole.SPEAKER,
+				MeetRoomMemberRole.SPEAKER,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
@@ -124,16 +117,14 @@ describe('Meetings API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('roles');
-			expect(metadata.roles).toContainEqual(expect.objectContaining({ role: ParticipantRole.SPEAKER }));
-			expect(metadata).toHaveProperty('selectedRole', ParticipantRole.SPEAKER);
+			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.SPEAKER);
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				'NON_EXISTENT_PARTICIPANT',
-				ParticipantRole.MODERATOR,
+				MeetRoomMemberRole.MODERATOR,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
@@ -148,7 +139,7 @@ describe('Meetings API Tests', () => {
 			response = await updateParticipant(
 				roomData.room.roomId,
 				participantIdentity,
-				ParticipantRole.MODERATOR,
+				MeetRoomMemberRole.MODERATOR,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);

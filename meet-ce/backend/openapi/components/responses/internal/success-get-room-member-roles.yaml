@@ -4,7 +4,7 @@ content:
         schema:
             type: array
             items:
-                $ref: '../../schemas/internal/meet-room-role-permissions.yaml'
+                $ref: '../../schemas/internal/room-member-role-permissions.yaml'
         example:
             - role: 'moderator'
               permissions:
@@ -17,6 +17,8 @@ content:
                       canUpdateOwnMetadata: true
                   openvidu:
                       canRecord: true
+                      canRetrieveRecordings: true
+                      canDeleteRecordings: true
                       canChat: true
                       canChangeVirtualBackground: true
             - role: 'speaker'
@@ -30,5 +32,7 @@ content:
                       canUpdateOwnMetadata: true
                   openvidu:
                       canRecord: false
+                      canRetrieveRecordings: true
+                      canDeleteRecordings: false
                       canChat: true
                       canChangeVirtualBackground: true

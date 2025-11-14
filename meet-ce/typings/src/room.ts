@@ -1,7 +1,10 @@
-import { ParticipantPermissions, ParticipantRole } from './participant.js';
 import { MeetRoomConfig } from './room-config.js';
+import { MeetRoomMemberPermissions, MeetRoomMemberRole } from './room-member.js';
 
-export interface BaseRoomOptions {
+/**
+ * Options for creating a room.
+ */
+export interface MeetRoomOptions {
     roomName?: string;
     autoDeletionDate?: number;
     autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
@@ -10,14 +13,9 @@ export interface BaseRoomOptions {
 }
 
 /**
- * Options for creating or configuring a room.
+ * Representation of a room
  */
-export type MeetRoomOptions = BaseRoomOptions;
-
-/**
- * Interface representing the response received when a room is created.
- */
-export interface MeetRoom extends BaseRoomOptions {
+export interface MeetRoom extends MeetRoomOptions {
     roomId: string;
     roomName: string;
     creationDate: number;
@@ -57,9 +55,9 @@ export enum MeetRoomDeletionPolicyWithRecordings {
     FAIL = 'fail' // Fail the deletion if there are ongoing or previous recordings
 }
 
-export interface MeetRoomRoleAndPermissions {
-    role: ParticipantRole;
-    permissions: ParticipantPermissions;
+export interface MeetRoomMemberRoleAndPermissions {
+    role: MeetRoomMemberRole;
+    permissions: MeetRoomMemberPermissions;
 }
 
 export type MeetRoomFilters = {

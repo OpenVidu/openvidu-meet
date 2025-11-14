@@ -14,13 +14,13 @@ import {
 	ABSStorageProvider,
 	AnalyticsService,
 	ApiKeyService,
+	BaseUrlService,
 	BlobStorageService,
 	DistributedEventService,
 	FrontendEventService,
 	GCSService,
 	GCSStorageProvider,
 	GlobalConfigService,
-	HttpContextService,
 	LegacyStorageService,
 	LiveKitService,
 	LivekitWebhookService,
@@ -30,9 +30,10 @@ import {
 	MutexService,
 	OpenViduWebhookService,
 	ParticipantNameService,
-	ParticipantService,
 	RecordingService,
 	RedisService,
+	RequestSessionService,
+	RoomMemberService,
 	RoomService,
 	S3KeyBuilder,
 	S3Service,
@@ -69,7 +70,10 @@ export const registerDependencies = () => {
 	container.bind(DistributedEventService).toSelf().inSingletonScope();
 	container.bind(MutexService).toSelf().inSingletonScope();
 	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
-	container.bind(HttpContextService).toSelf().inSingletonScope();
+	container.bind(BaseUrlService).toSelf().inSingletonScope();
+	// RequestSessionService uses AsyncLocalStorage for request isolation
+	// It's a singleton but provides per-request data isolation automatically
+	container.bind(RequestSessionService).toSelf().inSingletonScope();
 
 	container.bind(MongoDBService).toSelf().inSingletonScope();
 	container.bind(BaseRepository).toSelf().inSingletonScope();
@@ -97,7 +101,7 @@ export const registerDependencies = () => {
 	container.bind(RecordingService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
 	container.bind(ParticipantNameService).toSelf().inSingletonScope();
-	container.bind(ParticipantService).toSelf().inSingletonScope();
+	container.bind(RoomMemberService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
 	container.bind(AnalyticsService).toSelf().inSingletonScope();

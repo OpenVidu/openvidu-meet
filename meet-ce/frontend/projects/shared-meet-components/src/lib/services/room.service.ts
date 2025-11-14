@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { FeatureConfigurationService, HttpService, ParticipantService, SessionStorageService } from '../services';
 import {
 	MeetRoom,
 	MeetRoomConfig,
@@ -7,11 +6,12 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
+	MeetRoomMemberRoleAndPermissions,
 	MeetRoomOptions,
-	MeetRoomRoleAndPermissions,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
+import { FeatureConfigurationService, HttpService, SessionStorageService } from '../services';
 
 @Injectable({
 	providedIn: 'root'
@@ -29,7 +29,6 @@ export class RoomService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected participantService: ParticipantService,
 		protected featureConfService: FeatureConfigurationService,
 		protected sessionStorageService: SessionStorageService
 	) {
@@ -51,16 +50,17 @@ export class RoomService {
 		}
 	}
 
+	getRoomSecret(): string {
+		return this.roomSecret;
+	}
+
 	setE2EEKey(e2eeKey: string) {
 		this.e2eeKey = e2eeKey;
+		this.sessionStorageService.setE2EEKey(e2eeKey);
 	}
 
 	getE2EEKey(): string {
 		return this.e2eeKey;
-	}
-
-	getRoomSecret(): string {
-		return this.roomSecret;
 	}
 
 	/**
@@ -118,8 +118,7 @@ export class RoomService {
 	 */
 	async getRoom(roomId: string): Promise<MeetRoom> {
 		const path = `${this.ROOMS_API}/${roomId}`;
-		const headers = this.participantService.getParticipantRoleHeader();
-		return this.httpService.getRequest(path, headers);
+		return this.httpService.getRequest(path);
 	}
 
 	/**
@@ -195,8 +194,7 @@ export class RoomService {
 
 		try {
 			const path = `${this.ROOMS_API}/${roomId}/config`;
-			const headers = this.participantService.getParticipantRoleHeader();
-			const config = await this.httpService.getRequest<MeetRoomConfig>(path, headers);
+			const config = await this.httpService.getRequest<MeetRoomConfig>(path);
 			return config;
 		} catch (error) {
 			this.log.e('Error fetching room config', error);
@@ -240,7 +238,7 @@ export class RoomService {
 	 * @param secret - The secret parameter for the room
 	 * @returns A promise that resolves to an object containing the role and permissions
 	 */
-	async getRoomRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomRoleAndPermissions> {
+	async getRoomMemberRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomMemberRoleAndPermissions> {
 		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/roles/${secret}`;
 		return this.httpService.getRequest(path);
 	}

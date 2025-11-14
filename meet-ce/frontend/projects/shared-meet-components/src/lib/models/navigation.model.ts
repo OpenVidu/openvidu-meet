@@ -6,8 +6,6 @@ export enum ErrorReason {
 	INVALID_RECORDING_SECRET = 'invalid-recording-secret',
 	INVALID_ROOM = 'invalid-room',
 	INVALID_RECORDING = 'invalid-recording',
-	NO_RECORDINGS = 'no-recordings',
 	UNAUTHORIZED_RECORDING_ACCESS = 'unauthorized-recording-access',
-	RECORDINGS_ADMIN_ONLY_ACCESS = 'recordings-admin-only-access',
 	INTERNAL_ERROR = 'internal-error'
 }
