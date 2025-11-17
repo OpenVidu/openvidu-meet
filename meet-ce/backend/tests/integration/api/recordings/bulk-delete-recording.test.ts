@@ -30,7 +30,7 @@ describe('Recording API Tests', () => {
 		it('should return 400 when mixed valid and non-existent IDs are provided', async () => {
 			const testContext = await setupMultiRecordingsTestContext(3, 3, 3);
 			const recordingIds = testContext.rooms.map((room) => room.recordingId!);
-			const nonExistentIds = ['nonExistent--EG_000--1234', 'nonExistent--EG_111--5678'];
+			const nonExistentIds = ['non_existent--EG_000--1234', 'non_existent--EG_111--5678'];
 			const mixedIds = [...recordingIds, ...nonExistentIds];
 
 			const deleteResponse = await bulkDeleteRecordings(mixedIds);

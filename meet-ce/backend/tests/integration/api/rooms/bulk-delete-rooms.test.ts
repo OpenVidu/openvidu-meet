@@ -161,7 +161,7 @@ describe('Room API Tests', () => {
 				setupSingleRoomWithRecording(true) // Room with recordings
 			]);
 			await endMeeting(room4.roomId, moderatorToken);
-			const fakeRoomId = 'fakeRoomId'; // Non-existing room
+			const fakeRoomId = 'fake_room-123'; // Non-existing room
 
 			const response = await bulkDeleteRooms(
 				[room1.roomId, room2.roomId, room3.roomId, room4.roomId, fakeRoomId],
@@ -273,7 +273,7 @@ describe('Room API Tests', () => {
 		});
 
 		it('should validate roomIds and return 422 when all are invalid', async () => {
-			const response = await bulkDeleteRooms(['!!@##$', '!!@##$', ',', '.,-------}{¡$#<+']);
+			const response = await bulkDeleteRooms(['!!@##$', '!!@##$', ',', '.,}{¡$#<+']);
 
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
