@@ -41,7 +41,7 @@ const sanitizeRoomName = (val: string): string => {
  * @returns A sanitized string safe for use as an identifier
  */
 export const sanitizeRoomId = (val: string): string => {
-	return val.replace(/[^a-z0-9_-]/g, ''); // Allow only lowercase letters, numbers and underscores
+	return val.replace(/[^a-zA-Z0-9_-]/g, ''); // Allow only letters, numbers, hyphens and underscores
 };
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
