@@ -1,6 +1,6 @@
 <!-- Copy Link Button -->
-@if (showCopyLinkButton) {
-	@if (isMobile) {
+@if (showCopyLinkButton()) {
+	@if (isMobile()) {
 		<button id="copy-speaker-link" mat-menu-item (click)="onCopyLinkClick()" [disableRipple]="true">
 			<mat-icon>link</mat-icon>
 			<span class="button-text">{{ copyLinkText }}</span>
@@ -19,7 +19,7 @@
 }
 
 <!-- Leave Menu -->
-@if (showLeaveMenu) {
+@if (showLeaveMenu()) {
 	<button
 		id="leave-btn"
 		mat-icon-button
@@ -27,7 +27,7 @@
 		[matTooltip]="leaveMenuTooltip"
 		[disableRipple]="true"
 		class="custom-leave-btn"
-		[class.mobile-btn]="isMobile"
+		[class.mobile-btn]="isMobile()"
 	>
 		<mat-icon>call_end</mat-icon>
 	</button>

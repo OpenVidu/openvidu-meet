@@ -1,10 +1,12 @@
-import { inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import {
 	AppDataService,
 	AuthService,
+	MeetingContextService,
+	MeetingService,
 	NavigationService,
 	RecordingService,
 	RoomMemberService,
@@ -13,104 +15,182 @@ import {
 } from '..';
 import { ErrorReason } from '../../models';
 import { LobbyState } from '../../models/lobby.model';
+import { LoggerService } from 'openvidu-components-angular';
 
 /**
- * Service that manages the meeting lobby state and operations.
+ * Service that manages the meeting lobby phase state and operations.
  *
- * Responsibilities:
- * - Initialize and maintain lobby state
- * - Validate participant information
- * - Check for recordings availability
- * - Handle navigation (back button, recordings)
+ * This service is ONLY responsible for the LOBBY PHASE - the period before a participant joins the meeting.
  *
- * This service coordinates multiple domain services to provide
- * a simplified interface for the MeetingComponent.
  */
 @Injectable()
 export class MeetingLobbyService {
-	private state: LobbyState = {
-		roomId: '',
-		roomSecret: '',
+	/**
+	 * Reactive signal for lobby state.
+	 * This state is only relevant during the lobby phase.
+	 */
+	private readonly _state = signal<LobbyState>({
+		roomId: undefined,
 		roomClosed: false,
-		hasRecordings: false,
 		showRecordingCard: false,
 		showBackButton: true,
 		backButtonText: 'Back',
-		isE2EEEnabled: false,
+		hasRoomE2EEEnabled: false,
 		participantForm: new FormGroup({
 			name: new FormControl('', [Validators.required]),
 			e2eeKey: new FormControl('')
 		}),
-		roomMemberToken: ''
-	};
+		roomMemberToken: undefined
+	});
 
 	protected roomService: RoomService = inject(RoomService);
+	protected meetingContextService: MeetingContextService = inject(MeetingContextService);
+	protected meetingService: MeetingService = inject(MeetingService);
 	protected recordingService: RecordingService = inject(RecordingService);
 	protected authService: AuthService = inject(AuthService);
 	protected roomMemberService: RoomMemberService = inject(RoomMemberService);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected appDataService: AppDataService = inject(AppDataService);
 	protected wcManagerService: WebComponentManagerService = inject(WebComponentManagerService);
+	protected loggerService = inject(LoggerService);
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 
 	/**
-	 * Gets the current lobby state
+	 * Readonly signal for lobby state - components can use computed() with this
 	 */
-	get lobbyState(): LobbyState {
-		return this.state;
-	}
+	readonly state = this._state.asReadonly();
 
-	set participantName(name: string) {
-		this.state.participantForm.get('name')?.setValue(name);
-	}
+	/**
+	 * Computed signal for meeting URL derived from MeetingContextService
+	 * This ensures a single source of truth for the meeting URL
+	 */
+	readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());
 
-	get participantName(): string {
-		const { valid, value } = this.state.participantForm;
+	/**
+	 * Computed signal for whether the current user can moderate the room
+	 * Derived from MeetingContextService
+	 */
+	readonly canModerateRoom = computed(() => this.meetingContextService.canModerateRoom());
+
+	/**
+	 * Computed signal for participant name - optimized to avoid repeated form access
+	 */
+	readonly participantName = computed(() => {
+		const { valid, value } = this._state().participantForm;
 		if (!valid || !value.name?.trim()) {
 			return '';
 		}
 		return value.name.trim();
-	}
+	});
 
-	set e2eeKey(key: string) {
-		this.state.participantForm.get('e2eeKey')?.setValue(key);
-	}
-
-	get e2eeKey(): string {
-		const { valid, value } = this.state.participantForm;
+	/**
+	 * Computed signal for E2EE key - optimized to avoid repeated form access
+	 */
+	readonly e2eeKeyValue = computed(() => {
+		const { valid, value } = this._state().participantForm;
 		if (!valid || !value.e2eeKey?.trim()) {
 			return '';
 		}
 		return value.e2eeKey.trim();
+	});
+
+	/**
+	 * Computed signal for room member token
+	 */
+	readonly roomMemberToken = computed(() => this._state().roomMemberToken);
+
+	/**
+	 * Computed signal for room ID
+	 */
+	readonly roomId = computed(() => this._state().roomId);
+
+	/**
+	 * Computed signal for room secret.
+	 * Obtained from MeetingContextService
+	 */
+	readonly roomSecret = computed(() => this.meetingContextService.roomSecret());
+
+	/**
+	 * Computed signal for room name
+	 */
+	readonly roomName = computed(() => this._state().room?.roomName);
+
+	/**
+	 * Computed signal for has recordings.
+	 * Obtained from MeetingContextService
+	 */
+	readonly hasRecordings = computed(() => this.meetingContextService.hasRecordings());
+
+	/**
+	 * Setter for participant name
+	 */
+	setParticipantName(name: string): void {
+		this._state().participantForm.get('name')?.setValue(name);
+	}
+
+	/**
+	 * Setter for E2EE key
+	 */
+	setE2eeKey(key: string): void {
+		this._state().participantForm.get('e2eeKey')?.setValue(key);
 	}
 
 	/**
 	 * Initializes the lobby state by fetching room data and configuring UI
 	 */
-	async initialize(): Promise<LobbyState> {
-		this.state.roomId = this.roomService.getRoomId();
-		this.state.roomSecret = this.roomService.getRoomSecret();
-		this.state.room = await this.roomService.getRoom(this.state.roomId);
-		this.state.roomClosed = this.state.room.status === MeetRoomStatus.CLOSED;
-		this.state.isE2EEEnabled = this.state.room.config.e2ee.enabled;
+	async initialize(): Promise<void> {
+		try {
+			const roomId = this.meetingContextService.roomId();
+			if (!roomId) throw new Error('Room ID is not set in Meeting Context');
 
-		// If E2EE is enabled, require e2eeKey
-		if (this.state.isE2EEEnabled) {
-			this.state.participantForm.get('e2eeKey')?.setValidators([Validators.required]);
-			this.e2eeKey = this.roomService.getE2EEKey();
+			this._state.update((state) => ({ ...state, roomId }));
 
-			if (this.e2eeKey) {
-				// when e2eeKey is already set (e.g., from URL or webcomponent), populate and disable field
-				this.state.participantForm.get('e2eeKey')?.disable();
+			const [room] = await Promise.all([
+				this.roomService.getRoom(roomId),
+				this.setBackButtonText(),
+				this.checkForRecordings(),
+				this.initializeParticipantName()
+			]);
+
+		const roomClosed = room.status === MeetRoomStatus.CLOSED;
+		const hasRoomE2EEEnabled = room.config?.e2ee?.enabled || false;
+
+			this._state.update((state) => ({
+				...state,
+				room,
+				roomClosed,
+				hasRoomE2EEEnabled
+			}));
+
+			this.meetingContextService.setMeetRoom(room);
+
+			if (hasRoomE2EEEnabled) {
+				// If E2EE is enabled, make the e2eeKey form control required
+				const form = this._state().participantForm;
+				form.get('e2eeKey')?.setValidators([Validators.required]);
+				const contextE2eeKey = this.meetingContextService.e2eeKey();
+				if (contextE2eeKey) {
+					this.setE2eeKey(contextE2eeKey);
+					// fill the e2eeKey form control if already set in context (e.g., from URL param)
+					form.get('e2eeKey')?.disable();
+				}
+				form.get('e2eeKey')?.updateValueAndValidity();
 			}
-			this.state.participantForm.get('e2eeKey')?.updateValueAndValidity();
+		} catch (error) {
+			this.clearLobbyState();
+			throw error;
 		}
+	}
 
-		await this.setBackButtonText();
-		await this.checkForRecordings();
-		await this.initializeParticipantName();
-
-		return this.state;
+	/**
+	 * Copies the meeting speaker link to clipboard
+	 */
+	copyMeetingSpeakerLink() {
+		const { room } = this.state();
+		if (room) {
+			this.meetingService.copyMeetingSpeakerLink(room);
+		}
 	}
 
 	/**
@@ -137,7 +217,7 @@ export class MeetingLobbyService {
 				await this.navigationService.navigateTo('/rooms');
 			}
 		} catch (error) {
-			console.error('Error handling back navigation:', error);
+			this.log.e('Error handling back navigation:', error);
 		}
 	}
 
@@ -146,35 +226,42 @@ export class MeetingLobbyService {
 	 */
 	async goToRecordings(): Promise<void> {
 		try {
-			await this.navigationService.navigateTo(`room/${this.state.roomId}/recordings`, {
-				secret: this.state.roomSecret
+			const roomId = this._state().roomId;
+			const roomSecret = this.meetingContextService.roomSecret();
+			await this.navigationService.navigateTo(`room/${roomId}/recordings`, {
+				secret: roomSecret
 			});
 		} catch (error) {
-			console.error('Error navigating to recordings:', error);
+			this.log.e('Error navigating to recordings:', error);
 		}
 	}
 
 	async submitAccess(): Promise<void> {
-		const sanitized = this.participantName.trim(); // remove leading/trailing spaces
+		const sanitized = this.participantName().trim(); // remove leading/trailing spaces
 
 		if (!sanitized) {
-			console.error('Participant form is invalid. Cannot access meeting.');
+			this.log.e('Participant form is invalid. Cannot access meeting.');
 			throw new Error('Participant form is invalid');
 		}
-		this.participantName = sanitized;
+		this.setParticipantName(sanitized);
 
 		// For E2EE rooms, validate passkey
-		if (this.state.isE2EEEnabled && !this.e2eeKey) {
-			console.warn('E2EE key is required for encrypted rooms.');
-			return;
+		const { hasRoomE2EEEnabled, roomId } = this._state();
+		if (hasRoomE2EEEnabled) {
+			const e2eeKey = this.e2eeKeyValue();
+			if (!e2eeKey) {
+				this.log.w('E2EE key is required for encrypted rooms.');
+				return;
+			}
+			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
-		await this.generateRoomMemberToken();
-		await this.addParticipantNameToUrl();
-		await this.roomService.loadRoomConfig(this.state.roomId);
+		await Promise.all([
+			this.generateRoomMemberToken(),
+			this.addParticipantNameToUrl(),
+			this.roomService.loadRoomConfig(roomId!)
+		]);
 	}
-
-	// Protected helper methods
 
 	/**
 	 * Sets the back button text based on the application mode and user role
@@ -185,12 +272,12 @@ export class MeetingLobbyService {
 		const isAdmin = await this.authService.isAdmin();
 
 		if (isStandaloneMode && !redirection && !isAdmin) {
-			this.state.showBackButton = false;
+			this._state.update((state) => ({ ...state, showBackButton: false }));
 			return;
 		}
 
-		this.state.showBackButton = true;
-		this.state.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Rooms' : 'Back';
+		const backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Rooms' : 'Back';
+		this._state.update((state) => ({ ...state, showBackButton: true, backButtonText }));
 	}
 
 	/**
@@ -199,28 +286,38 @@ export class MeetingLobbyService {
 	 * If the user does not have sufficient permissions to list recordings,
 	 * the recordings card will be hidden (`showRecordingCard` will be set to `false`).
 	 *
-	 * If recordings exist, sets `showRecordingCard` to `true`; otherwise, to `false`.
+	 * If recordings exist, stores in MeetingContextService and shows recording card UI.
 	 */
 	protected async checkForRecordings(): Promise<void> {
 		try {
 			const canRetrieveRecordings = this.roomMemberService.canRetrieveRecordings();
 
 			if (!canRetrieveRecordings) {
-				this.state.showRecordingCard = false;
+				this._state.update((state) => ({ ...state, showRecordingCard: false }));
 				return;
 			}
 
+			const { roomId } = this._state();
+			if (!roomId) throw new Error('Room ID is not set in lobby state');
 			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
-				roomId: this.state.roomId,
+				roomId,
 				fields: 'recordingId'
 			});
 
-			this.state.hasRecordings = recordings.length > 0;
-			this.state.showRecordingCard = this.state.hasRecordings;
+			const hasRecordings = recordings.length > 0;
+
+			// Store in MeetingContextService (Single Source of Truth)
+			this.meetingContextService.setHasRecordings(hasRecordings);
+
+			// Update only UI flag locally
+			this._state.update((state) => ({
+				...state,
+				showRecordingCard: hasRecordings
+			}));
 		} catch (error) {
-			console.error('Error checking for recordings:', error);
-			this.state.showRecordingCard = false;
+			this.log.e('Error checking for recordings:', error);
+			this._state.update((state) => ({ ...state, showRecordingCard: false }));
 		}
 	}
 
@@ -240,7 +337,7 @@ export class MeetingLobbyService {
 		const participantName = currentParticipantName || username;
 
 		if (participantName) {
-			this.participantName = participantName;
+			this.setParticipantName(participantName);
 		}
 	}
 
@@ -251,18 +348,22 @@ export class MeetingLobbyService {
 	 */
 	protected async generateRoomMemberToken() {
 		try {
-			this.state.roomMemberToken = await this.roomMemberService.generateToken(
-				this.state.roomId,
+			const roomId = this._state().roomId;
+			const roomSecret = this.meetingContextService.roomSecret();
+			const roomMemberToken = await this.roomMemberService.generateToken(
+				roomId!,
 				{
-					secret: this.state.roomSecret,
+					secret: roomSecret!,
 					grantJoinMeetingPermission: true,
-					participantName: this.participantName
+					participantName: this.participantName()
 				},
-				this.e2eeKey
+				this.e2eeKeyValue()
 			);
-			this.participantName = this.roomMemberService.getParticipantName()!;
+			const updatedName = this.roomMemberService.getParticipantName()!;
+			this.setParticipantName(updatedName);
+			this._state.update((state) => ({ ...state, roomMemberToken }));
 		} catch (error: any) {
-			console.error('Error generating room member token:', error);
+			this.log.e('Error generating room member token:', error);
 			switch (error.status) {
 				case 400:
 					// Invalid secret
@@ -289,7 +390,23 @@ export class MeetingLobbyService {
 	 */
 	protected async addParticipantNameToUrl() {
 		await this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
-			'participant-name': this.participantName
+			'participant-name': this.participantName()
+		});
+	}
+
+	protected clearLobbyState() {
+		this._state.set({
+			roomId: undefined,
+			roomClosed: false,
+			showRecordingCard: false,
+			showBackButton: true,
+			backButtonText: 'Back',
+			hasRoomE2EEEnabled: false,
+			participantForm: new FormGroup({
+				name: new FormControl('', [Validators.required]),
+				e2eeKey: new FormControl('')
+			}),
+			roomMemberToken: undefined
 		});
 	}
 }

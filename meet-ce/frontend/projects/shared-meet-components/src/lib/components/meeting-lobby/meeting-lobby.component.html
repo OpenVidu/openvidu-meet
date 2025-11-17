@@ -4,8 +4,8 @@
 		<div class="room-header">
 			<mat-icon class="ov-room-icon room-icon">video_chat</mat-icon>
 			<div class="room-info">
-				<h1 class="room-title">{{ roomName }}</h1>
-				@if (isE2EEEnabled) {
+				<h1 class="room-title">{{ roomName() }}</h1>
+				@if (isE2EEEnabled()) {
 					<span class="encryption-badge" matTooltip="End-to-end encrypted">
 						<mat-icon class="badge-icon">lock</mat-icon>
 						This meeting is end-to-end encrypted
@@ -17,22 +17,22 @@
 		<!-- Action Cards Grid -->
 		<div class="action-cards-grid">
 			<!-- Join Room Card -->
-			<mat-card class="action-card primary-card fade-in" [ngClass]="{ 'room-closed-card': roomClosed }">
+			<mat-card class="action-card primary-card fade-in" [ngClass]="{ 'room-closed-card': roomClosed() }">
 				<mat-card-header class="card-header">
-					<mat-icon class="ov-room-icon card-icon">{{ roomClosed ? 'lock' : 'meeting_room' }}</mat-icon>
+					<mat-icon class="ov-room-icon card-icon">{{ roomClosed() ? 'lock' : 'meeting_room' }}</mat-icon>
 					<div class="card-title-group">
-						<mat-card-title>{{ roomClosed ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
+						<mat-card-title>{{ roomClosed() ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
 						<mat-card-subtitle>{{
-							roomClosed
+							roomClosed()
 								? 'This room is not available for meetings'
 								: 'Enter the room and start connecting'
 						}}</mat-card-subtitle>
 					</div>
 				</mat-card-header>
 
-				<mat-card-content class="card-content">
-					@if (!roomClosed) {
-						<form [formGroup]="participantForm" (ngSubmit)="onFormSubmit()" class="join-form">
+			<mat-card-content class="card-content">
+				@if (!roomClosed()) {
+					<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
 								<mat-label>Your display name</mat-label>
@@ -44,13 +44,13 @@
 									required
 								/>
 								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
-								@if (participantForm.get('name')?.hasError('required')) {
+								@if (participantForm().get('name')?.hasError('required')) {
 									<mat-error> The name is <strong>required</strong> </mat-error>
 								}
 							</mat-form-field>
 
 							<!-- E2EE Key Input (shown when E2EE is enabled) -->
-							@if (isE2EEEnabled) {
+							@if (isE2EEEnabled()) {
 								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
 									<mat-label>Encryption Key</mat-label>
 									<input
@@ -61,10 +61,10 @@
 										formControlName="e2eeKey"
 										required
 									/>
-									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
-									@if (participantForm.get('e2eeKey')?.hasError('required')) {
-										<mat-error> The encryption key is <strong>required</strong> </mat-error>
-									}
+								<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
+								@if (participantForm().get('e2eeKey')?.hasError('required')) {
+									<mat-error> The encryption key is <strong>required</strong> </mat-error>
+								}
 									<mat-hint>This room requires an encryption key to join</mat-hint>
 								</mat-form-field>
 							}
@@ -75,7 +75,7 @@
 								id="participant-name-submit"
 								type="submit"
 								class="join-button"
-								[disabled]="!participantForm.valid"
+								[disabled]="!participantForm().valid"
 							>
 								<span>Join Meeting</span>
 							</button>
@@ -93,7 +93,7 @@
 			</mat-card>
 
 			<!-- View Recordings Card -->
-			@if (showRecordingCard) {
+			@if (showRecordingCard()) {
 				<mat-card class="action-card secondary-card fade-in-delayed">
 					<mat-card-header class="card-header">
 						<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
@@ -126,16 +126,16 @@
 		</div>
 
 		<!-- Room URL Badge -->
-		@if (!roomClosed && showShareLink) {
-			<ov-share-meeting-link [meetingUrl]="meetingUrl" (copyClicked)="onCopyLinkClick()"></ov-share-meeting-link>
+		@if (!roomClosed() && showShareLink()) {
+			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()"></ov-share-meeting-link>
 		}
 
 		<!-- Quick Actions -->
-		@if (showBackButton) {
+		@if (showBackButton()) {
 			<div class="quick-actions fade-in-delayed-more">
 				<button mat-button class="quick-action-button" (click)="onBackClick()">
 					<mat-icon>arrow_back</mat-icon>
-					<span>{{ backButtonText }}</span>
+					<span>{{ backButtonText() }}</span>
 				</button>
 			</div>
 		}

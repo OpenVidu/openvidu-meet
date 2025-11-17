@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpReq
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, Observable, switchMap } from 'rxjs';
-import { AuthService, RoomMemberService, RoomService, TokenStorageService } from '../services';
+import { AuthService, MeetingContextService, RoomMemberService, RoomService, TokenStorageService } from '../services';
 
 /**
  * Adds all necessary authorization headers to the request based on available tokens
@@ -34,7 +34,7 @@ const addAuthHeadersIfNeeded = (
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router: Router = inject(Router);
 	const authService: AuthService = inject(AuthService);
-	const roomService = inject(RoomService);
+	const meetingContextService = inject(MeetingContextService);
 	const roomMemberService = inject(RoomMemberService);
 	const tokenStorageService = inject(TokenStorageService);
 
@@ -72,8 +72,10 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	const refreshRoomMemberToken = (firstError: HttpErrorResponse): Observable<HttpEvent<unknown>> => {
 		console.log('Refreshing room member token...');
-		const roomId = roomService.getRoomId();
-		const secret = roomService.getRoomSecret();
+		const roomId = meetingContextService.roomId();
+		if (!roomId) throw new Error('Cannot refresh room member token: room ID is undefined');
+		const secret = meetingContextService.roomSecret();
+		if (!secret) throw new Error('Cannot refresh room member token: room secret is undefined');
 		const participantName = roomMemberService.getParticipantName();
 		const participantIdentity = roomMemberService.getParticipantIdentity();
 		const grantJoinMeetingPermission = !!participantIdentity; // Grant join permission if identity is set

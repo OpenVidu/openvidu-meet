@@ -7,7 +7,7 @@ import { RoomService } from '../services/room.service';
  * Guard that prevents editing a room when there's an active meeting.
  * Redirects to /rooms if the room has an active meeting.
  */
-export const checkRoomEditGuard: CanActivateFn = async (route) => {
+export const checkEditableRoomGuard: CanActivateFn = async (route) => {
 	const roomService = inject(RoomService);
 	const router = inject(Router);
 

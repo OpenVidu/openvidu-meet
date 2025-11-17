@@ -1,0 +1,67 @@
+<ng-template #template let-participantContext="participant" let-localParticipant="localParticipant">
+	@let ctx = getDisplayProperties(participantContext, localParticipant);
+
+	<div class="participant-item-container">
+		<ov-participant-panel-item [participant]="participantContext">
+			<!-- Moderator Badge -->
+			<ng-container *ovParticipantPanelParticipantBadge>
+				@if (ctx.showModeratorBadge) {
+					<span class="moderator-badge" [attr.id]="'moderator-badge-' + participantContext.sid">
+						<mat-icon [matTooltip]="moderatorBadgeTooltip" class="material-symbols-outlined">
+							shield_person
+						</mat-icon>
+					</span>
+				}
+			</ng-container>
+
+			<!-- Moderation Controls -->
+			@if (ctx.showModerationControls) {
+				<div
+					*ovParticipantPanelItemElements
+					class="moderation-controls"
+					[attr.id]="'moderation-controls-' + participantContext.sid"
+				>
+					<!-- Make Moderator Button -->
+					@if (ctx.showMakeModeratorButton) {
+						<button
+							mat-icon-button
+							(click)="onMakeModeratorClick(participantContext, localParticipant)"
+							[matTooltip]="makeModeratorTooltip"
+							class="make-moderator-btn"
+							[attr.id]="'make-moderator-btn-' + participantContext.sid"
+						>
+							<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+						</button>
+					}
+
+					<!-- Unmake Moderator Button -->
+					@if (ctx.showUnmakeModeratorButton) {
+						<button
+							mat-icon-button
+							(click)="onUnmakeModeratorClick(participantContext, localParticipant)"
+							[matTooltip]="unmakeModeratorTooltip"
+							class="remove-moderator-btn"
+							[attr.id]="'remove-moderator-btn-' + participantContext.sid"
+						>
+							<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
+						</button>
+					}
+
+					<!-- Kick Participant Button -->
+					@if (ctx.showKickButton) {
+						<button
+							mat-icon-button
+							(click)="onKickParticipantClick(participantContext, localParticipant)"
+							[matTooltip]="kickParticipantTooltip"
+							class="force-disconnect-btn"
+							[attr.id]="'kick-participant-btn-' + participantContext.sid"
+						>
+							<mat-icon>call_end</mat-icon>
+						</button>
+					}
+				</div>
+			}
+		</ov-participant-panel-item>
+	</div>
+</ng-template>
+

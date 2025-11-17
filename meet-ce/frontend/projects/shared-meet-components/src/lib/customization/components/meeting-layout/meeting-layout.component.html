@@ -1,0 +1,23 @@
+@if (meetingContextService.lkRoom()) {
+	<ov-layout [ovRemoteParticipants]="filteredRemoteParticipants()">
+		@if (showMeetingLinkOverlay()) {
+			<ng-container *ovLayoutAdditionalElements>
+				<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
+					<ov-share-meeting-link
+						class="main-share-meeting-link"
+						[title]="linkOverlayTitle"
+						[subtitle]="linkOverlaySubtitle"
+						[titleSize]="linkOverlayTitleSize"
+						[titleWeight]="linkOverlayTitleWeight"
+						[meetingUrl]="meetingUrl()"
+						(copyClicked)="onCopyMeetingLinkClicked()"
+					></ov-share-meeting-link>
+				</div>
+			</ng-container>
+		}
+
+		<ng-template #stream let-track>
+			<ov-stream [track]="track"></ov-stream>
+		</ng-template>
+	</ov-layout>
+}

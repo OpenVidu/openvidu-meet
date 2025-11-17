@@ -1,0 +1,5 @@
+@if (showShareLink()) {
+	<div class="share-meeting-link-container">
+		<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyClicked()"></ov-share-meeting-link>
+	</div>
+}

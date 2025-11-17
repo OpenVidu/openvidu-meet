@@ -14,18 +14,11 @@ export * from './wizard-nav/wizard-nav.component';
 export * from './share-meeting-link/share-meeting-link.component';
 
 // Meeting modular components
-export * from './meeting-toolbar-buttons/meeting-toolbar-buttons.component';
-export * from './meeting-participant-panel/meeting-participant-panel.component';
-export * from './meeting-share-link-panel/meeting-share-link-panel.component';
 export * from './meeting-share-link-overlay/meeting-share-link-overlay.component';
 export * from './meeting-lobby/meeting-lobby.component';
-export * from './meeting-layout/meeting-layout.component';
 
 
 // Meeting components
-export * from './meeting-toolbar-buttons/meeting-toolbar-buttons.component';
-export * from './meeting-participant-panel/meeting-participant-panel.component';
-export * from './meeting-share-link-panel/meeting-share-link-panel.component';
 export * from './meeting-share-link-overlay/meeting-share-link-overlay.component';
 export * from './meeting-lobby/meeting-lobby.component';
 

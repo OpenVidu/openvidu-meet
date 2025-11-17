@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { ErrorReason } from '../models';
-import { NavigationService, RecordingService, RoomMemberService, RoomService } from '../services';
+import { MeetingContextService, NavigationService, RecordingService, RoomMemberService } from '../services';
 
 /**
  * Guard to validate access to a room by generating a room member token.
@@ -31,12 +31,20 @@ export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
  * @returns True if access is granted, or UrlTree for redirection
  */
 const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPermissions = false) => {
-	const roomService = inject(RoomService);
 	const roomMemberService = inject(RoomMemberService);
 	const navigationService = inject(NavigationService);
+	const meetingContextService = inject(MeetingContextService);
 
-	const roomId = roomService.getRoomId();
-	const secret = roomService.getRoomSecret();
+	const roomId = meetingContextService.roomId();
+	if (!roomId) {
+		console.error('Cannot validate room access: room ID is undefined');
+		return navigationService.redirectToErrorPage(ErrorReason.INVALID_ROOM);
+	}
+	const secret = meetingContextService.roomSecret();
+	if (!secret) {
+		console.error('Cannot validate room access: room secret is undefined');
+		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
+	}
 
 	try {
 		await roomMemberService.generateToken(roomId, {

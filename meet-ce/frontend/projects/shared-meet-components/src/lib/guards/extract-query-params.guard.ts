@@ -2,11 +2,12 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import { ErrorReason } from '../models';
-import { AppDataService, NavigationService, RoomMemberService, RoomService, SessionStorageService } from '../services';
+import { AppDataService, MeetingContextService, NavigationService, RoomMemberService, RoomService, SessionStorageService } from '../services';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const roomService = inject(RoomService);
+	const meetingContextService = inject(MeetingContextService);
 	const roomMemberService = inject(RoomMemberService);
 	const sessionStorageService = inject(SessionStorageService);
 
@@ -33,7 +34,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 	roomService.setRoomSecret(secret);
 
 	if (e2eeKey) {
-		roomService.setE2EEKey(e2eeKey);
+		meetingContextService.setE2eeKey(e2eeKey);
 	}
 
 	if (participantName) {

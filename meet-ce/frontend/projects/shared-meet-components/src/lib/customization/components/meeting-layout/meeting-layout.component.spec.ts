@@ -8,8 +8,8 @@ import {
 	OpenViduService
 } from 'openvidu-components-angular';
 import { MeetingLayoutComponent } from './meeting-layout.component';
-import { MeetLayoutService } from '../../services/layout.service';
-import { MeetLayoutMode } from '../../models/layout.model';
+import { MeetLayoutService } from '../../../services/layout.service';
+import { MeetLayoutMode } from '../../../models/layout.model';
 
 describe('MeetingLayoutComponent', () => {
 	let component: MeetingLayoutComponent;

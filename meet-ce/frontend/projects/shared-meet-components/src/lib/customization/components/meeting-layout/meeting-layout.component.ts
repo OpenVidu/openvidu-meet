@@ -1,18 +1,13 @@
-import { Component, signal, computed, effect, inject, DestroyRef, input, untracked, Type } from '@angular/core';
-import { NgComponentOutlet } from '@angular/common';
+import { Component, signal, computed, effect, inject, DestroyRef, input, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Participant } from 'livekit-client';
-import {
-	ParticipantModel,
-	LoggerService,
-	ParticipantService,
-	OpenViduService,
-	ILogger,
-	OpenViduComponentsUiModule
-} from 'openvidu-components-angular';
-import { MeetLayoutMode } from '../../models/layout.model';
-import { MeetLayoutService } from '../../services/layout.service';
-import { MEETING_COMPONENTS_TOKEN, MeetingComponentsPlugins } from '../../customization';
+import { LoggerService, OpenViduService, ILogger, OpenViduComponentsUiModule } from 'openvidu-components-angular';
+import { MeetLayoutMode } from '../../../models/layout.model';
+import { CustomParticipantModel } from '../../../models';
+import { MeetLayoutService } from '../../../services/layout.service';
+import { MeetingContextService } from '../../../services/meeting/meeting-context.service';
+import { ShareMeetingLinkComponent } from '../../../components/share-meeting-link/share-meeting-link.component';
+import { MeetingService } from '../../../services/meeting/meeting.service';
 
 /**
  * MeetingLayoutComponent - Intelligent layout component for scalable video conferencing
@@ -22,42 +17,39 @@ import { MEETING_COMPONENTS_TOKEN, MeetingComponentsPlugins } from '../../custom
  */
 @Component({
 	selector: 'ov-meeting-layout',
-	imports: [OpenViduComponentsUiModule, NgComponentOutlet],
+	imports: [OpenViduComponentsUiModule, ShareMeetingLinkComponent],
 	templateUrl: './meeting-layout.component.html',
 	styleUrl: './meeting-layout.component.scss'
 })
 export class MeetingLayoutComponent {
-	plugins: MeetingComponentsPlugins = inject(MEETING_COMPONENTS_TOKEN, { optional: true }) || {};
-
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly layoutService = inject(MeetLayoutService);
-	private readonly participantService = inject(ParticipantService);
-	private readonly openviduService = inject(OpenViduService);
+	protected readonly openviduService = inject(OpenViduService);
+	protected meetingContextService = inject(MeetingContextService);
+	protected meetingService = inject(MeetingService);
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly log: ILogger = this.loggerSrv.get('MeetingLayoutComponent');
+	protected readonly linkOverlayTitle = 'Start collaborating';
+	protected readonly linkOverlaySubtitle = 'Share this link to bring others into the meeting';
+	protected readonly linkOverlayTitleSize: 'sm' | 'md' | 'lg' | 'xl' = 'xl';
+	protected readonly linkOverlayTitleWeight: 'normal' | 'bold' = 'bold';
 
 	/**
 	 * Maximum number of active remote speakers to show in the layout when the last speakers layout is enabled.
-	 * Higher values provide more context but may impact performance on lower-end devices.
-	 * @default 4
 	 */
 	readonly maxRemoteSpeakers = input<number>(4);
 
-	/**
-	 * Optional component to render additional elements in the layout (e.g., share link overlay)
-	 * This allows plugins to inject custom UI elements into the layout.
-	 */
-	readonly additionalElementsComponent = input<Type<any> | undefined>(undefined);
-
-	/**
-	 * Inputs to pass to the additional elements component
-	 */
-	readonly additionalElementsInputs = input<any>(undefined);
-
-	// Reactive state with Signals
-	private readonly remoteParticipants = toSignal(this.participantService.remoteParticipants$, {
-		initialValue: [] as ParticipantModel[]
+	protected meetingUrl = computed(() => {
+		return this.meetingContextService.meetingUrl();
 	});
+
+	protected showMeetingLinkOverlay = computed(() => {
+		const remoteParticipants = this.meetingContextService.remoteParticipants();
+		return this.meetingContextService.canModerateRoom() && remoteParticipants.length === 0;
+	});
+
+	// Reactive state with Signals - now using MeetingContextService
+	private readonly remoteParticipants = computed(() => this.meetingContextService.remoteParticipants());
 
 	private readonly layoutMode = toSignal(this.layoutService.layoutMode$, {
 		initialValue: MeetLayoutMode.LAST_SPEAKERS
@@ -103,7 +95,7 @@ export class MeetingLayoutComponent {
 		// Filter active speakers that still exist in remote participants
 		const validActiveSpeakers = activeSpeakersOrder
 			.map((identity) => participantsMap.get(identity))
-			.filter((p): p is ParticipantModel => p !== undefined)
+			.filter((p): p is CustomParticipantModel => p !== undefined)
 			.slice(-maxSpeakers); // Take last N speakers (most recent)
 
 		// If we have fewer active speakers than max, fill with additional participants
@@ -120,8 +112,12 @@ export class MeetingLayoutComponent {
 	});
 
 	constructor() {
-		// Setup active speakers listener
-		this.setupActiveSpeakersListener();
+		effect(() => {
+			const lkRoom = this.meetingContextService.lkRoom();
+			if (lkRoom) {
+				this.setupActiveSpeakersListener();
+			}
+		});
 
 		// Effect to log layout mode changes (development only)
 		effect(() => {
@@ -157,17 +153,30 @@ export class MeetingLayoutComponent {
 		});
 	}
 
+	protected onCopyMeetingLinkClicked(): void {
+		const room = this.meetingContextService.meetRoom();
+		if (!room) {
+			this.log.e('Cannot copy link: meeting room is undefined');
+			return;
+		}
+
+		this.meetingService.copyMeetingSpeakerLink(room);
+	}
+
 	/**
 	 * Sets up the listener for active speakers changes from LiveKit
 	 * Uses efficient Set operations and early returns for performance
 	 */
 	private setupActiveSpeakersListener(): void {
 		const room = this.openviduService.getRoom();
+		if (!room) {
+			this.log.e('Cannot setup active speakers listener: room is undefined');
+			return;
+		}
 
 		// Register cleanup on component destroy
 		this.destroyRef.onDestroy(() => {
 			room.off('activeSpeakersChanged', this.handleActiveSpeakersChanged);
-			this.log.d('Active speakers listener cleaned up');
 		});
 
 		room.on('activeSpeakersChanged', this.handleActiveSpeakersChanged);

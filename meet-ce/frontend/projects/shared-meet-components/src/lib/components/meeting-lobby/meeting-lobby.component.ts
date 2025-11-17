@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Component, computed, inject } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ShareMeetingLinkComponent } from '../../components';
+import { MeetingLobbyService } from '../../services/meeting/meeting-lobby.service';
+import { MeetingService } from '../../services/meeting/meeting.service';
 
 /**
  * Reusable component for the meeting lobby page.
@@ -29,121 +31,36 @@ import { ShareMeetingLinkComponent } from '../../components';
 	]
 })
 export class MeetingLobbyComponent {
-	/**
-	 * The room name to display
-	 */
-	@Input({ required: true }) roomName = '';
+	protected lobbyService = inject(MeetingLobbyService);
+	protected meetingService = inject(MeetingService);
 
-	/**
-	 * The meeting URL to share
-	 */
-	@Input() meetingUrl = '';
+	protected roomName = computed(() => this.lobbyService.state().room?.roomName);
+	protected meetingUrl = computed(() => this.lobbyService.meetingUrl());
+	protected roomClosed = computed(() => this.lobbyService.state().roomClosed);
+	protected showRecordingCard = computed(() => this.lobbyService.state().showRecordingCard);
+	protected showShareLink = computed(() => {
+		const state = this.lobbyService.state();
+		const canModerate = this.lobbyService.canModerateRoom();
+		return !!state.room && !state.roomClosed && canModerate;
+	});
+	protected showBackButton = computed(() => this.lobbyService.state().showBackButton);
+	protected backButtonText = computed(() => this.lobbyService.state().backButtonText);
+	protected isE2EEEnabled = computed(() => this.lobbyService.state().hasRoomE2EEEnabled);
+	protected participantForm = computed(() => this.lobbyService.state().participantForm);
 
-	/**
-	 * Whether the room is closed
-	 */
-	@Input() roomClosed = false;
-
-	/**
-	 * Whether to show the recording card
-	 */
-	@Input() showRecordingCard = false;
-
-	/**
-	 * Whether to show the share meeting link component
-	 */
-	@Input() showShareLink = false;
-
-	/**
-	 * Whether to show the back button
-	 */
-	@Input() showBackButton = false;
-
-	/**
-	 * Back button text
-	 */
-	@Input() backButtonText = 'Back';
-
-	/**
-	 * Whether E2EE is enabled for the meeting
-	 */
-	@Input() isE2EEEnabled = false;
-
-	/**
-	 * The participant form group
-	 */
-	@Input({ required: true }) participantForm!: FormGroup;
-
-	/**
-	 * Emitted when the form is submitted
-	 */
-	@Output() formSubmitted = new EventEmitter<void>();
-
-	/**
-	 * Emitted when the view recordings button is clicked
-	 */
-	@Output() viewRecordingsClicked = new EventEmitter<void>();
-
-	/**
-	 * Emitted when the back button is clicked
-	 */
-	@Output() backClicked = new EventEmitter<void>();
-
-	/**
-	 * Emitted when the copy link button is clicked
-	 */
-	@Output() copyLinkClicked = new EventEmitter<void>();
-
-	/**
-	 * Alternative to @Output: Function to call when form is submitted
-	 * When using NgComponentOutlet, use this instead of the @Output above
-	 */
-	@Input() formSubmittedFn?: () => void;
-
-	/**
-	 * Alternative to @Output: Function to call when view recordings is clicked
-	 */
-	@Input() viewRecordingsClickedFn?: () => void;
-
-	/**
-	 * Alternative to @Output: Function to call when back button is clicked
-	 */
-	@Input() backClickedFn?: () => void;
-
-	/**
-	 * Alternative to @Output: Function to call when copy link is clicked
-	 */
-	@Input() copyLinkClickedFn?: () => void;
-
-	onFormSubmit(): void {
-		if (this.formSubmittedFn) {
-			this.formSubmittedFn();
-		} else {
-			this.formSubmitted.emit();
-		}
+	async onFormSubmit(): Promise<void> {
+		await this.lobbyService.submitAccess();
 	}
 
-	onViewRecordingsClick(): void {
-		if (this.viewRecordingsClickedFn) {
-			this.viewRecordingsClickedFn();
-		} else {
-			this.viewRecordingsClicked.emit();
-		}
+	async onViewRecordingsClick(): Promise<void> {
+		await this.lobbyService.goToRecordings();
 	}
 
-	onBackClick(): void {
-		if (this.backClickedFn) {
-			this.backClickedFn();
-		} else {
-			this.backClicked.emit();
-		}
+	async onBackClick(): Promise<void> {
+		await this.lobbyService.goBack();
 	}
 
 	onCopyLinkClick(): void {
-		if (this.copyLinkClickedFn) {
-			this.copyLinkClickedFn();
-		} else {
-			this.copyLinkClicked.emit();
-		}
+		this.lobbyService.copyMeetingSpeakerLink();
 	}
 }

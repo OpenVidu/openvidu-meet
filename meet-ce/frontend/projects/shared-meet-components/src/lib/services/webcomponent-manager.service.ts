@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -6,7 +6,7 @@ import {
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
-import { MeetingService, RoomMemberService, RoomService } from '../services';
+import { MeetingContextService, MeetingService, RoomMemberService } from '../services';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
@@ -23,14 +23,13 @@ export class WebComponentManagerService {
 	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
 
 	protected log;
+	protected readonly meetingContextService = inject(MeetingContextService);
+	protected readonly roomMemberService = inject(RoomMemberService);
+	protected readonly openviduService = inject(OpenViduService);
+	protected readonly meetingService = inject(MeetingService);
+	protected readonly loggerService = inject(LoggerService);
 
-	constructor(
-		protected loggerService: LoggerService,
-		protected roomMemberService: RoomMemberService,
-		protected openviduService: OpenViduService,
-		protected roomService: RoomService,
-		protected meetingService: MeetingService
-	) {
+	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
 	}
@@ -122,7 +121,8 @@ export class WebComponentManagerService {
 
 				try {
 					this.log.d('Ending meeting...');
-					const roomId = this.roomService.getRoomId();
+					const roomId = this.meetingContextService.roomId();
+					if (!roomId) throw new Error('Room ID is undefined while trying to end meeting');
 					await this.meetingService.endMeeting(roomId);
 				} catch (error) {
 					this.log.e('Error ending meeting:', error);
@@ -148,7 +148,8 @@ export class WebComponentManagerService {
 
 				try {
 					this.log.d(`Kicking participant '${participantIdentity}' from the meeting...`);
-					const roomId = this.roomService.getRoomId();
+					const roomId = this.meetingContextService.roomId();
+					if (!roomId) throw new Error('Room ID is undefined while trying to kick participant');
 					await this.meetingService.kickParticipant(roomId, participantIdentity);
 				} catch (error) {
 					this.log.e(`Error kicking participant '${participantIdentity}':`, error);

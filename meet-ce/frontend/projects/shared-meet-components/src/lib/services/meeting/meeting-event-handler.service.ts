@@ -21,10 +21,10 @@ import {
 import { CustomParticipantModel } from '../../models';
 import {
 	FeatureConfigurationService,
+	MeetingContextService,
 	NavigationService,
 	RecordingService,
 	RoomMemberService,
-	RoomService,
 	SessionStorageService,
 	TokenStorageService,
 	WebComponentManagerService
@@ -33,38 +33,19 @@ import {
 /**
  * Service that handles all LiveKit/OpenVidu room events.
  *
- * This service encapsulates all event handling logic previously in MeetingComponent,
- * providing a clean separation of concerns and making the component more maintainable.
- *
- * Responsibilities:
- * - Setup and manage room event listeners
- * - Handle data received events (recording stopped, config updates, role changes)
- * - Handle participant lifecycle events (connected, left)
- * - Handle recording events (start, stop)
- * - Map technical reasons to user-friendly reasons
- * - Manage meeting ended state
- * - Navigate to disconnected page with appropriate reason
- *
- * Benefits:
- * - Reduces MeetingComponent size by ~200 lines
- * - All event logic in one place (easier to test and maintain)
- * - Clear API for event handling
- * - Reusable across different components if needed
+ * This service encapsulates all event handling logic and updates the MeetingContextService
+ * as the single source of truth for meeting state.
  */
 @Injectable()
 export class MeetingEventHandlerService {
-	// Injected services
+	protected meetingContext = inject(MeetingContextService);
 	protected featureConfService = inject(FeatureConfigurationService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberService = inject(RoomMemberService);
-	protected roomService = inject(RoomService);
 	protected sessionStorageService = inject(SessionStorageService);
 	protected tokenStorageService = inject(TokenStorageService);
 	protected wcManagerService = inject(WebComponentManagerService);
 	protected navigationService = inject(NavigationService);
-
-	// Internal state
-	private meetingEndedByMe = false;
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -75,21 +56,16 @@ export class MeetingEventHandlerService {
 	 * This is the main entry point for room event handling.
 	 *
 	 * @param room The LiveKit Room instance
-	 * @param context Context object containing all necessary data and callbacks
 	 */
-	setupRoomListeners(
-		room: Room,
-		context: {
-			roomId: string;
-			roomSecret: string;
-			participantName: string;
-			localParticipant: () => CustomParticipantModel | undefined;
-			remoteParticipants: () => CustomParticipantModel[];
-			onHasRecordingsChanged: (hasRecordings: boolean) => void;
-			onRoomSecretChanged: (secret: string) => void;
-			onParticipantRoleUpdated?: () => void;
-		}
-	): void {
+	setupRoomListeners(room: Room): void {
+		this.setupDataReceivedListener(room);
+	}
+
+	/**
+	 * Sets up the DataReceived event listener for handling room signals
+	 * @param room The LiveKit Room instance
+	 */
+	private setupDataReceivedListener(room: Room): void {
 		room.on(
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
@@ -109,24 +85,17 @@ export class MeetingEventHandlerService {
 
 					switch (topic) {
 						case 'recordingStopped':
-							// Notify that recordings are now available
-							context.onHasRecordingsChanged(true);
+							// Update hasRecordings in MeetingContextService
+							this.meetingContext.setHasRecordings(true);
 							break;
 
 						case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
-							await this.handleRoomConfigUpdated(event, context.roomId, context.roomSecret);
+							// Room cannot be updated if a meeting is ongoing
+							// await this.handleRoomConfigUpdated(event);
 							break;
 
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-							await this.handleParticipantRoleUpdated(
-								event,
-								context.roomId,
-								context.participantName,
-								context.localParticipant,
-								context.remoteParticipants,
-								context.onRoomSecretChanged,
-								context.onParticipantRoleUpdated
-							);
+							await this.handleParticipantRoleUpdated(event);
 							break;
 					}
 				} catch (error) {
@@ -170,7 +139,8 @@ export class MeetingEventHandlerService {
 		let leftReason = this.mapLeftReason(event.reason);
 
 		// If meeting was ended by this user, update reason
-		if (leftReason === LeftEventReason.MEETING_ENDED && this.meetingEndedByMe) {
+		const meetingEndedBy = this.meetingContext.meetingEndedBy();
+		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBy === 'self') {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
@@ -236,16 +206,6 @@ export class MeetingEventHandlerService {
 		}
 	};
 
-	/**
-	 * Sets the "meeting ended by me" flag.
-	 * This is used to differentiate between meeting ended by this user vs ended by someone else.
-	 *
-	 * @param value True if this user ended the meeting
-	 */
-	setMeetingEndedByMe(value: boolean): void {
-		this.meetingEndedByMe = value;
-	}
-
 	// ============================================
 	// PRIVATE METHODS - Event Handlers
 	// ============================================
@@ -253,12 +213,9 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles room config updated event.
 	 * Updates feature config and refreshes room member token if needed.
+	 * Obtains roomId and roomSecret from MeetingContextService.
 	 */
-	private async handleRoomConfigUpdated(
-		event: MeetRoomConfigUpdatedPayload,
-		roomId: string,
-		roomSecret: string
-	): Promise<void> {
+	private async handleRoomConfigUpdated(event: MeetRoomConfigUpdatedPayload): Promise<void> {
 		const { config } = event;
 
 		// Update feature configuration
@@ -267,8 +224,16 @@ export class MeetingEventHandlerService {
 		// Refresh room member token if recording is enabled
 		if (config.recording.enabled) {
 			try {
+				const roomId = this.meetingContext.roomId();
+				const roomSecret = this.meetingContext.roomSecret();
 				const participantName = this.roomMemberService.getParticipantName();
 				const participantIdentity = this.roomMemberService.getParticipantIdentity();
+
+				if (!roomId || !roomSecret) {
+					console.error('Room ID or secret not available for token refresh');
+					return;
+				}
+
 				await this.roomMemberService.generateToken(roomId, {
 					secret: roomSecret,
 					grantJoinMeetingPermission: true,
@@ -284,26 +249,21 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles participant role updated event.
 	 * Updates local or remote participant role and refreshes room member token if needed.
+	 * Obtains all necessary data from MeetingContextService.
 	 */
-	private async handleParticipantRoleUpdated(
-		event: MeetParticipantRoleUpdatedPayload,
-		roomId: string,
-		participantName: string,
-		localParticipant: () => CustomParticipantModel | undefined,
-		remoteParticipants: () => CustomParticipantModel[],
-		onRoomSecretChanged: (secret: string) => void,
-		onParticipantRoleUpdated?: () => void
-	): Promise<void> {
+	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
 		const { participantIdentity, newRole, secret } = event;
-		const local = localParticipant();
+		const roomId = this.meetingContext.roomId();
+		const local = this.meetingContext.localParticipant();
+		const participantName = this.roomMemberService.getParticipantName();
 
 		// Check if the role update is for the local participant
 		if (local && participantIdentity === local.identity) {
-			if (!secret) return;
+			if (!secret || !roomId) return;
 
-			// Update room secret
-			onRoomSecretChanged(secret);
-			this.roomService.setRoomSecret(secret, false);
+			// Update room secret in context
+			this.meetingContext.setRoomSecret(secret);
+			this.sessionStorageService.setRoomSecret(secret);
 
 			try {
 				// Refresh participant token with new role
@@ -318,19 +278,20 @@ export class MeetingEventHandlerService {
 				local.meetRole = newRole;
 				console.log(`You have been assigned the role of ${newRole}`);
 
-				// Notify component that participant role was updated
-				onParticipantRoleUpdated?.();
+				// Increment version to trigger reactivity
+				this.meetingContext.incrementParticipantsVersion();
 			} catch (error) {
 				console.error('Error refreshing room member token:', error);
 			}
 		} else {
 			// Update remote participant role
-			const participant = remoteParticipants().find((p) => p.identity === participantIdentity);
+			const remoteParticipants = this.meetingContext.remoteParticipants();
+			const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
 			if (participant) {
 				participant.meetRole = newRole;
 
-				// Notify component that participant role was updated
-				onParticipantRoleUpdated?.();
+				// Increment version to trigger reactivity
+				this.meetingContext.incrementParticipantsVersion();
 			}
 		}
 	}

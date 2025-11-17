@@ -1,8 +1,8 @@
-@if (showPrejoin) {
-	<!-- Prejoin screen (Lobby) -->
-	@if (prejoinReady && plugins.lobby) {
-		<ng-container [ngComponentOutlet]="plugins.lobby" [ngComponentOutletInputs]="lobbyInputs()"> </ng-container>
-	} @else if (!prejoinReady) {
+@if (showLobby) {
+	<!-- Lobby phase (before joining meeting) -->
+	@if (isLobbyReady) {
+		<ov-meeting-lobby></ov-meeting-lobby>
+	} @else if (!isLobbyReady) {
 		<div class="prejoin-loading-container">
 			<mat-spinner diameter="30"></mat-spinner>
 			<p class="prejoin-loading-text">Preparing your meeting...</p>
@@ -10,24 +10,24 @@
 	} @else {
 		<div class="prejoin-error-container">
 			<mat-icon class="prejoin-error-icon">error_outline</mat-icon>
-			<p class="prejoin-error-text">Unable to load the pre-join screen. Please try reloading the page.</p>
+			<p class="prejoin-error-text">Unable to load the lobby. Please try reloading the page.</p>
 		</div>
 	}
 } @else {
 	<ov-videoconference
-		[token]="roomMemberToken"
+		[token]="roomMemberToken()!"
 		[prejoin]="true"
 		[prejoinDisplayParticipantName]="false"
 		[videoEnabled]="features().videoEnabled"
 		[audioEnabled]="features().audioEnabled"
-		[e2eeKey]="e2eeKey"
-		[toolbarRoomName]="roomName"
+		[e2eeKey]="e2eeKey()"
+		[toolbarRoomName]="roomName()"
 		[toolbarCameraButton]="features().showCamera"
 		[toolbarMicrophoneButton]="features().showMicrophone"
 		[toolbarScreenshareButton]="features().showScreenShare"
 		[toolbarLeaveButton]="!features().canModerateRoom"
 		[toolbarRecordingButton]="features().canRecordRoom"
-		[toolbarViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings"
+		[toolbarViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings()"
 		[toolbarBroadcastingButton]="false"
 		[toolbarChatPanelButton]="features().showChat"
 		[toolbarBackgroundEffectsButton]="features().showBackgrounds"
@@ -43,64 +43,40 @@
 			externalView: true
 		}"
 		[recordingActivityStartStopRecordingButton]="features().canRecordRoom"
-		[recordingActivityViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings"
+		[recordingActivityViewRecordingsButton]="features().canRetrieveRecordings && hasRecordings()"
 		[recordingActivityShowRecordingsList]="false"
 		[activitiesPanelBroadcastingActivity]="false"
 		[showThemeSelector]="features().showThemeSelector"
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"
-		(onParticipantConnected)="eventHandler.onParticipantConnected($event)"
-		(onParticipantLeft)="eventHandler.onParticipantLeft($event)"
-		(onRecordingStartRequested)="eventHandler.onRecordingStartRequested($event)"
-		(onRecordingStopRequested)="eventHandler.onRecordingStopRequested($event)"
+		(onParticipantConnected)="eventHandlerService.onParticipantConnected($event)"
+		(onParticipantLeft)="eventHandlerService.onParticipantLeft($event)"
+		(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
+		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
-		<!-- Toolbar Additional Buttons Plugin -->
-		@if (plugins.toolbar?.additionalButtons) {
-			<ng-container *ovToolbarAdditionalButtons>
-				<ng-container
-					[ngComponentOutlet]="plugins.toolbar!.additionalButtons!"
-					[ngComponentOutletInputs]="toolbarAdditionalButtonsInputs()"
-				></ng-container>
-			</ng-container>
-		}
+		<!-- Toolbar Additional Buttons -->
+		<div *ovToolbarAdditionalButtons>
+			<ng-content select="ov-meeting-toolbar-buttons[slot='additional-buttons']"></ng-content>
+		</div>
 
-		<!-- Toolbar Leave Button Plugin -->
-		@if (plugins.toolbar?.leaveButton) {
-			<ng-container *ovToolbarLeaveButton>
-				<ng-container
-					[ngComponentOutlet]="plugins.toolbar!.leaveButton!"
-					[ngComponentOutletInputs]="toolbarLeaveButtonInputs()"
-				></ng-container>
-			</ng-container>
-		}
+		<!-- Share Link Panel After Local Participant -->
+		<div *ovParticipantPanelAfterLocalParticipant>
+			<ng-content select="ov-meeting-share-link-panel[slot='after-local-participant']"></ng-content>
+		</div>
 
-		<!-- Participant Panel After Local Participant Plugin -->
-		@if (plugins.participantPanel?.afterLocalParticipant) {
-			<ng-container *ovParticipantPanelAfterLocalParticipant>
-				<ng-container
-					[ngComponentOutlet]="plugins.participantPanel!.afterLocalParticipant!"
-					[ngComponentOutletInputs]="participantPanelAfterLocalInputs()"
-				></ng-container>
+		<!-- Participant Panel Item Template -->
+		<div *ovParticipantPanelItem="let participant">
+			<ng-container
+				[ngTemplateOutlet]="participantPanelItemTemplate"
+				[ngTemplateOutletContext]="{ participant: participant, localParticipant: localParticipant() }"
+			>
 			</ng-container>
-		}
+		</div>
 
-		<!-- Custom layout component (CE uses MeetingLayoutComponent directly) -->
+		<!-- Custom layout component -->
 		<ng-container *ovLayout>
-			<ov-meeting-layout
-				[additionalElementsComponent]="layoutInputs().additionalElementsComponent"
-				[additionalElementsInputs]="layoutInputs().additionalElementsInputs"
-			></ov-meeting-layout>
+			<ng-content select="ov-meeting-layout[slot='layout']"></ng-content>
 		</ng-container>
-
-		<!-- Participant Panel Item Plugin -->
-		@if (plugins.participantPanel?.item) {
-			<ng-container *ovParticipantPanelItem="let participant">
-				<ng-container
-					[ngComponentOutlet]="plugins.participantPanel!.item!"
-					[ngComponentOutletInputs]="participantPanelItemInputsMap().get(participant.identity)"
-				></ng-container>
-			</ng-container>
-		}
 	</ov-videoconference>
 }

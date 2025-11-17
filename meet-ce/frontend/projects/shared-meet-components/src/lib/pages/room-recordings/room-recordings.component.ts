@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -8,11 +8,11 @@ import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings'
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RecordingListsComponent, RecordingTableAction } from '../../components';
 import {
+	MeetingContextService,
 	NavigationService,
 	NotificationService,
 	RecordingService,
-	RoomMemberService,
-	RoomService
+	RoomMemberService
 } from '../../services';
 
 @Component({
@@ -38,15 +38,15 @@ export class RoomRecordingsComponent implements OnInit {
 
 	protected log: ILogger;
 
-	constructor(
-		protected loggerService: LoggerService,
-		protected recordingService: RecordingService,
-		protected roomService: RoomService,
-		protected roomMemberService: RoomMemberService,
-		protected notificationService: NotificationService,
-		protected navigationService: NavigationService,
-		protected route: ActivatedRoute
-	) {
+	protected readonly loggerService = inject(LoggerService);
+	protected readonly recordingService = inject(RecordingService);
+	protected readonly roomMemberService = inject(RoomMemberService);
+	protected readonly notificationService = inject(NotificationService);
+	protected readonly navigationService = inject(NavigationService);
+	protected readonly meetingContextService = inject(MeetingContextService);
+	protected readonly route = inject(ActivatedRoute);
+
+	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomRecordingsComponent');
 	}
 
@@ -76,8 +76,10 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async goBackToRoom() {
 		try {
+			const roomSecret = this.meetingContextService.roomSecret();
+			if (!roomSecret) throw new Error('Cannot navigate back to room: room secret is undefined');
 			await this.navigationService.navigateTo(`/room/${this.roomId}`, {
-				secret: this.roomService.getRoomSecret()
+				secret: roomSecret
 			});
 		} catch (error) {
 			this.log.e('Error navigating back to room:', error);

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import {
-	checkRoomEditGuard,
+	checkEditableRoomGuard,
 	checkUserAuthenticatedGuard,
 	checkUserNotAuthenticatedGuard,
 	extractRecordingQueryParamsGuard,
@@ -89,7 +89,7 @@ export const baseRoutes: Routes = [
 			{
 				path: 'rooms/:roomId/edit',
 				component: RoomWizardComponent,
-				canActivate: [checkRoomEditGuard]
+				canActivate: [checkEditableRoomGuard]
 			},
 			{
 				path: 'recordings',
