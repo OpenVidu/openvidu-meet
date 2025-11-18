@@ -4,7 +4,7 @@ import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
-import { MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
+import { MEET_BASE_URL, MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
 import { initRequestContext, jsonSyntaxErrorHandler, setBaseUrlMiddleware } from './middlewares/index.js';
 import {
 	analyticsRouter,
@@ -43,7 +43,10 @@ const createApp = () => {
 	// Serve static files
 	app.use(express.static(frontendDirectoryPath));
 
+	// Configure trust proxy based on deployment topology
+	// This is important for rate limiting and getting the real client IP
 	app.set('trust proxy', true);
+
 	app.use(express.json());
 	app.use(jsonSyntaxErrorHandler);
 	app.use(cookieParser());
@@ -54,7 +57,10 @@ const createApp = () => {
 	app.use(initRequestContext);
 
 	// Middleware to set base URL for each request
-	app.use(setBaseUrlMiddleware);
+	// Only if MEET_BASE_URL is not set
+	if (!MEET_BASE_URL) {
+		app.use(setBaseUrlMiddleware);
+	}
 
 	// Public API routes
 	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>

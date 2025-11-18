@@ -258,7 +258,11 @@ const loginLimiter = rateLimit({
 	windowMs: ms('5m'),
 	limit: 5,
 	skipSuccessfulRequests: true,
-	message: 'Too many login attempts, please try again later'
+	message: 'Too many login attempts, please try again later',
+	// Use standard draft-7 headers for better proxy compatibility
+	standardHeaders: 'draft-7',
+	// Disable legacy headers
+	legacyHeaders: false
 });
 
 export const withLoginLimiter = (req: Request, res: Response, next: NextFunction) => {
