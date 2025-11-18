@@ -50,7 +50,7 @@ export class StorageInitService {
 				return;
 			}
 
-			this.logger.info('Storage not initialized or different project detected, proceeding with initialization');
+			this.logger.info('Starting storage initialization with default data');
 
 			// Initialize all components
 			await Promise.all([
@@ -95,10 +95,11 @@ export class StorageInitService {
 				this.logger.info(
 					`Different project detected: existing='${existingProjectId}', current='${currentProjectId}'. Re-initialization required.`
 				);
+				// Clear existing config to allow re-initialization
+				await this.globalConfigRepository.delete();
 				return false;
 			}
 
-			this.logger.verbose(`Storage already initialized for project '${currentProjectId}'`);
 			return true;
 		} catch (error) {
 			this.logger.warn('Error checking storage initialization status:', error);

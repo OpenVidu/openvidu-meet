@@ -18,6 +18,14 @@ export class UserService {
 	 * Initializes the default admin user
 	 */
 	async initializeAdminUser(): Promise<void> {
+		// Check if the admin user already exists
+		const existingUser = await this.userRepository.findByUsername(MEET_INITIAL_ADMIN_USER);
+
+		if (existingUser) {
+			this.logger.info('Admin user already initialized, skipping admin user initialization');
+			return;
+		}
+
 		const admin: MeetUser = {
 			username: MEET_INITIAL_ADMIN_USER,
 			passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),

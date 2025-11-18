@@ -18,6 +18,14 @@ export class ApiKeyService {
 	 * Initializes the API key if configured
 	 */
 	async initializeApiKey(): Promise<void> {
+		// Check if there are existing API keys
+		const existingKeys = await this.apiKeyRepository.findAll();
+
+		if (existingKeys.length > 0) {
+			this.logger.info('API key already initialized, skipping API key initialization');
+			return;
+		}
+
 		// Check if initial API key is configured
 		const initialApiKey = MEET_INITIAL_API_KEY;
 

@@ -70,4 +70,14 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 		const document = await this.findOne({});
 		return document ? this.toDomain(document) : null;
 	}
+
+	/**
+	 * Deletes the global configuration.
+	 *
+	 * WARNING: This will remove the global config document from the database.
+	 * Use with caution.
+	 */
+	async delete(): Promise<void> {
+		await this.deleteMany({});
+	}
 }
