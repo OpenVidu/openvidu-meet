@@ -8,7 +8,7 @@ export interface MeetRoomOptions {
     roomName?: string;
     autoDeletionDate?: number;
     autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
-    config?: MeetRoomConfig;
+    config?: Partial<MeetRoomConfig>;
     // maxParticipants?: number | null;
 }
 

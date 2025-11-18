@@ -86,7 +86,7 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy,
-			config: config!,
+			config: config! as MeetRoomConfig,
 			moderatorUrl: `/room/${roomId}?secret=${secureUid(10)}`,
 			speakerUrl: `/room/${roomId}?secret=${secureUid(10)}`,
 			status: MeetRoomStatus.OPEN,
@@ -129,12 +129,13 @@ export class RoomService {
 
 	/**
 	 * Updates the configuration of a specific meeting room.
+	 * Supports partial updates - only provided fields will be updated.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
-	 * @param config - The new config to apply to the meeting room
+	 * @param config - Partial config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
-	async updateMeetRoomConfig(roomId: string, config: MeetRoomConfig): Promise<MeetRoom> {
+	async updateMeetRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoom> {
 		const room = await this.getMeetRoom(roomId);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
@@ -142,7 +143,11 @@ export class RoomService {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		room.config = config;
+		// Merge the partial config with the existing config
+		room.config = {
+			...room.config,
+			...config
+		};
 
 		await this.roomRepository.update(room);
 		// Send signal to frontend

@@ -5,7 +5,7 @@ export interface MeetRoomConfig {
     chat: MeetChatConfig;
     recording: MeetRecordingConfig;
     virtualBackground: MeetVirtualBackgroundConfig;
-    e2ee?: MeetE2EEConfig;
+    e2ee: MeetE2EEConfig;
     // appearance: MeetAppearanceConfig;
 }
 

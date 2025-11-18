@@ -46,8 +46,7 @@ const MeetRecordingConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: false
+			required: true
 		},
 		allowAccessTo: {
 			type: String,
@@ -65,8 +64,7 @@ const MeetChatConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: true
+			required: true
 		}
 	},
 	{ _id: false }
@@ -79,8 +77,7 @@ const MeetVirtualBackgroundConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: true
+			required: true
 		}
 	},
 	{ _id: false }
@@ -119,7 +116,8 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		e2ee: {
 			type: MeetE2EEConfigSchema,
-			required: false
+			required: true,
+			default: { enabled: false }
 		}
 	},
 	{ _id: false }

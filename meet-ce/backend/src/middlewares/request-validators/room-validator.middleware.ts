@@ -112,17 +112,20 @@ export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object(
 	themes: z.array(RoomThemeSchema).length(1, 'There must be exactly one theme defined')
 });
 
-const RoomConfigSchema: z.ZodType<MeetRoomConfig> = z
+const RoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
-		recording: RecordingConfigSchema,
-		chat: ChatConfigSchema,
-		virtualBackground: VirtualBackgroundConfigSchema,
+		recording: RecordingConfigSchema.optional().default({
+			enabled: true,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		}),
+		chat: ChatConfigSchema.optional().default({ enabled: true }),
+		virtualBackground: VirtualBackgroundConfigSchema.optional().default({ enabled: true }),
 		e2ee: E2EEConfigSchema.optional().default({ enabled: false })
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
 		// Automatically disable recording when E2EE is enabled
-		if (data.e2ee?.enabled && data.recording.enabled) {
+		if (data.e2ee.enabled && data.recording.enabled) {
 			return {
 				...data,
 				recording: {
