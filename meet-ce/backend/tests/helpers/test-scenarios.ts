@@ -41,7 +41,7 @@ export interface TestContext {
 export const setupSingleRoom = async (
 	withParticipant = false,
 	roomName = 'TEST_ROOM',
-	config?: MeetRoomConfig
+	config?: Partial<MeetRoomConfig>
 ): Promise<RoomData> => {
 	const room = await createRoom({
 		roomName,
@@ -79,7 +79,7 @@ export const setupSingleRoom = async (
 export const setupMultiRoomTestContext = async (
 	numRooms: number,
 	withParticipants: boolean,
-	roomConfig?: MeetRoomConfig
+	roomConfig?: Partial<MeetRoomConfig>
 ): Promise<TestContext> => {
 	const rooms: RoomData[] = [];
 

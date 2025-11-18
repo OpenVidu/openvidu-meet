@@ -97,12 +97,8 @@ describe('Room API Tests', () => {
 			// Update only one config field
 			const partialConfig = {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				chat: { enabled: true },
-				virtualBackground: { enabled: true },
-				e2ee: { enabled: false }
+					enabled: false
+				}
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, partialConfig);
 
@@ -113,7 +109,16 @@ describe('Room API Tests', () => {
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
 			expect(getResponse.status).toBe(200);
-			expect(getResponse.body.config).toEqual(partialConfig);
+
+			const expectedConfig: MeetRoomConfig = {
+				recording: {
+					enabled: false
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false }
+			};
+			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
 
 		it('should reject room config update when there is an active meeting', async () => {
@@ -161,26 +166,6 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Update Room Config Validation failures', () => {
-		it('should fail when config has incorrect structure', async () => {
-			const { roomId } = await createRoom({
-				roomName: 'validation-test'
-			});
-
-			// Invalid config (missing required fields)
-			const invalidConfig = {
-				recording: {
-					enabled: false
-				},
-				// Missing chat config
-				virtualBackground: { enabled: false }
-			};
-			const response = await updateRoomConfig(roomId, invalidConfig as unknown as MeetRoomConfig);
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('chat');
-		});
-
 		it('should fail when config has incorrect types', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'type-test'
@@ -200,18 +185,6 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
-		});
-
-		it('should fail when config is missing required properties', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'missing-props'
-			});
-
-			const emptyConfig = {};
-			const response = await updateRoomConfig(createdRoom.roomId, emptyConfig as unknown as MeetRoomConfig);
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
 		});
 
 		it('should fail when recording is enabled but allowAccessTo is missing', async () => {

@@ -38,7 +38,7 @@ describe('E2EE Room Configuration Tests', () => {
 
 			expectValidRoom(room, 'Test E2EE Default');
 			expect(room.config.e2ee).toBeDefined();
-			expect(room.config.e2ee?.enabled).toBe(false);
+			expect(room.config.e2ee.enabled).toBe(false);
 		});
 	});
 
@@ -60,7 +60,7 @@ describe('E2EE Room Configuration Tests', () => {
 			const room = await createRoom(payload);
 
 			expect(room.roomName).toBe('Test E2EE Enabled');
-			expect(room.config.e2ee?.enabled).toBe(true);
+			expect(room.config.e2ee.enabled).toBe(true);
 			expect(room.config.recording.enabled).toBe(false); // Recording should be disabled
 		});
 	});
@@ -68,12 +68,6 @@ describe('E2EE Room Configuration Tests', () => {
 	describe('E2EE and Recording Interaction', () => {
 		it('Should not allow starting recording in a room with E2EE enabled', async () => {
 			const context = await setupMultiRoomTestContext(1, true, {
-				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				chat: { enabled: true },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -107,15 +101,8 @@ describe('E2EE Room Configuration Tests', () => {
 
 			// Update room to enable E2EE (recording should be automatically disabled)
 			const updatedConfig = {
-				recording: {
-					enabled: true, // This should be automatically disabled
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-				},
-				chat: { enabled: true },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			};
-
 			const response = await updateRoomConfig(room.roomId, updatedConfig);
 
 			expect(response.status).toBe(200);
@@ -124,11 +111,9 @@ describe('E2EE Room Configuration Tests', () => {
 			const { status, body: config } = await getRoomConfig(room.roomId);
 
 			expect(status).toBe(200);
-			expect(config.e2ee?.enabled).toBe(true);
+			expect(config.e2ee.enabled).toBe(true);
 			expect(config.recording.enabled).toBe(false);
 		});
-
-		// TODO: Add test for enabling E2EE when there are active recordings in the room
 	});
 
 	describe('E2EE Validation Tests', () => {
@@ -185,7 +170,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test E2EE Update Enabled'
 			});
 
-			expect(room.config.e2ee?.enabled).toBe(false);
+			expect(room.config.e2ee.enabled).toBe(false);
 
 			const { status, body } = await updateRoomConfig(room.roomId, {
 				recording: {
@@ -203,7 +188,7 @@ describe('E2EE Room Configuration Tests', () => {
 			// Fetch the updated room to verify changes
 			const { body: config } = await getRoomConfig(room.roomId);
 
-			expect(config.e2ee?.enabled).toBe(true);
+			expect(config.e2ee.enabled).toBe(true);
 			expect(config.recording.enabled).toBe(false);
 		});
 	});
@@ -253,10 +238,10 @@ describe('E2EE Room Configuration Tests', () => {
 			const e2eeEnabledRoom = testRooms.find((r: MeetRoom) => r.roomId === room1.roomId);
 			const e2eeDisabledRoom = testRooms.find((r: MeetRoom) => r.roomId === room2.roomId);
 
-			expect(e2eeEnabledRoom.config.e2ee?.enabled).toBe(true);
+			expect(e2eeEnabledRoom.config.e2ee.enabled).toBe(true);
 			expect(e2eeEnabledRoom.config.recording.enabled).toBe(false);
 
-			expect(e2eeDisabledRoom.config.e2ee?.enabled).toBe(false);
+			expect(e2eeDisabledRoom.config.e2ee.enabled).toBe(false);
 			expect(e2eeDisabledRoom.config.recording.enabled).toBe(true);
 		});
 	});

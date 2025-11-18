@@ -278,7 +278,7 @@ export const getRoomConfig = async (roomId: string): Promise<Response> => {
 		.send();
 };
 
-export const updateRoomConfig = async (roomId: string, config: MeetRoomConfig) => {
+export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomConfig>) => {
 	checkAppIsRunning();
 
 	return await request(app)
@@ -292,12 +292,6 @@ export const updateRecordingAccessConfigInRoom = async (roomId: string, recordin
 		recording: {
 			enabled: true,
 			allowAccessTo: recordingAccess
-		},
-		chat: {
-			enabled: true
-		},
-		virtualBackground: {
-			enabled: true
 		}
 	});
 	expect(response.status).toBe(200);

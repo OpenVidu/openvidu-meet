@@ -79,6 +79,58 @@ describe('Room API Tests', () => {
 				payload.autoDeletionPolicy
 			);
 		});
+
+		it('Should create a room when sending partial config', async () => {
+			const payload = {
+				roomName: 'Partial Config Room',
+				autoDeletionDate: validAutoDeletionDate,
+				config: {
+					recording: {
+						enabled: false
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: false
+				},
+				chat: { enabled: true }, // Default value
+				virtualBackground: { enabled: true }, // Default value
+				e2ee: { enabled: false } // Default value
+			};
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+		});
+
+		it('Should create a room when sending partial config with two fields', async () => {
+			const payload = {
+				roomName: 'Partial Config Room',
+				autoDeletionDate: validAutoDeletionDate,
+				config: {
+					chat: {
+						enabled: false
+					},
+					virtualBackground: {
+						enabled: false
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true, // Default value
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
+				},
+				chat: { enabled: false },
+				virtualBackground: { enabled: false },
+				e2ee: { enabled: false } // Default value
+			};
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+		});
 	});
 
 	describe('Room Name Sanitization Tests', () => {
