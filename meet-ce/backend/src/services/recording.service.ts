@@ -5,7 +5,7 @@ import ms from 'ms';
 import { Readable } from 'stream';
 import { uid } from 'uid';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_S3_SUBBUCKET } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { MeetLock, RecordingHelper, UtilsHelper } from '../helpers/index.js';
 import {
 	DistributedEventType,
@@ -644,7 +644,7 @@ export class RecordingService {
 		const recordingName = `${roomId}--${uid(10)}`;
 
 		// Generate the file path with the openviud-meet subbucket and the recording prefix
-		const filepath = `${MEET_S3_SUBBUCKET}/${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${roomId}/${recordingName}`;
+		const filepath = `${MEET_ENV.S3_SUBBUCKET}/${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${roomId}/${recordingName}`;
 
 		return new EncodedFileOutput({
 			fileType: EncodedFileType.DEFAULT_FILETYPE,

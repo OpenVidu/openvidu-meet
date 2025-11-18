@@ -15,15 +15,7 @@ import {
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
-import {
-	MEET_AWS_REGION,
-	MEET_S3_ACCESS_KEY,
-	MEET_S3_BUCKET,
-	MEET_S3_SECRET_KEY,
-	MEET_S3_SERVICE_ENDPOINT,
-	MEET_S3_SUBBUCKET,
-	MEET_S3_WITH_PATH_STYLE_ACCESS
-} from '../../../../environment.js';
+import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
 
@@ -33,17 +25,17 @@ export class S3Service {
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		const config: S3ClientConfig = {
-			region: MEET_AWS_REGION,
-			endpoint: MEET_S3_SERVICE_ENDPOINT,
-			forcePathStyle: MEET_S3_WITH_PATH_STYLE_ACCESS === 'true'
+			region: MEET_ENV.AWS_REGION,
+			endpoint: MEET_ENV.S3_SERVICE_ENDPOINT,
+			forcePathStyle: MEET_ENV.S3_WITH_PATH_STYLE_ACCESS === 'true'
 		};
 
 		// Configure credentials only if both access key and secret key are provided
 		// This allow IAM Role usage without hardcoding credentials
-		if (MEET_S3_ACCESS_KEY && MEET_S3_SECRET_KEY) {
+		if (MEET_ENV.S3_ACCESS_KEY && MEET_ENV.S3_SECRET_KEY) {
 			config.credentials = {
-				accessKeyId: MEET_S3_ACCESS_KEY,
-				secretAccessKey: MEET_S3_SECRET_KEY
+				accessKeyId: MEET_ENV.S3_ACCESS_KEY,
+				secretAccessKey: MEET_ENV.S3_SECRET_KEY
 			};
 		}
 
@@ -54,7 +46,7 @@ export class S3Service {
 	/**
 	 * Checks if a file exists in the specified S3 bucket.
 	 */
-	async exists(name: string, bucket: string = MEET_S3_BUCKET): Promise<boolean> {
+	async exists(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<boolean> {
 		try {
 			await this.getObjectHeaders(name, bucket);
 			this.logger.verbose(`S3 exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
@@ -72,7 +64,7 @@ export class S3Service {
 	async saveObject(
 		name: string,
 		body: Record<string, unknown>,
-		bucket: string = MEET_S3_BUCKET
+		bucket: string = MEET_ENV.S3_BUCKET
 	): Promise<PutObjectCommandOutput> {
 		const fullKey = this.getFullKey(name);
 
@@ -99,9 +91,9 @@ export class S3Service {
 	/**
 	 * Bulk deletes objects from S3.
 	 * @param keys Array of object keys to delete
-	 * @param bucket S3 bucket name (default: MEET_S3_BUCKET)
+	 * @param bucket S3 bucket name (default: S3_BUCKET)
 	 */
-	async deleteObjects(keys: string[], bucket: string = MEET_S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
+	async deleteObjects(keys: string[], bucket: string = MEET_ENV.S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
 		try {
 			this.logger.verbose(
 				`S3 deleteObjects: attempting to delete ${keys.length} objects from bucket '${bucket}'`
@@ -129,7 +121,7 @@ export class S3Service {
 	 * @param additionalPrefix Additional prefix relative to the subbucket.
 	 * @param maxKeys Maximum number of objects to return. Defaults to 50.
 	 * @param continuationToken Token to retrieve the next page.
-	 * @param bucket Optional bucket name. Defaults to MEET_S3_BUCKET.
+	 * @param bucket Optional bucket name. Defaults to S3_BUCKET.
 	 *
 	 * @returns The ListObjectsV2CommandOutput with Keys and NextContinuationToken.
 	 */
@@ -137,7 +129,7 @@ export class S3Service {
 		additionalPrefix = '',
 		maxKeys = 50,
 		continuationToken?: string,
-		bucket: string = MEET_S3_BUCKET
+		bucket: string = MEET_ENV.S3_BUCKET
 	): Promise<ListObjectsV2CommandOutput> {
 		// The complete prefix is constructed by combining the subbucket and the additionalPrefix.
 		// Example: if s3Subbucket is "recordings" and additionalPrefix is ".metadata/",
@@ -160,7 +152,7 @@ export class S3Service {
 		}
 	}
 
-	async getObjectAsJson(name: string, bucket: string = MEET_S3_BUCKET): Promise<object | undefined> {
+	async getObjectAsJson(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<object | undefined> {
 		try {
 			const obj = await this.getObject(name, bucket);
 			const str = await obj.Body?.transformToString();
@@ -189,7 +181,7 @@ export class S3Service {
 	async getObjectAsStream(
 		name: string,
 		range?: { start: number; end: number },
-		bucket: string = MEET_S3_BUCKET
+		bucket: string = MEET_ENV.S3_BUCKET
 	): Promise<Readable> {
 		try {
 			const obj = await this.getObject(name, bucket, range);
@@ -215,7 +207,7 @@ export class S3Service {
 		}
 	}
 
-	async getObjectHeaders(name: string, bucket: string = MEET_S3_BUCKET): Promise<HeadObjectCommandOutput> {
+	async getObjectHeaders(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<HeadObjectCommandOutput> {
 		try {
 			const fullKey = this.getFullKey(name);
 			const headParams: HeadObjectCommand = new HeadObjectCommand({
@@ -247,20 +239,20 @@ export class S3Service {
 			// Check if we can access the S3 service by listing objects with a small limit
 			await this.run(
 				new ListObjectsV2Command({
-					Bucket: MEET_S3_BUCKET,
+					Bucket: MEET_ENV.S3_BUCKET,
 					MaxKeys: 1
 				})
 			);
 
 			// If we reach here, both service and bucket are accessible
-			this.logger.verbose(`S3 health check: service accessible and bucket '${MEET_S3_BUCKET}' exists`);
+			this.logger.verbose(`S3 health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
 		} catch (error: any) {
 			this.logger.error(`S3 health check failed: ${error.message}`);
 
 			// Check if it's a bucket-specific error
 			if (error.name === 'NoSuchBucket') {
-				this.logger.error(`S3 bucket '${MEET_S3_BUCKET}' does not exist`);
+				this.logger.error(`S3 bucket '${MEET_ENV.S3_BUCKET}' does not exist`);
 				return { accessible: true, bucketExists: false };
 			}
 
@@ -275,7 +267,7 @@ export class S3Service {
 	 * Otherwise, the prefix is prepended to the name.
 	 */
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_S3_SUBBUCKET}`;
+		const prefix = `${MEET_ENV.S3_SUBBUCKET}`;
 
 		if (name.startsWith(prefix)) {
 			return name;
@@ -286,7 +278,7 @@ export class S3Service {
 
 	protected async getObject(
 		name: string,
-		bucket: string = MEET_S3_BUCKET,
+		bucket: string = MEET_ENV.S3_BUCKET,
 		range?: { start: number; end: number }
 	): Promise<GetObjectCommandOutput> {
 		const fullKey = this.getFullKey(name);

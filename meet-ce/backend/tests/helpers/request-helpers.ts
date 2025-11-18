@@ -23,20 +23,14 @@ import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
 import { container, initializeEagerServices } from '../../src/config/index.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
-import {
-	LIVEKIT_API_KEY,
-	LIVEKIT_API_SECRET,
-	MEET_INITIAL_ADMIN_PASSWORD,
-	MEET_INITIAL_ADMIN_USER,
-	MEET_INITIAL_API_KEY
-} from '../../src/environment.js';
+import { MEET_ENV } from '../../src/environment.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService, GlobalConfigService, RecordingService, RoomService } from '../../src/services/index.js';
 
 const CREDENTIALS = {
 	admin: {
-		username: MEET_INITIAL_ADMIN_USER,
-		password: MEET_INITIAL_ADMIN_PASSWORD
+		username: MEET_ENV.INITIAL_ADMIN_USER,
+		password: MEET_ENV.INITIAL_ADMIN_PASSWORD
 	}
 };
 
@@ -231,7 +225,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(options)
 		.expect(201);
 	return response.body;
@@ -242,7 +236,7 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
 
@@ -263,7 +257,7 @@ export const getRoom = async (roomId: string, fields?: string, roomMemberToken?:
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	} else {
-		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}
 
 	return await req;
@@ -274,7 +268,7 @@ export const getRoomConfig = async (roomId: string): Promise<Response> => {
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 };
 
@@ -283,7 +277,7 @@ export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomC
 
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ config });
 };
 
@@ -302,7 +296,7 @@ export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) =
 
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ status });
 };
 
@@ -311,7 +305,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, unknown> 
 
 	const result = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 	await sleep('1s');
 	return result;
@@ -322,7 +316,7 @@ export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, w
 
 	const result = await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
 	await sleep('1s');
 	return result;
@@ -434,9 +428,9 @@ export const joinFakeParticipant = async (roomId: string, participantIdentity: s
 		'--publish-demo',
 		roomId,
 		'--api-key',
-		LIVEKIT_API_KEY,
+		MEET_ENV.LIVEKIT_API_KEY,
 		'--api-secret',
-		LIVEKIT_API_SECRET
+		MEET_ENV.LIVEKIT_API_SECRET
 	]);
 
 	// Store the process to be able to terminate it later
@@ -468,9 +462,9 @@ export const updateParticipantMetadata = async (
 		'--metadata',
 		JSON.stringify(metadata),
 		'--api-key',
-		LIVEKIT_API_KEY,
+		MEET_ENV.LIVEKIT_API_KEY,
 		'--api-secret',
-		LIVEKIT_API_SECRET
+		MEET_ENV.LIVEKIT_API_SECRET
 	]);
 	await sleep('1s');
 };
@@ -595,7 +589,7 @@ export const getRecording = async (recordingId: string) => {
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
 export const getRecordingMedia = async (recordingId: string, range?: string) => {
@@ -603,7 +597,7 @@ export const getRecordingMedia = async (recordingId: string, range?: string) => 
 
 	const req = request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 
 	if (range) {
 		req.set('range', range);
@@ -618,7 +612,7 @@ export const getRecordingUrl = async (recordingId: string, privateAccess = false
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`)
 		.query({ privateAccess })
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
 export const deleteRecording = async (recordingId: string) => {
@@ -626,7 +620,7 @@ export const deleteRecording = async (recordingId: string) => {
 
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
 export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberToken?: string): Promise<Response> => {
@@ -639,7 +633,7 @@ export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberTok
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	} else {
-		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}
 
 	return await req;
@@ -659,7 +653,7 @@ export const downloadRecordings = async (
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	} else {
-		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}
 
 	if (asBuffer) {
@@ -707,7 +701,7 @@ export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
 
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
 

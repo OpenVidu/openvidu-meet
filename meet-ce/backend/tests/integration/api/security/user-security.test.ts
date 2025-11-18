@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MEET_INITIAL_ADMIN_PASSWORD } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
@@ -36,7 +36,7 @@ describe('User API Security Tests', () => {
 
 	describe('Change Password Tests', () => {
 		const changePasswordRequest = {
-			currentPassword: MEET_INITIAL_ADMIN_PASSWORD,
+			currentPassword: MEET_ENV.INITIAL_ADMIN_PASSWORD,
 			newPassword: 'newpassword123'
 		};
 
@@ -54,7 +54,7 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Reset password
-			await changePassword(changePasswordRequest.newPassword, MEET_INITIAL_ADMIN_PASSWORD, adminAccessToken);
+			await changePassword(changePasswordRequest.newPassword, MEET_ENV.INITIAL_ADMIN_PASSWORD, adminAccessToken);
 		});
 
 		it('should fail when user is not authenticated', async () => {

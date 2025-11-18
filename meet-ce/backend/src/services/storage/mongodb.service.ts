@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import mongoose from 'mongoose';
-import { environment, MEET_MONGO_DB_NAME } from '../../environment.js';
+import { MEET_ENV } from '../../environment.js';
 import { LoggerService } from '../index.js';
 
 /**
@@ -15,7 +15,7 @@ export class MongoDBService {
 
 	constructor(@inject(LoggerService) private logger: LoggerService) {
 		this.connectionString = this.buildMongoConnectionString();
-		this.dbName = MEET_MONGO_DB_NAME;
+		this.dbName = MEET_ENV.MONGO_DB_NAME;
 	}
 
 	/**
@@ -30,13 +30,13 @@ export class MongoDBService {
 	 */
 	private buildMongoConnectionString(): string {
 		const {
-			MEET_MONGO_URI: mongoUri,
-			MEET_MONGO_NODES: nodes,
-			MEET_MONGO_PORT: port,
-			MEET_MONGO_ADMIN_USERNAME: adminUser,
-			MEET_MONGO_ADMIN_PASSWORD: adminPass,
-			MEET_MONGO_REPLICA_SET_NAME: replicaSet
-		} = environment;
+			MONGO_URI: mongoUri,
+			MONGO_NODES: nodes,
+			MONGO_PORT: port,
+			MONGO_ADMIN_USERNAME: adminUser,
+			MONGO_ADMIN_PASSWORD: adminPass,
+			MONGO_REPLICA_SET_NAME: replicaSet
+		} = MEET_ENV;
 
 		if (mongoUri && mongoUri.trim() !== '') {
 			this.logger.info('Using provided MongoDB URI from environment variable MEET_MONGO_URI');

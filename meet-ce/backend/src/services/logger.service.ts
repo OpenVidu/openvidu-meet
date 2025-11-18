@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import winston from 'winston';
-import { MEET_EDITION, MEET_LOG_LEVEL } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 
 @injectable()
 export class LoggerService {
@@ -8,7 +8,7 @@ export class LoggerService {
 
 	constructor() {
 		this.logger = winston.createLogger({
-			level: MEET_LOG_LEVEL,
+			level: MEET_ENV.LOG_LEVEL,
 			format: winston.format.combine(
 				winston.format.timestamp({
 					format: 'YYYY-MM-DD HH:mm:ss'
@@ -20,7 +20,7 @@ export class LoggerService {
 								? JSON.stringify(info.metadata)
 								: ''
 							: '';
-					return `${info.timestamp} | ${MEET_EDITION} | [${info.level}] ${info.message} ${meta}`;
+					return `${info.timestamp} | ${MEET_ENV.EDITION} | [${info.level}] ${info.message} ${meta}`;
 
 					// return `${info.timestamp} [${info.level}] ${info.message}`;
 				}),
@@ -41,7 +41,7 @@ export class LoggerService {
 										? JSON.stringify(info.metadata)
 										: ''
 									: '';
-							return `${info.timestamp} | ${MEET_EDITION} | [${info.level}] ${info.message} ${meta}`;
+							return `${info.timestamp} | ${MEET_ENV.EDITION} | [${info.level}] ${info.message} ${meta}`;
 
 							// return `${info.timestamp} [${info.level}] ${info.message}`;
 						})

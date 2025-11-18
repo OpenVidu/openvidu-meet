@@ -17,7 +17,7 @@ import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_NAME_ID } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
 import {
 	errorDeletingRoom,
@@ -114,7 +114,7 @@ export class RoomService {
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
 			metadata: JSON.stringify({
-				createdBy: MEET_NAME_ID,
+				createdBy: MEET_ENV.NAME_ID,
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			}),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,

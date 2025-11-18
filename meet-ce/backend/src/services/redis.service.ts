@@ -1,20 +1,10 @@
+import { Redlock } from '@sesamecare-oss/redlock';
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
 import ms from 'ms';
-import { Redlock } from '@sesamecare-oss/redlock';
-import {
-	checkModuleEnabled,
-	REDIS_DB,
-	REDIS_HOST,
-	REDIS_PASSWORD,
-	REDIS_PORT,
-	REDIS_SENTINEL_HOST_LIST,
-	REDIS_SENTINEL_MASTER_NAME,
-	REDIS_SENTINEL_PASSWORD,
-	REDIS_USERNAME
-} from '../environment.js';
-import { internalError, DistributedEventPayload } from '../models/index.js';
+import { checkModuleEnabled, MEET_ENV } from '../environment.js';
+import { DistributedEventPayload, internalError } from '../models/index.js';
 import { LoggerService } from './index.js';
 
 @injectable()
@@ -353,9 +343,9 @@ export class RedisService extends EventEmitter {
 		checkModuleEnabled();
 
 		//Check if Redis Sentinel is configured
-		if (REDIS_SENTINEL_HOST_LIST) {
+		if (MEET_ENV.REDIS_SENTINEL_HOST_LIST) {
 			const sentinels: Array<SentinelAddress> = [];
-			const sentinelHosts = REDIS_SENTINEL_HOST_LIST.split(',');
+			const sentinelHosts = MEET_ENV.REDIS_SENTINEL_HOST_LIST.split(',');
 			sentinelHosts.forEach((host) => {
 				const rawHost = host.split(':');
 
@@ -368,26 +358,26 @@ export class RedisService extends EventEmitter {
 				sentinels.push({ host: hostName, port });
 			});
 
-			if (!REDIS_SENTINEL_PASSWORD) throw new Error('The Redis Sentinel password is required');
+			if (!MEET_ENV.REDIS_SENTINEL_PASSWORD) throw new Error('The Redis Sentinel password is required');
 
 			this.logger.verbose('Using Redis Sentinel');
 			return {
 				sentinels,
-				sentinelPassword: REDIS_SENTINEL_PASSWORD,
-				username: REDIS_USERNAME,
-				password: REDIS_PASSWORD,
-				name: REDIS_SENTINEL_MASTER_NAME,
-				db: Number(REDIS_DB),
+				sentinelPassword: MEET_ENV.REDIS_SENTINEL_PASSWORD,
+				username: MEET_ENV.REDIS_USERNAME,
+				password: MEET_ENV.REDIS_PASSWORD,
+				name: MEET_ENV.REDIS_SENTINEL_MASTER_NAME,
+				db: Number(MEET_ENV.REDIS_DB),
 				maxRetriesPerRequest: null // Infinite retries
 			};
 		} else {
 			this.logger.verbose('Using Redis standalone');
 			return {
-				port: Number(REDIS_PORT),
-				host: REDIS_HOST,
-				username: REDIS_USERNAME,
-				password: REDIS_PASSWORD,
-				db: Number(REDIS_DB),
+				port: Number(MEET_ENV.REDIS_PORT),
+				host: MEET_ENV.REDIS_HOST,
+				username: MEET_ENV.REDIS_USERNAME,
+				password: MEET_ENV.REDIS_PASSWORD,
+				db: Number(MEET_ENV.REDIS_DB),
 				maxRetriesPerRequest: null // Infinite retries
 			};
 		}

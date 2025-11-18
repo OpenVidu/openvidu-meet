@@ -14,7 +14,7 @@ import {
 	SendDataOptions,
 	StreamOutput
 } from 'livekit-server-sdk';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL_PRIVATE } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/index.js';
 import {
 	errorLivekitNotAvailable,
@@ -32,9 +32,13 @@ export class LiveKitService {
 	private roomClient: RoomServiceClient;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
-		const livekitUrlHostname = LIVEKIT_URL_PRIVATE.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
-		this.egressClient = new EgressClient(livekitUrlHostname, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
-		this.roomClient = new RoomServiceClient(livekitUrlHostname, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+		const livekitUrlHostname = MEET_ENV.LIVEKIT_URL_PRIVATE.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
+		this.egressClient = new EgressClient(livekitUrlHostname, MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
+		this.roomClient = new RoomServiceClient(
+			livekitUrlHostname,
+			MEET_ENV.LIVEKIT_API_KEY,
+			MEET_ENV.LIVEKIT_API_SECRET
+		);
 	}
 
 	async createRoom(options: CreateOptions): Promise<Room> {

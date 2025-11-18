@@ -2,7 +2,7 @@ import { MeetingEndAction, MeetRecordingInfo, MeetRecordingStatus, MeetRoomStatu
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import ms from 'ms';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RecordingRepository, RoomRepository } from '../repositories/index.js';
@@ -34,7 +34,7 @@ export class LivekitWebhookService {
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
-		this.webhookReceiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 	}
 
 	/**

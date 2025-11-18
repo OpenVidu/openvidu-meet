@@ -1,11 +1,6 @@
 import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import {
-	MEET_INITIAL_API_KEY,
-	MEET_INITIAL_WEBHOOK_ENABLED,
-	MEET_INITIAL_WEBHOOK_URL,
-	MEET_NAME_ID
-} from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/index.js';
 import { LoggerService } from './index.js';
 
@@ -83,10 +78,10 @@ export class GlobalConfigService {
 	 */
 	protected getDefaultConfig(): GlobalConfig {
 		const defaultConfig: GlobalConfig = {
-			projectId: MEET_NAME_ID,
+			projectId: MEET_ENV.NAME_ID,
 			webhooksConfig: {
-				enabled: MEET_INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_INITIAL_API_KEY,
-				url: MEET_INITIAL_WEBHOOK_URL
+				enabled: MEET_ENV.INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_ENV.INITIAL_API_KEY,
+				url: MEET_ENV.INITIAL_WEBHOOK_URL
 			},
 			securityConfig: {
 				authentication: {

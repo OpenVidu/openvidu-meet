@@ -7,12 +7,7 @@ import {
 } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import {
-	MEET_AZURE_ACCOUNT_KEY,
-	MEET_AZURE_ACCOUNT_NAME,
-	MEET_AZURE_CONTAINER_NAME,
-	MEET_AZURE_SUBCONTAINER_NAME
-} from '../../../../environment.js';
+import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
 
@@ -22,13 +17,13 @@ export class ABSService {
 	private containerClient: ContainerClient;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
-		if (!MEET_AZURE_ACCOUNT_NAME || !MEET_AZURE_ACCOUNT_KEY || !MEET_AZURE_CONTAINER_NAME) {
+		if (!MEET_ENV.AZURE_ACCOUNT_NAME || !MEET_ENV.AZURE_ACCOUNT_KEY || !MEET_ENV.AZURE_CONTAINER_NAME) {
 			throw new Error('Azure Blob Storage configuration is incomplete');
 		}
 
-		const AZURE_STORAGE_CONNECTION_STRING = `DefaultEndpointsProtocol=https;AccountName=${MEET_AZURE_ACCOUNT_NAME};AccountKey=${MEET_AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net`;
+		const AZURE_STORAGE_CONNECTION_STRING = `DefaultEndpointsProtocol=https;AccountName=${MEET_ENV.AZURE_ACCOUNT_NAME};AccountKey=${MEET_ENV.AZURE_ACCOUNT_KEY};EndpointSuffix=core.windows.net`;
 		this.blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-		this.containerClient = this.blobServiceClient.getContainerClient(MEET_AZURE_CONTAINER_NAME);
+		this.containerClient = this.blobServiceClient.getContainerClient(MEET_ENV.AZURE_CONTAINER_NAME);
 
 		this.logger.debug('Azure Client initialized');
 	}
@@ -279,7 +274,7 @@ export class ABSService {
 	}
 
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_AZURE_SUBCONTAINER_NAME}`;
+		const prefix = `${MEET_ENV.AZURE_SUBCONTAINER_NAME}`;
 
 		if (name.startsWith(prefix)) {
 			return name;
@@ -299,11 +294,11 @@ export class ABSService {
 
 			if (exists) {
 				this.logger.verbose(
-					`ABS health check: service accessible and container '${MEET_AZURE_CONTAINER_NAME}' exists`
+					`ABS health check: service accessible and container '${MEET_ENV.AZURE_CONTAINER_NAME}' exists`
 				);
 				return { accessible: true, containerExists: true };
 			} else {
-				this.logger.error(`ABS container '${MEET_AZURE_CONTAINER_NAME}' does not exist`);
+				this.logger.error(`ABS container '${MEET_ENV.AZURE_CONTAINER_NAME}' does not exist`);
 				return { accessible: true, containerExists: false };
 			}
 		} catch (error: any) {

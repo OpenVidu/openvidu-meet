@@ -1,7 +1,7 @@
 import { MeetUser, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_INITIAL_ADMIN_PASSWORD, MEET_INITIAL_ADMIN_USER } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, internalError } from '../models/error.model.js';
 import { UserRepository } from '../repositories/index.js';
@@ -19,7 +19,7 @@ export class UserService {
 	 */
 	async initializeAdminUser(): Promise<void> {
 		// Check if the admin user already exists
-		const existingUser = await this.userRepository.findByUsername(MEET_INITIAL_ADMIN_USER);
+		const existingUser = await this.userRepository.findByUsername(MEET_ENV.INITIAL_ADMIN_USER);
 
 		if (existingUser) {
 			this.logger.info('Admin user already initialized, skipping admin user initialization');
@@ -27,8 +27,8 @@ export class UserService {
 		}
 
 		const admin: MeetUser = {
-			username: MEET_INITIAL_ADMIN_USER,
-			passwordHash: await PasswordHelper.hashPassword(MEET_INITIAL_ADMIN_PASSWORD),
+			username: MEET_ENV.INITIAL_ADMIN_USER,
+			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD),
 			roles: [MeetUserRole.ADMIN, MeetUserRole.USER]
 		};
 

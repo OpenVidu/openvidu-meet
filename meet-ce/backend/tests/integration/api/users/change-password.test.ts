@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { MEET_INITIAL_ADMIN_PASSWORD } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -14,11 +14,11 @@ describe('Users API Tests', () => {
 	describe('Change Password Tests', () => {
 		it('should successfully change password', async () => {
 			const newPassword = 'newpassword123';
-			const response = await changePassword(MEET_INITIAL_ADMIN_PASSWORD, newPassword, adminAccessToken);
+			const response = await changePassword(MEET_ENV.INITIAL_ADMIN_PASSWORD, newPassword, adminAccessToken);
 			expect(response.status).toBe(200);
 
 			// Reset password
-			await changePassword(newPassword, MEET_INITIAL_ADMIN_PASSWORD, adminAccessToken);
+			await changePassword(newPassword, MEET_ENV.INITIAL_ADMIN_PASSWORD, adminAccessToken);
 		});
 
 		it('should fail when current password is incorrect', async () => {
@@ -28,7 +28,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should fail when new password is not 5 characters long', async () => {
-			const response = await changePassword(MEET_INITIAL_ADMIN_PASSWORD, '1234', adminAccessToken);
+			const response = await changePassword(MEET_ENV.INITIAL_ADMIN_PASSWORD, '1234', adminAccessToken);
 			expectValidationError(response, 'newPassword', 'New password must be at least 5 characters long');
 		});
 	});

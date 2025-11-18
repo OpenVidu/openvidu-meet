@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { injectable } from 'inversify';
-import { SERVER_PORT } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 
 @injectable()
 export class BaseUrlService {
@@ -34,6 +34,6 @@ export class BaseUrlService {
 	}
 
 	private getDefaultBaseUrl(): string {
-		return `http://localhost:${SERVER_PORT}`;
+		return `http://localhost:${MEET_ENV.SERVER_PORT}`;
 	}
 }

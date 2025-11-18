@@ -4,7 +4,7 @@ import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/index.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
-import { MEET_BASE_URL, MEET_EDITION, SERVER_CORS_ORIGIN, SERVER_PORT, logEnvVars } from './environment.js';
+import { MEET_ENV, logEnvVars } from './environment.js';
 import { initRequestContext, jsonSyntaxErrorHandler, setBaseUrlMiddleware } from './middlewares/index.js';
 import {
 	analyticsRouter,
@@ -31,10 +31,10 @@ const createApp = () => {
 	const app: Express = express();
 
 	// Enable CORS support
-	if (SERVER_CORS_ORIGIN) {
+	if (MEET_ENV.SERVER_CORS_ORIGIN) {
 		app.use(
 			cors({
-				origin: SERVER_CORS_ORIGIN,
+				origin: MEET_ENV.SERVER_CORS_ORIGIN,
 				credentials: true
 			})
 		);
@@ -57,8 +57,8 @@ const createApp = () => {
 	app.use(initRequestContext);
 
 	// Middleware to set base URL for each request
-	// Only if MEET_BASE_URL is not set
-	if (!MEET_BASE_URL) {
+	// Only if BASE_URL is not set
+	if (!MEET_ENV.BASE_URL) {
 		app.use(setBaseUrlMiddleware);
 	}
 
@@ -103,14 +103,14 @@ const createApp = () => {
 };
 
 const startServer = (app: express.Application) => {
-	app.listen(SERVER_PORT, async () => {
+	app.listen(MEET_ENV.SERVER_PORT, async () => {
 		console.log(' ');
 		console.log('---------------------------------------------------------');
 		console.log(' ');
-		console.log(`OpenVidu Meet ${MEET_EDITION} is listening on port`, chalk.cyanBright(SERVER_PORT));
+		console.log(`OpenVidu Meet ${MEET_ENV.EDITION} is listening on port`, chalk.cyanBright(MEET_ENV.SERVER_PORT));
 		console.log(
 			'REST API Docs: ',
-			chalk.cyanBright(`http://localhost:${SERVER_PORT}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
+			chalk.cyanBright(`http://localhost:${MEET_ENV.SERVER_PORT}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
 		);
 		logEnvVars();
 	});

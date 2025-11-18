@@ -8,7 +8,7 @@ import { Express } from 'express';
 import ms from 'ms';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -284,7 +284,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -301,7 +301,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -319,7 +319,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -334,7 +334,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -349,7 +349,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -365,7 +365,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -384,7 +384,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -403,7 +403,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -424,7 +424,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -441,7 +441,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -456,7 +456,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -472,7 +472,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -497,7 +497,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 
@@ -508,7 +508,7 @@ describe('Room API Tests', () => {
 			// In this case, instead of sending JSON object, send an invalid JSON string.
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.set('Content-Type', 'application/json')
 				.send('{"roomName": "TestRoom",') // invalid JSON syntax
 				.expect(400);
@@ -526,7 +526,7 @@ describe('Room API Tests', () => {
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(payload)
 				.expect(422);
 

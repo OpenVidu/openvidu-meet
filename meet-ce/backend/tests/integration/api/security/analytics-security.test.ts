@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ANALYTICS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`;
@@ -20,7 +20,7 @@ describe('Analytics API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.get(ANALYTICS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 

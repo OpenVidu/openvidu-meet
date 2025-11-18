@@ -3,7 +3,7 @@ import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { LIVEKIT_URL, MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
@@ -39,7 +39,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 
@@ -80,7 +80,7 @@ describe('Meeting API Security Tests', () => {
 
 		beforeEach(async () => {
 			const metadata: MeetRoomMemberTokenMetadata = {
-				livekitUrl: LIVEKIT_URL,
+				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				role: MeetRoomMemberRole.SPEAKER,
 				permissions: getPermissions(roomData.room.roomId, MeetRoomMemberRole.SPEAKER, true, true).meet
 			};
@@ -90,7 +90,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_NAME}/role`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ role });
 			expect(response.status).toBe(401);
 		});
@@ -136,7 +136,7 @@ describe('Meeting API Security Tests', () => {
 		it('should fail when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomData.room.roomId}/participants/${PARTICIPANT_IDENTITY}`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(401);
 		});
 

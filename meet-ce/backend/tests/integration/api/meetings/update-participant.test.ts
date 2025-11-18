@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetSignalType } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/index.js';
-import { LIVEKIT_URL } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { FrontendEventService, LiveKitService } from '../../../../src/services/index.js';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
@@ -33,7 +33,7 @@ describe('Meetings API Tests', () => {
 	describe('Update Participant Tests', () => {
 		const setParticipantMetadata = async (roomId: string, role: MeetRoomMemberRole) => {
 			const metadata: MeetRoomMemberTokenMetadata = {
-				livekitUrl: LIVEKIT_URL,
+				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				role,
 				permissions: getPermissions(roomId, role, true, true).meet
 			};

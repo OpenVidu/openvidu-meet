@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
-import { MEET_NAME_ID } from '../../environment.js';
+import { MEET_ENV } from '../../environment.js';
 import { MeetLock } from '../../helpers/index.js';
 import { internalError } from '../../models/index.js';
 import { GlobalConfigRepository } from '../../repositories/index.js';
@@ -89,7 +89,7 @@ export class StorageInitService {
 
 			// Check if it's from the same project
 			const existingProjectId = existingConfig.projectId;
-			const currentProjectId = MEET_NAME_ID;
+			const currentProjectId = MEET_ENV.NAME_ID;
 
 			if (existingProjectId !== currentProjectId) {
 				this.logger.info(

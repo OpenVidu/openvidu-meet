@@ -1,6 +1,6 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MEET_INITIAL_API_KEY } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/index.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';
 import { ApiKeyRepository } from '../repositories/index.js';
@@ -27,7 +27,7 @@ export class ApiKeyService {
 		}
 
 		// Check if initial API key is configured
-		const initialApiKey = MEET_INITIAL_API_KEY;
+		const initialApiKey = MEET_ENV.INITIAL_API_KEY;
 
 		if (!initialApiKey) {
 			this.logger.info('No initial API key configured, skipping API key initialization');

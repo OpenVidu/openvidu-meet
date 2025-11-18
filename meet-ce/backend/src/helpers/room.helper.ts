@@ -1,5 +1,5 @@
 import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
-import { MEET_NAME_ID } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -69,7 +69,7 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Safely parses JSON metadata and checks if createdBy matches MEET_NAME_ID.
+	 * Safely parses JSON metadata and checks if createdBy matches NAME_ID.
 	 * @returns true if metadata indicates OpenVidu Meet as creator, false otherwise
 	 */
 	static checkIfMeetingBelogsToOpenViduMeet(metadata?: string): boolean {
@@ -77,7 +77,7 @@ export class MeetRoomHelper {
 
 		try {
 			const parsed = JSON.parse(metadata);
-			const isOurs = parsed?.createdBy === MEET_NAME_ID;
+			const isOurs = parsed?.createdBy === MEET_ENV.NAME_ID;
 			return isOurs;
 		} catch (err: unknown) {
 			return false;

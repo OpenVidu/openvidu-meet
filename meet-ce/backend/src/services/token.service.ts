@@ -8,7 +8,7 @@ import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import { LoggerService } from './index.js';
 
 @injectable()
@@ -44,7 +44,7 @@ export class TokenService {
 		participantIdentity?: string
 	): Promise<string> {
 		const metadata: MeetRoomMemberTokenMetadata = {
-			livekitUrl: LIVEKIT_URL,
+			livekitUrl: MEET_ENV.LIVEKIT_URL,
 			role,
 			permissions: permissions.meet
 		};
@@ -59,7 +59,7 @@ export class TokenService {
 	}
 
 	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {
-		const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, tokenOptions);
+		const at = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, tokenOptions);
 
 		if (grants) {
 			at.addGrant(grants);
@@ -69,7 +69,7 @@ export class TokenService {
 	}
 
 	async verifyToken(token: string): Promise<ClaimGrants> {
-		const verifyer = new TokenVerifier(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+		const verifyer = new TokenVerifier(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 		return await verifyer.verify(token, 0);
 	}
 

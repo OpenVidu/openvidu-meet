@@ -2,7 +2,7 @@ import { Bucket, File, GetFilesOptions, Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
-import { MEET_S3_BUCKET, MEET_S3_SUBBUCKET } from '../../../../environment.js';
+import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../index.js';
 
@@ -13,16 +13,16 @@ export class GCSService {
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		this.storage = new Storage();
-		this.bucket = this.storage.bucket(MEET_S3_BUCKET); // Use S3_BUCKET as GCS bucket name
+		this.bucket = this.storage.bucket(MEET_ENV.S3_BUCKET); // Use S3_BUCKET as GCS bucket name
 		this.logger.debug('GCS Storage Client initialized');
 	}
 
 	/**
 	 * Checks if a file exists in the specified GCS bucket.
 	 */
-	async exists(name: string, bucket: string = MEET_S3_BUCKET): Promise<boolean> {
+	async exists(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<boolean> {
 		try {
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
 			const [exists] = await file.exists();
 
@@ -45,11 +45,11 @@ export class GCSService {
 	 * Saves an object to a GCS bucket.
 	 * Uses an internal retry mechanism in case of errors.
 	 */
-	async saveObject(name: string, body: Record<string, unknown>, bucket: string = MEET_S3_BUCKET): Promise<any> {
+	async saveObject(name: string, body: Record<string, unknown>, bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
 		const fullKey = this.getFullKey(name);
 
 		try {
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(fullKey);
 			const result = await this.retryOperation(async () => {
 				await file.save(JSON.stringify(body), {
@@ -76,15 +76,15 @@ export class GCSService {
 	/**
 	 * Bulk deletes objects from GCS Storage.
 	 * @param keys Array of object keys to delete
-	 * @param bucket GCS bucket name (default: MEET_S3_BUCKET)
+	 * @param bucket GCS bucket name (default: S3_BUCKET)
 	 */
-	async deleteObjects(keys: string[], bucket: string = MEET_S3_BUCKET): Promise<any> {
+	async deleteObjects(keys: string[], bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
 		try {
 			this.logger.verbose(
 				`GCS deleteObjects: attempting to delete ${keys.length} objects from bucket '${bucket}'`
 			);
 
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const deletePromises = keys.map((key) => {
 				const file = bucketObj.file(this.getFullKey(key));
 				return file.delete();
@@ -110,7 +110,7 @@ export class GCSService {
 	 * @param additionalPrefix Additional prefix relative to the subbucket.
 	 * @param maxKeys Maximum number of objects to return. Defaults to 50.
 	 * @param continuationToken Token to retrieve the next page.
-	 * @param bucket Optional bucket name. Defaults to MEET_S3_BUCKET.
+	 * @param bucket Optional bucket name. Defaults to S3_BUCKET.
 	 *
 	 * @returns S3-compatible response object.
 	 */
@@ -118,7 +118,7 @@ export class GCSService {
 		additionalPrefix = '',
 		maxResults = 50,
 		continuationToken?: string,
-		bucket: string = MEET_S3_BUCKET
+		bucket: string = MEET_ENV.S3_BUCKET
 	): Promise<{
 		items: Array<{ Key?: string; LastModified?: Date; Size?: number; ETag?: string }>;
 		continuationToken?: string;
@@ -129,7 +129,7 @@ export class GCSService {
 
 		try {
 			maxResults = Number(maxResults);
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 
 			const options: GetFilesOptions = {
 				prefix: basePrefix,
@@ -181,9 +181,9 @@ export class GCSService {
 		}
 	}
 
-	async getObjectAsJson(name: string, bucket: string = MEET_S3_BUCKET): Promise<object | undefined> {
+	async getObjectAsJson(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<object | undefined> {
 		try {
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
 
 			const [exists] = await file.exists();
@@ -220,10 +220,10 @@ export class GCSService {
 	async getObjectAsStream(
 		name: string,
 		range?: { start: number; end: number },
-		bucket: string = MEET_S3_BUCKET
+		bucket: string = MEET_ENV.S3_BUCKET
 	): Promise<Readable> {
 		try {
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
 
 			const options: any = {};
@@ -252,9 +252,9 @@ export class GCSService {
 		}
 	}
 
-	async getObjectHeaders(name: string, bucket: string = MEET_S3_BUCKET): Promise<any> {
+	async getObjectHeaders(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
 		try {
-			const bucketObj = bucket === MEET_S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
+			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
 			const [metadata] = await file.getMetadata();
 
@@ -289,14 +289,14 @@ export class GCSService {
 			await this.bucket.getMetadata();
 
 			// If we reach here, both service and bucket are accessible
-			this.logger.verbose(`GCS health check: service accessible and bucket '${MEET_S3_BUCKET}' exists`);
+			this.logger.verbose(`GCS health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
 		} catch (error: any) {
 			this.logger.error(`GCS health check failed: ${error.message}`);
 
 			// Check if it's a bucket-specific error
 			if (error.code === 404) {
-				this.logger.error(`GCS bucket '${MEET_S3_BUCKET}' does not exist`);
+				this.logger.error(`GCS bucket '${MEET_ENV.S3_BUCKET}' does not exist`);
 				return { accessible: true, bucketExists: false };
 			}
 
@@ -311,7 +311,7 @@ export class GCSService {
 	 * Otherwise, the prefix is prepended to the name.
 	 */
 	protected getFullKey(name: string): string {
-		const prefix = `${MEET_S3_SUBBUCKET}`; // Use S3_SUBBUCKET for compatibility
+		const prefix = `${MEET_ENV.S3_SUBBUCKET}`; // Use S3_SUBBUCKET for compatibility
 
 		if (name.startsWith(prefix)) {
 			return name;

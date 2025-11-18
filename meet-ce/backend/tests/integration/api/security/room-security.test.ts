@@ -3,7 +3,7 @@ import { AuthMode, MeetRecordingAccess } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MEET_INITIAL_API_KEY } from '../../../../src/environment.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	changeSecurityConfig,
 	createRoom,
@@ -34,7 +34,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({});
 			expect(response.status).toBe(201);
 		});
@@ -57,7 +57,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -86,7 +86,7 @@ describe('Room API Security Tests', () => {
 			const response = await request(app)
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -114,7 +114,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -183,7 +183,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -210,7 +210,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY);
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
@@ -279,7 +279,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/config`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ config: roomConfig });
 			expect(response.status).toBe(200);
 		});
@@ -309,7 +309,7 @@ describe('Room API Security Tests', () => {
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/status`)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_INITIAL_API_KEY)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ status: 'open' });
 			expect(response.status).toBe(200);
 		});
