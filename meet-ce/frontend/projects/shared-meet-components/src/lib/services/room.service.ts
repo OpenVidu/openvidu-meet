@@ -225,7 +225,7 @@ export class RoomService {
 	 * @param config - The room config to be saved.
 	 * @returns A promise that resolves when the config have been saved.
 	 */
-	async updateRoomConfig(roomId: string, config: MeetRoomConfig): Promise<void> {
+	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<void> {
 		this.log.d('Saving room config', config);
 		const path = `${this.ROOMS_API}/${roomId}/config`;
 		await this.httpService.putRequest(path, { config });

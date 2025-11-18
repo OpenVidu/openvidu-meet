@@ -92,7 +92,7 @@ export class MeetingLobbyService {
 		this.state.roomSecret = this.roomService.getRoomSecret();
 		this.state.room = await this.roomService.getRoom(this.state.roomId);
 		this.state.roomClosed = this.state.room.status === MeetRoomStatus.CLOSED;
-		this.state.isE2EEEnabled = this.state.room.config.e2ee?.enabled || false;
+		this.state.isE2EEEnabled = this.state.room.config.e2ee.enabled;
 
 		// If E2EE is enabled, require e2eeKey
 		if (this.state.isE2EEEnabled) {

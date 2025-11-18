@@ -7,10 +7,10 @@ import { RoomWizardStateService } from '../../../../../../services';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
-    selector: 'ov-room-config',
-    imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
-    templateUrl: './room-config.component.html',
-    styleUrl: './room-config.component.scss'
+	selector: 'ov-room-config',
+	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
+	templateUrl: './room-config.component.html',
+	styleUrl: './room-config.component.scss'
 })
 export class RoomConfigComponent implements OnDestroy {
 	configForm: FormGroup;
@@ -34,18 +34,16 @@ export class RoomConfigComponent implements OnDestroy {
 	}
 
 	private saveFormData(formValue: any): void {
-		const isE2EEEnabled = formValue.e2eeEnabled ?? false;
-
 		const stepData: any = {
 			config: {
 				chat: {
 					enabled: formValue.chatEnabled ?? false
 				},
 				virtualBackground: {
-					enabled: formValue.virtualBackgroundsEnabled ?? false
+					enabled: formValue.virtualBackgroundEnabled ?? false
 				},
 				e2ee: {
-					enabled: isE2EEEnabled
+					enabled: formValue.e2eeEnabled ?? false
 				}
 			}
 		};
@@ -59,7 +57,7 @@ export class RoomConfigComponent implements OnDestroy {
 			e2eeEnabled: isEnabled
 		});
 
-		const recordingStep = this.wizardService.steps().find(step => step.id === 'recording');
+		const recordingStep = this.wizardService.steps().find((step) => step.id === 'recording');
 		if (!recordingStep) return;
 
 		if (isEnabled) {
@@ -72,15 +70,21 @@ export class RoomConfigComponent implements OnDestroy {
 			}
 
 			// Disable recording automatically
-			recordingStep.formGroup.patchValue({
-				recordingEnabled: 'disabled'
-			}, { emitEvent: true });
+			recordingStep.formGroup.patchValue(
+				{
+					recordingEnabled: 'disabled'
+				},
+				{ emitEvent: true }
+			);
 		} else {
 			// Restore the previous recording state when E2EE is disabled
 			if (this.recordingStateBeforeE2EE !== null) {
-				recordingStep.formGroup.patchValue({
-					recordingEnabled: this.recordingStateBeforeE2EE
-				}, { emitEvent: true });
+				recordingStep.formGroup.patchValue(
+					{
+						recordingEnabled: this.recordingStateBeforeE2EE
+					},
+					{ emitEvent: true }
+				);
 
 				// Clear the saved state
 				this.recordingStateBeforeE2EE = null;
@@ -95,15 +99,15 @@ export class RoomConfigComponent implements OnDestroy {
 
 	onVirtualBackgroundToggleChange(event: any): void {
 		const isEnabled = event.checked;
-		this.configForm.patchValue({ virtualBackgroundsEnabled: isEnabled });
+		this.configForm.patchValue({ virtualBackgroundEnabled: isEnabled });
 	}
 
 	get chatEnabled(): boolean {
 		return this.configForm.value.chatEnabled || false;
 	}
 
-	get virtualBackgroundsEnabled(): boolean {
-		return this.configForm.value.virtualBackgroundsEnabled ?? false;
+	get virtualBackgroundEnabled(): boolean {
+		return this.configForm.value.virtualBackgroundEnabled ?? false;
 	}
 
 	get e2eeEnabled(): boolean {

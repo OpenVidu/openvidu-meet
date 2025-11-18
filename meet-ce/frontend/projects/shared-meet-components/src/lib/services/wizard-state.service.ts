@@ -157,8 +157,8 @@ export class RoomWizardStateService {
 				isActive: editMode, // Only active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: initialRoomOptions.config!.recording.enabled ? 'enabled' : 'disabled',
-					allowAccessTo: initialRoomOptions.config!.recording.allowAccessTo
+					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled',
+					allowAccessTo: initialRoomOptions.config!.recording!.allowAccessTo
 				})
 			},
 			{
@@ -188,9 +188,9 @@ export class RoomWizardStateService {
 				isActive: false,
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					chatEnabled: initialRoomOptions.config!.chat.enabled,
-					virtualBackgroundsEnabled: initialRoomOptions.config!.virtualBackground.enabled,
-					e2eeEnabled: initialRoomOptions.config!.e2ee?.enabled ?? false
+					chatEnabled: initialRoomOptions.config!.chat!.enabled,
+					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
+					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled
 				})
 			}
 		];
