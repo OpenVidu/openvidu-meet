@@ -8,8 +8,8 @@ OpenVidu Meet is a fully featured video conferencing application built with Angu
 2. [Prerequisites](#prerequisites)
 3. [Getting Started](#getting-started)
 4. [Development](#development)
-   - [Development Mode](#development-mode)
-   - [Manual Development Setup](#manual-development-setup)
+    - [Development Mode](#development-mode)
+    - [Manual Development Setup](#manual-development-setup)
 5. [Building](#building)
 6. [Testing](#testing)
 7. [Documentation](#documentation)
@@ -26,12 +26,12 @@ The OpenVidu Meet application is a monorepo managed with **pnpm workspaces** and
 ### Core Components
 
 - **Frontend** (`frontend/`): Angular 20 application providing the user interface
-  - **shared-meet-components**: Reusable Angular library with shared components for administration and preferences
-  - Integrates [openvidu-components-angular](https://github.com/OpenVidu/openvidu/tree/master/openvidu-components-angular) for core video conferencing functionality
+    - **shared-meet-components**: Reusable Angular library with shared components for administration and preferences
+    - Integrates [openvidu-components-angular](https://github.com/OpenVidu/openvidu/tree/master/openvidu-components-angular) for core video conferencing functionality
 
 - **Backend** (`backend/`): Node.js/TypeScript REST API server
-  - Manages rooms, participants, recordings, and authentication
-  - Serves the compiled frontend in production
+    - Manages rooms, participants, recordings, and authentication
+    - Serves the compiled frontend in production
 
 - **Typings** (`typings/`): Shared TypeScript type definitions used across frontend and backend
 
@@ -46,10 +46,9 @@ Before starting, ensure you have the following installed:
 - **Node.js**: Version 22 or higher
 - **pnpm**: Package manager (will be installed automatically by meet.sh if missing)
 - **LiveKit**: For local testing (optional)
-  ```bash
-  curl -sSL https://get.livekit.io/cli | bash
-  ```
-
+    ```bash
+    curl -sSL https://get.livekit.io/cli | bash
+    ```
 
 ## Getting Started
 
@@ -82,7 +81,7 @@ cd openvidu-meet
 
 Then, the application will be available at [http://localhost:6080](http://localhost:6080).
 
-> **Note:** Livereload is also available at [http://localhost:5080](http://localhost:5080).
+> **Note:** Livereload is also available at [http://localhost:6081](http://localhost:6081).
 
 ## Development
 
@@ -95,6 +94,7 @@ The recommended way to develop is using the integrated development mode that wat
 ```
 
 This command starts concurrent watchers for:
+
 - **openvidu-components-angular**: Core Angular components library
 - **Typings**: Shared type definitions with automatic sync
 - **Backend**: Node.js server with nodemon auto-restart
@@ -103,6 +103,7 @@ This command starts concurrent watchers for:
 
 > [!NOTE]
 > The backend uses `backend/.env.development` for environment variables during development. Configure your LiveKit credentials there:
+>
 > ```env
 > LIVEKIT_URL=ws://localhost:7880
 > LIVEKIT_API_KEY=your-api-key
@@ -170,6 +171,7 @@ The `meet.sh` script supports flags to optimize CI/CD pipelines:
 ```
 
 **Available flags:**
+
 - `--skip-install`: Skip dependency installation
 - `--skip-build`: Skip build steps
 - `--skip-typings`: Skip typings build (use when already built)
@@ -225,8 +227,9 @@ The test app will be available at [http://localhost:5080](http://localhost:5080)
 ```
 
 Documentation files will be generated in:
+
 - **Webcomponent**: `docs/webcomponent-*.md` (events, commands, attributes)
-- **REST API**: `backend/public/openapi/public.html`
+- **REST API**: `meet-ce/backend/public/openapi/public.html`
 
 If you specify an output directory, the documentation will be copied there.
 
@@ -289,35 +292,41 @@ openvidu-meet/
 │   ├── src/
 │   │   ├── api-key.ts
 │   │   ├── auth-config.ts
-│   │   ├── participant.ts
-│   │   ├── event.model.ts
+│   │   ├── room.ts
 │   │   └── ...
 │   └── package.json
 │
-├── frontend/                        # Angular frontend application
+├── frontend/                       # Angular frontend application
 │   ├── src/                        # Main application source
 │   ├── projects/
 │   │   └── shared-meet-components/ # Reusable Angular library
 │   └── webcomponent/               # Web component build
 │
-├── backend/                         # Node.js/Express backend
+├── backend/                        # Node.js/Express backend
 │   ├── src/
+│   │   ├── config/                 # Configuration files
 │   │   ├── controllers/            # REST API controllers
-│   │   ├── services/               # Business logic
+│   │   ├── helpers/                # Helper functions
 │   │   ├── middleware/             # Express middleware
+│   │   ├── migrations/             # Database migration scripts
+│   │   ├── models/                 # Domain models
+│   │   ├── repositories/           # Database interaction
+│   │   ├── routes/                 # API route definitions
+│   │   ├── services/               # Business logic
+│   │   ├── utils/                  # Utility functions
 │   │   └── environment.ts          # Environment configuration
 │   ├── openapi/                    # OpenAPI specifications
 │   └── public/                     # Static files (includes built frontend)
 │
-├── testapp/                         # Testing application
+├── testapp/                        # Testing application
 │   ├── src/
 │   └── public/
 │
-├── docker/                          # Docker build files
+├── docker/                         # Docker build files
 │   └── create_image.sh
 │
-├── docs/                            # Generated documentation
-├── scripts/                         # Build and utility scripts
+├── docs/                           # Generated documentation
+├── scripts/                        # Build and utility scripts
 └── openvidu-meet-pro/              # Professional Edition (separate license)
 ```
 
@@ -412,6 +421,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for detai
 
 - [OpenVidu Website](https://openvidu.io/)
 - [OpenVidu Meet](https://openvidu.io/latest/meet/)
+
 ---
 
 For questions and support, visit our [community forum](https://openvidu.discourse.group/).

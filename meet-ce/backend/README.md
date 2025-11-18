@@ -23,9 +23,26 @@ pnpm install
 pnpm run build:prod
 ```
 
-## Storage Structure
+## Storage Architecture
 
-The OpenVidu Meet backend uses an S3 bucket to store all application data, including rooms, recordings, user information, and system config. The bucket follows a hierarchical structure organized as follows:
+The OpenVidu Meet backend uses **MongoDB** as its primary data storage system for all application data, including rooms, recordings, user information, API keys, and system configuration.
+
+### MongoDB Collections
+
+The application manages the following MongoDB collections:
+
+- **`meetglobalconfigs`**: System-wide configuration (singleton collection)
+- **`meetusers`**: User accounts with authentication and roles
+- **`meetapikeys`**: API keys for authentication
+- **`meetrooms`**: Room configurations and metadata
+- **`meetrecordings`**: Recording metadata and access information
+- **`meetmigrations`**: Migration tracking for data and schema migrations
+
+Each document in these collections includes a `schemaVersion` field for schema evolution tracking (internal use only, not exposed via API).
+
+### Legacy Storage (S3/ABS/GCS)
+
+Prior versions of OpenVidu Meet used cloud object storage (S3, Azure Blob Storage, or Google Cloud Storage) for data persistence. The legacy storage structure followed this organization:
 
 ### Bucket Structure
 
@@ -108,6 +125,45 @@ Where:
 - `{uid}`: Unique recording session identifier
 
 This naming convention ensures uniqueness and provides traceability between the recording file, its metadata, and the originating room session.
+
+---
+
+## Data Migration System
+
+OpenVidu Meet includes a comprehensive migration system to handle data persistence changes and schema evolution.
+
+### Legacy Storage to MongoDB Migration
+
+On first startup, the application automatically migrates existing data from legacy storage (S3/Azure Blob Storage/Google Cloud Storage) to MongoDB. This migration:
+
+- **Runs automatically** on application startup if legacy storage is configured
+- **Is idempotent** - safe to run multiple times (skips already migrated data)
+- **Preserves all data** - rooms, recordings, users, API keys, and global config
+- **Tracks progress** in the `meetmigrations` collection
+- **Is HA-safe** using distributed locks to prevent concurrent migrations
+
+### MongoDB Schema Migration System
+
+The application uses a schema versioning system to safely evolve MongoDB document structures over time. This system:
+
+- **Runs automatically** at startup before accepting requests
+- **Tracks schema versions** via the `schemaVersion` field in each document
+- **Supports forward-only migrations** (v1 → v2 → v3)
+- **Processes in batches** for efficiency with large collections
+- **Is HA-safe** using distributed locks
+- **Validates before execution** to ensure migration safety
+
+Schema migrations handle scenarios like:
+
+- Adding new required fields with default values
+- Removing deprecated fields
+- Renaming or restructuring fields
+- Data type transformations
+
+For detailed information about creating and managing schema migrations, see:
+📖 **[Schema Migration Documentation](./src/migrations/README.md)**
+
+---
 
 ## Recordings
 
