@@ -25,7 +25,7 @@ export class MigrationService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(LegacyStorageService) protected storageService: LegacyStorageService,
+		@inject(LegacyStorageService) protected legacyStorageService: LegacyStorageService,
 		@inject(GlobalConfigRepository) protected configRepository: GlobalConfigRepository,
 		@inject(UserRepository) protected userRepository: UserRepository,
 		@inject(ApiKeyRepository) protected apiKeyRepository: ApiKeyRepository,
@@ -137,7 +137,7 @@ export class MigrationService {
 			}
 
 			// Try to get config from legacy storage
-			const legacyConfig = await this.storageService.getGlobalConfig();
+			const legacyConfig = await this.legacyStorageService.getGlobalConfig();
 
 			if (!legacyConfig) {
 				this.logger.info('No global config found in legacy storage, skipping migration');
@@ -149,7 +149,7 @@ export class MigrationService {
 			this.logger.info('Global config migrated successfully');
 
 			// Delete from legacy storage
-			await this.storageService.deleteGlobalConfig();
+			await this.legacyStorageService.deleteGlobalConfig();
 			this.logger.info('Legacy global config deleted');
 		} catch (error) {
 			this.logger.error('Error migrating global config from legacy storage to MongoDB:', error);
@@ -168,7 +168,7 @@ export class MigrationService {
 			// We need to check for the default admin username
 			const adminUsername = 'admin'; // Default username in legacy systems
 
-			const legacyUser = await this.storageService.getUser(adminUsername);
+			const legacyUser = await this.legacyStorageService.getUser(adminUsername);
 
 			if (!legacyUser) {
 				this.logger.info('No users found in legacy storage, skipping migration');
@@ -188,7 +188,7 @@ export class MigrationService {
 			this.logger.info(`User '${legacyUser.username}' migrated successfully`);
 
 			// Delete from legacy storage
-			await this.storageService.deleteUser(legacyUser.username);
+			await this.legacyStorageService.deleteUser(legacyUser.username);
 			this.logger.info(`Legacy user '${legacyUser.username}' deleted`);
 		} catch (error) {
 			this.logger.error('Error migrating users from legacy storage to MongoDB:', error);
@@ -203,7 +203,7 @@ export class MigrationService {
 		this.logger.info('Migrating API key from legacy storage to MongoDB...');
 
 		try {
-			const legacyApiKeys = await this.storageService.getApiKeys();
+			const legacyApiKeys = await this.legacyStorageService.getApiKeys();
 
 			if (!legacyApiKeys || legacyApiKeys.length === 0) {
 				this.logger.info('No API key found in legacy storage, skipping migration');
@@ -224,7 +224,7 @@ export class MigrationService {
 			this.logger.info(`API key migrated successfully`);
 
 			// Delete from legacy storage
-			await this.storageService.deleteApiKeys();
+			await this.legacyStorageService.deleteApiKeys();
 			this.logger.info('Legacy API key deleted');
 		} catch (error) {
 			this.logger.error('Error migrating API keys from legacy storage to MongoDB:', error);
@@ -242,12 +242,13 @@ export class MigrationService {
 		try {
 			let migratedCount = 0;
 			let skippedCount = 0;
+			let failedCount = 0;
 			let nextPageToken: string | undefined;
 			const batchSize = 50; // Process rooms in batches
 
 			do {
 				// Get batch of rooms from legacy storage
-				const { rooms, nextPageToken: nextToken } = await this.storageService.getRooms(
+				const { rooms, nextPageToken: nextToken } = await this.legacyStorageService.getRooms(
 					undefined,
 					batchSize,
 					nextPageToken
@@ -278,19 +279,20 @@ export class MigrationService {
 						this.logger.debug(`Room '${room.roomId}' migrated successfully`);
 					} catch (error) {
 						this.logger.warn(`Failed to migrate room '${room.roomId}':`, error);
+						failedCount++;
 					}
 				}
 
 				// Delete migrated rooms from legacy storage
 				if (roomIdsToDelete.length > 0) {
-					await this.storageService.deleteRooms(roomIdsToDelete);
+					await this.legacyStorageService.deleteRooms(roomIdsToDelete);
 					this.logger.debug(`Deleted ${roomIdsToDelete.length} rooms from legacy storage`);
 
 					// Try to delete archived room metadata in parallel for better performance
 					// No need to check if exists first - just attempt deletion
 					const archivedMetadataPromises = roomIdsToDelete.map(async (roomId) => {
 						try {
-							await this.storageService.deleteArchivedRoomMetadata(roomId);
+							await this.legacyStorageService.deleteArchivedRoomMetadata(roomId);
 							this.logger.debug(`Deleted archived metadata for room '${roomId}'`);
 						} catch (error) {
 							// Silently ignore if archived metadata doesn't exist
@@ -309,7 +311,13 @@ export class MigrationService {
 				nextPageToken = nextToken;
 			} while (nextPageToken);
 
-			this.logger.info(`Rooms migration completed: ${migratedCount} migrated, ${skippedCount} skipped`);
+			this.logger.info(
+				`Rooms migration completed: ${migratedCount} migrated, ${skippedCount} skipped, ${failedCount} failed`
+			);
+
+			if (failedCount > 0) {
+				throw new Error(`Failed to migrate ${failedCount} room(s) from legacy storage`);
+			}
 		} catch (error) {
 			this.logger.error('Error migrating rooms from legacy storage to MongoDB:', error);
 			throw error;
@@ -326,12 +334,13 @@ export class MigrationService {
 		try {
 			let migratedCount = 0;
 			let skippedCount = 0;
+			let failedCount = 0;
 			let nextPageToken: string | undefined;
 			const batchSize = 50; // Process recordings in batches
 
 			do {
 				// Get batch of recordings from legacy storage
-				const { recordings, nextContinuationToken } = await this.storageService.getRecordings(
+				const { recordings, nextContinuationToken } = await this.legacyStorageService.getRecordings(
 					undefined,
 					batchSize,
 					nextPageToken
@@ -360,7 +369,7 @@ export class MigrationService {
 						}
 
 						// Get access secrets from legacy storage
-						const secrets = await this.storageService.getRecordingAccessSecrets(recording.recordingId);
+						const secrets = await this.legacyStorageService.getRecordingAccessSecrets(recording.recordingId);
 
 						// Prepare recording document with access secrets
 						const recordingWithSecrets = {
@@ -380,19 +389,26 @@ export class MigrationService {
 						this.logger.debug(`Recording '${recording.recordingId}' migrated successfully`);
 					} catch (error) {
 						this.logger.warn(`Failed to migrate recording '${recording.recordingId}':`, error);
+						failedCount++;
 					}
 				}
 
 				// Delete migrated recordings from legacy storage (includes metadata and secrets)
 				if (recordingIdsToDelete.length > 0) {
-					await this.storageService.deleteRecordings(recordingIdsToDelete);
+					await this.legacyStorageService.deleteRecordings(recordingIdsToDelete);
 					this.logger.debug(`Deleted ${recordingIdsToDelete.length} recordings from legacy storage`);
 				}
 
 				nextPageToken = nextContinuationToken;
 			} while (nextPageToken);
 
-			this.logger.info(`Recordings migration completed: ${migratedCount} migrated, ${skippedCount} skipped`);
+			this.logger.info(
+				`Recordings migration completed: ${migratedCount} migrated, ${skippedCount} skipped, ${failedCount} failed`
+			);
+
+			if (failedCount > 0) {
+				throw new Error(`Failed to migrate ${failedCount} recording(s) from legacy storage`);
+			}
 		} catch (error) {
 			this.logger.error('Error migrating recordings from legacy storage to MongoDB:', error);
 			throw error;

@@ -22,12 +22,35 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 
 	/**
 	 * Mark a migration as started.
-	 * Creates a new migration record with RUNNING status.
+	 * Creates a new migration record with RUNNING status, or updates an existing one if it already exists.
+	 * This handles cases where a previous migration attempt failed or was interrupted.
 	 *
 	 * @param name - The name of the migration
-	 * @returns The created migration document
+	 * @returns The created or updated migration document
 	 */
 	async markAsStarted(name: MigrationName): Promise<MeetMigration> {
+		// Check if migration document already exists
+		const existingMigration = await this.findOne({ name });
+
+		if (existingMigration) {
+			// Update existing document to RUNNING status
+			const document = await this.updateOne(
+				{ name },
+				{
+					$set: {
+						status: MigrationStatus.RUNNING,
+						startedAt: Date.now()
+					},
+					$unset: {
+						completedAt: '',
+						error: ''
+					}
+				}
+			);
+			return this.toDomain(document);
+		}
+
+		// Create new migration document
 		const document = await this.createDocument({
 			name,
 			status: MigrationStatus.RUNNING,
