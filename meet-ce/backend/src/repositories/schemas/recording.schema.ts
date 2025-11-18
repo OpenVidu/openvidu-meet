@@ -1,11 +1,14 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
 /**
  * Extended interface for Recording documents in MongoDB.
  * Includes the base MeetRecordingInfo plus internal access secrets.
  */
 export interface MeetRecordingDocument extends MeetRecordingInfo, Document {
+	/** Schema version for migration tracking (internal use only) */
+	schemaVersion?: number;
 	accessSecrets?: {
 		public: string;
 		private: string;
@@ -18,6 +21,11 @@ export interface MeetRecordingDocument extends MeetRecordingInfo, Document {
  */
 const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 	{
+		schemaVersion: {
+			type: Number,
+			required: true,
+			default: INTERNAL_CONFIG.RECORDING_SCHEMA_VERSION
+		},
 		recordingId: {
 			type: String,
 			required: true
@@ -84,6 +92,7 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 			transform: (_doc, ret) => {
 				// Remove MongoDB internal fields
 				delete ret._id;
+				delete ret.schemaVersion;
 				// Remove access secrets before returning (they should only be accessed via specific methods)
 				delete ret.accessSecrets;
 				return ret;
@@ -101,7 +110,9 @@ MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ duration: -1, _id: -1 });
 MeetRecordingSchema.index({ size: -1, _id: -1 });
 
+export const meetRecordingCollectionName = 'MeetRecording';
+
 /**
  * Mongoose model for Recording entity.
  */
-export const MeetRecordingModel = model<MeetRecordingDocument>('MeetRecording', MeetRecordingSchema);
+export const MeetRecordingModel = model<MeetRecordingDocument>(meetRecordingCollectionName, MeetRecordingSchema);

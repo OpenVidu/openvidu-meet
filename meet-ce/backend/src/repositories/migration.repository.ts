@@ -31,7 +31,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 		const document = await this.createDocument({
 			name,
 			status: MigrationStatus.RUNNING,
-			startedAt: new Date()
+			startedAt: Date.now()
 		});
 		return this.toDomain(document);
 	}
@@ -50,7 +50,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 			{
 				$set: {
 					status: MigrationStatus.COMPLETED,
-					completedAt: new Date(),
+					completedAt: Date.now(),
 					...(metadata && { metadata })
 				}
 			}

@@ -25,12 +25,12 @@ const MigrationSchema = new Schema<MeetMigrationDocument>(
 			default: MigrationStatus.RUNNING
 		},
 		startedAt: {
-			type: Date,
+			type: Number,
 			required: true,
 			default: Date.now
 		},
 		completedAt: {
-			type: Date,
+			type: Number,
 			required: false
 		},
 		error: {

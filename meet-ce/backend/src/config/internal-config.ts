@@ -1,4 +1,5 @@
 import { StringValue } from 'ms';
+import { SchemaVersion } from '../models/migration.model.js';
 
 export const INTERNAL_CONFIG = {
 	// Base paths for the API
@@ -45,7 +46,16 @@ export const INTERNAL_CONFIG = {
 	// Additional intervals
 	MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '1h' as StringValue, // Minimum time for room auto-deletion date
 	MEETING_EMPTY_TIMEOUT: (process.env.MEETING_EMPTY_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
-	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue // Seconds to keep the meeting (LK room) open after the last participant leaves
+	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open after the last participant leaves
+
+	// MongoDB Schema Versions
+	// These define the current schema version for each collection
+	// Increment when making breaking changes to the schema structure
+	GLOBAL_CONFIG_SCHEMA_VERSION: 1 as SchemaVersion,
+	USER_SCHEMA_VERSION: 1 as SchemaVersion,
+	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion,
+	ROOM_SCHEMA_VERSION: 1 as SchemaVersion,
+	RECORDING_SCHEMA_VERSION: 1 as SchemaVersion
 };
 
 // This function is used to set private configuration values for testing purposes.

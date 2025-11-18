@@ -7,12 +7,16 @@ import {
 	MeetingEndAction
 } from '@openvidu-meet/typings';
 import { Document, Schema, model } from 'mongoose';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
 /**
  * Mongoose Document interface for MeetRoom.
  * Extends the MeetRoom interface with MongoDB Document functionality.
  */
-export interface MeetRoomDocument extends MeetRoom, Document {}
+export interface MeetRoomDocument extends MeetRoom, Document {
+	/** Schema version for migration tracking (internal use only) */
+	schemaVersion?: number;
+}
 
 /**
  * Mongoose schema for MeetRoom auto-deletion policy.
@@ -127,6 +131,11 @@ const MeetRoomConfigSchema = new Schema(
  */
 const MeetRoomSchema = new Schema<MeetRoomDocument>(
 	{
+		schemaVersion: {
+			type: Number,
+			required: true,
+			default: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
+		},
 		roomId: {
 			type: String,
 			required: true
@@ -177,6 +186,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			versionKey: false,
 			transform: (_doc, ret) => {
 				delete ret._id;
+				delete ret.schemaVersion;
 				return ret;
 			}
 		}
@@ -190,7 +200,9 @@ MeetRoomSchema.index({ roomName: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ autoDeletionDate: 1 });
 
+export const meetRoomCollectionName = 'MeetRoom';
+
 /**
  * Mongoose model for MeetRoom.
  */
-export const MeetRoomModel = model<MeetRoomDocument>('MeetRoom', MeetRoomSchema);
+export const MeetRoomModel = model<MeetRoomDocument>(meetRoomCollectionName, MeetRoomSchema);

@@ -1,11 +1,15 @@
 import { AuthMode, AuthType, GlobalConfig, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
 /**
  * Mongoose Document interface for GlobalConfig.
  * Extends the GlobalConfig interface with MongoDB Document functionality.
  */
-export interface MeetGlobalConfigDocument extends GlobalConfig, Document {}
+export interface MeetGlobalConfigDocument extends GlobalConfig, Document {
+	/** Schema version for migration tracking (internal use only) */
+	schemaVersion?: number;
+}
 
 /**
  * Sub-schema for authentication method.
@@ -144,6 +148,11 @@ const RoomsConfigSchema = new Schema(
  */
 const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 	{
+		schemaVersion: {
+			type: Number,
+			required: true,
+			default: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION
+		},
 		projectId: {
 			type: String,
 			required: true
@@ -166,6 +175,7 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 			versionKey: false,
 			transform: (_doc, ret) => {
 				delete ret._id;
+				delete ret.schemaVersion;
 				return ret;
 			}
 		}
@@ -175,7 +185,12 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 // Create indexes for efficient querying
 MeetGlobalConfigSchema.index({ projectId: 1 }, { unique: true });
 
+export const meetGlobalConfigCollectionName = 'MeetGlobalConfig';
+
 /**
  * Mongoose model for GlobalConfig entity.
  */
-export const MeetGlobalConfigModel = model<MeetGlobalConfigDocument>('MeetGlobalConfig', MeetGlobalConfigSchema);
+export const MeetGlobalConfigModel = model<MeetGlobalConfigDocument>(
+	meetGlobalConfigCollectionName,
+	MeetGlobalConfigSchema
+);
