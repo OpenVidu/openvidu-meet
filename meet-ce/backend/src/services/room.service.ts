@@ -26,10 +26,10 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { IScheduledTask } from '../models/index.js';
 import { RoomRepository } from '../repositories/index.js';
 import {
 	FrontendEventService,
-	IScheduledTask,
 	LiveKitService,
 	LoggerService,
 	RecordingService,

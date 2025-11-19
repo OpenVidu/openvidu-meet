@@ -1,9 +1,9 @@
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
+import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/index.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
-import { MeetRecordingDocument, MeetRecordingModel } from './schemas/recording.schema.js';
 
 /**
  * Repository for managing recording entities in MongoDB.

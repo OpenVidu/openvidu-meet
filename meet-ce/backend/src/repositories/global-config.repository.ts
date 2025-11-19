@@ -1,8 +1,8 @@
 import { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from '../models/mongoose-schemas/index.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
-import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from './schemas/global-config.schema.js';
 
 /**
  * Repository for managing GlobalConfig in MongoDB.

@@ -1,8 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { MeetMigration, MigrationName, MigrationStatus } from '../models/index.js';
+import { MeetMigrationDocument, MeetMigrationModel } from '../models/mongoose-schemas/index.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
-import { MeetMigrationDocument, MeetMigrationModel } from './schemas/migration.schema.js';
 
 @injectable()
 export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigrationDocument> {

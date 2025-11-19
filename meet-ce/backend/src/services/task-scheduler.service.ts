@@ -3,16 +3,8 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/index.js';
-import { LoggerService, MutexService, DistributedEventService } from './index.js';
-
-export type TaskType = 'cron' | 'timeout';
-
-export interface IScheduledTask {
-	name: string;
-	type: TaskType;
-	scheduleOrDelay: ms.StringValue;
-	callback: () => Promise<void>;
-}
+import { IScheduledTask } from '../models/index.js';
+import { DistributedEventService, LoggerService, MutexService } from './index.js';
 
 @injectable()
 export class TaskSchedulerService {

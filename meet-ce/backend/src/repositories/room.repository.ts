@@ -1,9 +1,9 @@
 import { MeetRoom } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/index.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
-import { MeetRoomDocument, MeetRoomModel } from './schemas/room.schema.js';
 
 /**
  * Repository for managing MeetRoom entities in MongoDB.

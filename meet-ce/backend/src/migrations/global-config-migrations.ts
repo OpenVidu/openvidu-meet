@@ -1,5 +1,5 @@
 import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetGlobalConfigDocument } from '../repositories/schemas/global-config.schema.js';
+import { MeetGlobalConfigDocument } from '../models/mongoose-schemas/index.js';
 
 /**
  * All migrations for the MeetGlobalConfig collection in chronological order.

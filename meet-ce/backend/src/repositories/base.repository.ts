@@ -1,33 +1,7 @@
 import { inject, injectable, unmanaged } from 'inversify';
 import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
+import { PaginatedFindOptions, PaginatedResult, PaginationCursor } from '../models/index.js';
 import { LoggerService } from '../services/logger.service.js';
-
-/**
- * Options for paginated find operations.
- */
-export interface PaginatedFindOptions {
-	maxItems?: number;
-	nextPageToken?: string;
-	sortField?: string;
-	sortOrder?: 'asc' | 'desc';
-}
-
-/**
- * Result of a paginated find operation.
- */
-export interface PaginatedResult<T> {
-	items: T[];
-	isTruncated: boolean;
-	nextPageToken?: string;
-}
-
-/**
- * Pagination cursor structure.
- */
-interface PaginationCursor {
-	fieldValue: unknown;
-	id: string;
-}
 
 /**
  * Base repository providing common CRUD operations for MongoDB entities.

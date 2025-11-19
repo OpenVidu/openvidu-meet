@@ -1,11 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
-
-const LoginRequestSchema = z.object({
-	username: z.string().min(4, 'Username must be at least 4 characters long'),
-	password: z.string().min(4, 'Password must be at least 4 characters long')
-});
+import { LoginRequestSchema } from '../../models/zod-schemas/index.js';
 
 export const validateLoginRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = LoginRequestSchema.safeParse(req.body);

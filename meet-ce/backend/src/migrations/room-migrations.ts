@@ -1,5 +1,5 @@
 import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetRoomDocument } from '../repositories/schemas/room.schema.js';
+import { MeetRoomDocument } from '../models/mongoose-schemas/index.js';
 
 /**
  * All migrations for the MeetRoom collection in chronological order.

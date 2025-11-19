@@ -9,7 +9,8 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { SendDataOptions } from 'livekit-server-sdk';
-import { OpenViduComponentsAdapterHelper, OpenViduComponentsSignalPayload } from '../helpers/index.js';
+import { OpenViduComponentsAdapterHelper } from '../helpers/index.js';
+import { OpenViduComponentsSignalPayload } from '../models/index.js';
 import { LiveKitService, LoggerService } from './index.js';
 
 /**

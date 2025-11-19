@@ -1,5 +1,5 @@
 import { Document, model, Schema } from 'mongoose';
-import { MeetMigration, MigrationName, MigrationStatus } from '../../models/index.js';
+import { MeetMigration, MigrationName, MigrationStatus } from '../index.js';
 
 /**
  * Mongoose Document interface for MeetMigration.

@@ -7,6 +7,28 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Sanitizes a room name by normalizing format.
+	 *
+	 * @param val The string to sanitize
+	 * @returns A sanitized string safe for use as a room name
+	 */
+	static sanitizeRoomName(val: string): string {
+		return val
+			.trim() // Remove leading/trailing spaces
+			.replace(/\s+/g, ' '); // Replace multiple consecutive spaces with a single space
+	}
+
+	/**
+	 * Sanitizes an identifier by removing invalid characters
+	 *
+	 * @param val The string to sanitize
+	 * @returns A sanitized string safe for use as an identifier
+	 */
+	static sanitizeRoomId(val: string): string {
+		return val.replace(/[^a-zA-Z0-9_-]/g, ''); // Allow only letters, numbers, hyphens and underscores
+	}
+
+	/**
 	 * Creates a sanitized room ID prefix from the given room name.
 	 *
 	 * This method normalizes the room name by:

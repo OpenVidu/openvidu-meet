@@ -1,37 +1,6 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { SendDataOptions } from 'livekit-server-sdk';
-
-const enum OpenViduComponentsDataTopic {
-	CHAT = 'chat',
-	RECORDING_STARTING = 'recordingStarting',
-	RECORDING_STARTED = 'recordingStarted',
-	RECORDING_STOPPING = 'recordingStopping',
-	RECORDING_STOPPED = 'recordingStopped',
-	RECORDING_DELETED = 'recordingDeleted',
-	RECORDING_FAILED = 'recordingFailed',
-	ROOM_STATUS = 'roomStatus'
-}
-
-interface RecordingSignalPayload {
-	id: string;
-	roomName: string;
-	roomId: string;
-	status: string;
-	filename?: string;
-	startedAt?: number;
-	endedAt?: number;
-	duration?: number;
-	size?: number;
-	location?: string;
-	error?: string;
-}
-
-interface RoomStatusSignalPayload {
-	isRecordingStarted: boolean;
-	recordingList: RecordingSignalPayload[];
-}
-
-export type OpenViduComponentsSignalPayload = RecordingSignalPayload | RoomStatusSignalPayload;
+import { OpenViduComponentsDataTopic, RecordingSignalPayload, RoomStatusSignalPayload } from '../models/index.js';
 
 export class OpenViduComponentsAdapterHelper {
 	private constructor() {

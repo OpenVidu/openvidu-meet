@@ -1,21 +1,7 @@
+import { LiveKitPermissions, MeetPermissions, MeetRoomMemberRole, MeetUser } from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
-import {
-	LiveKitPermissions,
-	MeetPermissions,
-	MeetRoomMemberRole,
-	MeetRoomMemberRoleAndPermissions,
-	MeetUser
-} from '@openvidu-meet/typings';
 import { injectable } from 'inversify';
-
-/**
- * Context stored per HTTP request using AsyncLocalStorage.
- * This ensures that each concurrent request has its own isolated data.
- */
-interface RequestContext {
-	user?: MeetUser;
-	roomMember?: MeetRoomMemberRoleAndPermissions;
-}
+import { RequestContext } from '../models/index.js';
 
 /**
  * Service that manages request-scoped session data using Node.js AsyncLocalStorage.
