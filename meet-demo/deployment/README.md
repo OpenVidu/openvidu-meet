@@ -8,7 +8,6 @@ This directory contains all the files needed to deploy the OpenVidu Meet Demo ap
 deployment/
 ├── docker-compose.yml # Docker Compose configuration
 ├── Dockerfile         # Application Docker image
-├── Caddyfile          # Caddy reverse proxy configuration
 ├── .env               # Environment variables
 └── README.md          # This file
 ```
