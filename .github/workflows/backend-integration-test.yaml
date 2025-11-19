@@ -22,7 +22,7 @@ on:
 jobs:
   build-components:
     name: Build OpenVidu Components Angular
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Build Components
         id: build
@@ -33,7 +33,7 @@ jobs:
   test-api:
     name: ${{ matrix.test-name }}
     needs: build-components
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,7 +106,7 @@ jobs:
 
   start-aws-runner-s3:
     name: Prepare AWS runner (S3)
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     if: ${{ inputs.use-aws != 'false' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -129,7 +129,7 @@ jobs:
 
   start-aws-runner-abs:
     name: Prepare AWS runner (ABS)
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     if: ${{ inputs.use-aws != 'false' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -152,7 +152,7 @@ jobs:
 
   start-aws-runner-gcs:
     name: Prepare AWS runner (GCS)
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     if: ${{ inputs.use-aws != 'false' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
@@ -181,7 +181,7 @@ jobs:
       - start-aws-runner-gcs
       - build-components
     if: ${{ always() && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
-    runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || 'ov-actions-runner' }}
+    runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
       fail-fast: false
       matrix:
@@ -326,7 +326,7 @@ jobs:
       - start-aws-runner-abs
       - start-aws-runner-gcs
       - test-recordings
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     if: ${{ always() }}
     strategy:
       fail-fast: false
@@ -350,7 +350,7 @@ jobs:
       - build-components
       - test-api
       - test-recordings
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     if: ${{ always() }}
     steps:
       - name: Remove Artifact

@@ -7,7 +7,7 @@ on:
 jobs:
   e2e-tests:
     name: WebComponent E2E Tests
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v5

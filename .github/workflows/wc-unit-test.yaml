@@ -7,7 +7,7 @@ on:
 jobs:
   unit-test:
     name: WebComponent Unit Tests
-    runs-on: ov-actions-runner
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Setup Node.js
         uses: actions/setup-node@v5
