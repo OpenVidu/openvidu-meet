@@ -9,21 +9,18 @@ services:
     restart: unless-stopped
 
   caddy:
-    image: caddy:2-alpine
+    image: cruizba/autohttps:v1.0.0
     container_name: caddy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
-      - caddy_config:/config
     environment:
-      - DOMAIN=${DOMAIN:-meet-demo-app.openvidu.io}
+      - SERVICES=meet-demo:6080=${DOMAIN:?mandatory}
     restart: unless-stopped
     depends_on:
       - meet-demo
 
 volumes:
   caddy_data:
-  caddy_config:

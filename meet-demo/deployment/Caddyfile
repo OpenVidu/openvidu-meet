@@ -1,3 +1,0 @@
-{$DOMAIN:meet-demo-app.openvidu.io} {
-    reverse_proxy meet-demo:6080
-}
