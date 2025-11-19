@@ -21,67 +21,67 @@ export const MEET_ENV = {
 	SERVER_CORS_ORIGIN: process.env.SERVER_CORS_ORIGIN || '*',
 	LOG_LEVEL: process.env.MEET_LOG_LEVEL || 'info',
 	NAME_ID: process.env.MEET_NAME_ID || 'openviduMeet',
-	BASE_URL: process.env.MEET_BASE_URL || '',
+	BASE_URL: process.env.MEET_BASE_URL ?? '',
 	EDITION: process.env.MEET_EDITION || 'CE',
 
 	// Authentication configuration
 	INITIAL_ADMIN_USER: process.env.MEET_INITIAL_ADMIN_USER || 'admin',
 	INITIAL_ADMIN_PASSWORD: process.env.MEET_INITIAL_ADMIN_PASSWORD || 'admin',
-	INITIAL_API_KEY: process.env.MEET_INITIAL_API_KEY || '',
+	INITIAL_API_KEY: process.env.MEET_INITIAL_API_KEY ?? '',
 
 	// Webhook configuration
 	INITIAL_WEBHOOK_ENABLED: process.env.MEET_INITIAL_WEBHOOK_ENABLED || 'false',
-	INITIAL_WEBHOOK_URL: process.env.MEET_INITIAL_WEBHOOK_URL || '',
+	INITIAL_WEBHOOK_URL: process.env.MEET_INITIAL_WEBHOOK_URL ?? '',
 
 	// LiveKit configuration
-	LIVEKIT_URL: process.env.LIVEKIT_URL || 'ws://localhost:7880',
-	LIVEKIT_URL_PRIVATE: process.env.LIVEKIT_URL_PRIVATE || process.env.LIVEKIT_URL || 'ws://localhost:7880',
-	LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY || 'devkey',
-	LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET || 'secret',
+	LIVEKIT_URL: process.env.LIVEKIT_URL ?? 'ws://localhost:7880',
+	LIVEKIT_URL_PRIVATE: process.env.LIVEKIT_URL_PRIVATE ?? process.env.LIVEKIT_URL ?? 'ws://localhost:7880',
+	LIVEKIT_API_KEY: process.env.LIVEKIT_API_KEY ?? 'devkey',
+	LIVEKIT_API_SECRET: process.env.LIVEKIT_API_SECRET ?? 'secret',
 
 	// MongoDB configuration
 	MONGO_ENABLED: process.env.MEET_MONGO_ENABLED || 'true',
-	MONGO_URI: process.env.MEET_MONGO_URI || '',
-	MONGO_NODES: process.env.MEET_MONGO_NODES || 'localhost',
-	MONGO_PORT: process.env.MEET_MONGO_PORT || '27017',
-	MONGO_ADMIN_USERNAME: process.env.MEET_MONGO_ADMIN_USERNAME || 'mongoadmin',
-	MONGO_ADMIN_PASSWORD: process.env.MEET_MONGO_ADMIN_PASSWORD || 'mongoadmin',
-	MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME || 'rs0',
-	MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME || 'openvidu-meet',
+	MONGO_URI: process.env.MEET_MONGO_URI ?? '',
+	MONGO_NODES: process.env.MEET_MONGO_NODES ?? 'localhost',
+	MONGO_PORT: process.env.MEET_MONGO_PORT ?? '27017',
+	MONGO_ADMIN_USERNAME: process.env.MEET_MONGO_ADMIN_USERNAME ?? 'mongoadmin',
+	MONGO_ADMIN_PASSWORD: process.env.MEET_MONGO_ADMIN_PASSWORD ?? 'mongoadmin',
+	MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME ?? 'rs0',
+	MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME ?? 'openvidu-meet',
 
 	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
 	// S3 or GCS configuration
-	S3_BUCKET: process.env.MEET_S3_BUCKET || 'openvidu-appdata',
-	S3_SUBBUCKET: process.env.MEET_S3_SUBBUCKET || 'openvidu-meet',
-	S3_SERVICE_ENDPOINT: process.env.MEET_S3_SERVICE_ENDPOINT || 'http://localhost:9000',
-	S3_ACCESS_KEY: process.env.MEET_S3_ACCESS_KEY || 'minioadmin',
-	S3_SECRET_KEY: process.env.MEET_S3_SECRET_KEY || 'minioadmin',
-	AWS_REGION: process.env.MEET_AWS_REGION || 'us-east-1',
-	S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS || 'true',
+	S3_BUCKET: process.env.MEET_S3_BUCKET ?? 'openvidu-appdata',
+	S3_SUBBUCKET: process.env.MEET_S3_SUBBUCKET ?? 'openvidu-meet',
+	S3_SERVICE_ENDPOINT: process.env.MEET_S3_SERVICE_ENDPOINT ?? 'http://localhost:9000',
+	S3_ACCESS_KEY: process.env.MEET_S3_ACCESS_KEY ?? 'minioadmin',
+	S3_SECRET_KEY: process.env.MEET_S3_SECRET_KEY ?? 'minioadmin',
+	AWS_REGION: process.env.MEET_AWS_REGION ?? 'us-east-1',
+	S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS ?? 'true',
 
 	// Azure Blob storage configuration
-	AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME || 'openvidu-appdata',
-	AZURE_SUBCONTAINER_NAME: process.env.MEET_AZURE_SUBCONTAINER_NAME || 'openvidu-meet',
-	AZURE_ACCOUNT_NAME: process.env.MEET_AZURE_ACCOUNT_NAME || '',
-	AZURE_ACCOUNT_KEY: process.env.MEET_AZURE_ACCOUNT_KEY || '',
+	AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME ?? 'openvidu-appdata',
+	AZURE_SUBCONTAINER_NAME: process.env.MEET_AZURE_SUBCONTAINER_NAME ?? 'openvidu-meet',
+	AZURE_ACCOUNT_NAME: process.env.MEET_AZURE_ACCOUNT_NAME ?? '',
+	AZURE_ACCOUNT_KEY: process.env.MEET_AZURE_ACCOUNT_KEY ?? '',
 
 	// Redis configuration
-	REDIS_HOST: process.env.MEET_REDIS_HOST || 'localhost',
-	REDIS_PORT: process.env.MEET_REDIS_PORT || '6379',
-	REDIS_USERNAME: process.env.MEET_REDIS_USERNAME || '',
-	REDIS_PASSWORD: process.env.MEET_REDIS_PASSWORD || 'redispassword',
-	REDIS_DB: process.env.MEET_REDIS_DB || '0',
+	REDIS_HOST: process.env.MEET_REDIS_HOST ?? 'localhost',
+	REDIS_PORT: process.env.MEET_REDIS_PORT ?? '6379',
+	REDIS_USERNAME: process.env.MEET_REDIS_USERNAME ?? '',
+	REDIS_PASSWORD: process.env.MEET_REDIS_PASSWORD ?? 'redispassword',
+	REDIS_DB: process.env.MEET_REDIS_DB ?? '0',
 
 	// Redis Sentinel configuration
-	REDIS_SENTINEL_HOST_LIST: process.env.MEET_REDIS_SENTINEL_HOST_LIST || '',
-	REDIS_SENTINEL_PASSWORD: process.env.MEET_REDIS_SENTINEL_PASSWORD || '',
-	REDIS_SENTINEL_MASTER_NAME: process.env.MEET_REDIS_SENTINEL_MASTER_NAME || 'openvidu',
+	REDIS_SENTINEL_HOST_LIST: process.env.MEET_REDIS_SENTINEL_HOST_LIST ?? '',
+	REDIS_SENTINEL_PASSWORD: process.env.MEET_REDIS_SENTINEL_PASSWORD ?? '',
+	REDIS_SENTINEL_MASTER_NAME: process.env.MEET_REDIS_SENTINEL_MASTER_NAME ?? 'openvidu',
 
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
-	ENABLED_MODULES: process.env.ENABLED_MODULES || ''
+	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
 };
 
 export function checkModuleEnabled() {
