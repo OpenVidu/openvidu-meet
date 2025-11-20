@@ -45,7 +45,16 @@ const createApp = () => {
 
 	// Configure trust proxy based on deployment topology
 	// This is important for rate limiting and getting the real client IP
-	app.set('trust proxy', true);
+	// Can be: true, false, a number (hops), or a custom function/string
+	const trustProxyValue = MEET_ENV.SERVER_TRUST_PROXY;
+	const parsedTrustProxy = /^\d+$/.test(trustProxyValue)
+		? parseInt(trustProxyValue, 10)
+		: trustProxyValue === 'true'
+			? true
+			: trustProxyValue === 'false'
+				? false
+				: trustProxyValue;
+	app.set('trust proxy', parsedTrustProxy);
 
 	app.use(express.json());
 	app.use(jsonSyntaxErrorHandler);

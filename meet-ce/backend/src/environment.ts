@@ -19,6 +19,7 @@ dotenv.config(envPath ? { path: envPath } : {});
 export const MEET_ENV = {
 	SERVER_PORT: process.env.SERVER_PORT || '6080',
 	SERVER_CORS_ORIGIN: process.env.SERVER_CORS_ORIGIN || '*',
+	SERVER_TRUST_PROXY: process.env.SERVER_TRUST_PROXY || 'true',
 	LOG_LEVEL: process.env.MEET_LOG_LEVEL || 'info',
 	NAME_ID: process.env.MEET_NAME_ID || 'openviduMeet',
 	BASE_URL: process.env.MEET_BASE_URL ?? '',
@@ -112,6 +113,7 @@ export const logEnvVars = () => {
 	console.log('---------------------------------------------------------');
 	console.log('SERVICE NAME ID: ', text(MEET_ENV.NAME_ID));
 	console.log('CORS ORIGIN:', text(MEET_ENV.SERVER_CORS_ORIGIN));
+	console.log('TRUST PROXY:', text(MEET_ENV.SERVER_TRUST_PROXY));
 	console.log('LOG LEVEL: ', text(MEET_ENV.LOG_LEVEL));
 	console.log('BLOB STORAGE MODE:', text(MEET_ENV.BLOB_STORAGE_MODE));
 	console.log('INITIAL ADMIN USER: ', credential('****' + MEET_ENV.INITIAL_ADMIN_USER.slice(-3)));
