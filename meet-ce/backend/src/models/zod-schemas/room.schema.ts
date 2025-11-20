@@ -142,8 +142,8 @@ export const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
 		.refine(
-			(date) => date >= Date.now() + ms(INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE),
-			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE} in the future`
+			(date) => date >= Date.now() + ms(INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION),
+			`autoDeletionDate must be at least ${INTERNAL_CONFIG.MIN_ROOM_AUTO_DELETE_DURATION} in the future`
 		)
 		.optional(),
 	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional()

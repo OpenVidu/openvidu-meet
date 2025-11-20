@@ -54,13 +54,13 @@ export class RoomService {
 		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {
-		const roomGarbageCollectorTask: IScheduledTask = {
-			name: 'roomGarbageCollector',
+		const expiredRoomsGCTask: IScheduledTask = {
+			name: 'expiredRoomsGC',
 			type: 'cron',
-			scheduleOrDelay: INTERNAL_CONFIG.ROOM_GC_INTERVAL,
+			scheduleOrDelay: INTERNAL_CONFIG.ROOM_EXPIRED_GC_INTERVAL,
 			callback: this.deleteExpiredRooms.bind(this)
 		};
-		this.taskSchedulerService.registerTask(roomGarbageCollectorTask);
+		this.taskSchedulerService.registerTask(expiredRoomsGCTask);
 	}
 
 	/**

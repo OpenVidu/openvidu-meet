@@ -62,9 +62,9 @@ describe('Recording Cleanup Tests', () => {
 		jest.spyOn(livekitService, 'getRoom');
 		jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
 		jest.spyOn(livekitService, 'stopEgress');
-		jest.spyOn(recordingService as never, 'performRecordingLocksGarbageCollection');
+		jest.spyOn(recordingService as never, 'performActiveRecordingLocksGC');
 		jest.spyOn(recordingService as never, 'evaluateAndReleaseOrphanedLock');
-		jest.spyOn(recordingService as never, 'performStaleRecordingsCleanup');
+		jest.spyOn(recordingService as never, 'performStaleRecordingsGC');
 		jest.spyOn(recordingService as never, 'evaluateAndAbortStaleRecording');
 		jest.spyOn(recordingService, 'getRecording');
 		jest.spyOn(recordingService as never, 'updateRecordingStatus');
@@ -155,7 +155,7 @@ describe('Recording Cleanup Tests', () => {
 			(livekitService.getInProgressRecordingsEgress as jest.Mock).mockResolvedValueOnce([] as never);
 
 			// Execute the stale recordings cleanup
-			await recordingService['performStaleRecordingsCleanup']();
+			await recordingService['performStaleRecordingsGC']();
 
 			// Verify that we checked for recordings but didn't attempt to process any
 			expect(livekitService.getInProgressRecordingsEgress).toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('Recording Cleanup Tests', () => {
 			);
 
 			// Execute the stale recordings cleanup - should not throw
-			await recordingService['performStaleRecordingsCleanup']();
+			await recordingService['performStaleRecordingsGC']();
 
 			// Verify the error was handled properly without further processing
 			expect(livekitService.getInProgressRecordingsEgress).toHaveBeenCalled();
@@ -186,7 +186,7 @@ describe('Recording Cleanup Tests', () => {
 			(livekitService.getInProgressRecordingsEgress as jest.Mock).mockResolvedValueOnce(mockEgressInfos as never);
 
 			// Execute the stale recordings cleanup
-			await recordingService['performStaleRecordingsCleanup']();
+			await recordingService['performStaleRecordingsGC']();
 
 			// Verify that each recording was processed individually
 			expect((recordingService as never)['evaluateAndAbortStaleRecording']).toHaveBeenCalledTimes(3);
@@ -459,7 +459,7 @@ describe('Recording Cleanup Tests', () => {
 			jest.useFakeTimers();
 			const now = 1_000_000;
 			jest.setSystemTime(now);
-			const staleUpdateTime = now - ms(INTERNAL_CONFIG.RECORDING_STALE_AFTER);
+			const staleUpdateTime = now - ms(INTERNAL_CONFIG.RECORDING_STALE_GRACE_PERIOD);
 			const egressInfo = createMockEgressInfo(roomId, egressId, EgressStatus.EGRESS_ACTIVE, staleUpdateTime);
 
 			// Mock recording as active

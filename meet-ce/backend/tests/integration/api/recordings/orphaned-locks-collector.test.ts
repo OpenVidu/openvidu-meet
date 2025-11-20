@@ -63,7 +63,7 @@ describe('Recording Garbage Collector Tests', () => {
 		jest.spyOn(livekitService, 'roomExists');
 		jest.spyOn(livekitService, 'getRoom');
 		jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
-		jest.spyOn(recordingService as never, 'performRecordingLocksGarbageCollection');
+		jest.spyOn(recordingService as never, 'performActiveRecordingLocksGC');
 		jest.spyOn(recordingService as never, 'evaluateAndReleaseOrphanedLock');
 
 		jest.clearAllMocks();
@@ -101,7 +101,7 @@ describe('Recording Garbage Collector Tests', () => {
 	 */
 	async function createTestLock(roomId: string, ageMs = 0): Promise<Lock | null> {
 		const lockName = getRecordingLock(roomId);
-		const lock = await mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_LOCK_TTL));
+		const lock = await mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL));
 
 		if (ageMs > 0) {
 			// Mock getLockCreatedAt to simulate lock age
@@ -125,7 +125,7 @@ describe('Recording Garbage Collector Tests', () => {
 			(mutexService.getLocksByPrefix as jest.Mock).mockResolvedValueOnce([] as never);
 
 			// Execute the garbage collector
-			await recordingService['performRecordingLocksGarbageCollection']();
+			await recordingService['performActiveRecordingLocksGC']();
 
 			// Verify that we checked for locks but didn't attempt to process any
 			expect(mutexService.getLocksByPrefix).toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('Recording Garbage Collector Tests', () => {
 			);
 
 			// Execute the garbage collector - should not throw
-			await recordingService['performRecordingLocksGarbageCollection']();
+			await recordingService['performActiveRecordingLocksGC']();
 
 			// Verify the error was handled properly without further processing
 			expect(mutexService.getLocksByPrefix).toHaveBeenCalled();
@@ -160,7 +160,7 @@ describe('Recording Garbage Collector Tests', () => {
 			);
 
 			// Execute the garbage collector
-			await recordingService['performRecordingLocksGarbageCollection']();
+			await recordingService['performActiveRecordingLocksGC']();
 
 			// Verify that each lock was processed individually
 			expect((recordingService as any).evaluateAndReleaseOrphanedLock).toHaveBeenCalledTimes(3);

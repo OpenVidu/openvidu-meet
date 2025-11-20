@@ -154,8 +154,11 @@ describe('path.utils - Robust project path resolution', () => {
 					expect(fs.existsSync(srcPath)).toBe(true);
 					break;
 				}
+
 				const parent = path.dirname(currentPath);
+
 				if (parent === currentPath) break; // Reached root
+
 				currentPath = parent;
 			}
 

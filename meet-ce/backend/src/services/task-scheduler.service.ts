@@ -63,7 +63,7 @@ export class TaskSchedulerService {
 		if (type === 'cron') {
 			this.logger.debug(`Scheduling cron task "${name}" with schedule "${scheduleOrDelay}"`);
 			const cronExpression = this.msStringToCronExpression(scheduleOrDelay);
-			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms(INTERNAL_CONFIG.CRON_JOB_MIN_LOCK_TTL));
+			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms(INTERNAL_CONFIG.CRON_JOB_LOCK_TTL));
 
 			const job = new CronJob(cronExpression, async () => {
 				try {

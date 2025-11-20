@@ -12,7 +12,7 @@ import {
 	generateRoomMemberToken,
 	getRoom,
 	joinFakeParticipant,
-	runRoomGarbageCollector,
+	runExpiredRoomsGC,
 	sleep,
 	startRecording,
 	startTestServer
@@ -21,7 +21,7 @@ import {
 describe('Room Garbage Collector Tests', () => {
 	beforeAll(async () => {
 		setInternalConfig({
-			MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '0s'
+			MIN_ROOM_AUTO_DELETE_DURATION: '0s'
 		});
 		await startTestServer();
 	});
@@ -46,7 +46,7 @@ describe('Room Garbage Collector Tests', () => {
 		await sleep('2s');
 
 		// Run garbage collector
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(404);
@@ -59,7 +59,7 @@ describe('Room Garbage Collector Tests', () => {
 		});
 		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		// The room should not be deleted but scheduled for deletion
 		const response = await getRoom(createdRoom.roomId);
@@ -74,7 +74,7 @@ describe('Room Garbage Collector Tests', () => {
 			autoDeletionDate: Date.now() + ms('1h')
 		});
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		const response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(200);
@@ -89,7 +89,7 @@ describe('Room Garbage Collector Tests', () => {
 		});
 		await joinFakeParticipant(room.roomId, 'test-participant');
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		// The room should not be deleted but scheduled for deletion
 		let response = await getRoom(room.roomId);
@@ -112,7 +112,7 @@ describe('Room Garbage Collector Tests', () => {
 			roomName: 'test-gc-no-date'
 		});
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		const response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(200);
@@ -137,7 +137,7 @@ describe('Room Garbage Collector Tests', () => {
 		// Make sure all rooms are expired
 		await sleep('2s');
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		for (const room of rooms) {
 			const response = await getRoom(room.roomId);
@@ -180,7 +180,7 @@ describe('Room Garbage Collector Tests', () => {
 		const moderatorToken = await generateRoomMemberToken(room1.roomId, { secret: moderatorSecret });
 		await startRecording(room1.roomId, moderatorToken);
 
-		await runRoomGarbageCollector();
+		await runExpiredRoomsGC();
 
 		const response = await getRoom(room1.roomId);
 		expect(response.status).toBe(200);

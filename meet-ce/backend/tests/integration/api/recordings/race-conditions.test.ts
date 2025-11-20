@@ -392,7 +392,7 @@ describe('Recording API Race Conditions Tests', () => {
 		context = await setupMultiRoomTestContext(1, true);
 		const roomData = context.getRoomByIndex(0)!;
 
-		const gcSpy = jest.spyOn(recordingService as any, 'performRecordingLocksGarbageCollection');
+		const gcSpy = jest.spyOn(recordingService as any, 'performActiveRecordingLocksGC');
 
 		const startResponse = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 		expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
@@ -400,7 +400,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		// Execute garbage collection while stopping the recording
 		const stopPromise = stopRecording(recordingId, roomData.moderatorToken);
-		const gcPromise = recordingService['performRecordingLocksGarbageCollection']();
+		const gcPromise = recordingService['performActiveRecordingLocksGC']();
 
 		// Both operations should complete
 

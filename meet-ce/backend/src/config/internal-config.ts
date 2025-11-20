@@ -17,10 +17,6 @@ export const INTERNAL_CONFIG = {
 	REFRESH_TOKEN_EXPIRATION: '1d',
 	ROOM_MEMBER_TOKEN_EXPIRATION: '2h',
 
-	// Participant name reservations
-	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed
-	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
-
 	// Authentication usernames
 	ANONYMOUS_USER: 'anonymous',
 	API_USER: 'api-user',
@@ -28,25 +24,30 @@ export const INTERNAL_CONFIG = {
 	// S3 configuration
 	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',
 	S3_INITIAL_RETRY_DELAY_MS: '100',
-	S3_ROOMS_PREFIX: 'rooms',
-	S3_RECORDINGS_PREFIX: 'recordings',
-	S3_USERS_PREFIX: 'users',
-	S3_API_KEYS_PREFIX: 'api_keys',
 
-	// Garbage collection and recording intervals
-	ROOM_GC_INTERVAL: '1h' as StringValue, // e.g. garbage collector interval for rooms
-	RECORDING_LOCK_TTL: '6h' as StringValue, // TTL for recording lock in Redis
-	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording start
-	RECORDING_LOCK_GC_INTERVAL: '30m' as StringValue, // Garbage collection interval for recording locks
-	RECORDING_ORPHANED_LOCK_GRACE_PERIOD: '1m' as StringValue, // Grace period for orphaned recording locks
-	RECORDING_STALE_CLEANUP_INTERVAL: '15m' as StringValue, // Interval for cleaning up stale recordings that have not been updated within the allowed time
-	RECORDING_STALE_AFTER: '5m' as StringValue, // Maximum allowed time since the last recording update before marking as stale
+	// Cron job configuration
+	CRON_JOB_LOCK_TTL: '59s' as StringValue, // Default TTL for cron job locks to avoid overlapping executions
 
-	CRON_JOB_MIN_LOCK_TTL: '59s' as StringValue, // Minimum TTL for cron job locks
+	// Timing and cleanup settings for room lifecycle management
+	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
+	ROOM_INACTIVE_MEETING_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up active meetings in rooms that are no longer active
+
+	// Timing and cleanup settings for recording lifecycle management
+	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
+	RECORDING_ACTIVE_LOCK_TTL: '7d' as StringValue, // Redis Lock TTL for active recording in a room
+	RECORDING_ACTIVE_LOCK_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up stale active recording locks
+	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Grace period to consider an active recording lock as orphaned (should be greater than RECORDING_STARTED_TIMEOUT)
+	RECORDING_STALE_GC_INTERVAL: '14m' as StringValue, // Interval for cleaning up stale recordings (not updated recently)
+	RECORDING_STALE_GRACE_PERIOD: '5m' as StringValue, // Maximum allowed time since the last recording update before marking it as stale
+
 	// Additional intervals
-	MIN_FUTURE_TIME_FOR_ROOM_AUTODELETION_DATE: '1h' as StringValue, // Minimum time for room auto-deletion date
+	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted
 	MEETING_EMPTY_TIMEOUT: (process.env.MEETING_EMPTY_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open until the first participant joins
 	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open after the last participant leaves
+
+	// Participant name reservation
+	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed
+	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
 
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection

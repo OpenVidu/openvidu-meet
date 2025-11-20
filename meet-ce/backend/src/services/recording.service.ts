@@ -48,23 +48,21 @@ export class RecordingService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
-		// Register the recording garbage collector task
-		const recordingGarbageCollectorTask: IScheduledTask = {
-			name: 'activeRecordingGarbageCollector',
+		const activeRecordingLocksGCTask: IScheduledTask = {
+			name: 'activeRecordingLocksGC',
 			type: 'cron',
-			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_LOCK_GC_INTERVAL,
-			callback: this.performRecordingLocksGarbageCollection.bind(this)
+			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_GC_INTERVAL,
+			callback: this.performActiveRecordingLocksGC.bind(this)
 		};
-		this.taskSchedulerService.registerTask(recordingGarbageCollectorTask);
+		this.taskSchedulerService.registerTask(activeRecordingLocksGCTask);
 
-		// Register the stale recordings cleanup task
-		const staleRecordingsCleanupTask: IScheduledTask = {
-			name: 'staleRecordingsCleanup',
+		const staleRecordingsGCTask: IScheduledTask = {
+			name: 'staleRecordingsGC',
 			type: 'cron',
-			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STALE_CLEANUP_INTERVAL,
-			callback: this.performStaleRecordingsCleanup.bind(this)
+			scheduleOrDelay: INTERNAL_CONFIG.RECORDING_STALE_GC_INTERVAL,
+			callback: this.performStaleRecordingsGC.bind(this)
 		};
-		this.taskSchedulerService.registerTask(staleRecordingsCleanupTask);
+		this.taskSchedulerService.registerTask(staleRecordingsGCTask);
 	}
 
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
@@ -586,7 +584,7 @@ export class RecordingService {
 		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
-			const lock = await this.mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_LOCK_TTL));
+			const lock = await this.mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL));
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
@@ -644,7 +642,7 @@ export class RecordingService {
 		const recordingName = `${roomId}--${uid(10)}`;
 
 		// Generate the file path with the openviud-meet subbucket and the recording prefix
-		const filepath = `${MEET_ENV.S3_SUBBUCKET}/${INTERNAL_CONFIG.S3_RECORDINGS_PREFIX}/${roomId}/${recordingName}`;
+		const filepath = `${MEET_ENV.S3_SUBBUCKET}/recordings/${roomId}/${recordingName}`;
 
 		return new EncodedFileOutput({
 			fileType: EncodedFileType.DEFAULT_FILETYPE,
@@ -753,7 +751,7 @@ export class RecordingService {
 	}
 
 	/**
-	 * Performs garbage collection for orphaned recording locks in the system.
+	 * Performs garbage collection for orphaned active recording locks in the system.
 	 *
 	 * This method identifies and releases locks that are no longer needed by:
 	 * 1. Finding all active recording locks in the system
@@ -771,10 +769,10 @@ export class RecordingService {
 	 * @throws {OpenViduMeetError} Rethrows any errors except 404 (room not found)
 	 * @protected
 	 */
-	protected async performRecordingLocksGarbageCollection(): Promise<void> {
+	protected async performActiveRecordingLocksGC(): Promise<void> {
 		this.logger.debug('Starting orphaned recording locks cleanup process');
 		// Create the lock pattern for finding all recording locks
-		const lockPattern = MeetLock.getRecordingActiveLock('roomId').replace('roomId', '*');
+		const lockPattern = MeetLock.getRecordingActiveLock('*');
 		this.logger.debug(`Searching for locks with pattern: ${lockPattern}`);
 		let recordingLocks: RedisLock[] = [];
 
@@ -788,7 +786,6 @@ export class RecordingService {
 
 			// Extract all rooms ids from the active locks
 			const lockPrefix = lockPattern.replace('*', '');
-
 			const roomIds = recordingLocks.map((lock) => lock.resources[0].replace(lockPrefix, ''));
 
 			const BATCH_SIZE = 10;
@@ -812,14 +809,14 @@ export class RecordingService {
 	}
 
 	/**
-	 * Evaluates and releases orphaned locks for a specific room.
+	 * Evaluates and releases orphaned active recording locks for a specific room.
 	 *
 	 * @param roomId - The ID of the room associated with the lock.
 	 * @param lockPrefix - The prefix used to identify the lock.
 	 */
 	protected async evaluateAndReleaseOrphanedLock(roomId: string, lockPrefix: string): Promise<void> {
 		const lockKey = `${lockPrefix}${roomId}`;
-		const gracePeriodMs = ms(INTERNAL_CONFIG.RECORDING_ORPHANED_LOCK_GRACE_PERIOD);
+		const gracePeriodMs = ms(INTERNAL_CONFIG.RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD);
 
 		const safeLockRelease = async (lockKey: string) => {
 			const stillExists = await this.mutexService.lockExists(lockKey);
@@ -884,6 +881,7 @@ export class RecordingService {
 				}
 			}
 
+			// Release lock if room does not exist or has no publishers
 			this.logger.debug(`Room ${roomId} no longer exists or has no publishers, releasing orphaned lock`);
 			await safeLockRelease(lockKey);
 		} catch (error) {
@@ -893,7 +891,7 @@ export class RecordingService {
 	}
 
 	/**
-	 * Performs cleanup of stale recordings across the system.
+	 * Performs garbage collection for stale recordings in the system.
 	 *
 	 * This method identifies and aborts recordings that have become stale by:
 	 * 1. Getting all recordings in progress from LiveKit
@@ -909,7 +907,7 @@ export class RecordingService {
 	 * @returns {Promise<void>} A promise that resolves when the cleanup process completes
 	 * @protected
 	 */
-	protected async performStaleRecordingsCleanup(): Promise<void> {
+	protected async performStaleRecordingsGC(): Promise<void> {
 		this.logger.debug('Starting stale recordings cleanup process');
 
 		try {
@@ -970,7 +968,7 @@ export class RecordingService {
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 		const updatedAt = RecordingHelper.extractUpdatedDate(egressInfo);
-		const staleAfterMs = ms(INTERNAL_CONFIG.RECORDING_STALE_AFTER);
+		const staleAfterMs = ms(INTERNAL_CONFIG.RECORDING_STALE_GRACE_PERIOD);
 
 		try {
 			const { status } = await this.getRecording(recordingId);
@@ -993,8 +991,8 @@ export class RecordingService {
 				if (!lkRoomExists) {
 					isRecordingStale = true; // There is no room and updated before stale time -> stale
 				} else {
-					const lkRoom = await this.livekitService.getRoom(roomId);
-					isRecordingStale = lkRoom.numPublishers === 0; // No publishers in the room and updated before stale time -> stale
+					const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
+					isRecordingStale = !hasParticipants; // No publishers in the room and updated before stale time -> stale
 				}
 			}
 
@@ -1006,7 +1004,7 @@ export class RecordingService {
 				return false;
 			}
 
-			this.logger.warn(`Room ${roomId} does not exist and recording ${recordingId} is stale, aborting...`);
+			this.logger.warn(`Room ${roomId} does not exist or has no participants and recording ${recordingId} is stale, aborting...`);
 
 			// Abort the recording
 			const { egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);

@@ -347,13 +347,13 @@ export const deleteAllRooms = async () => {
 };
 
 /**
- * Runs the room garbage collector to delete expired rooms.
+ * Runs the expired rooms garbage collector.
  *
  * This function retrieves the RoomService from the dependency injection container
  * and calls its deleteExpiredRooms method to clean up expired rooms.
  * It then waits for 1 second before completing.
  */
-export const runRoomGarbageCollector = async () => {
+export const runExpiredRoomsGC = async () => {
 	checkAppIsRunning();
 
 	const roomService = container.get(RoomService);
