@@ -1,4 +1,4 @@
-import { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
 import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/index.js';
@@ -171,6 +171,18 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 			publicAccessSecret: result.accessSecrets.public,
 			privateAccessSecret: result.accessSecrets.private
 		};
+	}
+
+	/**
+	 * Finds all active recordings (status 'ACTIVE' or 'ENDING').
+	 * Returns all active recordings without pagination.
+	 *
+	 * @returns Array of active recordings
+	 */
+	async findActiveRecordings(): Promise<TRecording[]> {
+		return await this.findAll({
+			status: { $in: [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
+		});
 	}
 
 	/**

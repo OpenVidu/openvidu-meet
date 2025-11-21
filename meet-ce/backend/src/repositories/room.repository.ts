@@ -120,6 +120,21 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Finds all rooms that have expired (autoDeletionDate < now).
+	 * Returns all expired rooms without pagination.
+	 *
+	 * @returns Array of expired rooms with enriched URLs
+	 */
+	async findExpiredRooms(): Promise<TRoom[]> {
+		const now = Date.now();
+
+		// Find all rooms where autoDeletionDate exists and is less than now
+		return await this.findAll({
+			autoDeletionDate: { $exists: true, $lt: now }
+		});
+	}
+
+	/**
 	 * Deletes a room by its roomId.
 	 *
 	 * @param roomId - The unique room identifier
@@ -137,21 +152,6 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 */
 	async deleteByRoomIds(roomIds: string[]): Promise<void> {
 		await this.deleteMany({ roomId: { $in: roomIds } });
-	}
-
-	/**
-	 * Finds all rooms that have expired (autoDeletionDate < now).
-	 * Returns all expired rooms without pagination.
-	 *
-	 * @returns Array of expired rooms with enriched URLs
-	 */
-	async findExpiredRooms(): Promise<TRoom[]> {
-		const now = Date.now();
-
-		// Find all rooms where autoDeletionDate exists and is less than now
-		return await this.findAll({
-			autoDeletionDate: { $exists: true, $lt: now }
-		});
 	}
 
 	/**

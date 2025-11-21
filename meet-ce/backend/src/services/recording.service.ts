@@ -1,6 +1,6 @@
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { EgressInfo, EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
+import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import ms from 'ms';
 import { Readable } from 'stream';
 import { uid } from 'uid';
@@ -894,43 +894,39 @@ export class RecordingService {
 	 * Performs garbage collection for stale recordings in the system.
 	 *
 	 * This method identifies and aborts recordings that have become stale by:
-	 * 1. Getting all recordings in progress from LiveKit
-	 * 2. Checking their last update time
-	 * 3. Aborting recordings that have exceeded the stale threshold
-	 * 4. Updating their status in storage
+	 * 1. Getting all active recordings from database (ACTIVE or ENDING status)
+	 * 2. Checking if there's a corresponding in-progress egress in LiveKit
+	 * 3. If no egress exists, marking the recording as ABORTED
+	 * 4. If egress exists, checking last update time and aborting if stale
 	 *
 	 * Stale recordings can occur when:
 	 * - Network issues prevent normal completion
 	 * - LiveKit egress process hangs or crashes
-	 * - Room is forcibly deleted while recording is active
-	 *
-	 * @returns {Promise<void>} A promise that resolves when the cleanup process completes
-	 * @protected
 	 */
 	protected async performStaleRecordingsGC(): Promise<void> {
 		this.logger.debug('Starting stale recordings cleanup process');
 
 		try {
-			// Get all in-progress recordings from LiveKit (across all rooms)
-			const allInProgressRecordings = await this.livekitService.getInProgressRecordingsEgress();
+			// Get all active recordings from database (ACTIVE or ENDING status)
+			const activeRecordings = await this.recordingRepository.findActiveRecordings();
 
-			if (allInProgressRecordings.length === 0) {
-				this.logger.debug('No in-progress recordings found');
+			if (activeRecordings.length === 0) {
+				this.logger.debug('No active recordings found in database');
 				return;
 			}
 
-			this.logger.debug(`Found ${allInProgressRecordings.length} in-progress recordings to check`);
+			this.logger.debug(`Found ${activeRecordings.length} active recordings in database to check`);
 
 			// Process in batches to avoid overwhelming the system
 			const BATCH_SIZE = 10;
 			let totalProcessed = 0;
 			let totalAborted = 0;
 
-			for (let i = 0; i < allInProgressRecordings.length; i += BATCH_SIZE) {
-				const batch = allInProgressRecordings.slice(i, i + BATCH_SIZE);
+			for (let i = 0; i < activeRecordings.length; i += BATCH_SIZE) {
+				const batch = activeRecordings.slice(i, i + BATCH_SIZE);
 
 				const results = await Promise.allSettled(
-					batch.map((egressInfo: EgressInfo) => this.evaluateAndAbortStaleRecording(egressInfo))
+					batch.map((recording: MeetRecordingInfo) => this.evaluateAndAbortStaleRecording(recording))
 				);
 
 				results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
@@ -939,8 +935,8 @@ export class RecordingService {
 					if (result.status === 'fulfilled' && result.value) {
 						totalAborted++;
 					} else if (result.status === 'rejected') {
-						const recordingId = RecordingHelper.extractRecordingIdFromEgress(batch[index]);
-						this.logger.error(`Failed to process stale recording ${recordingId}:`, result.reason);
+						const recordingId = batch[index].recordingId;
+						this.logger.error(`Failed to process recording ${recordingId}:`, result.reason);
 					}
 				});
 			}
@@ -955,34 +951,48 @@ export class RecordingService {
 
 	/**
 	 * Evaluates whether a recording is stale and aborts it if necessary.
-	 * A recording is considered stale if it has not been updated within the configured stale period
-	 * and either the associated LiveKit room does not exist or has no publishers.
-	 * If the recording is already aborted or has no updatedAt timestamp, it is kept as fresh.
+	 * First checks if there's a corresponding egress in LiveKit. If not, the recording is immediately
+	 * considered stale and aborted. If an egress exists, checks if it has been updated within the
+	 * configured stale period and whether the associated room exists or has publishers.
 	 *
-	 * @param egressInfo - The egress information containing details about the recording.
+	 * @param recording - The recording information from MongoDB.
 	 * @returns A promise that resolves to `true` if the recording was aborted, `false` otherwise.
-	 * @throws Will throw an error if there is an issue retrieving recording status, checking room existence,
+	 * @throws Will throw an error if there is an issue checking egress existence, room existence,
 	 *         or aborting the recording.
 	 */
-	protected async evaluateAndAbortStaleRecording(egressInfo: EgressInfo): Promise<boolean> {
-		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
-		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-		const updatedAt = RecordingHelper.extractUpdatedDate(egressInfo);
+	protected async evaluateAndAbortStaleRecording(recording: MeetRecordingInfo): Promise<boolean> {
+		const recordingId = recording.recordingId;
+		const roomId = recording.roomId;
+		const { egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 		const staleAfterMs = ms(INTERNAL_CONFIG.RECORDING_STALE_GRACE_PERIOD);
 
 		try {
-			const { status } = await this.getRecording(recordingId);
+			// Check if there's a corresponding egress in LiveKit for this room
+			const inProgressRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
+			const egressInfo = inProgressRecordings.find((egress) => egress.egressId === egressId);
 
-			if (status === MeetRecordingStatus.ABORTED) {
-				this.logger.warn(`Recording ${recordingId} is already aborted`);
+			if (!egressInfo) {
+				// No egress found in LiveKit, recording is stale
+				this.logger.warn(
+					`Recording ${recordingId} has no corresponding egress in LiveKit, marking as stale and aborting...`
+				);
+
+				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+				this.logger.info(`Successfully aborted stale recording ${recordingId}`);
 				return true;
 			}
+
+			// Egress exists, check if it's stale based on updatedAt timestamp
+			const updatedAt = RecordingHelper.extractUpdatedDate(egressInfo);
 
 			if (!updatedAt) {
 				this.logger.warn(`Recording ${recordingId} has no updatedAt timestamp, keeping it as fresh`);
 				return false;
 			}
 
+			this.logger.debug(`Recording ${recordingId} last updated at ${new Date(updatedAt).toISOString()}`);
+
+			// Check if recording has not been updated recently
 			const lkRoomExists = await this.livekitService.roomExists(roomId);
 			const ageIsStale = updatedAt < Date.now() - staleAfterMs;
 			let isRecordingStale = false;
@@ -996,19 +1006,16 @@ export class RecordingService {
 				}
 			}
 
-			// Check if recording has not been updated recently
-			this.logger.debug(`Recording ${recordingId} last updated at ${new Date(updatedAt).toISOString()}`);
-
 			if (!isRecordingStale) {
 				this.logger.debug(`Recording ${recordingId} is still fresh`);
 				return false;
 			}
 
-			this.logger.warn(`Room ${roomId} does not exist or has no participants and recording ${recordingId} is stale, aborting...`);
+			this.logger.warn(
+				`Room ${roomId} does not exist or has no participants and recording ${recordingId} is stale, aborting...`
+			);
 
 			// Abort the recording
-			const { egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
 			await Promise.all([
 				this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED),
 				this.livekitService.stopEgress(egressId)

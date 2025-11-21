@@ -196,10 +196,10 @@ flowchart TD
   L -- "Error (recording not found, already stopped,\nor unknown error)" --> O["Reject Request"] --> J
 ```
 
-4. **Failure handling**:
+3. **Failure handling**:
    If an OpenVidu instance crashes while a recording is active, the lock remains in place. This scenario can block subsequent recording attempts if the lock is not released promptly. To mitigate this issue, a lock garbage collector is implemented to periodically clean up orphaned locks.
 
-    The garbage collector runs when the OpenVidu deployment starts, and then every 30 minutes.
+    The garbage collector runs when the OpenVidu deployment starts, and then every 15 minutes.
 
 ```mermaid
 graph TD;
@@ -225,46 +225,53 @@ graph TD;
     L --> M
     M -->|More rooms| E
     M -->|No more rooms| N[Process completed]
-
 ```
 
-5. **Stale recordings cleanup**:
-   To handle recordings that become stale due to network issues, LiveKit or Egress crashes, or other unexpected situations, a separate cleanup process runs every 15 minutes to identify and abort recordings that haven't been updated within a configured threshold (5 minutes by default).
+4. **Stale recordings cleanup**:
+   To handle recordings that become stale due to network issues, LiveKit or Egress crashes, or other unexpected situations, a separate cleanup process runs every 14 minutes to identify and abort recordings that haven't been updated within a configured threshold (5 minutes by default).
 
 ```mermaid
 graph TD;
-    A[Initiate stale recordings cleanup] --> B[Get all in-progress recordings from LiveKit]
+    A[Initiate stale recordings cleanup] --> B[Get all active recordings from database<br/>ACTIVE or ENDING status]
     B -->|Error| C[Log error and exit]
     B -->|No recordings found| D[Log and exit]
     B -->|Recordings found| E[Process recordings in batches of 10]
 
     E --> F[For each recording in batch]
-    F --> G[Extract recording ID and updatedAt]
-    G --> H[Get recording status from storage]
+    F --> G[Extract recordingId, roomId and egressId]
+    G --> H[Check for corresponding egress in LiveKit]
 
-    H -->|Recording already ABORTED| I[Mark as already processed]
-    H -->|Recording active| J[Check if updatedAt exists]
+    H -->|No egress found| I[Recording is stale - no egress exists]
+    H -->|Egress exists| J[Extract updatedAt from egress]
 
-    J -->|No updatedAt timestamp| K[Keep as fresh - log warning]
-    J -->|Has updatedAt| L[Calculate if stale]
+    I --> K[Update status to ABORTED in database]
+    K --> L[Log successful abort - no egress found]
 
-    L -->|Still fresh| M[Log as fresh]
-    L -->|Is stale| N[Abort stale recording]
+    J -->|No updatedAt timestamp| M[Keep as fresh - log warning]
+    J -->|Has updatedAt| N[Check if recording age is stale]
 
-    N --> O[Update status to ABORTED in storage]
-    N --> P[Stop egress in LiveKit]
-    O --> Q[Log successful abort]
-    P --> Q
+    N -->|Age not stale| O[Log as fresh]
+    N -->|Age is stale| P[Check room existence]
 
-    I --> R[Continue to next recording]
-    K --> R
-    M --> R
-    Q --> R
+    P -->|Room does not exist| Q[Mark as stale]
+    P -->|Room exists| R[Check if room has participants]
 
-    R -->|More recordings in batch| F
-    R -->|Batch complete| S[Process next batch]
-    S -->|More batches| E
-    S -->|All batches processed| T[Log completion metrics]
-    T --> U[Process completed]
+    R -->|No participants| Q
+    R -->|Has participants| O
 
+    Q --> S[Update status to ABORTED in database]
+    Q --> T[Stop egress in LiveKit]
+    S --> U[Log successful abort]
+    T --> U
+
+    L --> V[Continue to next recording]
+    M --> V
+    O --> V
+    U --> V
+
+    V -->|More recordings in batch| F
+    V -->|Batch complete| W[Process next batch]
+    W -->|More batches| E
+    W -->|All batches processed| X[Log completion metrics]
+    X --> Y[Process completed]
 ```
