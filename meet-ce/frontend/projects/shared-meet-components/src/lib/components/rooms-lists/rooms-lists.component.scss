@@ -289,14 +289,14 @@
 	}
 
 	.getting-started-actions {
-		@extend .action-buttons;
+		@include design-tokens.ov-mobile-down {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
 
-		.create-room-btn {
-			@extend .refresh-btn;
-		}
-
-		.clear-filters-btn {
-			@extend .refresh-btn;
+			button {
+				width: 100%;
+				padding: var(--ov-meet-spacing-md);
+			}
 		}
 	}
 }
