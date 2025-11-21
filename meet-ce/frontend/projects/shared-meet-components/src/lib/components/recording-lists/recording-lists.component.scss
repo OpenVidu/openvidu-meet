@@ -179,7 +179,7 @@
 // === TOOLBAR AND SHARED UTILITIES ===
 .recordings-toolbar {
 	@extend .ov-data-toolbar;
-	margin-bottom: 0;
+	margin-bottom: var(--ov-meet-spacing-md);
 
 	// Responsive toolbar adjustments
 	@include design-tokens.ov-tablet-down {
