@@ -5,13 +5,11 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
-	errorRecordingNotFound,
 	errorRecordingsNotFromSameRoom,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { RecordingRepository } from '../repositories/recording.repository.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
@@ -230,20 +228,14 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 
 export const getRecordingUrl = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
 	const privateAccess = req.query.privateAccess === 'true';
 
 	logger.info(`Getting URL for recording '${recordingId}'`);
 
 	try {
-		const recordingRepository = container.get(RecordingRepository);
-		const recordingSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
-
-		if (!recordingSecrets) {
-			const error = errorRecordingNotFound(recordingId);
-			return rejectRequestFromMeetError(res, error);
-		}
-
+		const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
 		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
 		const recordingUrl = `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
 

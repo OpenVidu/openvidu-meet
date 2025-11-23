@@ -6,12 +6,11 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
 	errorRecordingDisabled,
-	errorRecordingNotFound,
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { RecordingRepository } from '../repositories/recording.repository.js';
 import { LoggerService } from '../services/logger.service.js';
+import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import {
@@ -141,13 +140,8 @@ export const configureRecordingAuth = async (req: Request, res: Response, next: 
 		try {
 			const recordingId = req.params.recordingId as string;
 
-			const recordingRepository = container.get(RecordingRepository);
-			const recordingSecrets = await recordingRepository.findAccessSecretsByRecordingId(recordingId);
-
-			if (!recordingSecrets) {
-				const error = errorRecordingNotFound(recordingId);
-				return rejectRequestFromMeetError(res, error);
-			}
+			const recordingService = container.get(RecordingService);
+			const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
 
 			const authValidators = [];
 

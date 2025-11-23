@@ -462,6 +462,25 @@ export class RecordingService {
 	}
 
 	/**
+	 * Retrieves the access secrets for a specific recording.
+	 *
+	 * @param recordingId - The unique identifier of the recording
+	 * @returns A promise that resolves to an object containing the public and private access secrets
+	 * @throws Will throw an error if the recording is not found
+	 */
+	async getRecordingAccessSecrets(
+		recordingId: string
+	): Promise<{ publicAccessSecret: string; privateAccessSecret: string }> {
+		const recordingSecrets = await this.recordingRepository.findAccessSecretsByRecordingId(recordingId);
+
+		if (!recordingSecrets) {
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		return recordingSecrets;
+	}
+
+	/**
 	 * Retrieves a paginated list of all recordings stored in MongoDB.
 	 *
 	 * @param maxItems - The maximum number of items to retrieve in a single request.
