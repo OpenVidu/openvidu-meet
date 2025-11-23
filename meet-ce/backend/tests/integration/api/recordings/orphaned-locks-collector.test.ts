@@ -199,8 +199,8 @@ describe('Recording Garbage Collector Tests', () => {
 			// Simulate lock exists
 			(mutexService.lockExists as jest.Mock).mockResolvedValueOnce(true as never);
 
-			// Simulate lock is recent (30 seconds old)
-			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((Date.now() - 30000) as never);
+			// Simulate lock is recent (20 seconds old)
+			(mutexService.getLockCreatedAt as jest.Mock).mockResolvedValueOnce((Date.now() - 20000) as never);
 
 			// Execute evaluateAndReleaseOrphanedLock
 			await recordingService['evaluateAndReleaseOrphanedLock'](testRooms.recentLock, 'prefix_');
