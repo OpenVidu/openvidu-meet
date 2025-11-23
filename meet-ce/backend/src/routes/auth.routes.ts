@@ -1,7 +1,8 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as authCtrl from '../controllers/auth.controller.js';
-import { validateLoginRequest, withLoginLimiter } from '../middlewares/index.js';
+import { withLoginLimiter } from '../middlewares/auth.middleware.js';
+import { validateLoginRequest } from '../middlewares/request-validators/auth-validator.middleware.js';
 
 export const authRouter: Router = Router();
 authRouter.use(bodyParser.urlencoded({ extended: true }));

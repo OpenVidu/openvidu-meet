@@ -9,7 +9,7 @@ import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
-import { LoggerService } from '../../../index.js';
+import { LoggerService } from '../../../logger.service.js';
 
 @injectable()
 export class ABSService {

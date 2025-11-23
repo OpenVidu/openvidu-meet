@@ -1,8 +1,9 @@
 import { inject, injectable } from 'inversify';
-import { RedisKeyName } from '../models/redis.model.js';
-import { LoggerService, RedisService } from './index.js';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { RedisKeyName } from '../models/redis.model.js';
+import { LoggerService } from './logger.service.js';
+import { RedisService } from './redis.service.js';
 
 @injectable()
 export class ParticipantNameService {
@@ -319,7 +320,7 @@ export class ParticipantNameService {
 	/**
 	 * Extracts the base name from a participant name that may have a numeric suffix.
 	 * This prevents infinite concatenation of suffixes (e.g., "BOB_1_1_1...").
-	 * 
+	 *
 	 * Examples:
 	 * - "BOB" -> { baseName: "BOB", originalCaseBase: "BOB" }
 	 * - "BOB_1" -> { baseName: "BOB", originalCaseBase: "BOB" }

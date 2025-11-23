@@ -9,7 +9,7 @@ import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { LoggerService } from './index.js';
+import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class TokenService {

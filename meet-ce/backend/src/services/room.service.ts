@@ -18,7 +18,8 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { MeetRoomHelper, UtilsHelper } from '../helpers/index.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
+import { UtilsHelper } from '../helpers/utils.helper.js';
 import {
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
@@ -26,16 +27,14 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { IScheduledTask } from '../models/index.js';
-import { RoomRepository } from '../repositories/index.js';
-import {
-	FrontendEventService,
-	LiveKitService,
-	LoggerService,
-	RecordingService,
-	RequestSessionService,
-	TaskSchedulerService
-} from './index.js';
+import { IScheduledTask } from '../models/task-scheduler.model.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { FrontendEventService } from './frontend-event.service.js';
+import { LiveKitService } from './livekit.service.js';
+import { LoggerService } from './logger.service.js';
+import { RecordingService } from './recording.service.js';
+import { RequestSessionService } from './request-session.service.js';
+import { TaskSchedulerService } from './task-scheduler.service.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.

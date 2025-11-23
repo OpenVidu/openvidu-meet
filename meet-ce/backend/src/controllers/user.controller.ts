@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { errorUnauthorized, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { RequestSessionService, UserService } from '../services/index.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+import { UserService } from '../services/user.service.js';
 
-export const getProfile = (req: Request, res: Response) => {
+export const getProfile = (_req: Request, res: Response) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getUser();
 

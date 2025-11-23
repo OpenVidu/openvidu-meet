@@ -1,13 +1,10 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
-import {
-	roomMemberTokenValidator,
-	validateUpdateParticipantRequest,
-	withAuth,
-	withModeratorPermissions,
-	withValidRoomId
-} from '../middlewares/index.js';
+import { roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { withModeratorPermissions } from '../middlewares/participant.middleware.js';
+import { validateUpdateParticipantRequest } from '../middlewares/request-validators/participant-validator.middleware.js';
+import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
 
 export const internalMeetingRouter: Router = Router();
 internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));

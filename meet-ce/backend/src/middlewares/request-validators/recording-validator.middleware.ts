@@ -8,7 +8,7 @@ import {
 	MultipleRecordingIdsSchema,
 	nonEmptySanitizedRecordingId,
 	StartRecordingRequestSchema
-} from '../../models/zod-schemas/index.js';
+} from '../../models/zod-schemas/recording.schema.js';
 
 export const withValidStartRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = StartRecordingRequestSchema.safeParse(req.body);

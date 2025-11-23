@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import mongoose from 'mongoose';
 import { MEET_ENV } from '../../environment.js';
-import { LoggerService } from '../index.js';
+import { LoggerService } from '../logger.service.js';
 
 /**
  * Service responsible for managing MongoDB connection lifecycle.

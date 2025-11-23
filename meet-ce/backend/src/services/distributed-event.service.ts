@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import { DistributedEventPayload, DistributedEventType } from '../models/distributed-event.model.js';
-import { LoggerService, RedisService } from './index.js';
+import { LoggerService } from './logger.service.js';
+import { RedisService } from './redis.service.js';
 
 /**
  * Service for managing distributed events using Redis pub/sub pattern.

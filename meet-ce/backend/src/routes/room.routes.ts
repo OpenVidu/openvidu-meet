@@ -5,11 +5,12 @@ import * as roomCtrl from '../controllers/room.controller.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,
-	configureRoomAuthorization,
-	configureRoomMemberTokenAuth,
 	roomMemberTokenValidator,
 	tokenAndRoleValidator,
-	withAuth,
+	withAuth
+} from '../middlewares/auth.middleware.js';
+import { configureRoomMemberTokenAuth } from '../middlewares/participant.middleware.js';
+import {
 	withValidRoomBulkDeleteRequest,
 	withValidRoomConfig,
 	withValidRoomDeleteRequest,
@@ -18,7 +19,8 @@ import {
 	withValidRoomMemberTokenRequest,
 	withValidRoomOptions,
 	withValidRoomStatus
-} from '../middlewares/index.js';
+} from '../middlewares/request-validators/room-validator.middleware.js';
+import { configureRoomAuthorization } from '../middlewares/room.middleware.js';
 
 export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));

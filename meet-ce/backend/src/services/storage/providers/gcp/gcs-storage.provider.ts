@@ -1,7 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import { GCSService, LoggerService } from '../../../index.js';
+import { LoggerService } from '../../../logger.service.js';
 import { StorageProvider } from '../../storage.interface.js';
+import { GCSService } from './gcs.service.js';
 
 /**
  * Basic GCS storage provider that implements only primitive storage operations.

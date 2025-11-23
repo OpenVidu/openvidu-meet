@@ -21,11 +21,14 @@ import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
-import { container, initializeEagerServices } from '../../src/config/index.js';
+import { container, initializeEagerServices } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import { MEET_ENV } from '../../src/environment.js';
 import { createApp, registerDependencies } from '../../src/server.js';
-import { ApiKeyService, GlobalConfigService, RecordingService, RoomService } from '../../src/services/index.js';
+import { ApiKeyService } from '../../src/services/api-key.service.js';
+import { GlobalConfigService } from '../../src/services/global-config.service.js';
+import { RecordingService } from '../../src/services/recording.service.js';
+import { RoomService } from '../../src/services/room.service.js';
 
 const CREDENTIALS = {
 	admin: {

@@ -1,8 +1,8 @@
 import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
-import { GlobalConfigRepository } from '../repositories/index.js';
-import { LoggerService } from './index.js';
+import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
+import { LoggerService } from './logger.service.js';
 
 /**
  * Service for managing global configuration.

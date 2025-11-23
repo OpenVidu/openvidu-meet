@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
-import { LiveKitService, LoggerService, RoomMemberService, RoomService } from '../services/index.js';
+import { LiveKitService } from '../services/livekit.service.js';
+import { LoggerService } from '../services/logger.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
+import { RoomService } from '../services/room.service.js';
 
 export const endMeeting = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

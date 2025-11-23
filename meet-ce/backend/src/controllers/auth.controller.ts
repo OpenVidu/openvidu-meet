@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ClaimGrants } from 'livekit-server-sdk';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,
@@ -9,8 +9,10 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { LoggerService, TokenService, UserService } from '../services/index.js';
-import { getRefreshToken } from '../utils/index.js';
+import { LoggerService } from '../services/logger.service.js';
+import { TokenService } from '../services/token.service.js';
+import { UserService } from '../services/user.service.js';
+import { getRefreshToken } from '../utils/token.utils.js';
 
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

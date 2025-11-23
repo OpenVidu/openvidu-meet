@@ -1,7 +1,9 @@
 import { GlobalConfig, MeetApiKey, MeetRecordingInfo, MeetRoom, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { OpenViduMeetError, RedisKeyName } from '../../models/index.js';
-import { LoggerService, RedisService } from '../index.js';
+import { OpenViduMeetError } from '../../models/error.model.js';
+import { RedisKeyName } from '../../models/redis.model.js';
+import { LoggerService } from '../logger.service.js';
+import { RedisService } from '../redis.service.js';
 import { StorageFactory } from './storage.factory.js';
 import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
 

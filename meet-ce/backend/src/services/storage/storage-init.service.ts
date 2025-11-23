@@ -1,10 +1,14 @@
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { MEET_ENV } from '../../environment.js';
-import { MeetLock } from '../../helpers/index.js';
-import { internalError } from '../../models/index.js';
-import { GlobalConfigRepository } from '../../repositories/index.js';
-import { ApiKeyService, GlobalConfigService, LoggerService, MutexService, UserService } from '../index.js';
+import { MeetLock } from '../../helpers/redis.helper.js';
+import { internalError } from '../../models/error.model.js';
+import { GlobalConfigRepository } from '../../repositories/global-config.repository.js';
+import { ApiKeyService } from '../api-key.service.js';
+import { GlobalConfigService } from '../global-config.service.js';
+import { LoggerService } from '../logger.service.js';
+import { MutexService } from '../mutex.service.js';
+import { UserService } from '../user.service.js';
 
 /**
  * Service responsible for storage initialization.

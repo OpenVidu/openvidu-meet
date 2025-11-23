@@ -9,7 +9,7 @@ import {
 	RoomRequestOptionsSchema,
 	UpdateRoomConfigSchema,
 	UpdateRoomStatusSchema
-} from '../../models/zod-schemas/index.js';
+} from '../../models/zod-schemas/room.schema.js';
 
 export const withValidRoomOptions = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomRequestOptionsSchema.safeParse(req.body);

@@ -4,14 +4,18 @@ import { Router } from 'express';
 import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
 	apiKeyValidator,
-	configureRecordingAuth,
 	roomMemberTokenValidator,
 	tokenAndRoleValidator,
-	withAuth,
+	withAuth
+} from '../middlewares/auth.middleware.js';
+import {
+	configureRecordingAuth,
 	withCanDeleteRecordingsPermission,
 	withCanRecordPermission,
 	withCanRetrieveRecordingsPermission,
-	withRecordingEnabled,
+	withRecordingEnabled
+} from '../middlewares/recording.middleware.js';
+import {
 	withValidGetRecordingMediaRequest,
 	withValidGetRecordingRequest,
 	withValidGetRecordingUrlRequest,
@@ -19,7 +23,7 @@ import {
 	withValidRecordingFiltersRequest,
 	withValidRecordingId,
 	withValidStartRecordingRequest
-} from '../middlewares/index.js';
+} from '../middlewares/request-validators/recording-validator.middleware.js';
 
 export const recordingRouter: Router = Router();
 recordingRouter.use(bodyParser.urlencoded({ extended: true }));

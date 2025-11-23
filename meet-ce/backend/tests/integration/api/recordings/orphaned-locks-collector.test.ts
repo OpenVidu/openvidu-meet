@@ -1,17 +1,14 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Lock } from '@sesamecare-oss/redlock';
 import { EgressInfo, EgressStatus, Room } from 'livekit-server-sdk';
 import ms from 'ms';
-import { Lock } from '@sesamecare-oss/redlock';
-import { container } from '../../../../src/config/index.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { MeetLock } from '../../../../src/helpers/index.js';
-import {
-	LiveKitService,
-	LoggerService,
-	MutexService,
-	RecordingService,
-	RedisLock
-} from '../../../../src/services/index.js';
+import { MeetLock } from '../../../../src/helpers/redis.helper.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { LoggerService } from '../../../../src/services/logger.service.js';
+import { MutexService, RedisLock } from '../../../../src/services/mutex.service.js';
+import { RecordingService } from '../../../../src/services/recording.service.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Recording Garbage Collector Tests', () => {

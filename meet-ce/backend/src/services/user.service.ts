@@ -4,8 +4,8 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, internalError } from '../models/error.model.js';
-import { UserRepository } from '../repositories/index.js';
-import { LoggerService } from './index.js';
+import { UserRepository } from '../repositories/user.repository.js';
+import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class UserService {

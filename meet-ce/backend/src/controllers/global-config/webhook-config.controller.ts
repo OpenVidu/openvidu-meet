@@ -1,8 +1,10 @@
 import { WebhookConfig } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
-import { container } from '../../config/index.js';
+import { container } from '../../config/dependency-injector.config.js';
 import { handleError } from '../../models/error.model.js';
-import { GlobalConfigService, LoggerService, OpenViduWebhookService } from '../../services/index.js';
+import { GlobalConfigService } from '../../services/global-config.service.js';
+import { LoggerService } from '../../services/logger.service.js';
+import { OpenViduWebhookService } from '../../services/openvidu-webhook.service.js';
 
 export const updateWebhookConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

@@ -2,8 +2,8 @@ import { EgressStatus } from '@livekit/protocol';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { EgressInfo } from 'livekit-server-sdk';
 import { uid as secureUid } from 'uid/secure';
-import { container } from '../config/index.js';
-import { RoomService } from '../services/index.js';
+import { container } from '../config/dependency-injector.config.js';
+import { RoomService } from '../services/room.service.js';
 
 export class RecordingHelper {
 	private constructor() {

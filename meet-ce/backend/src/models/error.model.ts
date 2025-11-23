@@ -1,8 +1,8 @@
 import { MeetRoomDeletionErrorCode } from '@openvidu-meet/typings';
 import { Response } from 'express';
 import { z } from 'zod';
-import { container } from '../config/index.js';
-import { LoggerService } from '../services/index.js';
+import { container } from '../config/dependency-injector.config.js';
+import { LoggerService } from '../services/logger.service.js';
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 415 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {

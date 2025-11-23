@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { container } from '../config/index.js';
-import { RequestSessionService } from '../services/index.js';
+import { container } from '../config/dependency-injector.config.js';
+import { RequestSessionService } from '../services/request-session.service.js';
 
 /**
  * Middleware that initializes the AsyncLocalStorage context for each HTTP request.

@@ -3,20 +3,21 @@ import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
 import ms from 'ms';
 import { MEET_ENV } from '../environment.js';
-import { MeetLock, MeetRoomHelper, RecordingHelper } from '../helpers/index.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
-import { RecordingRepository, RoomRepository } from '../repositories/index.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
-import {
-	DistributedEventService,
-	LiveKitService,
-	LoggerService,
-	MutexService,
-	OpenViduWebhookService,
-	RecordingService,
-	RoomMemberService,
-	RoomService
-} from './index.js';
+import { LiveKitService } from './livekit.service.js';
+import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
+import { OpenViduWebhookService } from './openvidu-webhook.service.js';
+import { RecordingService } from './recording.service.js';
+import { RoomMemberService } from './room-member.service.js';
+import { RoomService } from './room.service.js';
 
 @injectable()
 export class LivekitWebhookService {

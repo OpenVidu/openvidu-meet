@@ -2,9 +2,11 @@ import { CronJob } from 'cron';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetLock } from '../helpers/index.js';
-import { IScheduledTask } from '../models/index.js';
-import { DistributedEventService, LoggerService, MutexService } from './index.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import { IScheduledTask } from '../models/task-scheduler.model.js';
+import { DistributedEventService } from './distributed-event.service.js';
+import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
 
 @injectable()
 export class TaskSchedulerService {

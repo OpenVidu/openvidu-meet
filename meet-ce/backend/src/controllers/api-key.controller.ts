@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
-import { ApiKeyService, LoggerService } from '../services/index.js';
+import { ApiKeyService } from '../services/api-key.service.js';
+import { LoggerService } from '../services/logger.service.js';
 
 export const createApiKey = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

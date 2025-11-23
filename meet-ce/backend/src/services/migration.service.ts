@@ -1,24 +1,24 @@
 import { inject, injectable } from 'inversify';
 import { Model } from 'mongoose';
 import ms from 'ms';
-import { MeetLock } from '../helpers/index.js';
-import { migrationRegistry } from '../migrations/index.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import { migrationRegistry } from '../migrations/migration-registry.js';
 import {
 	CollectionMigrationRegistry,
 	generateSchemaMigrationName,
 	ISchemaMigration,
 	MigrationContext,
 	MigrationName
-} from '../models/index.js';
-import {
-	ApiKeyRepository,
-	GlobalConfigRepository,
-	MigrationRepository,
-	RecordingRepository,
-	RoomRepository,
-	UserRepository
-} from '../repositories/index.js';
-import { LegacyStorageService, LoggerService, MutexService } from './index.js';
+} from '../models/migration.model.js';
+import { ApiKeyRepository } from '../repositories/api-key.repository.js';
+import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
+import { MigrationRepository } from '../repositories/migration.repository.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { UserRepository } from '../repositories/user.repository.js';
+import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
+import { LegacyStorageService } from './storage/legacy-storage.service.js';
 
 @injectable()
 export class MigrationService {
@@ -369,7 +369,9 @@ export class MigrationService {
 						}
 
 						// Get access secrets from legacy storage
-						const secrets = await this.legacyStorageService.getRecordingAccessSecrets(recording.recordingId);
+						const secrets = await this.legacyStorageService.getRecordingAccessSecrets(
+							recording.recordingId
+						);
 
 						// Prepare recording document with access secrets
 						const recordingWithSecrets = {

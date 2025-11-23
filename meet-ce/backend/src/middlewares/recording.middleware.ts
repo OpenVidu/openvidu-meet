@@ -1,7 +1,7 @@
 import { MeetRoom, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
-import { container } from '../config/index.js';
-import { RecordingHelper } from '../helpers/index.js';
+import { container } from '../config/dependency-injector.config.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
@@ -10,8 +10,10 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { RecordingRepository } from '../repositories/index.js';
-import { LoggerService, RequestSessionService, RoomService } from '../services/index.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { LoggerService } from '../services/logger.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomService } from '../services/room.service.js';
 import {
 	allowAnonymous,
 	apiKeyValidator,

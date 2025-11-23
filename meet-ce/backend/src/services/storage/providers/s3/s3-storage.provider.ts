@@ -1,7 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import { LoggerService, S3Service } from '../../../index.js';
+import { LoggerService } from '../../../logger.service.js';
 import { StorageProvider } from '../../storage.interface.js';
+import { S3Service } from './s3.service.js';
 
 /**
  * Basic S3 storage provider that implements only primitive storage operations.

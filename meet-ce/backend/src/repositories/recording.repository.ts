@@ -1,7 +1,7 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
-import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/index.js';
+import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 

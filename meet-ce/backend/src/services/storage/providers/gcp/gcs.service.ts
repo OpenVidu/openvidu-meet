@@ -4,7 +4,7 @@ import { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
-import { LoggerService } from '../../../index.js';
+import { LoggerService } from '../../../logger.service.js';
 
 @injectable()
 export class GCSService {

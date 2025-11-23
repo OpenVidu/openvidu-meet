@@ -9,11 +9,13 @@ import {
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
-import { LoggerService, RoomMemberService, RoomService } from '../services/index.js';
-import { getBaseUrl } from '../utils/index.js';
+import { LoggerService } from '../services/logger.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
+import { RoomService } from '../services/room.service.js';
+import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

@@ -4,15 +4,13 @@ import { Router } from 'express';
 import * as appearanceConfigCtrl from '../controllers/global-config/appearance-config.controller.js';
 import * as securityConfigCtrl from '../controllers/global-config/security-config.controller.js';
 import * as webhookConfigCtrl from '../controllers/global-config/webhook-config.controller.js';
+import { allowAnonymous, tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
 import {
-	allowAnonymous,
-	tokenAndRoleValidator,
 	validateRoomsAppearanceConfig,
 	validateSecurityConfig,
 	validateWebhookConfig,
-	withAuth,
 	withValidWebhookTestRequest
-} from '../middlewares/index.js';
+} from '../middlewares/request-validators/config-validator.middleware.js';
 
 export const configRouter: Router = Router();
 configRouter.use(bodyParser.urlencoded({ extended: true }));

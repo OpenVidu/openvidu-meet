@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
-import { MeetMigration, MigrationName, MigrationStatus } from '../models/index.js';
-import { MeetMigrationDocument, MeetMigrationModel } from '../models/mongoose-schemas/index.js';
+import { MeetMigration, MigrationName, MigrationStatus } from '../models/migration.model.js';
+import { MeetMigrationDocument, MeetMigrationModel } from '../models/mongoose-schemas/migration.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 

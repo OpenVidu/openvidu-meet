@@ -1,5 +1,5 @@
 import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetRecordingDocument } from '../models/mongoose-schemas/index.js';
+import { MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
 
 /**
  * All migrations for the MeetRecording collection in chronological order.

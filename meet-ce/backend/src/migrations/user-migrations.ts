@@ -1,5 +1,5 @@
 import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetUserDocument } from '../models/mongoose-schemas/index.js';
+import { MeetUserDocument } from '../models/mongoose-schemas/user.schema.js';
 
 /**
  * All migrations for the MeetUser collection in chronological order.

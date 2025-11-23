@@ -1,52 +1,58 @@
 import { Container } from 'inversify';
 import { MEET_ENV } from '../environment.js';
-import {
-	ApiKeyRepository,
-	BaseRepository,
-	GlobalConfigRepository,
-	MigrationRepository,
-	RecordingRepository,
-	RoomRepository,
-	UserRepository
-} from '../repositories/index.js';
-import {
-	ABSService,
-	ABSStorageProvider,
-	AnalyticsService,
-	ApiKeyService,
-	BaseUrlService,
-	BlobStorageService,
-	DistributedEventService,
-	FrontendEventService,
-	GCSService,
-	GCSStorageProvider,
-	GlobalConfigService,
-	LegacyStorageService,
-	LiveKitService,
-	LivekitWebhookService,
-	LoggerService,
-	// MigrationService,
-	MongoDBService,
-	MutexService,
-	OpenViduWebhookService,
-	ParticipantNameService,
-	RecordingService,
-	RedisService,
-	RequestSessionService,
-	RoomMemberService,
-	RoomService,
-	S3KeyBuilder,
-	S3Service,
-	S3StorageProvider,
-	StorageFactory,
-	StorageInitService,
-	StorageKeyBuilder,
-	StorageProvider,
-	TaskSchedulerService,
-	TokenService,
-	UserService
-} from '../services/index.js';
+
+import { ApiKeyRepository } from '../repositories/api-key.repository.js';
+import { BaseRepository } from '../repositories/base.repository.js';
+import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
+import { MigrationRepository } from '../repositories/migration.repository.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { UserRepository } from '../repositories/user.repository.js';
+
+/*
+ * Services should be imported in order of use, starting with services
+ * without dependencies and then the services that depend on others. This
+ * helps avoid dependency cycles and ensures constructors receive the
+ * dependencies already registered in the container.
+ */
+import { LoggerService } from '../services/logger.service.js';
+import { RedisService } from '../services/redis.service.js';
+import { DistributedEventService } from '../services/distributed-event.service.js';
+import { MutexService } from '../services/mutex.service.js';
+import { TaskSchedulerService } from '../services/task-scheduler.service.js';
+import { BaseUrlService } from '../services/base-url.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+
+import { TokenService } from '../services/token.service.js';
+import { UserService } from '../services/user.service.js';
+import { ApiKeyService } from '../services/api-key.service.js';
+import { GlobalConfigService } from '../services/global-config.service.js';
+
+import { S3Service } from '../services/storage/providers/s3/s3.service.js';
+import { S3KeyBuilder } from '../services/storage/providers/s3/s3-storage-key.builder.js';
+import { S3StorageProvider } from '../services/storage/providers/s3/s3-storage.provider.js';
+import { ABSService } from '../services/storage/providers/abs/abs.service.js';
+import { ABSStorageProvider } from '../services/storage/providers/abs/abs-storage.provider.js';
+import { GCSService } from '../services/storage/providers/gcp/gcs.service.js';
+import { GCSStorageProvider } from '../services/storage/providers/gcp/gcs-storage.provider.js';
+
+import { MongoDBService } from '../services/storage/mongodb.service.js';
+import { StorageInitService } from '../services/storage/storage-init.service.js';
+import { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
+import { StorageFactory } from '../services/storage/storage.factory.js';
+import { BlobStorageService } from '../services/storage/blob-storage.service.js';
+import { LegacyStorageService } from '../services/storage/legacy-storage.service.js';
+
 import { MigrationService } from '../services/migration.service.js';
+import { LiveKitService } from '../services/livekit.service.js';
+import { FrontendEventService } from '../services/frontend-event.service.js';
+import { RecordingService } from '../services/recording.service.js';
+import { RoomService } from '../services/room.service.js';
+import { ParticipantNameService } from '../services/participant-name.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
+import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
+import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
+import { AnalyticsService } from '../services/analytics.service.js';
 
 export const container: Container = new Container();
 

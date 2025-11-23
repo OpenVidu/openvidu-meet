@@ -1,7 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
-import { ABSService, LoggerService } from '../../../index.js';
+import { LoggerService } from '../../../logger.service.js';
 import { StorageProvider } from '../../storage.interface.js';
+import { ABSService } from './abs.service.js';
 
 /**
  * Basic Azure Blob Storage provider that implements only primitive storage operations.

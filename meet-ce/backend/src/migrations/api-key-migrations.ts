@@ -1,5 +1,5 @@
 import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetApiKeyDocument } from '../models/mongoose-schemas/index.js';
+import { MeetApiKeyDocument } from '../models/mongoose-schemas/api-key.schema.js';
 
 /**
  * All migrations for the MeetApiKey collection in chronological order.

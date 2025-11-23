@@ -22,7 +22,7 @@ import {
 import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { MeetRoomHelper } from '../../helpers/index.js';
+import { MeetRoomHelper } from '../../helpers/room.helper.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
 	z

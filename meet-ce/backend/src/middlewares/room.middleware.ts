@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { errorInsufficientPermissions, rejectRequestFromMeetError } from '../models/error.model.js';
-import { RequestSessionService } from '../services/index.js';
+import { RequestSessionService } from '../services/request-session.service.js';
 
 /**
  * Middleware that configures authorization for accessing a specific room.

@@ -15,7 +15,7 @@ import {
 	StreamOutput
 } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
-import { RecordingHelper } from '../helpers/index.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorLivekitNotAvailable,
 	errorParticipantNotFound,
@@ -23,8 +23,8 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { chunkArray } from '../utils/index.js';
-import { LoggerService } from './index.js';
+import { chunkArray } from '../utils/array.utils.js';
+import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class LiveKitService {

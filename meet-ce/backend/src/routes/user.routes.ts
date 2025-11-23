@@ -2,7 +2,8 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as userCtrl from '../controllers/user.controller.js';
-import { tokenAndRoleValidator, validateChangePasswordRequest, withAuth } from '../middlewares/index.js';
+import { tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { validateChangePasswordRequest } from '../middlewares/request-validators/user-validator.middleware.js';
 
 export const userRouter: Router = Router();
 userRouter.use(bodyParser.urlencoded({ extended: true }));

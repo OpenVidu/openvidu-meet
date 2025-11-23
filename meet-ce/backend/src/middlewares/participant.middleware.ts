@@ -1,8 +1,10 @@
 import { AuthMode, MeetRoomMemberRole, MeetRoomMemberTokenOptions, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
-import { GlobalConfigService, RequestSessionService, RoomMemberService } from '../services/index.js';
+import { GlobalConfigService } from '../services/global-config.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
 
 /**

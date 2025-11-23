@@ -5,7 +5,7 @@ import {
 	SecurityConfigSchema,
 	WebhookConfigSchema,
 	WebhookTestSchema
-} from '../../models/zod-schemas/index.js';
+} from '../../models/zod-schemas/global-config.schema.js';
 
 export const validateWebhookConfig = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = WebhookConfigSchema.safeParse(req.body);

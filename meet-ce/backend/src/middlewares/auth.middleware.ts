@@ -3,27 +3,25 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
 import ms from 'ms';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
+	OpenViduMeetError,
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
 	errorInvalidRoomMemberToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorUnauthorized,
-	OpenViduMeetError,
 	rejectRequestFromMeetError
-} from '../models/index.js';
-import {
-	ApiKeyService,
-	LoggerService,
-	RequestSessionService,
-	RoomMemberService,
-	TokenService,
-	UserService
-} from '../services/index.js';
-import { getAccessToken, getRoomMemberToken } from '../utils/index.js';
+} from '../models/error.model.js';
+import { ApiKeyService } from '../services/api-key.service.js';
+import { LoggerService } from '../services/logger.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
+import { TokenService } from '../services/token.service.js';
+import { UserService } from '../services/user.service.js';
+import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
 
 /**
  * Interface for authentication validators.

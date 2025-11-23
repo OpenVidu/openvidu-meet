@@ -1,6 +1,6 @@
 import { MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/index.js';
+import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 

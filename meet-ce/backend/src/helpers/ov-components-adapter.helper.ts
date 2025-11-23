@@ -1,6 +1,10 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { SendDataOptions } from 'livekit-server-sdk';
-import { OpenViduComponentsDataTopic, RecordingSignalPayload, RoomStatusSignalPayload } from '../models/index.js';
+import {
+	OpenViduComponentsDataTopic,
+	RecordingSignalPayload,
+	RoomStatusSignalPayload
+} from '../models/ov-components-signal.model.js';
 
 export class OpenViduComponentsAdapterHelper {
 	private constructor() {

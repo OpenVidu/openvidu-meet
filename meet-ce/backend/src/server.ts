@@ -2,23 +2,21 @@ import chalk from 'chalk';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
-import { initializeEagerServices, registerDependencies } from './config/index.js';
+import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
-import { initRequestContext, jsonSyntaxErrorHandler, setBaseUrlMiddleware } from './middlewares/index.js';
-import {
-	analyticsRouter,
-	apiKeyRouter,
-	authRouter,
-	configRouter,
-	internalMeetingRouter,
-	internalRecordingRouter,
-	internalRoomRouter,
-	livekitWebhookRouter,
-	recordingRouter,
-	roomRouter,
-	userRouter
-} from './routes/index.js';
+import { setBaseUrlMiddleware } from './middlewares/base-url.middleware.js';
+import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
+import { initRequestContext } from './middlewares/request-context.middleware.js';
+import { analyticsRouter } from './routes/analytics.routes.js';
+import { apiKeyRouter } from './routes/api-key.routes.js';
+import { authRouter } from './routes/auth.routes.js';
+import { configRouter } from './routes/global-config.routes.js';
+import { livekitWebhookRouter } from './routes/livekit.routes.js';
+import { internalMeetingRouter } from './routes/meeting.routes.js';
+import { internalRecordingRouter, recordingRouter } from './routes/recording.routes.js';
+import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
+import { userRouter } from './routes/user.routes.js';
 import {
 	frontendDirectoryPath,
 	frontendHtmlPath,

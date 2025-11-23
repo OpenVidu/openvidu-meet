@@ -14,7 +14,9 @@ import {
 	errorInvalidWebhookUrl,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { ApiKeyService, GlobalConfigService, LoggerService } from './index.js';
+import { ApiKeyService } from './api-key.service.js';
+import { GlobalConfigService } from './global-config.service.js';
+import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class OpenViduWebhookService {

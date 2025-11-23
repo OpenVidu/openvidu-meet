@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { container } from '../../../../src/config/index.js';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
-import { LiveKitService } from '../../../../src/services/index.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
 	deleteAllRooms,
 	deleteRoom,

@@ -6,9 +6,11 @@ import { Readable } from 'stream';
 import { uid } from 'uid';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { MeetLock, RecordingHelper, UtilsHelper } from '../helpers/index.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
+import { MeetLock } from '../helpers/redis.helper.js';
+import { UtilsHelper } from '../helpers/utils.helper.js';
+import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
-	DistributedEventType,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
 	errorRecordingCannotBeStoppedWhileStarting,
@@ -17,23 +19,21 @@ import {
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
 	errorRoomNotFound,
-	IScheduledTask,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
 	OpenViduMeetError
-} from '../models/index.js';
-import { RecordingRepository, RoomRepository } from '../repositories/index.js';
-import {
-	BlobStorageService,
-	DistributedEventService,
-	FrontendEventService,
-	LiveKitService,
-	LoggerService,
-	MutexService,
-	RedisLock,
-	TaskSchedulerService
-} from './index.js';
+} from '../models/error.model.js';
+import { IScheduledTask } from '../models/task-scheduler.model.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { DistributedEventService } from './distributed-event.service.js';
+import { FrontendEventService } from './frontend-event.service.js';
+import { LiveKitService } from './livekit.service.js';
+import { LoggerService } from './logger.service.js';
+import { MutexService, RedisLock } from './mutex.service.js';
+import { BlobStorageService } from './storage/blob-storage.service.js';
+import { TaskSchedulerService } from './task-scheduler.service.js';
 
 @injectable()
 export class RecordingService {

@@ -10,16 +10,14 @@ import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { uid } from 'uid/single';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { validateRoomMemberTokenMetadata } from '../middlewares/index.js';
+import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/participant-validator.middleware.js';
 import { errorInvalidRoomSecret, errorParticipantNotFound, errorRoomClosed } from '../models/error.model.js';
-import {
-	FrontendEventService,
-	LiveKitService,
-	LoggerService,
-	ParticipantNameService,
-	RoomService,
-	TokenService
-} from './index.js';
+import { FrontendEventService } from './frontend-event.service.js';
+import { LiveKitService } from './livekit.service.js';
+import { LoggerService } from './logger.service.js';
+import { ParticipantNameService } from './participant-name.service.js';
+import { RoomService } from './room.service.js';
+import { TokenService } from './token.service.js';
 
 /**
  * Service for managing room members and meeting participants.

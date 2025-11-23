@@ -1,9 +1,4 @@
 import { expect } from '@jest/globals';
-import { Response } from 'supertest';
-import { container } from '../../src/config/dependency-injector.config';
-import { INTERNAL_CONFIG } from '../../src/config/internal-config';
-import { TokenService } from '../../src/services';
-
 import {
 	MeetingEndAction,
 	MeetRecordingAccess,
@@ -18,6 +13,10 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
+import { Response } from 'supertest';
+import { container } from '../../src/config/dependency-injector.config';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config';
+import { TokenService } from '../../src/services/token.service';
 
 export const expectErrorResponse = (
 	response: Response,

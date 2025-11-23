@@ -1,17 +1,13 @@
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { CollectionMigrationRegistry } from '../models/migration.model.js';
+import { meetApiKeyCollectionName, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
 import {
-	MeetApiKeyModel,
-	MeetGlobalConfigModel,
-	MeetRecordingModel,
-	MeetRoomModel,
-	MeetUserModel,
-	meetApiKeyCollectionName,
 	meetGlobalConfigCollectionName,
-	meetRecordingCollectionName,
-	meetRoomCollectionName,
-	meetUserCollectionName
-} from '../models/mongoose-schemas/index.js';
+	MeetGlobalConfigModel
+} from '../models/mongoose-schemas/global-config.schema.js';
+import { meetRecordingCollectionName, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
+import { meetRoomCollectionName, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import { meetUserCollectionName, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { apiKeyMigrations } from './api-key-migrations.js';
 import { globalConfigMigrations } from './global-config-migrations.js';
 import { recordingMigrations } from './recording-migrations.js';

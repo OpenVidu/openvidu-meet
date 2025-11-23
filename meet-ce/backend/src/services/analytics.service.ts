@@ -1,7 +1,8 @@
 import { MeetAnalytics } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { RecordingRepository, RoomRepository } from '../repositories/index.js';
-import { LoggerService } from './index.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
+import { LoggerService } from './logger.service.js';
 
 /**
  * Service for retrieving analytics data about OpenVidu Meet usage.

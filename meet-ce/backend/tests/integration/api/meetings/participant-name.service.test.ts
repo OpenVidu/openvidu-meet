@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import ms from 'ms';
-import { container, registerDependencies } from '../../../../src/config/index.js';
+import { container, registerDependencies } from '../../../../src/config/dependency-injector.config.js';
 import { ParticipantNameService } from '../../../../src/services/participant-name.service.js';
 import { RedisService } from '../../../../src/services/redis.service.js';
 

@@ -2,7 +2,7 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as apiKeyCtrl from '../controllers/api-key.controller.js';
-import { tokenAndRoleValidator, withAuth } from '../middlewares/index.js';
+import { tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
 
 export const apiKeyRouter: Router = Router();
 apiKeyRouter.use(bodyParser.urlencoded({ extended: true }));

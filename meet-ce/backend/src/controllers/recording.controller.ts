@@ -1,9 +1,9 @@
 import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
-import { container } from '../config/index.js';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { RecordingHelper } from '../helpers/index.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorRecordingNotFound,
 	errorRecordingsNotFromSameRoom,
@@ -11,9 +11,11 @@ import {
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { RecordingRepository } from '../repositories/index.js';
-import { LoggerService, RecordingService, RequestSessionService } from '../services/index.js';
-import { getBaseUrl } from '../utils/index.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
+import { LoggerService } from '../services/logger.service.js';
+import { RecordingService } from '../services/recording.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
+import { getBaseUrl } from '../utils/url.utils.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

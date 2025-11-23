@@ -1,10 +1,11 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
-import { PasswordHelper } from '../helpers/index.js';
+import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorApiKeyNotConfigured } from '../models/error.model.js';
-import { ApiKeyRepository } from '../repositories/index.js';
-import { LoggerService, UserService } from './index.js';
+import { ApiKeyRepository } from '../repositories/api-key.repository.js';
+import { LoggerService } from './logger.service.js';
+import { UserService } from './user.service.js';
 
 @injectable()
 export class ApiKeyService {

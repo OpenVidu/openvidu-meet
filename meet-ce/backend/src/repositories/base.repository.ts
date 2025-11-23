@@ -1,6 +1,6 @@
 import { inject, injectable, unmanaged } from 'inversify';
 import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
-import { PaginatedFindOptions, PaginatedResult, PaginationCursor } from '../models/index.js';
+import { PaginatedFindOptions, PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**

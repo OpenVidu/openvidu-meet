@@ -1,8 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { container } from '../../../../src/config/index.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { DistributedEventType } from '../../../../src/models/distributed-event.model.js';
-import { RecordingService } from '../../../../src/services';
 import {
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
@@ -27,6 +25,8 @@ import {
 	setupMultiRoomTestContext,
 	TestContext
 } from '../../../helpers/test-scenarios';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { RecordingService } from '../../../../src/services/recording.service.js';
 
 describe('Recording API Race Conditions Tests', () => {
 	let context: TestContext | null = null;
