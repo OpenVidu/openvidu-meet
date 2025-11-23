@@ -1,4 +1,11 @@
-import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
+import {
+	AuthMode,
+	AuthType,
+	GlobalConfig,
+	MeetAppearanceConfig,
+	SecurityConfig,
+	WebhookConfig
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
@@ -31,9 +38,131 @@ export class GlobalConfigService {
 	}
 
 	/**
+	 * Retrieves the webhook configuration.
+	 *
+	 * @returns The webhook configuration
+	 */
+	async getWebhookConfig(): Promise<WebhookConfig> {
+		try {
+			const config = await this.getGlobalConfig();
+			return config.webhooksConfig;
+		} catch (error) {
+			this.logger.error('Error retrieving webhook config:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Updates the webhook configuration.
+	 *
+	 * @param webhookConfig - The webhook configuration to update
+	 * @returns The updated webhook configuration
+	 */
+	async updateWebhookConfig(webhookConfig: WebhookConfig): Promise<WebhookConfig> {
+		try {
+			const globalConfig = await this.getGlobalConfig();
+
+			globalConfig.webhooksConfig = {
+				enabled: webhookConfig.enabled,
+				url: webhookConfig.url === undefined ? globalConfig.webhooksConfig.url : webhookConfig.url
+			};
+
+			await this.saveGlobalConfig(globalConfig);
+			this.logger.info('Webhook config updated successfully');
+			return globalConfig.webhooksConfig;
+		} catch (error) {
+			this.logger.error('Error updating webhook config:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Retrieves the security configuration.
+	 *
+	 * @returns The security configuration
+	 */
+	async getSecurityConfig(): Promise<SecurityConfig> {
+		try {
+			const config = await this.getGlobalConfig();
+			return config.securityConfig;
+		} catch (error) {
+			this.logger.error('Error retrieving security config:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Updates the security configuration.
+	 *
+	 * @param securityConfig - The security configuration to update
+	 * @returns The updated security configuration
+	 */
+	async updateSecurityConfig(securityConfig: SecurityConfig): Promise<SecurityConfig> {
+		try {
+			const globalConfig = await this.getGlobalConfig();
+			globalConfig.securityConfig.authentication = { ...securityConfig.authentication };
+			await this.saveGlobalConfig(globalConfig);
+			this.logger.info('Security config updated successfully');
+			return globalConfig.securityConfig;
+		} catch (error) {
+			this.logger.error('Error updating security config:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Retrieves the rooms appearance configuration.
+	 *
+	 * @returns The rooms appearance configuration
+	 */
+	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
+		try {
+			const config = await this.getGlobalConfig();
+			return config.roomsConfig;
+		} catch (error) {
+			this.logger.error('Error retrieving rooms appearance config:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Updates the rooms appearance configuration.
+	 *
+	 * @param appearanceConfig - The appearance configuration to update
+	 * @returns The updated appearance configuration
+	 */
+	async updateRoomsAppearanceConfig(appearanceConfig: {
+		appearance: MeetAppearanceConfig;
+	}): Promise<{ appearance: MeetAppearanceConfig }> {
+		try {
+			const globalConfig = await this.getGlobalConfig();
+
+			if (globalConfig.roomsConfig.appearance.themes.length > 0) {
+				// Preserve existing theme colors if they are not provided in the update
+				const existingTheme = globalConfig.roomsConfig.appearance.themes[0];
+				const newTheme = appearanceConfig.appearance.themes[0];
+
+				newTheme.backgroundColor = newTheme.backgroundColor ?? existingTheme.backgroundColor;
+				newTheme.primaryColor = newTheme.primaryColor ?? existingTheme.primaryColor;
+				newTheme.secondaryColor = newTheme.secondaryColor ?? existingTheme.secondaryColor;
+				newTheme.accentColor = newTheme.accentColor ?? existingTheme.accentColor;
+				newTheme.surfaceColor = newTheme.surfaceColor ?? existingTheme.surfaceColor;
+			}
+
+			globalConfig.roomsConfig = appearanceConfig;
+			await this.saveGlobalConfig(globalConfig);
+			this.logger.info('Rooms appearance config updated successfully');
+			return globalConfig.roomsConfig;
+		} catch (error) {
+			this.logger.error('Error updating rooms appearance config:', error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Retrieves the global configuration.
 	 */
-	async getGlobalConfig(): Promise<GlobalConfig> {
+	protected async getGlobalConfig(): Promise<GlobalConfig> {
 		try {
 			const config = await this.globalConfigRepository.get();
 
@@ -59,7 +188,7 @@ export class GlobalConfigService {
 	 * @returns The updated global configuration
 	 * @throws Error if global config does not exist
 	 */
-	async saveGlobalConfig(config: GlobalConfig): Promise<GlobalConfig> {
+	protected async saveGlobalConfig(config: GlobalConfig): Promise<GlobalConfig> {
 		try {
 			// Update existing config (will throw if not found)
 			const updated = await this.globalConfigRepository.update(config);

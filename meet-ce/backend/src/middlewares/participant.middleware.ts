@@ -32,7 +32,7 @@ export const configureRoomMemberTokenAuth = async (req: Request, res: Response, 
 	let authModeToAccessRoom: AuthMode;
 
 	try {
-		const { securityConfig } = await configService.getGlobalConfig();
+		const securityConfig = await configService.getSecurityConfig();
 		authModeToAccessRoom = securityConfig.authentication.authModeToAccessRoom;
 	} catch (error) {
 		return handleError(res, error, 'checking authentication config');

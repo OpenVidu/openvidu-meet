@@ -4,8 +4,7 @@ import {
 	MeetRoom,
 	MeetWebhookEvent,
 	MeetWebhookEventType,
-	MeetWebhookPayload,
-	WebhookConfig
+	MeetWebhookPayload
 } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
@@ -155,7 +154,7 @@ export class OpenViduWebhookService {
 	}
 
 	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
-		const webhookConfig = await this.getWebhookConfig();
+		const webhookConfig = await this.configService.getWebhookConfig();
 
 		if (!webhookConfig.enabled) return;
 
@@ -308,16 +307,6 @@ export class OpenViduWebhookService {
 			}
 
 			throw errorInvalidWebhookUrl(url, reason);
-		}
-	}
-
-	protected async getWebhookConfig(): Promise<WebhookConfig> {
-		try {
-			const { webhooksConfig } = await this.configService.getGlobalConfig();
-			return webhooksConfig;
-		} catch (error) {
-			this.logger.error('Error getting webhook config:', error);
-			throw error;
 		}
 	}
 

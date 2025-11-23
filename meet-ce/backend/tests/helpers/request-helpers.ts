@@ -187,7 +187,7 @@ export const changeSecurityConfig = async (authMode: AuthMode) => {
 export const restoreDefaultGlobalConfig = async () => {
 	const configService = container.get(GlobalConfigService);
 	const defaultGlobalConfig = configService['getDefaultConfig']();
-	await configService.saveGlobalConfig(defaultGlobalConfig);
+	await configService['saveGlobalConfig'](defaultGlobalConfig);
 };
 
 /**
