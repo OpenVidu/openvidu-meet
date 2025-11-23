@@ -4,6 +4,7 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomStatus,
+	MeetRoomThemeMode,
 	MeetingEndAction
 } from '@openvidu-meet/typings';
 import { Document, Schema, model } from 'mongoose';
@@ -92,6 +93,61 @@ const MeetE2EEConfigSchema = new Schema(
 			type: Boolean,
 			required: true,
 			default: false
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for room theme configuration.
+ */
+const MeetRoomThemeSchema = new Schema(
+	{
+		name: {
+			type: String,
+			required: true
+		},
+		enabled: {
+			type: Boolean,
+			required: true
+		},
+		baseTheme: {
+			type: String,
+			enum: Object.values(MeetRoomThemeMode),
+			required: true
+		},
+		backgroundColor: {
+			type: String,
+			required: false
+		},
+		primaryColor: {
+			type: String,
+			required: false
+		},
+		secondaryColor: {
+			type: String,
+			required: false
+		},
+		accentColor: {
+			type: String,
+			required: false
+		},
+		surfaceColor: {
+			type: String,
+			required: false
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for appearance configuration.
+ */
+export const MeetAppearanceConfigSchema = new Schema(
+	{
+		themes: {
+			type: [MeetRoomThemeSchema],
+			required: true
 		}
 	},
 	{ _id: false }

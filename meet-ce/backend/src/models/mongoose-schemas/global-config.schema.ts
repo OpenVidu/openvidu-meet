@@ -1,6 +1,7 @@
-import { AuthMode, AuthType, GlobalConfig, MeetRoomThemeMode } from '@openvidu-meet/typings';
+import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { MeetAppearanceConfigSchema } from './room.schema.js';
 
 /**
  * Mongoose Document interface for GlobalConfig.
@@ -69,61 +70,6 @@ const WebhookConfigSchema = new Schema(
 		url: {
 			type: String,
 			required: false
-		}
-	},
-	{ _id: false }
-);
-
-/**
- * Sub-schema for room theme configuration.
- */
-const MeetRoomThemeSchema = new Schema(
-	{
-		name: {
-			type: String,
-			required: true
-		},
-		enabled: {
-			type: Boolean,
-			required: true
-		},
-		baseTheme: {
-			type: String,
-			enum: Object.values(MeetRoomThemeMode),
-			required: true
-		},
-		backgroundColor: {
-			type: String,
-			required: false
-		},
-		primaryColor: {
-			type: String,
-			required: false
-		},
-		secondaryColor: {
-			type: String,
-			required: false
-		},
-		accentColor: {
-			type: String,
-			required: false
-		},
-		surfaceColor: {
-			type: String,
-			required: false
-		}
-	},
-	{ _id: false }
-);
-
-/**
- * Sub-schema for appearance configuration.
- */
-const MeetAppearanceConfigSchema = new Schema(
-	{
-		themes: {
-			type: [MeetRoomThemeSchema],
-			required: true
 		}
 	},
 	{ _id: false }

@@ -131,7 +131,7 @@ const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.ob
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema
 });
 
-export const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
+export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	roomName: z
 		.string()
 		.max(50, 'roomName cannot exceed 50 characters')
@@ -183,7 +183,7 @@ export const RoomRequestOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
-export const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
+export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -199,12 +199,12 @@ export const GetRoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	fields: z.string().optional()
 });
 
-export const DeleteRoomQueryParamsSchema = z.object({
+export const DeleteRoomReqSchema = z.object({
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
 
-export const BulkDeleteRoomsSchema = z.object({
+export const BulkDeleteRoomsReqSchema = z.object({
 	roomIds: z.preprocess(
 		(arg) => {
 			// First, convert input to array of strings
@@ -243,15 +243,15 @@ export const BulkDeleteRoomsSchema = z.object({
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
 
-export const UpdateRoomConfigSchema = z.object({
+export const UpdateRoomConfigReqSchema = z.object({
 	config: RoomConfigSchema
 });
 
-export const UpdateRoomStatusSchema = z.object({
+export const UpdateRoomStatusReqSchema = z.object({
 	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
 });
 
-export const RoomMemberTokenRequestSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
+export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
 	.object({
 		secret: z.string().nonempty('Secret is required'),
 		grantJoinMeetingPermission: z.boolean().optional().default(false),

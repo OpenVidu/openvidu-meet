@@ -16,13 +16,13 @@ import {
 	withRecordingEnabled
 } from '../middlewares/recording.middleware.js';
 import {
-	withValidGetRecordingMediaRequest,
-	withValidGetRecordingRequest,
-	withValidGetRecordingUrlRequest,
-	withValidMultipleRecordingIds,
-	withValidRecordingFiltersRequest,
-	withValidRecordingId,
-	withValidStartRecordingRequest
+	validateBulkDeleteRecordingsReq,
+	validateGetRecordingMediaReq,
+	validateGetRecordingReq,
+	validateGetRecordingsReq,
+	validateGetRecordingUrlReq,
+	validateStartRecordingReq,
+	withValidRecordingId
 } from '../middlewares/request-validators/recording-validator.middleware.js';
 
 export const recordingRouter: Router = Router();
@@ -34,26 +34,26 @@ recordingRouter.get(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
 	withCanRetrieveRecordingsPermission,
-	withValidRecordingFiltersRequest,
+	validateGetRecordingsReq,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
-	withValidMultipleRecordingIds,
+	validateBulkDeleteRecordingsReq,
 	withCanDeleteRecordingsPermission,
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
 	'/download',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
-	withValidMultipleRecordingIds,
+	validateBulkDeleteRecordingsReq,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.downloadRecordingsZip
 );
 recordingRouter.get(
 	'/:recordingId',
-	withValidGetRecordingRequest,
+	validateGetRecordingReq,
 	configureRecordingAuth,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecording
@@ -67,7 +67,7 @@ recordingRouter.delete(
 );
 recordingRouter.get(
 	'/:recordingId/media',
-	withValidGetRecordingMediaRequest,
+	validateGetRecordingMediaReq,
 	configureRecordingAuth,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingMedia
@@ -75,7 +75,7 @@ recordingRouter.get(
 recordingRouter.get(
 	'/:recordingId/url',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
-	withValidGetRecordingUrlRequest,
+	validateGetRecordingUrlReq,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingUrl
 );
@@ -87,7 +87,7 @@ internalRecordingRouter.use(bodyParser.json());
 
 internalRecordingRouter.post(
 	'/',
-	withValidStartRecordingRequest,
+	validateStartRecordingReq,
 	withRecordingEnabled,
 	withAuth(roomMemberTokenValidator),
 	withCanRecordPermission,

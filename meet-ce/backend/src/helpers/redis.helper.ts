@@ -30,10 +30,6 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.SCHEDULED_TASK}_${taskName}`;
 	}
 
-	static getRoomGarbageCollectorLock(): string {
-		return `${RedisLockPrefix.BASE}${RedisLockName.ROOM_GARBAGE_COLLECTOR}`;
-	}
-
 	static getStorageInitializationLock(): string {
 		return `${RedisLockPrefix.BASE}${RedisLockName.STORAGE_INITIALIZATION}`;
 	}

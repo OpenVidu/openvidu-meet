@@ -49,20 +49,29 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 			}
 		);
 
-export const StartRecordingRequestSchema = z.object({
+export const StartRecordingReqSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId')
 });
 
-export const GetRecordingSchema = z.object({
-	params: z.object({
-		recordingId: nonEmptySanitizedRecordingId('recordingId')
-	}),
-	query: z.object({
-		secret: z.string().optional()
-	})
+export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
+	maxItems: z.coerce
+		.number()
+		.positive('maxItems must be a positive number')
+		.transform((val) => {
+			// Convert the value to a number
+			const intVal = Math.floor(val);
+			// Ensure it's not greater than 100
+			return intVal > 100 ? 100 : intVal;
+		})
+		.default(10),
+	// status: z.string().optional(),
+	roomId: nonEmptySanitizedRoomId('roomId').optional(),
+	roomName: z.string().optional(),
+	nextPageToken: z.string().optional(),
+	fields: z.string().optional()
 });
 
-export const MultipleRecordingIdsSchema = z.object({
+export const BulkDeleteRecordingsReqSchema = z.object({
 	recordingIds: z.preprocess(
 		(arg) => {
 			if (typeof arg === 'string') {
@@ -81,7 +90,16 @@ export const MultipleRecordingIdsSchema = z.object({
 	)
 });
 
-export const GetRecordingMediaSchema = z.object({
+export const GetRecordingReqSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		secret: z.string().optional()
+	})
+});
+
+export const GetRecordingMediaReqSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
@@ -100,25 +118,7 @@ export const GetRecordingMediaSchema = z.object({
 		.passthrough() // Allow other headers to pass through
 });
 
-export const GetRecordingsFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	// status: z.string().optional(),
-	roomId: nonEmptySanitizedRoomId('roomId').optional(),
-	roomName: z.string().optional(),
-	nextPageToken: z.string().optional(),
-	fields: z.string().optional()
-});
-
-export const GetRecordingUrlSchema = z.object({
+export const GetRecordingUrlReqSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),

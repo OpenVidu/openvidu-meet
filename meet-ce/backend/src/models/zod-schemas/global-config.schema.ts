@@ -30,7 +30,7 @@ export const WebhookConfigSchema: z.ZodType<WebhookConfig> = z
 		}
 	);
 
-export const WebhookTestSchema = z.object({
+export const TestWebhookReqSchema = z.object({
 	url: z
 		.string()
 		.url('Must be a valid URL')

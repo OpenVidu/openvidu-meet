@@ -4,10 +4,10 @@ import {
 	RoomsAppearanceConfigSchema,
 	SecurityConfigSchema,
 	WebhookConfigSchema,
-	WebhookTestSchema
+	TestWebhookReqSchema
 } from '../../models/zod-schemas/global-config.schema.js';
 
-export const validateWebhookConfig = (req: Request, res: Response, next: NextFunction) => {
+export const validateUpdateWebhookConfigReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = WebhookConfigSchema.safeParse(req.body);
 
 	if (!success) {
@@ -18,8 +18,8 @@ export const validateWebhookConfig = (req: Request, res: Response, next: NextFun
 	next();
 };
 
-export const withValidWebhookTestRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = WebhookTestSchema.safeParse(req.body);
+export const validateTestWebhookReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = TestWebhookReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -29,7 +29,7 @@ export const withValidWebhookTestRequest = (req: Request, res: Response, next: N
 	next();
 };
 
-export const validateSecurityConfig = (req: Request, res: Response, next: NextFunction) => {
+export const validateUpdateSecurityConfigReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = SecurityConfigSchema.safeParse(req.body);
 
 	if (!success) {
@@ -40,7 +40,7 @@ export const validateSecurityConfig = (req: Request, res: Response, next: NextFu
 	next();
 };
 
-export const validateRoomsAppearanceConfig = (req: Request, res: Response, next: NextFunction) => {
+export const validateUpdateRoomsAppearanceConfigReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = RoomsAppearanceConfigSchema.safeParse(req.body);
 
 	if (!success) {

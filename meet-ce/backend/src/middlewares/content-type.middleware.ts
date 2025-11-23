@@ -24,11 +24,11 @@ export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: 
  * Otherwise, it passes the error to the next middleware in the chain.
  *
  * @param err - The error object that was caught
- * @param req - The Express request object
+ * @param _req - The Express request object
  * @param res - The Express response object
  * @param next - Express next function to continue to the next middleware
  */
-export const jsonSyntaxErrorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
+export const jsonSyntaxErrorHandler = (err: any, _req: Request, res: Response, next: NextFunction): void => {
 	if (err instanceof SyntaxError && (err as any).status === 400 && 'body' in err) {
 		const error = errorMalformedBody();
 		rejectRequestFromMeetError(res, error);

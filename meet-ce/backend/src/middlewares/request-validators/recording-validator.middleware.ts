@@ -1,23 +1,48 @@
 import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
-	GetRecordingMediaSchema,
-	GetRecordingSchema,
-	GetRecordingsFiltersSchema,
-	GetRecordingUrlSchema,
-	MultipleRecordingIdsSchema,
+	GetRecordingMediaReqSchema,
+	GetRecordingReqSchema,
+	RecordingFiltersSchema,
+	GetRecordingUrlReqSchema,
+	BulkDeleteRecordingsReqSchema,
 	nonEmptySanitizedRecordingId,
-	StartRecordingRequestSchema
+	StartRecordingReqSchema
 } from '../../models/zod-schemas/recording.schema.js';
 
-export const withValidStartRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = StartRecordingRequestSchema.safeParse(req.body);
+export const validateStartRecordingReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = StartRecordingReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
 	req.body = data;
+	next();
+};
+
+export const validateGetRecordingsReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = RecordingFiltersSchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.query = {
+		...data,
+		maxItems: data.maxItems?.toString()
+	};
+	next();
+};
+
+export const validateBulkDeleteRecordingsReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = BulkDeleteRecordingsReqSchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.query.recordingIds = data.recordingIds.join(',');
 	next();
 };
 
@@ -33,8 +58,8 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 	next();
 };
 
-export const withValidGetRecordingRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingSchema.safeParse({
+export const validateGetRecordingReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingReqSchema.safeParse({
 		params: req.params,
 		query: req.query
 	});
@@ -47,33 +72,8 @@ export const withValidGetRecordingRequest = (req: Request, res: Response, next: 
 	next();
 };
 
-export const withValidRecordingFiltersRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingsFiltersSchema.safeParse(req.query);
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.query = {
-		...data,
-		maxItems: data.maxItems?.toString()
-	};
-	next();
-};
-
-export const withValidMultipleRecordingIds = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = MultipleRecordingIdsSchema.safeParse(req.query);
-
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
-	}
-
-	req.query.recordingIds = data.recordingIds.join(',');
-	next();
-};
-
-export const withValidGetRecordingMediaRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingMediaSchema.safeParse({
+export const validateGetRecordingMediaReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingMediaReqSchema.safeParse({
 		params: req.params,
 		query: req.query,
 		headers: req.headers
@@ -89,8 +89,8 @@ export const withValidGetRecordingMediaRequest = (req: Request, res: Response, n
 	next();
 };
 
-export const withValidGetRecordingUrlRequest = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRecordingUrlSchema.safeParse({
+export const validateGetRecordingUrlReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRecordingUrlReqSchema.safeParse({
 		params: req.params,
 		query: req.query
 	});

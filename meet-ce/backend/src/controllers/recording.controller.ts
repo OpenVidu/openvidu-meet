@@ -36,6 +36,22 @@ export const startRecording = async (req: Request, res: Response) => {
 	}
 };
 
+export const stopRecording = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const recordingId = req.params.recordingId;
+
+	try {
+		logger.info(`Stopping recording '${recordingId}'`);
+		const recordingService = container.get(RecordingService);
+
+		const recordingInfo = await recordingService.stopRecording(recordingId);
+		res.setHeader('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`);
+		return res.status(202).json(recordingInfo);
+	} catch (error) {
+		handleError(res, error, `stopping recording '${recordingId}'`);
+	}
+};
+
 export const getRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
@@ -110,22 +126,6 @@ export const getRecording = async (req: Request, res: Response) => {
 		return res.status(200).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `getting recording '${recordingId}'`);
-	}
-};
-
-export const stopRecording = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const recordingId = req.params.recordingId;
-
-	try {
-		logger.info(`Stopping recording '${recordingId}'`);
-		const recordingService = container.get(RecordingService);
-
-		const recordingInfo = await recordingService.stopRecording(recordingId);
-		res.setHeader('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`);
-		return res.status(202).json(recordingInfo);
-	} catch (error) {
-		handleError(res, error, `stopping recording '${recordingId}'`);
 	}
 };
 

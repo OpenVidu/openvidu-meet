@@ -5,7 +5,7 @@ import express, { Express, Request, Response } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
-import { setBaseUrlMiddleware } from './middlewares/base-url.middleware.js';
+import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { analyticsRouter } from './routes/analytics.routes.js';
@@ -66,7 +66,7 @@ const createApp = () => {
 	// Middleware to set base URL for each request
 	// Only if BASE_URL is not set
 	if (!MEET_ENV.BASE_URL) {
-		app.use(setBaseUrlMiddleware);
+		app.use(setBaseUrlFromRequest);
 	}
 
 	// Public API routes

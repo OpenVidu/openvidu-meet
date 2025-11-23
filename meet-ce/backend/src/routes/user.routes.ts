@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as userCtrl from '../controllers/user.controller.js';
 import { tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
-import { validateChangePasswordRequest } from '../middlewares/request-validators/user-validator.middleware.js';
+import { validateChangePasswordReq } from '../middlewares/request-validators/user-validator.middleware.js';
 
 export const userRouter: Router = Router();
 userRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -14,6 +14,6 @@ userRouter.get('/profile', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, Me
 userRouter.post(
 	'/change-password',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
-	validateChangePasswordRequest,
+	validateChangePasswordReq,
 	userCtrl.changePassword
 );

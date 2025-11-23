@@ -76,17 +76,3 @@ export const withModeratorPermissions = async (req: Request, res: Response, next
 
 	return next();
 };
-
-export const checkParticipantFromSameRoom = async (req: Request, res: Response, next: NextFunction) => {
-	const { roomId } = req.params;
-
-	const requestSessionService = container.get(RequestSessionService);
-	const tokenRoomId = requestSessionService.getRoomIdFromToken();
-
-	if (!tokenRoomId || tokenRoomId !== roomId) {
-		const error = errorInsufficientPermissions();
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	return next();
-};

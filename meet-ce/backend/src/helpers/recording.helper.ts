@@ -1,7 +1,6 @@
 import { EgressStatus } from '@livekit/protocol';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { EgressInfo } from 'livekit-server-sdk';
-import { uid as secureUid } from 'uid/secure';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
 
@@ -203,17 +202,6 @@ export class RecordingHelper {
 	static extractSize(egressInfo: EgressInfo): number | undefined {
 		const size = Number(egressInfo.fileResults?.[0]?.size ?? 0);
 		return size !== 0 ? size : undefined;
-	}
-
-	/**
-	 * Builds the secrets for public and private access to recordings.
-	 * @returns An object containing public and private access secrets.
-	 */
-	static buildAccessSecrets(): { publicAccessSecret: string; privateAccessSecret: string } {
-		return {
-			publicAccessSecret: secureUid(10),
-			privateAccessSecret: secureUid(10)
-		};
 	}
 
 	private static toSeconds(nanoseconds: number): number {

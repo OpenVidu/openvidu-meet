@@ -10,7 +10,7 @@ import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { uid } from 'uid/single';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/participant-validator.middleware.js';
+import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-validator.middleware.js';
 import { errorInvalidRoomSecret, errorParticipantNotFound, errorRoomClosed } from '../models/error.model.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';

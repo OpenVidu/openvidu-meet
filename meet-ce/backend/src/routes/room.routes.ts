@@ -11,14 +11,14 @@ import {
 } from '../middlewares/auth.middleware.js';
 import { configureRoomMemberTokenAuth } from '../middlewares/participant.middleware.js';
 import {
-	withValidRoomBulkDeleteRequest,
-	withValidRoomConfig,
-	withValidRoomDeleteRequest,
-	withValidRoomFiltersRequest,
-	withValidRoomId,
-	withValidRoomMemberTokenRequest,
-	withValidRoomOptions,
-	withValidRoomStatus
+	validateBulkDeleteRoomsReq,
+	validateCreateRoomMemberTokenReq,
+	validateCreateRoomReq,
+	validateDeleteRoomReq,
+	validateGetRoomsReq,
+	validateUpdateRoomConfigReq,
+	validateUpdateRoomStatusReq,
+	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
 import { configureRoomAuthorization } from '../middlewares/room.middleware.js';
 
@@ -30,19 +30,19 @@ roomRouter.use(bodyParser.json());
 roomRouter.post(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	withValidRoomOptions,
+	validateCreateRoomReq,
 	roomCtrl.createRoom
 );
 roomRouter.get(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	withValidRoomFiltersRequest,
+	validateGetRoomsReq,
 	roomCtrl.getRooms
 );
 roomRouter.delete(
 	'/',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	withValidRoomBulkDeleteRequest,
+	validateBulkDeleteRoomsReq,
 	roomCtrl.bulkDeleteRooms
 );
 
@@ -56,7 +56,7 @@ roomRouter.get(
 roomRouter.delete(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	withValidRoomDeleteRequest,
+	validateDeleteRoomReq,
 	roomCtrl.deleteRoom
 );
 
@@ -71,7 +71,7 @@ roomRouter.put(
 	'/:roomId/config',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomId,
-	withValidRoomConfig,
+	validateUpdateRoomConfigReq,
 	roomCtrl.updateRoomConfig
 );
 
@@ -79,7 +79,7 @@ roomRouter.put(
 	'/:roomId/status',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	withValidRoomId,
-	withValidRoomStatus,
+	validateUpdateRoomStatusReq,
 	roomCtrl.updateRoomStatus
 );
 
@@ -91,7 +91,7 @@ internalRoomRouter.use(bodyParser.json());
 internalRoomRouter.post(
 	'/:roomId/token',
 	withValidRoomId,
-	withValidRoomMemberTokenRequest,
+	validateCreateRoomMemberTokenReq,
 	configureRoomMemberTokenAuth,
 	roomCtrl.generateRoomMemberToken
 );

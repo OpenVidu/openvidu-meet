@@ -1,15 +1,13 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
-import * as appearanceConfigCtrl from '../controllers/global-config/appearance-config.controller.js';
-import * as securityConfigCtrl from '../controllers/global-config/security-config.controller.js';
-import * as webhookConfigCtrl from '../controllers/global-config/webhook-config.controller.js';
+import * as globalConfigCtrl from '../controllers/global-config.controller.js';
 import { allowAnonymous, tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
 import {
-	validateRoomsAppearanceConfig,
-	validateSecurityConfig,
-	validateWebhookConfig,
-	withValidWebhookTestRequest
+	validateTestWebhookReq,
+	validateUpdateRoomsAppearanceConfigReq,
+	validateUpdateSecurityConfigReq,
+	validateUpdateWebhookConfigReq
 } from '../middlewares/request-validators/config-validator.middleware.js';
 
 export const configRouter: Router = Router();
@@ -20,26 +18,26 @@ configRouter.use(bodyParser.json());
 configRouter.put(
 	'/webhooks',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	validateWebhookConfig,
-	webhookConfigCtrl.updateWebhookConfig
+	validateUpdateWebhookConfigReq,
+	globalConfigCtrl.updateWebhookConfig
 );
-configRouter.get('/webhooks', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), webhookConfigCtrl.getWebhookConfig);
-configRouter.post('/webhooks/test', withValidWebhookTestRequest, webhookConfigCtrl.testWebhook);
+configRouter.get('/webhooks', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), globalConfigCtrl.getWebhookConfig);
+configRouter.post('/webhooks/test', validateTestWebhookReq, globalConfigCtrl.testWebhook);
 
 // Security config
 configRouter.put(
 	'/security',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	validateSecurityConfig,
-	securityConfigCtrl.updateSecurityConfig
+	validateUpdateSecurityConfigReq,
+	globalConfigCtrl.updateSecurityConfig
 );
-configRouter.get('/security', withAuth(allowAnonymous), securityConfigCtrl.getSecurityConfig);
+configRouter.get('/security', withAuth(allowAnonymous), globalConfigCtrl.getSecurityConfig);
 
 // Appearance config
 configRouter.put(
 	'/rooms/appearance',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
-	validateRoomsAppearanceConfig,
-	appearanceConfigCtrl.updateRoomsAppearanceConfig
+	validateUpdateRoomsAppearanceConfigReq,
+	globalConfigCtrl.updateRoomsAppearanceConfig
 );
-configRouter.get('/rooms/appearance', withAuth(allowAnonymous), appearanceConfigCtrl.getRoomsAppearanceConfig);
+configRouter.get('/rooms/appearance', withAuth(allowAnonymous), globalConfigCtrl.getRoomsAppearanceConfig);
