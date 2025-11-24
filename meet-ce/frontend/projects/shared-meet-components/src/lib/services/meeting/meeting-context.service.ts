@@ -98,13 +98,16 @@ export class MeetingContextService {
 
 	/**
 	 * Computed signal for whether the current user can moderate the room
-	 * Derived from FeatureConfigurationService
 	 */
 	readonly canModerateRoom = computed(() => this.featureConfigService.features().canModerateRoom);
 
 	/**
+	 * Computed signal for whether the layout selector feature is enabled
+	 */
+	readonly showLayoutSelector = computed(() => this.featureConfigService.features().showLayoutSelector);
+
+	/**
 	 * Computed signal for whether the device is mobile
-	 * Derived from ViewportService for responsive UI
 	 */
 	readonly isMobile = computed(() => this.viewportService.isMobile());
 

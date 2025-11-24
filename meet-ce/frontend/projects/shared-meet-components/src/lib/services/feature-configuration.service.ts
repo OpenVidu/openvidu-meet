@@ -28,6 +28,7 @@ export interface ApplicationFeatures {
 	showSettings: boolean;
 	showFullscreen: boolean;
 	showThemeSelector: boolean;
+	showLayoutSelector: boolean;
 
 	// Permissions
 	canModerateRoom: boolean;
@@ -56,6 +57,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showSettings: true,
 	showFullscreen: true,
 	showThemeSelector: true,
+	showLayoutSelector: false,
 
 	canModerateRoom: false,
 	canRecordRoom: false,

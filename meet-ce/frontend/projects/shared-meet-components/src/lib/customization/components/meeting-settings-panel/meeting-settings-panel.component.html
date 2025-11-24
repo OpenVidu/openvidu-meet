@@ -1,9 +1,10 @@
 <!-- Grid Layout Configuration Section -->
-<div class="layout-section">
-	<div class="section-header">
-		<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
-		<h4 class="section-title">Layout settings</h4>
-	</div>
+@if (showLayoutSelector()) {
+	<div class="layout-section">
+		<div class="section-header">
+			<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
+			<h4 class="section-title">Layout settings</h4>
+		</div>
 
 	<!-- Layout Mode Selection -->
 	<div class="layout-mode-container">
@@ -55,4 +56,5 @@
 			</div>
 		</div>
 	}
-</div>
+	</div>
+}

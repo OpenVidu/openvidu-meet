@@ -41,6 +41,11 @@ export class MeetingLayoutComponent {
 	});
 
 	/**
+	 * Whether the layout selector feature is enabled
+	 */
+	protected readonly showLayoutSelector = this.meetingContextService.showLayoutSelector;
+
+	/**
 	 * Tracks the order of active speakers (most recent last)
 	 */
 	private readonly activeSpeakersOrder = signal<string[]>([]);
@@ -48,9 +53,16 @@ export class MeetingLayoutComponent {
 	/**
 	 * Computed signal that provides the filtered list of participants to display.
 	 * Automatically reacts to changes in layout service configuration.
+	 * When showLayoutSelector is false, returns all remote participants (default behavior).
 	 */
 	readonly filteredRemoteParticipants = computed(() => {
 		const remoteParticipants = this.meetingContextService.remoteParticipants();
+
+		// If layout selector is disabled, use default behavior (show all participants)
+		if (!this.showLayoutSelector()) {
+			return remoteParticipants;
+		}
+
 		const isLastSpeakersMode = this.layoutService.isSmartMosaicEnabled();
 
 		if (!isLastSpeakersMode) {
@@ -91,13 +103,16 @@ export class MeetingLayoutComponent {
 
 	constructor() {
 		effect(() => {
-			if (this.meetingContextService.lkRoom()) {
+			// Only setup active speakers if layout selector is enabled
+			if (this.showLayoutSelector() && this.meetingContextService.lkRoom()) {
 				this.setupActiveSpeakersListener();
 			}
 		});
 
 		// Effect to handle active speakers cleanup when participants leave
 		effect(() => {
+			// Skip if layout selector is disabled
+			if (!this.showLayoutSelector()) return;
 			if (!this.layoutService.isSmartMosaicEnabled()) return;
 
 			const remoteParticipants = this.meetingContextService.remoteParticipants();

@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MeetLayoutMode } from '../../../models/layout.model';
 import { MeetLayoutService } from '../../../services/layout.service';
+import { MeetingContextService } from '../../../services/meeting/meeting-context.service';
 
 /**
  * Component for additional settings in the Settings Panel.
@@ -30,11 +31,17 @@ import { MeetLayoutService } from '../../../services/layout.service';
 })
 export class MeetingSettingsPanelComponent {
 	private readonly layoutService = inject(MeetLayoutService);
+	protected readonly meetingContextService = inject(MeetingContextService);
 
 	/**
 	 * Expose LayoutMode enum to template
 	 */
 	readonly LayoutMode = MeetLayoutMode;
+
+	/**
+	 * Whether the layout selector feature is enabled
+	 */
+	protected readonly showLayoutSelector = this.meetingContextService.showLayoutSelector;
 
 	/**
 	 * Current layout mode
