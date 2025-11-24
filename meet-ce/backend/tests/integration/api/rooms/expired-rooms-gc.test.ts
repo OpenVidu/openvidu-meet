@@ -18,7 +18,7 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
-describe('Room Garbage Collector Tests', () => {
+describe('Expired Rooms GC Tests', () => {
 	beforeAll(async () => {
 		setInternalConfig({
 			MIN_ROOM_AUTO_DELETE_DURATION: '0s'

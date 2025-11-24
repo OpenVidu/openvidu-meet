@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { SpiedFunction } from 'jest-mock';
 import { EgressInfo, EgressStatus } from 'livekit-server-sdk';
@@ -8,29 +8,32 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { LoggerService } from '../../../../src/services/logger.service.js';
+import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Stale Recordings GC Tests', () => {
-	let recordingService: RecordingService;
+	let recordingTaskScheduler: RecordingScheduledTasksService;
 
 	// Mock functions
 	let findActiveRecordingsMock: SpiedFunction<() => Promise<MeetRecordingInfo[]>>;
-	let roomExistsMock: SpiedFunction<(roomId: string) => Promise<boolean>>;
-	let roomHasParticipantsMock: SpiedFunction<(roomId: string) => Promise<boolean>>;
-	let getInProgressRecordingsEgressMock: SpiedFunction<() => Promise<EgressInfo[]>>;
+	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
+	let roomHasParticipantsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
+	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
 	let stopEgressMock: SpiedFunction<(egressId: string) => Promise<EgressInfo>>;
 	let evaluateAndAbortStaleRecordingMock: SpiedFunction<(recording: MeetRecordingInfo) => Promise<boolean>>;
 	let updateRecordingStatusMock: SpiedFunction<(recordingId: string, status: MeetRecordingStatus) => Promise<void>>;
 
 	beforeAll(async () => {
 		await startTestServer();
-		recordingService = container.get(RecordingService);
+
+		const logger = container.get(LoggerService);
+		const recordingService = container.get(RecordingService);
 		const recordingRepository = container.get(RecordingRepository);
 		const livekitService = container.get(LiveKitService);
+		recordingTaskScheduler = container.get(RecordingScheduledTasksService);
 
 		// Mute logs for the test
-		const logger = container.get(LoggerService);
 		jest.spyOn(logger, 'debug').mockImplementation(() => {});
 		jest.spyOn(logger, 'verbose').mockImplementation(() => {});
 		jest.spyOn(logger, 'info').mockImplementation(() => {});
@@ -43,12 +46,13 @@ describe('Stale Recordings GC Tests', () => {
 		roomHasParticipantsMock = jest.spyOn(livekitService, 'roomHasParticipants');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
 		stopEgressMock = jest.spyOn(livekitService, 'stopEgress');
-		evaluateAndAbortStaleRecordingMock = jest.spyOn(recordingService as never, 'evaluateAndAbortStaleRecording');
+		evaluateAndAbortStaleRecordingMock = jest.spyOn(
+			recordingTaskScheduler as never,
+			'evaluateAndAbortStaleRecording'
+		);
 		updateRecordingStatusMock = jest.spyOn(recordingService as never, 'updateRecordingStatus');
-	});
 
-	beforeEach(() => {
-		// Reset common mocks to default implementations
+		// Default mock implementations
 		updateRecordingStatusMock.mockResolvedValue();
 		stopEgressMock.mockResolvedValue({} as EgressInfo);
 	});
@@ -113,7 +117,7 @@ describe('Stale Recordings GC Tests', () => {
 			findActiveRecordingsMock.mockResolvedValueOnce([]);
 
 			// Execute the stale recordings cleanup
-			await recordingService['performStaleRecordingsGC']();
+			await recordingTaskScheduler['performStaleRecordingsGC']();
 
 			// Verify that we checked for recordings but didn't attempt to process any
 			expect(findActiveRecordingsMock).toHaveBeenCalled();
@@ -125,7 +129,7 @@ describe('Stale Recordings GC Tests', () => {
 			findActiveRecordingsMock.mockRejectedValueOnce(new Error('Failed to retrieve recordings'));
 
 			// Execute the stale recordings cleanup - should not throw
-			await recordingService['performStaleRecordingsGC']();
+			await recordingTaskScheduler['performStaleRecordingsGC']();
 
 			// Verify the error was handled properly without further processing
 			expect(findActiveRecordingsMock).toHaveBeenCalled();
@@ -146,7 +150,7 @@ describe('Stale Recordings GC Tests', () => {
 			getInProgressRecordingsEgressMock.mockResolvedValue([]);
 
 			// Execute the stale recordings cleanup
-			await recordingService['performStaleRecordingsGC']();
+			await recordingTaskScheduler['performStaleRecordingsGC']();
 
 			// Verify that each recording was processed individually
 			expect(evaluateAndAbortStaleRecordingMock).toHaveBeenCalledTimes(3);
@@ -166,7 +170,7 @@ describe('Stale Recordings GC Tests', () => {
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the recording was aborted without calling stopEgress
 			expect(result).toBe(true);
@@ -187,7 +191,7 @@ describe('Stale Recordings GC Tests', () => {
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([egressInfo]);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the method returned false (kept as fresh)
 			expect(result).toBe(false);
@@ -210,7 +214,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomExistsMock.mockResolvedValueOnce(true);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the method returned false (still fresh)
 			expect(result).toBe(false);
@@ -233,7 +237,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomExistsMock.mockResolvedValueOnce(false);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the recording was aborted
 			expect(result).toBe(true);
@@ -257,7 +261,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomHasParticipantsMock.mockResolvedValueOnce(false);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the recording was aborted
 			expect(result).toBe(true);
@@ -282,7 +286,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomHasParticipantsMock.mockResolvedValueOnce(true);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the recording was kept fresh (not aborted)
 			expect(result).toBe(false);
@@ -311,7 +315,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomExistsMock.mockResolvedValueOnce(false);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the recording was kept fresh (threshold is not inclusive)
 			expect(result).toBe(false);
@@ -330,7 +334,7 @@ describe('Stale Recordings GC Tests', () => {
 			getInProgressRecordingsEgressMock.mockRejectedValueOnce(new Error('LiveKit service unavailable'));
 
 			// Execute evaluateAndAbortStaleRecording and expect error to propagate
-			await expect(recordingService['evaluateAndAbortStaleRecording'](recording)).rejects.toThrow(
+			await expect(recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording)).rejects.toThrow(
 				'LiveKit service unavailable'
 			);
 
@@ -351,7 +355,7 @@ describe('Stale Recordings GC Tests', () => {
 			stopEgressMock.mockRejectedValueOnce(new Error('Failed to stop egress'));
 
 			// Execute evaluateAndAbortStaleRecording and expect error to propagate
-			await expect(recordingService['evaluateAndAbortStaleRecording'](recording)).rejects.toThrow(
+			await expect(recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording)).rejects.toThrow(
 				'Failed to stop egress'
 			);
 
@@ -373,7 +377,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomExistsMock.mockResolvedValueOnce(true);
 
 			// Execute evaluateAndAbortStaleRecording and expect it to resolve to false
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			expect(result).toBe(false);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
@@ -399,7 +403,7 @@ describe('Stale Recordings GC Tests', () => {
 			roomExistsMock.mockResolvedValueOnce(false);
 
 			// Execute evaluateAndAbortStaleRecording
-			const result = await recordingService['evaluateAndAbortStaleRecording'](recording);
+			const result = await recordingTaskScheduler['evaluateAndAbortStaleRecording'](recording);
 
 			// Verify that the correct egress was targeted
 			expect(result).toBe(true);

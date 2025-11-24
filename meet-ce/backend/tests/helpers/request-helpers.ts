@@ -28,7 +28,7 @@ import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
-import { RoomService } from '../../src/services/room.service.js';
+import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 
 const CREDENTIALS = {
 	admin: {
@@ -352,15 +352,15 @@ export const deleteAllRooms = async () => {
 /**
  * Runs the expired rooms garbage collector.
  *
- * This function retrieves the RoomService from the dependency injection container
+ * This function retrieves the RoomScheduledTasksService from the dependency injection container
  * and calls its deleteExpiredRooms method to clean up expired rooms.
  * It then waits for 1 second before completing.
  */
 export const runExpiredRoomsGC = async () => {
 	checkAppIsRunning();
 
-	const roomService = container.get(RoomService);
-	await (roomService as any)['deleteExpiredRooms']();
+	const roomTaskScheduler = container.get(RoomScheduledTasksService);
+	await roomTaskScheduler['deleteExpiredRooms']();
 	await sleep('1s');
 };
 

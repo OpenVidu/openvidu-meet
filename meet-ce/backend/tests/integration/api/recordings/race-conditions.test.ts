@@ -1,6 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { DistributedEventType } from '../../../../src/models/distributed-event.model.js';
+import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
+import { RecordingService } from '../../../../src/services/recording.service.js';
 import {
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
@@ -25,8 +28,6 @@ import {
 	setupMultiRoomTestContext,
 	TestContext
 } from '../../../helpers/test-scenarios';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { RecordingService } from '../../../../src/services/recording.service.js';
 
 describe('Recording API Race Conditions Tests', () => {
 	let context: TestContext | null = null;
@@ -63,7 +64,7 @@ describe('Recording API Race Conditions Tests', () => {
 			});
 		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
 		const handleRecordingLockTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
-		const releaseLockSpy = jest.spyOn(recordingService as any, 'releaseRecordingLockIfNoEgress');
+		const releaseLockSpy = jest.spyOn(recordingService, 'releaseRecordingLockIfNoEgress');
 
 		try {
 			// Attempt to start recording
@@ -117,7 +118,7 @@ describe('Recording API Race Conditions Tests', () => {
 		// Mock the handleRecordingLockTimeout method to prevent actual timeout handling
 		const handleTimeoutSpy = jest.spyOn(recordingService as any, 'handleRecordingTimeout');
 		// Mock the releaseRecordingLockIfNoEgress method to prevent actual lock release
-		const releaseLockSpy = jest.spyOn(recordingService as any, 'releaseRecordingLockIfNoEgress');
+		const releaseLockSpy = jest.spyOn(recordingService, 'releaseRecordingLockIfNoEgress');
 		const eventServiceOffSpy = jest.spyOn(recordingService['systemEventService'], 'off');
 
 		try {
@@ -392,7 +393,8 @@ describe('Recording API Race Conditions Tests', () => {
 		context = await setupMultiRoomTestContext(1, true);
 		const roomData = context.getRoomByIndex(0)!;
 
-		const gcSpy = jest.spyOn(recordingService as any, 'performActiveRecordingLocksGC');
+		const recordingTaskScheduler = container.get(RecordingScheduledTasksService);
+		const gcSpy = jest.spyOn(recordingTaskScheduler as any, 'performActiveRecordingLocksGC');
 
 		const startResponse = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 		expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
@@ -400,7 +402,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		// Execute garbage collection while stopping the recording
 		const stopPromise = stopRecording(recordingId, roomData.moderatorToken);
-		const gcPromise = recordingService['performActiveRecordingLocksGC']();
+		const gcPromise = recordingTaskScheduler['performActiveRecordingLocksGC']();
 
 		// Both operations should complete
 
