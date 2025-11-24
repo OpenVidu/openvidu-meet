@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -8,12 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MeetLayoutMode } from '../../../models/layout.model';
+import { MeetLayoutService } from '../../../services/layout.service';
 
 /**
  * Component for additional settings in the Settings Panel.
- * This component allows users to configure grid layout preferences including:
- * - Layout mode (Mosaic or Mosaic Smart)
- * - Number of participants to display in Smart mode
  */
 @Component({
 	selector: 'ov-meeting-settings-panel',
@@ -31,43 +29,40 @@ import { MeetLayoutMode } from '../../../models/layout.model';
 	styleUrl: './meeting-settings-panel.component.scss'
 })
 export class MeetingSettingsPanelComponent {
+	private readonly layoutService = inject(MeetLayoutService);
+
 	/**
 	 * Expose LayoutMode enum to template
 	 */
 	readonly LayoutMode = MeetLayoutMode;
 
 	/**
-	 * Current selected layout mode
+	 * Current layout mode
 	 */
-	layoutMode = signal<MeetLayoutMode>(MeetLayoutMode.MOSAIC);
+	protected readonly layoutMode = computed(() => this.layoutService.layoutMode());
 
 	/**
-	 * Number of participants to display in Smart mode
-	 * Range: 1-20
+	 * Current participant count
 	 */
-	participantCount = signal<number>(6);
+	protected readonly participantCount = computed(() => this.layoutService.maxRemoteSpeakers());
 
 	/**
-	 * Computed property to check if Smart mode is active
+	 * Computed property to check if Smart Mosaic mode is active
 	 */
-	isSmartMode = computed(() => this.layoutMode() === MeetLayoutMode.SMART_MOSAIC);
+	readonly isSmartMode = this.layoutService.isSmartMosaicEnabled;
 
 	/**
 	 * Handler for layout mode change
 	 */
 	onLayoutModeChange(mode: MeetLayoutMode): void {
-		this.layoutMode.set(mode);
-		console.log('Layout mode changed to:', mode);
-		// TODO: Integrate with layout service when available
+		this.layoutService.setLayoutMode(mode);
 	}
 
 	/**
 	 * Handler for participant count change
 	 */
 	onParticipantCountChange(count: number): void {
-		this.participantCount.set(count);
-		console.log('Participant count changed to:', count);
-		// TODO: Integrate with layout service when available
+		this.layoutService.setMaxRemoteSpeakers(count);
 	}
 
 	/**

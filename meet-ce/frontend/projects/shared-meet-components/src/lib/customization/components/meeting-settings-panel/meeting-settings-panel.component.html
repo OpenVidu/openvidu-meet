@@ -9,7 +9,7 @@
 	<div class="layout-mode-container">
 		<mat-radio-group
 			class="layout-radio-group"
-			[(ngModel)]="layoutMode"
+			[ngModel]="layoutMode()"
 			(ngModelChange)="onLayoutModeChange($event)"
 			aria-label="Select layout mode"
 		>
@@ -41,11 +41,12 @@
 					[max]="6"
 					[step]="1"
 					[displayWith]="formatLabel"
+					[showTickMarks]="true"
 					discrete
 				>
 					<input
 						matSliderThumb
-						[(ngModel)]="participantCount"
+						[ngModel]="participantCount()"
 						(ngModelChange)="onParticipantCountChange($event)"
 						aria-label="Number of participants to display"
 					/>
