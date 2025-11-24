@@ -27,14 +27,12 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
-import { TaskSchedulerService } from './task-scheduler.service.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -50,17 +48,8 @@ export class RoomService {
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
-		@inject(TaskSchedulerService) protected taskSchedulerService: TaskSchedulerService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
-	) {
-		const expiredRoomsGCTask: IScheduledTask = {
-			name: 'expiredRoomsGC',
-			type: 'cron',
-			scheduleOrDelay: INTERNAL_CONFIG.ROOM_EXPIRED_GC_INTERVAL,
-			callback: this.deleteExpiredRooms.bind(this)
-		};
-		this.taskSchedulerService.registerTask(expiredRoomsGCTask);
-	}
+	) {}
 
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
@@ -634,29 +623,5 @@ export class RoomService {
 			`Bulk deletion completed: ${successful.length}/${rooms.length} successful, ${failed.length}/${rooms.length} failed`
 		);
 		return { successful, failed };
-	}
-
-	/**
-	 * This method checks for rooms that have an auto-deletion date in the past and
-	 * tries to delete them based on their auto-deletion policy.
-	 */
-	protected async deleteExpiredRooms(): Promise<void> {
-		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
-
-		try {
-			const expiredRooms = await this.roomRepository.findExpiredRooms();
-
-			if (expiredRooms.length === 0) {
-				this.logger.verbose(`No expired rooms found.`);
-				return;
-			}
-
-			this.logger.verbose(
-				`Trying to delete ${expiredRooms.length} expired Meet rooms: ${expiredRooms.map((room) => room.roomId).join(', ')}`
-			);
-			await this.bulkDeleteMeetRooms(expiredRooms);
-		} catch (error) {
-			this.logger.error('Error deleting expired rooms:', error);
-		}
 	}
 }

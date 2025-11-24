@@ -52,6 +52,8 @@ import { ParticipantNameService } from '../services/participant-name.service.js'
 import { RoomMemberService } from '../services/room-member.service.js';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
+import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
+import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
 import { AnalyticsService } from '../services/analytics.service.js';
 
 export const container: Container = new Container();
@@ -110,6 +112,8 @@ export const registerDependencies = () => {
 	container.bind(RoomMemberService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
+	container.bind(RoomScheduledTasksService).toSelf().inSingletonScope();
+	container.bind(RecordingScheduledTasksService).toSelf().inSingletonScope();
 	container.bind(AnalyticsService).toSelf().inSingletonScope();
 };
 
@@ -140,9 +144,6 @@ const configureStorage = (storageMode: string) => {
 };
 
 export const initializeEagerServices = async () => {
-	// Force the creation of services that need to be initialized at startup
-	container.get(RecordingService);
-
 	// Connect to MongoDB and check health
 	const mongoService = container.get(MongoDBService);
 	await mongoService.connect();
@@ -159,4 +160,8 @@ export const initializeEagerServices = async () => {
 	// Initialize storage
 	const storageInitService = container.get(StorageInitService);
 	await storageInitService.initializeStorage();
+
+	// Initialize scheduled tasks services to register their cron jobs
+	container.get(RecordingScheduledTasksService);
+	container.get(RoomScheduledTasksService);
 };
