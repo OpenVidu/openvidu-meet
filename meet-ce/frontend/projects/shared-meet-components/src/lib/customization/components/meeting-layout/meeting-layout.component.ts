@@ -52,7 +52,7 @@ export class MeetingLayoutComponent {
 	private readonly remoteParticipants = computed(() => this.meetingContextService.remoteParticipants());
 
 	private readonly layoutMode = toSignal(this.layoutService.layoutMode$, {
-		initialValue: MeetLayoutMode.LAST_SPEAKERS
+		initialValue: MeetLayoutMode.SMART_MOSAIC
 	});
 
 	/**
@@ -64,7 +64,7 @@ export class MeetingLayoutComponent {
 	/**
 	 * Computed signal that determines if last speakers layout is enabled
 	 */
-	private readonly isLastSpeakersLayoutEnabled = computed(() => this.layoutMode() === MeetLayoutMode.LAST_SPEAKERS);
+	private readonly isLastSpeakersLayoutEnabled = computed(() => this.layoutMode() === MeetLayoutMode.SMART_MOSAIC);
 
 	/**
 	 * Computed signal that provides the filtered list of participants to display.

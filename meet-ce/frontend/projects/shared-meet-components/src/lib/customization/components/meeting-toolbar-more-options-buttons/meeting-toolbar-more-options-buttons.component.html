@@ -1,0 +1,10 @@
+<!-- Grid Layout Settings Button -->
+<button
+	mat-menu-item
+	id="grid-layout-settings-btn"
+	(click)="onOpenSettings()"
+	[matTooltip]="isMobileView() ? '' : 'Configure grid layout'"
+>
+	<mat-icon class="material-symbols-outlined">browser</mat-icon>
+	<span>Adjust Layout</span>
+</button>

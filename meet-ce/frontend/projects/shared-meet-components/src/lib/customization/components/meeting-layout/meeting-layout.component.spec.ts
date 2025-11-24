@@ -92,7 +92,7 @@ describe('MeetingLayoutComponent', () => {
 	describe('Default Layout Mode', () => {
 		beforeEach(() => {
 			fixture.detectChanges();
-			layoutModeSubject.next(MeetLayoutMode.DEFAULT);
+			layoutModeSubject.next(MeetLayoutMode.MOSAIC);
 		});
 
 		it('should show all remote participants in DEFAULT mode', () => {
@@ -121,7 +121,7 @@ describe('MeetingLayoutComponent', () => {
 	describe('Last Speakers Layout Mode', () => {
 		beforeEach(() => {
 			fixture.detectChanges();
-			layoutModeSubject.next(MeetLayoutMode.LAST_SPEAKERS);
+			layoutModeSubject.next(MeetLayoutMode.SMART_MOSAIC);
 			fixture.detectChanges();
 		});
 
@@ -238,7 +238,7 @@ describe('MeetingLayoutComponent', () => {
 	describe('Participant Cleanup', () => {
 		it('should remove disconnected participants from active speakers', () => {
 			fixture.detectChanges();
-			layoutModeSubject.next(MeetLayoutMode.LAST_SPEAKERS);
+			layoutModeSubject.next(MeetLayoutMode.SMART_MOSAIC);
 			fixture.detectChanges();
 
 			const mockParticipants = createMockParticipants(5);
@@ -274,7 +274,7 @@ describe('MeetingLayoutComponent', () => {
 	describe('Performance Optimizations', () => {
 		it('should not process events in DEFAULT mode', () => {
 			fixture.detectChanges();
-			layoutModeSubject.next(MeetLayoutMode.DEFAULT);
+			layoutModeSubject.next(MeetLayoutMode.MOSAIC);
 			fixture.detectChanges();
 
 			const mockParticipants = createMockParticipants(5);
@@ -294,7 +294,7 @@ describe('MeetingLayoutComponent', () => {
 
 		it('should not process empty speaker arrays', () => {
 			fixture.detectChanges();
-			layoutModeSubject.next(MeetLayoutMode.LAST_SPEAKERS);
+			layoutModeSubject.next(MeetLayoutMode.SMART_MOSAIC);
 			fixture.detectChanges();
 
 			const mockParticipants = createMockParticipants(5);

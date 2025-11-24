@@ -4,7 +4,9 @@ import {
 	MeetingLayoutComponent,
 	MeetingParticipantPanelItemComponent,
 	MeetingShareLinkPanelComponent,
-	MeetingToolbarButtonsComponent
+	MeetingToolbarButtonsComponent,
+	MeetingSettingsPanelComponent,
+	MeetingToolbarMoreOptionsButtonsComponent
 } from '@openvidu-meet/shared-components';
 
 @Component({
@@ -14,7 +16,9 @@ import {
 		MeetingToolbarButtonsComponent,
 		MeetingShareLinkPanelComponent,
 		MeetingParticipantPanelItemComponent,
-		MeetingLayoutComponent
+		MeetingLayoutComponent,
+		MeetingToolbarMoreOptionsButtonsComponent,
+		MeetingSettingsPanelComponent
 	],
 	templateUrl: './app-ce-meeting.component.html',
 	styleUrl: './app-ce-meeting.component.scss'

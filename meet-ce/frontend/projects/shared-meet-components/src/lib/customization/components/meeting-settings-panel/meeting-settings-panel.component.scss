@@ -1,0 +1,154 @@
+.layout-section {
+	padding: 0;
+	margin: 0;
+
+	.section-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 10px;
+		padding: 0 4px;
+
+		.section-icon {
+			color: var(--ov-text-surface-color);
+			font-size: 24px;
+			width: 24px;
+			height: 24px;
+		}
+
+		.section-title {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 500;
+			color: var(--ov-text-surface-color);
+		}
+	}
+
+	.layout-mode-container {
+		.input-label {
+			display: block;
+			font-size: 14px;
+			font-weight: 500;
+			color: var(--ov-text-surface-color);
+			margin-bottom: 12px;
+			padding: 0 4px;
+		}
+
+		.layout-radio-group {
+			display: flex;
+			flex-direction: column;
+
+			.layout-radio-option {
+				padding: 12px;
+				border-radius: 8px;
+				transition: all 0.2s ease;
+				margin: 0;
+
+				.radio-content {
+					display: flex;
+					flex-direction: column;
+					gap: 4px;
+					margin-left: 8px;
+
+					.radio-label {
+						font-size: 14px;
+						font-weight: 500;
+						color: var(--ov-text-surface-color);
+					}
+
+					.radio-description {
+						font-size: 12px;
+						color: var(--ov-text-secondary-color);
+						line-height: 1.4;
+					}
+				}
+			}
+		}
+	}
+
+	.participant-count-container {
+		padding: 16px;
+		border-radius: var(--ov-surface-radius);
+		border: 1px solid var(--ov-border-color);
+
+		.input-label {
+			display: block;
+			font-size: 14px;
+			font-weight: 500;
+			color: var(--ov-text-surface-color);
+			margin-bottom: 16px;
+		}
+
+		.slider-container {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+			margin-bottom: 8px;
+
+			.participant-slider {
+				flex: 1;
+				--mdc-slider-active-track-color: var(--ov-accent-action-color);
+				--mdc-slider-active-track-shape: 9999px;
+				--mdc-slider-disabled-active-track-color: var(--ov-accent-action-color);
+				--mdc-slider-disabled-handle-color: var(--ov-accent-action-color);
+				--mdc-slider-disabled-inactive-track-color: rgba(var(--ov-accent-action-color), 0.2);
+				--mdc-slider-focus-handle-color: var(--ov-accent-action-color);
+				--mdc-slider-handle-color: var(--ov-accent-action-color);
+				--mdc-slider-hover-handle-color: var(--ov-accent-action-color);
+				--mdc-slider-inactive-track-color: rgba(var(--ov-accent-action-color), 0.2);
+				--mdc-slider-inactive-track-shape: 9999px;
+				--mdc-slider-label-container-color: var(--ov-accent-action-color);
+				--mdc-slider-with-overlap-handle-outline-color: var(--ov-accent-action-color);
+				--mdc-slider-with-tick-marks-active-container-color: white;
+				--mdc-slider-with-tick-marks-disabled-container-color: white;
+				--mdc-slider-with-tick-marks-inactive-container-color: rgba(var(--ov-accent-action-color), 0.5);
+			}
+
+			.participant-count-value {
+				min-width: 32px;
+				text-align: center;
+				font-size: 16px;
+				font-weight: 600;
+				color: var(--ov-text-surface-color);
+				padding: 6px 10px;
+				background-color: var(--ov-accent-action-color);
+				border-radius: var(--ov-surface-radius);
+			}
+		}
+
+		.helper-text {
+			margin: 0;
+			font-size: 12px;
+			color: var(--ov-text-secondary-color);
+			line-height: 1.4;
+		}
+	}
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+	.layout-section {
+		.participant-count-container {
+			padding: 12px;
+
+			.slider-container {
+				.participant-count-value {
+					min-width: 28px;
+					font-size: 14px;
+					padding: 4px 8px;
+				}
+			}
+		}
+	}
+}
+
+// Custom radio button styles for this component
+.layout-radio-option {
+	::ng-deep .mdc-radio {
+		&:hover {
+			.mdc-radio__outer-circle {
+				border-color: none;
+			}
+		}
+	}
+}

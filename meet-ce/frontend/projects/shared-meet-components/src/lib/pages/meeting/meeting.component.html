@@ -60,6 +60,11 @@
 			<ng-content select="ov-meeting-toolbar-buttons[slot='additional-buttons']"></ng-content>
 		</div>
 
+		<!-- Toolbar More Options Additional Items -->
+		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
+			<ng-content select="ov-meeting-toolbar-more-options-buttons[slot='additional-buttons']"></ng-content>
+		</ng-container>
+
 		<!-- Share Link Panel After Local Participant -->
 		<div *ovParticipantPanelAfterLocalParticipant>
 			<ng-content select="ov-meeting-share-link-panel[slot='after-local-participant']"></ng-content>
@@ -73,6 +78,10 @@
 			>
 			</ng-container>
 		</div>
+
+		<ng-container *ovSettingsPanelGeneralAdditionalElements>
+			<ng-content select="ov-meeting-settings-panel[slot='additional-general-elements']"></ng-content>
+		</ng-container>
 
 		<!-- Custom layout component -->
 		<ng-container *ovLayout>

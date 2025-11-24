@@ -1,0 +1,57 @@
+<!-- Grid Layout Configuration Section -->
+<div class="layout-section">
+	<div class="section-header">
+		<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
+		<h4 class="section-title">Layout settings</h4>
+	</div>
+
+	<!-- Layout Mode Selection -->
+	<div class="layout-mode-container">
+		<mat-radio-group
+			class="layout-radio-group"
+			[(ngModel)]="layoutMode"
+			(ngModelChange)="onLayoutModeChange($event)"
+			aria-label="Select layout mode"
+		>
+			<mat-radio-button [value]="LayoutMode.MOSAIC" class="layout-radio-option">
+				<div class="radio-content">
+					<span class="radio-label">Mosaic</span>
+					<span class="radio-description">Shows all participants in a unified grid</span>
+				</div>
+			</mat-radio-button>
+
+			<mat-radio-button [value]="LayoutMode.SMART_MOSAIC" class="layout-radio-option">
+				<div class="radio-content">
+					<span class="radio-label">Smart Mosaic</span>
+					<span class="radio-description">Shows a limited number of active participants</span>
+				</div>
+			</mat-radio-button>
+		</mat-radio-group>
+	</div>
+
+	<!-- Participant Count Selection (only visible in Smart mode) -->
+	@if (isSmartMode()) {
+		<div class="participant-count-container">
+			<mat-label class="input-label">Number of visible participants</mat-label>
+			<p class="helper-text">Choose how many remote participants are shown in the grid</p>
+			<div class="slider-container">
+				<mat-slider
+					class="participant-slider"
+					[min]="1"
+					[max]="6"
+					[step]="1"
+					[displayWith]="formatLabel"
+					discrete
+				>
+					<input
+						matSliderThumb
+						[(ngModel)]="participantCount"
+						(ngModelChange)="onParticipantCountChange($event)"
+						aria-label="Number of participants to display"
+					/>
+				</mat-slider>
+				<span class="participant-count-value">{{ participantCount() }}</span>
+			</div>
+		</div>
+	}
+</div>

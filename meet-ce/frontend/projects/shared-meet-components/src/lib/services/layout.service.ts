@@ -8,7 +8,7 @@ import { MeetStorageService } from './storage.service';
 	providedIn: 'root'
 })
 export class MeetLayoutService extends LayoutService {
-	private layoutMode: MeetLayoutMode = MeetLayoutMode.DEFAULT;
+	private layoutMode: MeetLayoutMode = MeetLayoutMode.MOSAIC;
 	layoutModeSubject: Subject<MeetLayoutMode> = new Subject<MeetLayoutMode>();
 	layoutMode$: Observable<MeetLayoutMode> = this.layoutModeSubject.asObservable();
 
@@ -35,7 +35,7 @@ export class MeetLayoutService extends LayoutService {
 		if (layoutMode && Object.values(MeetLayoutMode).includes(layoutMode)) {
 			this.layoutMode = layoutMode;
 		} else {
-			this.layoutMode = MeetLayoutMode.DEFAULT;
+			this.layoutMode = MeetLayoutMode.MOSAIC;
 		}
 	}
 
@@ -45,7 +45,7 @@ export class MeetLayoutService extends LayoutService {
 	 * @returns {boolean} `true` if the layout mode is set to `LAST_SPEAKERS`, otherwise `false`.
 	 */
 	isLastSpeakersLayoutEnabled(): boolean {
-		return this.layoutMode === MeetLayoutMode.LAST_SPEAKERS;
+		return this.layoutMode === MeetLayoutMode.SMART_MOSAIC;
 	}
 
 	setLayoutMode(layoutMode: MeetLayoutMode) {
