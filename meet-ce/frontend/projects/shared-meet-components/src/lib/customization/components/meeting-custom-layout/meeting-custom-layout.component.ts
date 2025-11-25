@@ -15,19 +15,19 @@ import { MeetingService } from '../../../services/meeting/meeting.service';
  * active speakers to maximize client-side performance and scalability.
  */
 @Component({
-	selector: 'ov-meeting-layout',
+	selector: 'ov-meeting-custom-layout',
 	imports: [OpenViduComponentsUiModule, ShareMeetingLinkComponent],
-	templateUrl: './meeting-layout.component.html',
-	styleUrl: './meeting-layout.component.scss'
+	templateUrl: './meeting-custom-layout.component.html',
+	styleUrl: './meeting-custom-layout.component.scss'
 })
-export class MeetingLayoutComponent {
+export class MeetingCustomLayoutComponent {
 	private readonly loggerSrv = inject(LoggerService);
 	protected readonly layoutService = inject(MeetLayoutService);
 	protected readonly openviduService = inject(OpenViduService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
 	protected readonly destroyRef = inject(DestroyRef);
-	private readonly log: ILogger = this.loggerSrv.get('MeetingLayoutComponent');
+	private readonly log: ILogger = this.loggerSrv.get('MeetingCustomLayoutComponent');
 	protected readonly linkOverlayTitle = 'Start collaborating';
 	protected readonly linkOverlaySubtitle = 'Share this link to bring others into the meeting';
 	protected readonly linkOverlayTitleSize: 'sm' | 'md' | 'lg' | 'xl' = 'xl';

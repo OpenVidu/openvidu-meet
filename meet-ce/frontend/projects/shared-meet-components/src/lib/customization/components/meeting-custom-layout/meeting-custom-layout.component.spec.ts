@@ -7,13 +7,13 @@ import {
 	ParticipantService,
 	OpenViduService
 } from 'openvidu-components-angular';
-import { MeetingLayoutComponent } from './meeting-layout.component';
+import { MeetingCustomLayoutComponent } from './meeting-custom-layout.component';
 import { MeetLayoutService } from '../../../services/layout.service';
 import { MeetLayoutMode } from '../../../models/layout.model';
 
 describe('MeetingLayoutComponent', () => {
-	let component: MeetingLayoutComponent;
-	let fixture: ComponentFixture<MeetingLayoutComponent>;
+	let component: MeetingCustomLayoutComponent;
+	let fixture: ComponentFixture<MeetingCustomLayoutComponent>;
 	let mockLayoutService: jasmine.SpyObj<MeetLayoutService>;
 	let mockParticipantService: jasmine.SpyObj<ParticipantService>;
 	let mockOpenViduService: jasmine.SpyObj<OpenViduService>;
@@ -56,7 +56,7 @@ describe('MeetingLayoutComponent', () => {
 		});
 
 		await TestBed.configureTestingModule({
-			imports: [MeetingLayoutComponent],
+			imports: [MeetingCustomLayoutComponent],
 			providers: [
 				{ provide: MeetLayoutService, useValue: mockLayoutService },
 				{ provide: ParticipantService, useValue: mockParticipantService },
@@ -65,7 +65,7 @@ describe('MeetingLayoutComponent', () => {
 			]
 		}).compileComponents();
 
-		fixture = TestBed.createComponent(MeetingLayoutComponent);
+		fixture = TestBed.createComponent(MeetingCustomLayoutComponent);
 		component = fixture.componentInstance;
 	});
 

@@ -7,35 +7,26 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingContextService } from '../../../services/meeting/meeting-context.service';
 import { MeetingService } from '../../../services/meeting/meeting.service';
-import { LoggerService, OpenViduService, ViewportService } from 'openvidu-components-angular';
+import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 
 /**
- * Reusable component for meeting toolbar additional buttons.
+ * Reusable component for meeting toolbar Leave button.
  */
 @Component({
-	selector: 'ov-meeting-toolbar-buttons',
-	templateUrl: './meeting-toolbar-buttons.component.html',
-	styleUrls: ['./meeting-toolbar-buttons.component.scss'],
+	selector: 'ov-meeting-toolbar-leave-button',
+	templateUrl: './meeting-toolbar-leave-button.component.html',
+	styleUrls: ['./meeting-toolbar-leave-button.component.scss'],
 	imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule]
 })
-export class MeetingToolbarButtonsComponent {
+export class MeetingToolbarLeaveButtonComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarButtons');
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarLeaveButtons');
 	protected openviduService = inject(OpenViduService);
-	protected readonly copyLinkTooltip = 'Copy the meeting link';
-	protected readonly copyLinkText = 'Copy meeting link';
 	protected readonly leaveMenuTooltip = 'Leave options';
 	protected readonly leaveOptionText = 'Leave meeting';
 	protected readonly endMeetingOptionText = 'End meeting for all';
-
-	/**
-	 * Whether to show the copy link button
-	 */
-	protected showCopyLinkButton = computed(() => {
-		return this.meetingContextService.canModerateRoom();
-	});
 
 	/**
 	 * Whether to show the leave menu with options
@@ -50,16 +41,6 @@ export class MeetingToolbarButtonsComponent {
 	protected isMobile = computed(() => {
 		return this.meetingContextService.isMobile();
 	});
-
-	onCopyLinkClick(): void {
-		const room = this.meetingContextService.meetRoom();
-		if (!room) {
-			this.log.e('Cannot copy link: meeting room is undefined');
-			return;
-		}
-
-		this.meetingService.copyMeetingSpeakerLink(room);
-	}
 
 	async onLeaveMeetingClick(): Promise<void> {
 		await this.openviduService.disconnectRoom();

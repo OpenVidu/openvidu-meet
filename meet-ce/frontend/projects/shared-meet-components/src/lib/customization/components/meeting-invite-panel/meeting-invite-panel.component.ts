@@ -10,16 +10,16 @@ import { LoggerService } from 'openvidu-components-angular';
  * inside the participants panel.
  */
 @Component({
-	selector: 'ov-meeting-share-link-panel',
-	templateUrl: './meeting-share-link-panel.component.html',
-	styleUrls: ['./meeting-share-link-panel.component.scss'],
+	selector: 'ov-meeting-invite-panel',
+	templateUrl: './meeting-invite-panel.component.html',
+	styleUrls: ['./meeting-invite-panel.component.scss'],
 	imports: [CommonModule, ShareMeetingLinkComponent]
 })
-export class MeetingShareLinkPanelComponent {
+export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - MeetingShareLinkPanel');
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingInvitePanel');
 
 	/**
 	 * Computed signal to determine if the share link should be shown

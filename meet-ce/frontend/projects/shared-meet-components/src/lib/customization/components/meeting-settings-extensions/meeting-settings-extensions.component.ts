@@ -15,7 +15,7 @@ import { MeetingContextService } from '../../../services/meeting/meeting-context
  * Component for additional settings in the Settings Panel.
  */
 @Component({
-	selector: 'ov-meeting-settings-panel',
+	selector: 'ov-meeting-settings-extensions',
 	imports: [
 		CommonModule,
 		MatIconModule,
@@ -26,10 +26,10 @@ import { MeetingContextService } from '../../../services/meeting/meeting-context
 		MatSelectModule,
 		FormsModule
 	],
-	templateUrl: './meeting-settings-panel.component.html',
-	styleUrl: './meeting-settings-panel.component.scss'
+	templateUrl: './meeting-settings-extensions.component.html',
+	styleUrl: './meeting-settings-extensions.component.scss'
 })
-export class MeetingSettingsPanelComponent {
+export class MeetingSettingsExtensionsComponent {
 	private readonly layoutService = inject(MeetLayoutService);
 	protected readonly meetingContextService = inject(MeetingContextService);
 

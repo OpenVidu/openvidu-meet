@@ -13,7 +13,7 @@ import {
 	ViewportService
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
-import { MeetingParticipantPanelItemComponent } from '../../customization';
+import { MeetingParticipantItemComponent } from '../../customization';
 import {
 	ApplicationFeatures,
 	FeatureConfigurationService,
@@ -44,17 +44,15 @@ import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lo
 	providers: [MeetingLobbyService, MeetingEventHandlerService]
 })
 export class MeetingComponent implements OnInit {
-	protected _participantPanelItem?: MeetingParticipantPanelItemComponent;
+	protected _participantItem?: MeetingParticipantItemComponent;
 
 	// Template reference for custom participant panel item
-	@ContentChild(MeetingParticipantPanelItemComponent)
-	set participantPanelItem(value: MeetingParticipantPanelItemComponent | undefined) {
+	@ContentChild(MeetingParticipantItemComponent)
+	set participantItem(value: MeetingParticipantItemComponent | undefined) {
 		// Store the reference to the custom participant panel item component
-		this._participantPanelItem = value;
+		this._participantItem = value;
 	}
-	get participantPanelItemTemplate(): TemplateRef<any> | undefined {
-		return this._participantPanelItem?.template;
-	}
+	protected participantItemTemplate = computed(() => this._participantItem?.template);
 
 	/**
 	 * Controls whether to show lobby (true) or meeting view (false)

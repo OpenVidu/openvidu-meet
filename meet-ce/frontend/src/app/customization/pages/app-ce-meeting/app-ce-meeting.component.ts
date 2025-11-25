@@ -1,24 +1,26 @@
 import { Component } from '@angular/core';
 import {
 	MeetingComponent,
-	MeetingLayoutComponent,
-	MeetingParticipantPanelItemComponent,
-	MeetingShareLinkPanelComponent,
-	MeetingToolbarButtonsComponent,
-	MeetingSettingsPanelComponent,
-	MeetingToolbarMoreOptionsButtonsComponent
+	MeetingCustomLayoutComponent,
+	MeetingParticipantItemComponent,
+	MeetingInvitePanelComponent,
+	MeetingToolbarLeaveButtonComponent,
+	MeetingToolbarExtraButtonsComponent,
+	MeetingSettingsExtensionsComponent,
+	MeetingToolbarMoreOptionsMenuComponent
 } from '@openvidu-meet/shared-components';
 
 @Component({
 	selector: 'app-ce-ov-meeting',
 	imports: [
 		MeetingComponent,
-		MeetingToolbarButtonsComponent,
-		MeetingShareLinkPanelComponent,
-		MeetingParticipantPanelItemComponent,
-		MeetingLayoutComponent,
-		MeetingToolbarMoreOptionsButtonsComponent,
-		MeetingSettingsPanelComponent
+		MeetingToolbarLeaveButtonComponent,
+		MeetingToolbarExtraButtonsComponent,
+		MeetingInvitePanelComponent,
+		MeetingParticipantItemComponent,
+		MeetingCustomLayoutComponent,
+		MeetingToolbarMoreOptionsMenuComponent,
+		MeetingSettingsExtensionsComponent
 	],
 	templateUrl: './app-ce-meeting.component.html',
 	styleUrl: './app-ce-meeting.component.scss'

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MeetingToolbarMoreOptionsButtonsComponent } from './meeting-toolbar-more-options-buttons.component';
+import { MeetingToolbarMoreOptionsMenuComponent } from './meeting-toolbar-more-options-menu.component';
 
 describe('MeetingToolbarMoreOptionsButtonsComponent', () => {
-  let component: MeetingToolbarMoreOptionsButtonsComponent;
-  let fixture: ComponentFixture<MeetingToolbarMoreOptionsButtonsComponent>;
+  let component: MeetingToolbarMoreOptionsMenuComponent;
+  let fixture: ComponentFixture<MeetingToolbarMoreOptionsMenuComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MeetingToolbarMoreOptionsButtonsComponent]
+      imports: [MeetingToolbarMoreOptionsMenuComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MeetingToolbarMoreOptionsButtonsComponent);
+    fixture = TestBed.createComponent(MeetingToolbarMoreOptionsMenuComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

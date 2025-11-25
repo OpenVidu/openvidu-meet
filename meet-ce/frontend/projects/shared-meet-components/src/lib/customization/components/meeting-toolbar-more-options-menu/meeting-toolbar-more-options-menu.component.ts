@@ -10,10 +10,9 @@ import { MeetingContextService } from '../../../services/meeting/meeting-context
 /**
  * Component for additional menu items in the toolbar's "More Options" menu.
  * This component handles custom actions like opening the settings panel for grid layout changes.
- * It follows the responsive pattern from openvidu-components-angular, adapting to mobile/tablet/desktop views.
  */
 @Component({
-  selector: 'ov-meeting-toolbar-more-options-buttons',
+  selector: 'ov-meeting-toolbar-more-options-menu',
   imports: [
     CommonModule,
     MatIconModule,
@@ -21,10 +20,10 @@ import { MeetingContextService } from '../../../services/meeting/meeting-context
     MatMenuModule,
     MatTooltipModule
   ],
-  templateUrl: './meeting-toolbar-more-options-buttons.component.html',
-  styleUrl: './meeting-toolbar-more-options-buttons.component.scss'
+  templateUrl: './meeting-toolbar-more-options-menu.component.html',
+  styleUrl: './meeting-toolbar-more-options-menu.component.scss'
 })
-export class MeetingToolbarMoreOptionsButtonsComponent {
+export class MeetingToolbarMoreOptionsMenuComponent {
   /**
    * Viewport service for responsive behavior detection
    * Injected from openvidu-components-angular

@@ -24,18 +24,18 @@ export interface ParticipantDisplayProperties {
  * This component receives context from the template (participant, localParticipant).
  */
 @Component({
-	selector: 'ov-meeting-participant-panel-item',
-	templateUrl: './meeting-participant-panel-item.component.html',
-	styleUrls: ['./meeting-participant-panel-item.component.scss'],
+	selector: 'ov-meeting-participant-item',
+	templateUrl: './meeting-participant-item.component.html',
+	styleUrls: ['./meeting-participant-item.component.scss'],
 	imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule]
 })
-export class MeetingParticipantPanelItemComponent {
+export class MeetingParticipantItemComponent {
 	// Template reference for the component's template
 	@ViewChild('template', { static: true }) template!: TemplateRef<any>;
 
 	protected meetingService: MeetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - ParticipantPanelItem');
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
 
 	// Tooltips (could be made configurable in the future if needed)
 	protected readonly moderatorBadgeTooltip = 'Moderator';

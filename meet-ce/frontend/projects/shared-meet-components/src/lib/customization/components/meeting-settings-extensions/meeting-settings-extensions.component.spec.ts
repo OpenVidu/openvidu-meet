@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MeetingSettingsPanelComponent } from './meeting-settings-panel.component';
+import { MeetingSettingsExtensionsComponent } from './meeting-settings-extensions.component';
 
 describe('MeetingSettingsPanelComponent', () => {
-  let component: MeetingSettingsPanelComponent;
-  let fixture: ComponentFixture<MeetingSettingsPanelComponent>;
+  let component: MeetingSettingsExtensionsComponent;
+  let fixture: ComponentFixture<MeetingSettingsExtensionsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MeetingSettingsPanelComponent]
+      imports: [MeetingSettingsExtensionsComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MeetingSettingsPanelComponent);
+    fixture = TestBed.createComponent(MeetingSettingsExtensionsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -1,24 +1,4 @@
-<!-- Copy Link Button -->
-@if (showCopyLinkButton()) {
-	@if (isMobile()) {
-		<button id="copy-speaker-link" mat-menu-item (click)="onCopyLinkClick()" [disableRipple]="true">
-			<mat-icon>link</mat-icon>
-			<span class="button-text">{{ copyLinkText }}</span>
-		</button>
-	} @else {
-		<button
-			id="copy-speaker-link"
-			mat-icon-button
-			(click)="onCopyLinkClick()"
-			[disableRipple]="true"
-			[matTooltip]="copyLinkTooltip"
-		>
-			<mat-icon>link</mat-icon>
-		</button>
-	}
-}
-
-<!-- Leave Menu -->
+<!-- Leave Button for Moderators -->
 @if (showLeaveMenu()) {
 	<button
 		id="leave-btn"

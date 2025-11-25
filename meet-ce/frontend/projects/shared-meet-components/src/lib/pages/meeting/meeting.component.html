@@ -55,37 +55,42 @@
 		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"
 	>
+		<!-- Toolbar Leave Button (for moderators) -->
+		<ng-container *ovToolbarLeaveButton>
+			<ng-content select="ov-meeting-toolbar-leave-button"></ng-content>
+		</ng-container>
+
 		<!-- Toolbar Additional Buttons -->
 		<div *ovToolbarAdditionalButtons>
-			<ng-content select="ov-meeting-toolbar-buttons[slot='additional-buttons']"></ng-content>
+			<ng-content select="ov-meeting-toolbar-extra-buttons"></ng-content>
 		</div>
 
 		<!-- Toolbar More Options Additional Items -->
 		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-			<ng-content select="ov-meeting-toolbar-more-options-buttons[slot='additional-buttons']"></ng-content>
+			<ng-content select="ov-meeting-toolbar-more-options-menu"></ng-content>
 		</ng-container>
 
 		<!-- Share Link Panel After Local Participant -->
 		<div *ovParticipantPanelAfterLocalParticipant>
-			<ng-content select="ov-meeting-share-link-panel[slot='after-local-participant']"></ng-content>
+			<ng-content select="ov-meeting-invite-panel"></ng-content>
 		</div>
 
 		<!-- Participant Panel Item Template -->
 		<div *ovParticipantPanelItem="let participant">
 			<ng-container
-				[ngTemplateOutlet]="participantPanelItemTemplate"
+				[ngTemplateOutlet]="participantItemTemplate()"
 				[ngTemplateOutletContext]="{ participant: participant, localParticipant: localParticipant() }"
 			>
 			</ng-container>
 		</div>
 
 		<ng-container *ovSettingsPanelGeneralAdditionalElements>
-			<ng-content select="ov-meeting-settings-panel[slot='additional-general-elements']"></ng-content>
+			<ng-content select="ov-meeting-settings-extensions"></ng-content>
 		</ng-container>
 
 		<!-- Custom layout component -->
 		<ng-container *ovLayout>
-			<ng-content select="ov-meeting-layout[slot='layout']"></ng-content>
+			<ng-content select="ov-meeting-custom-layout"></ng-content>
 		</ng-container>
 	</ov-videoconference>
 }
