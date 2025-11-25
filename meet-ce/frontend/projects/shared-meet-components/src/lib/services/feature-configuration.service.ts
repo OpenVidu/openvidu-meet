@@ -57,7 +57,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showSettings: true,
 	showFullscreen: true,
 	showThemeSelector: true,
-	showLayoutSelector: false,
+	showLayoutSelector: true, // flag for allowing smart layout. It's changed manually.
 
 	canModerateRoom: false,
 	canRecordRoom: false,
