@@ -1,5 +1,8 @@
 FROM node:22-alpine
 
+# Install tzdata package for timezone data
+RUN apk add --no-cache tzdata
+
 WORKDIR /app
 
 # Copy package files and install dependencies

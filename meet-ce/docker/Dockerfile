@@ -84,7 +84,7 @@ ARG PNPM_VERSION=10.18.3
 ENV PNPM_VERSION=${PNPM_VERSION}
 
 # Install bash (required by meet.sh which uses bash arrays)
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash tzdata
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
