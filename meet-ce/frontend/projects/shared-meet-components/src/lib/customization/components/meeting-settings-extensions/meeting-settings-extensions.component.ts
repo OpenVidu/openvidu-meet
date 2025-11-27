@@ -54,6 +54,16 @@ export class MeetingSettingsExtensionsComponent {
 	protected readonly participantCount = computed(() => this.layoutService.maxRemoteSpeakers());
 
 	/**
+	 * Minimum number of participants that can be shown when Smart Mosaic layout is enabled
+	 */
+	protected readonly minParticipants = this.layoutService.MIN_REMOTE_SPEAKERS;
+
+	/**
+	 * Maximum number of participants that can be shown
+	 */
+	protected readonly maxParticipants = this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
+
+	/**
 	 * Computed property to check if Smart Mosaic mode is active
 	 */
 	readonly isSmartMode = this.layoutService.isSmartMosaicEnabled;

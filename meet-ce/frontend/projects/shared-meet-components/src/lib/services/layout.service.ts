@@ -7,10 +7,13 @@ import { MeetStorageService } from './storage.service';
 	providedIn: 'root'
 })
 export class MeetLayoutService extends LayoutService {
+	private readonly DEFAULT_SMART_MOSAIC_SPEAKERS = 4;
+	private readonly DEFAULT_LAYOUT_MODE = MeetLayoutMode.MOSAIC;
 
-	private DEFAULT_MIN_REMOTE_SPEAKERS = 1;
-	private DEFAULT_SMART_MOSAIC_SPEAKERS = 4;
-	private DEFAULT_LAYOUT_MODE = MeetLayoutMode.MOSAIC;
+	/** Minimum number of remote speakers that can be displayed when Smart Mosaic layout is enabled */
+	readonly MIN_REMOTE_SPEAKERS = 1;
+	/** Maximum number of remote speakers that can be displayed when Smart Mosaic layout is enabled */
+	readonly MAX_REMOTE_SPEAKERS_LIMIT = 6;
 
 	private readonly _layoutMode = signal<MeetLayoutMode>(MeetLayoutMode.MOSAIC);
 	readonly layoutMode = this._layoutMode.asReadonly();
@@ -68,7 +71,7 @@ export class MeetLayoutService extends LayoutService {
 	 */
 	private initializeMaxRemoteSpeakers(): void {
 		const count = this.storageService.getMaxRemoteSpeakers();
-		if (count && count >= this.DEFAULT_MIN_REMOTE_SPEAKERS && count <= this.DEFAULT_SMART_MOSAIC_SPEAKERS) {
+		if (count && count >= this.MIN_REMOTE_SPEAKERS && count <= this.MAX_REMOTE_SPEAKERS_LIMIT) {
 			this._maxRemoteSpeakers.set(count);
 		} else {
 			this._maxRemoteSpeakers.set(this.DEFAULT_SMART_MOSAIC_SPEAKERS);
@@ -117,8 +120,10 @@ export class MeetLayoutService extends LayoutService {
 	 * @param count - Number of remote participants to display (default minimum to default maximum)
 	 */
 	setMaxRemoteSpeakers(count: number): void {
-		if (count < this.DEFAULT_MIN_REMOTE_SPEAKERS || count > this.DEFAULT_SMART_MOSAIC_SPEAKERS) {
-			this.log.w(`Invalid max remote speakers count: ${count}. Must be between ${this.DEFAULT_MIN_REMOTE_SPEAKERS} and ${this.DEFAULT_SMART_MOSAIC_SPEAKERS}`);
+		if (count < this.MIN_REMOTE_SPEAKERS || count > this.MAX_REMOTE_SPEAKERS_LIMIT) {
+			this.log.w(
+				`Invalid max remote speakers count: ${count}. Must be between ${this.MIN_REMOTE_SPEAKERS} and ${this.MAX_REMOTE_SPEAKERS_LIMIT}`
+			);
 			return;
 		}
 
