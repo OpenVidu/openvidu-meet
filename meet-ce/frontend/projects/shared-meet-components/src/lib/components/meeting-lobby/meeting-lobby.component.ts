@@ -47,6 +47,15 @@ export class MeetingLobbyComponent {
 	protected backButtonText = computed(() => this.lobbyService.state().backButtonText);
 	protected isE2EEEnabled = computed(() => this.lobbyService.state().hasRoomE2EEEnabled);
 	protected participantForm = computed(() => this.lobbyService.state().participantForm);
+	/**
+	 * Computed signal to determine if the E2EE key input should be shown.
+	 * When E2EE key is provided via URL query param, the control is disabled and should not be displayed.
+	 */
+	protected showE2EEKeyInput = computed(() => {
+		const form = this.lobbyService.state().participantForm;
+		const e2eeKeyControl = form.get('e2eeKey');
+		return this.isE2EEEnabled() && e2eeKeyControl?.enabled;
+	});
 
 	async onFormSubmit(): Promise<void> {
 		await this.lobbyService.submitAccess();

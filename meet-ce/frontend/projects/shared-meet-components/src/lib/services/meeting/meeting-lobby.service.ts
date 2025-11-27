@@ -86,13 +86,15 @@ export class MeetingLobbyService {
 
 	/**
 	 * Computed signal for E2EE key - optimized to avoid repeated form access
+	 * Uses getRawValue() to get the value even when the control is disabled (e.g., when set from URL param)
 	 */
 	readonly e2eeKeyValue = computed(() => {
-		const { valid, value } = this._state().participantForm;
-		if (!valid || !value.e2eeKey?.trim()) {
+		const form = this._state().participantForm;
+		const rawValue = form.getRawValue();
+		if (!form.valid || !rawValue.e2eeKey?.trim()) {
 			return '';
 		}
-		return value.e2eeKey.trim();
+		return rawValue.e2eeKey.trim();
 	});
 
 	/**

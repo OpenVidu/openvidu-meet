@@ -49,8 +49,8 @@
 								}
 							</mat-form-field>
 
-							<!-- E2EE Key Input (shown when E2EE is enabled) -->
-							@if (isE2EEEnabled()) {
+							<!-- E2EE Key Input (shown when E2EE is enabled and key is not pre-filled from URL) -->
+							@if (showE2EEKeyInput()) {
 								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
 									<mat-label>Encryption Key</mat-label>
 									<input
