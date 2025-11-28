@@ -1,5 +1,0 @@
-description: Successfully retrieved the room role and associated permissions
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/room-member-role-permissions.yaml'

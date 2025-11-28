@@ -30,10 +30,6 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
     /rooms/{roomId}/token:
         $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1token'
-    /rooms/{roomId}/roles:
-        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles'
-    /rooms/{roomId}/roles/{secret}:
-        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1roles~1{secret}'
     /recordings:
         $ref: './paths/internal/recordings.yaml#/~1recordings'
     /recordings/{recordingId}/stop:
@@ -59,17 +55,13 @@ components:
             $ref: components/schemas/internal/webhooks-config.yaml
         SecurityConfig:
             $ref: components/schemas/internal/global-security-config.yaml
+        RoomsAppearanceConfig:
+            $ref: components/schemas/internal/rooms-appearance-config.yaml
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
-        MeetRoomOptions:
-            $ref: components/schemas/meet-room-options.yaml
-        MeetRoomConfig:
-            $ref: components/schemas/meet-room-config.yaml#/MeetRoomConfig
-        MeetRoomMemberRoleAndPermissions:
-            $ref: components/schemas/internal/room-member-role-permissions.yaml
-        MeetAnalytics:
-            $ref: components/schemas/internal/meet-analytics.yaml
         MeetRecording:
             $ref: components/schemas/meet-recording.yaml
+        MeetAnalytics:
+            $ref: components/schemas/internal/meet-analytics.yaml
         Error:
             $ref: components/schemas/error.yaml
