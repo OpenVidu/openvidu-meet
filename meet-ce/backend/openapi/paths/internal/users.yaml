@@ -1,3 +1,106 @@
+/users:
+    post:
+        operationId: createUser
+        summary: Create a new user
+        description: |
+            Creates a new user account in the system.
+
+            The username must be unique. If a user with the specified username already exists,
+            the request will fail with a conflict error.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/create-user-request.yaml'
+        responses:
+            '201':
+                $ref: '../../components/responses/internal/success-create-user.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-username-already-exists.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    get:
+        operationId: getUsers
+        summary: Get all users
+        description: >
+            Retrieves a paginated list of all users in the system.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/max-items.yaml'
+            - $ref: '../../components/parameters/next-page-token.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-users.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/users/{username}:
+    get:
+        operationId: getUser
+        summary: Get a user
+        description: >
+            Retrieves the details of a specific user by their username.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/internal/username-path.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-user.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-user-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: deleteUser
+        summary: Delete a user
+        description: |
+            Deletes a user from the system.
+
+            This operation will remove the user account and may affect rooms and resources
+            associated with this user.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/internal/username-path.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-delete-user.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-user-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
 /users/profile:
     get:
         operationId: getUserProfile

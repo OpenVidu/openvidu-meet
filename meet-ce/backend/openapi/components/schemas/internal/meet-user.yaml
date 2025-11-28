@@ -2,12 +2,25 @@ type: object
 properties:
     username:
         type: string
-        example: 'admin'
-        description: The username of the authenticated user.
+        example: 'alice_smith'
+        description: The unique username of the user.
+    name:
+        type: string
+        example: 'Alice Smith'
+        description: |
+            The display name (profile name) of the user.
     roles:
         type: array
         items:
             type: string
-            enum: ['admin', 'user']
-        example: ['admin', 'user']
-        description: A list of roles assigned to the authenticated user.
+            enum: ['admin', 'user', 'room_member']
+        example: ['user']
+        description: |
+            A list of roles assigned to the user. Available roles:
+            - admin: Has full control over the entire application (configuration, users, rooms, recordings, etc).
+            - user: Can create rooms and access exclusively their own created rooms and associated recordings.
+            - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or configure rooms.
+required:
+    - username
+    - name
+    - roles

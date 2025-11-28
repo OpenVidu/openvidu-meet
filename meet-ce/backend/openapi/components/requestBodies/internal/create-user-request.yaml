@@ -1,0 +1,46 @@
+description: User creation options
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                username:
+                    type: string
+                    example: 'alice_smith'
+                    description: |
+                        The unique username for the new user. This must be unique across all users.
+
+                        If a user with this username already exists, the request will fail with a conflict error.
+                name:
+                    type: string
+                    maxLength: 50
+                    example: 'Alice Smith'
+                    description: |
+                        The display name (profile name) for the user.
+                roles:
+                    type: array
+                    items:
+                        type: string
+                        enum: ['admin', 'user', 'room_member']
+                    minItems: 1
+                    example: ['user']
+                    description: |
+                        An array of roles to assign to the user. At least one role must be specified.
+
+                        Available roles:
+                        - admin: Has full control over the entire application (configuration, users, rooms, recordings, etc).
+                        - user: Can create rooms and access exclusively their own created rooms and associated recordings.
+                        - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or configure rooms.
+                password:
+                    type: string
+                    format: password
+                    minLength: 5
+                    example: 'SecureP@ssw0rd'
+                    description: |
+                        The password for the new user account.
+            required:
+                - username
+                - name
+                - roles
+                - password

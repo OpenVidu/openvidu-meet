@@ -16,6 +16,10 @@ paths:
         $ref: './paths/internal/auth.yaml#/~1auth~1refresh'
     /api-keys:
         $ref: './paths/internal/api-keys.yaml#/~1auth~1api-keys'
+    /users:
+        $ref: './paths/internal/users.yaml#/~1users'
+    /users/{username}:
+        $ref: './paths/internal/users.yaml#/~1users~1{username}'
     /users/profile:
         $ref: './paths/internal/users.yaml#/~1users~1profile'
     /users/change-password:
