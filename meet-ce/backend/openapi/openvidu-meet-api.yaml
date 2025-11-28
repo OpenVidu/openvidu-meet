@@ -17,6 +17,8 @@ paths:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1config'
     /rooms/{roomId}/status:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1status'
+    /rooms/{roomId}/guests:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1guests'
     /rooms/{roomId}/members:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1members'
     /rooms/{roomId}/members/{memberId}:

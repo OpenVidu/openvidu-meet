@@ -14,6 +14,15 @@ properties:
             The display name of the room, used to identify it in a user-friendly way. This value does not need to be unique.
 
             Maximum length: 50 characters. If not provided, the default value "Room" will be used.
+    owner:
+        type: string
+        example: 'admin'
+        description: |
+            The owner of the room, indicating who created it.
+
+            This can be:
+            - A username (e.g., 'alice_smith') if the room was created by a registered Meet user.
+            - The string 'app' if the room was created via the REST API using an API key.
     creationDate:
         type: number
         example: 1620000000000
@@ -67,18 +76,10 @@ properties:
     #     description: >
     #         The maximum number of participants allowed in the room. If the number of participants exceeds
     #         this limit, new participants will not be allowed to join.
-    moderatorUrl:
-        type: string
-        example: 'http://localhost:6080/room/room-123?secret=123456'
+    guests:
+        $ref: meet-room-guests.yaml
         description: >
-            The URL for moderator room members to access the room. The moderator role has special permissions to manage the
-            room resources and meeting participants.
-    speakerUrl:
-        type: string
-        example: 'http://localhost:6080/room/room-123?secret=654321'
-        description: >
-            The URL for speaker room members to access the room. The speaker role has permissions to publish audio and
-            video streams to the meeting.
+            Configuration for guest access to the room, including access URLs and default permissions for moderator and speaker roles.
     status:
         type: string
         enum:

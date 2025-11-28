@@ -58,3 +58,27 @@ properties:
         $ref: './meet-room-config.yaml#/MeetRoomConfig'
         description: >
             The config for the room. These config will be used to configure the room's settings.
+    guests:
+        type: object
+        properties:
+            moderator:
+                type: object
+                properties:
+                    permissions:
+                        $ref: meet-permissions.yaml
+                        description: >
+                            Optional custom permissions for moderator guests. If not provided, default moderator permissions will be used.
+            speaker:
+                type: object
+                properties:
+                    permissions:
+                        $ref: meet-permissions.yaml
+                        description: >
+                            Optional custom permissions for speaker guests. If not provided, default speaker permissions will be used.
+        description: |
+            Optional configuration for default guest permissions.
+
+            You can specify custom permissions for moderator and/or speaker guest roles.
+            If not provided, default permissions for each role will be used:
+            - Moderator: Full permissions to manage the room and meeting.
+            - Speaker: Permissions to publish audio and video streams.

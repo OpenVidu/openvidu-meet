@@ -18,6 +18,7 @@ content:
                     rooms:
                         - roomId: 'room-123'
                           roomName: 'room'
+                          owner: 'admin'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           autoDeletionPolicy:
@@ -32,12 +33,46 @@ content:
                                   enabled: true
                               e2ee:
                                   enabled: false
-                          moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                          speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                          guests:
+                              moderator:
+                                  accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: true
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: true
+                                      canMakeModerator: true
+                                      canKickParticipants: true
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                              speaker:
+                                  accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                                  permissions:
+                                      canRecord: false
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: false
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: false
+                                      canMakeModerator: false
+                                      canKickParticipants: false
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
                           roomName: 'room'
+                          owner: 'app'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           autoDeletionPolicy:
@@ -52,8 +87,41 @@ content:
                                   enabled: false
                               e2ee:
                                   enabled: false
-                          moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
-                          speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                          guests:
+                              moderator:
+                                  accessUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: true
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: true
+                                      canMakeModerator: true
+                                      canKickParticipants: true
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                              speaker:
+                                  accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: false
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: false
+                                      canMakeModerator: false
+                                      canKickParticipants: false
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
                           status: open
                           meetingEndAction: none
                     pagination:
@@ -102,16 +170,4 @@ content:
                     pagination:
                         isTruncated: true
                         nextPageToken: 'abc123'
-                        maxItems: 10
-
-            fields=moderatorUrl,speakerUrl:
-                summary: Response containing only moderator and speaker URLs
-                value:
-                    rooms:
-                        - moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                          speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                        - moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
-                          speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
-                    pagination:
-                        isTruncated: false
                         maxItems: 10

@@ -235,6 +235,39 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/guests:
+    put:
+        operationId: updateRoomGuests
+        summary: Update room guests configuration
+        description: |
+            Updates the default permissions for moderator and/or speaker guest roles in the specified room.
+
+            This allows you to customize what permissions guests will have when joining the room
+            using the moderator or speaker access URLs.
+
+            You can update one or both roles in a single request.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-guests-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-guests.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
 /rooms/{roomId}/members:
     post:
         operationId: addRoomMember

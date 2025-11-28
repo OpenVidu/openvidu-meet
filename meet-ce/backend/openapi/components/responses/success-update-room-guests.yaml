@@ -1,0 +1,10 @@
+description: Success response for updating room guests configuration
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: Room guests config for room 'room-123' updated successfully

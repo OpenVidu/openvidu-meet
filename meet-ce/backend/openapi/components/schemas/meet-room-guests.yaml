@@ -1,0 +1,36 @@
+type: object
+properties:
+    moderator:
+        type: object
+        properties:
+            accessUrl:
+                type: string
+                format: uri
+                example: 'http://localhost:6080/room/room-123?secret=123456'
+                description: >
+                    The URL for moderator guests to access the room.
+            permissions:
+                $ref: meet-permissions.yaml
+                description: >
+                    The default permissions for moderator guests. These permissions define what moderator guests can do in the meeting.
+    speaker:
+        type: object
+        properties:
+            accessUrl:
+                type: string
+                format: uri
+                example: 'http://localhost:6080/room/room-123?secret=654321'
+                description: >
+                    The URL for speaker guests to access the room.
+            permissions:
+                $ref: meet-permissions.yaml
+                description: >
+                    The default permissions for speaker guests. These permissions define what speaker guests can do in the meeting.
+description: |
+    Configuration for guest access to the room. Guests are participants who join without being registered members.
+
+    The guests object contains two roles:
+    - moderator: Has full permissions to manage the room and meeting by default.
+    - speaker: Has permissions to publish audio and video streams by default.
+
+    Each role has an access URL and a set of default permissions that will be applied to all guests joining with that role.
