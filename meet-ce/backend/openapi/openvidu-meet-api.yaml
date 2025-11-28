@@ -17,6 +17,10 @@ paths:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1config'
     /rooms/{roomId}/status:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1status'
+    /rooms/{roomId}/members:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1members'
+    /rooms/{roomId}/members/{memberId}:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
     /recordings:
         $ref: './paths/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -37,6 +41,8 @@ components:
             $ref: components/schemas/meet-room-options.yaml
         MeetRoomConfig:
             $ref: './components/schemas/meet-room-config.yaml#/MeetRoomConfig'
+        MeetRoomMember:
+            $ref: components/schemas/meet-room-member.yaml
         MeetRecording:
             $ref: components/schemas/meet-recording.yaml
         MeetWebhookEvent:
