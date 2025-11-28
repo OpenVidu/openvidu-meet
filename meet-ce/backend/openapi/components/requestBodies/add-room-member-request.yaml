@@ -5,15 +5,19 @@ content:
         schema:
             type: object
             properties:
-                userName:
+                username:
                     type: string
                     example: 'alice_smith'
                     description: |
-                        The unique username for OpenVidu Meet users. This field is optional and should only be provided
-                        when adding an internal Meet user as a member.
+                        The unique username for OpenVidu Meet users. This field should be provided when adding an internal Meet user as a member.
 
-                        If provided, the member will be associated with the Meet user account.
-                        If omitted, the member will be treated as an external user.
+                        If provided:
+                        - The member will be associated with the Meet user account.
+                        - The 'name' field will be ignored and automatically set based on the Meet user's profile name.
+
+                        If omitted, the member will be treated as an external user and 'name' must be provided.
+
+                        Note: You must provide either 'username' or 'name', but not both are required.
                 name:
                     type: string
                     maxLength: 50
@@ -21,7 +25,10 @@ content:
                     description: |
                         The display name for the participant when joining the meeting with this member access.
 
-                        For OpenVidu Meet users, this should be their profile name. For external users, this is the assigned name.
+                        This field is required only when adding an external user (when 'username' is not provided).
+                        If 'username' is provided, this field will be ignored and the name will be set from the Meet user's profile.
+
+                        Note: You must provide either 'username' or 'name', but not both are required.
                 baseRole:
                     type: string
                     enum:
@@ -62,5 +69,9 @@ content:
                         - canWriteChat: Can send chat messages in the meeting.
                         - canChangeVirtualBackground: Can change the virtual background.
             required:
-                - name
                 - baseRole
+            description: |
+                Request body to add a new member to a room.
+
+                Important: You must provide either 'username' (for Meet users) or 'name' (for external users).
+                If 'username' is provided, the 'name' field will be ignored.

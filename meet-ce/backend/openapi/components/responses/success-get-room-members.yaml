@@ -17,7 +17,7 @@ content:
                 value:
                     members:
                         - memberId: 'abc123'
-                          userName: 'alice_smith'
+                          username: 'alice_smith'
                           name: 'Alice Smith'
                           accessUrl: 'http://localhost:6080/room/room-123?secret=abc123'
                           baseRole: 'moderator'

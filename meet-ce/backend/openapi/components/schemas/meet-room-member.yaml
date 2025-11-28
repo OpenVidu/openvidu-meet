@@ -6,7 +6,7 @@ properties:
         description: >
             The unique identifier of the room member. This ID is automatically generated when the member is added to the room,
             and is used as the secret in the access URL.
-    userName:
+    username:
         type: [string, 'null']
         example: 'alice_smith'
         description: |
