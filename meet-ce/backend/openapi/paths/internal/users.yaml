@@ -5,7 +5,7 @@
         description: |
             Creates a new user account in the system.
 
-            The username must be unique. If a user with the specified username already exists,
+            The userId must be unique. If a user with the specified userId already exists,
             the request will fail with a conflict error.
         tags:
             - Internal API - Users
@@ -21,7 +21,7 @@
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
             '409':
-                $ref: '../../components/responses/internal/error-username-already-exists.yaml'
+                $ref: '../../components/responses/internal/error-userId-already-exists.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
@@ -49,18 +49,56 @@
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
-/users/{username}:
+/users/me:
+    get:
+        operationId: getMe
+        summary: Get authenticated user
+        description: >
+            Retrieves the details of the authenticated user.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-me.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+/users/change-password:
+    post:
+        operationId: changeUserPassword
+        summary: Change user password
+        description: >
+            Allows the authenticated user to change their password.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/change-password-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-change-password.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-invalid-password.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/users/{userId}:
     get:
         operationId: getUser
         summary: Get a user
         description: >
-            Retrieves the details of a specific user by their username.
+            Retrieves the details of a specific user by their userId.
         tags:
             - Internal API - Users
         security:
             - accessTokenHeader: []
         parameters:
-            - $ref: '../../components/parameters/internal/username-path.yaml'
+            - $ref: '../../components/parameters/internal/userId-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-user.yaml'
@@ -87,7 +125,7 @@
         security:
             - accessTokenHeader: []
         parameters:
-            - $ref: '../../components/parameters/internal/username-path.yaml'
+            - $ref: '../../components/parameters/internal/userId-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-delete-user.yaml'
@@ -97,44 +135,6 @@
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../../components/responses/internal/error-user-not-found.yaml'
-            '422':
-                $ref: '../../components/responses/validation-error.yaml'
-            '500':
-                $ref: '../../components/responses/internal-server-error.yaml'
-/users/profile:
-    get:
-        operationId: getUserProfile
-        summary: Get user profile
-        description: >
-            Retrieves the profile information of the authenticated user.
-        tags:
-            - Internal API - Users
-        security:
-            - accessTokenHeader: []
-        responses:
-            '200':
-                $ref: '../../components/responses/internal/success-get-profile.yaml'
-            '401':
-                $ref: '../../components/responses/unauthorized-error.yaml'
-/users/change-password:
-    post:
-        operationId: changeUserPassword
-        summary: Change user password
-        description: >
-            Allows the authenticated user to change their password.
-        tags:
-            - Internal API - Users
-        security:
-            - accessTokenHeader: []
-        requestBody:
-            $ref: '../../components/requestBodies/internal/change-password-request.yaml'
-        responses:
-            '200':
-                $ref: '../../components/responses/internal/success-change-password.yaml'
-            '400':
-                $ref: '../../components/responses/internal/error-invalid-password.yaml'
-            '401':
-                $ref: '../../components/responses/unauthorized-error.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':

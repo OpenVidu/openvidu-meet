@@ -5,33 +5,29 @@ content:
         schema:
             type: object
             properties:
-                username:
+                userId:
                     type: string
+                    pattern: '^[a-z0-9_]+$'
                     example: 'alice_smith'
                     description: |
-                        The unique username for the new user. This must be unique across all users.
+                        The unique identifier for the new user. This must be unique across all users.
 
-                        If a user with this username already exists, the request will fail with a conflict error.
+                        Validation: Must contain only lowercase letters, numbers, and underscores.
                 name:
                     type: string
                     maxLength: 50
                     example: 'Alice Smith'
                     description: |
                         The display name (profile name) for the user.
-                roles:
-                    type: array
-                    items:
-                        type: string
-                        enum: ['admin', 'user', 'room_member']
-                    minItems: 1
-                    example: ['user']
+                role:
+                    type: string
+                    enum: ['admin', 'user', 'room_member']
+                    example: 'user'
                     description: |
-                        An array of roles to assign to the user. At least one role must be specified.
-
-                        Available roles:
+                        The role to assign to the user. Available roles:
                         - admin: Has full control over the entire application (configuration, users, rooms, recordings, etc).
-                        - user: Can create rooms and access exclusively their own created rooms and associated recordings.
-                        - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or configure rooms.
+                        - user: Can create and manage their own created rooms and associated recordings. Can also access rooms they are a member of, but without management permissions.
+                        - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or manage rooms.
                 password:
                     type: string
                     format: password
@@ -40,7 +36,7 @@ content:
                     description: |
                         The password for the new user account.
             required:
-                - username
+                - userId
                 - name
-                - roles
+                - role
                 - password

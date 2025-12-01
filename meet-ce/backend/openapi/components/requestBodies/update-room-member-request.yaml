@@ -16,7 +16,7 @@ content:
                         - moderator: By default, has full permissions to manage the room and meeting.
                         - speaker: By default, has permissions to publish audio and video streams.
 
-                        Individual permissions can be overridden through the customPermissions object.
+                        Individual permissions can be overridden through the 'customPermissions' object.
                 customPermissions:
                     type: object
                     additionalProperties:
@@ -29,18 +29,5 @@ content:
                         Only include the permissions you want to override from the base role defaults.
                         Each property should be a permission name (e.g., 'canRecord', 'canShareScreen') with a boolean value.
 
-                        Available permissions to override:
-                        - canRecord: Can start/stop recording the meeting.
-                        - canRetrieveRecordings: Can list and play recordings.
-                        - canDeleteRecordings: Can delete recordings.
-                        - canJoinMeeting: Can join the meeting.
-                        - canShareAccessLinks: Can share access links to invite others.
-                        - canMakeModerator: Can promote other participants to moderator role.
-                        - canKickParticipants: Can remove other participants from the meeting.
-                        - canEndMeeting: Can end the meeting for all participants.
-                        - canPublishVideo: Can publish video in the meeting.
-                        - canPublishAudio: Can publish audio in the meeting.
-                        - canShareScreen: Can share screen in the meeting.
-                        - canReadChat: Can read chat messages in the meeting.
-                        - canWriteChat: Can send chat messages in the meeting.
-                        - canChangeVirtualBackground: Can change the virtual background.
+                        For the complete list of all available permissions, see the full permissions schema:
+                        [MeetPermissions](#/schemas/MeetPermissions)

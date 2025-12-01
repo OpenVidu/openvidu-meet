@@ -2,28 +2,24 @@ type: object
 properties:
     memberId:
         type: string
-        example: 'abc123'
-        description: >
-            The unique identifier of the room member. This ID is automatically generated when the member is added to the room,
-            and is used as the secret in the access URL.
-    username:
-        type: [string, 'null']
         example: 'alice_smith'
         description: |
-            The unique username for OpenVidu Meet users. This field is only present when the member is an internal Meet user.
+            The unique identifier of the room member.
 
-            If this field is present, the member is a registered Meet user. If null or absent, the member is an external user.
+            - For internal users: This is set to the userId of the linked Meet user account.
+            - For external users: This is an automatically generated unique identifier starting from 'ext-'.
     name:
         type: string
         example: 'Alice Smith'
         description: |
             The display name for the participant when joining the meeting with this member access.
 
-            For OpenVidu Meet users, this is their profile name. For external users, this is the assigned name.
+            - For OpenVidu Meet users, this is their profile name.
+            - For external users, this is the assigned name.
     accessUrl:
         type: string
         format: uri
-        example: 'http://localhost:6080/room/room-123?secret=abc123'
+        example: 'http://localhost:6080/room/room-123'
         description: >
             The unique URL for this member to access the room. This URL is different from the moderator and speaker URLs
             and provides access with the specific permissions assigned to this member.

@@ -18,12 +18,12 @@ paths:
         $ref: './paths/internal/api-keys.yaml#/~1auth~1api-keys'
     /users:
         $ref: './paths/internal/users.yaml#/~1users'
-    /users/{username}:
-        $ref: './paths/internal/users.yaml#/~1users~1{username}'
-    /users/profile:
-        $ref: './paths/internal/users.yaml#/~1users~1profile'
+    /users/me:
+        $ref: './paths/internal/users.yaml#/~1users~1me'
     /users/change-password:
         $ref: './paths/internal/users.yaml#/~1users~1change-password'
+    /users/{userId}:
+        $ref: './paths/internal/users.yaml#/~1users~1{userId}'
     /config/webhooks:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1webhooks'
     /config/webhooks/test:

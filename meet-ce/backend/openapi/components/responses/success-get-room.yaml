@@ -16,17 +16,16 @@ content:
                         withMeeting: when_meeting_ends
                         withRecordings: close
                     config:
-                        chat:
-                            enabled: true
                         recording:
                             enabled: false
+                        chat:
+                            enabled: true
                         virtualBackground:
                             enabled: true
                         e2ee:
                             enabled: false
-                    guests:
+                    roles:
                         moderator:
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
                             permissions:
                                 canRecord: true
                                 canRetrieveRecordings: true
@@ -35,7 +34,7 @@ content:
                                 canShareAccessLinks: true
                                 canMakeModerator: true
                                 canKickParticipants: true
-                                canEndMeeting: false
+                                canEndMeeting: true
                                 canPublishVideo: true
                                 canPublishAudio: true
                                 canShareScreen: true
@@ -43,7 +42,6 @@ content:
                                 canWriteChat: true
                                 canChangeVirtualBackground: true
                         speaker:
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
                             permissions:
                                 canRecord: false
                                 canRetrieveRecordings: true
@@ -59,6 +57,13 @@ content:
                                 canReadChat: true
                                 canWriteChat: true
                                 canChangeVirtualBackground: true
+                    anonymous:
+                        moderator:
+                            enabled: true
+                            accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                        speaker:
+                            enabled: true
+                            accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
                     status: open
                     meetingEndAction: none
 
@@ -75,50 +80,22 @@ content:
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     config:
-                        chat:
-                            enabled: true
                         recording:
                             enabled: false
+                        chat:
+                            enabled: true
                         virtualBackground:
                             enabled: true
                         e2ee:
                             enabled: false
 
-            fields=moderatorUrl,speakerUrl:
-                summary: Response containing only moderator and speaker URLs
+            fields=anonymous:
+                summary: Response containing only anonymous access configuration
                 value:
-                    guests:
+                    anonymous:
                         moderator:
+                            enabled: true
                             accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                            permissions:
-                                canRecord: true
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: true
-                                canJoinMeeting: true
-                                canShareAccessLinks: true
-                                canMakeModerator: true
-                                canKickParticipants: true
-                                canEndMeeting: false
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true
                         speaker:
+                            enabled: true
                             accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                            permissions:
-                                canRecord: false
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: false
-                                canJoinMeeting: true
-                                canShareAccessLinks: false
-                                canMakeModerator: false
-                                canKickParticipants: false
-                                canEndMeeting: false
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true

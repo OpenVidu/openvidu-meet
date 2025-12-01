@@ -16,10 +16,9 @@ content:
                 summary: Full room member details response with multiple members
                 value:
                     members:
-                        - memberId: 'abc123'
-                          username: 'alice_smith'
+                        - memberId: 'alice_smith'
                           name: 'Alice Smith'
-                          accessUrl: 'http://localhost:6080/room/room-123?secret=abc123'
+                          accessUrl: 'http://localhost:6080/room/room-123'
                           baseRole: 'moderator'
                           customPermissions:
                               canEndMeeting: false
@@ -38,9 +37,9 @@ content:
                               canReadChat: true
                               canWriteChat: true
                               canChangeVirtualBackground: true
-                        - memberId: 'xyz789'
-                          name: 'Bob External'
-                          accessUrl: 'http://localhost:6080/room/room-123?secret=xyz789'
+                        - memberId: 'ext-abc123'
+                          name: 'Bob'
+                          accessUrl: 'http://localhost:6080/room/room-123?secret=ext-abc123'
                           baseRole: 'speaker'
                           customPermissions:
                               canShareScreen: false
@@ -67,9 +66,9 @@ content:
                 summary: Response with only accessUrl and baseRole for each member
                 value:
                     members:
-                        - accessUrl: 'http://localhost:6080/room/room-123?secret=abc123'
+                        - accessUrl: 'http://localhost:6080/room/room-123'
                           baseRole: 'moderator'
-                        - accessUrl: 'http://localhost:6080/room/room-123?secret=xyz789'
+                        - accessUrl: 'http://localhost:6080/room/room-123?secret=ext-abc123'
                           baseRole: 'speaker'
                     pagination:
                         isTruncated: false

@@ -15,15 +15,15 @@ content:
                 summary: Response with multiple users
                 value:
                     users:
-                        - username: 'admin'
+                        - userId: 'admin'
                           name: 'Admin'
-                          roles: ['admin']
-                        - username: 'alice_smith'
+                          role: 'admin'
+                        - userId: 'alice_smith'
                           name: 'Alice Smith'
-                          roles: ['user']
-                        - username: 'bob_jones'
+                          role: 'user'
+                        - userId: 'bob_jones'
                           name: 'Bob Jones'
-                          roles: ['room_member']
+                          role: 'room_member'
                     pagination:
                         nextPageToken: 'eyJvZmZzZXQiOjEwfQ=='
                         isTruncated: true
@@ -32,9 +32,9 @@ content:
                 summary: Response with all users in a single page
                 value:
                     users:
-                        - username: 'admin'
+                        - userId: 'admin'
                           name: 'Admin'
-                          roles: ['admin', 'user']
+                          role: 'admin'
                     pagination:
                         isTruncated: false
                         maxItems: 10

@@ -8,9 +8,9 @@ content:
                     $ref: '../schemas/meet-room-config.yaml#/MeetRoomConfig'
         example:
             config:
-                chat:
-                    enabled: true
                 recording:
                     enabled: false
+                chat:
+                    enabled: true
                 virtualBackground:
                     enabled: true

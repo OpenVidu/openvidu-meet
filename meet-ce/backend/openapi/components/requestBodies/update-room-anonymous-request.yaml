@@ -1,0 +1,6 @@
+description: Room anonymous access configuration update options
+required: true
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/meet-room-anonymous-config.yaml'

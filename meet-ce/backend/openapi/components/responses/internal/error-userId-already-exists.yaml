@@ -1,4 +1,4 @@
-description: Username already exists
+description: UserId already exists
 content:
     application/json:
         schema:

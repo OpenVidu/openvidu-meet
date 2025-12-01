@@ -235,17 +235,15 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-/rooms/{roomId}/guests:
+/rooms/{roomId}/roles:
     put:
-        operationId: updateRoomGuests
-        summary: Update room guests configuration
+        operationId: updateRoomRoles
+        summary: Update roles permissions for a room
         description: |
-            Updates the default permissions for moderator and/or speaker guest roles in the specified room.
+            Updates the permissions by role for the specified room.
 
-            This allows you to customize what permissions guests will have when joining the room
-            using the moderator or speaker access URLs.
-
-            You can update one or both roles in a single request.
+            You can customize permissions for moderator and/or speaker roles.
+            Only specify the permissions you want to change from the current configuration.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -254,10 +252,40 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
         requestBody:
-            $ref: '../components/requestBodies/update-room-guests-request.yaml'
+            $ref: '../components/requestBodies/update-room-roles-request.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-update-room-guests.yaml'
+                $ref: '../components/responses/success-update-room-roles.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/anonymous:
+    put:
+        operationId: updateRoomAnonymous
+        summary: Update anonymous access config for a room
+        description: |
+            Updates the anonymous access configuration for the specified room.
+
+            This allows you to enable or disable anonymous access for specific roles (moderator/speaker).
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-anonymous-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-anonymous.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

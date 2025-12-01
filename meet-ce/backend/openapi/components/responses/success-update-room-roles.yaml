@@ -1,4 +1,4 @@
-description: Success response for updating room guests configuration
+description: Success response for updating room roles configuration
 content:
     application/json:
         schema:
@@ -7,4 +7,4 @@ content:
                 message:
                     type: string
         example:
-            message: Room guests config for room 'room-123' updated successfully
+            message: Roles permissions for room 'room-123' updated successfully
