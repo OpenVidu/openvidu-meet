@@ -15,7 +15,6 @@ import {
 import { Subject } from 'rxjs';
 import { MeetingParticipantItemComponent } from '../../customization';
 import {
-	ApplicationFeatures,
 	FeatureConfigurationService,
 	GlobalConfigService,
 	MeetingContextService,
@@ -27,6 +26,7 @@ import {
 	WebComponentManagerService
 } from '../../services';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
+import { ApplicationFeatures } from '../../models/app.model';
 
 @Component({
 	selector: 'ov-meeting',

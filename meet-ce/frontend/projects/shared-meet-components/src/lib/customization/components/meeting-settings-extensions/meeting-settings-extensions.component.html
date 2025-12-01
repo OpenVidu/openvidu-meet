@@ -1,5 +1,5 @@
 <!-- Grid Layout Configuration Section -->
-@if (showLayoutSelector()) {
+@if (isLayoutSwitchingAllowed()) {
 	<div class="layout-section">
 		<div class="section-header">
 			<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
@@ -14,14 +14,14 @@
 				(ngModelChange)="onLayoutModeChange($event)"
 				aria-label="Select layout mode"
 			>
-				<mat-radio-button [value]="LayoutMode.MOSAIC" class="layout-radio-option">
+				<mat-radio-button [value]="LayoutMode.MOSAIC" id="layout-mosaic" class="layout-radio-option">
 					<div class="radio-content">
 						<span class="radio-label">Mosaic</span>
 						<span class="radio-description">Shows all participants in a unified grid</span>
 					</div>
 				</mat-radio-button>
 
-				<mat-radio-button [value]="LayoutMode.SMART_MOSAIC" class="layout-radio-option">
+				<mat-radio-button [value]="LayoutMode.SMART_MOSAIC" id="layout-smart-mosaic" class="layout-radio-option">
 					<div class="radio-content">
 						<span class="radio-label">Smart Mosaic</span>
 						<span class="radio-description">Shows a limited number of active participants</span>

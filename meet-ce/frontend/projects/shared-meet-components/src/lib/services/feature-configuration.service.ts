@@ -4,41 +4,10 @@ import {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
-	MeetRoomTheme,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-
-/**
- * Interface that defines all available features in the application
- */
-export interface ApplicationFeatures {
-	// Media Features
-	videoEnabled: boolean;
-	audioEnabled: boolean;
-	showCamera: boolean;
-	showMicrophone: boolean;
-	showScreenShare: boolean;
-
-	// UI Features
-	showRecordingPanel: boolean;
-	showChat: boolean;
-	showBackgrounds: boolean;
-	showParticipantList: boolean;
-	showSettings: boolean;
-	showFullscreen: boolean;
-	showThemeSelector: boolean;
-	showLayoutSelector: boolean;
-
-	// Permissions
-	canModerateRoom: boolean;
-	canRecordRoom: boolean;
-	canRetrieveRecordings: boolean;
-
-	// Appearance
-	hasCustomTheme: boolean;
-	themeConfig?: MeetRoomTheme;
-}
+import { ApplicationFeatures } from '../models/app.model';
 
 /**
  * Base configuration for default features
@@ -57,7 +26,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showSettings: true,
 	showFullscreen: true,
 	showThemeSelector: true,
-	showLayoutSelector: true, // flag for allowing smart layout. It's changed manually.
+	allowLayoutSwitching: true,
 
 	canModerateRoom: false,
 	canRecordRoom: false,

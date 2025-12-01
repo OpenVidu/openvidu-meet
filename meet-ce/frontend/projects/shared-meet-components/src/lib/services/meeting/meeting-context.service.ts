@@ -102,9 +102,9 @@ export class MeetingContextService {
 	readonly canModerateRoom = computed(() => this.featureConfigService.features().canModerateRoom);
 
 	/**
-	 * Computed signal for whether the layout selector feature is enabled
+	 * Computed signal for whether layout switching is allowed
 	 */
-	readonly showLayoutSelector = computed(() => this.featureConfigService.features().showLayoutSelector);
+	readonly allowLayoutSwitching = computed(() => this.featureConfigService.features().allowLayoutSwitching);
 
 	/**
 	 * Computed signal for whether the device is mobile

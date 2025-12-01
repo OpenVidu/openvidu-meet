@@ -39,9 +39,9 @@ export class MeetingSettingsExtensionsComponent {
 	readonly LayoutMode = MeetLayoutMode;
 
 	/**
-	 * Whether the layout selector feature is enabled
+	 * Whether the layout switching feature is allowed
 	 */
-	protected readonly showLayoutSelector = this.meetingContextService.showLayoutSelector;
+	protected readonly isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
 
 	/**
 	 * Current layout mode

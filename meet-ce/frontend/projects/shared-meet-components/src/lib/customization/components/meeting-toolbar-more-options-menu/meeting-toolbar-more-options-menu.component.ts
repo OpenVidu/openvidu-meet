@@ -50,9 +50,9 @@ export class MeetingToolbarMoreOptionsMenuComponent {
   readonly isDesktopView = computed(() => this.viewportService.isDesktop());
 
   /**
-   * Whether the layout selector feature is enabled
+   * Whether the layout switching feature is allowed
    */
-  readonly showLayoutSelector = computed(() => this.meetingContextService.showLayoutSelector());
+  readonly isLayoutSwitchingAllowed = computed(() => this.meetingContextService.allowLayoutSwitching());
 
   /**
    * Opens the settings panel to allow users to change grid layout
