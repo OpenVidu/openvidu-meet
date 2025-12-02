@@ -73,6 +73,7 @@ content:
                               speaker:
                                   enabled: true
                                   accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                          accessUrl: 'http://localhost:6080/room/room-123'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
@@ -132,6 +133,7 @@ content:
                               speaker:
                                   enabled: true
                                   accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                          accessUrl: 'http://localhost:6080/room/room-456'
                           status: open
                           meetingEndAction: none
                     pagination:

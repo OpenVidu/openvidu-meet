@@ -64,13 +64,9 @@ content:
                         speaker:
                             enabled: true
                             accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                    accessUrl: 'http://localhost:6080/room/room-123'
                     status: open
                     meetingEndAction: none
-
-            fields=roomId:
-                summary: Response with only the roomId
-                value:
-                    roomId: 'room-123'
 
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config

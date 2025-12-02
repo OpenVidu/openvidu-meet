@@ -123,6 +123,16 @@ properties:
                         example: 'http://localhost:6080/room/room-123?secret=654321'
                         description: >
                             The URL for anonymous speakers to access the room.
+    accessUrl:
+        type: string
+        format: uri
+        example: 'http://localhost:6080/room/room-123'
+        description: |
+            The general access URL for authenticated users to join the room.
+
+            This URL should be used by:
+            - The room owner (internal Meet user who created the room)
+            - Internal Meet users who are members of the room
     status:
         type: string
         enum:
