@@ -11,8 +11,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
-import { CustomParticipantModel, httpInterceptor, ThemeService } from '@openvidu-meet/shared-components';
-import { OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
+import { CustomParticipantModel, httpInterceptor, MeetLayoutService, ThemeService } from '@openvidu-meet/shared-components';
+import { LayoutService, OpenViduComponentsConfig, OpenViduComponentsModule, ParticipantProperties } from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
 	production: environment.production,
@@ -29,6 +29,7 @@ export const appConfig: ApplicationConfig = {
 			return initializerFn();
 		}),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
+		{ provide: LayoutService, useClass: MeetLayoutService },
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),

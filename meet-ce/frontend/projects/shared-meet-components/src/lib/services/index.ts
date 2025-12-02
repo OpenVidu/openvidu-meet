@@ -19,3 +19,5 @@ export * from './theme.service';
 export * from './token-storage.service';
 export * from './wizard-state.service';
 export * from './analytics.service';
+export * from './layout.service';
+export * from './storage.service';
