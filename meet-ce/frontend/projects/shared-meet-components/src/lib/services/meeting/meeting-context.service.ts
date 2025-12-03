@@ -1,9 +1,10 @@
-import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
-import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
-import { Room, ParticipantService, ViewportService } from 'openvidu-components-angular';
-import { CustomParticipantModel } from '../../models';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
+import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
+import { CustomParticipantModel } from '../../models';
 import { FeatureConfigurationService } from '../feature-configuration.service';
+import { SessionStorageService } from '../session-storage.service';
 
 /**
  * Central service for managing meeting context and state during the MEETING PHASE.
@@ -17,6 +18,7 @@ export class MeetingContextService {
 	private readonly ovParticipantService = inject(ParticipantService);
 	private readonly featureConfigService = inject(FeatureConfigurationService);
 	private readonly viewportService = inject(ViewportService);
+	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly destroyRef = inject(DestroyRef);
 	private isSubscribed = false;
 	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
@@ -188,8 +190,13 @@ export class MeetingContextService {
 	/**
 	 * Sets the room secret in context
 	 * @param secret The room secret
+	 * @param updateStorage Whether to persist in SessionStorage (default: false)
 	 */
-	setRoomSecret(secret: string): void {
+	setRoomSecret(secret: string, updateStorage = false): void {
+		if (updateStorage) {
+			this.sessionStorageService.setRoomSecret(secret);
+		}
+
 		this._roomSecret.set(secret);
 	}
 

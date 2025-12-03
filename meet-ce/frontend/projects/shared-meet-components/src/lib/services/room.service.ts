@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
 	MeetRoom,
 	MeetRoomConfig,
@@ -11,7 +11,7 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService, MeetingContextService, SessionStorageService } from '../services';
+import { FeatureConfigurationService, HttpService } from '../services';
 
 /**
  * RoomService - Persistence Layer for Room Data
@@ -30,63 +30,13 @@ import { FeatureConfigurationService, HttpService, MeetingContextService, Sessio
 export class RoomService {
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
 	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
-
-	protected roomId: string = '';
-	protected roomSecret: string = '';
-	protected e2eeKey: string = '';
 	protected log;
-	protected meetingContext = inject(MeetingContextService);
-
 	constructor(
 		protected loggerService: LoggerService,
 		protected httpService: HttpService,
-		protected featureConfService: FeatureConfigurationService,
-		protected sessionStorageService: SessionStorageService
+		protected featureConfService: FeatureConfigurationService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
-	}
-
-	/**
-	 * Stores the room ID in memory and automatically syncs to MeetingContextService.
-	 * This ensures persistence and reactivity across the application.
-	 *
-	 * @param roomId - The room identifier to store
-	 */
-	setRoomId(roomId: string) {
-		this.roomId = roomId;
-		// Auto-sync to MeetingContextService (Single Source of Truth for runtime)
-		this.meetingContext.setRoomId(roomId);
-	}
-
-	/**
-	 * Loads persisted room state from internal storage to MeetingContextService.
-	 * Should be called during application initialization to restore state after page reload.
-	 *
-	 * This method transfers data from RoomService → MeetingContextService,
-	 * making it available as reactive signals throughout the application.
-	 */
-	loadPersistedStateToContext(): void {
-		if (this.roomId) {
-			this.meetingContext.setRoomId(this.roomId);
-		}
-		if (this.roomSecret) {
-			this.meetingContext.setRoomSecret(this.roomSecret);
-		}
-	}
-
-	/**
-	 * Stores the room secret in memory, session storage, and automatically syncs to MeetingContextService.
-	 *
-	 * @param secret - The room secret to store
-	 * @param updateStorage - Whether to persist in SessionStorage (default: true)
-	 */
-	setRoomSecret(secret: string, updateStorage = true) {
-		this.roomSecret = secret;
-		if (updateStorage) {
-			this.sessionStorageService.setRoomSecret(secret);
-		}
-		// Auto-sync to MeetingContextService (Single Source of Truth for runtime)
-		this.meetingContext.setRoomSecret(secret);
 	}
 
 	/**

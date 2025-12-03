@@ -2,11 +2,16 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import { ErrorReason } from '../models';
-import { AppDataService, MeetingContextService, NavigationService, RoomMemberService, RoomService, SessionStorageService } from '../services';
+import {
+	AppDataService,
+	MeetingContextService,
+	NavigationService,
+	RoomMemberService,
+	SessionStorageService
+} from '../services';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const roomService = inject(RoomService);
 	const meetingContextService = inject(MeetingContextService);
 	const roomMemberService = inject(RoomMemberService);
 	const sessionStorageService = inject(SessionStorageService);
@@ -30,8 +35,8 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	roomService.setRoomId(roomId);
-	roomService.setRoomSecret(secret);
+	meetingContextService.setRoomId(roomId);
+	meetingContextService.setRoomSecret(secret, true);
 
 	if (e2eeKey) {
 		meetingContextService.setE2eeKey(e2eeKey);
@@ -51,7 +56,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 export const extractRecordingQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const roomService = inject(RoomService);
+	const meetingContextService = inject(MeetingContextService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret } = extractParams(route);
@@ -62,8 +67,8 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 		return navigationService.redirectToErrorPage(ErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	roomService.setRoomId(roomId);
-	roomService.setRoomSecret(secret);
+	meetingContextService.setRoomId(roomId);
+	meetingContextService.setRoomSecret(secret, true);
 
 	return true;
 };
