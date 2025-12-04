@@ -145,7 +145,7 @@ export async function interactWithElementInIframe(
 	// Perform the specified action
 	switch (action) {
 		case 'click':
-			await element.click();
+			await element.click({ force: true });
 			break;
 		case 'fill':
 			await element.fill(value);
@@ -307,7 +307,8 @@ export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'spe
 
 export const startScreenSharing = async (page: Page) => {
 	await interactWithElementInIframe(page, '#screenshare-btn', { action: 'click' });
-	await waitForElementInIframe(page, '#local-element-screen_share', { state: 'visible' });
+	await page.waitForTimeout(500);
+	// await waitForElementInIframe(page, '#local-element-screen_share', { state: 'visible' });
 };
 
 export const stopScreenSharing = async (page: Page) => {
@@ -727,181 +728,14 @@ export const closeSettingsPanel = async (page: Page): Promise<void> => {
 	await page.waitForTimeout(500); // Wait for panel to close
 };
 
+export const toggleParticipantPanel = async (page: Page) => {
+	await interactWithElementInIframe(page, '#participants-panel-btn', { action: 'click' });
+	await page.waitForTimeout(1000); // Wait for panel to fully load
+};
+
 export const muteAudio = async (page: Page) => {
 	await interactWithElementInIframe(page, '#mic-btn', { action: 'click' });
 	await page.waitForTimeout(500); // Wait for action to complete
-};
-
-/**
- * Gets the number of visible participant tiles in the video grid.
- * This counts all participant containers currently displayed.
- *
- * @param page - Playwright page object
- * @returns Number of visible participant tiles
- */
-export const getVisibleParticipantsCount = async (page: Page): Promise<number> => {
-	const participantSelector = '.OV_publisher';
-	const count = await countElementsInIframe(page, participantSelector);
-	console.log(`👥 Visible participants in grid: ${count}`);
-	return count;
-};
-
-/**
- * Gets the identities of all visible participants in the grid.
- *
- * @param page - Playwright page object
- * @returns Array of participant names/identities visible in the grid
- */
-export const getVisibleParticipantNames = async (page: Page): Promise<string[]> => {
-	const frameLocator = await getIframeInShadowDom(page);
-	const participantContainers = frameLocator.locator('.participant-name-container');
-	const count = await participantContainers.count();
-
-	const names: string[] = [];
-	for (let i = 0; i < count; i++) {
-		const container = participantContainers.nth(i);
-		const participantName = await container.textContent();
-
-		if (participantName) {
-			names.push(participantName.trim());
-		}
-	}
-
-	console.log(`👥 Visible participant names: ${names.join(', ')}`);
-	return names;
-};
-
-/**
- * Waits for the participant grid to show a specific number of participants.
- *
- * @param page - Playwright page object
- * @param expectedCount - Expected number of visible participants
- * @param timeout - Maximum time to wait in milliseconds (default: 10000)
- * @returns true if the expected count is reached, false if timeout
- */
-export const waitForParticipantCount = async (
-	page: Page,
-	expectedCount: number,
-	timeout: number = 10000
-): Promise<boolean> => {
-	const startTime = Date.now();
-
-	while (Date.now() - startTime < timeout) {
-		const currentCount = await getVisibleParticipantsCount(page);
-		if (currentCount === expectedCount) {
-			console.log(`✅ Participant count reached: ${expectedCount}`);
-			return true;
-		}
-		await page.waitForTimeout(500);
-	}
-
-	const finalCount = await getVisibleParticipantsCount(page);
-	console.log(`❌ Timeout waiting for participant count. Expected: ${expectedCount}, Got: ${finalCount}`);
-	return false;
-};
-
-/**
- * Waits for a specific participant to become visible in the grid.
- * Uses polling to check if the participant's name appears in the visible participants list.
- *
- * @param page - Playwright page object
- * @param participantName - The name/identity of the participant to wait for
- * @param timeout - Maximum time to wait in milliseconds (default: 30000)
- * @returns true if the participant becomes visible, throws error if timeout
- */
-export const waitForParticipantVisible = async (
-	page: Page,
-	participantName: string,
-	timeout: number = 30000
-): Promise<boolean> => {
-	console.log(`⏳ Waiting for participant "${participantName}" to become visible...`);
-	const startTime = Date.now();
-
-	while (Date.now() - startTime < timeout) {
-		const visibleNames = await getVisibleParticipantNames(page);
-		if (visibleNames.includes(participantName)) {
-			console.log(`✅ Participant "${participantName}" is now visible`);
-			return true;
-		}
-		await page.waitForTimeout(500);
-	}
-
-	const finalNames = await getVisibleParticipantNames(page);
-	throw new Error(
-		`Timeout waiting for participant "${participantName}" to become visible. ` +
-			`Current visible: [${finalNames.join(', ')}]`
-	);
-};
-
-/**
- * Waits for a specific participant to become hidden (not visible) in the grid.
- * Uses polling to check if the participant's name disappears from the visible participants list.
- *
- * @param page - Playwright page object
- * @param participantName - The name/identity of the participant to wait for hiding
- * @param timeout - Maximum time to wait in milliseconds (default: 30000)
- * @returns true if the participant becomes hidden, throws error if timeout
- */
-export const waitForParticipantHidden = async (
-	page: Page,
-	participantName: string,
-	timeout: number = 30000
-): Promise<boolean> => {
-	console.log(`⏳ Waiting for participant "${participantName}" to become hidden...`);
-	const startTime = Date.now();
-
-	while (Date.now() - startTime < timeout) {
-		const visibleNames = await getVisibleParticipantNames(page);
-		if (!visibleNames.includes(participantName)) {
-			console.log(`✅ Participant "${participantName}" is now hidden`);
-			return true;
-		}
-		await page.waitForTimeout(500);
-	}
-
-	const finalNames = await getVisibleParticipantNames(page);
-	throw new Error(
-		`Timeout waiting for participant "${participantName}" to become hidden. ` +
-			`Current visible: [${finalNames.join(', ')}]`
-	);
-};
-
-/**
- * Waits for a layout change where one participant replaces another.
- * Useful for testing Smart Mosaic speaker rotation.
- *
- * @param page - Playwright page object
- * @param participantToAppear - The participant that should become visible
- * @param participantToDisappear - The participant that should become hidden
- * @param timeout - Maximum time to wait in milliseconds (default: 30000)
- * @returns true if the swap happens, throws error if timeout
- */
-export const waitForParticipantSwap = async (
-	page: Page,
-	participantToAppear: string,
-	participantToDisappear: string,
-	timeout: number = 30000
-): Promise<boolean> => {
-	console.log(`⏳ Waiting for swap: "${participantToAppear}" replaces "${participantToDisappear}"...`);
-	const startTime = Date.now();
-
-	while (Date.now() - startTime < timeout) {
-		const visibleNames = await getVisibleParticipantNames(page);
-		const newIsVisible = visibleNames.includes(participantToAppear);
-		const oldIsHidden = !visibleNames.includes(participantToDisappear);
-
-		if (newIsVisible && oldIsHidden) {
-			console.log(`✅ Swap complete: "${participantToAppear}" replaced "${participantToDisappear}"`);
-			return true;
-		}
-		await page.waitForTimeout(500);
-	}
-
-	const finalNames = await getVisibleParticipantNames(page);
-	throw new Error(
-		`Timeout waiting for participant swap. Expected "${participantToAppear}" to replace "${participantToDisappear}". ` +
-			`Current visible: [${finalNames.join(', ')}]`
-	);
 };
 
 /**

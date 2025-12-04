@@ -12,4 +12,6 @@ export interface BrowserFakeParticipantOptions {
 	enableVideo?: boolean;
 	/** Whether to enable audio (default: true) */
 	enableAudio?: boolean;
+	/** Whether to enable screen sharing (default: false) */
+	screenShare?: boolean;
 }

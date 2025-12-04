@@ -5,22 +5,24 @@ import {
 	createTestRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	getVisibleParticipantsCount,
-	getVisibleParticipantNames,
 	joinRoomAs,
+	muteAudio,
 	prepareForJoiningRoom,
-	waitForElementInIframe,
-	waitForParticipantCount,
-	waitForParticipantVisible,
-	waitForParticipantSwap,
-	muteAudio
+	waitForElementInIframe
 } from '../helpers/function-helpers';
 import {
-	disconnectAllFakeParticipants,
 	disconnectAllBrowserFakeParticipants,
+	disconnectAllFakeParticipants,
+	disconnectBrowserFakeParticipant,
+	forceMuteParticipantAudio,
+	getVisibleParticipantNames,
+	getVisibleParticipantsCount,
 	joinBrowserFakeParticipant,
 	joinFakeParticipant,
-	disconnectBrowserFakeParticipant
+	stopScreenShareBrowserFakeParticipant,
+	waitForParticipantCount,
+	waitForParticipantSwap,
+	waitForParticipantVisible
 } from '../helpers/participant.helper';
 
 test.describe('Custom Layout Tests', () => {
@@ -66,9 +68,7 @@ test.describe('Custom Layout Tests', () => {
 	// =========================================================================
 
 	test.describe('Smart Mosaic Layout - Speaker Priority', () => {
-		test('should display only local participant and the single active remote speaker when limit is set to 1 and one remote is muted', async ({
-			page
-		}) => {
+		test('displays only active speaker when limit is 1 and other participant is muted', async ({ page }) => {
 			// Scenario: 3 participants (local + remote A speaking + remote B muted), limit = 1
 			// Expected: Grid shows local + remote A only (2 participants total)
 			// Audio: Remote A uses continuous_speech.ogg, Remote B has no audio
@@ -107,9 +107,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities).not.toContain('RemoteB-Silent'); // Silent participant should NOT be visible
 		});
 
-		test('should reorder two remote participants based on alternating speech activity while keeping local participant always visible', async ({
-			page
-		}) => {
+		test('reorders participants based on speech activity changes', async ({ page }) => {
 			// Scenario: 3 participants, A speaks first (0-5s), then B speaks (5s onwards)
 			// Expected: Initially A is prioritized, after B speaks, B becomes prioritized
 			// Audio: A uses speech_5s_then_silence.ogg, B uses silence_5s_then_speech.ogg
@@ -171,9 +169,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities.length).toBe(2); // Local + current active speaker
 		});
 
-		test('should rotate three remote participants by most recent speaker order with limit of 2 visible remotes', async ({
-			page
-		}) => {
+		test('rotates participants showing most recent speakers when limit exceeded', async ({ page }) => {
 			// Scenario: 4 participants with limit = 2, speaking order A → B → C
 			// Expected: After rotation, grid shows local + B + C (last 2 speakers)
 			// Audio: A speaks 0-3s, B speaks 5-8s, C speaks 10-13s
@@ -236,9 +232,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities).not.toContain('RemoteA-First'); // A was rotated out
 		});
 
-		test('should display local and three most active remote speakers while ignoring the silent participant when limit is 3', async ({
-			page
-		}) => {
+		test('displays local and three most active speakers when limit is 3', async ({ page }) => {
 			// Scenario: 5 participants (local + A, B, C speaking + D always silent), limit = 3
 			// Expected: Grid shows local + A + B + C, D is never shown
 			// Audio: A, B, C use continuous_speech.wav, D has no audio
@@ -298,9 +292,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities).not.toContain('RemoteD-Silent');
 		});
 
-		test('should handle simultaneous speech from multiple participants and correctly reorder when only one continues speaking', async ({
-			page
-		}) => {
+		test('handles simultaneous speech and reorders when only one continues', async ({ page }) => {
 			// Scenario: 3 remote participants + local, limit = 2
 			// All 3 speak simultaneously for first 5s, then only A continues speaking
 			// Expected: Initially any 2 of the 3 are visible (all speaking)
@@ -373,9 +365,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(participantCount).toBe(3);
 		});
 
-		test('should not reorder layout continuously when smart mosaic limit is reached and multiple participants speak intermittently', async ({
-			page
-		}) => {
+		test('stabilizes layout when limit reached with continuous speakers', async ({ page }) => {
 			// Scenario: 2 remote participants + local, limit = 1
 			// Participants A and B speak continuously
 			// Expected: Layout stabilizes showing local + 1 most recent active speakers
@@ -425,9 +415,7 @@ test.describe('Custom Layout Tests', () => {
 			}
 		});
 
-		test('should immediately prioritize a newly joined participant who starts speaking over existing silent participants', async ({
-			page
-		}) => {
+		test('prioritizes newly joined speaking participant over silent ones', async ({ page }) => {
 			// Scenario: Local + 2 silent participants (A, B) in room, limit = 1
 			// New participant C joins and starts speaking immediately
 			// Expected: C immediately appears in the grid, replacing one of the silent participants
@@ -483,9 +471,7 @@ test.describe('Custom Layout Tests', () => {
 	});
 
 	test.describe('Smart Mosaic Layout - Participant Join/Leave Handling', () => {
-		test('should update visible participants correctly when a visible speaker leaves the room', async ({
-			page
-		}) => {
+		test('updates visible participants when speaker leaves', async ({ page }) => {
 			// Scenario: Local + 3 remote participants (A, B, C) with limit = 2
 			// A and B are visible speakers, C is silent
 			// A leaves the room → B should remain visible, C should NOT appear
@@ -551,9 +537,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(participantCount).toBe(3); // Local + 2 remotes
 		});
 
-		test('should update visible participants correctly when a silent participant joins the room', async ({
-			page
-		}) => {
+		test('does not show silent participants when they join', async ({ page }) => {
 			// Scenario: Local + 2 remote participants (A speaking, B silent) with limit = 1
 			// A is visible speaker, B is silent
 			// C joins as silent participant → should NOT appear in the grid
@@ -610,7 +594,7 @@ test.describe('Custom Layout Tests', () => {
 	});
 
 	test.describe('Mosaic Layout and Smart Mosaic Layout Switching', () => {
-		test('should switch from Smart Mosaic to Mosaic layout and display all participants', async ({ page }) => {
+		test('switches from Smart Mosaic to Mosaic showing all participants', async ({ page }) => {
 			// Scenario: Start in Smart Mosaic layout with limit = 2, switch to Mosaic
 			// Expected: After switching, all participants become visible in the grid
 			// Audio: Participants A, B, C, D use continuous_speech.wav
@@ -671,9 +655,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(participantCount).toBe(5); // Local + 4 remotes
 		});
 
-		test('should switch from Mosaic to Smart Mosaic layout and maintain participant visibility based on speaking activity', async ({
-			page
-		}) => {
+		test('switches from Mosaic to Smart Mosaic limiting by speakers', async ({ page }) => {
 			// Scenario: Start in Mosaic layout with 4 participants visible, switch to Smart Mosaic with limit = 2
 			// Expected: After switching, only the 2 most recent active speakers remain visible
 			// Audio: Participants A, B, C, D use continuous_speech.wav
@@ -730,7 +712,7 @@ test.describe('Custom Layout Tests', () => {
 	// =========================================================================
 
 	test.describe('Smart Mosaic Layout - Audio Level and Duration Filtering', () => {
-		test('should not display participant with low volume audio below threshold', async ({ page }) => {
+		test('filters out low volume audio below threshold', async ({ page }) => {
 			// Scenario: 3 participants - Local + Remote A (normal volume) + Remote B (low volume ~10%)
 			// Expected: Only Remote A appears in the grid, Remote B is filtered due to low audioLevel
 			// Audio: A uses continuous_speech.wav, B uses low_volume_speech.wav (10% volume)
@@ -771,9 +753,7 @@ test.describe('Custom Layout Tests', () => {
 			}
 		});
 
-		test('should maintain layout stability when multiple participants have intermittent low-level audio', async ({
-			page
-		}) => {
+		test('maintains stability with multiple low-volume speakers', async ({ page }) => {
 			// Scenario: 3 participants all with low volume audio, limit = 2
 			// Expected: Layout remains stable without constant swapping (all filtered by audioLevel threshold)
 			// Audio: All use low_volume_speech.wav
@@ -832,7 +812,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(swapCount).toBe(0);
 		});
 
-		test('should not prioritize participant with brief sound (cough) under minimum duration', async ({ page }) => {
+		test('filters out brief sounds under minimum duration', async ({ page }) => {
 			// Scenario: 3 participants - Local + Remote A (continuous speech) + Remote B (0.5s cough only)
 			// Expected: Remote A appears as active speaker, Remote B's brief cough is filtered out
 			// Audio: A uses continuous_speech.wav, B uses brief_cough.wav (0.5s sound)
@@ -875,7 +855,7 @@ test.describe('Custom Layout Tests', () => {
 			}
 		});
 
-		test('should not swap active speaker for participant with 1 second sound burst', async ({ page }) => {
+		test('does not swap speaker for 1 second sound bursts', async ({ page }) => {
 			// Scenario: 3 participants - Local + Remote A (speaking) + Remote B (1s sound burst)
 			// Expected: A remains visible, B's 1 second sound is filtered (< 1.5s threshold)
 			// Audio: A uses continuous_speech.wav, B uses brief_sound_1s.wav
@@ -913,6 +893,187 @@ test.describe('Custom Layout Tests', () => {
 
 				await page.waitForTimeout(500);
 			}
+		});
+	});
+
+	test.describe('Smart Mosaic Layout - Mute participants', () => {
+		test('should be able to mute/unmute participants and keep muted ones in view', async ({ page }) => {
+			// Scenario: 2 remote participants + local, limit = 1
+			// Remote A speaks first and is visible
+			// Remote A is muted → Remote B speaks and becomes visible
+			// Remote A is unmuted and speaks again → Remote A becomes visible again
+			// Audio: A and B use silence_5s_then_speech.wav
+
+			// Local participant joins the room
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
+			await joinRoomAs('moderator', participantName, page);
+
+			// Wait for session to be ready
+			await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
+			await muteAudio(page); // Mute local to avoid interference
+
+			// Configure Smart Mosaic layout with limit = 1
+			await configureLayoutMode(page, 'smart-mosaic', 1);
+
+			// Join Remote A who speaks first
+			await joinBrowserFakeParticipant(roomId, 'RemoteA-Speaking', {
+				audioFile: 'continuous_speech.wav'
+			});
+
+			// Wait for A to become visible
+			await waitForParticipantVisible(page, 'RemoteA-Speaking');
+
+			// Verify Remote A is visible
+			let [visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+			expect(visibleIdentities).toContain('RemoteA-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
+			// Mute Remote A
+			await forceMuteParticipantAudio(page, 'RemoteA-Speaking');
+
+			// Join Remote B who speaks next
+			await joinBrowserFakeParticipant(roomId, 'RemoteB-SpeakingNext', {
+				audioFile: 'continuous_speech.wav'
+			});
+
+			// Verify Remote A is visible although muted,
+			[visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+			expect(visibleIdentities).not.toContain('RemoteB-SpeakingNext');
+			expect(visibleIdentities).toContain('RemoteA-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
+			// Unmute Remote A
+			await forceMuteParticipantAudio(page, 'RemoteA-Speaking');
+			// Verify Remote A is visible again
+			[visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+			expect(visibleIdentities).toContain('RemoteA-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
+		});
+	});
+
+	test.describe('Smart Mosaic Layout - Screen Sharing visibility', () => {
+		test('retain screen sharing participant regardless limit', async ({ page }) => {
+			// Scenario: 2 remote participants + local, limit = 1
+			// Remote A shares screen (no audio) → should be visible
+			// Remote B speaks → should become visible, replacing A
+			// Remote A stops sharing → should not be visible unless speaking
+			// Audio: B uses continuous_speech.wav
+
+			// Local participant joins the room
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
+			await joinRoomAs('moderator', participantName, page);
+
+			// Wait for session to be ready
+			await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
+			await muteAudio(page); // Mute local to avoid interference
+
+			// Configure Smart Mosaic layout with limit = 1
+			await configureLayoutMode(page, 'smart-mosaic', 1);
+
+			// Join Remote A who shares screen
+			await joinBrowserFakeParticipant(roomId, 'RemoteA-ScreenShare', {
+				screenShare: true,
+				audioFile: 'complete_silence.wav' // No audio
+			});
+
+			await waitForParticipantVisible(page, 'RemoteA-ScreenShare');
+
+			// Verify Remote A is visible due to screen sharing
+			let [visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+			expect(visibleIdentities).toContain('RemoteA-ScreenShare');
+			expect(visibleIdentities).toContain('RemoteA-ScreenShare_SCREEN');
+			expect(participantCount).toBe(3); // Local + screen share + 1 remote
+
+			// Join Remote B who speaks
+			await joinBrowserFakeParticipant(roomId, 'RemoteB-Speaking', {
+				audioFile: 'continuous_speech.wav'
+			});
+
+			// Wait for B to become visible
+			await waitForParticipantVisible(page, 'RemoteB-Speaking');
+
+			// Verify Remote B is visible, replacing A
+			[visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+
+			expect(visibleIdentities).toContain('RemoteB-Speaking');
+			expect(visibleIdentities).not.toContain('RemoteA-ScreenShare');
+			expect(visibleIdentities).toContain('RemoteA-ScreenShare_SCREEN');
+			expect(participantCount).toBe(3); // Local + screen + 1 remote
+
+			// Stop Remote A's screen sharing
+			await stopScreenShareBrowserFakeParticipant(roomId, 'RemoteA-ScreenShare');
+
+			// Wait for layout to update
+			await page.waitForTimeout(2000);
+
+			// Verify Remote A is no longer visible
+			[visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+			expect(visibleIdentities).toContain('RemoteB-Speaking');
+			expect(visibleIdentities).not.toContain('RemoteA-ScreenShare');
+			expect(participantCount).toBe(2); // Local + 1 remote
+		});
+
+		test('show screen sharing participant over silent ones', async ({ page }) => {
+			// Scenario: 3 remote participants + local, limit = 2
+			// Remote A shares screen (no audio) → should be visible
+			// Remote B and C are silent → should NOT be visible
+			// Audio: B and C are silent
+
+			// Local participant joins the room
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
+			await joinRoomAs('moderator', participantName, page);
+
+			// Wait for session to be ready
+			await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
+			await muteAudio(page); // Mute local to avoid interference
+
+			// Configure Smart Mosaic layout with limit = 2
+			await configureLayoutMode(page, 'smart-mosaic', 2);
+
+			// Join two silent participants
+			await Promise.all([
+				joinFakeParticipant(roomId, 'RemoteB-Silent'),
+				joinFakeParticipant(roomId, 'RemoteC-Silent')
+			]);
+
+			await waitForParticipantCount(page, 3);
+
+			// Join Remote A who shares screen
+			await joinBrowserFakeParticipant(roomId, 'RemoteA-ScreenShare', {
+				screenShare: true,
+				audioFile: 'complete_silence.wav' // No audio
+			});
+
+			await waitForParticipantVisible(page, 'RemoteA-ScreenShare_SCREEN');
+
+			// Wait for layout to update
+			await page.waitForTimeout(3000);
+
+			// Verify Remote A is visible due to screen sharing
+			const [visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+
+			expect(visibleIdentities).not.toContain('RemoteA-ScreenShare');
+			expect(visibleIdentities).toContain('RemoteA-ScreenShare_SCREEN');
+			expect(participantCount).toBe(4); // Local + screen share + 1 remote
 		});
 	});
 });
