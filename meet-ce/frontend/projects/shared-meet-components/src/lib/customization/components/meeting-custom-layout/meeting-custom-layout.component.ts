@@ -1,10 +1,8 @@
-import { Component, computed, effect, inject, untracked } from '@angular/core';
-import { LoggerService, ILogger, OpenViduComponentsUiModule } from 'openvidu-components-angular';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ILogger, LoggerService, OpenViduComponentsUiModule, ParticipantModel } from 'openvidu-components-angular';
+import { ShareMeetingLinkComponent } from '../../../components';
 import { CustomParticipantModel } from '../../../models';
-import { MeetLayoutService } from '../../../services/layout.service';
-import { MeetingContextService } from '../../../services/meeting/meeting-context.service';
-import { ShareMeetingLinkComponent } from '../../../components/share-meeting-link/share-meeting-link.component';
-import { MeetingService } from '../../../services/meeting/meeting.service';
+import { MeetingContextService, MeetingService, MeetLayoutService } from '../../../services';
 
 @Component({
 	selector: 'ov-meeting-custom-layout',
@@ -17,7 +15,6 @@ export class MeetingCustomLayoutComponent {
 	protected readonly layoutService = inject(MeetLayoutService);
 	protected readonly meetingContextService = inject(MeetingContextService);
 	protected readonly meetingService = inject(MeetingService);
-
 	protected readonly linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
@@ -26,7 +23,7 @@ export class MeetingCustomLayoutComponent {
 	};
 
 	protected readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());
-
+	protected readonly remoteParticipants = computed(() => this.meetingContextService.remoteParticipants());
 	protected readonly shouldShowLinkOverlay = computed(() => {
 		const hasNoRemotes = this.meetingContextService.remoteParticipants().length === 0;
 		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
@@ -35,28 +32,17 @@ export class MeetingCustomLayoutComponent {
 	protected readonly isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
 
 	private displayedParticipantIds: string[] = [];
+	private audioElements = new Map<string, HTMLMediaElement>();
+	private proxyCache = new WeakMap<ParticipantModel, ParticipantModel>();
 
-	readonly visibleRemoteParticipants = computed(() => {
-		const allRemotes = this.meetingContextService.remoteParticipants();
-
-		if (!this.isSmartMosaicActive()) {
-			return allRemotes;
-		}
-
-		const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
-		const availableIds = new Set(participantMap.keys());
-		const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
-
-		this.syncDisplayedParticipantsWithTarget(targetIds, availableIds);
-
-		return this.displayedParticipantIds
-			.map((id) => participantMap.get(id))
-			.filter((p): p is CustomParticipantModel => p !== undefined);
-	});
+	private _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
+	readonly visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
 
 	constructor() {
 		this.setupSpeakerTrackingEffect();
 		this.setupParticipantCleanupEffect();
+		this.handleAudioElementsEffect();
+		this.setupVisibleParticipantsUpdate();
 	}
 
 	protected onCopyMeetingLinkClicked(): void {
@@ -70,6 +56,43 @@ export class MeetingCustomLayoutComponent {
 
 	private isSmartMosaicActive(): boolean {
 		return this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled();
+	}
+
+	private setupVisibleParticipantsUpdate(): void {
+		effect(
+			() => {
+				const allRemotes = this.meetingContextService.remoteParticipants();
+
+				if (!this.isSmartMosaicActive()) {
+					this._visibleRemoteParticipants.set(allRemotes);
+					return;
+				}
+
+				const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
+				const availableIds = new Set(participantMap.keys());
+				const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+
+				this.syncDisplayedParticipantsWithTarget(targetIds, availableIds);
+
+				const visibleParticipants = this.displayedParticipantIds
+					.map((id) => participantMap.get(id))
+					.filter((p): p is CustomParticipantModel => p !== undefined);
+
+				// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
+				const proxiedParticipants = visibleParticipants.map((p) => this.getOrCreateVideoOnlyProxy(p));
+				this._visibleRemoteParticipants.set(proxiedParticipants);
+			},
+			{ allowSignalWrites: true }
+		);
+	}
+
+	private getOrCreateVideoOnlyProxy(participant: ParticipantModel): ParticipantModel {
+		let proxy = this.proxyCache.get(participant);
+		if (!proxy) {
+			proxy = this.createVideoOnlyProxy(participant);
+			this.proxyCache.set(participant, proxy);
+		}
+		return proxy;
 	}
 
 	/**
@@ -115,12 +138,73 @@ export class MeetingCustomLayoutComponent {
 		});
 	}
 
+	private handleAudioElementsEffect(): void {
+		effect(() => {
+			const participants = this.remoteParticipants();
+			const isSmartMosaic = this.isSmartMosaicActive();
+
+			// Use untracked to avoid re-running effect when we manipulate DOM or internal state
+			untracked(() => {
+				this.manageAudioTracks(participants, isSmartMosaic);
+			});
+		});
+	}
+
 	private setupParticipantCleanupEffect(): void {
 		effect(() => {
 			if (!this.isSmartMosaicActive()) return;
 
-			const currentIds = new Set(this.meetingContextService.remoteParticipants().map((p) => p.identity));
+			const currentIds = new Set(this.remoteParticipants().map((p) => p.identity));
 			untracked(() => this.layoutService.removeDisconnectedSpeakers(currentIds));
+		});
+	}
+
+	private manageAudioTracks(participants: ParticipantModel[], isSmartMosaic: boolean) {
+		if (!isSmartMosaic) {
+			this.cleanupAudioElements(new Set());
+			return;
+		}
+
+		const currentAudioTrackSids = new Set<string>();
+
+		for (const p of participants) {
+			// Access original audio tracks (not proxied)
+			for (const t of p.audioTracks) {
+				if (t.track && t.track.attach) {
+					currentAudioTrackSids.add(t.trackSid);
+					let audio = this.audioElements.get(t.trackSid);
+					if (!audio) {
+						audio = t.track.attach();
+						this.audioElements.set(t.trackSid, audio);
+					}
+					audio.muted = p.isMutedForcibly;
+				}
+			}
+		}
+
+		this.cleanupAudioElements(currentAudioTrackSids);
+	}
+
+	private cleanupAudioElements(activeSids: Set<string>) {
+		for (const [sid, audio] of this.audioElements) {
+			if (!activeSids.has(sid)) {
+				audio.pause();
+				audio.srcObject = null;
+				audio.remove();
+				this.audioElements.delete(sid);
+			}
+		}
+	}
+
+	private createVideoOnlyProxy(participant: ParticipantModel): ParticipantModel {
+		return new Proxy(participant, {
+			get: (target, prop, receiver) => {
+				if (prop === 'tracks') {
+					// Return only video tracks to hide audio from ov-layout
+					return target.tracks.filter((t) => !t.isAudioTrack);
+				}
+				return Reflect.get(target, prop, receiver);
+			}
 		});
 	}
 }

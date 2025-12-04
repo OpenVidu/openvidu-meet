@@ -1,8 +1,8 @@
-import { Injectable, signal, computed, effect, DestroyRef, inject } from '@angular/core';
-import { Room, Participant } from 'livekit-client';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { Participant, Room } from 'livekit-client';
 import { LayoutService, LoggerService, ViewportService } from 'openvidu-components-angular';
-import { MeetLayoutMode } from '../models/layout.model';
-import { MeetStorageService } from './storage.service';
+import { MeetStorageService } from '.';
+import { MeetLayoutMode } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MeetLayoutService extends LayoutService {
@@ -20,7 +20,7 @@ export class MeetLayoutService extends LayoutService {
 	 * Minimum audio level threshold (0-1) to consider a participant as actively speaking.
 	 * Filters out background noise, coughs, and brief sounds.
 	 */
-	private readonly AUDIO_LEVEL_THRESHOLD = 0.05;
+	private readonly AUDIO_LEVEL_THRESHOLD = 0.1;
 
 	/**
 	 * Minimum duration in milliseconds that a participant must be speaking
