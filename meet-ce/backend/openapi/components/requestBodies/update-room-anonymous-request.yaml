@@ -3,4 +3,7 @@ required: true
 content:
     application/json:
         schema:
-            $ref: '../schemas/meet-room-anonymous-config.yaml'
+            type: object
+            properties:
+                config:
+                    $ref: '../schemas/meet-room-anonymous-config.yaml'
