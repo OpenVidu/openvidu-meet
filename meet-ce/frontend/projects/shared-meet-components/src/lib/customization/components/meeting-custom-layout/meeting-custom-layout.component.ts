@@ -33,7 +33,7 @@ export class MeetingCustomLayoutComponent {
 
 	private displayedParticipantIds: string[] = [];
 	private audioElements = new Map<string, HTMLMediaElement>();
-	private proxyCache = new WeakMap<ParticipantModel, ParticipantModel>();
+	private proxyCache = new WeakMap<ParticipantModel, { proxy: ParticipantModel; showCamera: boolean }>();
 
 	private _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
 	readonly visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
@@ -72,26 +72,35 @@ export class MeetingCustomLayoutComponent {
 				const availableIds = new Set(participantMap.keys());
 				const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
 
-				this.syncDisplayedParticipantsWithTarget(targetIds, availableIds);
+				// Include screen sharers in the display list, even if they are not active speakers
+				const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
+				const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
+
+				this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
 
 				const visibleParticipants = this.displayedParticipantIds
 					.map((id) => participantMap.get(id))
 					.filter((p): p is CustomParticipantModel => p !== undefined);
 
 				// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
-				const proxiedParticipants = visibleParticipants.map((p) => this.getOrCreateVideoOnlyProxy(p));
+				// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
+				const proxiedParticipants = visibleParticipants.map((p) => {
+					const showCamera = targetIds.has(p.identity);
+					return this.getOrCreateVideoOnlyProxy(p, showCamera);
+				});
 				this._visibleRemoteParticipants.set(proxiedParticipants);
 			},
 			{ allowSignalWrites: true }
 		);
 	}
 
-	private getOrCreateVideoOnlyProxy(participant: ParticipantModel): ParticipantModel {
-		let proxy = this.proxyCache.get(participant);
-		if (!proxy) {
-			proxy = this.createVideoOnlyProxy(participant);
-			this.proxyCache.set(participant, proxy);
+	private getOrCreateVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
+		const cached = this.proxyCache.get(participant);
+		if (cached && cached.showCamera === showCamera) {
+			return cached.proxy;
 		}
+		const proxy = this.createVideoOnlyProxy(participant, showCamera);
+		this.proxyCache.set(participant, { proxy, showCamera });
 		return proxy;
 	}
 
@@ -196,12 +205,17 @@ export class MeetingCustomLayoutComponent {
 		}
 	}
 
-	private createVideoOnlyProxy(participant: ParticipantModel): ParticipantModel {
+	private createVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
 		return new Proxy(participant, {
 			get: (target, prop, receiver) => {
 				if (prop === 'tracks') {
 					// Return only video tracks to hide audio from ov-layout
-					return target.tracks.filter((t) => !t.isAudioTrack);
+					// Also filter camera tracks if showCamera is false
+					return target.tracks.filter((t) => {
+						if (t.isAudioTrack) return false;
+						if (t.isCameraTrack && !showCamera) return false;
+						return true;
+					});
 				}
 				return Reflect.get(target, prop, receiver);
 			}
