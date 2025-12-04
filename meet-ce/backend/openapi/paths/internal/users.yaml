@@ -36,11 +36,38 @@
         security:
             - accessTokenHeader: []
         parameters:
+            - $ref: '../../components/parameters/internal/user-id-query.yaml'
+            - $ref: '../../components/parameters/internal/user-name.yaml'
+            - $ref: '../../components/parameters/internal/user-role.yaml'
             - $ref: '../../components/parameters/max-items.yaml'
             - $ref: '../../components/parameters/next-page-token.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-users.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: bulkDeleteUsers
+        summary: Bulk delete users
+        description: |
+            Deletes multiple users at once by their userIds.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/internal/user-ids.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-bulk-delete-users.yaml'
+            '400':
+                $ref: '../../components/responses/internal/error-bulk-delete-users.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -98,7 +125,7 @@
         security:
             - accessTokenHeader: []
         parameters:
-            - $ref: '../../components/parameters/internal/userId-path.yaml'
+            - $ref: '../../components/parameters/internal/user-id-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-user.yaml'
@@ -125,7 +152,7 @@
         security:
             - accessTokenHeader: []
         parameters:
-            - $ref: '../../components/parameters/internal/userId-path.yaml'
+            - $ref: '../../components/parameters/internal/user-id-path.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-delete-user.yaml'

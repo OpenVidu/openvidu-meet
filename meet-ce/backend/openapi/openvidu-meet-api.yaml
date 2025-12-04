@@ -22,9 +22,9 @@ paths:
     /rooms/{roomId}/status:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1status'
     /rooms/{roomId}/members:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1members'
+        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members'
     /rooms/{roomId}/members/{memberId}:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
+        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
     /recordings:
         $ref: './paths/recordings.yaml#/~1recordings'
     /recordings/download:

@@ -1,0 +1,9 @@
+name: name
+in: query
+required: false
+description: >
+    Filter members by name. The search is case-insensitive and matches members whose names contain the specified text.
+    For example, 'ali' will match 'Alice' and 'Malik'.
+schema:
+    type: string
+example: 'Alice'

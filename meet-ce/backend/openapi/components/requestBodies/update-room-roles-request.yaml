@@ -3,4 +3,7 @@ required: true
 content:
     application/json:
         schema:
-            $ref: '../schemas/meet-room-roles-config.yaml'
+            type: object
+            properties:
+                config:
+                    $ref: '../schemas/meet-room-roles-config.yaml'

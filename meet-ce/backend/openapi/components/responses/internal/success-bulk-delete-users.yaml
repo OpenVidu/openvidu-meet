@@ -1,0 +1,18 @@
+description: All specified users were deleted successfully.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                deleted:
+                    type: array
+                    items:
+                        type: string
+                    description: List of users that were deleted successfully.
+        example:
+            message: "All users deleted successfully"
+            deleted:
+                - 'alice_smith'
+                - 'john_doe'

@@ -1,0 +1,9 @@
+in: query
+name: userId
+required: false
+description: >
+    Filter users by userId. The search matches users that contain the specified text in their userId.
+    For example, 'alice' will match 'alice_smith', 'bob_alice', and 'alice123'.
+schema:
+    type: string
+example: 'alice_smith'

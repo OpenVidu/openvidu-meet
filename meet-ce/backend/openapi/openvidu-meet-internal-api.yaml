@@ -32,8 +32,8 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1security'
     /config/rooms/appearance:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
-    /rooms/{roomId}/token:
-        $ref: './paths/internal/rooms.yaml#/~1rooms~1{roomId}~1token'
+    /rooms/{roomId}/members/token:
+        $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /recordings:
         $ref: './paths/internal/recordings.yaml#/~1recordings'
     /recordings/{recordingId}/stop:

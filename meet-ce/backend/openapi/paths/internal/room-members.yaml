@@ -1,11 +1,11 @@
-/rooms/{roomId}/token:
+/rooms/{roomId}/members/token:
     post:
         operationId: generateRoomMemberToken
         summary: Generate room member token
         description: >
             Generates a token for a user to access an OpenVidu Meet room and its resources.
         tags:
-            - Internal API - Rooms
+            - Internal API - Room Members
         security:
             - accessTokenHeader: []
         parameters:
