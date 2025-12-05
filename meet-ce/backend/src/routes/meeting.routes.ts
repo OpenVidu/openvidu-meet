@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
-import { withModeratorPermissions } from '../middlewares/participant.middleware.js';
+import { withModeratorPermissions } from '../middlewares/room-member.middleware.js';
 import { validateUpdateParticipantRoleReq } from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
 
