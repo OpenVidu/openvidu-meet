@@ -1,3 +1,4 @@
+import { MeetRoomMemberPermissions } from './permissions/meet-permissions.js';
 import { MeetRoomConfig } from './room-config.js';
 import { MeetRoomMemberPermissions, MeetRoomMemberRole } from './room-member.js';
 import { SortAndPagination } from './sort-pagination.js';
@@ -10,6 +11,8 @@ export interface MeetRoomOptions {
     autoDeletionDate?: number;
     autoDeletionPolicy?: MeetRoomAutoDeletionPolicy;
     config?: Partial<MeetRoomConfig>;
+    roles?: MeetRoomRolesConfig;
+    anonymous?: MeetRoomAnonymousConfig;
     // maxParticipants?: number | null;
 }
 
@@ -19,12 +22,68 @@ export interface MeetRoomOptions {
 export interface MeetRoom extends MeetRoomOptions {
     roomId: string;
     roomName: string;
+    owner: string; // userId of the internal Meet user who owns this room
     creationDate: number;
     config: MeetRoomConfig;
-    moderatorUrl: string;
-    speakerUrl: string;
+    roles: MeetRoomRoles; // Complete permissions for each role
+    anonymous: MeetRoomAnonymous; // Anonymous access configuration
+    accessUrl: string; // General access URL for authenticated users (owner and internal members)
     status: MeetRoomStatus;
     meetingEndAction: MeetingEndAction; // Action to take on the room when the meeting ends
+}
+
+/**
+ * Roles configuration for a room.
+ * Defines the complete permissions for moderator and speaker roles.
+ */
+export interface MeetRoomRoles {
+    moderator: {
+        permissions: MeetRoomMemberPermissions;
+    };
+    speaker: {
+        permissions: MeetRoomMemberPermissions;
+    };
+}
+
+/**
+ * Roles configuration for creating/updating a room.
+ * Allows partial permission updates.
+ */
+export interface MeetRoomRolesConfig {
+    moderator?: {
+        permissions: Partial<MeetRoomMemberPermissions>;
+    };
+    speaker?: {
+        permissions: Partial<MeetRoomMemberPermissions>;
+    };
+}
+
+/**
+ * Anonymous access configuration for a room.
+ * Defines which roles have anonymous access enabled and their access URLs.
+ */
+export interface MeetRoomAnonymous {
+    moderator: {
+        enabled: boolean;
+        accessUrl: string;
+    };
+    speaker: {
+        enabled: boolean;
+        accessUrl: string;
+    };
+}
+
+/**
+ * Anonymous access configuration for creating/updating a room.
+ * Only includes enabled flags.
+ */
+export interface MeetRoomAnonymousConfig {
+    moderator?: {
+        enabled: boolean;
+    };
+    speaker?: {
+        enabled: boolean;
+    };
 }
 
 export enum MeetRoomStatus {
@@ -54,11 +113,6 @@ export enum MeetRoomDeletionPolicyWithRecordings {
     FORCE = 'force', // Force deletion even if there are ongoing or previous recordings
     CLOSE = 'close', // Close the room and keep recordings
     FAIL = 'fail' // Fail the deletion if there are ongoing or previous recordings
-}
-
-export interface MeetRoomMemberRoleAndPermissions {
-    role: MeetRoomMemberRole;
-    permissions: MeetRoomMemberPermissions;
 }
 
 export interface MeetRoomFilters extends SortAndPagination {

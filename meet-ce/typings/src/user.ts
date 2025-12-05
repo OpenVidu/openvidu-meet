@@ -1,16 +1,34 @@
+/**
+ * Options for creating a new Meet user.
+ */
+export interface MeetUserOptions {
+    userId: string; // Unique identifier for the user (lowercase letters, numbers, underscores)
+    name: string; // Name of the user
+    role: MeetUserRole; // Role of the user
+    password: string; // Plain text password for the user (will be hashed before storage)
+}
+
 export interface MeetUser {
-	username: string;
-	passwordHash: string;
-	roles: MeetUserRole[];
+    userId: string;
+    name: string;
+    role: MeetUserRole;
+    passwordHash: string;
 }
 
 export enum MeetUserRole {
-	// Represents a user with administrative privileges
-	ADMIN = 'admin',
-	// Represents a regular user with standard access
-	USER = 'user',
-	// Represents a user who accesses the application via an API key
-	APP = 'app',
+    // Represents a user with administrative privileges (can manage all rooms and users)
+    ADMIN = 'admin',
+    // Represents a regular user (can manage own rooms and access rooms where they are members)
+    USER = 'user',
+    // Represents a room member role (used for room-specific access)
+    ROOM_MEMBER = 'room_member'
 }
 
 export type MeetUserDTO = Omit<MeetUser, 'passwordHash'>;
+
+export type MeetUserFilters = {
+    userId?: string;
+    name?: string;
+    maxItems?: number;
+    nextPageToken?: string;
+};
