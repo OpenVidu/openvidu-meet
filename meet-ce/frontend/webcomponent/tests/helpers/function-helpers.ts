@@ -292,6 +292,7 @@ export const viewRecordingsAs = async (role: 'moderator' | 'speaker', page: Page
 };
 
 export const leaveRoom = async (page: Page, role: 'moderator' | 'speaker' = 'speaker', waitForMeetingEnded = false) => {
+	await page.waitForTimeout(200);
 	await interactWithElementInIframe(page, '#leave-btn', { action: 'click' });
 
 	if (role === 'moderator') {

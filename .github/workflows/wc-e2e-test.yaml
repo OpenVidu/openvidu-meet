@@ -17,6 +17,8 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10.18.3
+      - name: Install LK CLI
+        run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@main
         with:
