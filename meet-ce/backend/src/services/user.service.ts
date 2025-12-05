@@ -1,6 +1,5 @@
 import { MeetUser, MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, internalError } from '../models/error.model.js';
@@ -27,17 +26,18 @@ export class UserService {
 		}
 
 		const admin: MeetUser = {
-			username: MEET_ENV.INITIAL_ADMIN_USER,
-			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD),
-			roles: [MeetUserRole.ADMIN, MeetUserRole.USER]
+			userId: MEET_ENV.INITIAL_ADMIN_USER,
+			name: 'Admin',
+			role: MeetUserRole.ADMIN,
+			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD)
 		};
 
 		await this.userRepository.create(admin);
 		this.logger.info(`Admin user initialized with default credentials`);
 	}
 
-	async authenticateUser(username: string, password: string): Promise<MeetUser | null> {
-		const user = await this.getUser(username);
+	async authenticateUser(userId: string, password: string): Promise<MeetUser | null> {
+		const user = await this.getUser(userId);
 
 		if (!user || !(await PasswordHelper.verifyPassword(password, user.passwordHash))) {
 			return null;
@@ -46,24 +46,13 @@ export class UserService {
 		return user;
 	}
 
-	async getUser(username: string): Promise<MeetUser | null> {
-		return this.userRepository.findByUsername(username);
+	async getUser(userId: string): Promise<MeetUser | null> {
+		return this.userRepository.findByUsername(userId);
 	}
 
-	getAnonymousUser(): MeetUser {
-		return {
-			username: INTERNAL_CONFIG.ANONYMOUS_USER,
-			passwordHash: '',
-			roles: [MeetUserRole.USER]
-		};
-	}
-
-	getApiUser(): MeetUser {
-		return {
-			username: INTERNAL_CONFIG.API_USER,
-			passwordHash: '',
-			roles: [MeetUserRole.APP]
-		};
+	async getUserAssociatedWithApiKey(): Promise<MeetUser | null> {
+		// Return admin user for API key access
+		return this.userRepository.findByUsername(MEET_ENV.INITIAL_ADMIN_USER);
 	}
 
 	async changePassword(username: string, currentPassword: string, newPassword: string) {

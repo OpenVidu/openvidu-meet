@@ -101,6 +101,14 @@ export const errorInvalidApiKey = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authentication Error', 'Invalid API key', 401);
 };
 
+export const errorInvalidApiKeySubject = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Authorization Error',
+		'Invalid API key subject. The user associated with the API key does not exist',
+		403
+	);
+};
+
 export const errorApiKeyNotConfigured = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Authentication Error',

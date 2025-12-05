@@ -69,8 +69,8 @@ export class TokenService {
 	}
 
 	async verifyToken(token: string): Promise<ClaimGrants> {
-		const verifyer = new TokenVerifier(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
-		return await verifyer.verify(token, 0);
+		const verifier = new TokenVerifier(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
+		return await verifier.verify(token, 0);
 	}
 
 	/**
