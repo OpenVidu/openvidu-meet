@@ -2,18 +2,15 @@ import {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
-	MeetPermissions,
-	MeetRecordingAccess,
 	MeetRecordingConfig,
+	MeetRoomAnonymousConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomFilters,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
+	MeetRoomRolesConfig,
 	MeetRoomStatus,
 	MeetRoomTheme,
 	MeetRoomThemeMode,
@@ -23,6 +20,7 @@ import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
+import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
 	z
@@ -34,23 +32,9 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
-const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.nativeEnum(MeetRecordingAccess);
-
-const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z
-	.object({
-		enabled: z.boolean(),
-		allowAccessTo: RecordingAccessSchema.optional()
-	})
-	.refine(
-		(data) => {
-			// If recording is enabled, allowAccessTo must be provided
-			return !data.enabled || data.allowAccessTo !== undefined;
-		},
-		{
-			message: 'allowAccessTo is required when recording is enabled',
-			path: ['allowAccessTo']
-		}
-	);
+const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
+	enabled: z.boolean()
+});
 
 const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
 	enabled: z.boolean()
@@ -103,10 +87,7 @@ const RoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.transform((data) => {
 		// Automatically disable recording when E2EE is enabled
 		if (data.e2ee?.enabled && data.recording?.enabled) {
-			data.recording = {
-				...data.recording,
-				enabled: false
-			};
+			data.recording.enabled = false;
 		}
 
 		return data;
@@ -123,6 +104,32 @@ const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWi
 const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.object({
 	withMeeting: RoomDeletionPolicyWithMeetingSchema,
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema
+});
+
+const RoomRolesConfigSchema: z.ZodType<MeetRoomRolesConfig> = z.object({
+	moderator: z
+		.object({
+			permissions: PartialMeetPermissionsSchema
+		})
+		.optional(),
+	speaker: z
+		.object({
+			permissions: PartialMeetPermissionsSchema
+		})
+		.optional()
+});
+
+const RoomAnonymousConfigSchema: z.ZodType<MeetRoomAnonymousConfig> = z.object({
+	moderator: z
+		.object({
+			enabled: z.boolean()
+		})
+		.optional(),
+	speaker: z
+		.object({
+			enabled: z.boolean()
+		})
+		.optional()
 });
 
 export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
@@ -164,10 +171,15 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			}
 		),
 	config: RoomConfigSchema.optional().default({
-		recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+		recording: { enabled: true },
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false }
+	}),
+	roles: RoomRolesConfigSchema.optional(),
+	anonymous: RoomAnonymousConfigSchema.optional().default({
+		moderator: { enabled: true },
+		speaker: { enabled: true }
 	})
 	// maxParticipants: z
 	// 	.number()
@@ -244,38 +256,14 @@ export const UpdateRoomConfigReqSchema = z.object({
 	config: RoomConfigSchema
 });
 
+export const UpdateRoomRolesReqSchema = z.object({
+	roles: RoomRolesConfigSchema
+});
+
+export const UpdateRoomAnonymousReqSchema = z.object({
+	anonymous: RoomAnonymousConfigSchema
+});
+
 export const UpdateRoomStatusReqSchema = z.object({
 	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
-});
-
-export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
-	.object({
-		secret: z.string().nonempty('Secret is required'),
-		grantJoinMeetingPermission: z.boolean().optional().default(false),
-		participantName: z.string().optional(),
-		participantIdentity: z.string().optional()
-	})
-	.refine(
-		(data) => {
-			// If grantJoinMeetingPermission is true, participantName must be provided
-			return !data.grantJoinMeetingPermission || data.participantName;
-		},
-		{
-			message: 'participantName is required when grantJoinMeetingPermission is true',
-			path: ['participantName']
-		}
-	);
-
-const MeetPermissionsSchema: z.ZodType<MeetPermissions> = z.object({
-	canRecord: z.boolean(),
-	canRetrieveRecordings: z.boolean(),
-	canDeleteRecordings: z.boolean(),
-	canChat: z.boolean(),
-	canChangeVirtualBackground: z.boolean()
-});
-
-export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
-	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
-	role: z.nativeEnum(MeetRoomMemberRole),
-	permissions: MeetPermissionsSchema
 });
