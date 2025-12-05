@@ -1,3 +1,4 @@
+import { LeftEventReason } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../../config';
 import {
@@ -8,7 +9,6 @@ import {
 	leaveRoom,
 	prepareForJoiningRoom
 } from '../../helpers/function-helpers';
-import { LeftEventReason } from '@openvidu-meet/typings';
 
 let subscribedToAppErrors = false;
 
@@ -279,7 +279,7 @@ test.describe('Web Component E2E Tests', () => {
 				// Check for valid reason values from LeftEventReason enum
 				const validReasons = Object.values(LeftEventReason);
 
-				const hasValidReason = validReasons.some((reason) => eventText.includes(reason));
+				const hasValidReason = validReasons.some((reason) => eventText?.includes(reason));
 				expect(hasValidReason).toBe(true);
 			});
 		});

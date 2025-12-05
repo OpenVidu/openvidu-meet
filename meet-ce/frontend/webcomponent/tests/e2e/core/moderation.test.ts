@@ -1,4 +1,4 @@
-import { expect, test, Page, BrowserContext } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../../config.js';
 import {
 	createTestRoom,
@@ -7,7 +7,6 @@ import {
 	getIframeInShadowDom,
 	getLocalParticipantId,
 	getParticipantIdByName,
-	interactWithElementInIframe,
 	isShareLinkOverlayyHidden,
 	joinRoomAs,
 	leaveRoom,
@@ -15,7 +14,7 @@ import {
 	openParticipantsPanel,
 	prepareForJoiningRoom,
 	removeParticipantModerator,
-	waitForElementInIframe,
+	waitForElementInIframe
 } from '../../helpers/function-helpers.js';
 
 let subscribedToAppErrors = false;
