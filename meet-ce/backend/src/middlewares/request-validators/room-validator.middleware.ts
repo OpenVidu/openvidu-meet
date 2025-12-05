@@ -1,15 +1,14 @@
-import { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomsReqSchema,
 	DeleteRoomReqSchema,
-	RoomFiltersSchema,
 	nonEmptySanitizedRoomId,
-	RoomMemberTokenMetadataSchema,
-	RoomMemberTokenOptionsSchema,
+	RoomFiltersSchema,
 	RoomOptionsSchema,
+	UpdateRoomAnonymousReqSchema,
 	UpdateRoomConfigReqSchema,
+	UpdateRoomRolesReqSchema,
 	UpdateRoomStatusReqSchema
 } from '../../models/zod-schemas/room.schema.js';
 
@@ -102,8 +101,8 @@ export const validateUpdateRoomStatusReq = (req: Request, res: Response, next: N
 	next();
 };
 
-export const validateCreateRoomMemberTokenReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomMemberTokenOptionsSchema.safeParse(req.body);
+export const validateUpdateRoomRolesReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomRolesReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -113,12 +112,13 @@ export const validateCreateRoomMemberTokenReq = (req: Request, res: Response, ne
 	next();
 };
 
-export const validateRoomMemberTokenMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata => {
-	const { success, error, data } = RoomMemberTokenMetadataSchema.safeParse(metadata);
+export const validateUpdateRoomAnonymousReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomAnonymousReqSchema.safeParse(req.body);
 
 	if (!success) {
-		throw new Error(`Invalid metadata: ${error.message}`);
+		return rejectUnprocessableRequest(res, error);
 	}
 
-	return data;
+	req.body = data;
+	next();
 };
