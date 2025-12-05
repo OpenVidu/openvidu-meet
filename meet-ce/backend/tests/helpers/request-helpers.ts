@@ -364,6 +364,21 @@ export const runExpiredRoomsGC = async () => {
 	await sleep('1s');
 };
 
+/**
+ * Runs the inconsistent rooms garbage collector.
+ *
+ * This function retrieves the RoomScheduledTasksService from the dependency injection container
+ * and calls its checkInconsistentRooms method to clean up inconsistent rooms.
+ * It then waits for 1 second before completing.
+ */
+export const executeRoomStatusValidationGC = async () => {
+	checkAppIsRunning();
+
+	const roomTaskScheduler = container.get(RoomScheduledTasksService);
+	await (roomTaskScheduler as any)['validateRoomsStatusGC']();
+	await sleep('1s');
+};
+
 export const runReleaseActiveRecordingLock = async (roomId: string) => {
 	checkAppIsRunning();
 

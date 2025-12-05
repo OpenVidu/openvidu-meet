@@ -1,8 +1,9 @@
-import { MeetRoom, MeetRoomConfig } from '@openvidu-meet/typings';
+import { MeetRoomConfig } from '@openvidu-meet/typings';
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
 import { MeetRoomHelper } from '../../src/helpers/room.helper';
+import { RoomData, TestContext } from '../interfaces/scenarios';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
 	createRoom,
@@ -14,21 +15,6 @@ import {
 } from './request-helpers';
 
 let mockWebhookServer: http.Server;
-
-export interface RoomData {
-	room: MeetRoom;
-	moderatorSecret: string;
-	moderatorToken: string;
-	speakerSecret: string;
-	speakerToken: string;
-	recordingId?: string;
-}
-
-export interface TestContext {
-	rooms: RoomData[];
-	getRoomByIndex(index: number): RoomData | undefined;
-	getLastRoom(): RoomData | undefined;
-}
 
 /**
  * Creates a single room with optional participant.

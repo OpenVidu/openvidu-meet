@@ -1,4 +1,4 @@
-import { MeetRoom } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -135,6 +135,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Finds all rooms with active meetings.
+	 * Returns all active rooms without pagination.
+	 *
+	 * @returns Array of active rooms with enriched URLs
+	 */
+	async findActiveRooms(): Promise<TRoom[]> {
+		return await this.findAll({
+			status: MeetRoomStatus.ACTIVE_MEETING
+		});
+	}
+
+	/**
 	 * Deletes a room by its roomId.
 	 *
 	 * @param roomId - The unique room identifier
@@ -165,7 +177,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Counts the number of rooms with active meetings.
 	 */
 	async countActiveRooms(): Promise<number> {
-		return await this.count({ status: 'active_meeting' });
+		return await this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
 	}
 
 	// ==========================================

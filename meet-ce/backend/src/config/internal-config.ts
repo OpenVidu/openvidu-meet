@@ -30,7 +30,7 @@ export const INTERNAL_CONFIG = {
 
 	// Timing and cleanup settings for room lifecycle management
 	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
-	ROOM_INACTIVE_MEETING_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up active meetings in rooms that are no longer active
+	ROOM_ACTIVE_VERIFICATION_GC_INTERVAL: '15m' as StringValue, // Interval for checking room 'active_meeting' status consistency
 
 	// Timing and cleanup settings for recording lifecycle management
 	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
