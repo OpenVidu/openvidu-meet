@@ -54,6 +54,10 @@ export const StartRecordingReqSchema = z.object({
 });
 
 export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
+	roomId: nonEmptySanitizedRoomId('roomId').optional(),
+	roomName: z.string().optional(),
+	// status: z.string().optional(),
+	fields: z.string().optional(),
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -64,11 +68,7 @@ export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object(
 			return intVal > 100 ? 100 : intVal;
 		})
 		.default(10),
-	// status: z.string().optional(),
-	roomId: nonEmptySanitizedRoomId('roomId').optional(),
-	roomName: z.string().optional(),
-	nextPageToken: z.string().optional(),
-	fields: z.string().optional()
+	nextPageToken: z.string().optional()
 });
 
 export const BulkDeleteRecordingsReqSchema = z.object({
