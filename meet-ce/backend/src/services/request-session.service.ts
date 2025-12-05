@@ -1,4 +1,9 @@
-import { LiveKitPermissions, MeetPermissions, MeetRoomMemberRole, MeetUser } from '@openvidu-meet/typings';
+import {
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
+	MeetUser
+} from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
 import { injectable } from 'inversify';
 import { RequestContext } from '../models/request-context.model.js';
@@ -66,58 +71,41 @@ export class RequestSessionService {
 	/**
 	 * Gets the authenticated user from the current request context.
 	 */
-	getUser(): MeetUser | undefined {
+	getAuthenticatedUser(): MeetUser | undefined {
 		return this.getContext()?.user;
 	}
 
 	/**
-	 * Sets the room member token information (role, permissions, and token claims)
+	 * Sets the room member token metadata (room ID, base role, permissions)
 	 * in the current request context.
 	 * If called outside a request context, this operation is silently ignored.
 	 */
-	setRoomMemberTokenInfo(
-		role: MeetRoomMemberRole,
-		meetPermissions: MeetPermissions,
-		livekitPermissions: LiveKitPermissions
-	): void {
+	setRoomMemberTokenMetadata(metadata: MeetRoomMemberTokenMetadata): void {
 		const context = this.getContext();
 
 		if (context) {
-			context.roomMember = {
-				role,
-				permissions: {
-					meet: meetPermissions,
-					livekit: livekitPermissions
-				}
-			};
+			context.roomMember = metadata;
 		}
 	}
 
 	/**
-	 * Gets the room member role from the current request context.
+	 * Gets the room ID to which the room member belongs from the current request context.
 	 */
-	getRoomMemberRole(): MeetRoomMemberRole | undefined {
-		return this.getContext()?.roomMember?.role;
+	getRoomIdFromMember(): string | undefined {
+		return this.getContext()?.roomMember?.roomId;
 	}
 
 	/**
-	 * Gets the room member Meet permissions from the current request context.
+	 * Gets the room member base role from the current request context.
 	 */
-	getRoomMemberMeetPermissions(): MeetPermissions | undefined {
-		return this.getContext()?.roomMember?.permissions.meet;
+	getRoomMemberBaseRole(): MeetRoomMemberRole | undefined {
+		return this.getContext()?.roomMember?.baseRole;
 	}
 
 	/**
-	 * Gets the room member LiveKit permissions from the current request context.
+	 * Gets the room member effective permissions from the current request context.
 	 */
-	getRoomMemberLivekitPermissions(): LiveKitPermissions | undefined {
-		return this.getContext()?.roomMember?.permissions.livekit;
-	}
-
-	/**
-	 * Gets the room ID from the token claims in the current request context.
-	 */
-	getRoomIdFromToken(): string | undefined {
-		return this.getContext()?.roomMember?.permissions.livekit.room;
+	getRoomMemberPermissions(): MeetRoomMemberPermissions | undefined {
+		return this.getContext()?.roomMember?.effectivePermissions;
 	}
 }

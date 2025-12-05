@@ -1,4 +1,4 @@
-import { LiveKitPermissions, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ClaimGrants } from 'livekit-server-sdk';
@@ -9,6 +9,7 @@ import {
 	OpenViduMeetError,
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
+	errorInvalidApiKeySubject,
 	errorInvalidRoomMemberToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
@@ -27,7 +28,7 @@ import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
  * Interface for authentication validators.
  * Each validator must implement methods to check if credentials are present and to validate them.
  */
-interface AuthValidator {
+export interface AuthValidator {
 	/**
 	 * Checks if the authentication credentials for this validator are present in the request.
 	 * This allows the middleware to skip validation for methods that are not being used.
@@ -74,7 +75,7 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 
 /**
  * Token and role validator for role-based access.
- * Validates JWT tokens and checks if the user has at least one of the required roles.
+ * Validates JWT tokens and checks if the user has one of the required roles.
  *
  * @param roles One or more roles that are allowed to access the resource
  */
@@ -92,27 +93,25 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 				throw errorUnauthorized();
 			}
 
-			const tokenService = container.get(TokenService);
 			let payload: ClaimGrants;
 
 			try {
+				const tokenService = container.get(TokenService);
 				payload = await tokenService.verifyToken(token);
 			} catch (error) {
 				throw errorInvalidToken();
 			}
 
-			const username = payload.sub;
 			const userService = container.get(UserService);
-			const user = username ? await userService.getUser(username) : null;
+			const userId = payload.sub;
+			const user = userId ? await userService.getUser(userId) : null;
 
 			if (!user) {
 				throw errorInvalidTokenSubject();
 			}
 
-			// Check if user has at least one of the required roles
-			const hasRequiredRole = roles.some((role) => user.roles.includes(role));
-
-			if (!hasRequiredRole) {
+			// Check if user has one of the required roles
+			if (!roles.includes(user.role)) {
 				throw errorInsufficientPermissions();
 			}
 
@@ -124,7 +123,7 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 
 /**
  * Room member token validator for room access.
- * Validates room member tokens and checks role permissions.
+ * Validates room member tokens and sets the room member metadata in the session.
  */
 export const roomMemberTokenValidator: AuthValidator = {
 	async isPresent(req: Request): Promise<boolean> {
@@ -140,13 +139,12 @@ export const roomMemberTokenValidator: AuthValidator = {
 		}
 
 		let tokenMetadata: string | undefined;
-		let livekitPermissions: LiveKitPermissions | undefined;
 
 		try {
 			const tokenService = container.get(TokenService);
-			({ metadata: tokenMetadata, video: livekitPermissions } = await tokenService.verifyToken(token));
+			({ metadata: tokenMetadata } = await tokenService.verifyToken(token));
 
-			if (!tokenMetadata || !livekitPermissions) {
+			if (!tokenMetadata) {
 				throw new Error('Missing required token claims');
 			}
 		} catch (error) {
@@ -155,22 +153,23 @@ export const roomMemberTokenValidator: AuthValidator = {
 
 		const requestSessionService = container.get(RequestSessionService);
 
-		// Validate the room member token metadata and extract role and permissions
+		// Validate the room member token metadata and set it in the session
 		try {
 			const roomMemberService = container.get(RoomMemberService);
-			const { role, permissions: meetPermissions } =
-				roomMemberService.parseRoomMemberTokenMetadata(tokenMetadata);
-
-			requestSessionService.setRoomMemberTokenInfo(role, meetPermissions, livekitPermissions);
+			const parsedMetadata = roomMemberService.parseRoomMemberTokenMetadata(tokenMetadata);
+			requestSessionService.setRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
 			const logger = container.get(LoggerService);
 			logger.error('Invalid room member token:', error);
 			throw errorInvalidRoomMemberToken();
 		}
 
-		// Set authenticated user if present, otherwise anonymous
+		// Set authenticated user if present
 		const user = await getAuthenticatedUserOrAnonymous(req);
-		requestSessionService.setUser(user);
+
+		if (user) {
+			requestSessionService.setUser(user);
+		}
 	}
 };
 
@@ -199,7 +198,11 @@ export const apiKeyValidator: AuthValidator = {
 		}
 
 		const userService = container.get(UserService);
-		const apiUser = userService.getApiUser();
+		const apiUser = await userService.getUserAssociatedWithApiKey();
+
+		if (!apiUser) {
+			throw errorInvalidApiKeySubject();
+		}
 
 		const requestSessionService = container.get(RequestSessionService);
 		requestSessionService.setUser(apiUser);
@@ -208,7 +211,7 @@ export const apiKeyValidator: AuthValidator = {
 
 /**
  * Anonymous access validator.
- * Always present and allows unauthenticated access with an anonymous user.
+ * Allows unauthenticated access with an anonymous user.
  */
 export const allowAnonymous: AuthValidator = {
 	async isPresent(): Promise<boolean> {
@@ -219,14 +222,15 @@ export const allowAnonymous: AuthValidator = {
 	async validate(req: Request): Promise<void> {
 		const user = await getAuthenticatedUserOrAnonymous(req);
 
-		const requestSessionService = container.get(RequestSessionService);
-		requestSessionService.setUser(user);
+		if (user) {
+			const requestSessionService = container.get(RequestSessionService);
+			requestSessionService.setUser(user);
+		}
 	}
 };
 
-// Return the authenticated user if available, otherwise return an anonymous user
-const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<MeetUser> => {
-	const userService = container.get(UserService);
+// Return the authenticated user if available, otherwise return null
+const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<MeetUser | null> => {
 	let user: MeetUser | null = null;
 
 	// Check if there is a user already authenticated
@@ -236,16 +240,14 @@ const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<MeetUser> 
 		try {
 			const tokenService = container.get(TokenService);
 			const payload = await tokenService.verifyToken(token);
-			const username = payload.sub;
-			user = username ? await userService.getUser(username) : null;
+			const userId = payload.sub;
+
+			const userService = container.get(UserService);
+			user = userId ? await userService.getUser(userId) : null;
 		} catch (error) {
 			const logger = container.get(LoggerService);
 			logger.debug('Token found but invalid:' + error);
 		}
-	}
-
-	if (!user) {
-		user = userService.getAnonymousUser();
 	}
 
 	return user;

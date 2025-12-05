@@ -17,10 +17,6 @@ export const INTERNAL_CONFIG = {
 	REFRESH_TOKEN_EXPIRATION: '1d',
 	ROOM_MEMBER_TOKEN_EXPIRATION: '2h',
 
-	// Authentication usernames
-	ANONYMOUS_USER: 'anonymous',
-	API_USER: 'api-user',
-
 	// S3 configuration
 	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',
 	S3_INITIAL_RETRY_DELAY_MS: '100',
