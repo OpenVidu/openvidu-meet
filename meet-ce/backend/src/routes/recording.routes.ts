@@ -32,21 +32,33 @@ recordingRouter.use(bodyParser.json());
 // Recording Routes
 recordingRouter.get(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
+	withAuth(
+		apiKeyValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
+		roomMemberTokenValidator
+	),
 	withCanRetrieveRecordingsPermission,
 	validateGetRecordingsReq,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
 	'/',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
+	withAuth(
+		apiKeyValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
+		roomMemberTokenValidator
+	),
 	validateBulkDeleteRecordingsReq,
 	withCanDeleteRecordingsPermission,
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
 	'/download',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
+	withAuth(
+		apiKeyValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
+		roomMemberTokenValidator
+	),
 	validateBulkDeleteRecordingsReq,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.downloadRecordingsZip
@@ -60,7 +72,11 @@ recordingRouter.get(
 );
 recordingRouter.delete(
 	'/:recordingId',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
+	withAuth(
+		apiKeyValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
+		roomMemberTokenValidator
+	),
 	withValidRecordingId,
 	withCanDeleteRecordingsPermission,
 	recordingCtrl.deleteRecording
@@ -74,7 +90,11 @@ recordingRouter.get(
 );
 recordingRouter.get(
 	'/:recordingId/url',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN), roomMemberTokenValidator),
+	withAuth(
+		apiKeyValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
+		roomMemberTokenValidator
+	),
 	validateGetRecordingUrlReq,
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingUrl
