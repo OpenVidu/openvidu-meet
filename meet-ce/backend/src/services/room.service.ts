@@ -8,9 +8,12 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
+	MeetRoomMember,
 	MeetRoomMemberRole,
 	MeetRoomOptions,
-	MeetRoomStatus
+	MeetRoomStatus,
+	MeetUser,
+	MeetUserRole
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
@@ -233,7 +236,7 @@ export class RoomService {
 		}
 
 		// Remove moderatorUrl if the room member is a speaker to prevent access to moderator links
-		const role = this.requestSessionService.getRoomMemberRole();
+		const role = this.requestSessionService.getRoomMemberBaseRole();
 
 		if (role === MeetRoomMemberRole.SPEAKER) {
 			delete (room as Partial<MeetRoom>).moderatorUrl;
@@ -633,5 +636,71 @@ export class RoomService {
 			`Bulk deletion completed: ${successful.length}/${rooms.length} successful, ${failed.length}/${rooms.length} failed`
 		);
 		return { successful, failed };
+	}
+
+	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
+		// TODO: Implement
+		return false;
+	}
+
+	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
+		// TODO: Implement
+		return false;
+	}
+
+	async getRoomMember(roomId: string, userId: string): Promise<MeetRoomMember | null> {
+		// TODO: Implement
+		return null;
+	}
+
+	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
+		// TODO: Implement
+		return false;
+	}
+
+	/**
+	 * Checks if a registered user can access a specific room based on their role.
+	 *
+	 * @param roomId The ID of the room to check access for.
+	 * @param user The user object containing user details and role.
+	 * @returns A promise that resolves to true if the user can access the room, false otherwise.
+	 */
+	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
+		switch (user.role) {
+			case MeetUserRole.ADMIN:
+				// Admins can access all rooms
+				return true;
+
+			case MeetUserRole.USER: {
+				// Users can access rooms they own or are members of
+				const isOwner = await this.isRoomOwner(roomId, user.userId);
+
+				if (isOwner) {
+					return true;
+				}
+
+				const isMember = await this.isRoomMember(roomId, user.userId);
+
+				if (isMember) {
+					return true;
+				}
+
+				return false;
+			}
+
+			case MeetUserRole.ROOM_MEMBER: {
+				// Room members can only access rooms they are members of
+				const isMember = await this.isRoomMember(roomId, user.userId);
+
+				if (isMember) {
+					return true;
+				}
+
+				return false;
+			}
+
+			default:
+				return false;
+		}
 	}
 }

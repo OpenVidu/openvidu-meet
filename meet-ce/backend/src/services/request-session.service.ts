@@ -2,7 +2,8 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
-	MeetUser
+	MeetUser,
+	MeetUserRole
 } from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
 import { injectable } from 'inversify';
@@ -73,6 +74,13 @@ export class RequestSessionService {
 	 */
 	getAuthenticatedUser(): MeetUser | undefined {
 		return this.getContext()?.user;
+	}
+
+	/**
+	 * Gets the authenticated user's role from the current request context.
+	 */
+	getAuthenticatedUserRole(): MeetUserRole | undefined {
+		return this.getContext()?.user?.role;
 	}
 
 	/**

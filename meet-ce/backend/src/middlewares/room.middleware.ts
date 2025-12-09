@@ -2,31 +2,46 @@ import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { errorInsufficientPermissions, rejectRequestFromMeetError } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomService } from '../services/room.service.js';
 
 /**
- * Middleware that configures authorization for accessing a specific room.
+ * Middleware to authorize access to a room.
  *
- * - If there is no token in the session, the user is granted access (admin or API key).
- * - If the user does not belong to the requested room, access is denied.
- * - Otherwise, the user is allowed to access the room.
+ * - If a Room Member Token is used, it checks that the token's roomId matches the requested roomId.
+ * - If a registered user is authenticated, it checks their role and whether they are the owner or a member of the room.
+ * - If neither a valid token nor an authenticated user is present, it rejects the request.
  */
-export const configureRoomAuthorization = async (req: Request, res: Response, next: NextFunction) => {
+export const authorizeRoomAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 
 	const requestSessionService = container.get(RequestSessionService);
-	const tokenRoomId = requestSessionService.getRoomIdFromToken();
+	const memberRoomId = requestSessionService.getRoomIdFromMember();
+	const user = requestSessionService.getAuthenticatedUser();
 
-	// If there is no token, the user is admin or it is invoked using the API key
-	// In this case, the user is allowed to access the resource
-	if (!tokenRoomId) {
+	const forbiddenError = errorInsufficientPermissions();
+
+	// Room Member Token
+	if (memberRoomId) {
+		// Check if the member's roomId matches the requested roomId
+		if (memberRoomId !== roomId) {
+			return rejectRequestFromMeetError(res, forbiddenError);
+		}
+
 		return next();
 	}
 
-	// If the user does not belong to the requested room, access is denied
-	if (tokenRoomId !== roomId) {
-		const error = errorInsufficientPermissions();
-		return rejectRequestFromMeetError(res, error);
+	// Registered User
+	if (user) {
+		const roomService = container.get(RoomService);
+		const canAccess = await roomService.canUserAccessRoom(roomId, user);
+
+		if (!canAccess) {
+			return rejectRequestFromMeetError(res, forbiddenError);
+		}
+
+		return next();
 	}
 
-	return next();
+	// If there is no token and no user, reject the request
+	return rejectRequestFromMeetError(res, forbiddenError);
 };

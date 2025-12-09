@@ -1,5 +1,7 @@
 import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import { Request } from 'express';
 import { MEET_ENV } from '../environment.js';
+import { RecordingHelper } from './recording.helper.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -81,7 +83,8 @@ export class MeetRoomHelper {
 	 *   - moderatorSecret: The secret extracted from the moderator room URL
 	 */
 	static extractSecretsFromRoom(room: MeetRoom): { speakerSecret: string; moderatorSecret: string } {
-		const { speakerUrl, moderatorUrl } = room;
+		const speakerUrl = room.anonymous.speaker.accessUrl;
+		const moderatorUrl = room.anonymous.moderator.accessUrl;
 
 		const parsedSpeakerUrl = new URL(speakerUrl);
 		const speakerSecret = parsedSpeakerUrl.searchParams.get('secret') || '';
@@ -104,5 +107,37 @@ export class MeetRoomHelper {
 		} catch (err: unknown) {
 			return false;
 		}
+	}
+
+	/**
+	 * Extracts the room ID from the request object.
+	 * It checks the following locations in order:
+	 * 1. req.params.roomId
+	 * 2. req.body.roomId
+	 * 3. req.params.recordingId (extracts roomId from it)
+	 *
+	 * @param req - The express request object
+	 * @returns The extracted room ID or undefined if not found
+	 */
+	static getRoomIdFromRequest(req: Request): string | undefined {
+		// 1. Check params
+		if (req.params.roomId) {
+			return req.params.roomId;
+		}
+
+		// 2. Check body
+		if (req.body.roomId) {
+			return req.body.roomId;
+		}
+
+		// 3. Check recordingId in params
+		const recordingId = req.params.recordingId;
+
+		if (recordingId) {
+			const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+			return roomId;
+		}
+
+		return undefined;
 	}
 }

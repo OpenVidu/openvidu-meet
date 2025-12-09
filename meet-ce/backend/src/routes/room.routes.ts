@@ -9,7 +9,6 @@ import {
 	tokenAndRoleValidator,
 	withAuth
 } from '../middlewares/auth.middleware.js';
-import { configureRoomMemberTokenAuth } from '../middlewares/room-member.middleware.js';
 import {
 	validateBulkDeleteRoomMembersReq,
 	validateCreateRoomMemberReq,
@@ -28,7 +27,11 @@ import {
 	validateUpdateRoomStatusReq,
 	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
-import { configureRoomAuthorization } from '../middlewares/room.middleware.js';
+import {
+	authorizeRoomMemberTokenGeneration,
+	setupRoomMemberTokenAuthentication
+} from '../middlewares/room-member.middleware.js';
+import { authorizeRoomAccess } from '../middlewares/room.middleware.js';
 
 export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -62,7 +65,7 @@ roomRouter.get(
 		roomMemberTokenValidator
 	),
 	withValidRoomId,
-	configureRoomAuthorization,
+	authorizeRoomAccess,
 	roomCtrl.getRoom
 );
 roomRouter.delete(
@@ -80,7 +83,7 @@ roomRouter.get(
 		roomMemberTokenValidator
 	),
 	withValidRoomId,
-	configureRoomAuthorization,
+	authorizeRoomAccess,
 	roomCtrl.getRoomConfig
 );
 roomRouter.put(
@@ -123,7 +126,7 @@ roomRouter.post(
 );
 roomRouter.get(
 	'/:roomId/members',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER), roomMemberTokenValidator),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
 	withValidRoomId,
 	validateGetRoomMembersReq,
 	roomMemberCtrl.getRoomMembers
@@ -169,6 +172,7 @@ internalRoomRouter.post(
 	'/:roomId/members/token',
 	withValidRoomId,
 	validateCreateRoomMemberTokenReq,
-	configureRoomMemberTokenAuth,
+	setupRoomMemberTokenAuthentication,
+	authorizeRoomMemberTokenGeneration,
 	roomMemberCtrl.generateRoomMemberToken
 );
