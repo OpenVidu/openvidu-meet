@@ -324,6 +324,7 @@ export const applyVirtualBackground = async (page: Page, backgroundId: string) =
 	await page.waitForTimeout(500);
 	await interactWithElementInIframe(page, '#virtual-bg-btn', { action: 'click' });
 	await waitForElementInIframe(page, 'ov-background-effects-panel', { state: 'visible' });
+	await page.waitForTimeout(500);
 	await interactWithElementInIframe(page, `#effect-${backgroundId}`, { action: 'click' });
 	await page.waitForTimeout(2000); // Allow background processing time
 	await interactWithElementInIframe(page, '.panel-close-button', { action: 'click' });
