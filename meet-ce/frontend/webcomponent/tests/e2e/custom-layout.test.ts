@@ -956,6 +956,49 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities).toContain('RemoteA-Speaking');
 			expect(participantCount).toBe(2); // Local + 1 remote
 		});
+		test('should hidden participants who are audio muted', async ({ page }) => {
+			// Local participant joins the room
+			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
+			await joinRoomAs('moderator', participantName, page);
+			// Wait for session to be ready
+			await waitForElementInIframe(page, 'ov-session', { state: 'visible' });
+			await muteAudio(page); // Mute local to avoid interference
+			// Configure Smart Mosaic layout with limit = 1
+			await configureLayoutMode(page, 'smart-mosaic', 1);
+			// Join Remote A who speaks first
+			const pageA = await joinBrowserFakeParticipant(roomId, 'RemoteA-Speaking', {
+				audioFile: 'continuous_speech.wav'
+			});
+			// Wait for A to become visible
+			await waitForParticipantVisible(page, 'RemoteA-Speaking');
+			// Verify Remote A is visible
+			let [visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+
+			await joinBrowserFakeParticipant(roomId, 'RemoteB-Speaking', {
+				audioFile: 'continuous_speech.wav'
+			});
+
+			await page.waitForTimeout(2000);
+
+			expect(visibleIdentities).toContain('RemoteA-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
+			// Audio mute Remote A
+			await muteAudio(pageA);
+			// Wait for layout to update
+			await waitForParticipantVisible(page, 'RemoteB-Speaking');
+			// Verify Remote A is hidden
+			[visibleIdentities, participantCount] = await Promise.all([
+				getVisibleParticipantNames(page),
+				getVisibleParticipantsCount(page)
+			]);
+
+			expect(visibleIdentities).not.toContain('RemoteA-Speaking');
+			expect(visibleIdentities).toContain('RemoteB-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
+		});
 	});
 
 	test.describe('Smart Mosaic Layout - Screen Sharing visibility', () => {
