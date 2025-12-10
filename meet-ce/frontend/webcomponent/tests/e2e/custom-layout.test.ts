@@ -270,26 +270,9 @@ test.describe('Custom Layout Tests', () => {
 			await Promise.all([
 				waitForParticipantVisible(page, 'RemoteA-Speaker'),
 				waitForParticipantVisible(page, 'RemoteB-Speaker'),
-				waitForParticipantVisible(page, 'RemoteC-Speaker')
+				waitForParticipantVisible(page, 'RemoteC-Speaker'),
+				waitForParticipantCount(page, 4) // Local + 3 remotes
 			]);
-
-			// Verify the grid shows exactly 4 participants (local + 3 active speakers)
-			const [visibleIdentities, participantCount] = await Promise.all([
-				getVisibleParticipantNames(page),
-				getVisibleParticipantsCount(page)
-			]);
-
-			// Should show local + 3 speakers = 4 total
-			expect(participantCount).toBe(4);
-
-			// Verify all three speakers are visible
-			expect(visibleIdentities).toContain('RemoteA-Speaker');
-			expect(visibleIdentities).toContain('RemoteB-Speaker');
-			expect(visibleIdentities).toContain('RemoteC-Speaker');
-
-			// Verify the silent participant is NOT visible
-			// Since limit is 3 and we have 3 active speakers, silent D should be excluded
-			expect(visibleIdentities).not.toContain('RemoteD-Silent');
 		});
 
 		test('handles simultaneous speech and reorders when only one continues', async ({ page }) => {
