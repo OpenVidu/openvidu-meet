@@ -45,7 +45,6 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"livekit-client": "2.15.15"
-		}
+			"livekit-cient": "2.16.0"		}
 	}
 }
