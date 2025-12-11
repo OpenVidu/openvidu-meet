@@ -26,7 +26,7 @@ export class MeetLayoutService extends LayoutService {
 	 * Minimum duration in milliseconds that a participant must be speaking
 	 * before being considered for display in the smart layout.
 	 */
-	private readonly MIN_SPEAKING_DURATION_MS = 1200;
+	private readonly MIN_SPEAKING_DURATION_MS = 2000;
 
 	/**
 	 * Grace period in milliseconds to keep tracking a speaker after they stop.
