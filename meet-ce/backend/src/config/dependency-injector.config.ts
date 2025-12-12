@@ -7,6 +7,7 @@ import { GlobalConfigRepository } from '../repositories/global-config.repository
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
 /*
@@ -86,6 +87,7 @@ export const registerDependencies = () => {
 	container.bind(MongoDBService).toSelf().inSingletonScope();
 	container.bind(BaseRepository).toSelf().inSingletonScope();
 	container.bind(RoomRepository).toSelf().inSingletonScope();
+	container.bind(RoomMemberRepository).toSelf().inSingletonScope();
 	container.bind(UserRepository).toSelf().inSingletonScope();
 	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
 	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();

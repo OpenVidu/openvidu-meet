@@ -1,4 +1,4 @@
-import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
+import { GlobalConfig, OAuthProvider } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetAppearanceConfigSchema } from './room.schema.js';
@@ -13,14 +13,25 @@ export interface MeetGlobalConfigDocument extends GlobalConfig, Document {
 }
 
 /**
- * Sub-schema for authentication method.
- * Currently only supports single_user type.
+ * Sub-schema for OAuth provider configuration.
  */
-const AuthMethodSchema = new Schema(
+const OAuthProviderConfigSchema = new Schema(
 	{
-		type: {
+		provider: {
 			type: String,
-			enum: Object.values(AuthType),
+			enum: Object.values(OAuthProvider),
+			required: true
+		},
+		clientId: {
+			type: String,
+			required: true
+		},
+		clientSecret: {
+			type: String,
+			required: true
+		},
+		redirectUri: {
+			type: String,
 			required: true
 		}
 	},
@@ -32,14 +43,13 @@ const AuthMethodSchema = new Schema(
  */
 const AuthenticationConfigSchema = new Schema(
 	{
-		authMethod: {
-			type: AuthMethodSchema,
+		allowUserCreation: {
+			type: Boolean,
 			required: true
 		},
-		authModeToAccessRoom: {
-			type: String,
-			enum: Object.values(AuthMode),
-			required: true
+		oauthProviders: {
+			type: [OAuthProviderConfigSchema],
+			required: false
 		}
 	},
 	{ _id: false }

@@ -78,7 +78,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
-	 * @param options.sortField - Field to sort by (default: 'createdAt')
+	 * @param options.sortField - Field to sort by (default: 'creationDate')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
@@ -173,7 +173,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	// ==========================================
 
 	/**
-	 * Normalizes room data for storage by removing the base URL from URLs.
+	 * Normalizes room data for storage by removing the base URL from access URLs.
 	 * This ensures only the path is stored in the database.
 	 *
 	 * @param room - The room data to normalize
@@ -182,8 +182,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	private normalizeRoomForStorage(room: TRoom): TRoom {
 		return {
 			...room,
-			moderatorUrl: this.extractPathFromUrl(room.moderatorUrl),
-			speakerUrl: this.extractPathFromUrl(room.speakerUrl)
+			accessUrl: this.extractPathFromUrl(room.accessUrl),
+			anonymous: {
+				...room.anonymous,
+				moderator: {
+					...room.anonymous.moderator,
+					accessUrl: this.extractPathFromUrl(room.anonymous.moderator.accessUrl)
+				},
+				speaker: {
+					...room.anonymous.speaker,
+					accessUrl: this.extractPathFromUrl(room.anonymous.speaker.accessUrl)
+				}
+			}
 		};
 	}
 
@@ -209,7 +219,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
-	 * Enriches room data by adding the base URL to URLs.
+	 * Enriches room data by adding the base URL to access URLs.
 	 * Converts MongoDB document to domain object.
 	 *
 	 * @param document - The MongoDB document
@@ -221,8 +231,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 
 		return {
 			...room,
-			moderatorUrl: `${baseUrl}${room.moderatorUrl}`,
-			speakerUrl: `${baseUrl}${room.speakerUrl}`
+			accessUrl: `${baseUrl}${room.accessUrl}`,
+			anonymous: {
+				...room.anonymous,
+				moderator: {
+					...room.anonymous.moderator,
+					accessUrl: `${baseUrl}${room.anonymous.moderator.accessUrl}`
+				},
+				speaker: {
+					...room.anonymous.speaker,
+					accessUrl: `${baseUrl}${room.anonymous.speaker.accessUrl}`
+				}
+			}
 		};
 	}
 }

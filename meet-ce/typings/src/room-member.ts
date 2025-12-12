@@ -16,6 +16,7 @@ export interface MeetRoomMemberOptions {
  */
 export interface MeetRoomMember {
     memberId: string; // Unique identifier for the member (equals userId for internal users, or generated for external users)
+    roomId: string; // ID of the room the member belongs to
     name: string; // Name of the member (either internal or external user name)
     baseRole: MeetRoomMemberRole; // The base role of the member in the room
     customPermissions?: Partial<MeetRoomMemberPermissions>; // Custom permissions for the member (if any)

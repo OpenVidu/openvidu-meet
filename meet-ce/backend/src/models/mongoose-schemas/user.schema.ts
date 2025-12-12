@@ -22,19 +22,22 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 			required: true,
 			default: INTERNAL_CONFIG.USER_SCHEMA_VERSION
 		},
-		username: {
+		userId: {
 			type: String,
+			required: true
+		},
+		name: {
+			type: String,
+			required: true
+		},
+		role: {
+			type: String,
+			enum: Object.values(MeetUserRole),
 			required: true
 		},
 		passwordHash: {
 			type: String,
 			required: true
-		},
-		roles: {
-			type: [String],
-			enum: Object.values(MeetUserRole),
-			required: true,
-			default: [MeetUserRole.USER]
 		}
 	},
 	{
@@ -50,7 +53,8 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 );
 
 // Create indexes for efficient querying
-MeetUserSchema.index({ username: 1 }, { unique: true });
+MeetUserSchema.index({ userId: 1 }, { unique: true });
+MeetUserSchema.index({ name: 1, _id: 1 });
 
 export const meetUserCollectionName = 'MeetUser';
 
