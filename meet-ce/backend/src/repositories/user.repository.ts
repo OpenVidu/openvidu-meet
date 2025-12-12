@@ -50,7 +50,7 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	}
 
 	/**
-	 * Finds a user by their username.
+	 * Finds a user by their userId.
 	 *
 	 * @param userId - The unique user identifier
 	 * @returns The user or null if not found
@@ -58,6 +58,16 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	async findByUserId(userId: string): Promise<TUser | null> {
 		const document = await this.findOne({ userId });
 		return document ? this.toDomain(document) : null;
+	}
+
+	/**
+	 * Finds users by their userIds.
+	 *
+	 * @param userIds - Array of user identifiers
+	 * @returns Array of found users
+	 */
+	async findByUserIds(userIds: string[]): Promise<TUser[]> {
+		return await this.findAll({ userId: { $in: userIds } });
 	}
 
 	/**

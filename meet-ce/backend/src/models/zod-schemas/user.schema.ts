@@ -1,7 +1,7 @@
 import { MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
-export const CreateUserReqSchema: z.ZodType<MeetUserOptions> = z.object({
+export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
 	userId: z
 		.string()
 		.min(5, 'userId must be at least 5 characters long')

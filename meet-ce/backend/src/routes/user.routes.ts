@@ -26,13 +26,13 @@ userRouter.delete(
 	'/',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	validateBulkDeleteUsersReq,
-	userCtrl.bulkDeleteUser
+	userCtrl.bulkDeleteUsers
 );
 
 userRouter.get(
 	'/me',
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
-	userCtrl.getProfile
+	userCtrl.getMe
 );
 userRouter.post(
 	'/change-password',
