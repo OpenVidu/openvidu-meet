@@ -196,7 +196,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	// ==========================================
 
 	/**
-	 * Normalizes room data for storage by removing the base URL from URLs.
+	 * Normalizes room data for storage by removing the base URL from access URLs.
 	 * This ensures only the path is stored in the database.
 	 *
 	 * @param room - The room data to normalize
@@ -205,8 +205,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	private normalizeRoomForStorage(room: TRoom): TRoom {
 		return {
 			...room,
-			moderatorUrl: this.extractPathFromUrl(room.moderatorUrl),
-			speakerUrl: this.extractPathFromUrl(room.speakerUrl)
+			accessUrl: this.extractPathFromUrl(room.accessUrl),
+			anonymous: {
+				...room.anonymous,
+				moderator: {
+					...room.anonymous.moderator,
+					accessUrl: this.extractPathFromUrl(room.anonymous.moderator.accessUrl)
+				},
+				speaker: {
+					...room.anonymous.speaker,
+					accessUrl: this.extractPathFromUrl(room.anonymous.speaker.accessUrl)
+				}
+			}
 		};
 	}
 
@@ -232,7 +242,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
-	 * Enriches room data by adding the base URL to URLs.
+	 * Enriches room data by adding the base URL to access URLs.
 	 * Converts MongoDB document to domain object.
 	 * Only enriches URLs that are present in the document.
 	 *
@@ -245,8 +255,20 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 
 		return {
 			...room,
-			...(room.moderatorUrl !== undefined && { moderatorUrl: `${baseUrl}${room.moderatorUrl}` }),
-			...(room.speakerUrl !== undefined && { speakerUrl: `${baseUrl}${room.speakerUrl}` })
+			...(room.accessUrl !== undefined && { accessUrl: `${baseUrl}${room.accessUrl}` }),
+			...(room.anonymous !== undefined && {
+				anonymous: {
+					...room.anonymous,
+					moderator: {
+						...room.anonymous.moderator,
+						accessUrl: `${baseUrl}${room.anonymous.moderator.accessUrl}`
+					},
+					speaker: {
+						...room.anonymous.speaker,
+						accessUrl: `${baseUrl}${room.anonymous.speaker.accessUrl}`
+					}
+				}
+			})
 		};
 	}
 }

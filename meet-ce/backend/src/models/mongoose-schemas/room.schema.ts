@@ -1,5 +1,4 @@
 import {
-	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -9,6 +8,7 @@ import {
 } from '@openvidu-meet/typings';
 import { Document, Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
 
 /**
  * Mongoose Document interface for MeetRoom.
@@ -48,11 +48,6 @@ const MeetRecordingConfigSchema = new Schema(
 		enabled: {
 			type: Boolean,
 			required: true
-		},
-		allowAccessTo: {
-			type: String,
-			enum: Object.values(MeetRecordingAccess),
-			required: false
 		}
 	},
 	{ _id: false }
@@ -91,8 +86,7 @@ const MeetE2EEConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: false
+			required: true
 		}
 	},
 	{ _id: false }
@@ -154,6 +148,56 @@ export const MeetAppearanceConfigSchema = new Schema(
 );
 
 /**
+ * Sub-schema for room roles configuration.
+ */
+const MeetRoomRolesSchema = new Schema(
+	{
+		moderator: {
+			permissions: {
+				type: MeetRoomMemberPermissionsSchema,
+				required: true
+			}
+		},
+		speaker: {
+			permissions: {
+				type: MeetRoomMemberPermissionsSchema,
+				required: true
+			}
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for anonymous access configuration.
+ */
+const MeetRoomAnonymousSchema = new Schema(
+	{
+		moderator: {
+			enabled: {
+				type: Boolean,
+				required: true
+			},
+			accessUrl: {
+				type: String,
+				required: true
+			}
+		},
+		speaker: {
+			enabled: {
+				type: Boolean,
+				required: true
+			},
+			accessUrl: {
+				type: String,
+				required: true
+			}
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Mongoose schema for MeetRoom configuration.
  */
 const MeetRoomConfigSchema = new Schema(
@@ -172,8 +216,7 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		e2ee: {
 			type: MeetE2EEConfigSchema,
-			required: true,
-			default: { enabled: false }
+			required: true
 		}
 	},
 	{ _id: false }
@@ -198,6 +241,10 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: String,
 			required: true
 		},
+		owner: {
+			type: String,
+			required: true
+		},
 		creationDate: {
 			type: Number,
 			required: true
@@ -214,11 +261,15 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: MeetRoomConfigSchema,
 			required: true
 		},
-		moderatorUrl: {
-			type: String,
+		roles: {
+			type: MeetRoomRolesSchema,
 			required: true
 		},
-		speakerUrl: {
+		anonymous: {
+			type: MeetRoomAnonymousSchema,
+			required: true
+		},
+		accessUrl: {
 			type: String,
 			required: true
 		},
