@@ -86,9 +86,9 @@ export const BulkDeleteRecordingsReqSchema = z.object({
 
 			return [];
 		},
-		z
-			.array(nonEmptySanitizedRecordingId('recordingId'))
-			.nonempty({ message: 'recordingIds must contain at least one item' })
+		z.array(nonEmptySanitizedRecordingId('recordingId')).min(1, {
+			message: 'At least one recordingId is required'
+		})
 	)
 });
 

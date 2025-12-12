@@ -3,12 +3,12 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteUsersReqSchema,
 	ChangePasswordReqSchema,
-	CreateUserReqSchema,
-	UserFiltersSchema
+	UserFiltersSchema,
+	UserOptionsSchema
 } from '../../models/zod-schemas/user.schema.js';
 
 export const validateCreateUserReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = CreateUserReqSchema.safeParse(req.body);
+	const { success, error, data } = UserOptionsSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

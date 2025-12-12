@@ -42,7 +42,7 @@ export const validateBulkDeleteRecordingsReq = (req: Request, res: Response, nex
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query.recordingIds = data.recordingIds.join(',');
+	req.query = data;
 	next();
 };
 

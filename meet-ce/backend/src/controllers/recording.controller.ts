@@ -57,7 +57,7 @@ export const getRecordings = async (req: Request, res: Response) => {
 	const queryParams = req.query;
 
 	// If room member token is present, retrieve only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromToken();
+	const roomId = requestSessionService.getRoomIdFromMember();
 
 	if (roomId) {
 		queryParams.roomId = roomId;
@@ -87,17 +87,15 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const requestSessionService = container.get(RequestSessionService);
-	const { recordingIds } = req.query;
+	const { recordingIds } = req.query as { recordingIds: string[] };
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		const recordingIdsArray = (recordingIds as string).split(',');
-
 		// If room member token is present, delete only recordings for the room associated with the token
-		const roomId = requestSessionService.getRoomIdFromToken();
+		const roomId = requestSessionService.getRoomIdFromMember();
 
-		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIdsArray, roomId);
+		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIds, roomId);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && failed.length === 0) {
@@ -257,7 +255,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	let validRecordingIds = recordingIdsArray;
 
 	// If room member token is present, download only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromToken();
+	const roomId = requestSessionService.getRoomIdFromMember();
 
 	if (roomId) {
 		validRecordingIds = recordingIdsArray.filter((recordingId) => {

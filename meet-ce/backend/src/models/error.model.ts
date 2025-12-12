@@ -199,6 +199,16 @@ export const isErrorRecordingCannotBeStoppedWhileStarting = (
 	return isMatchingError(error, errorRecordingCannotBeStoppedWhileStarting(recordingId));
 };
 
+// User errors
+
+export const errorUserNotFound = (userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('User Error', `User '${userId}' not found`, 404);
+};
+
+export const errorUserAlreadyExists = (userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('User Error', `User '${userId}' already exists`, 409);
+};
+
 // Room errors
 
 export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {

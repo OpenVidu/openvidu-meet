@@ -3,9 +3,6 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomMemberRole,
-	MeetRoomMemberRoleAndPermissions,
-	MeetRoomMemberTokenOptions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
@@ -13,7 +10,6 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { handleError } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
-import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
@@ -181,75 +177,5 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 		return res.status(updated ? 200 : 202).json({ message, room });
 	} catch (error) {
 		handleError(res, error, `updating room status for room '${roomId}'`);
-	}
-};
-
-export const generateRoomMemberToken = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const roomMemberTokenService = container.get(RoomMemberService);
-
-	const { roomId } = req.params;
-	const tokenOptions: MeetRoomMemberTokenOptions = req.body;
-
-	try {
-		logger.verbose(`Generating room member token for room '${roomId}'`);
-		const token = await roomMemberTokenService.generateOrRefreshRoomMemberToken(roomId, tokenOptions);
-		return res.status(200).json({ token });
-	} catch (error) {
-		handleError(res, error, `generating room member token for room '${roomId}'`);
-	}
-};
-
-export const getRoomMemberRolesAndPermissions = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const roomService = container.get(RoomService);
-	const roomMemberService = container.get(RoomMemberService);
-
-	const { roomId } = req.params;
-
-	// Check if the room exists
-	try {
-		await roomService.getMeetRoom(roomId);
-	} catch (error) {
-		return handleError(res, error, `getting room '${roomId}'`);
-	}
-
-	logger.verbose(`Getting room member roles and associated permissions for room '${roomId}'`);
-	const moderatorPermissions = await roomMemberService.getRoomMemberPermissions(roomId, MeetRoomMemberRole.MODERATOR);
-	const speakerPermissions = await roomMemberService.getRoomMemberPermissions(roomId, MeetRoomMemberRole.SPEAKER);
-
-	const rolesAndPermissions: MeetRoomMemberRoleAndPermissions[] = [
-		{
-			role: MeetRoomMemberRole.MODERATOR,
-			permissions: moderatorPermissions
-		},
-		{
-			role: MeetRoomMemberRole.SPEAKER,
-			permissions: speakerPermissions
-		}
-	];
-	res.status(200).json(rolesAndPermissions);
-};
-
-export const getRoomMemberRoleAndPermissions = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const roomMemberService = container.get(RoomMemberService);
-
-	const { roomId, secret } = req.params;
-
-	try {
-		logger.verbose(
-			`Getting room member role and associated permissions for room '${roomId}' and secret '${secret}'`
-		);
-
-		const role = await roomMemberService.getRoomMemberRoleBySecret(roomId, secret);
-		const permissions = await roomMemberService.getRoomMemberPermissions(roomId, role);
-		const roleAndPermissions: MeetRoomMemberRoleAndPermissions = {
-			role,
-			permissions
-		};
-		return res.status(200).json(roleAndPermissions);
-	} catch (error) {
-		handleError(res, error, `getting room member role and permissions for room '${roomId}' and secret '${secret}'`);
 	}
 };
