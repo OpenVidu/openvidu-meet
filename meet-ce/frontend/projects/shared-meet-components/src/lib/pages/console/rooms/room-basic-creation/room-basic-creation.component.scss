@@ -4,9 +4,11 @@
 	@include design-tokens.ov-page-content;
 	@include design-tokens.ov-container;
 
-	padding: var(--ov-meet-spacing-xl);
-	max-width: 600px;
+	// padding: var(--ov-meet-spacing-xl);
+	// max-width: 600px;
+	max-width: 100%;
 	margin: 0 auto;
+	justify-content: center;
 
 	.page-header {
 		display: flex;

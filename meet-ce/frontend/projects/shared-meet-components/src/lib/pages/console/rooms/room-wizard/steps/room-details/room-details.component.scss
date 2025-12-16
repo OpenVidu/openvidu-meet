@@ -4,7 +4,7 @@
 	@include design-tokens.ov-page-content;
 	@include design-tokens.ov-container;
 
-	padding: var(--ov-meet-spacing-md);
+    justify-content: center;
 
 	.step-header {
 		display: flex;

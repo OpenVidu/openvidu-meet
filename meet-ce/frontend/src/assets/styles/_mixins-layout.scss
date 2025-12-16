@@ -15,6 +15,7 @@
 	max-width: var(--ov-meet-container-max-width);
 	margin: 0 auto;
 	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl) var(--ov-meet-spacing-xl);
+	height: calc(100% - (64px + var(--ov-meet-spacing-lg))); // Full height minus header and footer
 }
 
 // Mixin for truncated text

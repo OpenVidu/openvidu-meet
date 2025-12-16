@@ -181,8 +181,7 @@
 	}
 
 	.mat-stepper-vertical {
-		position: absolute;
-		left: 10;
+		// Remove absolute positioning to work with flexbox
 	}
 
 	.mat-step-header .mat-step-icon-selected {

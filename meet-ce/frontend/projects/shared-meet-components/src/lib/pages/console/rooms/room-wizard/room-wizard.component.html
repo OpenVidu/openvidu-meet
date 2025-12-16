@@ -6,20 +6,24 @@
 					editMode ? 'Edit your room settings' : 'Create and configure your video room in a few simple steps'
 				}}
 			</p>
-			@if (!isBasicCreation()) {
-				<ov-step-indicator
-					[steps]="steps()"
-					[currentStepIndex]="currentStepIndex()"
-					[allowNavigation]="true"
-					[editMode]="editMode"
-					(stepClick)="onStepClick($event)"
-				>
-				</ov-step-indicator>
-			}
 		</header>
 
-		<main class="wizard-content">
-			<section class="step-content ov-surface">
+		<div class="wizard-body">
+			@if (!isBasicCreation()) {
+				<aside class="wizard-sidebar">
+					<ov-step-indicator
+						[steps]="steps()"
+						[currentStepIndex]="currentStepIndex()"
+						[allowNavigation]="true"
+						[editMode]="editMode"
+						(stepClick)="onStepClick($event)"
+					>
+					</ov-step-indicator>
+				</aside>
+			}
+
+			<main class="wizard-content">
+				<section class="step-content ov-surface">
 				@if (isCreatingRoom()) {
 					<!-- Room Creation Loading State -->
 					<div class="room-creation-loading">
@@ -70,8 +74,9 @@
 						}
 					}
 				}
-			</section>
-		</main>
+				</section>
+			</main>
+		</div>
 
 		<footer class="wizard-footer">
 			@if (isBasicCreation()) {

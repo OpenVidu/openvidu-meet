@@ -1,60 +1,94 @@
 @use '../../../../../../../../src/assets/styles/design-tokens';
 
+// Main wizard container - fills viewport height exactly
 .wizard-container {
-	@include design-tokens.ov-container;
-	@include design-tokens.ov-page-content;
-	min-height: 600px;
-	gap: 0;
-	padding-top: 0;
+	@include design-tokens.ov-theme-transition;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	max-height: 100%;
+	max-width: var(--ov-meet-container-max-width);
+	margin: 0 auto;
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl);
+	gap: var(--ov-meet-spacing-lg);
+	overflow: hidden; // Prevent page scroll
 }
 
+// Header section - fixed at top
 .wizard-header {
-	@include design-tokens.ov-get-started-header;
+	flex-shrink: 0;
+	text-align: center;
+	// padding-bottom: var(--ov-meet-spacing-md);
 
-	h2 {
-		margin-bottom: var(--ov-meet-spacing-md);
-		font-size: var(--ov-meet-font-size-xxl);
-		font-weight: var(--ov-meet-font-weight-light);
-		color: var(--ov-meet-text-primary);
+	.subtitle {
+		margin: 0;
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-lg);
+		line-height: var(--ov-meet-line-height-normal);
 	}
 }
 
+// Body section - contains sidebar and main content
+.wizard-body {
+	flex: 1 1 0; // Grow to fill space, shrink if needed, base size 0
+	display: flex;
+	gap: var(--ov-meet-spacing-xl);
+	min-height: 0; // Critical for flexbox overflow
+	max-height: calc(100% - 64px - var(--ov-meet-spacing-lg) - var(--ov-meet-spacing-lg) - 27px - var(--ov-meet-spacing-lg) - var(--ov-meet-spacing-lg) - 57px); // Calculate available height
+	align-items: stretch;
+	// overflow: hidden; // Prevent body overflow
+}
+
+// Sidebar for step indicator (large screens)
+.wizard-sidebar {
+	flex-shrink: 0;
+	width: 280px;
+	display: flex;
+	flex-direction: column;
+}
+
+// Main content area
 .wizard-content {
 	flex: 1;
 	display: flex;
 	justify-content: center;
-	align-items: flex-start;
+	align-items: center;
+	min-height: 0; // Critical for flexbox overflow
 }
 
+// Step content card
 .step-content {
 	@include design-tokens.ov-section-card;
+	width: 100%;
+	max-width: 700px;
+	height: -webkit-fill-available;
+  	height: -moz-available;
+  	height: fill-available;
+	max-height: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	overflow-x: hidden;
 
-	& {
+	// Inner content should be centered vertically when small
+	> :first-child {
 		width: 100%;
-		max-width: 600px;
-		min-height: 450px;
-		max-height: 450px;
-		flex-direction: column;
-		justify-content: flex-start;
-		display: flex;
-		overflow-y: auto;
+		min-height: min-content;
+		height: 100%;
 	}
 }
 
-.step-content > :first-child {
-	margin: auto 0;
-	width: 100%;
-	min-height: min-content;
-}
-
+// Footer section - fixed at bottom
 .wizard-footer {
-	flex: 1;
+	flex-shrink: 0;
 	display: flex;
 	justify-content: center;
+	// padding-top: var(--ov-meet-spacing-md);
+
 	.basic-nav,
 	.wizard-nav {
 		width: 100%;
-		max-width: 650px;
+		max-width: 700px;
 		display: flex;
 		flex-direction: column;
 	}
@@ -62,6 +96,7 @@
 	.basic-nav .wizard-navigation {
 		padding: var(--ov-meet-spacing-md) 0 0 0;
 	}
+
 	.cancel-button {
 		@include design-tokens.ov-button-base;
 		border-radius: var(--ov-meet-radius-sm);
@@ -170,17 +205,70 @@
 	}
 }
 
-// Responsive design using the system mixins
+// Responsive design
+// Large desktop: sidebar on left (>=1200px)
+@media (min-width: 1200px) {
+	.wizard-body {
+		flex-direction: row;
+	}
+
+	.wizard-sidebar {
+		display: flex;
+	}
+}
+
+// Medium screens: move step indicator to top (768px - 1199px)
+@media (max-width: 1199px) and (min-width: 769px) {
+	.wizard-body {
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+	}
+
+	.wizard-sidebar {
+		width: 100%;
+		max-width: 100%;
+		flex-shrink: 0;
+	}
+
+	.step-content {
+		max-width: 800px;
+	}
+}
+
+// Tablet and below: compact vertical step indicator (<=768px)
 @include design-tokens.ov-tablet-down {
 	.wizard-container {
 		padding: var(--ov-meet-spacing-md);
+		gap: var(--ov-meet-spacing-md);
+		height: 100vh;
+		max-height: 100vh;
+		overflow: hidden;
 	}
 
 	.wizard-header {
-		padding-bottom: var(--ov-meet-spacing-md);
+		padding-bottom: var(--ov-meet-spacing-sm);
 
-		h2 {
-			font-size: var(--ov-meet-font-size-xl);
+		.subtitle {
+			font-size: var(--ov-meet-font-size-md);
+		}
+	}
+
+	.wizard-body {
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+	}
+
+	.wizard-sidebar {
+		width: 100%;
+		flex-shrink: 0;
+	}
+
+	.wizard-footer {
+		padding-top: var(--ov-meet-spacing-sm);
+
+		.basic-nav,
+		.wizard-nav {
+			max-width: 100%;
 		}
 	}
 
@@ -199,10 +287,22 @@
 	}
 }
 
+// Mobile: further optimizations
 @include design-tokens.ov-mobile-down {
+	.wizard-container {
+		padding: var(--ov-meet-spacing-sm);
+		height: 100vh;
+		max-height: 100vh;
+		overflow: hidden;
+	}
+
 	.wizard-header {
-		h2 {
-			font-size: var(--ov-meet-font-size-lg);
+		.subtitle {
+			font-size: var(--ov-meet-font-size-sm);
 		}
+	}
+
+	.room-creation-loading {
+		padding: var(--ov-meet-spacing-md);
 	}
 }
