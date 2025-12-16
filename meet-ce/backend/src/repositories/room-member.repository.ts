@@ -1,10 +1,10 @@
 import { MeetRoomMember, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetRoomRoles } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { errorRoomNotFound } from '../models/error.model.js';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 import { RoomRepository } from './room.repository.js';
-import { errorRoomNotFound } from '../models/error.model.js';
 
 /**
  * Repository for managing MeetRoomMember entities in MongoDB.
@@ -105,6 +105,16 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	}
 
 	/**
+	 * Finds room members by their memberIds.
+	 *
+	 * @param memberIds - Array of member identifiers
+	 * @returns Array of found room members
+	 */
+	async findByRoomAndMemberIds(memberIds: string[]): Promise<MeetRoomMember[]> {
+		return await this.findAll({ memberId: { $in: memberIds } });
+	}
+
+	/**
 	 * Finds members of a room with optional filtering, pagination, and sorting.
 	 *
 	 * @param roomId - The ID of the room
@@ -186,15 +196,15 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		await this.deleteMany({ roomId, memberId: { $in: memberIds } });
 	}
 
-    /**
-     * Removes all members from a room.
-     *
-     * @param roomId - The ID of the room
-     * @throws Error if members could not be deleted
-     */
-    async deleteAllByRoomId(roomId: string): Promise<void> {
-        await this.deleteMany({ roomId });
-    }
+	/**
+	 * Removes all members from a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @throws Error if members could not be deleted
+	 */
+	async deleteAllByRoomId(roomId: string): Promise<void> {
+		await this.deleteMany({ roomId });
+	}
 
 	// ==========================================
 	// PRIVATE HELPER METHODS

@@ -1,23 +1,42 @@
 import {
-	MeetRecordingAccess,
+	LiveKitPermissions,
+	MeetRoomMember,
+	MeetRoomMemberFilters,
+	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
-	MeetRoomStatus
+	MeetRoomStatus,
+	MeetUserRole,
+	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
+import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
+import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-validator.middleware.js';
-import { errorInvalidRoomSecret, errorParticipantNotFound, errorRoomClosed } from '../models/error.model.js';
+import { UtilsHelper } from '../helpers/utils.helper.js';
+import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidRoomSecret,
+	errorParticipantNotFound,
+	errorRoomClosed,
+	errorRoomMemberNotFound,
+	errorUnauthorized,
+	errorUserNotFound
+} from '../models/error.model.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
+import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
+import { UserService } from './user.service.js';
 
 /**
  * Service for managing room members and meeting participants.
@@ -26,34 +45,186 @@ import { TokenService } from './token.service.js';
 export class RoomMemberService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RoomService) protected roomService: RoomService,
+		@inject(UserService) protected userService: UserService,
 		@inject(ParticipantNameService) protected participantNameService: ParticipantNameService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(TokenService) protected tokenService: TokenService
+		@inject(TokenService) protected tokenService: TokenService,
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
 	/**
-	 * Validates a secret against a room's moderator and speaker secrets and returns the corresponding role.
+	 * Creates a new room member.
 	 *
-	 * @param roomId - The unique identifier of the room to check
-	 * @param secret - The secret to validate against the room's moderator and speaker secrets
-	 * @returns A promise that resolves to the room member role (MODERATOR or SPEAKER) if the secret is valid
-	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
-	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
+	 * @param roomId - The ID of the room
+	 * @param memberOptions - The options for creating the room member
+	 * @returns A promise that resolves to the created MeetRoomMember object
 	 */
-	async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
-		const room = await this.roomService.getMeetRoom(roomId);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+	async createRoomMember(roomId: string, memberOptions: MeetRoomMemberOptions): Promise<MeetRoomMember> {
+		const { userId, name, baseRole, customPermissions } = memberOptions;
 
-		switch (secret) {
-			case moderatorSecret:
-				return MeetRoomMemberRole.MODERATOR;
-			case speakerSecret:
-				return MeetRoomMemberRole.SPEAKER;
-			default:
-				throw errorInvalidRoomSecret(room.roomId, secret);
+		// Generate memberId and member name
+		let memberId: string;
+		let memberName: string;
+
+		if (userId) {
+			// Registered user: memberId = userId, get name from user service
+			const user = await this.userService.getUser(userId);
+
+			if (!user) {
+				throw errorUserNotFound(userId);
+			}
+
+			memberId = userId;
+			memberName = user.name;
+		} else if (name) {
+			// External user: generate memberId, use provided name
+			memberId = `ext-${secureUid(15)}`;
+			memberName = name;
+		} else {
+			throw new Error('Either userId or name must be provided');
 		}
+
+		const roomMember = {
+			memberId,
+			roomId,
+			name: memberName,
+			baseRole,
+			customPermissions
+		} as MeetRoomMember;
+		return this.roomMemberRepository.create(roomMember);
+	}
+
+	/**
+	 * Checks if a user (registered or external) is a member of a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member
+	 * @returns A promise that resolves to true if the user is a member, false otherwise
+	 */
+	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
+		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+		return !!member;
+	}
+
+	/**
+	 * Retrieves a specific room member by their ID.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member
+	 * @returns A promise that resolves to the MeetRoomMember object or null if not found
+	 */
+	async getRoomMember(roomId: string, memberId: string): Promise<MeetRoomMember | null> {
+		return this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+	}
+
+	/**
+	 * Retrieves all members of a room with filtering and pagination.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param filters - Filters for the query
+	 * @returns A promise that resolves to an object containing the members and pagination info
+	 */
+	async getAllRoomMembers(
+		roomId: string,
+		filters: MeetRoomMemberFilters
+	): Promise<{
+		members: MeetRoomMember[];
+		isTruncated: boolean;
+		nextPageToken?: string;
+	}> {
+		const { fields, ...findOptions } = filters;
+		const response = await this.roomMemberRepository.findByRoomId(roomId, findOptions);
+
+		if (fields) {
+			const filteredMembers = response.members.map((member: MeetRoomMember) =>
+				UtilsHelper.filterObjectFields(member, fields)
+			);
+			response.members = filteredMembers as MeetRoomMember[];
+		}
+
+		return response;
+	}
+
+	/**
+	 * Updates an existing room member.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member to update
+	 * @param updates - The fields to update (baseRole and/or customPermissions)
+	 * @returns A promise that resolves to the updated MeetRoomMember object
+	 */
+	async updateRoomMember(
+		roomId: string,
+		memberId: string,
+		updates: { baseRole?: MeetRoomMemberRole; customPermissions?: Partial<MeetRoomMemberPermissions> }
+	): Promise<MeetRoomMember> {
+		const member = await this.getRoomMember(roomId, memberId);
+
+		if (!member) {
+			throw errorRoomMemberNotFound(roomId, memberId);
+		}
+
+		// Update baseRole if provided
+		if (updates.baseRole) {
+			member.baseRole = updates.baseRole;
+		}
+
+		// Update customPermissions if provided
+		if (updates.customPermissions) {
+			member.customPermissions = updates.customPermissions;
+		}
+
+		return this.roomMemberRepository.update(member);
+	}
+
+	/**
+	 * Deletes a room member.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member to delete
+	 */
+	async deleteRoomMember(roomId: string, memberId: string): Promise<void> {
+		const member = await this.getRoomMember(roomId, memberId);
+
+		if (!member) {
+			throw errorRoomMemberNotFound(roomId, memberId);
+		}
+
+		return this.roomMemberRepository.deleteByRoomAndMemberId(roomId, memberId);
+	}
+
+	/**
+	 * Deletes multiple room members in bulk.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberIds - Array of member IDs to delete
+	 * @returns A promise that resolves to an object with successful and failed deletions
+	 */
+	async bulkDeleteRoomMembers(
+		roomId: string,
+		memberIds: string[]
+	): Promise<{
+		deleted: string[];
+		failed: { memberId: string; error: string }[];
+	}> {
+		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(memberIds);
+		const foundMemberIds = membersToDelete.map((m) => m.memberId);
+
+		const failed = memberIds
+			.filter((id) => !foundMemberIds.includes(id))
+			.map((id) => ({ memberId: id, error: 'Room member not found' }));
+
+		if (foundMemberIds.length > 0) {
+			await this.roomMemberRepository.deleteByRoomIdAndMemberIds(roomId, foundMemberIds);
+		}
+
+		return {
+			deleted: foundMemberIds,
+			failed
+		};
 	}
 
 	/**
@@ -64,27 +235,93 @@ export class RoomMemberService {
 	 * @returns A promise that resolves to the generated token
 	 */
 	async generateOrRefreshRoomMemberToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions): Promise<string> {
-		const { secret, grantJoinMeetingPermission = false, participantName, participantIdentity } = tokenOptions;
+		const { secret, joinMeeting = false, participantName, participantIdentity } = tokenOptions;
 
-		// Get room member role from secret
-		const role = await this.getRoomMemberRoleBySecret(roomId, secret);
+		let baseRole: MeetRoomMemberRole;
+		let customPermissions: Partial<MeetRoomMemberPermissions> | undefined = undefined;
+		let effectivePermissions: MeetRoomMemberPermissions;
+		let memberId: string | undefined;
 
-		if (grantJoinMeetingPermission && participantName) {
-			return this.generateTokenWithJoinMeetingPermission(roomId, role, participantName, participantIdentity);
+		if (secret) {
+			// Case 1: Secret provided (Anonymous access or External Member)
+			const isValidSecret = await this.roomService.isValidRoomSecret(roomId, secret);
+
+			if (isValidSecret) {
+				// If secret matches anonymous access URL secret, assign role and permissions based on it
+				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
+
+				const room = await this.roomService.getMeetRoom(roomId);
+				effectivePermissions = room.roles[baseRole].permissions;
+			} else {
+				// If secret is a memberId, fetch the member and assign their role and permissions
+				const member = await this.getRoomMember(roomId, secret);
+
+				if (member) {
+					memberId = member.memberId;
+					baseRole = member.baseRole;
+					customPermissions = member.customPermissions;
+					effectivePermissions = member.effectivePermissions;
+				} else {
+					throw errorInvalidRoomSecret(roomId, secret);
+				}
+			}
 		} else {
-			return this.generateTokenWithoutJoinMeetingPermission(roomId, role);
+			// Case 2: Authenticated user
+			const user = this.requestSessionService.getAuthenticatedUser();
+
+			if (!user) {
+				throw errorUnauthorized();
+			}
+
+			// Check if user is admin or owner
+			const isOwner = await this.roomService.isRoomOwner(roomId, user.userId);
+
+			if (user.role === MeetUserRole.ADMIN || isOwner) {
+				// Admins and owners have MODERATOR role with full permissions
+				baseRole = MeetRoomMemberRole.MODERATOR;
+				effectivePermissions = this.getAllPermissions();
+			} else {
+				// If user is a member, fetch their role and permissions
+				const member = await this.getRoomMember(roomId, user.userId);
+
+				if (member) {
+					memberId = user.userId;
+					baseRole = member.baseRole;
+					customPermissions = member.customPermissions;
+					effectivePermissions = member.effectivePermissions;
+				} else {
+					throw errorUnauthorized();
+				}
+			}
+		}
+
+		if (joinMeeting && participantName) {
+			return this.generateTokenForJoiningMeeting(
+				roomId,
+				baseRole,
+				effectivePermissions,
+				participantName,
+				participantIdentity,
+				customPermissions,
+				memberId
+			);
+		} else {
+			return this.generateToken(roomId, baseRole, effectivePermissions, customPermissions, memberId);
 		}
 	}
 
 	/**
-	 * Generates a token with join meeting permissions.
+	 * Generates a token for joining a meeting.
 	 * Handles both new token generation and token refresh.
 	 */
-	protected async generateTokenWithJoinMeetingPermission(
+	protected async generateTokenForJoiningMeeting(
 		roomId: string,
-		role: MeetRoomMemberRole,
+		baseRole: MeetRoomMemberRole,
+		effectivePermissions: MeetRoomMemberPermissions,
 		participantName: string,
-		participantIdentity?: string
+		participantIdentity?: string,
+		customPermissions?: Partial<MeetRoomMemberPermissions>,
+		memberId?: string
 	): Promise<string> {
 		// Check that room is open
 		const room = await this.roomService.getMeetRoom(roomId);
@@ -93,12 +330,17 @@ export class RoomMemberService {
 			throw errorRoomClosed(roomId);
 		}
 
+		// Check that member has permission to join meeting
+		if (!effectivePermissions.canJoinMeeting) {
+			throw errorInsufficientPermissions();
+		}
+
 		const isRefresh = !!participantIdentity;
 
 		if (!isRefresh) {
 			// GENERATION MODE
 			this.logger.verbose(
-				`Generating room member token with join meeting permission for '${participantName}' in room '${roomId}'`
+				`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
 			);
 
 			// Create the Livekit room if it doesn't exist
@@ -131,147 +373,132 @@ export class RoomMemberService {
 			}
 		}
 
-		// Get participant permissions (with join meeting)
-		const permissions = await this.getRoomMemberPermissions(roomId, role, true);
+		const livekitPermissions = await this.getLiveKitPermissions(roomId, effectivePermissions);
+		const tokenMetadata: MeetRoomMemberTokenMetadata = {
+			livekitUrl: MEET_ENV.LIVEKIT_URL,
+			roomId,
+			memberId,
+			baseRole,
+			customPermissions,
+			effectivePermissions
+		};
 
 		// Generate token with participant name
-		return this.tokenService.generateRoomMemberToken(role, permissions, participantName, participantIdentity);
+		return this.tokenService.generateRoomMemberToken(
+			tokenMetadata,
+			livekitPermissions,
+			participantName,
+			participantIdentity
+		);
 	}
 
 	/**
-	 * Generates a token without join meeting permission.
-	 * This token only provides access to other room resources (recordings, etc.)
+	 * Generates a token for accessing room resources but not joining a meeting.
 	 */
-	protected async generateTokenWithoutJoinMeetingPermission(
+	protected async generateToken(
 		roomId: string,
-		role: MeetRoomMemberRole
+		baseRole: MeetRoomMemberRole,
+		effectivePermissions: MeetRoomMemberPermissions,
+		customPermissions?: Partial<MeetRoomMemberPermissions>,
+		memberId?: string
 	): Promise<string> {
-		this.logger.verbose(`Generating room member token without join meeting permission for room '${roomId}'`);
+		this.logger.verbose(
+			`Generating room member token for accessing room resources but not joining a meeting for room '${roomId}'`
+		);
 
-		// Get participant permissions (without join meeting)
-		const permissions = await this.getRoomMemberPermissions(roomId, role, false);
+		const tokenMetadata: MeetRoomMemberTokenMetadata = {
+			livekitUrl: MEET_ENV.LIVEKIT_URL,
+			roomId,
+			memberId,
+			baseRole,
+			customPermissions,
+			effectivePermissions
+		};
 
-		// Generate token without participant name
-		return this.tokenService.generateRoomMemberToken(role, permissions);
+		// Generate token without LiveKit permissions and participant name
+		return this.tokenService.generateRoomMemberToken(tokenMetadata);
 	}
 
 	/**
-	 * Gets the permissions for a room member based on their role.
+	 * Validates a secret against a room's moderator and speaker secrets and returns the corresponding role.
+	 *
+	 * @param roomId - The unique identifier of the room to check
+	 * @param secret - The secret to validate against the room's moderator and speaker secrets
+	 * @returns A promise that resolves to the room member role (MODERATOR or SPEAKER) if the secret is valid
+	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
+	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
+	 */
+	protected async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
+		const room = await this.roomService.getMeetRoom(roomId);
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+
+		switch (secret) {
+			case moderatorSecret:
+				return MeetRoomMemberRole.MODERATOR;
+			case speakerSecret:
+				return MeetRoomMemberRole.SPEAKER;
+			default:
+				throw errorInvalidRoomSecret(room.roomId, secret);
+		}
+	}
+
+	/**
+	 * Gets all permissions set to true.
+	 */
+	protected getAllPermissions(): MeetRoomMemberPermissions {
+		return {
+			canRecord: true,
+			canRetrieveRecordings: true,
+			canDeleteRecordings: true,
+			canJoinMeeting: true,
+			canShareAccessLinks: true,
+			canMakeModerator: true,
+			canKickParticipants: true,
+			canEndMeeting: true,
+			canPublishVideo: true,
+			canPublishAudio: true,
+			canShareScreen: true,
+			canReadChat: true,
+			canWriteChat: true,
+			canChangeVirtualBackground: true
+		};
+	}
+
+	/**
+	 * Gets the LiveKit permissions for a room member based on their Meet permissions.
 	 *
 	 * @param roomId - The ID of the room
-	 * @param role - The role of the room member
-	 * @param addJoinPermission - Whether to include join permission (for meeting access)
-	 * @returns The permissions for the room member
+	 * @returns The LiveKit permissions for the room member
 	 */
-	async getRoomMemberPermissions(
+	protected async getLiveKitPermissions(
 		roomId: string,
-		role: MeetRoomMemberRole,
-		addJoinPermission = true
-	): Promise<MeetRoomMemberPermissions> {
-		const recordingPermissions = await this.getRecordingPermissions(roomId, role);
+		permissions: MeetRoomMemberPermissions
+	): Promise<LiveKitPermissions> {
+		const canPublishSources: TrackSource[] = [];
 
-		switch (role) {
-			case MeetRoomMemberRole.MODERATOR:
-				return this.generateModeratorPermissions(
-					roomId,
-					recordingPermissions.canRetrieveRecordings,
-					recordingPermissions.canDeleteRecordings,
-					addJoinPermission
-				);
-			case MeetRoomMemberRole.SPEAKER:
-				return this.generateSpeakerPermissions(
-					roomId,
-					recordingPermissions.canRetrieveRecordings,
-					recordingPermissions.canDeleteRecordings,
-					addJoinPermission
-				);
-		}
-	}
-
-	protected generateModeratorPermissions(
-		roomId: string,
-		canRetrieveRecordings: boolean,
-		canDeleteRecordings: boolean,
-		addJoinPermission: boolean
-	): MeetRoomMemberPermissions {
-		return {
-			livekit: {
-				roomJoin: addJoinPermission,
-				room: roomId,
-				canPublish: true,
-				canSubscribe: true,
-				canPublishData: true,
-				canUpdateOwnMetadata: true
-			},
-			meet: {
-				canRecord: true,
-				canRetrieveRecordings,
-				canDeleteRecordings,
-				canChat: true,
-				canChangeVirtualBackground: true
-			}
-		};
-	}
-
-	protected generateSpeakerPermissions(
-		roomId: string,
-		canRetrieveRecordings: boolean,
-		canDeleteRecordings: boolean,
-		addJoinPermission: boolean
-	): MeetRoomMemberPermissions {
-		return {
-			livekit: {
-				roomJoin: addJoinPermission,
-				room: roomId,
-				canPublish: true,
-				canSubscribe: true,
-				canPublishData: true,
-				canUpdateOwnMetadata: true
-			},
-			meet: {
-				canRecord: false,
-				canRetrieveRecordings,
-				canDeleteRecordings,
-				canChat: true,
-				canChangeVirtualBackground: true
-			}
-		};
-	}
-
-	protected async getRecordingPermissions(
-		roomId: string,
-		role: MeetRoomMemberRole
-	): Promise<{
-		canRetrieveRecordings: boolean;
-		canDeleteRecordings: boolean;
-	}> {
-		const room = await this.roomService.getMeetRoom(roomId);
-		const recordingAccess = room.config.recording.allowAccessTo;
-
-		if (!recordingAccess) {
-			// Default to no access if not configured
-			return {
-				canRetrieveRecordings: false,
-				canDeleteRecordings: false
-			};
+		if (permissions.canPublishAudio) {
+			canPublishSources.push(TrackSource.MICROPHONE);
 		}
 
-		// A room member can delete recordings if they are a moderator and the recording access is not set to admin
-		const canDeleteRecordings =
-			role === MeetRoomMemberRole.MODERATOR && recordingAccess !== MeetRecordingAccess.ADMIN;
+		if (permissions.canPublishVideo) {
+			canPublishSources.push(TrackSource.CAMERA);
+		}
 
-		/* A room member can retrieve recordings if
-			- they can delete recordings
-			- they are a speaker and the recording access includes speakers
-		*/
-		const canRetrieveRecordings =
-			canDeleteRecordings ||
-			(role === MeetRoomMemberRole.SPEAKER && recordingAccess === MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
+		if (permissions.canShareScreen) {
+			canPublishSources.push(TrackSource.SCREEN_SHARE);
+			canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
+		}
 
-		return {
-			canRetrieveRecordings,
-			canDeleteRecordings
+		const livekitPermissions: LiveKitPermissions = {
+			room: roomId,
+			roomJoin: true,
+			canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
+			canPublishSources,
+			canSubscribe: true,
+			canPublishData: true,
+			canUpdateOwnMetadata: true
 		};
+		return livekitPermissions;
 	}
 
 	/**
@@ -304,9 +531,9 @@ export class RoomMemberService {
 			const metadata: MeetRoomMemberTokenMetadata = this.parseRoomMemberTokenMetadata(participant.metadata);
 
 			// Update role and permissions in metadata
-			metadata.role = newRole;
-			const { meet } = await this.getRoomMemberPermissions(roomId, newRole);
-			metadata.permissions = meet;
+			metadata.baseRole = newRole;
+			metadata.customPermissions = undefined;
+			metadata.effectivePermissions = meetRoom.roles[newRole].permissions;
 
 			await this.livekitService.updateParticipantMetadata(roomId, participantIdentity, JSON.stringify(metadata));
 
