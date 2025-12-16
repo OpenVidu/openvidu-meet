@@ -32,7 +32,7 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const queryParams = req.query as unknown as MeetRoomFilters;
+	const queryParams = req.query as MeetRoomFilters;
 
 	logger.verbose('Getting all rooms');
 
@@ -177,5 +177,37 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 		return res.status(updated ? 200 : 202).json({ message, room });
 	} catch (error) {
 		handleError(res, error, `updating room status for room '${roomId}'`);
+	}
+};
+
+export const updateRoomRoles = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { roles } = req.body;
+	const { roomId } = req.params;
+
+	logger.verbose(`Updating roles permissions for room '${roomId}'`);
+
+	try {
+		await roomService.updateMeetRoomRoles(roomId, roles);
+		return res.status(200).json({ message: `Roles permissions for room '${roomId}' updated successfully` });
+	} catch (error) {
+		handleError(res, error, `updating roles permissions for room '${roomId}'`);
+	}
+};
+
+export const updateRoomAnonymous = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomService = container.get(RoomService);
+	const { anonymous } = req.body;
+	const { roomId } = req.params;
+
+	logger.verbose(`Updating anonymous access config for room '${roomId}'`);
+
+	try {
+		await roomService.updateMeetRoomAnonymous(roomId, anonymous);
+		return res.status(200).json({ message: `Anonymous access config for room '${roomId}' updated successfully` });
+	} catch (error) {
+		handleError(res, error, `updating anonymous access config for room '${roomId}'`);
 	}
 };

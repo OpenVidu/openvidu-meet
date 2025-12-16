@@ -61,12 +61,21 @@ export class MeetRoomHelper {
 	 * @param room - The MeetRoom object to convert.
 	 * @returns An MeetRoomOptions object containing the same properties as the input room.
 	 */
-	static toOpenViduOptions(room: MeetRoom): MeetRoomOptions {
+	static toRoomOptions(room: MeetRoom): MeetRoomOptions {
 		return {
 			roomName: room.roomName,
 			autoDeletionDate: room.autoDeletionDate,
 			autoDeletionPolicy: room.autoDeletionPolicy,
-			config: room.config
+			config: room.config,
+			roles: room.roles,
+			anonymous: {
+				moderator: {
+					enabled: room.anonymous.moderator.enabled
+				},
+				speaker: {
+					enabled: room.anonymous.speaker.enabled
+				}
+			}
 			// maxParticipants: room.maxParticipants
 		};
 	}
@@ -75,12 +84,12 @@ export class MeetRoomHelper {
 	 * Extracts speaker and moderator secrets from a MeetRoom object's URLs.
 	 *
 	 * This method parses the 'secret' query parameter from both speaker and moderator
-	 * room URLs associated with the meeting room.
+	 * anonymous access URLs associated with the meeting room.
 	 *
 	 * @param room - The MeetRoom object containing speakerUrl and moderatorUrl properties
 	 * @returns An object containing the extracted secrets with the following properties:
-	 *   - speakerSecret: The secret extracted from the speaker room URL
-	 *   - moderatorSecret: The secret extracted from the moderator room URL
+	 *   - speakerSecret: The secret extracted from the speaker anonymous access URL
+	 *   - moderatorSecret: The secret extracted from the moderator anonymous access URL
 	 */
 	static extractSecretsFromRoom(room: MeetRoom): { speakerSecret: string; moderatorSecret: string } {
 		const speakerUrl = room.anonymous.speaker.accessUrl;
