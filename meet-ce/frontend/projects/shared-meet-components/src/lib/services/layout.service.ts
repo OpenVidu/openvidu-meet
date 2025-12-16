@@ -7,8 +7,7 @@ import { MeetLayoutMode } from '../models';
 @Injectable({ providedIn: 'root' })
 export class MeetLayoutService extends LayoutService {
 	private readonly destroyRef = inject(DestroyRef);
-	private readonly DEFAULT_MAX_SPEAKERS = 4;
-
+	private readonly INITIAL_SPEAKERS_COUNT = 4;
 	readonly MIN_REMOTE_SPEAKERS = 1;
 	readonly MAX_REMOTE_SPEAKERS_LIMIT = 6;
 
@@ -41,7 +40,7 @@ export class MeetLayoutService extends LayoutService {
 	private readonly _layoutMode = signal<MeetLayoutMode>(MeetLayoutMode.MOSAIC);
 	readonly layoutMode = this._layoutMode.asReadonly();
 
-	private readonly _maxRemoteSpeakers = signal<number>(this.DEFAULT_MAX_SPEAKERS);
+	private readonly _maxRemoteSpeakers = signal<number>(this.INITIAL_SPEAKERS_COUNT);
 	readonly maxRemoteSpeakers = this._maxRemoteSpeakers.asReadonly();
 
 	readonly isSmartMosaicEnabled = computed(() => this._layoutMode() === MeetLayoutMode.SMART_MOSAIC);
@@ -80,6 +79,9 @@ export class MeetLayoutService extends LayoutService {
 	) {
 		super(loggerService, viewPortService);
 		this.log = this.loggerService.get('MeetLayoutService');
+
+		const isMobileOrTablet = this.viewPortService.isPhysicalMobile() || this.viewPortService.isPhysicalTablet();
+		if (isMobileOrTablet) this._maxRemoteSpeakers.set(2);
 
 		this.loadLayoutModeFromStorage();
 		this.loadMaxSpeakersFromStorage();
