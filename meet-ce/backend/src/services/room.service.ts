@@ -1,16 +1,18 @@
 import {
 	MeetingEndAction,
-	MeetRecordingAccess,
 	MeetRoom,
+	MeetRoomAnonymous,
+	MeetRoomAnonymousConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomMember,
-	MeetRoomMemberRole,
+	MeetRoomMemberPermissions,
 	MeetRoomOptions,
+	MeetRoomRoles,
+	MeetRoomRolesConfig,
 	MeetRoomStatus,
 	MeetUser,
 	MeetUserRole
@@ -30,6 +32,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
@@ -48,6 +51,7 @@ export class RoomService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingService) protected recordingService: RecordingService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
@@ -64,14 +68,73 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { roomName, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
+		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, anonymous } = roomOptions;
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
 		const roomId = `${roomIdPrefix}-${uid(15)}`;
 
+		const user = this.requestSessionService.getAuthenticatedUser();
+
+		if (!user) {
+			throw internalError('Cannot create room without an authenticated user');
+		}
+
+		const defaultModeratorPermissions: MeetRoomMemberPermissions = {
+			canRecord: true,
+			canRetrieveRecordings: true,
+			canDeleteRecordings: true,
+			canJoinMeeting: true,
+			canShareAccessLinks: true,
+			canMakeModerator: true,
+			canKickParticipants: true,
+			canEndMeeting: true,
+			canPublishVideo: true,
+			canPublishAudio: true,
+			canShareScreen: true,
+			canReadChat: true,
+			canWriteChat: true,
+			canChangeVirtualBackground: true
+		};
+		const defaultSpeakerPermissions: MeetRoomMemberPermissions = {
+			canRecord: false,
+			canRetrieveRecordings: true,
+			canDeleteRecordings: false,
+			canJoinMeeting: true,
+			canShareAccessLinks: false,
+			canMakeModerator: false,
+			canKickParticipants: false,
+			canEndMeeting: false,
+			canPublishVideo: true,
+			canPublishAudio: true,
+			canShareScreen: true,
+			canReadChat: true,
+			canWriteChat: true,
+			canChangeVirtualBackground: true
+		};
+
+		const roomRoles: MeetRoomRoles = {
+			moderator: {
+				permissions: { ...defaultModeratorPermissions, ...roles?.moderator?.permissions }
+			},
+			speaker: {
+				permissions: { ...defaultSpeakerPermissions, ...roles?.speaker?.permissions }
+			}
+		};
+
+		const anonymousConfig: MeetRoomAnonymous = {
+			moderator: {
+				enabled: anonymous?.moderator?.enabled ?? true,
+				accessUrl: `/room/${roomId}?secret=${secureUid(10)}`
+			},
+			speaker: {
+				enabled: anonymous?.speaker?.enabled ?? true,
+				accessUrl: `/room/${roomId}?secret=${secureUid(10)}`
+			}
+		};
+
 		const defaultConfig: MeetRoomConfig = {
-			recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+			recording: { enabled: true },
 			chat: { enabled: true },
 			virtualBackground: { enabled: true },
 			e2ee: { enabled: false }
@@ -89,13 +152,15 @@ export class RoomService {
 		const meetRoom: MeetRoom = {
 			roomId,
 			roomName: roomName!,
+			owner: user.userId,
 			creationDate: Date.now(),
 			// maxParticipants,
 			autoDeletionDate,
-			autoDeletionPolicy,
+			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
 			config: roomConfig,
-			moderatorUrl: `/room/${roomId}?secret=${secureUid(10)}`,
-			speakerUrl: `/room/${roomId}?secret=${secureUid(10)}`,
+			roles: roomRoles,
+			anonymous: anonymousConfig,
+			accessUrl: `/room/${roomId}`,
 			status: MeetRoomStatus.OPEN,
 			meetingEndAction: MeetingEndAction.NONE
 		};
@@ -122,7 +187,7 @@ export class RoomService {
 			name: roomId,
 			metadata: JSON.stringify({
 				createdBy: MEET_ENV.NAME_ID,
-				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
+				roomOptions: MeetRoomHelper.toRoomOptions(meetRoom)
 			}),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
 			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined
@@ -163,7 +228,7 @@ export class RoomService {
 
 		await this.roomRepository.update(room);
 		// Send signal to frontend
-		await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
+		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
 		return room;
 	}
 
@@ -193,18 +258,72 @@ export class RoomService {
 	}
 
 	/**
-	 * Checks if a meeting room with the specified name exists
+	 * Updates the roles permissions of a specific meeting room.
 	 *
-	 * @param roomName - The name of the meeting room to check
+	 * @param roomId - The unique identifier of the meeting room to update
+	 * @param roles - The new roles permissions
+	 * @returns A Promise that resolves to the updated MeetRoom object
+	 */
+	async updateMeetRoomRoles(roomId: string, roles: MeetRoomRolesConfig): Promise<MeetRoom> {
+		const room = await this.getMeetRoom(roomId);
+
+		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
+			throw errorRoomActiveMeeting(roomId);
+		}
+
+		if (roles.moderator) {
+			room.roles.moderator.permissions = {
+				...room.roles.moderator.permissions,
+				...roles.moderator.permissions
+			};
+		}
+
+		if (roles.speaker) {
+			room.roles.speaker.permissions = {
+				...room.roles.speaker.permissions,
+				...roles.speaker.permissions
+			};
+		}
+
+		await this.roomRepository.update(room);
+		return room;
+	}
+
+	/**
+	 * Updates the anonymous access configuration of a specific meeting room.
+	 *
+	 * @param roomId - The unique identifier of the meeting room to update
+	 * @param anonymous - The new anonymous access configuration
+	 * @returns A Promise that resolves to the updated MeetRoom object
+	 */
+	async updateMeetRoomAnonymous(roomId: string, anonymous: MeetRoomAnonymousConfig): Promise<MeetRoom> {
+		const room = await this.getMeetRoom(roomId);
+
+		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
+			throw errorRoomActiveMeeting(roomId);
+		}
+
+		if (anonymous.moderator) {
+			room.anonymous.moderator.enabled = anonymous.moderator.enabled;
+		}
+
+		if (anonymous.speaker) {
+			room.anonymous.speaker.enabled = anonymous.speaker.enabled;
+		}
+
+		await this.roomRepository.update(room);
+		return room;
+	}
+
+	/**
+	 * Checks if a meeting room with the specified ID exists
+	 *
+	 * @param roomId - The ID of the meeting room to check
 	 * @returns A Promise that resolves to true if the room exists, false otherwise
 	 */
-	async meetRoomExists(roomName: string): Promise<boolean> {
-		try {
-			await this.getMeetRoom(roomName);
-			return true;
-		} catch (err) {
-			return false;
-		}
+	async meetRoomExists(roomId: string): Promise<boolean> {
+		const meetRoom = await this.roomRepository.findByRoomId(roomId);
+		return !!meetRoom;
 	}
 
 	/**
@@ -235,11 +354,11 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		// Remove moderatorUrl if the room member is a speaker to prevent access to moderator links
-		const role = this.requestSessionService.getRoomMemberBaseRole();
+		// Remove anonymous access info if the authenticated room member does not have permission to share access links
+		const permissions = await this.getAuthenticatedRoomMemberPermissions(roomId);
 
-		if (role === MeetRoomMemberRole.SPEAKER) {
-			delete (room as Partial<MeetRoom>).moderatorUrl;
+		if (room.anonymous && !permissions.canShareAccessLinks) {
+			delete (room as Partial<MeetRoom>).anonymous;
 		}
 
 		return room;
@@ -638,24 +757,78 @@ export class RoomService {
 		return { successful, failed };
 	}
 
+	/**
+	 * Checks if a user is the owner of a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param userId - The ID of the user
+	 * @returns A promise that resolves to true if the user is the owner, false otherwise
+	 */
 	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
-		// TODO: Implement
-		return false;
+		const room = await this.roomRepository.findByRoomId(roomId);
+		return room?.owner === userId;
 	}
 
-	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
-		// TODO: Implement
-		return false;
-	}
-
-	async getRoomMember(roomId: string, userId: string): Promise<MeetRoomMember | null> {
-		// TODO: Implement
-		return null;
-	}
-
+	/**
+	 * Validates if the provided secret matches one of the room's secrets for anonymous access.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param secret - The secret to validate
+	 * @returns A promise that resolves to true if the secret is valid, false otherwise
+	 */
 	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		// TODO: Implement
-		return false;
+		const room = await this.roomRepository.findByRoomId(roomId);
+
+		if (!room) return false;
+
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		return secret === moderatorSecret || secret === speakerSecret;
+	}
+
+	/**
+	 * Retrieves the permissions of the authenticated room member.
+	 *
+	 * - If there's no authenticated user nor room member token, returns all permissions.
+	 *   This is necessary for methods invoked by system processes (e.g., room auto-deletion).
+	 * - If the user is admin or the room owner, they have all permissions.
+	 * - If the user is a registered room member, their permissions are obtained from their room member info.
+	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
+	 *
+	 * @param roomId The ID of the room.
+	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
+	 */
+	async getAuthenticatedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
+		const user = this.requestSessionService.getAuthenticatedUser();
+		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
+
+		if (!user && !memberRoomId) {
+			return this.getAllPermissions();
+		}
+
+		// Registered user
+		if (user) {
+			const isAdmin = user.role === MeetUserRole.ADMIN;
+			const isOwner = await this.isRoomOwner(roomId, user.userId);
+
+			// Admins and owners have all permissions
+			if (isAdmin || isOwner) {
+				return this.getAllPermissions();
+			}
+
+			const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, user.userId);
+
+			if (member) {
+				return member.effectivePermissions;
+			}
+		}
+
+		// Room member token
+		if (memberRoomId === roomId) {
+			const permissions = this.requestSessionService.getRoomMemberPermissions();
+			return permissions!;
+		}
+
+		return this.getNoPermissions();
 	}
 
 	/**
@@ -666,41 +839,52 @@ export class RoomService {
 	 * @returns A promise that resolves to true if the user can access the room, false otherwise.
 	 */
 	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
-		switch (user.role) {
-			case MeetUserRole.ADMIN:
-				// Admins can access all rooms
-				return true;
-
-			case MeetUserRole.USER: {
-				// Users can access rooms they own or are members of
-				const isOwner = await this.isRoomOwner(roomId, user.userId);
-
-				if (isOwner) {
-					return true;
-				}
-
-				const isMember = await this.isRoomMember(roomId, user.userId);
-
-				if (isMember) {
-					return true;
-				}
-
-				return false;
-			}
-
-			case MeetUserRole.ROOM_MEMBER: {
-				// Room members can only access rooms they are members of
-				const isMember = await this.isRoomMember(roomId, user.userId);
-
-				if (isMember) {
-					return true;
-				}
-
-				return false;
-			}
-
-			default:
-				return false;
+		if (user.role === MeetUserRole.ADMIN) {
+			// Admins can access all rooms
+			return true;
 		}
+
+		// Users can access rooms they own or are members of
+		const isOwner = await this.isRoomOwner(roomId, user.userId);
+		const isMember = await this.isRoomMember(roomId, user.userId);
+		return isOwner || isMember;
+	}
+
+	private getAllPermissions(): MeetRoomMemberPermissions {
+		return {
+			canRecord: true,
+			canRetrieveRecordings: true,
+			canDeleteRecordings: true,
+			canJoinMeeting: true,
+			canShareAccessLinks: true,
+			canMakeModerator: true,
+			canKickParticipants: true,
+			canEndMeeting: true,
+			canPublishVideo: true,
+			canPublishAudio: true,
+			canShareScreen: true,
+			canReadChat: true,
+			canWriteChat: true,
+			canChangeVirtualBackground: true
+		};
+	}
+
+	private getNoPermissions(): MeetRoomMemberPermissions {
+		return {
+			canRecord: false,
+			canRetrieveRecordings: false,
+			canDeleteRecordings: false,
+			canJoinMeeting: false,
+			canShareAccessLinks: false,
+			canMakeModerator: false,
+			canKickParticipants: false,
+			canEndMeeting: false,
+			canPublishVideo: false,
+			canPublishAudio: false,
+			canShareScreen: false,
+			canReadChat: false,
+			canWriteChat: false,
+			canChangeVirtualBackground: false
+		};
 	}
 }
