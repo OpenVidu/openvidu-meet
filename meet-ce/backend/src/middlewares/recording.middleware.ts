@@ -12,6 +12,7 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import {
 	allowAnonymous,
@@ -120,6 +121,7 @@ export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermiss
 
 		const requestSessionService = container.get(RequestSessionService);
 		const roomService = container.get(RoomService);
+		const roomMemberService = container.get(RoomMemberService);
 
 		const memberRoomId = requestSessionService.getRoomIdFromMember();
 		const user = requestSessionService.getAuthenticatedUser();
@@ -164,7 +166,7 @@ export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermiss
 			}
 
 			// Check if member with permissions
-			const member = await roomService.getRoomMember(roomId, user.userId);
+			const member = await roomMemberService.getRoomMember(roomId, user.userId);
 
 			if (member && member.effectivePermissions[permission]) {
 				return next();

@@ -48,18 +48,18 @@ export interface MeetRoomMemberTokenOptions {
      */
     secret?: string;
     /**
-     * Whether to include meeting join permissions in the token.
+     * Whether the token is intended for joining a meeting.
      * If true, participantName must be provided.
      */
-    grantJoinMeetingPermission?: boolean;
+    joinMeeting?: boolean;
     /**
      * The name of the participant when joining the meeting.
-     * Required if grantJoinMeetingPermission is true and this is a new token (not a refresh).
+     * Required if joinMeeting is true.
      */
     participantName?: string;
     /**
      * The identity of the participant in the meeting.
-     * Required when refreshing an existing token with meeting permissions.
+     * Required when refreshing an existing token used to join a meeting.
      */
     participantIdentity?: string;
 }
@@ -71,6 +71,7 @@ export interface MeetRoomMemberTokenOptions {
 export interface MeetRoomMemberTokenMetadata {
     livekitUrl: string;
     roomId: string;
+    memberId?: string;
     baseRole: MeetRoomMemberRole;
     customPermissions?: Partial<MeetRoomMemberPermissions>;
     effectivePermissions: MeetRoomMemberPermissions;

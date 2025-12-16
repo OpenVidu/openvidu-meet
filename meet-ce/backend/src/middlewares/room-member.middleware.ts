@@ -2,10 +2,64 @@ import { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions, MeetUserRole } f
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { errorInsufficientPermissions, rejectRequestFromMeetError } from '../models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorInvalidRoomSecret,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import { allowAnonymous, AuthValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
+
+/**
+ * Middleware to authorize access to specific room member information.
+ *
+ * - If the user is a registered user, checks if they have management permissions (admin or owner).
+ * - If the user is authenticated via room member token, checks if they are accessing their own info.
+ */
+export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
+	const roomId = req.params.roomId as string;
+	const memberId = req.params.memberId as string;
+
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getAuthenticatedUser();
+	const memberRoomId = requestSessionService.getRoomIdFromMember();
+	const currentMemberId = requestSessionService.getRoomMemberId();
+
+	const forbiddenError = errorInsufficientPermissions();
+
+	// Scenario 1: Registered User
+	if (user) {
+		// Allow if user is admin
+		if (user.role === MeetUserRole.ADMIN) {
+			return next();
+		}
+
+		// Allow if user is room owner
+		const roomService = container.get(RoomService);
+		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+
+		if (isOwner) {
+			return next();
+		}
+	}
+
+	// Scenario 2: Room Member Token
+	if (memberRoomId) {
+		// Check if the token belongs to the requested room
+		if (memberRoomId !== roomId) {
+			return rejectRequestFromMeetError(res, forbiddenError);
+		}
+
+		// Check if the token belongs to the requested member (self access)
+		if (currentMemberId === memberId) {
+			return next();
+		}
+	}
+
+	return rejectRequestFromMeetError(res, forbiddenError);
+};
 
 /**
  * Middleware to configure authentication for generating room member tokens.
@@ -38,6 +92,8 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 
 	const requestSessionService = container.get(RequestSessionService);
 	const roomService = container.get(RoomService);
+	const roomMemberService = container.get(RoomMemberService);
+	
 	const user = requestSessionService.getAuthenticatedUser();
 
 	const forbiddenError = errorInsufficientPermissions();
@@ -52,13 +108,14 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 		}
 
 		// Check if secret is a memberId
-		const isMember = await roomService.isRoomMember(roomId, secret);
+		const isMember = await roomMemberService.isRoomMember(roomId, secret);
 
 		if (isMember) {
 			return next();
 		}
 
-		return rejectRequestFromMeetError(res, forbiddenError);
+		const error = errorInvalidRoomSecret(roomId, secret);
+		return rejectRequestFromMeetError(res, error);
 	}
 
 	// Scenario 2: No secret provided (Authenticated User)

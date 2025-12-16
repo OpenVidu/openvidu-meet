@@ -104,6 +104,13 @@ export class RequestSessionService {
 	}
 
 	/**
+	 * Gets the room member ID from the current request context.
+	 */
+	getRoomMemberId(): string | undefined {
+		return this.getContext()?.roomMember?.memberId;
+	}
+
+	/**
 	 * Gets the room member base role from the current request context.
 	 */
 	getRoomMemberBaseRole(): MeetRoomMemberRole | undefined {
