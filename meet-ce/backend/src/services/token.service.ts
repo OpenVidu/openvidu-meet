@@ -1,9 +1,4 @@
-import {
-	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
-	MeetUser
-} from '@openvidu-meet/typings';
+import { LiveKitPermissions, MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
@@ -17,10 +12,11 @@ export class TokenService {
 
 	async generateAccessToken(user: MeetUser): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
-			identity: user.username,
+			identity: user.userId,
+			name: user.name,
 			ttl: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
-				roles: user.roles
+				role: user.role
 			})
 		};
 		return await this.generateJwtToken(tokenOptions);
@@ -28,34 +24,29 @@ export class TokenService {
 
 	async generateRefreshToken(user: MeetUser): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
-			identity: user.username,
+			identity: user.userId,
+			name: user.name,
 			ttl: INTERNAL_CONFIG.REFRESH_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
-				roles: user.roles
+				role: user.role
 			})
 		};
 		return await this.generateJwtToken(tokenOptions);
 	}
 
 	async generateRoomMemberToken(
-		role: MeetRoomMemberRole,
-		permissions: MeetRoomMemberPermissions,
+		tokenMetadata: MeetRoomMemberTokenMetadata,
+		livekitPermissions?: LiveKitPermissions,
 		participantName?: string,
 		participantIdentity?: string
 	): Promise<string> {
-		const metadata: MeetRoomMemberTokenMetadata = {
-			livekitUrl: MEET_ENV.LIVEKIT_URL,
-			role,
-			permissions: permissions.meet
-		};
-
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantIdentity,
 			name: participantName,
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
-			metadata: JSON.stringify(metadata)
+			metadata: JSON.stringify(tokenMetadata)
 		};
-		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
+		return await this.generateJwtToken(tokenOptions, livekitPermissions);
 	}
 
 	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {

@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRoom } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRoom, MeetRoomMember } from '@openvidu-meet/typings';
 
 export class UtilsHelper {
 	// Prevent instantiation of this utility class.
@@ -7,11 +7,14 @@ export class UtilsHelper {
 	/**
 	 * Filters the fields of an object based on a list of keys.
 	 *
-	 * @param obj - The object to filter (it can be a MeetRoom or MeetRecordingInfo).
+	 * @param obj - The object to filter (it can be a MeetRoom, MeetRecordingInfo, or MeetRoomMember).
 	 * @param fields - A comma-separated string or an array of field names to keep.
 	 * @returns A new object containing only the specified keys.
 	 */
-	static filterObjectFields<T extends MeetRecordingInfo | MeetRoom>(obj: T, fields?: string | string[]): Partial<T> {
+	static filterObjectFields<T extends MeetRoom | MeetRecordingInfo | MeetRoomMember>(
+		obj: T,
+		fields?: string | string[]
+	): Partial<T> {
 		// If no fields are provided, return the full object.
 		if (!fields || (typeof fields === 'string' && fields.trim().length === 0)) {
 			return obj;

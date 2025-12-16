@@ -239,6 +239,10 @@ export const errorInvalidRoomMemberRole = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', 'No valid room member role provided', 400);
 };
 
+export const errorRoomMemberNotFound = (roomId: string, memberId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Member Error', `Room member '${memberId}' not found in room '${roomId}'`, 404);
+};
+
 // Participant errors
 
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
