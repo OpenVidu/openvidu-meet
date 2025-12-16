@@ -1,3 +1,4 @@
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { errorInsufficientPermissions, rejectRequestFromMeetError } from '../models/error.model.js';
@@ -43,5 +44,36 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 	}
 
 	// If there is no token and no user, reject the request
+	return rejectRequestFromMeetError(res, forbiddenError);
+};
+
+/**
+ * Middleware to authorize management of a room.
+ *
+ * - Checks if the authenticated user is an admin or the owner of the room.
+ */
+export const authorizeRoomManagement = async (req: Request, res: Response, next: NextFunction) => {
+	const roomId = req.params.roomId as string;
+
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getAuthenticatedUser();
+
+	const forbiddenError = errorInsufficientPermissions();
+
+	if (!user) {
+		return rejectRequestFromMeetError(res, forbiddenError);
+	}
+
+	if (user.role === MeetUserRole.ADMIN) {
+		return next();
+	}
+
+	const roomService = container.get(RoomService);
+	const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+
+	if (isOwner) {
+		return next();
+	}
+
 	return rejectRequestFromMeetError(res, forbiddenError);
 };

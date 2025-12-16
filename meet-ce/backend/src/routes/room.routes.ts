@@ -28,10 +28,11 @@ import {
 	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
 import {
+	authorizeRoomMemberAccess,
 	authorizeRoomMemberTokenGeneration,
 	setupRoomMemberTokenAuthentication
 } from '../middlewares/room-member.middleware.js';
-import { authorizeRoomAccess } from '../middlewares/room.middleware.js';
+import { authorizeRoomAccess, authorizeRoomManagement } from '../middlewares/room.middleware.js';
 
 export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -72,6 +73,7 @@ roomRouter.delete(
 	'/:roomId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	validateDeleteRoomReq,
+	authorizeRoomManagement,
 	roomCtrl.deleteRoom
 );
 
@@ -90,6 +92,7 @@ roomRouter.put(
 	'/:roomId/config',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateUpdateRoomConfigReq,
 	roomCtrl.updateRoomConfig
 );
@@ -98,6 +101,7 @@ roomRouter.put(
 	'/:roomId/status',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateUpdateRoomStatusReq,
 	roomCtrl.updateRoomStatus
 );
@@ -105,6 +109,7 @@ roomRouter.put(
 	'/:roomId/roles',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateUpdateRoomRolesReq,
 	roomCtrl.updateRoomRoles
 );
@@ -112,6 +117,7 @@ roomRouter.put(
 	'/:roomId/anonymous',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateUpdateRoomAnonymousReq,
 	roomCtrl.updateRoomAnonymous
 );
@@ -121,13 +127,15 @@ roomRouter.post(
 	'/:roomId/members',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateCreateRoomMemberReq,
 	roomMemberCtrl.createRoomMember
 );
 roomRouter.get(
 	'/:roomId/members',
-	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateGetRoomMembersReq,
 	roomMemberCtrl.getRoomMembers
 );
@@ -135,24 +143,23 @@ roomRouter.delete(
 	'/:roomId/members',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateBulkDeleteRoomMembersReq,
 	roomMemberCtrl.bulkDeleteRoomMembers
 );
 
 roomRouter.get(
 	'/:roomId/members/:memberId',
-	withAuth(
-		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
-	),
+	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER), roomMemberTokenValidator),
 	withValidRoomId,
-	roomMemberCtrl.getRoomMemberTokenInfo
+	authorizeRoomMemberAccess,
+	roomMemberCtrl.getRoomMember
 );
 roomRouter.put(
 	'/:roomId/members/:memberId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	validateUpdateRoomMemberReq,
 	roomMemberCtrl.updateRoomMember
 );
@@ -160,6 +167,7 @@ roomRouter.delete(
 	'/:roomId/members/:memberId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	authorizeRoomManagement,
 	roomMemberCtrl.deleteRoomMember
 );
 
