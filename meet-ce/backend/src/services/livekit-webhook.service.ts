@@ -18,6 +18,7 @@ import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -33,6 +34,7 @@ export class LivekitWebhookService {
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -260,7 +262,8 @@ export class LivekitWebhookService {
 					this.logger.info(
 						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
-					await this.recordingService.deleteAllRoomRecordings(roomId); // This operation must complete before deleting the room
+					tasks.push(this.recordingService.deleteAllRoomRecordings(roomId));
+					tasks.push(this.roomMemberRepository.deleteAllByRoomId(roomId));
 					tasks.push(this.roomRepository.deleteByRoomId(roomId));
 					break;
 				case MeetingEndAction.CLOSE:

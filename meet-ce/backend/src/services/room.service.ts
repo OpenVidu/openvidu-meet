@@ -420,10 +420,10 @@ export class RoomService {
 	/**
 	 * Executes the deletion strategy for a room based on its state and the provided deletion policies.
 	 * - Validates the deletion policies (throws if not allowed).
-	 * - If no active meeting and no recordings, deletes the room directly.
+	 * - If no active meeting and no recordings, deletes the room directly (and its members).
 	 * - If there is an active meeting, sets the meeting end action (DELETE or CLOSE) and optionally ends the meeting.
 	 * - If there are recordings and policy is CLOSE, closes the room.
-	 * - If force delete is requested, deletes all recordings and the room.
+	 * - If force delete is requested, deletes the room and all recordings and members.
 	 */
 	protected async executeDeletionStrategy(
 		roomId: string,
@@ -437,7 +437,10 @@ export class RoomService {
 
 		// No meeting, no recordings: simple deletion
 		if (!hasActiveMeeting && !hasRecordings) {
-			await this.roomRepository.deleteByRoomId(roomId);
+			await Promise.all([
+				this.roomMemberRepository.deleteAllByRoomId(roomId),
+				this.roomRepository.deleteByRoomId(roomId)
+			]);
 			return undefined;
 		}
 
@@ -467,9 +470,10 @@ export class RoomService {
 			return room;
 		}
 
-		// Force delete: delete room and all recordings
+		// Force delete: delete room and all recordings and members
 		await Promise.all([
 			this.recordingService.deleteAllRoomRecordings(roomId),
+			this.roomMemberRepository.deleteAllByRoomId(roomId),
 			this.roomRepository.deleteByRoomId(roomId)
 		]);
 		return undefined;
