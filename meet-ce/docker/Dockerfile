@@ -1,7 +1,7 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:22.21.0 AS builder
+FROM node:22.21.1 AS builder
 
 # Define pnpm version as build argument with default value
 ARG PNPM_VERSION=10.18.3
@@ -75,7 +75,7 @@ RUN rm -rf node_modules \
 # ====================================================
 # Stage 2: production
 # ====================================================
-FROM node:22.21.0-alpine3.21 AS production
+FROM node:22.21.1-alpine3.23 AS production
 
 # Define pnpm version as build argument with default value
 ARG PNPM_VERSION=10.18.3
