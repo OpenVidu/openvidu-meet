@@ -1,5 +1,15 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges } from '@angular/core';
+import {
+	Component,
+	computed,
+	EventEmitter,
+	Input,
+	OnChanges,
+	OnInit,
+	Output,
+	signal,
+	SimpleChanges
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,8 +25,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { formatBytes, formatDurationToHMS } from '../../utils';
 import { ViewportService } from 'openvidu-components-angular';
+import { formatBytes, formatDurationToHMS } from '../../utils';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
@@ -134,9 +144,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 
 	constructor(private viewportService: ViewportService) {}
 
-	get isMobileView() {
-		return this.viewportService.isMobileView;
-	}
+	protected isMobileView = computed(() => this.viewportService.isMobileView());
 
 	ngOnInit() {
 		this.setupFilters();
