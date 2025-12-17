@@ -20,6 +20,6 @@
 		"dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
 	},
 	"devDependencies": {
-		"typescript": "5.9.2"
+		"typescript": "5.9.3"
 	}
 }

@@ -41,10 +41,11 @@
 		"concurrently": "9.2.1",
 		"identity-obj-proxy": "3.0.0",
 		"tree-kill": "1.2.2",
-		"wait-on": "9.0.1"
+		"wait-on": "9.0.3"
 	},
 	"pnpm": {
 		"overrides": {
-			"livekit-cient": "2.16.0"		}
+			"livekit-client": "2.16.1"
+		}
 	}
 }
