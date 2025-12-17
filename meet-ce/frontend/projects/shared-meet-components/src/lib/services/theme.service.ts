@@ -1,4 +1,4 @@
-import { computed, Inject, Injectable, signal, DOCUMENT } from '@angular/core';
+import { computed, DOCUMENT, Inject, Injectable, signal } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from 'openvidu-components-angular';
 
 export type Theme = 'light' | 'dark';
@@ -11,7 +11,7 @@ export class ThemeService {
 	private readonly _currentTheme = signal<Theme>('light');
 
 	// Computed signals for reactivity
-	public readonly currentTheme = computed(() => this._currentTheme());
+	public readonly currentTheme = computed<Theme>(() => this._currentTheme());
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
 	public readonly isLight = computed(() => this._currentTheme() === 'light');
 
