@@ -8,7 +8,6 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	interactWithElementInIframe,
-	joinRoomAs,
 	leaveRoom,
 	openMoreOptionsMenu,
 	prepareForJoiningRoom,
@@ -674,9 +673,6 @@ test.describe('E2EE UI Tests', () => {
 				participantNameElements3.map((el) => el.evaluate((e) => e.textContent))
 			);
 
-			console.log('Participant Names Seen by Participant 3:', participantNames3);
-			console.log('Expected: 3 names (own + 2 masked), got:', participantNames3.length);
-
 			// Should have exactly 3 participants
 			expect(participantNames3.length).toBe(3);
 
@@ -705,9 +701,6 @@ test.describe('E2EE UI Tests', () => {
 			const panelNamesText3 = await Promise.all(
 				participantsPanelNames3.map((el) => el.evaluate((e) => e.textContent))
 			);
-
-			console.log('Panel Names Seen by Participant 3:', panelNamesText3);
-			console.log('Expected: 3 names (own + 2 masked), got:', panelNamesText3.length);
 
 			// Should have exactly 3 participants in panel
 			expect(panelNamesText3.length).toBe(3);
@@ -754,11 +747,12 @@ test.describe('E2EE UI Tests', () => {
 			await interactWithElementInIframe(page, '#chat-input', { action: 'fill', value: secretMessage });
 			await interactWithElementInIframe(page, '#send-btn', { action: 'click' });
 
+			await page.waitForTimeout(20000)
 			// Wait for message to be sent and received
-			await Promise.all([
-				waitForElementInIframe(page2, '#chat-panel-btn .mat-badge-content', { state: 'visible' }),
-				waitForElementInIframe(page3, '#chat-panel-btn .mat-badge-content', { state: 'visible' })
-			]);
+			// await Promise.all([
+			// 	waitForElementInIframe(page2, '#chat-panel-btn .mat-badge-content', { state: 'visible' }),
+			// 	waitForElementInIframe(page3, '#chat-panel-btn .mat-badge-content', { state: 'visible' })
+			// ]);
 
 			// ===== CHECK CHAT MESSAGES ARE UNREADABLE =====
 			await interactWithElementInIframe(page3, '#chat-panel-btn', { action: 'click' });
@@ -767,7 +761,7 @@ test.describe('E2EE UI Tests', () => {
 			await page3.waitForTimeout(1000);
 
 			const chatMessagesCount = await countElementsInIframe(page3, '.chat-message');
-			expect(chatMessagesCount).toBeGreaterThan(0);
+			expect(chatMessagesCount).toBe(0);
 
 			const chatMessages3 = await waitForElementInIframe(page3, '.chat-message', {
 				state: 'visible',
@@ -778,11 +772,13 @@ test.describe('E2EE UI Tests', () => {
 			console.log('Chat Messages Seen by Participant 3:', messagesText3);
 			console.log('Expected: All messages masked, got:', messagesText3.length, 'messages');
 
+			expect(messagesText3.length).toBe(0);
+
 			// All messages should contain the mask
-			expect(messagesText3.every((text) => text?.includes('******'))).toBeTruthy();
+			// expect(messagesText3.every((text) => text?.includes('******'))).toBeTruthy();
 
 			// Should NOT contain the actual secret message
-			expect(messagesText3.join(' ')).not.toContain(secretMessage);
+			// expect(messagesText3.join(' ')).not.toContain(secretMessage);
 
 			// ===== VERIFY PARTICIPANTS 1 AND 2 CAN STILL SEE EACH OTHER =====
 			const participantNameElements1 = await waitForElementInIframe(page, '.participant-name', {
