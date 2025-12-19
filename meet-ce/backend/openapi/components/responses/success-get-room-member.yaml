@@ -1,5 +1,0 @@
-description: Success response for retrieving a room member info
-content:
-    application/json:
-        schema:
-            $ref: '../schemas/meet-room-member.yaml'

@@ -9,64 +9,29 @@ content:
                 value:
                     roomId: 'room-123'
                     roomName: 'room'
-                    owner: 'admin'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     autoDeletionPolicy:
                         withMeeting: when_meeting_ends
                         withRecordings: close
                     config:
-                        recording:
-                            enabled: false
                         chat:
                             enabled: true
+                        recording:
+                            enabled: false
                         virtualBackground:
                             enabled: true
                         e2ee:
                             enabled: false
-                    roles:
-                        moderator:
-                            permissions:
-                                canRecord: true
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: true
-                                canJoinMeeting: true
-                                canShareAccessLinks: true
-                                canMakeModerator: true
-                                canKickParticipants: true
-                                canEndMeeting: true
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true
-                        speaker:
-                            permissions:
-                                canRecord: false
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: false
-                                canJoinMeeting: true
-                                canShareAccessLinks: false
-                                canMakeModerator: false
-                                canKickParticipants: false
-                                canEndMeeting: false
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true
-                    anonymous:
-                        moderator:
-                            enabled: true
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                        speaker:
-                            enabled: true
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                    accessUrl: 'http://localhost:6080/room/room-123'
+                    moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                    speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
                     status: open
                     meetingEndAction: none
+
+            fields=roomId:
+                summary: Response with only the roomId
+                value:
+                    roomId: 'room-123'
 
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config
@@ -76,22 +41,17 @@ content:
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     config:
-                        recording:
-                            enabled: false
                         chat:
                             enabled: true
+                        recording:
+                            enabled: false
                         virtualBackground:
                             enabled: true
                         e2ee:
                             enabled: false
 
-            fields=anonymous:
-                summary: Response containing only anonymous access configuration
+            fields=moderatorUrl,speakerUrl:
+                summary: Response containing only moderator and speaker URLs
                 value:
-                    anonymous:
-                        moderator:
-                            enabled: true
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                        speaker:
-                            enabled: true
-                            accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                    moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                    speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'

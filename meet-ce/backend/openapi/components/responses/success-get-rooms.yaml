@@ -18,122 +18,42 @@ content:
                     rooms:
                         - roomId: 'room-123'
                           roomName: 'room'
-                          owner: 'admin'
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
                           config:
-                              recording:
-                                  enabled: false
                               chat:
                                   enabled: true
+                              recording:
+                                  enabled: false
                               virtualBackground:
                                   enabled: true
                               e2ee:
                                   enabled: false
-                          roles:
-                              moderator:
-                                  permissions:
-                                      canRecord: true
-                                      canRetrieveRecordings: true
-                                      canDeleteRecordings: true
-                                      canJoinMeeting: true
-                                      canShareAccessLinks: true
-                                      canMakeModerator: true
-                                      canKickParticipants: true
-                                      canEndMeeting: true
-                                      canPublishVideo: true
-                                      canPublishAudio: true
-                                      canShareScreen: true
-                                      canReadChat: true
-                                      canWriteChat: true
-                                      canChangeVirtualBackground: true
-                              speaker:
-                                  permissions:
-                                      canRecord: false
-                                      canRetrieveRecordings: true
-                                      canDeleteRecordings: false
-                                      canJoinMeeting: true
-                                      canShareAccessLinks: false
-                                      canMakeModerator: false
-                                      canKickParticipants: false
-                                      canEndMeeting: false
-                                      canPublishVideo: true
-                                      canPublishAudio: true
-                                      canShareScreen: true
-                                      canReadChat: true
-                                      canWriteChat: true
-                                      canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
-                              speaker:
-                                  enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                          accessUrl: 'http://localhost:6080/room/room-123'
+                          moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                          speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
                           roomName: 'room'
-                          owner: 'alice_smith'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
                           config:
-                              recording:
-                                  enabled: true
                               chat:
                                   enabled: false
+                              recording:
+                                  enabled: true
                               virtualBackground:
                                   enabled: false
                               e2ee:
                                   enabled: false
-                          roles:
-                              moderator:
-                                  permissions:
-                                      canRecord: true
-                                      canRetrieveRecordings: true
-                                      canDeleteRecordings: false
-                                      canJoinMeeting: true
-                                      canShareAccessLinks: true
-                                      canMakeModerator: false
-                                      canKickParticipants: true
-                                      canEndMeeting: true
-                                      canPublishVideo: true
-                                      canPublishAudio: true
-                                      canShareScreen: true
-                                      canReadChat: true
-                                      canWriteChat: true
-                                      canChangeVirtualBackground: true
-                              speaker:
-                                  permissions:
-                                      canRecord: true
-                                      canRetrieveRecordings: true
-                                      canDeleteRecordings: false
-                                      canJoinMeeting: true
-                                      canShareAccessLinks: false
-                                      canMakeModerator: false
-                                      canKickParticipants: false
-                                      canEndMeeting: false
-                                      canPublishVideo: true
-                                      canPublishAudio: true
-                                      canShareScreen: false
-                                      canReadChat: true
-                                      canWriteChat: true
-                                      canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: false
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=789012'
-                              speaker:
-                                  enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
-                          accessUrl: 'http://localhost:6080/room/room-456'
+                          moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                          speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
                           status: open
                           meetingEndAction: none
                     pagination:
@@ -158,10 +78,10 @@ content:
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           config:
-                              recording:
-                                  enabled: false
                               chat:
                                   enabled: true
+                              recording:
+                                  enabled: false
                               virtualBackground:
                                   enabled: true
                               e2ee:
@@ -171,10 +91,10 @@ content:
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           config:
-                              recording:
-                                  enabled: true
                               chat:
                                   enabled: false
+                              recording:
+                                  enabled: true
                               virtualBackground:
                                   enabled: false
                               e2ee:
@@ -182,4 +102,16 @@ content:
                     pagination:
                         isTruncated: true
                         nextPageToken: 'abc123'
+                        maxItems: 10
+
+            fields=moderatorUrl,speakerUrl:
+                summary: Response containing only moderator and speaker URLs
+                value:
+                    rooms:
+                        - moderatorUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                          speakerUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                        - moderatorUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                          speakerUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                    pagination:
+                        isTruncated: false
                         maxItems: 10
