@@ -1,5 +1,6 @@
 import {
 	MeetingEndAction,
+	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
@@ -66,6 +67,22 @@ export class RoomService {
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
 		const roomId = `${roomIdPrefix}-${uid(15)}`;
+
+		const defaultConfig: MeetRoomConfig = {
+			recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+			chat: { enabled: true },
+			virtualBackground: { enabled: true },
+			e2ee: { enabled: false }
+		};
+		const roomConfig = {
+			...defaultConfig,
+			...config
+		};
+
+		// Disable recording if E2EE is enabled
+		if (roomConfig.e2ee.enabled && roomConfig.recording.enabled) {
+			roomConfig.recording.enabled = false;
+		}
 
 		const meetRoom: MeetRoom = {
 			roomId,
@@ -136,6 +153,11 @@ export class RoomService {
 			...room.config,
 			...config
 		};
+
+		// Disable recording if E2EE is enabled
+		if (room.config.e2ee.enabled && room.config.recording.enabled) {
+			room.config.recording.enabled = false;
+		}
 
 		await this.roomRepository.update(room);
 		// Send signal to frontend
