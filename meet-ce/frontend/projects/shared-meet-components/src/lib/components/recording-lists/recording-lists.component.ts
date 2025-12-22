@@ -84,7 +84,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() recordings: MeetRecordingInfo[] = [];
 	@Input() canDeleteRecordings = false;
 	@Input() showSearchBox = true;
-	@Input() showFilters = false;
+	@Input() showFilters = true;
 	@Input() showSelection = true;
 	@Input() showRoomInfo = true;
 	@Input() showLoadMore = false;
@@ -160,11 +160,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 			this.updateSelectionState();
 
 			// Show message when no recordings match filters
-			if (this.recordings.length === 0 && this.hasActiveFilters()) {
-				this.showEmptyFilterMessage = true;
-			} else {
-				this.showEmptyFilterMessage = false;
-			}
+			this.showEmptyFilterMessage = this.recordings.length === 0 && this.hasActiveFilters();
 		}
 	}
 

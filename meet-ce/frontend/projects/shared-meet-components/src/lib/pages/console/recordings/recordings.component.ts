@@ -2,16 +2,16 @@ import { Component, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { RecordingListsComponent, RecordingTableAction } from '../../../components';
 import { NotificationService, RecordingService } from '../../../services';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 
 @Component({
-    selector: 'ov-recordings',
-    imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
-    templateUrl: './recordings.component.html',
-    styleUrl: './recordings.component.scss'
+	selector: 'ov-recordings',
+	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
+	templateUrl: './recordings.component.html',
+	styleUrl: './recordings.component.scss'
 })
 export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
@@ -101,21 +101,21 @@ export class RecordingsComponent implements OnInit {
 				recordingFilters.roomName = filters.nameFilter;
 			}
 
-			const response = await this.recordingService.listRecordings(recordingFilters);
-
 			// Filter by status on client side if needed
-			let filteredRecordings = response.recordings;
 			if (filters?.statusFilter) {
-				filteredRecordings = response.recordings.filter((r) => r.status === filters.statusFilter);
+				recordingFilters.status = filters.statusFilter as MeetRecordingStatus;
 			}
+
+			const response = await this.recordingService.listRecordings(recordingFilters);
+			let recordings = response.recordings;
 
 			if (!refresh) {
 				// Update recordings list
 				const currentRecordings = this.recordings();
-				this.recordings.set([...currentRecordings, ...filteredRecordings]);
+				this.recordings.set([...currentRecordings, ...recordings]);
 			} else {
 				// Replace recordings list
-				this.recordings.set(filteredRecordings);
+				this.recordings.set(recordings);
 			}
 
 			// Update pagination

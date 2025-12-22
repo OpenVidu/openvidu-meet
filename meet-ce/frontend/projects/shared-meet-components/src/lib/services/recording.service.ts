@@ -85,20 +85,29 @@ export class RecordingService {
 
 		if (filters) {
 			const params = new URLSearchParams();
-			if (filters.maxItems) {
-				params.append('maxItems', filters.maxItems.toString());
-			}
-			if (filters.nextPageToken) {
-				params.append('nextPageToken', filters.nextPageToken);
-			}
 			if (filters.roomId) {
 				params.append('roomId', filters.roomId);
 			}
 			if (filters.roomName) {
 				params.append('roomName', filters.roomName);
 			}
+			if (filters.status) {
+				params.append('status', filters.status);
+			}
 			if (filters.fields) {
 				params.append('fields', filters.fields);
+			}
+			if (filters.maxItems) {
+				params.append('maxItems', filters.maxItems.toString());
+			}
+			if (filters.nextPageToken) {
+				params.append('nextPageToken', filters.nextPageToken);
+			}
+			if (filters.sortField) {
+				params.append('sortField', filters.sortField);
+			}
+			if (filters.sortOrder) {
+				params.append('sortOrder', filters.sortOrder);
 			}
 
 			path += `?${params.toString()}`;
