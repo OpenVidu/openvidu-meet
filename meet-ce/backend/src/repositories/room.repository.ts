@@ -1,4 +1,4 @@
-import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -76,32 +76,38 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 *
 	 * @param options - Query options
 	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
+	 * @param options.status - Optional room status to filter by
+	 * @param options.fields - Comma-separated list of fields to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
-	 * @param options.sortField - Field to sort by (default: 'createdAt')
+	 * @param options.sortField - Field to sort by (default: 'creationDate')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
-	async find(
-		options: {
-			roomName?: string;
-			maxItems?: number;
-			nextPageToken?: string;
-			sortField?: string;
-			sortOrder?: 'asc' | 'desc';
-		} = {}
-	): Promise<{
+	async find(options: MeetRoomFilters = {}): Promise<{
 		rooms: TRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { roomName, maxItems = 100, nextPageToken, sortField = 'creationDate', sortOrder = 'desc' } = options;
+		const {
+			roomName,
+			status,
+			fields,
+			maxItems = 100,
+			nextPageToken,
+			sortField = 'creationDate',
+			sortOrder = 'desc'
+		} = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};
 
 		if (roomName) {
 			filter.roomName = new RegExp(roomName, 'i');
+		}
+
+		if (status) {
+			filter.status = status;
 		}
 
 		// Use base repository's pagination method

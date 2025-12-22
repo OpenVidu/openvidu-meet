@@ -216,9 +216,7 @@ export class RoomService {
 		nextPageToken?: string;
 	}> {
 		const { fields, ...findOptions } = filters;
-		const response = await this.roomRepository.find({
-			...findOptions
-		});
+		const response = await this.roomRepository.find(findOptions);
 
 		if (fields) {
 			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));

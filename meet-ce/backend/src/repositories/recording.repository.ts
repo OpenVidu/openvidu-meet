@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
 import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
@@ -90,27 +90,29 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param options - Query options
 	 * @param options.roomId - Optional room ID for exact match filtering
 	 * @param options.roomName - Optional room name for regex match filtering (case-insensitive)
+	 * @param options.status - Optional recording status to filter by
+	 * @param options.fields - Comma-separated list of fields to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
 	 * @param options.sortField - Field to sort by (default: 'startDate')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing recordings array, pagination info, and optional next page token
 	 */
-	async find(
-		options: {
-			roomId?: string;
-			roomName?: string;
-			maxItems?: number;
-			nextPageToken?: string;
-			sortField?: string;
-			sortOrder?: 'asc' | 'desc';
-		} = {}
-	): Promise<{
+	async find(options: MeetRecordingFilters = {}): Promise<{
 		recordings: TRecording[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { roomId, roomName, maxItems = 10, nextPageToken, sortField = 'startDate', sortOrder = 'desc' } = options;
+		const {
+			roomId,
+			roomName,
+			status,
+			fields,
+			maxItems = 10,
+			nextPageToken,
+			sortField = 'startDate',
+			sortOrder = 'desc'
+		} = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};
@@ -124,6 +126,10 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 		} else if (roomName) {
 			// Only roomName defined: regex match (case-insensitive)
 			filter.roomName = new RegExp(roomName, 'i');
+		}
+
+		if (status) {
+			filter.status = status;
 		}
 
 		// Use base repository's pagination method

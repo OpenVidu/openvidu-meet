@@ -213,32 +213,18 @@ export class RecordingService {
 		nextPageToken?: string;
 	}> {
 		try {
-			const { maxItems, nextPageToken, roomId, roomName, fields } = filters;
-
-			const response = await this.recordingRepository.find({
-				roomId,
-				roomName,
-				maxItems,
-				nextPageToken
-			});
+			const { fields, ...findOptions } = filters;
+			const response = await this.recordingRepository.find(findOptions);
 
 			// Apply field filtering if specified
-			let recordings = response.recordings;
-
 			if (fields) {
-				recordings = recordings.map((rec: MeetRecordingInfo) =>
+				response.recordings = response.recordings.map((rec: MeetRecordingInfo) =>
 					UtilsHelper.filterObjectFields(rec, fields)
 				) as MeetRecordingInfo[];
 			}
 
-			this.logger.info(`Retrieved ${recordings.length} recordings.`);
-
-			// Return the paginated list of recordings
-			return {
-				recordings,
-				isTruncated: response.isTruncated,
-				nextPageToken: response.nextPageToken
-			};
+			this.logger.info(`Retrieved ${response.recordings.length} recordings.`);
+			return response;
 		} catch (error) {
 			this.logger.error(`Error getting recordings: ${error}`);
 			throw error;
