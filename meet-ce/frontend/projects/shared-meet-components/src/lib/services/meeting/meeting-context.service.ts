@@ -1,5 +1,5 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+
 import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
 import { CustomParticipantModel } from '../../models';
@@ -20,7 +20,7 @@ export class MeetingContextService {
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly destroyRef = inject(DestroyRef);
-	private isSubscribed = false;
+
 	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _roomId = signal<string | undefined>(undefined);
@@ -113,6 +113,11 @@ export class MeetingContextService {
 	 */
 	readonly isMobile = computed(() => this.viewportService.isMobile());
 
+	constructor() {
+		// Setup automatic synchronization with ParticipantService signals
+		this.setupParticipantSynchronization();
+	}
+
 	/**
 	 * Sets the room ID in context
 	 * @param roomId The room ID
@@ -137,28 +142,24 @@ export class MeetingContextService {
 	 */
 	setLkRoom(room: Room) {
 		this._lkRoom.set(room);
-		// Subscribe to participants only once when lkRoom is set
-		if (!this.isSubscribed) {
-			this.subscribeToParticipants();
-			this.isSubscribed = true;
-		}
 	}
 
 	/**
-	 * Subscribes to local and remote participants from the OpenVidu Components ParticipantService
+	 * Synchronizes participants from OpenVidu Components ParticipantService using signals.
+	 * Effects are automatically cleaned up when the service is destroyed.
 	 */
-	protected subscribeToParticipants(): void {
-		this.ovParticipantService.localParticipant$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((participant) => {
-				this._localParticipant.set(participant as CustomParticipantModel);
-			});
+	private setupParticipantSynchronization(): void {
+		// Sync local participant signal
+		effect(() => {
+			const localParticipant = this.ovParticipantService.localParticipantSignal();
+			this._localParticipant.set(localParticipant as CustomParticipantModel);
+		}, { allowSignalWrites: true });
 
-		this.ovParticipantService.remoteParticipants$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((participants) => {
-				this._remoteParticipants.set(participants as CustomParticipantModel[]);
-			});
+		// Sync remote participants signal
+		effect(() => {
+			const remoteParticipants = this.ovParticipantService.remoteParticipantsSignal();
+			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
+		}, { allowSignalWrites: true });
 	}
 
 	/**
@@ -239,6 +240,5 @@ export class MeetingContextService {
 		this._participantsVersion.set(0);
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
-		this.isSubscribed = false;
 	}
 }
