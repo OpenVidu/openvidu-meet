@@ -15,9 +15,6 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { DeleteRoomDialogComponent, RoomsListsComponent, RoomTableAction } from '../../../components';
-import { DeleteRoomDialogOptions } from '../../../models';
-import { NavigationService, NotificationService, RoomService } from '../../../services';
 import {
 	MeetRoom,
 	MeetRoomDeletionErrorCode,
@@ -28,28 +25,31 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
+import { DeleteRoomDialogComponent, RoomsListsComponent, RoomTableAction } from '../../../components';
+import { DeleteRoomDialogOptions } from '../../../models';
+import { NavigationService, NotificationService, RoomService } from '../../../services';
 
 @Component({
-    selector: 'ov-rooms',
-    imports: [
-        MatListModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        RouterModule,
-        MatTableModule,
-        MatMenuModule,
-        MatTooltipModule,
-        MatDividerModule,
-        MatSortModule,
-        MatPaginatorModule,
-        MatProgressSpinnerModule,
-        MatFormFieldModule,
-        MatInputModule,
-        RoomsListsComponent
-    ],
-    templateUrl: './rooms.component.html',
-    styleUrl: './rooms.component.scss'
+	selector: 'ov-rooms',
+	imports: [
+		MatListModule,
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		RouterModule,
+		MatTableModule,
+		MatMenuModule,
+		MatTooltipModule,
+		MatDividerModule,
+		MatSortModule,
+		MatPaginatorModule,
+		MatProgressSpinnerModule,
+		MatFormFieldModule,
+		MatInputModule,
+		RoomsListsComponent
+	],
+	templateUrl: './rooms.component.html',
+	styleUrl: './rooms.component.scss'
 })
 export class RoomsComponent implements OnInit {
 	// @ViewChild(MatSort) sort!: MatSort;
@@ -149,17 +149,21 @@ export class RoomsComponent implements OnInit {
 				roomFilters.roomName = filters.nameFilter;
 			}
 
-			const response = await this.roomService.listRooms(roomFilters);
+			// Apply status filter if provided
+			if (filters?.statusFilter) {
+				roomFilters.status = filters.statusFilter as MeetRoomStatus;
+			}
 
-			// TODO: Filter rooms by status
+			const response = await this.roomService.listRooms(roomFilters);
+			const rooms = response.rooms;
 
 			if (!refresh) {
 				// Update rooms list
 				const currentRooms = this.rooms();
-				this.rooms.set([...currentRooms, ...response.rooms]);
+				this.rooms.set([...currentRooms, ...rooms]);
 			} else {
 				// Replace rooms list
-				this.rooms.set(response.rooms);
+				this.rooms.set(rooms);
 			}
 
 			// TODO: Sort rooms

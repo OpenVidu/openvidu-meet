@@ -93,7 +93,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	// Input properties
 	@Input() rooms: MeetRoom[] = [];
 	@Input() showSearchBox = true;
-	@Input() showFilters = false;
+	@Input() showFilters = true;
 	@Input() showSelection = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
@@ -128,9 +128,9 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	// Status options
 	statusOptions = [
 		{ value: '', label: 'All statuses' },
-		{ value: 'open', label: 'Open' },
-		{ value: 'active_meeting', label: 'Active Meeting' },
-		{ value: 'closed', label: 'Closed' }
+		{ value: MeetRoomStatus.OPEN, label: 'Open' },
+		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'Active Meeting' },
+		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
 	];
 
 	constructor() {}
@@ -149,11 +149,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 			this.updateSelectionState();
 
 			// Show message when no rooms match filters
-			if (this.rooms.length === 0 && this.hasActiveFilters()) {
-				this.showEmptyFilterMessage = true;
-			} else {
-				this.showEmptyFilterMessage = false;
-			}
+			this.showEmptyFilterMessage = this.rooms.length === 0 && this.hasActiveFilters();
 		}
 	}
 

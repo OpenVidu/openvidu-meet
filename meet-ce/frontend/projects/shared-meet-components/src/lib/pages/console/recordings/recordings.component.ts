@@ -95,13 +95,13 @@ export class RecordingsComponent implements OnInit {
 				nextPageToken: !refresh ? this.nextPageToken : undefined
 			};
 
-			// Apply room ID filter if provided
+			// Apply room filter if provided
 			if (filters?.nameFilter) {
 				recordingFilters.roomId = filters.nameFilter;
 				recordingFilters.roomName = filters.nameFilter;
 			}
 
-			// Filter by status on client side if needed
+			// Apply status filter if provided
 			if (filters?.statusFilter) {
 				recordingFilters.status = filters.statusFilter as MeetRecordingStatus;
 			}

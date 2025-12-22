@@ -67,17 +67,26 @@ export class RoomService {
 
 		if (filters) {
 			const queryParams = new URLSearchParams();
+			if (filters.roomName) {
+				queryParams.set('roomName', filters.roomName);
+			}
+			if (filters.status) {
+				queryParams.set('status', filters.status);
+			}
+			if (filters.fields) {
+				queryParams.set('fields', filters.fields);
+			}
 			if (filters.maxItems) {
 				queryParams.set('maxItems', filters.maxItems.toString());
 			}
 			if (filters.nextPageToken) {
 				queryParams.set('nextPageToken', filters.nextPageToken);
 			}
-			if (filters.roomName) {
-				queryParams.set('roomName', filters.roomName);
+			if (filters.sortField) {
+				queryParams.set('sortField', filters.sortField);
 			}
-			if (filters.fields) {
-				queryParams.set('fields', filters.fields);
+			if (filters.sortOrder) {
+				queryParams.set('sortOrder', filters.sortOrder);
 			}
 
 			path += `?${queryParams.toString()}`;
