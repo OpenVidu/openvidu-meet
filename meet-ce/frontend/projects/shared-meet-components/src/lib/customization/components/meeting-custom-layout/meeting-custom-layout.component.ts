@@ -1,12 +1,18 @@
+import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ILogger, LoggerService, OpenViduComponentsUiModule, ParticipantModel } from 'openvidu-components-angular';
-import { ShareMeetingLinkComponent } from '../../../components';
+import { HiddenParticipantsIndicatorComponent, ShareMeetingLinkComponent } from '../../../components';
 import { CustomParticipantModel } from '../../../models';
 import { MeetingContextService, MeetingService, MeetLayoutService } from '../../../services';
 
 @Component({
 	selector: 'ov-meeting-custom-layout',
-	imports: [OpenViduComponentsUiModule, ShareMeetingLinkComponent],
+	imports: [
+		CommonModule,
+		OpenViduComponentsUiModule,
+		ShareMeetingLinkComponent,
+		HiddenParticipantsIndicatorComponent
+	],
 	templateUrl: './meeting-custom-layout.component.html',
 	styleUrl: './meeting-custom-layout.component.scss'
 })
@@ -38,6 +44,26 @@ export class MeetingCustomLayoutComponent {
 	private _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
 	readonly visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
 
+	protected readonly hiddenParticipantsCount = computed(() => {
+		const total = this.remoteParticipants().length;
+		const visible = this.visibleRemoteParticipants().length;
+		return Math.max(0, total - visible);
+	});
+
+	/**
+	 * Indicates whether to show the hidden participants indicator in the top bar
+	 * when in smart mosaic mode.
+	 */
+	protected readonly showTopBarHiddenParticipantsIndicator = computed(() => {
+		const localParticipant = this.meetingContextService.localParticipant()!;
+		const hasPinnedParticipant =
+			localParticipant.isPinned || this.remoteParticipants().some((p) => (p as CustomParticipantModel).isPinned);
+		const visibleParticipantsCount = this.visibleRemoteParticipants().length;
+		const showTopBar =
+			!hasPinnedParticipant && visibleParticipantsCount < this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
+		return showTopBar;
+	});
+
 	constructor() {
 		this.setupSpeakerTrackingEffect();
 		this.setupParticipantCleanupEffect();
@@ -54,7 +80,7 @@ export class MeetingCustomLayoutComponent {
 		this.meetingService.copyMeetingSpeakerLink(room);
 	}
 
-	private isSmartMosaicActive(): boolean {
+	protected isSmartMosaicActive(): boolean {
 		return this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled();
 	}
 

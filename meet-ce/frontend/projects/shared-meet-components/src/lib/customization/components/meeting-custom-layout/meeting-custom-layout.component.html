@@ -14,6 +14,15 @@
 					></ov-share-meeting-link>
 				</div>
 			</ng-container>
+		} @else if (isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
+			<ng-container *ovLayoutAdditionalElements>
+				<div [ngClass]="{ 'OV_top-bar': showTopBarHiddenParticipantsIndicator() }">
+					<ov-hidden-participants-indicator
+						[count]="hiddenParticipantsCount()"
+						[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"
+					/>
+				</div>
+			</ng-container>
 		}
 
 		<ng-template #stream let-track>
