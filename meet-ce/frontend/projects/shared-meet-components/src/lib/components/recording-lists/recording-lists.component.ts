@@ -21,6 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -31,6 +32,13 @@ import { formatBytes, formatDurationToHMS } from '../../utils';
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
 	action: 'play' | 'download' | 'shareLink' | 'delete' | 'bulkDelete' | 'bulkDownload';
+}
+
+export interface RecordingTableFilter {
+	nameFilter: string;
+	statusFilter: MeetRecordingStatus | '';
+	sortField: 'roomName' | 'startDate' | 'duration' | 'size';
+	sortOrder: 'asc' | 'desc';
 }
 
 /**
@@ -74,6 +82,7 @@ export interface RecordingTableAction {
 		MatToolbarModule,
 		MatBadgeModule,
 		MatDividerModule,
+		MatSortModule,
 		DatePipe
 	],
 	templateUrl: './recording-lists.component.html',
@@ -89,16 +98,25 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() showRoomInfo = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
-	@Input() initialFilters: { nameFilter: string; statusFilter: string } = { nameFilter: '', statusFilter: '' };
+	@Input() initialFilters: RecordingTableFilter = {
+		nameFilter: '',
+		statusFilter: '',
+		sortField: 'startDate',
+		sortOrder: 'desc'
+	};
 	// Output events
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
-	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() loadMore = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() refresh = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
+	@Output() loadMore = new EventEmitter<RecordingTableFilter>();
+	@Output() refresh = new EventEmitter<RecordingTableFilter>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
 	statusFilterControl = new FormControl('');
+
+	// Sort state
+	currentSortField: 'roomName' | 'startDate' | 'duration' | 'size' = 'startDate';
+	currentSortOrder: 'asc' | 'desc' = 'desc';
 
 	showEmptyFilterMessage = false; // Show message when no recordings match filters
 
@@ -170,6 +188,8 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		// Set up initial filter values
 		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
 		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
+		this.currentSortField = this.initialFilters.sortField;
+		this.currentSortOrder = this.initialFilters.sortOrder;
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.subscribe((value) => {
@@ -282,14 +302,30 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 
 	loadMoreRecordings() {
 		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = this.statusFilterControl.value || '';
-		this.loadMore.emit({ nameFilter, statusFilter });
+		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
+		this.loadMore.emit({
+			nameFilter,
+			statusFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
 	}
 
 	refreshRecordings() {
 		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = this.statusFilterControl.value || '';
-		this.refresh.emit({ nameFilter, statusFilter });
+		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
+		this.refresh.emit({
+			nameFilter,
+			statusFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
+	}
+
+	onSortChange(sortState: Sort) {
+		this.currentSortField = sortState.active as 'roomName' | 'startDate' | 'duration' | 'size';
+		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.emitFilterChange();
 	}
 
 	// ===== FILTER METHODS =====
@@ -301,7 +337,9 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	private emitFilterChange() {
 		this.filterChange.emit({
 			nameFilter: this.nameFilterControl.value || '',
-			statusFilter: this.statusFilterControl.value || ''
+			statusFilter: (this.statusFilterControl.value || '') as MeetRecordingStatus | '',
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
 		});
 	}
 

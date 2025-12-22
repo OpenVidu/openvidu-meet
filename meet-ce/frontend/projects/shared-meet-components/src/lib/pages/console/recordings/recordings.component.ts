@@ -4,7 +4,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { RecordingListsComponent, RecordingTableAction } from '../../../components';
+import { RecordingListsComponent, RecordingTableAction, RecordingTableFilter } from '../../../components';
 import { NotificationService, RecordingService } from '../../../services';
 
 @Component({
@@ -21,9 +21,11 @@ export class RecordingsComponent implements OnInit {
 	showInitialLoader = false;
 	isLoading = false;
 
-	initialFilters = {
+	initialFilters: RecordingTableFilter = {
 		nameFilter: '',
-		statusFilter: ''
+		statusFilter: '',
+		sortField: 'startDate',
+		sortOrder: 'desc'
 	};
 
 	// Pagination
@@ -47,14 +49,11 @@ export class RecordingsComponent implements OnInit {
 			this.showInitialLoader = true;
 		}, 200);
 
+		// If a specific room ID is provided, filter recordings by that room
 		if (roomId) {
-			// If a specific room ID is provided, filter recordings by that room
 			this.initialFilters.nameFilter = roomId;
-			await this.loadRecordings(this.initialFilters);
-		} else {
-			// Load all recordings if no room ID is specified
-			await this.loadRecordings();
 		}
+		await this.loadRecordings(this.initialFilters);
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
@@ -84,7 +83,7 @@ export class RecordingsComponent implements OnInit {
 		}
 	}
 
-	private async loadRecordings(filters?: { nameFilter: string; statusFilter: string }, refresh = false) {
+	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
 		}, 200);
@@ -92,17 +91,19 @@ export class RecordingsComponent implements OnInit {
 		try {
 			const recordingFilters: MeetRecordingFilters = {
 				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined
+				nextPageToken: !refresh ? this.nextPageToken : undefined,
+				sortField: filters.sortField,
+				sortOrder: filters.sortOrder
 			};
 
 			// Apply room filter if provided
-			if (filters?.nameFilter) {
+			if (filters.nameFilter) {
 				recordingFilters.roomId = filters.nameFilter;
 				recordingFilters.roomName = filters.nameFilter;
 			}
 
 			// Apply status filter if provided
-			if (filters?.statusFilter) {
+			if (filters.statusFilter) {
 				recordingFilters.status = filters.statusFilter as MeetRecordingStatus;
 			}
 
@@ -130,12 +131,12 @@ export class RecordingsComponent implements OnInit {
 		}
 	}
 
-	async loadMoreRecordings(filters?: { nameFilter: string; statusFilter: string }) {
+	async loadMoreRecordings(filters: RecordingTableFilter) {
 		if (!this.hasMoreRecordings || this.isLoading) return;
 		await this.loadRecordings(filters);
 	}
 
-	async refreshRecordings(filters?: { nameFilter: string; statusFilter: string }) {
+	async refreshRecordings(filters: RecordingTableFilter) {
 		await this.loadRecordings(filters, true);
 	}
 
