@@ -25,7 +25,7 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { DeleteRoomDialogComponent, RoomsListsComponent, RoomTableAction } from '../../../components';
+import { DeleteRoomDialogComponent, RoomsListsComponent, RoomTableAction, RoomTableFilter } from '../../../components';
 import { DeleteRoomDialogOptions } from '../../../models';
 import { NavigationService, NotificationService, RoomService } from '../../../services';
 
@@ -52,11 +52,6 @@ import { NavigationService, NotificationService, RoomService } from '../../../se
 	styleUrl: './rooms.component.scss'
 })
 export class RoomsComponent implements OnInit {
-	// @ViewChild(MatSort) sort!: MatSort;
-	// @ViewChild(MatPaginator) paginator!: MatPaginator;
-	// dataSource = new MatTableDataSource<MeetRoom>([]);
-	// searchTerm = '';
-
 	rooms = signal<MeetRoom[]>([]);
 
 	// Loading state
@@ -64,9 +59,11 @@ export class RoomsComponent implements OnInit {
 	showInitialLoader = false;
 	isLoading = false;
 
-	initialFilters = {
+	initialFilters: RoomTableFilter = {
 		nameFilter: '',
-		statusFilter: ''
+		statusFilter: '',
+		sortField: 'creationDate',
+		sortOrder: 'desc'
 	};
 
 	// Pagination
@@ -91,7 +88,7 @@ export class RoomsComponent implements OnInit {
 			this.showInitialLoader = true;
 		}, 200);
 
-		await this.loadRooms();
+		await this.loadRooms(this.initialFilters);
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
@@ -133,7 +130,7 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private async loadRooms(filters?: { nameFilter: string; statusFilter: string }, refresh = false) {
+	private async loadRooms(filters: RoomTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
 		}, 200);
@@ -141,16 +138,18 @@ export class RoomsComponent implements OnInit {
 		try {
 			const roomFilters: MeetRoomFilters = {
 				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined
+				nextPageToken: !refresh ? this.nextPageToken : undefined,
+				sortField: filters.sortField,
+				sortOrder: filters.sortOrder
 			};
 
 			// Apply room ID filter if provided
-			if (filters?.nameFilter) {
+			if (filters.nameFilter) {
 				roomFilters.roomName = filters.nameFilter;
 			}
 
 			// Apply status filter if provided
-			if (filters?.statusFilter) {
+			if (filters.statusFilter) {
 				roomFilters.status = filters.statusFilter as MeetRoomStatus;
 			}
 
@@ -166,10 +165,6 @@ export class RoomsComponent implements OnInit {
 				this.rooms.set(rooms);
 			}
 
-			// TODO: Sort rooms
-			// this.dataSource.data = this.rooms();
-			// this.setupTableFeatures();
-
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRooms = response.pagination.isTruncated;
@@ -182,63 +177,12 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	// private setupTableFeatures() {
-	// 	// Setup sorting
-	// 	this.dataSource.sort = this.sort;
-	// 	this.dataSource.paginator = this.paginator;
-
-	// 	// Custom sorting for dates and status
-	// 	this.dataSource.sortingDataAccessor = (item, property) => {
-	// 		switch (property) {
-	// 			case 'creationDate':
-	// 				return new Date(item.creationDate);
-	// 			case 'status':
-	// 				return item.markedForDeletion ? 1 : 0; // Active rooms first
-	// 			case 'autoDeletion':
-	// 				return item.autoDeletionDate ? new Date(item.autoDeletionDate) : new Date('9999-12-31'); // Rooms without auto-deletion go last
-	// 			case 'roomName':
-	// 				return item.roomId;
-	// 			default:
-	// 				return (item as any)[property];
-	// 		}
-	// 	};
-
-	// 	// Custom filtering
-	// 	this.dataSource.filterPredicate = (data: MeetRoom, filter: string) => {
-	// 		const searchStr = filter.toLowerCase();
-	// 		return (
-	// 			data.roomId.toLowerCase().includes(searchStr) ||
-	// 			data.roomName.toLowerCase().includes(searchStr) ||
-	// 			false ||
-	// 			(data.markedForDeletion ? 'inactive' : 'active').includes(searchStr)
-	// 		);
-	// 	};
-	// }
-
-	// applyFilter(event: Event) {
-	// 	const filterValue = (event.target as HTMLInputElement).value;
-	// 	this.searchTerm = filterValue;
-	// 	this.dataSource.filter = filterValue.trim().toLowerCase();
-
-	// 	if (this.dataSource.paginator) {
-	// 		this.dataSource.paginator.firstPage();
-	// 	}
-	// }
-
-	// clearFilter() {
-	// 	this.searchTerm = '';
-	// 	this.dataSource.filter = '';
-	// 	if (this.dataSource.paginator) {
-	// 		this.dataSource.paginator.firstPage();
-	// 	}
-	// }
-
-	async loadMoreRooms(filters?: { nameFilter: string; statusFilter: string }) {
+	async loadMoreRooms(filters: RoomTableFilter) {
 		if (!this.hasMoreRooms || this.isLoading) return;
 		await this.loadRooms(filters);
 	}
 
-	async refreshRooms(filters?: { nameFilter: string; statusFilter: string }) {
+	async refreshRooms(filters: RoomTableFilter) {
 		await this.loadRooms(filters, true);
 	}
 

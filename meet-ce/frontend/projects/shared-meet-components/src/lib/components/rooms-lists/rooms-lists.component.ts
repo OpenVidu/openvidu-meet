@@ -21,6 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -39,6 +40,13 @@ export interface RoomTableAction {
 		| 'close'
 		| 'delete'
 		| 'bulkDelete';
+}
+
+export interface RoomTableFilter {
+	nameFilter: string;
+	statusFilter: MeetRoomStatus | '';
+	sortField: 'roomName' | 'creationDate' | 'autoDeletionDate';
+	sortOrder: 'asc' | 'desc';
 }
 
 /**
@@ -84,6 +92,7 @@ export interface RoomTableAction {
 		MatToolbarModule,
 		MatBadgeModule,
 		MatDividerModule,
+		MatSortModule,
 		DatePipe
 	],
 	templateUrl: './rooms-lists.component.html',
@@ -97,7 +106,12 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	@Input() showSelection = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
-	@Input() initialFilters: { nameFilter: string; statusFilter: string } = { nameFilter: '', statusFilter: '' };
+	@Input() initialFilters: RoomTableFilter = {
+		nameFilter: '',
+		statusFilter: '',
+		sortField: 'creationDate',
+		sortOrder: 'desc'
+	};
 
 	// Host binding for styling when rooms are selected
 	@HostBinding('class.has-selections')
@@ -107,13 +121,17 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 
 	// Output events
 	@Output() roomAction = new EventEmitter<RoomTableAction>();
-	@Output() filterChange = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() loadMore = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
-	@Output() refresh = new EventEmitter<{ nameFilter: string; statusFilter: string }>();
+	@Output() filterChange = new EventEmitter<RoomTableFilter>();
+	@Output() loadMore = new EventEmitter<RoomTableFilter>();
+	@Output() refresh = new EventEmitter<RoomTableFilter>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
 	statusFilterControl = new FormControl('');
+
+	// Sort state
+	currentSortField: 'roomName' | 'creationDate' | 'autoDeletionDate' = 'creationDate';
+	currentSortOrder: 'asc' | 'desc' = 'desc';
 
 	showEmptyFilterMessage = false; // Show message when no rooms match filters
 
@@ -159,6 +177,8 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		// Set up initial filter values
 		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
 		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
+		this.currentSortField = this.initialFilters.sortField;
+		this.currentSortOrder = this.initialFilters.sortOrder;
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.subscribe((value) => {
@@ -281,14 +301,30 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 
 	loadMoreRooms() {
 		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = this.statusFilterControl.value || '';
-		this.loadMore.emit({ nameFilter, statusFilter });
+		const statusFilter = (this.statusFilterControl.value || '') as MeetRoomStatus | '';
+		this.loadMore.emit({
+			nameFilter,
+			statusFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
 	}
 
 	refreshRooms() {
 		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = this.statusFilterControl.value || '';
-		this.refresh.emit({ nameFilter, statusFilter });
+		const statusFilter = (this.statusFilterControl.value || '') as MeetRoomStatus | '';
+		this.refresh.emit({
+			nameFilter,
+			statusFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
+	}
+
+	onSortChange(sortState: Sort) {
+		this.currentSortField = sortState.active as 'roomName' | 'creationDate' | 'autoDeletionDate';
+		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.emitFilterChange();
 	}
 
 	// ===== FILTER METHODS =====
@@ -300,7 +336,9 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	private emitFilterChange() {
 		this.filterChange.emit({
 			nameFilter: this.nameFilterControl.value || '',
-			statusFilter: this.statusFilterControl.value || ''
+			statusFilter: (this.statusFilterControl.value || '') as MeetRoomStatus | '',
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
 		});
 	}
 

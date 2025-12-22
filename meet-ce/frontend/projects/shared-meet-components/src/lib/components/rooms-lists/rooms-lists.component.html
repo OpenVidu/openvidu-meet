@@ -139,7 +139,17 @@
 	} @else {
 		<!-- Rooms Table -->
 		<div class="table-container" id="table-container">
-			<table mat-table [dataSource]="rooms" class="rooms-table" id="rooms-table">
+			<table
+				mat-table
+				[dataSource]="rooms"
+				matSort
+				matSortDisableClear
+				[matSortActive]="currentSortField"
+				[matSortDirection]="currentSortOrder"
+				(matSortChange)="onSortChange($event)"
+				class="rooms-table"
+				id="rooms-table"
+			>
 				<!-- Selection Column -->
 				@if (showSelection) {
 					<ng-container matColumnDef="select">
@@ -169,7 +179,15 @@
 
 				<!-- Room Name Column -->
 				<ng-container matColumnDef="roomName">
-					<th mat-header-cell *matHeaderCellDef class="room-header" id="room-name-header">Room Name</th>
+					<th
+						mat-header-cell
+						*matHeaderCellDef
+						mat-sort-header="roomName"
+						class="room-header"
+						id="room-name-header"
+					>
+						Room Name
+					</th>
 					<td mat-cell *matCellDef="let room" class="room-cell" id="room-name-cell-{{ room.roomId }}">
 						<div class="room-info" id="room-info-{{ room.roomId }}">
 							<span class="room-name" id="room-name-{{ room.roomId }}">{{ room.roomName }}</span>
@@ -218,7 +236,9 @@
 
 				<!-- Creation Date Column -->
 				<ng-container matColumnDef="creationDate">
-					<th mat-header-cell *matHeaderCellDef id="creation-date-header">Created</th>
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="creationDate" id="creation-date-header">
+						Created
+					</th>
 					<td mat-cell *matCellDef="let room" id="creation-date-cell-{{ room.roomId }}">
 						@if (room.creationDate) {
 							<div class="date-info" id="date-info-{{ room.roomId }}">
@@ -237,7 +257,9 @@
 
 				<!-- Auto Deletion Column -->
 				<ng-container matColumnDef="autoDeletion">
-					<th mat-header-cell *matHeaderCellDef id="auto-deletion-header">Auto Deletion</th>
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="autoDeletionDate" id="auto-deletion-header">
+						Auto Deletion
+					</th>
 					<td mat-cell *matCellDef="let room" id="auto-deletion-cell-{{ room.roomId }}">
 						<div class="auto-deletion-content" id="auto-deletion-content-{{ room.roomId }}">
 							<div class="auto-deletion-info" id="auto-deletion-info-{{ room.roomId }}">
