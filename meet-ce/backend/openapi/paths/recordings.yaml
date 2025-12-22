@@ -6,6 +6,8 @@
             Retrieves a paginated list of all recordings available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 
+            By default, the recordings are sorted by start date in descending order (newest first).
+
             > **Note:** If this endpoint is called using the `roomMemberTokenHeader` authentication method,
             > the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
         tags:
@@ -15,12 +17,14 @@
             - accessTokenHeader: []
             - roomMemberTokenHeader: []
         parameters:
-            # - $ref: '../components/parameters/recording-status.yaml'
-            - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/room-id-query.yaml'
             - $ref: '../components/parameters/room-name.yaml'
+            - $ref: '../components/parameters/recording-status.yaml'
+            - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
+            - $ref: '../components/parameters/sort-field.yaml'
+            - $ref: '../components/parameters/sort-order.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-recordings.yaml'

@@ -29,6 +29,8 @@
         description: >
             Retrieves a paginated list of all rooms available in the system.
             You can apply filters to narrow down the results based on specific criteria.
+
+            By default, the rooms are sorted by creation date in descending order (newest first).
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -36,9 +38,12 @@
             - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-name.yaml'
+            - $ref: '../components/parameters/room-status.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
+            - $ref: '../components/parameters/sort-field.yaml'
+            - $ref: '../components/parameters/sort-order.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-rooms.yaml'
