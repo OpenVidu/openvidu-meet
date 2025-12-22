@@ -98,6 +98,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	@Input() showRoomInfo = true;
 	@Input() showLoadMore = false;
 	@Input() loading = false;
+	@Input() roomName?: string; // Optional: if provided, shows room-specific empty state message
 	@Input() initialFilters: RecordingTableFilter = {
 		nameFilter: '',
 		statusFilter: '',

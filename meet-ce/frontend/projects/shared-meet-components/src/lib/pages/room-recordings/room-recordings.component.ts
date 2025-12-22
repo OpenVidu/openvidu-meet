@@ -73,7 +73,7 @@ export class RoomRecordingsComponent implements OnInit {
 		this.isInitializing = false;
 
 		// Set room name based on recordings or roomId
-		if (this.recordings()) {
+		if (this.recordings().length > 0) {
 			this.roomName = this.recordings()[0].roomName;
 		} else {
 			const parts = this.roomId.split('-');

@@ -3,9 +3,16 @@
 	<div class="no-recordings-state">
 		<div class="empty-content">
 			<h3>No recordings yet</h3>
-			<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
+			@if (roomName) {
+				<p>
+					No recordings found for <strong>{{ roomName }}</strong
+					>. Start a recording in this room to see them listed here.
+				</p>
+			} @else {
+				<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
+			}
 			<div class="getting-started-actions">
-				<button mat-button (click)="refresh.emit()" class="refresh-recordings-btn primary-button">
+				<button mat-button (click)="refreshRecordings()" class="refresh-recordings-btn primary-button">
 					<mat-icon>refresh</mat-icon>
 					Refresh Recordings
 				</button>
