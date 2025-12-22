@@ -15,8 +15,16 @@
 				</div>
 			</ng-container>
 		} @else if (isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
-			<ng-container *ovLayoutAdditionalElements>
-				<div [ngClass]="{ 'OV_top-bar': showTopBarHiddenParticipantsIndicator() }">
+			<!-- Use bottom slot to position indicator at the end -->
+			<ng-container *ovLayoutAdditionalElements="'bottom'">
+				<div
+					[ngClass]="{
+						'OV_top-bar': showTopBarHiddenParticipantsIndicator(),
+						OV_last: !showTopBarHiddenParticipantsIndicator(),
+						'participant-indicator-container': true
+					}"
+					(click)="toggleParticipantsPanel()"
+				>
 					<ov-hidden-participants-indicator
 						[count]="hiddenParticipantsCount()"
 						[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"

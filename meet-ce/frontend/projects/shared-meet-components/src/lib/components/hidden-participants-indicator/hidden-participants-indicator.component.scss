@@ -11,6 +11,9 @@
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	transition: all 0.2s ease-in-out;
 
+	container-type: size;
+	container-name: hidden-indicator;
+
 	&:hover {
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 	}
@@ -71,11 +74,11 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: center;
 	width: 100%;
 	height: 100%;
-	padding: 20px;
-	gap: 16px;
+	padding: clamp(4px, 3cqh, 20px) clamp(4px, 2cqw, 16px);
+	gap: clamp(4px, 2cqh, 16px);
 }
 
 .header-section {
@@ -111,7 +114,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 12px;
+	gap: clamp(4px, 1.5cqh, 12px);
 	flex: 1;
 	justify-content: center;
 
@@ -119,23 +122,28 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 80px;
-		height: 80px;
+		// width: clamp(32px, 40cqw, 80px);
+		height: clamp(44px, 40cqh, 80px);
+		aspect-ratio: 1 / 1;
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		border-radius: 50%;
-		font-size: 36px;
+		font-size: clamp(22px, 6cqh, 36px);
 		font-weight: 700;
 		color: #ffffff;
 		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
-		animation: pulse 2s ease-in-out infinite;
 	}
 
 	.count-label {
-		font-size: 15px;
+		font-size: clamp(14px, 2.5cqh, 15px);
 		font-weight: 500;
 		color: #e0e0e0;
 		text-align: center;
 		letter-spacing: 0.3px;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		padding: 0 4px;
 	}
 }
 
@@ -164,18 +172,38 @@
 	}
 }
 
-@keyframes pulse {
-	0%, 100% {
-		transform: scale(1);
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+
+@container hidden-indicator (max-height: 100px) {
+	.count-label {
+		display: none;
 	}
-	50% {
-		transform: scale(1.05);
-		box-shadow: 0 6px 16px rgba(102, 126, 234, 0.7);
+
+	.count-section {
+		gap: 0;
 	}
 }
 
-// Responsive adjustments
+@container hidden-indicator (max-width: 120px) {
+	.count-label {
+		display: none;
+	}
+
+	.count-section {
+		gap: 0;
+	}
+}
+
+// Para espacios extra pequeños, optimizar padding y sombras
+@container hidden-indicator (max-width: 100px) {
+	.vertical-content {
+		padding: 4px;
+	}
+
+	.count-badge-vertical {
+		box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+	}
+}
+
 @media (max-width: 768px), (max-height: 500px) {
 	.count-badge-horizontal {
 		min-width: 40px;

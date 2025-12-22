@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ILogger, LoggerService, OpenViduComponentsUiModule, ParticipantModel } from 'openvidu-components-angular';
+import { ILogger, LoggerService, OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from 'openvidu-components-angular';
 import { HiddenParticipantsIndicatorComponent, ShareMeetingLinkComponent } from '../../../components';
 import { CustomParticipantModel } from '../../../models';
 import { MeetingContextService, MeetingService, MeetLayoutService } from '../../../services';
@@ -21,6 +21,7 @@ export class MeetingCustomLayoutComponent {
 	protected readonly layoutService = inject(MeetLayoutService);
 	protected readonly meetingContextService = inject(MeetingContextService);
 	protected readonly meetingService = inject(MeetingService);
+	protected readonly panelService = inject(PanelService);
 	protected readonly linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
@@ -82,6 +83,10 @@ export class MeetingCustomLayoutComponent {
 
 	protected isSmartMosaicActive(): boolean {
 		return this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled();
+	}
+
+	protected toggleParticipantsPanel(): void {
+		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
 
 	private setupVisibleParticipantsUpdate(): void {

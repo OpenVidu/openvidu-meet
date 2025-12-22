@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
 /**
  * Component that displays an indicator for participants not visible in the current layout.
@@ -10,7 +11,7 @@ import { Component, computed, input } from '@angular/core';
  */
 @Component({
 	selector: 'ov-hidden-participants-indicator',
-	imports: [CommonModule],
+	imports: [CommonModule, MatIconModule],
 	templateUrl: './hidden-participants-indicator.component.html',
 	styleUrl: './hidden-participants-indicator.component.scss'
 })
@@ -30,11 +31,10 @@ export class HiddenParticipantsIndicatorComponent {
 	 * Get the display text for the hidden participants count
 	 */
 	protected displayText = computed(() => {
-		if (this.count() === 0) return '';
 		return `+${this.count()}`;
 	});
 
 	protected descriptionText = computed(() => {
-		return this.count() === 1 ? 'participant not visible' : 'participants not visible';
+		return this.count() === 1 ? 'participant not currently visible' : 'participants not currently visible';
 	});
 }

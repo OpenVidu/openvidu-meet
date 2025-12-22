@@ -1,6 +1,5 @@
 @use '../../../../../../../src/assets/styles/design-tokens';
 
-
 .remote-participant {
 	height: -webkit-fill-available;
 	height: -moz-available;
@@ -80,6 +79,9 @@
 	cursor: move;
 }
 
+.participant-indicator-container {
+	cursor: pointer;
+}
 .OV_top-bar {
 	box-sizing: border-box;
 	padding: 4px 4px 2px 4px !important;
