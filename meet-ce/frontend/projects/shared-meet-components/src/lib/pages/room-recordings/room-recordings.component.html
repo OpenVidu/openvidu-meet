@@ -43,13 +43,15 @@
 					[canDeleteRecordings]="canDeleteRecordings"
 					[loading]="isLoading"
 					[showSearchBox]="false"
-					[showFilters]="false"
+					[showFilters]="true"
 					[showSelection]="true"
 					[showRoomInfo]="false"
 					[showLoadMore]="hasMoreRecordings"
+					[initialFilters]="initialFilters"
 					(recordingAction)="onRecordingAction($event)"
-					(loadMore)="loadMoreRecordings()"
-					(refresh)="refreshRecordings()"
+					(loadMore)="loadMoreRecordings($event)"
+					(refresh)="refreshRecordings($event)"
+					(filterChange)="refreshRecordings($event)"
 					class="recordings-list"
 				>
 				</ov-recording-lists>

@@ -104,7 +104,7 @@ export class RecordingsComponent implements OnInit {
 
 			// Apply status filter if provided
 			if (filters.statusFilter) {
-				recordingFilters.status = filters.statusFilter as MeetRecordingStatus;
+				recordingFilters.status = filters.statusFilter;
 			}
 
 			const response = await this.recordingService.listRecordings(recordingFilters);

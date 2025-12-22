@@ -6,7 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { RecordingListsComponent, RecordingTableAction } from '../../components';
+import { RecordingListsComponent, RecordingTableAction, RecordingTableFilter } from '../../components';
 import {
 	MeetingContextService,
 	NavigationService,
@@ -31,6 +31,13 @@ export class RoomRecordingsComponent implements OnInit {
 	isInitializing = true;
 	showInitialLoader = false;
 	isLoading = false;
+
+	initialFilters: RecordingTableFilter = {
+		nameFilter: '',
+		statusFilter: '',
+		sortField: 'startDate',
+		sortOrder: 'desc'
+	};
 
 	// Pagination
 	hasMoreRecordings = false;
@@ -59,7 +66,7 @@ export class RoomRecordingsComponent implements OnInit {
 			this.showInitialLoader = true;
 		}, 200);
 
-		await this.loadRecordings();
+		await this.loadRecordings(this.initialFilters);
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
@@ -109,7 +116,7 @@ export class RoomRecordingsComponent implements OnInit {
 		}
 	}
 
-	private async loadRecordings(statusFilter?: string, refresh = false) {
+	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
 		}, 200);
@@ -118,24 +125,26 @@ export class RoomRecordingsComponent implements OnInit {
 			const recordingFilters: MeetRecordingFilters = {
 				roomId: this.roomId,
 				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined
+				nextPageToken: !refresh ? this.nextPageToken : undefined,
+				sortField: filters.sortField,
+				sortOrder: filters.sortOrder
 			};
 
-			const response = await this.recordingService.listRecordings(recordingFilters);
-
-			// Filter by status on client side if needed
-			let filteredRecordings = response.recordings;
-			if (statusFilter) {
-				filteredRecordings = response.recordings.filter((r) => r.status === statusFilter);
+			// Apply status filter if provided
+			if (filters.statusFilter) {
+				recordingFilters.status = filters.statusFilter;
 			}
+
+			const response = await this.recordingService.listRecordings(recordingFilters);
+			let recordings = response.recordings;
 
 			if (!refresh) {
 				// Update recordings list
 				const currentRecordings = this.recordings();
-				this.recordings.set([...currentRecordings, ...filteredRecordings]);
+				this.recordings.set([...currentRecordings, ...recordings]);
 			} else {
 				// Replace recordings list
-				this.recordings.set(filteredRecordings);
+				this.recordings.set(recordings);
 			}
 
 			// Update pagination
@@ -150,13 +159,13 @@ export class RoomRecordingsComponent implements OnInit {
 		}
 	}
 
-	async loadMoreRecordings() {
+	async loadMoreRecordings(filters: RecordingTableFilter) {
 		if (!this.hasMoreRecordings || this.isLoading) return;
-		await this.loadRecordings();
+		await this.loadRecordings(filters);
 	}
 
-	async refreshRecordings() {
-		await this.loadRecordings(undefined, true);
+	async refreshRecordings(filters: RecordingTableFilter) {
+		await this.loadRecordings(filters, true);
 	}
 
 	private async playRecording(recording: MeetRecordingInfo) {
