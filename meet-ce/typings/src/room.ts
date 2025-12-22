@@ -1,5 +1,6 @@
 import { MeetRoomConfig } from './room-config.js';
 import { MeetRoomMemberPermissions, MeetRoomMemberRole } from './room-member.js';
+import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * Options for creating a room.
@@ -60,12 +61,11 @@ export interface MeetRoomMemberRoleAndPermissions {
     permissions: MeetRoomMemberPermissions;
 }
 
-export type MeetRoomFilters = {
-    maxItems?: number;
-    nextPageToken?: string;
+export interface MeetRoomFilters extends SortAndPagination {
     roomName?: string;
+    status?: MeetRoomStatus;
     fields?: string;
-};
+}
 
 export enum MeetRoomDeletionSuccessCode {
     ROOM_DELETED = 'room_deleted',

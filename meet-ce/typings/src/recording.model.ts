@@ -1,3 +1,5 @@
+import { SortAndPagination } from './sort-pagination.js';
+
 export enum MeetRecordingStatus {
     STARTING = 'starting',
     ACTIVE = 'active',
@@ -31,10 +33,9 @@ export interface MeetRecordingInfo {
     details?: string;
 }
 
-export type MeetRecordingFilters = {
-    maxItems?: number;
-    nextPageToken?: string;
+export interface MeetRecordingFilters extends SortAndPagination {
     roomId?: string;
     roomName?: string;
+    status?: MeetRecordingStatus;
     fields?: string;
-};
+}

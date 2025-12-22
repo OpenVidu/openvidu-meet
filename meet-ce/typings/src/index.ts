@@ -5,6 +5,7 @@ export * from './event.model.js';
 
 export * from './permissions/livekit-permissions.js';
 export * from './permissions/meet-permissions.js';
+export * from './sort-pagination.js';
 export * from './room-member.js';
 export * from './user.js';
 

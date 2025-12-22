@@ -1,4 +1,4 @@
-import { MeetRecordingFilters } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { nonEmptySanitizedRoomId } from './room.schema.js';
 
@@ -54,6 +54,10 @@ export const StartRecordingReqSchema = z.object({
 });
 
 export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
+	roomId: nonEmptySanitizedRoomId('roomId').optional(),
+	roomName: z.string().optional(),
+	status: z.nativeEnum(MeetRecordingStatus).optional(),
+	fields: z.string().optional(),
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -64,11 +68,9 @@ export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object(
 			return intVal > 100 ? 100 : intVal;
 		})
 		.default(10),
-	// status: z.string().optional(),
-	roomId: nonEmptySanitizedRoomId('roomId').optional(),
-	roomName: z.string().optional(),
 	nextPageToken: z.string().optional(),
-	fields: z.string().optional()
+	sortField: z.enum(['startDate', 'roomName', 'duration', 'size']).optional().default('startDate'),
+	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
 });
 
 export const BulkDeleteRecordingsReqSchema = z.object({

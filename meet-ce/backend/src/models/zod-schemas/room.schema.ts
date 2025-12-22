@@ -178,6 +178,9 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 });
 
 export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
+	roomName: z.string().optional(),
+	status: z.nativeEnum(MeetRoomStatus).optional(),
+	fields: z.string().optional(),
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -189,8 +192,8 @@ export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	roomName: z.string().optional(),
-	fields: z.string().optional()
+	sortField: z.enum(['creationDate', 'roomName', 'autoDeletionDate']).optional().default('creationDate'),
+	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
 });
 
 export const DeleteRoomReqSchema = z.object({
