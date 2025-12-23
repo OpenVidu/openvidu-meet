@@ -3,34 +3,25 @@
 		@if (isTopBarMode()) {
 			<!-- Horizontal/Bar Layout -->
 			<div class="horizontal-content">
-				<div class="left-section">
-					<div class="count-badge">
-						<mat-icon class="badge-icon">
-							@if (count() === 1) {
-								person
-							} @else {
-								people
-							}
-						</mat-icon>
-						<span class="badge-number">+{{ count() }}</span>
-					</div>
-					<div class="count-info">
-						<span class="count-number">+{{ count() }}</span>
-						<span class="description">{{ descriptionText() }}</span>
+				<div class="unified-indicator" (click)="clicked.emit()">
+					<mat-icon class="indicator-icon">
+						@if (count() === 1) {
+							person
+						} @else {
+							people
+						}
+					</mat-icon>
+					<div class="text-container">
+						<span class="count-text">+{{ count() }} {{ descriptionText() }}</span>
+						@if (formattedParticipantNames()) {
+							<span class="names-text">({{ formattedParticipantNames() }})</span>
+						}
 					</div>
 				</div>
-				@if (formattedParticipantNames()) {
-					<div class="right-section">
-						<div class="participant-names">
-							<mat-icon class="names-icon">visibility_off</mat-icon>
-							<span class="names-text">{{ formattedParticipantNames() }}</span>
-						</div>
-					</div>
-				}
 			</div>
 		} @else {
 			<!-- Vertical/Standard Layout -->
-			<div class="vertical-content">
+			<div class="vertical-content" (click)="clicked.emit()">
 				<div class="count-section">
 					<div class="count-badge">
 						<mat-icon class="badge-icon">

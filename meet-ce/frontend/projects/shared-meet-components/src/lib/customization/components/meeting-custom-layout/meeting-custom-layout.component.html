@@ -20,12 +20,11 @@
 				<div
 					[ngClass]="{
 						'OV_top-bar': showTopBarHiddenParticipantsIndicator(),
-						OV_last: !showTopBarHiddenParticipantsIndicator(),
-						'participant-indicator-container': true
+						OV_last: !showTopBarHiddenParticipantsIndicator()
 					}"
-					(click)="toggleParticipantsPanel()"
 				>
 					<ov-hidden-participants-indicator
+						(clicked)="toggleParticipantsPanel()"
 						[count]="hiddenParticipantsCount()"
 						[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"
 						[hiddenParticipantNames]="hiddenParticipantNames()"

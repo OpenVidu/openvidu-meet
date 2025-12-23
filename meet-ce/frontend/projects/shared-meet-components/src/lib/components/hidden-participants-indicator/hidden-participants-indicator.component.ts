@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 /**
@@ -26,6 +26,11 @@ export class HiddenParticipantsIndicatorComponent {
 	 */
 	hiddenParticipantNames = input<string[]>([]);
 
+	/**
+	 * Emits when the component is clicked
+	 */
+	clicked = output<void>();
+
 	mode = input<'topbar' | 'standard'>('standard');
 
 	protected isTopBarMode = computed(() => this.mode() === 'topbar');
@@ -40,7 +45,7 @@ export class HiddenParticipantsIndicatorComponent {
 	});
 
 	protected descriptionText = computed(() => {
-		return `hidden participant${this.count() === 1 ? '' : 's'}`;
+		return this.count() === 1 ? 'more participant ' : 'more participants';
 	});
 
 	/**
