@@ -58,17 +58,17 @@
 
 // Step content card
 .step-content {
-	@include design-tokens.ov-section-card;
 	width: 100%;
 	max-width: 700px;
 	height: -webkit-fill-available;
-  	height: -moz-available;
-  	height: fill-available;
+	height: -moz-available;
+	height: fill-available;
 	max-height: 100%;
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
 	overflow-x: hidden;
+	@include design-tokens.ov-section-card;
 
 	// Inner content should be centered vertically when small
 	> :first-child {

@@ -12,6 +12,7 @@
 	padding-bottom: 0;
 	padding-top: var(--ov-meet-spacing-xxl);
 	background: var(--ov-meet-background-color);
+	height: fit-content;
 }
 
 // Room Header
@@ -48,9 +49,8 @@
 .recordings-content {
 	@include design-tokens.ov-container;
 	@include design-tokens.ov-page-content;
-	margin-top: var(--ov-meet-spacing-xl);
 	flex: 1;
-	padding-bottom: var(--ov-meet-spacing-xl); // Add bottom padding for better UX
+	padding-bottom: var(--ov-meet-spacing-xl);
 }
 
 .recordings-loading-container {
