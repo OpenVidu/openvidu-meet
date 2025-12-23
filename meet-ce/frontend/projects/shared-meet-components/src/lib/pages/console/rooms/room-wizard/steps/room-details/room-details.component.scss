@@ -10,7 +10,6 @@
 		display: flex;
 		align-items: flex-start;
 		gap: var(--ov-meet-spacing-sm);
-		// margin-bottom: var(--ov-meet-spacing-xl);
 
 		.step-icon {
 			@include design-tokens.ov-icon(xl);
@@ -39,14 +38,13 @@
 	}
 
 	.step-content {
-		// margin-bottom: var(--ov-meet-spacing-xl);
 
 		.room-details-form {
-			@include design-tokens.ov-grid-responsive(280px);
 			gap: var(--ov-meet-spacing-lg);
 
 			.form-field {
 				width: 100%;
+				margin: 8px 0px;
 
 				// Material form field customization using existing system
 				::ng-deep {
@@ -90,14 +88,15 @@
 
 			// Time selection styling
 			.time-selection-container {
+				margin: 8px 0px;
 				.time-selection-row {
 					display: flex;
 					align-items: center;
 					gap: var(--ov-meet-spacing-sm);
+					text-align: center;
 
 					.time-field {
 						flex: 1;
-						max-width: 120px;
 					}
 
 					.time-separator {
@@ -154,12 +153,12 @@
 				}
 
 				.time-hint {
-					display: flex;
 					align-items: center;
 					gap: var(--ov-meet-spacing-xs);
 					background-color: var(--ov-meet-surface-accent);
 					border-radius: var(--ov-meet-radius-sm);
 					border-left: 3px solid var(--ov-meet-primary);
+					text-align: center;
 
 					.hint-icon {
 						@include design-tokens.ov-icon(sm);
