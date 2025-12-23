@@ -109,6 +109,7 @@
 
 .ov-users-permissions {
 	color: var(--ov-meet-icon-users-permissions) !important;
+	overflow: none;
 	@include layout.ov-theme-transition;
 }
 .ov-settings-icon {
