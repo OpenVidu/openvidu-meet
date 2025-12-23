@@ -4,40 +4,18 @@
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	background: var(--ov-secondary-action-color);
+	background: var(--ov-surface-color);
 	border-radius: var(--ov-surface-radius);
 	position: relative;
 	overflow: hidden;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	transition: all 0.2s ease-in-out;
-
 	container-type: size;
 	container-name: hidden-indicator;
-
-	&:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-	}
 }
 
 // ============================================
-// HORIZONTAL MODE (Barra superior compacta)
+// SHARED STYLES
 // ============================================
-.horizontal-content {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 24px;
-	padding: 0 24px;
-	width: 100%;
-	height: 100%;
-}
-
-.left-section {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	flex-shrink: 0;
-}
 
 .count-badge {
 	display: flex;
@@ -45,12 +23,12 @@
 	justify-content: center;
 	min-width: 50px;
 	height: 50px;
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: var(--ov-accent-action-color);
 	border-radius: 50%;
 	font-size: 22px;
 	font-weight: 700;
-	color: #ffffff;
-	box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+	color: var(--ov-text-primary-color);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 	flex-shrink: 0;
 	position: relative;
 
@@ -85,14 +63,6 @@
 	}
 }
 
-.right-section {
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	flex: 1;
-	min-width: 0; // Allow flex item to shrink below content size
-}
-
 .participant-names {
 	display: flex;
 	align-items: center;
@@ -123,6 +93,34 @@
 }
 
 // ============================================
+// HORIZONTAL MODE (Barra superior compacta)
+// ============================================
+.horizontal-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 0 24px;
+	width: 100%;
+	height: 100%;
+
+	.left-section {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		flex-shrink: 0;
+	}
+
+	.right-section {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+// ============================================
 // VERTICAL MODE (Tile estándar 16:9)
 // ============================================
 .vertical-content {
@@ -134,44 +132,32 @@
 	height: 100%;
 	padding: clamp(4px, 3cqh, 20px) clamp(4px, 2cqw, 16px);
 	gap: clamp(4px, 2cqh, 16px);
-}
 
-.count-section {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: clamp(4px, 1.5cqh, 12px);
-	flex: 1;
-	justify-content: center;
-	width: 100%;
-
-	.participant-names-vertical {
+	.count-section {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
+		gap: clamp(4px, 1.5cqh, 12px);
+		flex: 1;
+		justify-content: center;
+		width: 100%;
+	}
+
+	// Overrides for vertical mode
+	.participant-names {
 		justify-content: center;
 		gap: 6px;
 		padding: clamp(4px, 1.5cqh, 8px) clamp(8px, 3cqw, 12px);
-		background-color: var(--ov-accent-action-color);
-		border-radius: 20px;
-		border: 1px solid rgba(0, 0, 0, 0.2);
 		max-width: 90%;
 
 		.names-icon {
 			font-size: clamp(14px, 3cqw, 16px);
 			width: clamp(14px, 3cqw, 16px);
 			height: clamp(14px, 3cqw, 16px);
-			color: var(--ov-text-primary-color);
-			flex-shrink: 0;
 		}
 
 		.names-text {
 			font-size: clamp(11px, 2cqh, 13px);
-			font-weight: 500;
-			color: var(--ov-text-primary-color);
-			letter-spacing: 0.2px;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
 			text-align: center;
 			flex: 1;
 			min-width: 0;
@@ -179,60 +165,60 @@
 	}
 }
 
-@container hidden-indicator (max-height: 100px) {
-	.vertical .count-info {
-		display: none;
-	}
+// ============================================
+// RESPONSIVE & CONTAINER QUERIES
+// ============================================
 
-	.count-section {
-		gap: 0;
-	}
-	.participant-names-vertical {
-		display: none !important;
-	}
-
-	// Show number instead of icon when small
-	.vertical .count-badge {
-		.badge-icon {
+@container hidden-indicator (max-height: 145px) {
+	.vertical-content {
+		.count-info {
 			display: none;
 		}
-		.badge-number {
-			display: block;
+		.count-section {
+			gap: 0;
+		}
+		.participant-names {
+			display: none !important;
+		}
+		.count-badge {
+			.badge-icon {
+				display: none;
+			}
+			.badge-number {
+				display: block;
+			}
 		}
 	}
 }
 
-@container hidden-indicator (max-width: 120px) {
-	.vertical .count-info {
-		display: none;
-	}
-
-	.count-section {
-		gap: 0;
-	}
-	.participant-names-vertical {
-		display: none !important;
-	}
-
-	// Show number instead of icon when small
-	.vertical .count-badge {
-		.badge-icon {
+@container hidden-indicator (max-width: 145px) {
+	.vertical-content {
+		.count-info {
 			display: none;
 		}
-		.badge-number {
-			display: block;
+		.count-section {
+			gap: 0;
+		}
+		.participant-names {
+			display: none !important;
+		}
+		.count-badge {
+			.badge-icon {
+				display: none;
+			}
+			.badge-number {
+				display: block;
+			}
 		}
 	}
 }
 
-// Para espacios extra pequeños, optimizar padding y sombras
-@container hidden-indicator (max-width: 100px) {
+@container hidden-indicator (max-width: 145px) {
 	.vertical-content {
 		padding: 4px;
-	}
-
-	.count-badge {
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+		.count-badge {
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+		}
 	}
 }
 
@@ -255,16 +241,16 @@
 	.vertical-content {
 		padding: 16px;
 		gap: 12px;
-	}
 
-	.count-section {
-		.count-badge {
-			width: 64px;
-			height: 64px;
-			font-size: 28px;
-		}
-		.count-info {
-			font-size: 13px;
+		.count-section {
+			.count-badge {
+				width: 64px;
+				height: 64px;
+				font-size: 28px;
+			}
+			.count-info {
+				font-size: 13px;
+			}
 		}
 	}
 }
