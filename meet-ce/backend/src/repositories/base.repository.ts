@@ -1,6 +1,7 @@
+import { SortAndPagination } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
 import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
-import { PaginatedFindOptions, PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
+import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**
@@ -29,11 +30,23 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	/**
 	 * Finds a single document matching the given filter.
 	 * @param filter - MongoDB query filter
+	 * @param fields - Optional comma-separated list of fields to select from database
 	 * @returns The document or null if not found
 	 */
-	protected async findOne(filter: FilterQuery<TDocument>): Promise<TDocument | null> {
+	protected async findOne(filter: FilterQuery<TDocument>, fields?: string): Promise<TDocument | null> {
 		try {
-			return await this.model.findOne(filter).exec();
+			let query = this.model.findOne(filter);
+
+			if (fields) {
+				const fieldSelection = fields
+					.split(',')
+					.map((field) => field.trim())
+					.filter((field) => field !== '')
+					.join(' ');
+				query = query.select(fieldSelection);
+			}
+
+			return await query.exec();
 		} catch (error) {
 			this.logger.error('Error finding document with filter:', filter, error);
 			throw error;
@@ -70,11 +83,13 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param options.nextPageToken - Token for pagination (encoded cursor)
 	 * @param options.sortField - Field to sort by (default: 'createdAt')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
+	 * @param fields - Optional comma-separated list of fields to select from database
 	 * @returns Paginated result with items, truncation flag, and optional next token
 	 */
 	protected async findMany(
 		filter: FilterQuery<TDocument> = {},
-		options: PaginatedFindOptions = {}
+		options: SortAndPagination = {},
+		fields?: string
 	): Promise<PaginatedResult<TDomain>> {
 		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = 'desc' } = options;
 
@@ -96,7 +111,22 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		// Fetch one more than requested to check if there are more results
 		const limit = maxItems + 1;
 
-		const documents = await this.model.find(filter).sort(sort).limit(limit).exec();
+		// Build query
+		let query = this.model.find(filter).sort(sort).limit(limit);
+
+		// Apply field selection if specified
+		if (fields) {
+			// Convert comma-separated string to space-separated format for MongoDB select()
+			const fieldSelection = fields
+				.split(',')
+				.map((field) => field.trim())
+				.filter((field) => field !== '')
+				.join(' ');
+
+			query = query.select(fieldSelection);
+		}
+
+		const documents = await query.exec();
 
 		// Check if there are more results
 		const hasMore = documents.length > maxItems;

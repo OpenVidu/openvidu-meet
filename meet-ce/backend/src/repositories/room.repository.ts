@@ -60,10 +60,11 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Returns the room with enriched URLs (including base URL).
 	 *
 	 * @param roomId - The unique room identifier
+	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns The room or null if not found
 	 */
-	async findByRoomId(roomId: string): Promise<TRoom | null> {
-		const document = await this.findOne({ roomId });
+	async findByRoomId(roomId: string, fields?: string): Promise<TRoom | null> {
+		const document = await this.findOne({ roomId }, fields);
 		return document ? this.enrichRoomWithBaseUrls(document) : null;
 	}
 
@@ -111,12 +112,16 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 		}
 
 		// Use base repository's pagination method
-		const result = await this.findMany(filter, {
-			maxItems,
-			nextPageToken,
-			sortField,
-			sortOrder
-		});
+		const result = await this.findMany(
+			filter,
+			{
+				maxItems,
+				nextPageToken,
+				sortField,
+				sortOrder
+			},
+			fields
+		);
 
 		return {
 			rooms: result.items,
@@ -229,6 +234,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	/**
 	 * Enriches room data by adding the base URL to URLs.
 	 * Converts MongoDB document to domain object.
+	 * Only enriches URLs that are present in the document.
 	 *
 	 * @param document - The MongoDB document
 	 * @returns Room data with complete URLs
@@ -239,8 +245,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 
 		return {
 			...room,
-			moderatorUrl: `${baseUrl}${room.moderatorUrl}`,
-			speakerUrl: `${baseUrl}${room.speakerUrl}`
+			...(room.moderatorUrl !== undefined && { moderatorUrl: `${baseUrl}${room.moderatorUrl}` }),
+			...(room.speakerUrl !== undefined && { speakerUrl: `${baseUrl}${room.speakerUrl}` })
 		};
 	}
 }

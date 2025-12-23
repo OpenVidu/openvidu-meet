@@ -8,7 +8,6 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { UtilsHelper } from '../helpers/utils.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
 	errorRecordingAlreadyStarted,
@@ -213,16 +212,7 @@ export class RecordingService {
 		nextPageToken?: string;
 	}> {
 		try {
-			const { fields, ...findOptions } = filters;
-			const response = await this.recordingRepository.find(findOptions);
-
-			// Apply field filtering if specified
-			if (fields) {
-				response.recordings = response.recordings.map((rec: MeetRecordingInfo) =>
-					UtilsHelper.filterObjectFields(rec, fields)
-				) as MeetRecordingInfo[];
-			}
-
+			const response = await this.recordingRepository.find(filters);
 			this.logger.info(`Retrieved ${response.recordings.length} recordings.`);
 			return response;
 		} catch (error) {
@@ -435,13 +425,13 @@ export class RecordingService {
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
 	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
-		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId, fields);
 
 		if (!recordingInfo) {
 			throw errorRecordingNotFound(recordingId);
 		}
 
-		return UtilsHelper.filterObjectFields(recordingInfo, fields) as MeetRecordingInfo;
+		return recordingInfo;
 	}
 
 	/**

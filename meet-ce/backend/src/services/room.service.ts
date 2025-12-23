@@ -20,7 +20,6 @@ import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { UtilsHelper } from '../helpers/utils.helper.js';
 import {
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
@@ -215,14 +214,7 @@ export class RoomService {
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { fields, ...findOptions } = filters;
-		const response = await this.roomRepository.find(findOptions);
-
-		if (fields) {
-			const filteredRooms = response.rooms.map((room: MeetRoom) => UtilsHelper.filterObjectFields(room, fields));
-			response.rooms = filteredRooms as MeetRoom[];
-		}
-
+		const response = await this.roomRepository.find(filters);
 		return response;
 	}
 
@@ -233,23 +225,21 @@ export class RoomService {
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
 	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
-		const meetRoom = await this.roomRepository.findByRoomId(roomId);
+		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
-		if (!meetRoom) {
+		if (!room) {
 			this.logger.error(`Meet room with ID ${roomId} not found.`);
 			throw errorRoomNotFound(roomId);
 		}
-
-		const filteredRoom = UtilsHelper.filterObjectFields(meetRoom, fields);
 
 		// Remove moderatorUrl if the room member is a speaker to prevent access to moderator links
 		const role = this.requestSessionService.getRoomMemberRole();
 
 		if (role === MeetRoomMemberRole.SPEAKER) {
-			delete filteredRoom.moderatorUrl;
+			delete (room as Partial<MeetRoom>).moderatorUrl;
 		}
 
-		return filteredRoom as MeetRoom;
+		return room;
 	}
 
 	/**

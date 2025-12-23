@@ -1,14 +1,4 @@
 /**
- * Options for paginated find operations.
- */
-export interface PaginatedFindOptions {
-	maxItems?: number;
-	nextPageToken?: string;
-	sortField?: string;
-	sortOrder?: 'asc' | 'desc';
-}
-
-/**
  * Result of a paginated find operation.
  */
 export interface PaginatedResult<T> {

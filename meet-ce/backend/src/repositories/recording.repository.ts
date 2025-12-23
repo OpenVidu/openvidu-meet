@@ -73,10 +73,11 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * Finds a recording by its recordingId.
 	 *
 	 * @param recordingId - The ID of the recording to find
+	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
-	async findByRecordingId(recordingId: string): Promise<TRecording | null> {
-		const document = await this.findOne({ recordingId });
+	async findByRecordingId(recordingId: string, fields?: string): Promise<TRecording | null> {
+		const document = await this.findOne({ recordingId }, fields);
 		return document ? this.toDomain(document) : null;
 	}
 
@@ -133,12 +134,16 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 		}
 
 		// Use base repository's pagination method
-		const result = await this.findMany(filter, {
-			maxItems,
-			nextPageToken,
-			sortField,
-			sortOrder
-		});
+		const result = await this.findMany(
+			filter,
+			{
+				maxItems,
+				nextPageToken,
+				sortField,
+				sortOrder
+			},
+			fields
+		);
 
 		return {
 			recordings: result.items,
