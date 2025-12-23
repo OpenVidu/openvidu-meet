@@ -21,6 +21,11 @@ export class HiddenParticipantsIndicatorComponent {
 	 */
 	count = input<number>(0);
 
+	/**
+	 * Names of hidden participants (used in topbar mode to show who is hidden)
+	 */
+	hiddenParticipantNames = input<string[]>([]);
+
 	mode = input<'topbar' | 'standard'>('standard');
 
 	protected isTopBarMode = computed(() => this.mode() === 'topbar');
@@ -35,6 +40,29 @@ export class HiddenParticipantsIndicatorComponent {
 	});
 
 	protected descriptionText = computed(() => {
-		return this.count() === 1 ? 'participant not currently visible' : 'participants not currently visible';
+		return `hidden participant${this.count() === 1 ? '' : 's'}`;
+	});
+
+	/**
+	 * Get formatted participant names for display in topbar mode
+	 * Shows up to 3 names, then "and X more" if there are additional participants
+	 */
+	protected formattedParticipantNames = computed(() => {
+		const names = this.hiddenParticipantNames();
+		const total = this.count();
+
+		if (!names || names.length === 0) {
+			return '';
+		}
+
+		const maxNamesToShow = 3;
+		const visibleNames = names.slice(0, maxNamesToShow);
+		const remaining = total - visibleNames.length;
+
+		if (remaining > 0) {
+			return `${visibleNames.join(', ')} and ${remaining} more`;
+		}
+
+		return visibleNames.join(', ');
 	});
 }

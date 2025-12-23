@@ -3,26 +3,55 @@
 		@if (isTopBarMode()) {
 			<!-- Horizontal/Bar Layout -->
 			<div class="horizontal-content">
-				<div class="count-badge-horizontal">
-					@if (count() === 1) {
-						<mat-icon>person</mat-icon>
-					} @else {
-						<mat-icon>people</mat-icon>
-					}
+				<div class="left-section">
+					<div class="count-badge">
+						<mat-icon class="badge-icon">
+							@if (count() === 1) {
+								person
+							} @else {
+								people
+							}
+						</mat-icon>
+						<span class="badge-number">+{{ count() }}</span>
+					</div>
+					<div class="count-info">
+						<span class="count-number">+{{ count() }}</span>
+						<span class="description">{{ descriptionText() }}</span>
+					</div>
 				</div>
-				<div class="text-horizontal">
-					<span class="count-number">{{ count() }}</span>
-					<span class="description">{{ descriptionText() }}</span>
-				</div>
+				@if (formattedParticipantNames()) {
+					<div class="right-section">
+						<div class="participant-names">
+							<mat-icon class="names-icon">visibility_off</mat-icon>
+							<span class="names-text">{{ formattedParticipantNames() }}</span>
+						</div>
+					</div>
+				}
 			</div>
 		} @else {
 			<!-- Vertical/Standard Layout -->
 			<div class="vertical-content">
 				<div class="count-section">
-					<div class="count-badge-vertical">
-						{{ displayText() }}
+					<div class="count-badge">
+						<mat-icon class="badge-icon">
+							@if (count() === 1) {
+								person
+							} @else {
+								people
+							}
+						</mat-icon>
+						<span class="badge-number">+{{ count() }}</span>
 					</div>
-					<div class="count-label"> {{ count() }} {{ descriptionText() }}</div>
+					<div class="count-info">
+						<span class="count-number">+{{ count() }}</span>
+						<span class="description">{{ descriptionText() }}</span>
+					</div>
+					@if (formattedParticipantNames()) {
+						<div class="participant-names-vertical">
+							<mat-icon class="names-icon">visibility_off</mat-icon>
+							<span class="names-text">{{ formattedParticipantNames() }}</span>
+						</div>
+					}
 				</div>
 			</div>
 		}

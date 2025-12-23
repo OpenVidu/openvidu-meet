@@ -51,6 +51,13 @@ export class MeetingCustomLayoutComponent {
 		return Math.max(0, total - visible);
 	});
 
+	protected readonly hiddenParticipantNames = computed(() => {
+		const visibleIds = new Set(this.visibleRemoteParticipants().map((p) => p.identity));
+		return this.remoteParticipants()
+			.filter((p) => !visibleIds.has(p.identity))
+			.map((p) => p.name || 'Unknown');
+	});
+
 	/**
 	 * Indicates whether to show the hidden participants indicator in the top bar
 	 * when in smart mosaic mode.

@@ -25,14 +25,21 @@
 .horizontal-content {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	gap: 16px;
+	justify-content: space-between;
+	gap: 24px;
 	padding: 0 24px;
 	width: 100%;
 	height: 100%;
 }
 
-.count-badge-horizontal {
+.left-section {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+.count-badge {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -45,9 +52,20 @@
 	color: #ffffff;
 	box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 	flex-shrink: 0;
+	position: relative;
+
+	.badge-icon {
+		display: block;
+	}
+
+	.badge-number {
+		display: none;
+		position: absolute;
+		font-size: inherit;
+	}
 }
 
-.text-horizontal {
+.count-info {
 	display: flex;
 	align-items: baseline;
 	gap: 8px;
@@ -67,6 +85,43 @@
 	}
 }
 
+.right-section {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex: 1;
+	min-width: 0; // Allow flex item to shrink below content size
+}
+
+.participant-names {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	background-color: rgba(102, 126, 234, 0.15);
+	border-radius: 20px;
+	border: 1px solid rgba(102, 126, 234, 0.3);
+	max-width: 100%;
+
+	.names-icon {
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		color: #667eea;
+		flex-shrink: 0;
+	}
+
+	.names-text {
+		font-size: 14px;
+		font-weight: 500;
+		color: #e0e0e0;
+		letter-spacing: 0.2px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
 // ============================================
 // VERTICAL MODE (Tile estándar 16:9)
 // ============================================
@@ -81,35 +136,6 @@
 	gap: clamp(4px, 2cqh, 16px);
 }
 
-.header-section {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-	width: 100%;
-
-	.icon-group {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.participants-icon {
-		width: 40px;
-		height: 40px;
-		color: #667eea;
-		opacity: 0.9;
-	}
-
-	.title {
-		font-size: 16px;
-		font-weight: 600;
-		color: #ffffff;
-		text-align: center;
-		letter-spacing: 0.5px;
-	}
-}
-
 .count-section {
 	display: flex;
 	flex-direction: column;
@@ -117,79 +143,86 @@
 	gap: clamp(4px, 1.5cqh, 12px);
 	flex: 1;
 	justify-content: center;
+	width: 100%;
 
-	.count-badge-vertical {
+	.participant-names-vertical {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		// width: clamp(32px, 40cqw, 80px);
-		height: clamp(44px, 40cqh, 80px);
-		aspect-ratio: 1 / 1;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border-radius: 50%;
-		font-size: clamp(22px, 6cqh, 36px);
-		font-weight: 700;
-		color: #ffffff;
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
-	}
+		gap: 6px;
+		padding: clamp(4px, 1.5cqh, 8px) clamp(8px, 3cqw, 12px);
+		background-color: rgba(102, 126, 234, 0.15);
+		border-radius: 12px;
+		border: 1px solid rgba(102, 126, 234, 0.3);
+		max-width: 90%;
 
-	.count-label {
-		font-size: clamp(14px, 2.5cqh, 15px);
-		font-weight: 500;
-		color: #e0e0e0;
-		text-align: center;
-		letter-spacing: 0.3px;
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		padding: 0 4px;
-	}
-}
+		.names-icon {
+			font-size: clamp(14px, 3cqw, 16px);
+			width: clamp(14px, 3cqw, 16px);
+			height: clamp(14px, 3cqw, 16px);
+			color: #667eea;
+			flex-shrink: 0;
+		}
 
-.info-section {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 12px 16px;
-	background-color: rgba(255, 255, 255, 0.05);
-	border-radius: 6px;
-	width: 100%;
-
-	.info-icon {
-		width: 20px;
-		height: 20px;
-		color: #667eea;
-		flex-shrink: 0;
-	}
-
-	.info-text {
-		font-size: 12px;
-		font-weight: 500;
-		color: #b0b0b0;
-		line-height: 1.4;
-		letter-spacing: 0.2px;
+		.names-text {
+			font-size: clamp(11px, 2cqh, 13px);
+			font-weight: 500;
+			color: #e0e0e0;
+			letter-spacing: 0.2px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			text-align: center;
+			flex: 1;
+			min-width: 0;
+		}
 	}
 }
 
 
 @container hidden-indicator (max-height: 100px) {
-	.count-label {
+	.vertical .count-info {
 		display: none;
 	}
 
 	.count-section {
 		gap: 0;
+	}
+	.participant-names-vertical {
+		display: none !important;
+	}
+
+	// Show number instead of icon when small
+	.vertical .count-badge {
+		.badge-icon {
+			display: none;
+		}
+		.badge-number {
+			display: block;
+		}
 	}
 }
 
 @container hidden-indicator (max-width: 120px) {
-	.count-label {
+	.vertical .count-info {
 		display: none;
 	}
 
 	.count-section {
 		gap: 0;
+	}
+	.participant-names-vertical {
+		display: none !important;
+	}
+
+	// Show number instead of icon when small
+	.vertical .count-badge {
+		.badge-icon {
+			display: none;
+		}
+		.badge-number {
+			display: block;
+		}
 	}
 }
 
@@ -199,19 +232,19 @@
 		padding: 4px;
 	}
 
-	.count-badge-vertical {
+	.count-badge {
 		box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
 	}
 }
 
 @media (max-width: 768px), (max-height: 500px) {
-	.count-badge-horizontal {
+	.count-badge {
 		min-width: 40px;
 		height: 40px;
 		font-size: 18px;
 	}
 
-	.text-horizontal {
+	.count-info {
 		.count-number {
 			font-size: 20px;
 		}
@@ -225,31 +258,14 @@
 		gap: 12px;
 	}
 
-	.header-section {
-		.participants-icon {
-			width: 32px;
-			height: 32px;
-		}
-		.title {
-			font-size: 14px;
-		}
-	}
-
 	.count-section {
-		.count-badge-vertical {
+		.count-badge {
 			width: 64px;
 			height: 64px;
 			font-size: 28px;
 		}
-		.count-label {
+		.count-info {
 			font-size: 13px;
-		}
-	}
-
-	.info-section {
-		padding: 10px 12px;
-		.info-text {
-			font-size: 11px;
 		}
 	}
 }
