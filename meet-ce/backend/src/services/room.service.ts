@@ -90,7 +90,7 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy,
-			config: config! as MeetRoomConfig,
+			config: roomConfig,
 			moderatorUrl: `/room/${roomId}?secret=${secureUid(10)}`,
 			speakerUrl: `/room/${roomId}?secret=${secureUid(10)}`,
 			status: MeetRoomStatus.OPEN,
