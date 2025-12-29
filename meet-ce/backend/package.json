@@ -1,6 +1,6 @@
 {
 	"name": "@openvidu-meet/backend",
-	"version": "3.4.1",
+	"version": "3.5.0",
 	"description": "OpenVidu Meet Backend",
 	"author": "OpenVidu",
 	"license": "Apache-2.0",

@@ -1,6 +1,6 @@
 services:
   meet-demo:
-    image: openvidu/openvidu-meet-demo:3.4.1
+    image: openvidu/openvidu-meet-demo:3.5.0
     container_name: meet-demo
     environment:
       - SERVER_PORT=6080

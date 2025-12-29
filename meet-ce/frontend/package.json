@@ -1,6 +1,6 @@
 {
 	"name": "@openvidu-meet/frontend",
-	"version": "3.4.1",
+	"version": "3.5.0",
 	"scripts": {
 		"clean": "rm -rf node_modules dist test-results .angular",
 		"dev": "pnpm exec ng build --configuration development --watch",
