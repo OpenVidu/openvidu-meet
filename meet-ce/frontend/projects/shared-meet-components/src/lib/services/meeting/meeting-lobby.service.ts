@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { LoggerService } from 'openvidu-components-angular';
 import {
 	AppDataService,
 	AuthService,
@@ -15,7 +16,6 @@ import {
 } from '..';
 import { ErrorReason } from '../../models';
 import { LobbyState } from '../../models/lobby.model';
-import { LoggerService } from 'openvidu-components-angular';
 
 /**
  * Service that manages the meeting lobby phase state and operations.
@@ -155,8 +155,8 @@ export class MeetingLobbyService {
 				this.initializeParticipantName()
 			]);
 
-		const roomClosed = room.status === MeetRoomStatus.CLOSED;
-		const hasRoomE2EEEnabled = room.config?.e2ee?.enabled || false;
+			const roomClosed = room.status === MeetRoomStatus.CLOSED;
+			const hasRoomE2EEEnabled = room.config?.e2ee?.enabled || false;
 
 			this._state.update((state) => ({
 				...state,
@@ -258,11 +258,8 @@ export class MeetingLobbyService {
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
-		await Promise.all([
-			this.generateRoomMemberToken(),
-			this.addParticipantNameToUrl(),
-			this.roomService.loadRoomConfig(roomId!)
-		]);
+		await this.generateRoomMemberToken();
+		await Promise.all([this.addParticipantNameToUrl(), this.roomService.loadRoomConfig(roomId!)]);
 	}
 
 	/**
