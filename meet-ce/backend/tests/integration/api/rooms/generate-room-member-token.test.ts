@@ -15,7 +15,8 @@ import {
 	updateRecordingAccessConfigInRoom,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Room API Tests', () => {
 	let roomData: RoomData;

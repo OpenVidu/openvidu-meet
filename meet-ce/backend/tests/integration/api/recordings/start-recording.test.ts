@@ -19,7 +19,8 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
-import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios.js';
+import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
+import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

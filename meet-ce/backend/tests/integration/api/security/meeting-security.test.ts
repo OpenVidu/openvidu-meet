@@ -12,7 +12,8 @@ import {
 	startTestServer,
 	updateParticipantMetadata
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
 

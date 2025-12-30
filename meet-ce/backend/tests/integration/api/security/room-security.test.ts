@@ -12,7 +12,8 @@ import {
 	sleep,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
 const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;

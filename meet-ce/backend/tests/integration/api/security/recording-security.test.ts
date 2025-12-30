@@ -18,7 +18,8 @@ import {
 	stopRecording,
 	updateRecordingAccessConfigInRoom
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
 const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;

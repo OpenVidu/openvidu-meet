@@ -23,11 +23,8 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
-import {
-	setupMultiRecordingsTestContext,
-	setupMultiRoomTestContext,
-	TestContext
-} from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext, setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
+import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Race Conditions Tests', () => {
 	let context: TestContext | null = null;

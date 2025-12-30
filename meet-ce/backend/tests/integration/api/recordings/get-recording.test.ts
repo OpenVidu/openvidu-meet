@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { MeetRecordingStatus, MeetRoom } from '@openvidu-meet/typings';
+import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { expectValidationError, expectValidGetRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
@@ -10,7 +10,8 @@ import {
 	startTestServer,
 	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
-import { setupMultiRecordingsTestContext, TestContext } from '../../../helpers/test-scenarios.js';
+import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios.js';
+import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

@@ -10,7 +10,8 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
-import { setupMultiRoomTestContext, TestContext } from '../../../helpers/test-scenarios';
+import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
+import { TestContext } from '../../../interfaces/scenarios';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

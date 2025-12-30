@@ -10,7 +10,8 @@ import {
 	getRoom,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { RoomData, setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import { RoomData } from '../../../interfaces/scenarios.js';
 
 describe('Meetings API Tests', () => {
 	let livekitService: LiveKitService;
