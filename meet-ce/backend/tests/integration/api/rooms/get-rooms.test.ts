@@ -1,6 +1,6 @@
-import { afterEach, beforeAll, describe, it } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import ms from 'ms';
-import { MeetRoom } from '@openvidu-meet/typings';
 import {
 	expectSuccessRoomsResponse,
 	expectValidationError,
@@ -8,6 +8,7 @@ import {
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../helpers/request-helpers.js';
+import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
@@ -68,6 +69,17 @@ describe('Room API Tests', () => {
 			expectValidRoom(rooms[0], 'test-room');
 		});
 
+		it('should return a list of rooms applying status filter', async () => {
+			await setupSingleRoom(true); // Active meeting
+			await setupSingleRoom(false); // Open
+
+			const response = await getRooms({ status: MeetRoomStatus.ACTIVE_MEETING });
+			const { rooms } = response.body;
+
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+			expect(rooms[0].status).toBe(MeetRoomStatus.ACTIVE_MEETING);
+		});
+
 		it('should return a list of rooms with pagination', async () => {
 			// Create rooms sequentially to ensure different creation dates
 			for (let i = 0; i < 6; i++) {
@@ -106,6 +118,82 @@ describe('Room API Tests', () => {
 
 			expectSuccessRoomsResponse(response, 0, 12, false, false);
 		});
+
+		it('should sort rooms by roomName ascending and descending', async () => {
+			await createRoom({ roomName: 'zebra-room' });
+			await createRoom({ roomName: 'alpha-room' });
+			await createRoom({ roomName: 'beta-room' });
+
+			// Test ascending
+			let response = await getRooms({ sortField: 'roomName', sortOrder: 'asc' });
+			let rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], 'alpha-room');
+			expectValidRoom(rooms[1], 'beta-room');
+			expectValidRoom(rooms[2], 'zebra-room');
+
+			// Test descending
+			response = await getRooms({ sortField: 'roomName', sortOrder: 'desc' });
+			rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], 'zebra-room');
+			expectValidRoom(rooms[1], 'beta-room');
+			expectValidRoom(rooms[2], 'alpha-room');
+		});
+
+		it('should sort rooms by creationDate ascending and descending', async () => {
+			const room1 = await createRoom({ roomName: 'first-room' });
+			const room2 = await createRoom({ roomName: 'second-room' });
+			const room3 = await createRoom({ roomName: 'third-room' });
+
+			// Test ascending
+			let response = await getRooms({ sortField: 'creationDate', sortOrder: 'asc' });
+			let rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], room1.roomName);
+			expectValidRoom(rooms[1], room2.roomName);
+			expectValidRoom(rooms[2], room3.roomName);
+
+			// Test descending (default)
+			response = await getRooms({ sortField: 'creationDate', sortOrder: 'desc' });
+			rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], room3.roomName);
+			expectValidRoom(rooms[1], room2.roomName);
+			expectValidRoom(rooms[2], room1.roomName);
+		});
+
+		it('should sort rooms by autoDeletionDate ascending and descending', async () => {
+			const now = Date.now();
+			const date1 = now + ms('2h');
+			const date2 = now + ms('3h');
+
+			await createRoom({ roomName: 'room-3h', autoDeletionDate: date2 });
+			await createRoom({ roomName: 'room-2h', autoDeletionDate: date1 });
+			await createRoom({ roomName: 'room-without-date' }); // Room without autoDeletionDate
+
+			// Test ascending
+			let response = await getRooms({ sortField: 'autoDeletionDate', sortOrder: 'asc' });
+			let rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], 'room-without-date', undefined, undefined, undefined);
+			expectValidRoom(rooms[1], 'room-2h', undefined, undefined, date1);
+			expectValidRoom(rooms[2], 'room-3h', undefined, undefined, date2);
+
+			// Test descending
+			response = await getRooms({ sortField: 'autoDeletionDate', sortOrder: 'desc' });
+			rooms = response.body.rooms;
+
+			expectSuccessRoomsResponse(response, 3, 10, false, false);
+			expectValidRoom(rooms[0], 'room-3h', undefined, undefined, date2);
+			expectValidRoom(rooms[1], 'room-2h', undefined, undefined, date1);
+			expectValidRoom(rooms[2], 'room-without-date', undefined, undefined, undefined);
+		});
 	});
 
 	describe('List Room Validation failures', () => {
@@ -127,6 +215,21 @@ describe('Room API Tests', () => {
 		it('should fail when fields is not a string', async () => {
 			const response = await getRooms({ fields: { invalid: 'data' } });
 			expectValidationError(response, 'fields', 'Expected string');
+		});
+
+		it('should fail when sortField is invalid', async () => {
+			const response = await getRooms({ sortField: 'invalidField' });
+			expectValidationError(response, 'sortField', 'Invalid enum value');
+		});
+
+		it('should fail when sortOrder is invalid', async () => {
+			const response = await getRooms({ sortOrder: 'invalid' });
+			expectValidationError(response, 'sortOrder', 'Invalid enum value');
+		});
+
+		it('should fail when status is invalid', async () => {
+			const response = await getRooms({ status: 'invalid_status' });
+			expectValidationError(response, 'status', 'Invalid enum value');
 		});
 	});
 });

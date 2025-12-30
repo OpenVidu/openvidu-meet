@@ -96,9 +96,10 @@ export const setupMultiRoomTestContext = async (
 
 export const setupSingleRoomWithRecording = async (
 	stopRecordingCond = false,
-	stopDelay?: StringValue
+	stopDelay?: StringValue,
+	roomName = 'TEST_ROOM'
 ): Promise<RoomData> => {
-	const roomData = await setupSingleRoom(true, 'TEST_ROOM');
+	const roomData = await setupSingleRoom(true, roomName);
 	const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	roomData.recordingId = response.body.recordingId;
