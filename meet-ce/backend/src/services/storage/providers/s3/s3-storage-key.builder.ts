@@ -44,6 +44,6 @@ export class S3KeyBuilder implements StorageKeyBuilder {
 	}
 
 	buildApiKeysKey(): string {
-		return `api-keys.json`;
+		return `api_keys.json`;
 	}
 }
