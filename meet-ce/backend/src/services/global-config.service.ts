@@ -1,11 +1,4 @@
-import {
-	AuthMode,
-	AuthType,
-	GlobalConfig,
-	MeetAppearanceConfig,
-	SecurityConfig,
-	WebhookConfig
-} from '@openvidu-meet/typings';
+import { GlobalConfig, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
@@ -214,10 +207,7 @@ export class GlobalConfigService {
 			},
 			securityConfig: {
 				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.NONE
+					allowUserCreation: true
 				}
 			},
 			roomsConfig: {
