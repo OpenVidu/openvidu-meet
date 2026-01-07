@@ -1,5 +1,6 @@
 import { MeetRoomMember, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Document, Schema, model } from 'mongoose';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
 /**
  * Mongoose Document interface for MeetRoomMember.
@@ -53,6 +54,11 @@ const MeetRoomMemberPartialPermissionsSchema = createPermissionsSchema(false);
  */
 const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 	{
+		schemaVersion: {
+			type: Number,
+			required: true,
+			default: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION
+		},
 		memberId: {
 			type: String,
 			required: true

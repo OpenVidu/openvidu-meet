@@ -48,10 +48,11 @@ export const INTERNAL_CONFIG = {
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure
-	GLOBAL_CONFIG_SCHEMA_VERSION: 1 as SchemaVersion,
-	USER_SCHEMA_VERSION: 1 as SchemaVersion,
+	GLOBAL_CONFIG_SCHEMA_VERSION: 2 as SchemaVersion,
+	USER_SCHEMA_VERSION: 2 as SchemaVersion,
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion,
-	ROOM_SCHEMA_VERSION: 1 as SchemaVersion,
+	ROOM_SCHEMA_VERSION: 2 as SchemaVersion,
+	ROOM_MEMBER_SCHEMA_VERSION: 1 as SchemaVersion,
 	RECORDING_SCHEMA_VERSION: 1 as SchemaVersion
 };
 
