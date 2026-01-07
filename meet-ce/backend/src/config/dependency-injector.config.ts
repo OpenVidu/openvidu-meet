@@ -41,7 +41,6 @@ import { StorageInitService } from '../services/storage/storage-init.service.js'
 import { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
 import { StorageFactory } from '../services/storage/storage.factory.js';
 import { BlobStorageService } from '../services/storage/blob-storage.service.js';
-import { LegacyStorageService } from '../services/storage/legacy-storage.service.js';
 
 import { MigrationService } from '../services/migration.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
@@ -101,7 +100,6 @@ export const registerDependencies = () => {
 	container.bind(StorageFactory).toSelf().inSingletonScope();
 	container.bind(BlobStorageService).toSelf().inSingletonScope();
 	container.bind(StorageInitService).toSelf().inSingletonScope();
-	container.bind(LegacyStorageService).toSelf().inSingletonScope();
 	container.bind(MigrationService).toSelf().inSingletonScope();
 
 	container.bind(FrontendEventService).toSelf().inSingletonScope();
