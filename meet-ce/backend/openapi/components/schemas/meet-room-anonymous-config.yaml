@@ -1,0 +1,24 @@
+type: object
+properties:
+    moderator:
+        type: object
+        properties:
+            enabled:
+                type: boolean
+                default: true
+                example: true
+                description: |
+                    Enables or disables anonymous access for the moderator role.
+    speaker:
+        type: object
+        properties:
+            enabled:
+                type: boolean
+                default: true
+                example: true
+                description: |
+                    Enables or disables anonymous access for the speaker role.
+description: |
+    Configuration for anonymous access.
+
+    Both moderator and speaker fields are optional. If not specified, current configuration will be maintained.

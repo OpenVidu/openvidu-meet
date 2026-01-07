@@ -240,3 +240,209 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/roles:
+    put:
+        operationId: updateRoomRoles
+        summary: Update roles permissions for a room
+        description: |
+            Updates the permissions by role for the specified room.
+
+            You can customize permissions for moderator and/or speaker roles.
+            Only specify the permissions you want to change from the current configuration.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-roles-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-roles.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/anonymous:
+    put:
+        operationId: updateRoomAnonymous
+        summary: Update anonymous access config for a room
+        description: |
+            Updates the anonymous access configuration for the specified room.
+
+            This allows you to enable or disable anonymous access for specific roles (moderator/speaker).
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-anonymous-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-anonymous.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/members:
+    post:
+        operationId: addRoomMember
+        summary: Add a member to a room
+        description: |
+            Adds a new member to the specified room with custom permissions.
+
+            Each member receives a unique access URL that is different from the moderator and speaker URLs.
+            The member's permissions are based on a base role (moderator or speaker) with optional overrides.
+
+            This allows fine-grained control over what each specific participant can do in the meeting.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/add-room-member-request.yaml'
+        responses:
+            '201':
+                $ref: '../components/responses/success-add-room-member.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    get:
+        operationId: getRoomMembers
+        summary: Get all members of a room
+        description: >
+            Retrieves a paginated list of all members in the specified room.
+            Each member has custom access URLs and permissions that can differ from the default moderator and speaker roles.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/room-member-fields.yaml'
+            - $ref: '../components/parameters/max-items.yaml'
+            - $ref: '../components/parameters/next-page-token.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-room-members.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/members/{memberId}:
+    get:
+        operationId: getRoomMember
+        summary: Get a room member
+        description: >
+            Retrieves the details of a specific room member by their member ID.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/member-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-room-member.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-member-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    put:
+        operationId: updateRoomMember
+        summary: Update a room member
+        description: |
+            Updates the permissions and/or base role of a specific room member.
+
+            You can modify the member's base role and custom permission overrides.
+            The effective permissions will be recalculated based on the new base role and custom permissions.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/member-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-member-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-member.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-member-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: deleteRoomMember
+        summary: Delete a room member
+        description: |
+            Removes a member from the specified room, revoking their access.
+
+            If the member is currently in an active meeting, they will be immediately kicked out.
+            The member's access URL will no longer be valid after deletion.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/member-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-delete-room-member.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-member-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'

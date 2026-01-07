@@ -1,0 +1,75 @@
+description: Successfully retrieved the list of room members
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                members:
+                    type: array
+                    items:
+                        $ref: '../schemas/meet-room-member.yaml'
+                pagination:
+                    $ref: '../schemas/meet-pagination.yaml'
+
+        examples:
+            complete_member_details:
+                summary: Full room member details response with multiple members
+                value:
+                    members:
+                        - memberId: 'alice_smith'
+                          name: 'Alice Smith'
+                          accessUrl: 'http://localhost:6080/room/room-123'
+                          baseRole: 'moderator'
+                          customPermissions:
+                              canEndMeeting: false
+                          effectivePermissions:
+                              canRecord: true
+                              canRetrieveRecordings: true
+                              canDeleteRecordings: true
+                              canJoinMeeting: true
+                              canShareAccessLinks: true
+                              canMakeModerator: true
+                              canKickParticipants: true
+                              canEndMeeting: false
+                              canPublishVideo: true
+                              canPublishAudio: true
+                              canShareScreen: true
+                              canReadChat: true
+                              canWriteChat: true
+                              canChangeVirtualBackground: true
+                        - memberId: 'ext-abc123'
+                          name: 'Bob'
+                          accessUrl: 'http://localhost:6080/room/room-123?secret=ext-abc123'
+                          baseRole: 'speaker'
+                          customPermissions:
+                              canShareScreen: false
+                              canRecord: true
+                          effectivePermissions:
+                              canRecord: true
+                              canRetrieveRecordings: true
+                              canDeleteRecordings: false
+                              canJoinMeeting: true
+                              canShareAccessLinks: false
+                              canMakeModerator: false
+                              canKickParticipants: false
+                              canEndMeeting: false
+                              canPublishVideo: true
+                              canPublishAudio: true
+                              canShareScreen: false
+                              canReadChat: true
+                              canWriteChat: true
+                              canChangeVirtualBackground: true
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+            fields=accessUrl,baseRole:
+                summary: Response with only accessUrl and baseRole for each member
+                value:
+                    members:
+                        - accessUrl: 'http://localhost:6080/room/room-123'
+                          baseRole: 'moderator'
+                        - accessUrl: 'http://localhost:6080/room/room-123?secret=ext-abc123'
+                          baseRole: 'speaker'
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10

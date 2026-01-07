@@ -1,0 +1,5 @@
+description: Room member updated successfully
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/meet-room-member.yaml'

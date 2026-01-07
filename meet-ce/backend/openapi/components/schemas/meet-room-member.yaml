@@ -1,0 +1,53 @@
+type: object
+properties:
+    memberId:
+        type: string
+        example: 'alice_smith'
+        description: |
+            The unique identifier of the room member.
+
+            - For internal users: This is set to the userId of the linked Meet user account.
+            - For external users: This is an automatically generated unique identifier starting from 'ext-'.
+    name:
+        type: string
+        example: 'Alice Smith'
+        description: |
+            The display name for the participant when joining the meeting with this member access.
+
+            - For OpenVidu Meet users, this is their profile name.
+            - For external users, this is the assigned name.
+    accessUrl:
+        type: string
+        format: uri
+        example: 'http://localhost:6080/room/room-123'
+        description: >
+            The unique URL for this member to access the room. This URL is different from the moderator and speaker URLs
+            and provides access with the specific permissions assigned to this member.
+    baseRole:
+        type: string
+        enum:
+            - moderator
+            - speaker
+        example: 'speaker'
+        description: |
+            The base role that defines the default permissions for this member. Options are:
+            - moderator: By default, has full permissions to manage the room and meeting.
+            - speaker: By default, has permissions to publish audio and video streams.
+
+            Individual permissions can be overridden through the customPermissions object.
+    customPermissions:
+        type: object
+        additionalProperties:
+            type: boolean
+        example:
+            canShareScreen: false
+            canRecord: true
+        description: |
+            Custom permission overrides for this member. This object contains only the permissions that differ from the base role defaults.
+
+            Each property is a permission name with a boolean value indicating whether the permission is granted or denied.
+    effectivePermissions:
+        $ref: meet-permissions.yaml
+        description: >
+            The complete set of effective permissions for this member. This object is calculated by applying the customPermissions
+            overrides to the base role defaults, resulting in the final permissions that will be enforced.
