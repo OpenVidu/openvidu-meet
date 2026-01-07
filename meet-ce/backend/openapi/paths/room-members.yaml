@@ -13,6 +13,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
         requestBody:
@@ -42,6 +43,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-name.yaml'
@@ -72,6 +74,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-ids.yaml'
@@ -100,6 +103,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
@@ -129,6 +133,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-id.yaml'
@@ -159,6 +164,7 @@
             - OpenVidu Meet - Room Members
         security:
             - apiKeyHeader: []
+            - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-id.yaml'

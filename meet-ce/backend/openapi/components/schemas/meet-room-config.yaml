@@ -29,19 +29,6 @@ MeetRecordingConfig:
             default: true
             example: true
             description: If true, the room will be allowed to record the video of the participants.
-        allowAccessTo:
-            type: string
-            enum:
-                - admin
-                - admin_moderator
-                - admin_moderator_speaker
-            default: admin_moderator_speaker
-            example: admin_moderator_speaker
-            description: |
-                Defines who can access the recording. Options are:
-                - `admin`: Only administrators can access the recording.
-                - `admin_moderator`: Administrators and moderators can access the recording.
-                - `admin_moderator_speaker`: Administrators, moderators and speakers can access the recording.
 MeetVirtualBackgroundConfig:
     type: object
     properties:

@@ -7,28 +7,35 @@ properties:
 AuthenticationConfig:
     type: object
     properties:
-        authMethod:
-            type: object
-            properties:
-                type:
-                    type: string
-                    enum:
-                        - single_user
-                    default: single_user
-                    example: single_user
-                    description: |
-                        Specifies the authentication method used to access the application.
-                        - `single_user`: Only one user account exists, which has administrative privileges and is used for all access.
-        authModeToAccessRoom:
+        allowUserCreation:
+            type: boolean
+            description: Allow admins to create new user accounts.
+            example: true
+        oauthProviders:
+            type: array
+            description: Optional list of allowed OAuth providers for user registration.
+            items:
+                $ref: '#/OAuthProviderConfig'
+
+OAuthProviderConfig:
+    type: object
+    properties:
+        provider:
             type: string
             enum:
-                - none
-                - moderators_only
-                - all_users
-            default: none
-            example: none
-            description: |
-                Specifies who is required to authenticate before accessing a room:
-                - `none`: No authentication required.
-                - `moderators_only`: Only moderators need to authenticate.
-                - `all_users`: All users must authenticate.
+                - google
+                - github
+            description: Supported OAuth provider.
+            example: google
+        clientId:
+            type: string
+            description: OAuth client ID.
+            example: your-client-id.apps.googleusercontent.com
+        clientSecret:
+            type: string
+            description: OAuth client secret.
+            example: your-client-secret
+        redirectUri:
+            type: string
+            description: OAuth redirect URI.
+            example: https://your-domain.com/auth/callback

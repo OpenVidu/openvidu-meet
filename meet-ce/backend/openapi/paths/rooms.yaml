@@ -27,10 +27,13 @@
         operationId: getRooms
         summary: Get all rooms
         description: |
-            Retrieves a paginated list of all rooms available in the system.
+            Retrieves a paginated list of rooms available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 
             By default, the rooms are sorted by creation date in descending order (newest first).
+
+            > **Note:** If this endpoint is called using the `accessTokenHeader` authentication method,
+            > only rooms the authenticated user has access to will be returned.
         tags:
             - OpenVidu Meet - Rooms
         security:

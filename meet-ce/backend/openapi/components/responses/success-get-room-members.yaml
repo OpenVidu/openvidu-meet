@@ -18,6 +18,7 @@ content:
                     members:
                         - memberId: 'alice_smith'
                           name: 'Alice Smith'
+                          membershipDate: 1620000000000
                           accessUrl: 'http://localhost:6080/room/room-123'
                           baseRole: 'moderator'
                           customPermissions:
@@ -39,6 +40,7 @@ content:
                               canChangeVirtualBackground: true
                         - memberId: 'ext-abc123'
                           name: 'Bob'
+                          membershipDate: 1620003600000
                           accessUrl: 'http://localhost:6080/room/room-123?secret=ext-abc123'
                           baseRole: 'speaker'
                           customPermissions:

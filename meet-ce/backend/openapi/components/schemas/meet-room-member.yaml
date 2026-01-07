@@ -6,7 +6,7 @@ properties:
         description: |
             The unique identifier of the room member.
 
-            - For internal users: This is set to the userId of the linked Meet user account.
+            - For registered Meet users: This is set to the userId of the linked Meet user account.
             - For external users: This is an automatically generated unique identifier starting from 'ext-'.
     name:
         type: string
@@ -14,8 +14,13 @@ properties:
         description: |
             The display name for the participant when joining the meeting with this member access.
 
-            - For OpenVidu Meet users, this is their profile name.
+            - For registered Meet users, this is their profile name.
             - For external users, this is the assigned name.
+    membershipDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The timestamp (in milliseconds since Unix epoch) when this member was added to the room.
     accessUrl:
         type: string
         format: uri

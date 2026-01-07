@@ -10,6 +10,11 @@ properties:
         example: 'Alice Smith'
         description: |
             The display name (profile name) of the user.
+    registrationDate:
+        type: number
+        example: 1620000000000
+        description: |
+            The registration date of the user in milliseconds since the Unix epoch.
     role:
         type: string
         enum: ['admin', 'user', 'room_member']

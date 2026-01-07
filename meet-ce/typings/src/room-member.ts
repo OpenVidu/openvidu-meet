@@ -5,7 +5,7 @@ import { SortAndPagination } from './sort-pagination.js';
  * Options for adding a member to a room.
  */
 export interface MeetRoomMemberOptions {
-    userId?: string; // userId of an internal Meet user (mutually exclusive with name)
+    userId?: string; // userId of a registered Meet user (mutually exclusive with name)
     name?: string; // Name for an external user (mutually exclusive with userId)
     baseRole: MeetRoomMemberRole; // The base role assigned to the member
     customPermissions?: Partial<MeetRoomMemberPermissions>; // Custom permissions for the member (overrides base role permissions)
@@ -16,9 +16,9 @@ export interface MeetRoomMemberOptions {
  * A member can be an internal user (identified by userId) or an external user (identified by name).
  */
 export interface MeetRoomMember {
-    memberId: string; // Unique identifier for the member (equals userId for internal users, or generated for external users)
+    memberId: string; // Unique identifier for the member (equals userId for registered users, or generated for external users)
     roomId: string; // ID of the room the member belongs to
-    name: string; // Name of the member (either internal or external user name)
+    name: string; // Name of the member (either registered or external user name)
     membershipDate: number; // Timestamp when the member was added to the room
     accessUrl: string; // URL for the member to access the room
     baseRole: MeetRoomMemberRole; // The base role of the member in the room

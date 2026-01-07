@@ -17,12 +17,15 @@ content:
                     users:
                         - userId: 'admin'
                           name: 'Admin'
+                          registrationDate: 1620000000000
                           role: 'admin'
                         - userId: 'alice_smith'
                           name: 'Alice Smith'
+                          registrationDate: 1620050000000
                           role: 'user'
                         - userId: 'bob_jones'
                           name: 'Bob Jones'
+                          registrationDate: 1620100000000
                           role: 'room_member'
                     pagination:
                         nextPageToken: 'eyJvZmZzZXQiOjEwfQ=='
@@ -34,6 +37,7 @@ content:
                     users:
                         - userId: 'admin'
                           name: 'Admin'
+                          registrationDate: 1620000000000
                           role: 'admin'
                     pagination:
                         isTruncated: false

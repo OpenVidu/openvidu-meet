@@ -14,7 +14,7 @@ properties:
         type: string
         example: 'alice_smith'
         description: |
-            The userId of the internal Meet user who owns this room.
+            The userId of the registered Meet user who owns this room.
 
             If the room was created by a registered Meet user, this will be their userId.
             If the room was created via the REST API using an API key, this will be the userId of the global admin (root user).
@@ -131,8 +131,8 @@ properties:
             The general access URL for authenticated users to join the room.
 
             This URL should be used by:
-            - The room owner (internal Meet user who created the room)
-            - Internal Meet users who are members of the room
+            - The room owner (registered Meet user who created the room)
+            - Registered Meet users who are members of the room
     status:
         type: string
         enum:

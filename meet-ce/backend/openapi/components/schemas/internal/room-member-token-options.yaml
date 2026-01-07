@@ -6,15 +6,15 @@ properties:
         type: string
         description: A secret key for room access. Determines the member's role.
         example: 'abc123456'
-    grantJoinMeetingPermission:
+    joinMeeting:
         type: boolean
-        description: Whether to grant permission to join the meeting. If true, participantName must be provided.
+        description: Whether the token is intended for joining a meeting. If true, participantName must be provided.
         example: true
     participantName:
         type: string
-        description: The name of the participant when joining the meeting. Required if `grantJoinMeetingPermission` is true and this is a new token (not a refresh).
+        description: The name of the participant when joining the meeting. Required if `joinMeeting` is true.
         example: 'Alice'
     participantIdentity:
         type: string
-        description: The identity of the participant in the meeting. Required when refreshing an existing token with meeting permissions.
+        description: The identity of the participant in the meeting. Required when refreshing an existing token used for joining a meeting.
         example: 'Alice'

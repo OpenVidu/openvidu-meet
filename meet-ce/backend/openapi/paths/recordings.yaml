@@ -3,13 +3,14 @@
         operationId: getRecordings
         summary: Get all recordings
         description: |
-            Retrieves a paginated list of all recordings available in the system.
+            Retrieves a paginated list of recordings available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 
             By default, the recordings are sorted by start date in descending order (newest first).
 
-            > **Note:** If this endpoint is called using the `roomMemberTokenHeader` authentication method,
-            > the `roomId` filter will be ignored and only recordings associated with the room included in the token will be returned.
+            > **Note:**
+            > - When using `accessTokenHeader` authentication: Returns only recordings the authenticated user has access to.
+            > - When using `roomMemberTokenHeader` authentication: The `roomId` filter is ignored and only recordings associated with the room included in the token are returned.
         tags:
             - OpenVidu Meet - Recordings
         security:
