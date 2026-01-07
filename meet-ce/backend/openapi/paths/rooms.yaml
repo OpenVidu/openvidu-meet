@@ -26,7 +26,7 @@
     get:
         operationId: getRooms
         summary: Get all rooms
-        description: >
+        description: |
             Retrieves a paginated list of all rooms available in the system.
             You can apply filters to narrow down the results based on specific criteria.
 

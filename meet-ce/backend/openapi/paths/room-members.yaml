@@ -33,9 +33,11 @@
     get:
         operationId: getRoomMembers
         summary: Get all members of a room
-        description: >
+        description: |
             Retrieves a paginated list of all members in the specified room.
-            Each member has custom access URLs and permissions that can differ from the default moderator and speaker roles.
+            Each member has their own access URL and custom permissions that can differ from the default moderator and speaker roles.
+
+            By default, the room members are sorted by membership date in descending order (newest first).
         tags:
             - OpenVidu Meet - Room Members
         security:
@@ -46,6 +48,8 @@
             - $ref: '../components/parameters/room-member-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
+            - $ref: '../components/parameters/sort-field.yaml'
+            - $ref: '../components/parameters/sort-order.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room-members.yaml'

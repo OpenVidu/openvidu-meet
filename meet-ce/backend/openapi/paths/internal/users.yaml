@@ -29,8 +29,10 @@
     get:
         operationId: getUsers
         summary: Get all users
-        description: >
+        description: |
             Retrieves a paginated list of all users in the system.
+
+            By default, the users are sorted by registration date in descending order (newest first).
         tags:
             - Internal API - Users
         security:
@@ -41,6 +43,8 @@
             - $ref: '../../components/parameters/internal/user-role.yaml'
             - $ref: '../../components/parameters/max-items.yaml'
             - $ref: '../../components/parameters/next-page-token.yaml'
+            - $ref: '../../components/parameters/sort-field.yaml'
+            - $ref: '../../components/parameters/sort-order.yaml'
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-users.yaml'
