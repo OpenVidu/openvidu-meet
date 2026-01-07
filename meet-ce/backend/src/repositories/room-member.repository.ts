@@ -129,8 +129,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param options.fields - Comma-separated list of fields to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
-	 * @param options.sortField - Field to sort by (default: 'name')
-	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
+	 * @param options.sortField - Field to sort by (default: 'membershipDate')
+	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing members array, pagination info, and optional next page token
 	 */
 	async findByRoomId(
@@ -149,7 +149,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 		this.currentRoomRoles = room.roles;
 
-		const { name, fields, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
+		const { name, fields, maxItems = 100, nextPageToken, sortField = 'membershipDate', sortOrder = 'desc' } = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = { roomId };

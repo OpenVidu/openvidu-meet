@@ -30,6 +30,10 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 			type: String,
 			required: true
 		},
+		registrationDate: {
+			type: Number,
+			required: true
+		},
 		role: {
 			type: String,
 			enum: Object.values(MeetUserRole),
@@ -54,7 +58,10 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 
 // Create indexes for efficient querying
 MeetUserSchema.index({ userId: 1 }, { unique: true });
-MeetUserSchema.index({ name: 1, _id: 1 });
+MeetUserSchema.index({ registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ name: 1, registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ role: 1, registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ name: 1, role: 1, _id: 1 });
 
 export const meetUserCollectionName = 'MeetUser';
 

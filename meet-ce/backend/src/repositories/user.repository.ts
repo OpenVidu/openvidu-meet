@@ -79,8 +79,8 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @param options.role - Optional role to filter by
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
-	 * @param options.sortField - Field to sort by (default: 'name')
-	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
+	 * @param options.sortField - Field to sort by (default: 'registrationDate')
+	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing users array, pagination info, and optional next page token
 	 */
 	async find(options: MeetUserFilters = {}): Promise<{
@@ -88,7 +88,15 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { userId, name, role, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
+		const {
+			userId,
+			name,
+			role,
+			maxItems = 100,
+			nextPageToken,
+			sortField = 'registrationDate',
+			sortOrder = 'desc'
+		} = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};

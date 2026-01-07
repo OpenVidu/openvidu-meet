@@ -13,6 +13,7 @@ export interface MeetUserOptions {
 export interface MeetUser {
     userId: string;
     name: string;
+    registrationDate: number;
     role: MeetUserRole;
     passwordHash: string;
 }

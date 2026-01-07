@@ -71,6 +71,10 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 			type: String,
 			required: true
 		},
+		membershipDate: {
+			type: Number,
+			required: true
+		},
 		baseRole: {
 			type: String,
 			enum: Object.values(MeetRoomMemberRole),
@@ -95,6 +99,8 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 
 // Create indexes for efficient querying
 MeetRoomMemberSchema.index({ roomId: 1, memberId: 1 }, { unique: true });
+MeetRoomMemberSchema.index({ roomId: 1, membershipDate: -1, _id: -1 });
+MeetRoomMemberSchema.index({ roomId: 1, name: 1, membershipDate: -1, _id: -1 });
 MeetRoomMemberSchema.index({ roomId: 1, name: 1, _id: 1 });
 MeetRoomMemberSchema.index({ memberId: 1 });
 

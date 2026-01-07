@@ -28,6 +28,7 @@ export class UserService {
 		const admin: MeetUser = {
 			userId: MEET_ENV.INITIAL_ADMIN_USER,
 			name: 'Admin',
+			registrationDate: Date.now(),
 			role: MeetUserRole.ADMIN,
 			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD)
 		};
@@ -47,6 +48,7 @@ export class UserService {
 		const user: MeetUser = {
 			userId: userOptions.userId,
 			name: userOptions.name,
+			registrationDate: Date.now(),
 			role: userOptions.role,
 			passwordHash
 		};

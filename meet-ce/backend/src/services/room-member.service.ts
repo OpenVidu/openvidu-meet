@@ -90,6 +90,7 @@ export class RoomMemberService {
 			memberId,
 			roomId,
 			name: memberName,
+			membershipDate: Date.now(),
 			baseRole,
 			customPermissions
 		} as MeetRoomMember;
