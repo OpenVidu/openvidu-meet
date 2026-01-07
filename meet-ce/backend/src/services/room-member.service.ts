@@ -67,6 +67,7 @@ export class RoomMemberService {
 		// Generate memberId and member name
 		let memberId: string;
 		let memberName: string;
+		let accessUrl = `/room/${roomId}`;
 
 		if (userId) {
 			// Registered user: memberId = userId, get name from user service
@@ -80,8 +81,9 @@ export class RoomMemberService {
 			memberName = user.name;
 		} else if (name) {
 			// External user: generate memberId, use provided name
-			memberId = `ext-${secureUid(15)}`;
+			memberId = `ext-${secureUid(10)}`;
 			memberName = name;
+			accessUrl += `?secret=${memberId}`;
 		} else {
 			throw new Error('Either userId or name must be provided');
 		}
@@ -91,9 +93,10 @@ export class RoomMemberService {
 			roomId,
 			name: memberName,
 			membershipDate: Date.now(),
+			accessUrl,
 			baseRole,
 			customPermissions
-		} as MeetRoomMember;
+		};
 		return this.roomMemberRepository.create(roomMember);
 	}
 

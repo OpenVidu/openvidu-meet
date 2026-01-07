@@ -54,7 +54,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param member - The room member data to add
 	 * @returns The created room member
 	 */
-	async create(member: MeetRoomMember): Promise<MeetRoomMember> {
+	async create(member: Omit<MeetRoomMember, 'effectivePermissions'>): Promise<MeetRoomMember> {
 		const room = await this.roomRepository.findByRoomId(member.roomId);
 
 		if (!room) {
@@ -62,7 +62,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		}
 
 		this.currentRoomRoles = room.roles;
-		const document = await this.createDocument(member);
+		const document = await this.createDocument(member as MeetRoomMember);
 		const domain = this.toDomain(document);
 		this.currentRoomRoles = undefined;
 		return domain;
@@ -149,7 +149,14 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 		this.currentRoomRoles = room.roles;
 
-		const { name, fields, maxItems = 100, nextPageToken, sortField = 'membershipDate', sortOrder = 'desc' } = options;
+		const {
+			name,
+			fields,
+			maxItems = 100,
+			nextPageToken,
+			sortField = 'membershipDate',
+			sortOrder = 'desc'
+		} = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = { roomId };

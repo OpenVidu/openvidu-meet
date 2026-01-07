@@ -75,6 +75,10 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 			type: Number,
 			required: true
 		},
+		accessUrl: {
+			type: String,
+			required: true
+		},
 		baseRole: {
 			type: String,
 			enum: Object.values(MeetRoomMemberRole),

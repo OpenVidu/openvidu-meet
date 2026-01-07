@@ -20,6 +20,7 @@ export interface MeetRoomMember {
     roomId: string; // ID of the room the member belongs to
     name: string; // Name of the member (either internal or external user name)
     membershipDate: number; // Timestamp when the member was added to the room
+    accessUrl: string; // URL for the member to access the room
     baseRole: MeetRoomMemberRole; // The base role of the member in the room
     customPermissions?: Partial<MeetRoomMemberPermissions>; // Custom permissions for the member (if any)
     effectivePermissions: MeetRoomMemberPermissions; // Effective permissions for the member (base role + custom permissions)
