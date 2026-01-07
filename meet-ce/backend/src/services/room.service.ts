@@ -1,6 +1,5 @@
 import {
 	MeetingEndAction,
-	MeetRecordingAccess,
 	MeetRoom,
 	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
@@ -54,7 +53,7 @@ export class RoomService {
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
-	 * @param {MeetRoomOptions} options - The options for creating the OpenVidu room.
+	 * @param {MeetRoomOptions} roomOptions - The options for creating the OpenVidu room.
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
@@ -66,22 +65,7 @@ export class RoomService {
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
 		const roomId = `${roomIdPrefix}-${uid(15)}`;
-
-		const defaultConfig: MeetRoomConfig = {
-			recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
-			chat: { enabled: true },
-			virtualBackground: { enabled: true },
-			e2ee: { enabled: false }
-		};
-		const roomConfig = {
-			...defaultConfig,
-			...config
-		};
-
-		// Disable recording if E2EE is enabled
-		if (roomConfig.e2ee.enabled && roomConfig.recording.enabled) {
-			roomConfig.recording.enabled = false;
-		}
+		const roomConfig: MeetRoomConfig = config as MeetRoomConfig;
 
 		const meetRoom: MeetRoom = {
 			roomId,
