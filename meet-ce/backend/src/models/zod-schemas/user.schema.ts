@@ -26,7 +26,9 @@ export const UserFiltersSchema: z.ZodType<MeetUserFilters> = z.object({
 			return intVal > 100 ? 100 : intVal;
 		})
 		.default(10),
-	nextPageToken: z.string().optional()
+	nextPageToken: z.string().optional(),
+	sortField: z.enum(['name', 'registrationDate']).optional().default('registrationDate'),
+	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
 });
 
 export const BulkDeleteUsersReqSchema = z.object({

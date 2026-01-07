@@ -1,4 +1,10 @@
-import { MeetRoomMember, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetRoomRoles } from '@openvidu-meet/typings';
+import {
+	MeetRoomMember,
+	MeetRoomMemberFilters,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomRoles
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { errorRoomNotFound } from '../models/error.model.js';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
@@ -120,6 +126,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param roomId - The ID of the room
 	 * @param options - Query options
 	 * @param options.name - Optional member name to filter by (case-insensitive partial match)
+	 * @param options.fields - Comma-separated list of fields to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
 	 * @param options.sortField - Field to sort by (default: 'name')
@@ -128,13 +135,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 */
 	async findByRoomId(
 		roomId: string,
-		options: {
-			name?: string;
-			maxItems?: number;
-			nextPageToken?: string;
-			sortField?: string;
-			sortOrder?: 'asc' | 'desc';
-		} = {}
+		options: MeetRoomMemberFilters = {}
 	): Promise<{
 		members: MeetRoomMember[];
 		isTruncated: boolean;
@@ -148,7 +149,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 		this.currentRoomRoles = room.roles;
 
-		const { name, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
+		const { name, fields, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = { roomId };
@@ -158,12 +159,16 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		}
 
 		// Use base repository's pagination method
-		const result = await this.findMany(filter, {
-			maxItems,
-			nextPageToken,
-			sortField,
-			sortOrder
-		});
+		const result = await this.findMany(
+			filter,
+			{
+				maxItems,
+				nextPageToken,
+				sortField,
+				sortOrder
+			},
+			fields
+		);
 
 		this.currentRoomRoles = undefined;
 

@@ -17,7 +17,6 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { UtilsHelper } from '../helpers/utils.helper.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
 import {
 	errorInsufficientPermissions,
@@ -135,16 +134,7 @@ export class RoomMemberService {
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { fields, ...findOptions } = filters;
-		const response = await this.roomMemberRepository.findByRoomId(roomId, findOptions);
-
-		if (fields) {
-			const filteredMembers = response.members.map((member: MeetRoomMember) =>
-				UtilsHelper.filterObjectFields(member, fields)
-			);
-			response.members = filteredMembers as MeetRoomMember[];
-		}
-
+		const response = await this.roomMemberRepository.findByRoomId(roomId, filters);
 		return response;
 	}
 

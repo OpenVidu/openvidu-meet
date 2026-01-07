@@ -1,4 +1,5 @@
 import { MeetRoomMemberPermissions } from './permissions/meet-permissions.js';
+import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * Options for adding a member to a room.
@@ -31,12 +32,10 @@ export enum MeetRoomMemberRole {
     SPEAKER = 'speaker'
 }
 
-export type MeetRoomMemberFilters = {
+export interface MeetRoomMemberFilters extends SortAndPagination {
     name?: string;
     fields?: string;
-    maxItems?: number;
-    nextPageToken?: string;
-};
+}
 
 /**
  * Options for generating a room member token.

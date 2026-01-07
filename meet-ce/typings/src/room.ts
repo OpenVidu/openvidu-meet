@@ -1,6 +1,5 @@
 import { MeetRoomMemberPermissions } from './permissions/meet-permissions.js';
 import { MeetRoomConfig } from './room-config.js';
-import { MeetRoomMemberPermissions, MeetRoomMemberRole } from './room-member.js';
 import { SortAndPagination } from './sort-pagination.js';
 
 /**

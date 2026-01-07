@@ -78,7 +78,9 @@ export const RoomMemberFiltersSchema: z.ZodType<MeetRoomMemberFilters> = z.objec
 			return intVal > 100 ? 100 : intVal;
 		})
 		.default(10),
-	nextPageToken: z.string().optional()
+	nextPageToken: z.string().optional(),
+	sortField: z.enum(['name', 'membershipDate']).optional().default('membershipDate'),
+	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
 });
 
 export const BulkDeleteRoomMembersReqSchema = z.object({

@@ -1,3 +1,5 @@
+import { SortAndPagination } from './sort-pagination.js';
+
 /**
  * Options for creating a new Meet user.
  */
@@ -26,9 +28,8 @@ export enum MeetUserRole {
 
 export type MeetUserDTO = Omit<MeetUser, 'passwordHash'>;
 
-export type MeetUserFilters = {
+export interface MeetUserFilters extends SortAndPagination {
     userId?: string;
     name?: string;
-    maxItems?: number;
-    nextPageToken?: string;
-};
+    role?: MeetUserRole;
+}

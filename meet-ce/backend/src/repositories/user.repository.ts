@@ -1,4 +1,4 @@
-import { MeetUser } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserFilters } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -76,27 +76,19 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @param options - Query options
 	 * @param options.userId - Optional user ID to filter by (case-insensitive partial match)
 	 * @param options.name - Optional name to filter by (case-insensitive partial match)
+	 * @param options.role - Optional role to filter by
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
 	 * @param options.sortField - Field to sort by (default: 'name')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
 	 * @returns Object containing users array, pagination info, and optional next page token
 	 */
-	async find(
-		options: {
-			userId?: string;
-			name?: string;
-			maxItems?: number;
-			nextPageToken?: string;
-			sortField?: string;
-			sortOrder?: 'asc' | 'desc';
-		} = {}
-	): Promise<{
+	async find(options: MeetUserFilters = {}): Promise<{
 		users: TUser[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const { userId, name, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
+		const { userId, name, role, maxItems = 100, nextPageToken, sortField = 'name', sortOrder = 'asc' } = options;
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};
@@ -110,6 +102,10 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 		} else if (name) {
 			// Only name defined: regex match (case-insensitive)
 			filter.name = new RegExp(name, 'i');
+		}
+
+		if (role) {
+			filter.role = role;
 		}
 
 		// Use base repository's pagination method
