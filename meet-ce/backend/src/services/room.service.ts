@@ -13,6 +13,7 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
+import merge from 'lodash.merge';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
@@ -32,6 +33,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
+
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -131,11 +133,8 @@ export class RoomService {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		// Merge the partial config with the existing config
-		room.config = {
-			...room.config,
-			...config
-		};
+		// Merge existing config with new config (partial update)
+		room.config = merge({}, room.config, config);
 
 		// Disable recording if E2EE is enabled
 		if (room.config.e2ee.enabled && room.config.recording.enabled) {

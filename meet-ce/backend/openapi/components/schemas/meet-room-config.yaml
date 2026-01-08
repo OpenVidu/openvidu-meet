@@ -29,6 +29,25 @@ MeetRecordingConfig:
             default: true
             example: true
             description: If true, the room will be allowed to record the video of the participants.
+        layout:
+            type: string
+            enum:
+                - grid
+                - speaker
+                - single-speaker
+                - grid-light
+                - speaker-light
+                - single-speaker-light
+            default: grid
+            example: grid
+            description: |
+                Defines the layout of the recording. Options are:
+                - `grid`: All participants are shown in a grid layout.
+                - `speaker`: The active speaker is shown prominently, with other participants in smaller thumbnails.
+                - `single-speaker`: Only the active speaker is shown in the recording.
+                - `grid-light`: Similar to `grid` but with a light-themed background.
+                - `speaker-light`: Similar to `speaker` but with a light-themed background.
+                - `single-speaker-light`: Similar to `single-speaker` but with a light
         allowAccessTo:
             type: string
             enum:

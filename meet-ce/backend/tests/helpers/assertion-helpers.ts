@@ -3,6 +3,7 @@ import {
 	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAutoDeletionPolicy,
@@ -155,6 +156,7 @@ export const expectValidRoom = (
 		expect(room.config).toEqual({
 			recording: {
 				enabled: true,
+				layout: MeetRecordingLayout.GRID,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
 			chat: { enabled: true },

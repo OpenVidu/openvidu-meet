@@ -1,5 +1,6 @@
 import {
 	MeetRecordingAccess,
+	MeetRecordingLayout,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -48,6 +49,12 @@ const MeetRecordingConfigSchema = new Schema(
 		enabled: {
 			type: Boolean,
 			required: true
+		},
+		layout: {
+			type: String,
+			enum: Object.values(MeetRecordingLayout),
+			required: true,
+			default: MeetRecordingLayout.GRID
 		},
 		allowAccessTo: {
 			type: String,

@@ -1,18 +1,20 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
-import { WizardNavigationConfig, WizardStep } from '../models';
 import {
 	MeetRecordingAccess,
+	MeetRecordingLayout,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
+import { WizardNavigationConfig, WizardStep } from '../models';
 
 // Default room config following the app's defaults
 const DEFAULT_CONFIG: MeetRoomConfig = {
 	recording: {
 		enabled: true,
+		layout: MeetRecordingLayout.GRID,
 		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 	},
 	chat: { enabled: true },
@@ -178,7 +180,7 @@ export class RoomWizardStateService {
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
 				formGroup: this.formBuilder.group({
-					layoutType: 'grid'
+					layout: initialRoomOptions.config?.recording?.layout || MeetRecordingLayout.GRID
 				})
 			},
 			{
@@ -232,6 +234,7 @@ export class RoomWizardStateService {
 
 				break;
 			case 'recording':
+			case 'recordingLayout':
 				updatedOptions = {
 					...currentOptions,
 					config: {
@@ -244,7 +247,6 @@ export class RoomWizardStateService {
 				};
 				break;
 			case 'recordingTrigger':
-			case 'recordingLayout':
 				// These steps don't update room options
 				updatedOptions = { ...currentOptions };
 				break;
@@ -291,15 +293,21 @@ export class RoomWizardStateService {
 	private updateStepsVisibility(): void {
 		const currentSteps = this._steps();
 		const currentOptions = this._roomOptions();
-		// TODO: Uncomment when recording config is fully implemented
-		const recordingEnabled = false; // currentOptions.config?.recording.enabled ?? false;
+
+		const recordingEnabled = currentOptions.config?.recording?.enabled ?? false;
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
-			if (step.id === 'recordingTrigger' || step.id === 'recordingLayout') {
+			if (step.id === 'recordingLayout') {
 				return {
 					...step,
 					isVisible: recordingEnabled // Only show if recording is enabled
+				};
+			}
+			if (step.id === 'recordingTrigger') {
+				return {
+					...step,
+					isVisible: false // TODO: Change to true when recording trigger config is implemented
 				};
 			}
 			return step;

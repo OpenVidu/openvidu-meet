@@ -27,6 +27,8 @@ content:
                           config:
                               recording:
                                   enabled: false
+                                  layout: grid
+                                  allowAccessTo: admin_moderator_speaker
                               chat:
                                   enabled: true
                               virtualBackground:
@@ -87,6 +89,8 @@ content:
                           config:
                               recording:
                                   enabled: true
+                                  layout: grid
+                                  allowAccessTo: admin_moderator_speaker
                               chat:
                                   enabled: false
                               virtualBackground:

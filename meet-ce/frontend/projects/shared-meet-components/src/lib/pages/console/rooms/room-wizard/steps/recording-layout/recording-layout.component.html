@@ -13,10 +13,10 @@
 		<form [formGroup]="layoutForm" class="layout-form">
 			<!-- Layout Options Cards -->
 			<div class="options-grid">
-				@for (option of layoutOptions; track option.id) {
+				@for (option of layoutOptions(); track option.id) {
 					<ov-selectable-card
 						[option]="option"
-						[selectedValue]="selectedOption"
+						[selectedValue]="selectedOption()"
 						[showSelectionIndicator]="true"
 						[showProBadge]="option.isPro ?? false"
 						[showRecommendedBadge]="option.recommended ?? false"

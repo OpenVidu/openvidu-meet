@@ -5,6 +5,7 @@ import {
 	MeetPermissions,
 	MeetRecordingAccess,
 	MeetRecordingConfig,
+	MeetRecordingLayout,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -36,21 +37,11 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 
 const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.nativeEnum(MeetRecordingAccess);
 
-const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z
-	.object({
-		enabled: z.boolean(),
-		allowAccessTo: RecordingAccessSchema.optional()
-	})
-	.refine(
-		(data) => {
-			// If recording is enabled, allowAccessTo must be provided
-			return !data.enabled || data.allowAccessTo !== undefined;
-		},
-		{
-			message: 'allowAccessTo is required when recording is enabled',
-			path: ['allowAccessTo']
-		}
-	);
+const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
+	enabled: z.boolean(),
+	layout: z.nativeEnum(MeetRecordingLayout).optional(),
+	allowAccessTo: RecordingAccessSchema.optional()
+});
 
 const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
 	enabled: z.boolean()
@@ -119,16 +110,33 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 /**
  * Schema for creating room config (applies defaults for missing fields)
  * Used when creating a new room - missing fields get default values
+ *
+ * IMPORTANT: Using functions in .default() to avoid shared mutable state.
+ * Each call creates a new object instance instead of reusing the same reference.
  */
 const CreateRoomConfigSchema = z
 	.object({
-		recording: RecordingConfigSchema.optional().default({ enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER }),
-		chat: ChatConfigSchema.optional().default({ enabled: true }),
-		virtualBackground: VirtualBackgroundConfigSchema.optional().default({ enabled: true }),
-		e2ee: E2EEConfigSchema.optional().default({ enabled: false })
+		recording: RecordingConfigSchema.optional().default(() => ({
+			enabled: true,
+			layout: MeetRecordingLayout.GRID,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		})),
+		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
+		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
+		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
+		// Apply default layout if not provided
+		if (data.recording.layout === undefined) {
+			data.recording.layout = MeetRecordingLayout.GRID;
+		}
+
+		// Apply default allowAccessTo if not provided
+		if (data.recording.allowAccessTo === undefined) {
+			data.recording.allowAccessTo = MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER;
+		}
+
 		// Automatically disable recording when E2EE is enabled
 		if (data.e2ee.enabled && data.recording.enabled) {
 			data.recording = {
@@ -169,10 +177,10 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		)
 		.optional(),
 	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional()
-		.default({
+		.default(() => ({
 			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
 			withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
-		})
+		}))
 		.refine(
 			(policy) => {
 				return !policy || policy.withMeeting !== MeetRoomDeletionPolicyWithMeeting.FAIL;
@@ -192,7 +200,11 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			}
 		),
 	config: CreateRoomConfigSchema.optional().default({
-		recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+		recording: {
+			enabled: true,
+			layout: MeetRecordingLayout.GRID,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false }

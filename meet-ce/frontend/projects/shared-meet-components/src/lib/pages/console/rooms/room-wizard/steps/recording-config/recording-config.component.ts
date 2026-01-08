@@ -6,10 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { MeetRecordingAccess, MeetRoomOptions } from '@openvidu-meet/typings';
+import { Subject, takeUntil } from 'rxjs';
 import { SelectableCardComponent, SelectableOption, SelectionEvent } from '../../../../../../components';
 import { RoomWizardStateService } from '../../../../../../services';
-import { MeetRecordingAccess } from '@openvidu-meet/typings';
-import { Subject, takeUntil } from 'rxjs';
 
 interface RecordingAccessOption {
 	value: MeetRecordingAccess;
@@ -88,7 +88,7 @@ export class RecordingConfigComponent implements OnDestroy {
 	private saveFormData(formValue: any) {
 		const enabled = formValue.recordingEnabled === 'enabled';
 
-		const stepData: any = {
+		const stepData: Partial<MeetRoomOptions> = {
 			config: {
 				recording: {
 					enabled,

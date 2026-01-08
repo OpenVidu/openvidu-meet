@@ -1,4 +1,10 @@
-import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	MeetRecordingFilters,
+	MeetRecordingInfo,
+	MeetRecordingStatus,
+	MeetRoom,
+	MeetRoomConfig
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import ms from 'ms';
@@ -58,7 +64,7 @@ export class RecordingService {
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
-			await this.validateRoomForStartRecording(roomId);
+			const room = await this.validateRoomForStartRecording(roomId);
 
 			// Manually send the recording signal to OpenVidu Components for avoiding missing event if timeout occurs
 			// and the egress_started webhook is not received.
@@ -100,7 +106,7 @@ export class RecordingService {
 
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
-					const options = this.generateCompositeOptionsFromRequest();
+					const options = this.generateCompositeOptionsFromRequest(room.config);
 					const output = this.generateFileOutputFromRequest(roomId);
 					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
@@ -542,7 +548,14 @@ export class RecordingService {
 		}
 	}
 
-	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
+	/**
+	 * Validates that a room exists and has participants before starting a recording.
+	 *
+	 * @param roomId
+	 * @returns The MeetRoom object if validation passes.
+	 * @throws Will throw an error if the room does not exist or has no participants.
+	 */
+	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRoom> {
 		const room = await this.roomRepository.findByRoomId(roomId);
 
 		if (!room) throw errorRoomNotFound(roomId);
@@ -550,6 +563,8 @@ export class RecordingService {
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
+
+		return room;
 	}
 
 	/**
@@ -683,9 +698,15 @@ export class RecordingService {
 		}
 	}
 
-	protected generateCompositeOptionsFromRequest(layout = 'grid'): RoomCompositeOptions {
+	/**
+	 * Generates composite options for recording based on the provided room configuration.
+	 *
+	 * @param roomConfig  The room configuration
+	 * @returns The generated RoomCompositeOptions object.
+	 */
+	protected generateCompositeOptionsFromRequest({ recording }: MeetRoomConfig): RoomCompositeOptions {
 		return {
-			layout: layout
+			layout: recording.layout
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false
