@@ -10,37 +10,28 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { GlobalConfigService, NotificationService } from '../../../services';
 import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 'openvidu-components-angular';
-
-type ColorField = 'backgroundColor' | 'primaryColor' | 'secondaryColor' | 'accentColor' | 'surfaceColor';
-
-interface ThemeColors {
-	backgroundColor: string;
-	primaryColor: string;
-	secondaryColor: string;
-	accentColor: string;
-	surfaceColor: string;
-}
+import { ColorField, ThemeColors } from '../../../models';
+import { GlobalConfigService, NotificationService } from '../../../services';
 
 @Component({
-    selector: 'ov-config',
-    imports: [
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        MatSlideToggleModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-        MatDividerModule,
-        ReactiveFormsModule
-    ],
-    templateUrl: './config.component.html',
-    styleUrl: './config.component.scss'
+	selector: 'ov-config',
+	imports: [
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatSelectModule,
+		MatSlideToggleModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatDividerModule,
+		ReactiveFormsModule
+	],
+	templateUrl: './config.component.html',
+	styleUrl: './config.component.scss'
 })
 export class ConfigComponent implements OnInit {
 	isLoading = signal(true);
