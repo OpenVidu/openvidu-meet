@@ -81,6 +81,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Finds rooms owned by a specific user.
+	 * Returns rooms with enriched URLs (including base URL).
+	 *
+	 * @param owner - The userId of the room owner
+	 * @param fields - Comma-separated list of fields to include in the result
+	 * @returns Array of rooms owned by the user
+	 */
+	async findByOwner(owner: string, fields?: string): Promise<TRoom[]> {
+		return await this.findAll({ owner }, fields);
+	}
+
+	/**
 	 * Finds rooms with optional filtering, pagination, and sorting.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *

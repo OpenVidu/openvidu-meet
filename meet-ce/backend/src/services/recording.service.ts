@@ -201,7 +201,7 @@ export class RecordingService {
 
 	/**
 	 * Retrieves a list of recordings based on the provided filtering, pagination, and sorting options.
-	 * 
+	 *
 	 * If the request is made with a room member token, only recordings for the associated room are returned.
 	 * If the request is made by an authenticated user, access is determined by the user's role and permissions:
 	 * - ADMIN: Can see all recordings
@@ -240,11 +240,8 @@ export class RecordingService {
 
 				// If USER role, also get owned room IDs
 				if (user.role === MeetUserRole.USER) {
-					const ownedRooms = await this.roomRepository.find({
-						owner: user.userId,
-						fields: 'roomId'
-					});
-					ownedRoomIds = ownedRooms.rooms.map((r) => r.roomId);
+					const ownedRooms = await this.roomRepository.findByOwner(user.userId, 'roomId');
+					ownedRoomIds = ownedRooms.map((r) => r.roomId);
 				}
 
 				// Combine owned rooms and member rooms with permission
