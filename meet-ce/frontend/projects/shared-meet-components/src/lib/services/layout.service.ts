@@ -37,7 +37,7 @@ export class MeetLayoutService extends LayoutService {
 	// STATE SIGNALS
 	// ==============================================================================================
 
-	private readonly _layoutMode = signal<MeetLayoutMode>(MeetLayoutMode.MOSAIC);
+	private readonly _layoutMode = signal<MeetLayoutMode>(MeetLayoutMode.SMART_MOSAIC);
 	readonly layoutMode = this._layoutMode.asReadonly();
 
 	private readonly _maxRemoteSpeakers = signal<number>(this.INITIAL_SPEAKERS_COUNT);
