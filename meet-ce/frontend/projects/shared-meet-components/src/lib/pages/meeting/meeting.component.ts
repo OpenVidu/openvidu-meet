@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, ContentChild, effect, inject, OnInit, Signal, signal, TemplateRef } from '@angular/core';
+import { Component, computed, ContentChild, effect, inject, OnInit, Signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -13,7 +13,9 @@ import {
 	ViewportService
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
+import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization';
+import { ApplicationFeatures } from '../../models/app.model';
 import {
 	FeatureConfigurationService,
 	GlobalConfigService,
@@ -25,8 +27,6 @@ import {
 	RoomMemberService,
 	WebComponentManagerService
 } from '../../services';
-import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
-import { ApplicationFeatures } from '../../models/app.model';
 
 @Component({
 	selector: 'ov-meeting',
