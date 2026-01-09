@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -104,11 +104,9 @@ export class ConfigComponent implements OnInit {
 
 	private lastBaseThemeValue: MeetRoomThemeMode | null = null;
 	private isUpdatingColors = false; // Flag to prevent infinite loops
-
-	constructor(
-		private configService: GlobalConfigService,
-		private notificationService: NotificationService
-	) {
+	protected configService: GlobalConfigService = inject(GlobalConfigService);
+	protected notificationService: NotificationService = inject(NotificationService);
+	constructor() {
 		// Track form changes
 		this.appearanceForm.valueChanges.subscribe(() => {
 			// Prevent infinite loops when updating colors programmatically
