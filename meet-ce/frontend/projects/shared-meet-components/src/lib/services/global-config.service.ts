@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
+import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { FeatureConfigurationService, HttpService } from '../services';
 
 @Injectable({
@@ -8,18 +8,12 @@ import { FeatureConfigurationService, HttpService } from '../services';
 })
 export class GlobalConfigService {
 	protected readonly GLOBAL_CONFIG_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/config`;
-
 	protected securityConfig?: SecurityConfig;
-
-	protected log;
-
-	constructor(
-		protected loggerService: LoggerService,
-		protected httpService: HttpService,
-		protected featureConfService: FeatureConfigurationService
-	) {
-		this.log = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
-	}
+	protected loggerService: LoggerService = inject(LoggerService);
+	protected httpService: HttpService = inject(HttpService);
+	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
+	constructor() {}
 
 	async getSecurityConfig(forceRefresh = false): Promise<SecurityConfig> {
 		if (this.securityConfig && !forceRefresh) {
