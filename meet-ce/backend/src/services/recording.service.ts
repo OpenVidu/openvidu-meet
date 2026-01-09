@@ -4,6 +4,7 @@ import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions 
 import ms from 'ms';
 import { Readable } from 'stream';
 import { uid } from 'uid';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -32,6 +33,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService, RedisLock } from './mutex.service.js';
 import { RequestSessionService } from './request-session.service.js';
+import { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
 
 @injectable()
@@ -282,20 +284,34 @@ export class RecordingService {
 		recordingIds: string[],
 		roomId?: string
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
+		const roomService = container.get(RoomService);
+
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 
 		for (const recordingId of recordingIds) {
+			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+
 			// If a roomId is provided, only process recordings from that room
 			if (roomId) {
-				const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
 				if (recRoomId !== roomId) {
 					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
 					failedRecordings.add({
 						recordingId,
 						error: `Recording '${recordingId}' does not belong to room '${roomId}'`
+					});
+					continue;
+				}
+			} else {
+				// Check room member permissions for each recording if no roomId filter is applied
+				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(recRoomId);
+
+				if (!permissions.canDeleteRecordings) {
+					this.logger.warn(`Insufficient permissions to delete recording '${recordingId}'`);
+					failedRecordings.add({
+						recordingId,
+						error: `Insufficient permissions to delete recording '${recordingId}'`
 					});
 					continue;
 				}

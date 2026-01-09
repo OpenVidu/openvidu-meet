@@ -27,6 +27,7 @@ import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
+	errorInsufficientPermissions,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
 	internalError,
@@ -328,7 +329,7 @@ export class RoomService {
 
 	/**
 	 * Retrieves a list of rooms based on the provided filtering, pagination, and sorting options.
-	 * 
+	 *
 	 * If the request is made by an authenticated user, access is determined by the user's role:
 	 * - ADMIN: Can see all rooms
 	 * - USER: Can see rooms they own or are members of
@@ -716,6 +717,17 @@ export class RoomService {
 					const roomId = typeof room === 'string' ? room : room.roomId;
 
 					try {
+						const user = this.requestSessionService.getAuthenticatedUser();
+
+						// Check permissions if user is authenticated and not an admin
+						if (user && user.role !== MeetUserRole.ADMIN) {
+							const isOwner = await this.isRoomOwner(roomId, user.userId);
+
+							if (!isOwner) {
+								throw errorInsufficientPermissions();
+							}
+						}
+
 						let result;
 
 						if (typeof room === 'string') {
