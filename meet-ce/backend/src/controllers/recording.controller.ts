@@ -53,18 +53,9 @@ export const stopRecording = async (req: Request, res: Response) => {
 export const getRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
 	const queryParams = req.query;
 
-	// If room member token is present, retrieve only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromMember();
-
-	if (roomId) {
-		queryParams.roomId = roomId;
-		logger.info(`Getting recordings for room '${roomId}'`);
-	} else {
-		logger.info('Getting all recordings');
-	}
+	logger.info('Getting all recordings');
 
 	try {
 		const { recordings, isTruncated, nextPageToken } = await recordingService.getAllRecordings(queryParams);

@@ -327,17 +327,38 @@ export class RoomService {
 	}
 
 	/**
-	 * Retrieves a list of rooms.
-	 * @returns A Promise that resolves to an array of {@link MeetRoom} objects.
-	 * @throws If there was an error retrieving the rooms.
+	 * Retrieves a list of rooms based on the provided filtering, pagination, and sorting options.
+	 * 
+	 * If the request is made by an authenticated user, access is determined by the user's role:
+	 * - ADMIN: Can see all rooms
+	 * - USER: Can see rooms they own or are members of
+	 * - ROOM_MEMBER: Can see rooms they are members of
+	 *
+	 * @param filters - Filtering, pagination and sorting options
+	 * @returns A Promise that resolves to paginated room list
+	 * @throws If there was an error retrieving the rooms
 	 */
 	async getAllMeetRooms(filters: MeetRoomFilters): Promise<{
 		rooms: MeetRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const response = await this.roomRepository.find(filters);
-		return response;
+		const user = this.requestSessionService.getAuthenticatedUser();
+		const queryOptions: MeetRoomFilters & { roomIds?: string[]; owner?: string } = { ...filters };
+
+		// Admin can see all rooms - no additional filters needed
+		if (user && user.role !== MeetUserRole.ADMIN) {
+			// For USER and ROOM_MEMBER roles, get the list of room IDs they are members of
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(user.userId);
+			queryOptions.roomIds = memberRoomIds;
+
+			// If USER role, also filter by rooms they own
+			if (user.role === MeetUserRole.USER) {
+				queryOptions.owner = user.userId;
+			}
+		}
+
+		return await this.roomRepository.find(queryOptions);
 	}
 
 	/**
@@ -771,6 +792,18 @@ export class RoomService {
 	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
 		const room = await this.roomRepository.findByRoomId(roomId);
 		return room?.owner === userId;
+	}
+
+	/**
+	 * Checks if a user is a member of a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member (userId)
+	 * @returns A promise that resolves to true if the user is a member, false otherwise
+	 */
+	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
+		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+		return !!member;
 	}
 
 	/**

@@ -113,11 +113,67 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	/**
 	 * Finds room members by their memberIds.
 	 *
+	 * @param roomId - The ID of the room
 	 * @param memberIds - Array of member identifiers
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(memberIds: string[]): Promise<MeetRoomMember[]> {
-		return await this.findAll({ memberId: { $in: memberIds } });
+	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string): Promise<MeetRoomMember[]> {
+		return await this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
+	}
+
+	/**
+	 * Gets all room IDs where a user is a member.
+	 *
+	 * @param memberId - The ID of the member (userId)
+	 * @returns Array of room IDs where the user is a member
+	 */
+	async getRoomIdsByMemberId(memberId: string): Promise<string[]> {
+		const members = await this.findAll({ memberId }, 'roomId');
+		return members.map((m) => m.roomId);
+	}
+
+	/**
+	 * Gets all room IDs where a member has a specific permission enabled.
+	 * Takes into account both base role permissions and custom permissions.
+	 *
+	 * @param memberId - The ID of the member (userId)
+	 * @param permission - The permission key to check (e.g., 'canRetrieveRecordings')
+	 * @returns Array of room IDs where the member has the specified permission
+	 */
+	async getRoomIdsByMemberIdWithPermission(
+		memberId: string,
+		permission: keyof MeetRoomMemberPermissions
+	): Promise<string[]> {
+		// Get all memberships for this user
+		const members = await this.findAll({ memberId }, 'roomId,baseRole,customPermissions');
+
+		if (members.length === 0) {
+			return [];
+		}
+
+		// Fetch all rooms
+		const roomIds = members.map((m) => m.roomId);
+		const rooms = await this.roomRepository.findByRoomIds(roomIds, 'roomId,roles');
+		const roomsMap = new Map(rooms.map((room) => [room.roomId, room]));
+
+		// Filter members where the permission is enabled
+		const roomIdsWithPermission: string[] = [];
+
+		for (const member of members) {
+			const room = roomsMap.get(member.roomId);
+
+			if (!room) continue;
+
+			// Compute effective permissions
+			const basePermissions = room.roles[member.baseRole].permissions;
+			const effectivePermission = member.customPermissions?.[permission] ?? basePermissions[permission];
+
+			if (effectivePermission) {
+				roomIdsWithPermission.push(member.roomId);
+			}
+		}
+
+		return roomIdsWithPermission;
 	}
 
 	/**

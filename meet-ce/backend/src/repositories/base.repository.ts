@@ -60,13 +60,24 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * WARNING: Use with caution on large collections. Consider using findMany() with pagination instead.
 	 *
 	 * @param filter - Base MongoDB query filter
+	 * @param fields - Optional comma-separated list of fields to select from database
 	 * @returns Array of domain objects matching the filter
 	 */
-	protected async findAll(filter: FilterQuery<TDocument> = {}): Promise<TDomain[]> {
+	protected async findAll(filter: FilterQuery<TDocument> = {}, fields?: string): Promise<TDomain[]> {
 		try {
-			const documents = await this.model.find(filter).exec();
+			let query = this.model.find(filter);
+
+			if (fields) {
+				const fieldSelection = fields
+					.split(',')
+					.map((field) => field.trim())
+					.filter((field) => field !== '')
+					.join(' ');
+				query = query.select(fieldSelection);
+			}
 
 			// Transform documents to domain objects
+			const documents = await query.exec();
 			return documents.map((doc) => this.toDomain(doc));
 		} catch (error) {
 			this.logger.error('Error finding all documents with filter:', filter, error);

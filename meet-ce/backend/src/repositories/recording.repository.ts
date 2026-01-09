@@ -89,6 +89,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * even when the sort field has duplicate values.
 	 *
 	 * @param options - Query options
+	 * @param options.roomIds - Optional array of room IDs to filter by
 	 * @param options.roomId - Optional room ID for exact match filtering
 	 * @param options.roomName - Optional room name for regex match filtering (case-insensitive)
 	 * @param options.status - Optional recording status to filter by
@@ -99,12 +100,13 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing recordings array, pagination info, and optional next page token
 	 */
-	async find(options: MeetRecordingFilters = {}): Promise<{
+	async find(options: MeetRecordingFilters & { roomIds?: string[] } = {}): Promise<{
 		recordings: TRecording[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
 		const {
+			roomIds,
 			roomId,
 			roomName,
 			status,
@@ -117,6 +119,11 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};
+
+		if (roomIds && roomIds.length > 0) {
+			// Filter by multiple room IDs
+			filter.roomId = { $in: roomIds };
+		}
 
 		if (roomId && roomName) {
 			// Both defined: OR filter with exact roomId match and regex roomName match

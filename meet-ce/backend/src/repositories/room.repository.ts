@@ -69,6 +69,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Finds rooms by their roomIds.
+	 * Returns rooms with enriched URLs (including base URL).
+	 *
+	 * @param roomIds - Array of room identifiers
+	 * @param fields - Comma-separated list of fields to include in the result
+	 * @returns Array of found rooms
+	 */
+	async findByRoomIds(roomIds: string[], fields?: string): Promise<TRoom[]> {
+		return await this.findAll({ roomId: { $in: roomIds } }, fields);
+	}
+
+	/**
 	 * Finds rooms with optional filtering, pagination, and sorting.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *
@@ -78,6 +90,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param options - Query options
 	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
 	 * @param options.status - Optional room status to filter by
+	 * @param options.owner - Optional owner userId to filter by
+	 * @param options.roomIds - Optional array of room IDs to filter by, representing rooms the user is a member of
 	 * @param options.fields - Comma-separated list of fields to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
@@ -85,7 +99,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
-	async find(options: MeetRoomFilters = {}): Promise<{
+	async find(options: MeetRoomFilters & { owner?: string; roomIds?: string[] } = {}): Promise<{
 		rooms: TRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
@@ -93,6 +107,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 		const {
 			roomName,
 			status,
+			owner,
+			roomIds,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -102,6 +118,15 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 
 		// Build base filter
 		const filter: Record<string, unknown> = {};
+
+		// Handle owner and roomIds with $or when both are present
+		if (owner && roomIds && roomIds.length > 0) {
+			filter.$or = [{ owner }, { roomId: { $in: roomIds } }];
+		} else if (owner) {
+			filter.owner = owner;
+		} else if (roomIds && roomIds.length > 0) {
+			filter.roomId = { $in: roomIds };
+		}
 
 		if (roomName) {
 			filter.roomName = new RegExp(roomName, 'i');
