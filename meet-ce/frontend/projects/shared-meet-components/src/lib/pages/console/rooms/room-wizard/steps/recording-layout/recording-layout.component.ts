@@ -30,13 +30,13 @@ export class RecordingLayoutComponent {
 	layoutOptions: Signal<SelectableOption[]> = computed(() => {
 		return [
 			{
-				id: 'grid',
+				id: MeetRecordingLayout.GRID,
 				title: 'Grid Layout',
 				description: 'Display participants in an equal-size grid',
 				imageUrl: `./assets/layouts/grid_${this.theme()}.png`
 			},
 			{
-				id: 'speaker',
+				id: MeetRecordingLayout.SPEAKER,
 				title: 'Speaker Layout',
 				description: 'Highlight the active speaker with other participants below',
 				imageUrl: `./assets/layouts/speaker_${this.theme()}.png`,
@@ -45,7 +45,7 @@ export class RecordingLayoutComponent {
 				// recommended: true
 			},
 			{
-				id: 'single-speaker',
+				id: MeetRecordingLayout.SINGLE_SPEAKER,
 				title: 'Single Speaker',
 				description: 'Show only the active speaker in the recording',
 				imageUrl: `./assets/layouts/single_speaker_${this.theme()}.png`,
