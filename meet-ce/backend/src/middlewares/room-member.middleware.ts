@@ -15,7 +15,8 @@ import { allowAnonymous, AuthValidator, tokenAndRoleValidator, withAuth } from '
 /**
  * Middleware to authorize access to specific room member information.
  *
- * - If the user is a registered user, checks if they have management permissions (admin or owner).
+ * - If the user is a registered user, checks if they have management permissions (admin or owner),
+ *  or if they are accessing their own member info.
  * - If the user is authenticated via room member token, checks if they are accessing their own info.
  */
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
@@ -41,6 +42,11 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
 
 		if (isOwner) {
+			return next();
+		}
+
+		if (user.userId === memberId) {
+			// If the user is trying to access their own member info, allow it
 			return next();
 		}
 	}
@@ -93,7 +99,7 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 	const requestSessionService = container.get(RequestSessionService);
 	const roomService = container.get(RoomService);
 	const roomMemberService = container.get(RoomMemberService);
-	
+
 	const user = requestSessionService.getAuthenticatedUser();
 
 	const forbiddenError = errorInsufficientPermissions();
