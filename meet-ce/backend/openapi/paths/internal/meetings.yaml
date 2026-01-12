@@ -69,5 +69,7 @@
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'

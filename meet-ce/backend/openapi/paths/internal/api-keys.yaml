@@ -14,6 +14,10 @@
         responses:
             '201':
                 $ref: '../../components/responses/internal/success-create-api-key.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
     get:
@@ -31,6 +35,10 @@
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-get-api-keys.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
     delete:
@@ -45,5 +53,9 @@
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-delete-api-key.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'

@@ -113,8 +113,6 @@
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
-            '404':
-                $ref: '../../components/responses/internal/error-appearance-config-not-defined.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
     put:
