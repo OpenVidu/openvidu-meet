@@ -15,9 +15,9 @@ import { allowAnonymous, AuthValidator, tokenAndRoleValidator, withAuth } from '
 /**
  * Middleware to authorize access to specific room member information.
  *
+ * - If the user is authenticated via room member token, checks if they are accessing their own info.
  * - If the user is a registered user, checks if they have management permissions (admin or owner),
  *  or if they are accessing their own member info.
- * - If the user is authenticated via room member token, checks if they are accessing their own info.
  */
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
@@ -30,7 +30,20 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 
 	const forbiddenError = errorInsufficientPermissions();
 
-	// Scenario 1: Registered User
+	// Scenario 1: Room Member Token
+	if (memberRoomId) {
+		// Check if the token belongs to the requested room
+		if (memberRoomId !== roomId) {
+			return rejectRequestFromMeetError(res, forbiddenError);
+		}
+
+		// Check if the token belongs to the requested member (self access)
+		if (currentMemberId === memberId) {
+			return next();
+		}
+	}
+
+	// Scenario 2: Registered User
 	if (user) {
 		// Allow if user is admin
 		if (user.role === MeetUserRole.ADMIN) {
@@ -47,19 +60,6 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 
 		if (user.userId === memberId) {
 			// If the user is trying to access their own member info, allow it
-			return next();
-		}
-	}
-
-	// Scenario 2: Room Member Token
-	if (memberRoomId) {
-		// Check if the token belongs to the requested room
-		if (memberRoomId !== roomId) {
-			return rejectRequestFromMeetError(res, forbiddenError);
-		}
-
-		// Check if the token belongs to the requested member (self access)
-		if (currentMemberId === memberId) {
 			return next();
 		}
 	}
