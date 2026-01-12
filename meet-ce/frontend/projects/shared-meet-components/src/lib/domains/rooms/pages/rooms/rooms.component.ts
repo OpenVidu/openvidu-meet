@@ -25,9 +25,17 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { DeleteRoomDialogComponent, DeleteRoomDialogOptions, NavigationService, NotificationService } from '../../../../shared';
-import { RoomsListsComponent, RoomTableAction, RoomTableFilter } from '../../components';
-import { RoomService } from '../../services';
+import { NavigationService } from '../../../../shared/services/navigation.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
+
+import { DeleteRoomDialogComponent } from '../../../../shared/components/dialogs/delete-room-dialog/delete-room-dialog.component';
+import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
+import {
+	RoomsListsComponent,
+	RoomTableAction,
+	RoomTableFilter
+} from '../../components/rooms-lists/rooms-lists.component';
+import { RoomService } from '../../services/room.service';
 
 @Component({
 	selector: 'ov-rooms',

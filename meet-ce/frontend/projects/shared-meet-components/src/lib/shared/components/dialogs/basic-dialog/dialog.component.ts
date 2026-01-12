@@ -10,7 +10,7 @@ import {
 	MatDialogTitle
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import type { DialogOptions } from '../../../models';
+import type { DialogOptions } from '../../../models/notification.model';
 
 @Component({
     selector: 'ov-dialog',

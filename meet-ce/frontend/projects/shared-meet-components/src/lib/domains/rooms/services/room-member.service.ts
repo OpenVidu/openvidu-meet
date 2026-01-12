@@ -6,7 +6,10 @@ import {
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import { E2eeService, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService, TokenStorageService, getValidDecodedToken } from '../../../shared';
+import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { HttpService } from '../../../shared/services/http.service';
+import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { getValidDecodedToken } from '../../../shared/utils/token.utils';
 
 @Injectable({
 	providedIn: 'root'

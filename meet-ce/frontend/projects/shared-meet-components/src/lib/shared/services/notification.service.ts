@@ -3,7 +3,9 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { DialogComponent, DialogOptions, SpinnerComponent } from '..';
+import { DialogComponent } from '../components/dialogs/basic-dialog/dialog.component';
+import { SpinnerComponent } from '../components/spinner/spinner.component';
+import { DialogOptions } from '../models/notification.model';
 
 @Injectable({
 	providedIn: 'root'

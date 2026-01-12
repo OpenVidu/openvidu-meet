@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { NavigationService } from '../../../../shared';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({

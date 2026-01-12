@@ -10,23 +10,25 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey } from '@openvidu-meet/typings';
-import { ApiKeyService, GlobalConfigService, NotificationService } from '../../../../shared';
+import { ApiKeyService } from '../../../../shared/services/api-key.service';
+import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Component({
-    selector: 'ov-embedded',
-    imports: [
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatSlideToggleModule,
-        MatTooltipModule,
-        ReactiveFormsModule,
-        MatProgressSpinnerModule
-    ],
-    templateUrl: './embedded.component.html',
-    styleUrl: './embedded.component.scss'
+	selector: 'ov-embedded',
+	imports: [
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatSlideToggleModule,
+		MatTooltipModule,
+		ReactiveFormsModule,
+		MatProgressSpinnerModule
+	],
+	templateUrl: './embedded.component.html',
+	styleUrl: './embedded.component.scss'
 })
 export class EmbeddedComponent implements OnInit {
 	isLoading = signal(true);

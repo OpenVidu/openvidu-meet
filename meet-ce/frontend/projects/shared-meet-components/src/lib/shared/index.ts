@@ -1,8 +1,8 @@
-export * from './components/index';
-export * from './guards/index';
-export * from './interceptors/index';
-export * from './models/index';
+export * from './components';
+export * from './guards';
+export * from './interceptors';
+export * from './models';
 export * from './routes/base-routes';
-export * from './services/index';
-export * from './utils/index';
+export * from './services';
+export * from './utils';
 

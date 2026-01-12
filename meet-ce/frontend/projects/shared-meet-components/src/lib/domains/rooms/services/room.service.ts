@@ -11,7 +11,8 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService } from '../../../shared';
+import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { HttpService } from '../../../shared/services/http.service';
 
 /**
  * RoomService - Persistence Layer for Room Data

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { ProFeatureBadgeComponent } from '../';
+import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
 
 /**
  * Interface for selectable card option data

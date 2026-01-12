@@ -1,7 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
-import { HttpService, NavigationService, TokenStorageService } from '../../../shared/services';
+import { HttpService } from '../../../shared/services/http.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
+import { TokenStorageService } from '../../../shared/services/token-storage.service';
 
 @Injectable({
 	providedIn: 'root'

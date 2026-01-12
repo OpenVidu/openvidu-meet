@@ -1,8 +1,8 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { Participant, Room } from 'livekit-client';
 import { LayoutService, LoggerService, ViewportService } from 'openvidu-components-angular';
-import { MeetStorageService } from '../../../shared';
-import { MeetLayoutMode } from '../models';
+import { MeetStorageService } from '../../../shared/services/storage.service';
+import { MeetLayoutMode } from '../models/layout.model';
 
 @Injectable({ providedIn: 'root' })
 export class MeetingLayoutService extends LayoutService {

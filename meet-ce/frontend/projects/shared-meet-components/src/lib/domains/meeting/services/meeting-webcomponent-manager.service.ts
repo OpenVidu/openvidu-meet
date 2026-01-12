@@ -1,5 +1,4 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { AppDataService } from '@openvidu-meet/shared-components';
 import {
 	WebComponentCommand,
 	WebComponentEvent,
@@ -7,8 +6,10 @@ import {
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
-import { MeetingContextService, MeetingService } from '.';
-import { RoomMemberService } from '../../rooms/services';
+import { AppDataService } from '../../../shared/services/app-data.service';
+import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { MeetingContextService } from './meeting-context.service';
+import { MeetingService } from './meeting.service';
 
 /**
  * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.

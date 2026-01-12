@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService, HttpService } from '.';
+import { FeatureConfigurationService } from './feature-configuration.service';
+import { HttpService } from './http.service';
 
 @Injectable({
 	providedIn: 'root'

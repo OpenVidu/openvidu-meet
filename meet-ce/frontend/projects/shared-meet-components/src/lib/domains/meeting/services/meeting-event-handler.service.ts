@@ -18,15 +18,14 @@ import {
 	Room,
 	RoomEvent
 } from 'openvidu-components-angular';
-import { MeetingContextService, MeetingWebComponentManagerService } from '.';
-import {
-	FeatureConfigurationService,
-	NavigationService,
-	SessionStorageService,
-	TokenStorageService
-} from '../../../shared';
-import { RecordingService } from '../../recordings/services';
-import { RoomMemberService } from '../../rooms/services';
+import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { RecordingService } from '../../recordings/services/recording.service';
+import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { MeetingContextService } from './meeting-context.service';
+import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.

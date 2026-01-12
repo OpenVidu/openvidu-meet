@@ -13,16 +13,18 @@ import {
 	ViewportService
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
-import {
-	ApplicationFeatures,
-	FeatureConfigurationService,
-	GlobalConfigService,
-	NotificationService
-} from '../../../../shared';
-import { RoomMemberService, } from '../../../rooms/services';
+import { ApplicationFeatures } from '../../../../shared/models/app.model';
+import { FeatureConfigurationService } from '../../../../shared/services/feature-configuration.service';
+import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
+import { RoomMemberService } from '../../../rooms/services/room-member.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
-import { MeetingParticipantItemComponent } from '../../customization';
-import { MeetingContextService, MeetingEventHandlerService, MeetingLobbyService, MeetingService, MeetingWebComponentManagerService } from '../../services';
+import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
+import { MeetingLobbyService } from '../../services/meeting-lobby.service';
+import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
+import { MeetingService } from '../../services/meeting.service';
 
 @Component({
 	selector: 'ov-meeting',

@@ -1,4 +1,3 @@
-
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,21 +5,25 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { Subject, takeUntil } from 'rxjs';
-import { SelectableCardComponent, SelectableCardOption, SelectionCardEvent } from '../../../../../../shared';
-import { RoomWizardStateService } from '../../../../services';
+import {
+	SelectableCardComponent,
+	SelectableCardOption,
+	SelectionCardEvent
+} from '../../../../../../shared//components/selectable-card/selectable-card.component';
+import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
 @Component({
-    selector: 'ov-recording-trigger',
-    imports: [
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatIconModule,
-    MatCardModule,
-    MatRadioModule,
-    SelectableCardComponent
-],
-    templateUrl: './recording-trigger.component.html',
-    styleUrl: './recording-trigger.component.scss'
+	selector: 'ov-recording-trigger',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatCardModule,
+		MatRadioModule,
+		SelectableCardComponent
+	],
+	templateUrl: './recording-trigger.component.html',
+	styleUrl: './recording-trigger.component.scss'
 })
 export class RecordingTriggerComponent implements OnDestroy {
 	triggerForm: FormGroup;

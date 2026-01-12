@@ -7,22 +7,24 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { AppDataService, ConsoleNavLink, ThemeService } from '../../../../shared';
+import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
+import { AppDataService } from '../../../../shared/services/app-data.service';
+import { ThemeService } from '../../../../shared/services/theme.service';
 
 @Component({
-    selector: 'ov-console-nav',
-    imports: [
-        CommonModule,
-        MatToolbarModule,
-        MatListModule,
-        MatButtonModule,
-        MatIconModule,
-        MatSidenavModule,
-        MatTooltipModule,
-        RouterModule
-    ],
-    templateUrl: './console-nav.component.html',
-    styleUrl: './console-nav.component.scss'
+	selector: 'ov-console-nav',
+	imports: [
+		CommonModule,
+		MatToolbarModule,
+		MatListModule,
+		MatButtonModule,
+		MatIconModule,
+		MatSidenavModule,
+		MatTooltipModule,
+		RouterModule
+	],
+	templateUrl: './console-nav.component.html',
+	styleUrl: './console-nav.component.scss'
 })
 export class ConsoleNavComponent {
 	@ViewChild(MatSidenav) sidenav!: MatSidenav;

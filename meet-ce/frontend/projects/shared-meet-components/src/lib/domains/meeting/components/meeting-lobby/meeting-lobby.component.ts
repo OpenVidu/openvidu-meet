@@ -6,7 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ShareMeetingLinkComponent } from '../../components';
+import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 import { MeetingService } from '../../services/meeting.service';
 

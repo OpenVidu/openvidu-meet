@@ -19,26 +19,27 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 // import { ProFeatureBadgeComponent } from '../components';
 import { AuthMode } from '@openvidu-meet/typings';
-import { GlobalConfigService, NotificationService } from '../../../../shared';
+import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
-    selector: 'ov-users-permissions',
-    imports: [
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-        MatDividerModule,
-        ReactiveFormsModule,
-        // ProFeatureBadgeComponent
-    ],
-    templateUrl: './users-permissions.component.html',
-    styleUrl: './users-permissions.component.scss'
+	selector: 'ov-users-permissions',
+	imports: [
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatSelectModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatDividerModule,
+		ReactiveFormsModule
+		// ProFeatureBadgeComponent
+	],
+	templateUrl: './users-permissions.component.html',
+	styleUrl: './users-permissions.component.scss'
 })
 export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(true);

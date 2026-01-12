@@ -4,7 +4,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MeetAnalytics } from '@openvidu-meet/typings';
-import { AnalyticsService, NavigationService } from '../../../../shared';
+import { AnalyticsService } from '../../../../shared/services/analytics.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 
 @Component({
 	selector: 'ov-overview',

@@ -3,21 +3,17 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import {
-	MeetingContextService,
-	MeetingService,
-
-	MeetingWebComponentManagerService
-} from '.';
-import { AppDataService, NavigationService } from '../../../shared';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { AppDataService } from '../../../shared/services/app-data.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
 import { AuthService } from '../../auth/services/auth.service';
-import { RecordingService } from '../../recordings/services';
-import {
-	RoomMemberService,
-	RoomService,
-} from '../../rooms/services';
+import { RecordingService } from '../../recordings/services/recording.service';
+import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { RoomService } from '../../rooms/services/room.service';
 import { LobbyState } from '../models/lobby.model';
+import { MeetingContextService } from './meeting-context.service';
+import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
+import { MeetingService } from './meeting.service';
 
 /**
  * Service that manages the meeting lobby phase state and operations.

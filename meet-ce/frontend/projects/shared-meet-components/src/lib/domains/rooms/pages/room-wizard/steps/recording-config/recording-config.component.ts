@@ -8,8 +8,12 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MeetRecordingAccess, MeetRoomOptions } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
-import { SelectableCardComponent, SelectableCardOption, SelectionCardEvent } from '../../../../../../shared';
-import { RoomWizardStateService } from '../../../../services';
+import {
+	SelectableCardComponent,
+	SelectableCardOption,
+	SelectionCardEvent
+} from '../../../../../../shared/components/selectable-card/selectable-card.component';
+import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
 interface RecordingAccessOption {
 	value: MeetRecordingAccess;

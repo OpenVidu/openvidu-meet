@@ -1,40 +1,25 @@
 import { Routes } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
-import { LoginComponent } from '../../domains/auth/pages/login/login.component';
+import { checkUserAuthenticatedGuard, checkUserNotAuthenticatedGuard } from '../../domains/auth/guards/auth.guard';
+import { validateRecordingAccessGuard } from '../../domains/recordings/guards/recording-validate-access.guard';
+import { checkEditableRoomGuard } from '../../domains/rooms/guards/room-edit-check.guard';
 import {
-	ConfigComponent,
-	ConsoleComponent,
-	EmbeddedComponent,
-	OverviewComponent,
-	UsersPermissionsComponent
-} from '../../domains/console/pages';
-import { ErrorComponent } from '../../domains/console/pages/error/error.component';
-import { EndMeetingComponent, MeetingComponent } from '../../domains/meeting/pages';
-import { validateRecordingAccessGuard } from '../../domains/recordings/guards';
-import { RecordingsComponent, ViewRecordingComponent } from '../../domains/recordings/pages';
-import {
-	checkEditableRoomGuard, validateRoomAccessGuard,
+	validateRoomAccessGuard,
 	validateRoomRecordingsAccessGuard
-} from '../../domains/rooms/guards';
-import { RoomRecordingsComponent, RoomsComponent, RoomWizardComponent } from '../../domains/rooms/pages';
-import {
-	checkUserAuthenticatedGuard,
-	checkUserNotAuthenticatedGuard,
-	extractRecordingQueryParamsGuard,
-	extractRoomQueryParamsGuard,
-	removeQueryParamsGuard,
-	runGuardsSerially,
-} from '../guards';
-
+} from '../../domains/rooms/guards/room-validate-access.guard';
+import { extractRecordingQueryParamsGuard, extractRoomQueryParamsGuard } from '../guards/extract-query-params.guard';
+import { removeQueryParamsGuard } from '../guards/remove-query-params.guard';
+import { runGuardsSerially } from '../guards/run-serially.guard';
 export const baseRoutes: Routes = [
 	{
 		path: 'login',
-		component: LoginComponent,
+		loadComponent: () => import('../../domains/auth/pages/login/login.component').then((m) => m.LoginComponent),
 		canActivate: [checkUserNotAuthenticatedGuard]
 	},
 	{
 		path: 'room/:room-id',
-		component: MeetingComponent,
+		loadComponent: () =>
+			import('../../domains/meeting/pages/meeting/meeting.component').then((m) => m.MeetingComponent),
 		canActivate: [
 			runGuardsSerially(
 				extractRoomQueryParamsGuard,
@@ -45,7 +30,10 @@ export const baseRoutes: Routes = [
 	},
 	{
 		path: 'room/:room-id/recordings',
-		component: RoomRecordingsComponent,
+		loadComponent: () =>
+			import('../../domains/rooms/pages/room-recordings/room-recordings.component').then(
+				(m) => m.RoomRecordingsComponent
+			),
 		canActivate: [
 			runGuardsSerially(
 				extractRecordingQueryParamsGuard,
@@ -56,14 +44,25 @@ export const baseRoutes: Routes = [
 	},
 	{
 		path: 'recording/:recording-id',
-		component: ViewRecordingComponent,
+		loadComponent: () =>
+			import('../../domains/recordings/pages/view-recording/view-recording.component').then(
+				(m) => m.ViewRecordingComponent
+			),
 		canActivate: [validateRecordingAccessGuard]
 	},
-	{ path: 'disconnected', component: EndMeetingComponent },
-	{ path: 'error', component: ErrorComponent },
+	{
+		path: 'disconnected',
+		loadComponent: () =>
+			import('../../domains/meeting/pages/end-meeting/end-meeting.component').then((m) => m.EndMeetingComponent)
+	},
+	{
+		path: 'error',
+		loadComponent: () => import('../../domains/console/pages/error/error.component').then((m) => m.ErrorComponent)
+	},
 	{
 		path: '',
-		component: ConsoleComponent,
+		loadComponent: () =>
+			import('../../domains/console/pages/console/console.component').then((m) => m.ConsoleComponent),
 		canActivate: [checkUserAuthenticatedGuard],
 		children: [
 			{
@@ -73,36 +72,53 @@ export const baseRoutes: Routes = [
 			},
 			{
 				path: 'overview',
-				component: OverviewComponent
+				loadComponent: () =>
+					import('../../domains/console/pages/overview/overview.component').then((m) => m.OverviewComponent)
 			},
 			{
 				path: 'rooms',
-				component: RoomsComponent
+				loadComponent: () =>
+					import('../../domains/rooms/pages/rooms/rooms.component').then((m) => m.RoomsComponent)
 			},
 			{
 				path: 'rooms/new',
-				component: RoomWizardComponent
+
+				loadComponent: () =>
+					import('../../domains/rooms/pages/room-wizard/room-wizard.component').then(
+						(m) => m.RoomWizardComponent
+					)
 			},
 			{
 				path: 'rooms/:roomId/edit',
-				component: RoomWizardComponent,
+				loadComponent: () =>
+					import('../../domains/rooms/pages/room-wizard/room-wizard.component').then(
+						(m) => m.RoomWizardComponent
+					),
 				canActivate: [checkEditableRoomGuard]
 			},
 			{
 				path: 'recordings',
-				component: RecordingsComponent
+				loadComponent: () =>
+					import('../../domains/recordings/pages/recordings/recordings.component').then(
+						(m) => m.RecordingsComponent
+					)
 			},
 			{
 				path: 'embedded',
-				component: EmbeddedComponent
+				loadComponent: () =>
+					import('../../domains/console/pages/embedded/embedded.component').then((m) => m.EmbeddedComponent)
 			},
 			{
 				path: 'users-permissions',
-				component: UsersPermissionsComponent
+				loadComponent: () =>
+					import('../../domains/console/pages/users-permissions/users-permissions.component').then(
+						(m) => m.UsersPermissionsComponent
+					)
 			},
 			{
 				path: 'config',
-				component: ConfigComponent
+				loadComponent: () =>
+					import('../../domains/console/pages/config/config.component').then((m) => m.ConfigComponent)
 			},
 			// {
 			// 	path: 'about',

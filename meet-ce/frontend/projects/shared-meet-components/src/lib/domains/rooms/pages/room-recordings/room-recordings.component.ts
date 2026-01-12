@@ -6,11 +6,16 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { NavigationService, NotificationService } from '../../../../shared';
+import { NavigationService } from '../../../../shared/services/navigation.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { MeetingContextService } from '../../../meeting/services';
-import { RecordingListsComponent, RecordingTableAction, RecordingTableFilter } from '../../../recordings/components';
-import { RecordingService } from '../../../recordings/services';
-import { RoomMemberService } from '../../services';
+import {
+	RecordingListsComponent,
+	RecordingTableAction,
+	RecordingTableFilter
+} from '../../../recordings/components/recording-lists/recording-lists.component';
+import { RecordingService } from '../../../recordings/services/recording.service';
+import { RoomMemberService } from '../../services/room-member.service';
 
 @Component({
 	selector: 'ov-room-recordings',

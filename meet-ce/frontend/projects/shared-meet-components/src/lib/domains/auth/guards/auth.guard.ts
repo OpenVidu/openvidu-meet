@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { AuthService } from '../../domains/auth/services/auth.service';
-import { NavigationService } from '../services';
+import { NavigationService } from '../../../shared/services';
+import { AuthService } from '../services';
 
 export const checkUserAuthenticatedGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,

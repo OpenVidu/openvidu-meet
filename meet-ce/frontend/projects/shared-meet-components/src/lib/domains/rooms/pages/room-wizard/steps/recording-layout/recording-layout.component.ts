@@ -6,8 +6,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MeetRecordingLayout } from '@openvidu-meet/typings';
-import { SelectableCardComponent, SelectableCardOption, SelectionCardEvent, ThemeService } from '../../../../../../shared';
-import { RoomWizardStateService } from '../../../../services';
+import {
+	SelectableCardComponent,
+	SelectableCardOption,
+	SelectionCardEvent
+} from '../../../../../../shared/components/selectable-card/selectable-card.component';
+import { ThemeService } from '../../../../../../shared/services/theme.service';
+import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
 @Component({
 	selector: 'ov-recording-layout',

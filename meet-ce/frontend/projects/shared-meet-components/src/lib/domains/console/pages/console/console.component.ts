@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
-import { ConsoleNavLink } from '../../../../shared';
+import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ConsoleNavComponent } from '../../components';
+import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
 
 @Component({
-    selector: 'ov-console',
-    imports: [ConsoleNavComponent],
-    templateUrl: './console.component.html',
-    styleUrl: './console.component.scss'
+	selector: 'ov-console',
+	imports: [ConsoleNavComponent],
+	templateUrl: './console.component.html',
+	styleUrl: './console.component.scss'
 })
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[] = [

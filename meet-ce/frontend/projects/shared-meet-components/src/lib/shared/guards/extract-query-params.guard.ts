@@ -1,10 +1,12 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
-import { MeetingContextService } from '../../domains/meeting/services';
-import { RoomMemberService } from '../../domains/rooms/services';
+import { MeetingContextService } from '../../domains/meeting/services/meeting-context.service';
+import { RoomMemberService } from '../../domains/rooms/services/room-member.service';
 import { NavigationErrorReason } from '../models/navigation.model';
-import { AppDataService, NavigationService, SessionStorageService } from '../services';
+import { AppDataService } from '../services/app-data.service';
+import { NavigationService } from '../services/navigation.service';
+import { SessionStorageService } from '../services/session-storage.service';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);

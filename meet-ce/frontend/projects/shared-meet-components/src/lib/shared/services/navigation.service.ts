@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
-import { AppDataService, SessionStorageService } from '.';
 import { NavigationErrorReason } from '../models/navigation.model';
+import { AppDataService } from './app-data.service';
+import { SessionStorageService } from './session-storage.service';
 
 @Injectable({
 	providedIn: 'root'

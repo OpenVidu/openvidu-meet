@@ -4,9 +4,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { NotificationService } from '../../../../shared';
-import { RecordingListsComponent, RecordingTableAction, RecordingTableFilter } from '../../components';
-import { RecordingService } from '../../services';
+import { NotificationService } from '../../../../shared/services/notification.service';
+import {
+	RecordingListsComponent,
+	RecordingTableAction,
+	RecordingTableFilter
+} from '../../components/recording-lists/recording-lists.component';
+import { RecordingService } from '../../services/recording.service';
 
 @Component({
 	selector: 'ov-recordings',

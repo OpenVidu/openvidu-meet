@@ -15,26 +15,26 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RecordingService } from '../../services';
+import { RecordingService } from '../../services/recording.service';
 
 @Component({
-    selector: 'ov-share-recording-dialog',
-    imports: [
-        FormsModule,
-        MatRadioModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatButtonModule,
-        MatIconModule,
-        MatDialogTitle,
-        MatDialogContent,
-        MatDialogActions,
-        MatDialogClose,
-        MatTooltipModule,
-        MatProgressSpinnerModule
-    ],
-    templateUrl: './recording-share-dialog.component.html',
-    styleUrl: './recording-share-dialog.component.scss'
+	selector: 'ov-share-recording-dialog',
+	imports: [
+		FormsModule,
+		MatRadioModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatButtonModule,
+		MatIconModule,
+		MatDialogTitle,
+		MatDialogContent,
+		MatDialogActions,
+		MatDialogClose,
+		MatTooltipModule,
+		MatProgressSpinnerModule
+	],
+	templateUrl: './recording-share-dialog.component.html',
+	styleUrl: './recording-share-dialog.component.scss'
 })
 export class RecordingShareDialogComponent implements OnInit {
 	accessType: 'private' | 'public' = 'public';

@@ -2,14 +2,12 @@ import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import {
-	FeatureConfigurationService,
-	GlobalConfigService,
-	HttpService,
-	TokenStorageService
-} from '../../../shared/services';
+import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
+import { HttpService } from '../../../shared/services/http.service';
+import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { AuthService } from '../../auth/services/auth.service';
-import { RecordingShareDialogComponent } from '../components';
+import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 
 @Injectable({
 	providedIn: 'root'

@@ -1,19 +1,19 @@
-
 import { Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
-import { AppDataService, NavigationService, } from '../../../../shared';
+import { AppDataService } from '../../../../shared/services/app-data.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { MeetingWebComponentManagerService } from '../../services';
+import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
 
 @Component({
-    selector: 'ov-end-meeting',
-    imports: [MatCardModule, MatButtonModule, MatIconModule],
-    templateUrl: './end-meeting.component.html',
-    styleUrl: './end-meeting.component.scss'
+	selector: 'ov-end-meeting',
+	imports: [MatCardModule, MatButtonModule, MatIconModule],
+	templateUrl: './end-meeting.component.html',
+	styleUrl: './end-meeting.component.scss'
 })
 export class EndMeetingComponent implements OnInit {
 	disconnectedTitle = 'You Left the Meeting';

@@ -3,10 +3,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { AppDataService, NavigationService, } from '../../../../shared';
 import { NavigationErrorReason } from '../../../../shared/models/navigation.model';
+import { AppDataService } from '../../../../shared/services/app-data.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { MeetingWebComponentManagerService } from '../../../meeting/services';
+import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 
 @Component({
 	selector: 'ov-error',
