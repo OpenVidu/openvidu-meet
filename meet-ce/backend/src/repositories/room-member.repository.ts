@@ -274,6 +274,17 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		await this.deleteMany({ roomId });
 	}
 
+	/**
+	 * Removes all room memberships for a specific member across all rooms.
+	 * This is useful when deleting a user account.
+	 *
+	 * @param memberId - The ID of the member whose memberships should be deleted
+	 * @throws Error if members could not be deleted
+	 */
+	async deleteAllByMemberId(memberId: string): Promise<void> {
+		await this.deleteMany({ memberId });
+	}
+
 	// ==========================================
 	// PRIVATE HELPER METHODS
 	// ==========================================

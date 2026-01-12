@@ -3,6 +3,8 @@ import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import { errorInvalidPassword, errorUserAlreadyExists, errorUserNotFound } from '../models/error.model.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { LoggerService } from './logger.service.js';
 
@@ -10,7 +12,9 @@ import { LoggerService } from './logger.service.js';
 export class UserService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(UserRepository) protected userRepository: UserRepository
+		@inject(UserRepository) protected userRepository: UserRepository,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
 	) {}
 
 	/**
@@ -107,7 +111,12 @@ export class UserService {
 			throw errorUserNotFound(userId);
 		}
 
+		// Clean up user resources using bulk method
+		await this.bulkCleanupUserResources([userId]);
+
+		// Finally, delete the user
 		await this.userRepository.deleteByUserId(userId);
+		this.logger.info(`User '${userId}' deleted successfully`);
 	}
 
 	async bulkDeleteUsers(
@@ -121,13 +130,67 @@ export class UserService {
 			.map((id) => ({ userId: id, error: 'User not found' }));
 
 		if (foundUserIds.length > 0) {
+			// Clean up resources for all users in batches
+			await this.bulkCleanupUserResources(foundUserIds);
+
+			// Delete all users after cleanup
 			await this.userRepository.deleteByUserIds(foundUserIds);
+			this.logger.info(`Bulk deleted ${foundUserIds.length} user(s) successfully`);
 		}
 
 		return {
 			deleted: foundUserIds,
 			failed
 		};
+	}
+
+	/**
+	 * Cleans up resources for multiple users in batches:
+	 * - Deletes all room memberships
+	 * - Transfers ownership of owned rooms to the global admin
+	 *
+	 * @param userIds - Array of user IDs to clean up
+	 */
+	private async bulkCleanupUserResources(userIds: string[]): Promise<void> {
+		const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
+		const USER_BATCH_SIZE = 10; // Process users in batches of 10
+		const ROOM_UPDATE_BATCH_SIZE = 50; // Update rooms in batches of 50
+
+		// Process users in batches
+		for (let i = 0; i < userIds.length; i += USER_BATCH_SIZE) {
+			const userBatch = userIds.slice(i, i + USER_BATCH_SIZE);
+
+			// Delete all memberships and fetch all owned rooms for this batch in parallel
+			const [, ownedRoomsPerUser] = await Promise.all([
+				// Delete memberships for all users in this batch in parallel
+				Promise.all(userBatch.map((userId) => this.roomMemberRepository.deleteAllByMemberId(userId))),
+				// Fetch owned rooms for all users in this batch in parallel
+				Promise.all(userBatch.map((userId) => this.roomRepository.findByOwner(userId)))
+			]);
+
+			// Flatten all owned rooms from this batch
+			const batchOwnedRooms = ownedRoomsPerUser.flat();
+
+			if (batchOwnedRooms.length > 0) {
+				// Update rooms in sub-batches to avoid overwhelming the database
+				for (let j = 0; j < batchOwnedRooms.length; j += ROOM_UPDATE_BATCH_SIZE) {
+					const roomBatch = batchOwnedRooms.slice(j, j + ROOM_UPDATE_BATCH_SIZE);
+
+					await Promise.all(
+						roomBatch.map((room) => {
+							room.owner = adminUserId;
+							return this.roomRepository.update(room);
+						})
+					);
+				}
+
+				this.logger.info(
+					`Processed batch: Transferred ownership of ${batchOwnedRooms.length} room(s) from ${userBatch.length} user(s) to admin '${adminUserId}'`
+				);
+			}
+		}
+
+		this.logger.info(`Completed cleanup for ${userIds.length} user(s)`);
 	}
 
 	// Convert user to UserDTO to remove sensitive information
