@@ -15,7 +15,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RecordingService } from '../../services/recording.service';
 
 @Component({
 	selector: 'ov-share-recording-dialog',
@@ -46,8 +45,12 @@ export class RecordingShareDialogComponent implements OnInit {
 	copied = false;
 
 	constructor(
-		@Inject(MAT_DIALOG_DATA) public data: { recordingId: string; recordingUrl?: string },
-		private recordingService: RecordingService,
+		@Inject(MAT_DIALOG_DATA)
+		public data: {
+			recordingId: string;
+			recordingUrl?: string;
+			generateRecordingUrl?: (privateAccess: boolean) => Promise<{ url: string }>;
+		},
 		private clipboard: Clipboard
 	) {
 		this.recordingUrl = data.recordingUrl;
@@ -63,12 +66,17 @@ export class RecordingShareDialogComponent implements OnInit {
 	}
 
 	async getRecordingUrl() {
+		if (!this.data.generateRecordingUrl) {
+			this.erroMessage = 'URL generation function not available.';
+			return;
+		}
+
 		this.loading = true;
 		this.erroMessage = undefined;
 
 		try {
 			const privateAccess = this.accessType === 'private';
-			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
+			const { url } = await this.data.generateRecordingUrl(privateAccess);
 			this.recordingUrl = url;
 		} catch (error) {
 			this.erroMessage = 'Failed to generate recording URL. Please try again later.';

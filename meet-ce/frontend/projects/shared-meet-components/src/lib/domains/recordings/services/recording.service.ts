@@ -269,7 +269,8 @@ export class RecordingService {
 			width: '450px',
 			data: {
 				recordingId,
-				recordingUrl
+				recordingUrl,
+				generateRecordingUrl: (privateAccess: boolean) => this.generateRecordingUrl(recordingId, privateAccess)
 			},
 			panelClass: 'ov-meet-dialog'
 		});
