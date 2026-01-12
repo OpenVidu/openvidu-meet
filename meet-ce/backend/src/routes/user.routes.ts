@@ -7,7 +7,8 @@ import {
 	validateBulkDeleteUsersReq,
 	validateChangePasswordReq,
 	validateCreateUserReq,
-	validateGetUsersReq
+	validateGetUsersReq,
+	validateResetUserPasswordReq
 } from '../middlewares/request-validators/user-validator.middleware.js';
 
 export const userRouter: Router = Router();
@@ -42,4 +43,10 @@ userRouter.post(
 );
 
 userRouter.get('/:userId', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)), userCtrl.getUser);
+userRouter.put(
+	'/:userId/password',
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
+	validateResetUserPasswordReq,
+	userCtrl.resetUserPassword
+);
 userRouter.delete('/:userId', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), userCtrl.deleteUser);

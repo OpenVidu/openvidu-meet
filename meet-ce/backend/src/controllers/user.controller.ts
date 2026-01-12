@@ -131,6 +131,25 @@ export const getMe = (_req: Request, res: Response) => {
 	return res.status(200).json(userDTO);
 };
 
+export const resetUserPassword = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+	const { newPassword } = req.body as { newPassword: string };
+
+	const logger = container.get(LoggerService);
+	logger.verbose(`Admin resetting password for user '${userId}'`);
+
+	try {
+		const userService = container.get(UserService);
+		await userService.resetUserPassword(userId, newPassword);
+
+		return res.status(200).json({
+			message: `Password for user '${userId}' has been reset successfully. User must change password on next login.`
+		});
+	} catch (error) {
+		handleError(res, error, 'resetting user password');
+	}
+};
+
 export const changePassword = async (req: Request, res: Response) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();

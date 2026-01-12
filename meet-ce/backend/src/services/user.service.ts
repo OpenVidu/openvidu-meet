@@ -108,6 +108,27 @@ export class UserService {
 		await this.userRepository.update(user);
 	}
 
+	/**
+	 * Reset user password by admin. This is used when a user forgets their password.
+	 * The mustChangePassword flag is set to true to force the user to change the password on next login.
+	 *
+	 * @param userId - The ID of the user whose password will be reset
+	 * @param newPassword - The new temporary password set by admin
+	 */
+	async resetUserPassword(userId: string, newPassword: string): Promise<void> {
+		const user = await this.userRepository.findByUserId(userId);
+
+		if (!user) {
+			throw errorUserNotFound(userId);
+		}
+
+		user.passwordHash = await PasswordHelper.hashPassword(newPassword);
+		user.mustChangePassword = true; // Force password change on next login
+
+		await this.userRepository.update(user);
+		this.logger.info(`Password reset for user '${userId}' by admin. User must change password on next login.`);
+	}
+
 	async deleteUser(userId: string): Promise<void> {
 		const user = await this.userRepository.findByUserId(userId);
 
