@@ -1,0 +1,304 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// Use utility classes for rooms toolbar
+.rooms-toolbar {
+	@extend .ov-data-toolbar;
+
+	.toolbar-left {
+		::ng-deep .search-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
+
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+
+		::ng-deep .clear-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// Use utility classes
+.search-field {
+	@extend .ov-search-field;
+}
+
+.selection-info {
+	@extend .ov-selection-info;
+}
+
+.batch-actions {
+	@extend .ov-batch-actions;
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+}
+
+.loading-container {
+	@extend .ov-loading-container;
+}
+
+.table-container {
+	@extend .ov-table-container;
+	margin-top: 0;
+}
+
+.rooms-toolbar + .table-container {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-top: none;
+	box-shadow: var(--ov-meet-shadow-sm);
+}
+
+:host:not(:has(.rooms-toolbar)) .table-container {
+	margin-top: var(--ov-meet-spacing-md);
+}
+
+.rooms-table {
+	@extend .ov-data-table;
+
+	.mat-mdc-header-cell {
+		&.room-header {
+			@extend .primary-header;
+		}
+
+		&.status-header {
+			min-width: 140px;
+		}
+
+		&.creation-date-header {
+			min-width: 150px;
+		}
+
+		&.auto-deletion-header {
+			min-width: 160px;
+		}
+
+		&.actions-header {
+			@extend .actions-header;
+		}
+	}
+
+	.mat-mdc-cell {
+		&.room-cell {
+			@extend .primary-cell;
+		}
+
+		&.status-cell {
+			min-width: 140px;
+		}
+
+		&.creation-date-cell {
+			min-width: 150px;
+		}
+
+		&.auto-deletion-cell {
+			min-width: 160px;
+		}
+
+		&.actions-cell {
+			@extend .actions-cell;
+		}
+	}
+}
+
+.room-info {
+	@extend .ov-info-display;
+
+	.room-name {
+		@extend .primary-text;
+	}
+
+	.room-id {
+		@extend .secondary-text, .monospace-text;
+	}
+}
+
+.status-container {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	width: 100%;
+}
+
+.status-badge {
+	@extend .ov-status-badge;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	font-size: var(--ov-meet-font-size-xs);
+	width: fit-content;
+
+	.status-icon {
+		@include design-tokens.ov-icon(sm);
+	}
+}
+
+.meeting-end-info-icon {
+	@include design-tokens.ov-icon(sm);
+
+	&.meeting-end-close {
+		color: var(--ov-meet-color-warning);
+	}
+
+	&.meeting-end-delete {
+		color: var(--ov-meet-color-error);
+	}
+}
+
+.date-info {
+	@extend .ov-date-info;
+}
+
+.auto-deletion-info {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-xs);
+
+	.deletion-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		border-radius: var(--ov-meet-radius-sm);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		width: fit-content;
+		text-transform: uppercase;
+
+		.deletion-icon {
+			@include design-tokens.ov-icon(sm);
+		}
+	}
+
+	.deletion-date-time {
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+
+		.deletion-date {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.deletion-time {
+			font-size: var(--ov-meet-font-size-xs);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+
+	.auto-deletion-disabled {
+		color: var(--ov-meet-text-hint);
+
+		.deletion-icon {
+			color: var(--ov-meet-text-hint);
+		}
+	}
+
+	.auto-deletion-scheduled {
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-color-warning);
+
+		.deletion-icon {
+			color: var(--ov-meet-color-warning);
+		}
+	}
+
+	.auto-deletion-expired {
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-color-error);
+
+		.deletion-icon {
+			color: var(--ov-meet-color-error);
+		}
+	}
+}
+
+.no-data {
+	@extend .ov-no-data;
+}
+
+.action-buttons {
+	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+
+	.mat-mdc-icon-button {
+		&:hover {
+			background-color: transparent;
+		}
+
+		&.primary-action {
+			color: var(--ov-meet-color-primary);
+		}
+
+		&.room-config-btn {
+			color: var(--ov-meet-icon-settings);
+		}
+
+		&.copy-link-btn {
+			color: var(--ov-meet-text-secondary);
+		}
+
+		&.view-recordings-btn {
+			color: var(--ov-meet-icon-recordings);
+		}
+
+		&.delete-room-btn {
+			color: var(--ov-meet-color-error);
+		}
+	}
+}
+
+.close-room-icon {
+	color: var(--ov-meet-color-warning) !important;
+
+	.mat-icon {
+		color: var(--ov-meet-color-warning) !important;
+	}
+}
+
+.open-room-icon {
+	color: var(--ov-meet-color-success) !important;
+
+	.mat-icon {
+		color: var(--ov-meet-color-success) !important;
+	}
+}
+
+.delete-action {
+	@extend .ov-delete-action;
+}
+
+.no-rooms-state {
+	@extend .ov-empty-state;
+
+	.empty-icon {
+		@include design-tokens.ov-icon(xl);
+		color: var(--ov-meet-text-hint);
+		margin-bottom: var(--ov-meet-spacing-lg);
+		display: block;
+	}
+
+	.getting-started-actions {
+		@include design-tokens.ov-mobile-down {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
+
+			button {
+				width: 100%;
+				padding: var(--ov-meet-spacing-md);
+			}
+		}
+	}
+}
+
+.mat-mdc-checkbox,
+.mat-mdc-icon-button,
+.mat-mdc-button {
+	@extend .ov-focus-visible;
+}

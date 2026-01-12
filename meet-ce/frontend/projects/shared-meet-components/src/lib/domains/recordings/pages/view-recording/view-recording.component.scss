@@ -1,0 +1,339 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// === MOBILE RESPONSIVE EXPERIENCE ===
+
+.mobile-container {
+	touch-action: manipulation;
+
+	min-height: 100vh;
+	background-color: var(--ov-meet-background-color);
+	display: flex;
+	flex-direction: column;
+
+	@include design-tokens.ov-tablet-up {
+		display: none; // Hide on tablet and desktop
+	}
+}
+
+// === MOBILE HEADER TOOLBAR ===
+
+.mobile-header-toolbar {
+	position: sticky;
+	top: 0;
+	z-index: 1010;
+	background-color: var(--ov-meet-background-color);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	padding-top: max(var(--ov-meet-spacing-sm), env(safe-area-inset-top));
+}
+
+.toolbar-content {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-md);
+	min-height: 48px;
+
+	.back-button {
+		// @extend .ov-icon-button;
+		color: var(--ov-meet-text-primary);
+		flex-shrink: 0;
+
+		mat-icon {
+			@include design-tokens.ov-icon(md);
+		}
+	}
+
+	.recording-info {
+		flex: 1;
+		min-width: 0;
+
+		.recording-title {
+			margin: 0 0 2px 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+
+			// Truncate long titles
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.recording-metadata {
+			display: flex;
+			gap: var(--ov-meet-spacing-md);
+			flex-wrap: wrap;
+
+			.recording-date,
+			.recording-duration {
+				@include design-tokens.ov-flex-center;
+				gap: var(--ov-meet-spacing-xs);
+				font-size: var(--ov-meet-font-size-xs);
+				color: var(--ov-meet-text-secondary);
+
+				mat-icon {
+					@include design-tokens.ov-icon(xs);
+				}
+			}
+		}
+	}
+
+	.header-actions {
+		display: flex;
+		gap: var(--ov-meet-spacing-xs);
+		flex-shrink: 0;
+
+		.action-button {
+			&.download-button,
+			&.share-button {
+				color: var(--ov-meet-text-primary);
+			}
+
+			&.download-button {
+				color: var(--ov-meet-color-info);
+			}
+
+			mat-icon {
+				@include design-tokens.ov-icon(md);
+			}
+		}
+	}
+}
+
+.status-bar {
+	@include design-tokens.ov-flex-center;
+	gap: var(--ov-meet-spacing-xs);
+	justify-content: center;
+	background: color-mix(in srgb, var(--ov-meet-color-warning) 12%, transparent);
+	border-top: 1px solid var(--ov-meet-color-warning);
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+	font-size: var(--ov-meet-font-size-xs);
+	color: var(--ov-meet-color-warning);
+
+	.status-icon {
+		@include design-tokens.ov-icon(xs);
+	}
+
+	.status-text {
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+}
+
+
+// === MAIN PAGE LAYOUT ===
+
+.recording-page-content {
+	@include design-tokens.ov-container;
+	@include design-tokens.ov-page-content;
+	max-width: 1000px;
+	padding-top: var(--ov-meet-spacing-xl);
+}
+
+// === LOADING STATES ===
+
+.loading-container {
+	@include design-tokens.ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	height: 60vh;
+	color: var(--ov-meet-text-secondary);
+
+	.loading-text {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-md);
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+}
+
+// === ERROR STATES ===
+
+.error-container {
+	@include design-tokens.ov-flex-center;
+	min-height: 60vh;
+	padding: var(--ov-meet-spacing-xl);
+
+	.error-content {
+		text-align: center;
+		max-width: 500px;
+
+		.error-icon {
+			@include design-tokens.ov-icon(xl);
+			color: var(--ov-meet-color-error);
+			margin-bottom: var(--ov-meet-spacing-md);
+		}
+
+		.error-title {
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+			font-size: var(--ov-meet-font-size-xxl);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.error-message {
+			margin: 0 0 var(--ov-meet-spacing-lg) 0;
+			font-size: var(--ov-meet-font-size-md);
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-relaxed);
+		}
+
+		.error-actions {
+			display: flex;
+			gap: var(--ov-meet-spacing-md);
+			justify-content: center;
+			flex-wrap: wrap;
+
+			button {
+				@include design-tokens.ov-button-base;
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+			}
+		}
+	}
+}
+
+// === HEADER SECTION ===
+
+.recording-header {
+	margin-bottom: var(--ov-meet-spacing-xl);
+
+	.header-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-lg);
+
+		@include design-tokens.ov-tablet-down {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
+	.header-info {
+		display: flex;
+		flex: 1;
+
+		.recording-info {
+			width: 50%;
+		}
+
+		.recording-title {
+			margin: 0 0 var(--ov-meet-spacing-sm) 0;
+			font-size: var(--ov-meet-font-size-hero);
+			font-weight: var(--ov-meet-font-weight-light);
+			color: var(--ov-meet-text-primary);
+			line-height: var(--ov-meet-line-height-tight);
+
+			@include design-tokens.ov-mobile-down {
+				font-size: var(--ov-meet-font-size-xxl);
+			}
+		}
+
+		.recording-metadata {
+			display: flex;
+			flex-wrap: wrap;
+			gap: var(--ov-meet-spacing-lg);
+			margin-bottom: var(--ov-meet-spacing-sm);
+
+			@include design-tokens.ov-mobile-down {
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-xs);
+			}
+
+			.recording-date,
+			.recording-duration {
+				@include design-tokens.ov-flex-center;
+				gap: var(--ov-meet-spacing-xs);
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+
+				mat-icon {
+					@include design-tokens.ov-icon(sm);
+				}
+			}
+		}
+
+		.recording-status {
+			@include design-tokens.ov-flex-center;
+			gap: var(--ov-meet-spacing-xs);
+			justify-content: flex-start;
+
+			.status-icon {
+				@include design-tokens.ov-icon(sm);
+
+				&.complete {
+					color: var(--ov-meet-color-success);
+				}
+
+				&.starting,
+				&.active,
+				&.ending {
+					color: var(--ov-meet-color-warning);
+				}
+
+				&.failed {
+					color: var(--ov-meet-color-error);
+				}
+			}
+
+			.status-text {
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				font-weight: var(--ov-meet-font-weight-medium);
+			}
+		}
+	}
+}
+
+// === VIDEO SECTION ===
+// Video player styles are now in recording-video-player.component.scss
+
+// === ACTIONS SECTION ===
+
+.actions-section {
+	flex: 2;
+	align-self: self-end;
+
+	.primary-actions {
+		@include design-tokens.ov-flex-center;
+		gap: var(--ov-meet-spacing-md);
+		flex-wrap: wrap;
+		justify-content: end;
+
+		.action-btn {
+			@include design-tokens.ov-button-base;
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			min-width: 120px;
+			height: 48px;
+
+			mat-icon {
+				@include design-tokens.ov-icon(sm);
+			}
+		}
+	}
+}
+
+// === RESPONSIVE ADJUSTMENTS ===
+
+@include design-tokens.ov-mobile-down {
+	.recording-page-content {
+		padding: var(--ov-meet-spacing-lg);
+		padding-top: var(--ov-meet-spacing-xl);
+	}
+
+	.actions-section .primary-actions {
+		flex-direction: column;
+		align-items: stretch;
+
+		.action-btn {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+}
+
+@include design-tokens.ov-tablet-down {
+	// Video player responsive styles moved to recording-video-player.component.scss
+}

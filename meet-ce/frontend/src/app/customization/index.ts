@@ -1,1 +1,1 @@
-export * from './meeting-ce.providers';
+export * from './pages/app-ce-meeting/app-ce-meeting.component';
