@@ -231,19 +231,27 @@ export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message:
 	return new OpenViduMeetError(errorCode, message, 409);
 };
 
-export const errorInvalidRoomMemberToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', 'Invalid room member token', 400);
-};
-
-export const errorInvalidRoomMemberRole = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', 'No valid room member role provided', 400);
-};
+// Room member errors
 
 export const errorRoomMemberNotFound = (roomId: string, memberId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Member Error', `Room member '${memberId}' not found in room '${roomId}'`, 404);
 };
 
-// Participant errors
+export const errorRoomMemberAlreadyExists = (roomId: string, userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Member Error', `User '${userId}' is already a member of room '${roomId}'`, 409);
+};
+
+export const errorRoomMemberCannotBeOwnerOrAdmin = (roomId: string, userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Member Error',
+		`User '${userId}' cannot be added as a member of room '${roomId}' because they are the room owner or an admin`,
+		409
+	);
+};
+
+export const errorInvalidRoomMemberToken = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Member Error', 'Invalid room member token', 400);
+};
 
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(

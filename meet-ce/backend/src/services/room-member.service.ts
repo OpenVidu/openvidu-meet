@@ -23,6 +23,8 @@ import {
 	errorInvalidRoomSecret,
 	errorParticipantNotFound,
 	errorRoomClosed,
+	errorRoomMemberAlreadyExists,
+	errorRoomMemberCannotBeOwnerOrAdmin,
 	errorRoomMemberNotFound,
 	errorUnauthorized,
 	errorUserNotFound
@@ -64,23 +66,38 @@ export class RoomMemberService {
 	async createRoomMember(roomId: string, memberOptions: MeetRoomMemberOptions): Promise<MeetRoomMember> {
 		const { userId, name, baseRole, customPermissions } = memberOptions;
 
-		// Generate memberId and member name
 		let memberId: string;
 		let memberName: string;
 		let accessUrl = `/room/${roomId}`;
 
 		if (userId) {
-			// Registered user: memberId = userId, get name from user service
+			// Registered user
 			const user = await this.userService.getUser(userId);
 
 			if (!user) {
 				throw errorUserNotFound(userId);
 			}
 
+			// Check if user is already a member of the room
+			const existingMember = await this.getRoomMember(roomId, userId);
+
+			if (existingMember) {
+				throw errorRoomMemberAlreadyExists(roomId, userId);
+			}
+
+			// Check that user is not admin or the owner of the room
+			const isOwner = await this.roomService.isRoomOwner(roomId, userId);
+
+			if (user.role === MeetUserRole.ADMIN || isOwner) {
+				throw errorRoomMemberCannotBeOwnerOrAdmin(roomId, userId);
+			}
+
+			// Use userId as memberId and user's name
 			memberId = userId;
 			memberName = user.name;
 		} else if (name) {
-			// External user: generate memberId, use provided name
+			// External user
+			// Generate memberId and use provided name
 			memberId = `ext-${secureUid(10)}`;
 			memberName = name;
 			accessUrl += `?secret=${memberId}`;
