@@ -16,6 +16,7 @@ export interface MeetUser {
     registrationDate: number;
     role: MeetUserRole;
     passwordHash: string;
+    mustChangePassword: boolean;
 }
 
 export enum MeetUserRole {
@@ -27,7 +28,7 @@ export enum MeetUserRole {
     ROOM_MEMBER = 'room_member'
 }
 
-export type MeetUserDTO = Omit<MeetUser, 'passwordHash'>;
+export type MeetUserDTO = Omit<MeetUser, 'passwordHash' | 'mustChangePassword'>;
 
 export interface MeetUserFilters extends SortAndPagination {
     userId?: string;

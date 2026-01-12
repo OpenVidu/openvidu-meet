@@ -30,6 +30,21 @@ export const login = async (req: Request, res: Response) => {
 
 	try {
 		const tokenService = container.get(TokenService);
+
+		// Check if password change is required
+		if (user.mustChangePassword) {
+			// Generate temporary token with limited TTL, no refresh token
+			const accessToken = await tokenService.generateAccessToken(user, true);
+
+			logger.info(`Login succeeded for user '${username}', but password change is required`);
+			return res.status(200).json({
+				message: `User '${username}' logged in successfully, but password change is required`,
+				accessToken,
+				mustChangePassword: true
+			});
+		}
+
+		// Normal login flow
 		const accessToken = await tokenService.generateAccessToken(user);
 		const refreshToken = await tokenService.generateRefreshToken(user);
 

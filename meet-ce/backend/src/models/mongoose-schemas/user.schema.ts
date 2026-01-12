@@ -42,6 +42,10 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 		passwordHash: {
 			type: String,
 			required: true
+		},
+		mustChangePassword: {
+			type: Boolean,
+			required: true
 		}
 	},
 	{

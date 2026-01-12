@@ -97,6 +97,14 @@ export const errorInsufficientPermissions = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authorization Error', 'Insufficient permissions to access this resource', 403);
 };
 
+export const errorPasswordChangeRequired = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Authorization Error',
+		'Password change required. Please change your password before accessing other resources.',
+		403
+	);
+};
+
 export const errorInvalidApiKey = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authentication Error', 'Invalid API key', 401);
 };

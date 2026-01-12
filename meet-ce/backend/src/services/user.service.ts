@@ -34,7 +34,8 @@ export class UserService {
 			name: 'Admin',
 			registrationDate: Date.now(),
 			role: MeetUserRole.ADMIN,
-			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD)
+			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD),
+			mustChangePassword: false
 		};
 
 		await this.userRepository.create(admin);
@@ -54,7 +55,8 @@ export class UserService {
 			name: userOptions.name,
 			registrationDate: Date.now(),
 			role: userOptions.role,
-			passwordHash
+			passwordHash,
+			mustChangePassword: true
 		};
 
 		return this.userRepository.create(user);
@@ -101,6 +103,8 @@ export class UserService {
 		}
 
 		user.passwordHash = await PasswordHelper.hashPassword(newPassword);
+		user.mustChangePassword = false; // Clear the flag (if needed) after password change
+
 		await this.userRepository.update(user);
 	}
 

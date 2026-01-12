@@ -10,6 +10,7 @@ import {
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
@@ -147,7 +148,25 @@ export const changePassword = async (req: Request, res: Response) => {
 	try {
 		const userService = container.get(UserService);
 		await userService.changePassword(user.userId, currentPassword, newPassword);
-		return res.status(200).json({ message: `Password for user '${user.userId}' changed successfully` });
+
+		const message = `Password for user '${user.userId}' changed successfully`;
+		logger.info(message);
+
+		// Generate new tokens if the user had to change password
+		if (user.mustChangePassword) {
+			logger.info(`Generating new tokens for user '${user.userId}' after password change`);
+			const tokenService = container.get(TokenService);
+			const accessToken = await tokenService.generateAccessToken(user);
+			const refreshToken = await tokenService.generateRefreshToken(user);
+
+			return res.status(200).json({
+				message,
+				accessToken,
+				refreshToken
+			});
+		}
+
+		return res.status(200).json({ message });
 	} catch (error) {
 		handleError(res, error, 'changing password');
 	}

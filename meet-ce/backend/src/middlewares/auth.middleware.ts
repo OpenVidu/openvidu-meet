@@ -13,6 +13,7 @@ import {
 	errorInvalidRoomMemberToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
+	errorPasswordChangeRequired,
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
@@ -113,6 +114,17 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 			// Check if user has one of the required roles
 			if (!roles.includes(user.role)) {
 				throw errorInsufficientPermissions();
+			}
+
+			// Check if password change is required
+			if (user.mustChangePassword) {
+				// Allow only change password endpoint when password change is required
+				const requestPath = req.path;
+				const allowedPath = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`;
+
+				if (requestPath !== allowedPath) {
+					throw errorPasswordChangeRequired();
+				}
 			}
 
 			const requestSessionService = container.get(RequestSessionService);

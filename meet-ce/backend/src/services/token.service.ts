@@ -10,11 +10,13 @@ import { LoggerService } from './logger.service.js';
 export class TokenService {
 	constructor(@inject(LoggerService) protected logger: LoggerService) {}
 
-	async generateAccessToken(user: MeetUser): Promise<string> {
+	async generateAccessToken(user: MeetUser, isTemporary = false): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.userId,
 			name: user.name,
-			ttl: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
+			ttl: isTemporary
+				? INTERNAL_CONFIG.PASSWORD_CHANGE_TOKEN_EXPIRATION
+				: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
 			metadata: JSON.stringify({
 				role: user.role
 			})
