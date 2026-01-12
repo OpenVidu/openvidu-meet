@@ -1,4 +1,4 @@
-import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import ms from 'ms';
@@ -18,22 +18,19 @@ import {
 	errorRecordingNotStopped,
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
-	errorRoomNotFound,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
-import { RoomMemberRepository } from '../repositories/room-member.repository.js';
-import { RoomRepository } from '../repositories/room.repository.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService, RedisLock } from './mutex.service.js';
 import { RequestSessionService } from './request-session.service.js';
-import { RoomService } from './room.service.js';
+import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
 
 @injectable()
@@ -42,14 +39,17 @@ export class RecordingService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
-		@inject(RoomRepository) protected roomRepository: RoomRepository,
-		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
+
+	private async getRoomService(): Promise<RoomService> {
+		const { RoomService } = await import('./room.service.js');
+		return container.get(RoomService);
+	}
 
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
@@ -223,42 +223,30 @@ export class RecordingService {
 		nextPageToken?: string;
 	}> {
 		try {
-			const user = this.requestSessionService.getAuthenticatedUser();
 			const memberRoomId = this.requestSessionService.getRoomIdFromMember();
 			const queryOptions: MeetRecordingFilters & { roomIds?: string[]; owner?: string } = { ...filters };
 
 			// If room member token is present, retrieve only recordings for the room associated with the token
 			if (memberRoomId) {
 				queryOptions.roomId = memberRoomId;
-			} else if (user && user.role !== MeetUserRole.ADMIN) {
-				// For USER and ROOM_MEMBER roles,
-				// get room IDs where user is member WITH canRetrieveRecordings permission
-				const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberIdWithPermission(
-					user.userId,
-					'canRetrieveRecordings'
-				);
+			} else {
+				// Get accessible room IDs based on user role and permissions
+				const roomService = await this.getRoomService();
+				const accessibleRoomIds = await roomService.getAccessibleRoomIds('canRetrieveRecordings');
 
-				let ownedRoomIds: string[] = [];
+				if (accessibleRoomIds !== null) {
+					if (accessibleRoomIds.length === 0) {
+						// User has no access to any rooms, return empty result
+						return {
+							recordings: [],
+							isTruncated: false
+						};
+					}
 
-				// If USER role, also get owned room IDs
-				if (user.role === MeetUserRole.USER) {
-					const ownedRooms = await this.roomRepository.findByOwner(user.userId, 'roomId');
-					ownedRoomIds = ownedRooms.map((r) => r.roomId);
+					// Apply roomIds filter
+					queryOptions.roomIds = accessibleRoomIds;
 				}
-
-				// Combine owned rooms and member rooms with permission
-				const accessibleRoomIds = [...new Set([...ownedRoomIds, ...memberRoomIds])];
-
-				if (accessibleRoomIds.length === 0) {
-					// User has no access to any rooms, return empty result
-					return {
-						recordings: [],
-						isTruncated: false
-					};
-				}
-
-				// Apply roomIds filter
-				queryOptions.roomIds = accessibleRoomIds;
+				// If accessibleRoomIds is null, user is ADMIN and no filter is applied
 			}
 
 			const response = await this.recordingRepository.find(queryOptions);
@@ -284,7 +272,7 @@ export class RecordingService {
 		recordingIds: string[],
 		roomId?: string
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
-		const roomService = container.get(RoomService);
+		const roomService = await this.getRoomService();
 
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
@@ -606,9 +594,8 @@ export class RecordingService {
 	}
 
 	protected async validateRoomForStartRecording(roomId: string): Promise<void> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-
-		if (!room) throw errorRoomNotFound(roomId);
+		const roomService = await this.getRoomService();
+		await roomService.getMeetRoom(roomId);
 
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 

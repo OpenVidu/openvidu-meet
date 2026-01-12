@@ -22,6 +22,7 @@ import { CreateOptions, Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
@@ -40,6 +41,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
+import type { RoomMemberService } from './room-member.service.js';
 
 /**
  * Service for managing OpenVidu Meet rooms.
@@ -58,6 +60,11 @@ export class RoomService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
+
+	private async getRoomMemberService(): Promise<RoomMemberService> {
+		const { RoomMemberService } = await import('./room-member.service.js');
+		return container.get(RoomMemberService);
+	}
 
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
@@ -360,6 +367,37 @@ export class RoomService {
 		}
 
 		return await this.roomRepository.find(queryOptions);
+	}
+
+	/**
+	 * Gets the list of room IDs accessible by the authenticated user based on their role and permissions.
+	 *
+	 * @param permission - Optional permission to filter rooms (e.g., 'canRetrieveRecordings')
+	 * @returns A promise that resolves to an array of accessible room IDs, or null if user is ADMIN (no filter needed)
+	 */
+	async getAccessibleRoomIds(permission?: keyof MeetRoomMemberPermissions): Promise<string[] | null> {
+		const user = this.requestSessionService.getAuthenticatedUser();
+
+		// Admin has access to all rooms
+		if (!user || user.role === MeetUserRole.ADMIN) {
+			return null;
+		}
+
+		// Get room IDs where user is member with the specified permission (if provided)
+		const memberRoomIds = permission
+			? await this.roomMemberRepository.getRoomIdsByMemberIdWithPermission(user.userId, permission)
+			: await this.roomMemberRepository.getRoomIdsByMemberId(user.userId);
+
+		let ownedRoomIds: string[] = [];
+
+		// If USER role, also get owned room IDs
+		if (user.role === MeetUserRole.USER) {
+			const ownedRooms = await this.roomRepository.findByOwner(user.userId, 'roomId');
+			ownedRoomIds = ownedRooms.map((r) => r.roomId);
+		}
+
+		// Combine owned rooms and member rooms
+		return [...new Set([...ownedRoomIds, ...memberRoomIds])];
 	}
 
 	/**
@@ -807,18 +845,6 @@ export class RoomService {
 	}
 
 	/**
-	 * Checks if a user is a member of a room.
-	 *
-	 * @param roomId - The ID of the room
-	 * @param memberId - The ID of the member (userId)
-	 * @returns A promise that resolves to true if the user is a member, false otherwise
-	 */
-	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
-		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
-		return !!member;
-	}
-
-	/**
 	 * Validates if the provided secret matches one of the room's secrets for anonymous access.
 	 *
 	 * @param roomId - The ID of the room
@@ -847,11 +873,12 @@ export class RoomService {
 	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
 	 */
 	async getAuthenticatedRoomMemberPermissions(roomId: string): Promise<MeetRoomMemberPermissions> {
+		const roomMemberService = await this.getRoomMemberService();
 		const user = this.requestSessionService.getAuthenticatedUser();
 		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
 
 		if (!user && !memberRoomId) {
-			return this.getAllPermissions();
+			return roomMemberService.getAllPermissions();
 		}
 
 		// Registered user
@@ -861,10 +888,10 @@ export class RoomService {
 
 			// Admins and owners have all permissions
 			if (isAdmin || isOwner) {
-				return this.getAllPermissions();
+				return roomMemberService.getAllPermissions();
 			}
 
-			const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, user.userId);
+			const member = await roomMemberService.getRoomMember(roomId, user.userId);
 
 			if (member) {
 				return member.effectivePermissions;
@@ -877,7 +904,7 @@ export class RoomService {
 			return permissions!;
 		}
 
-		return this.getNoPermissions();
+		return roomMemberService.getNoPermissions();
 	}
 
 	/**
@@ -895,45 +922,8 @@ export class RoomService {
 
 		// Users can access rooms they own or are members of
 		const isOwner = await this.isRoomOwner(roomId, user.userId);
-		const isMember = await this.isRoomMember(roomId, user.userId);
+		const roomMemberService = await this.getRoomMemberService();
+		const isMember = await roomMemberService.isRoomMember(roomId, user.userId);
 		return isOwner || isMember;
-	}
-
-	private getAllPermissions(): MeetRoomMemberPermissions {
-		return {
-			canRecord: true,
-			canRetrieveRecordings: true,
-			canDeleteRecordings: true,
-			canJoinMeeting: true,
-			canShareAccessLinks: true,
-			canMakeModerator: true,
-			canKickParticipants: true,
-			canEndMeeting: true,
-			canPublishVideo: true,
-			canPublishAudio: true,
-			canShareScreen: true,
-			canReadChat: true,
-			canWriteChat: true,
-			canChangeVirtualBackground: true
-		};
-	}
-
-	private getNoPermissions(): MeetRoomMemberPermissions {
-		return {
-			canRecord: false,
-			canRetrieveRecordings: false,
-			canDeleteRecordings: false,
-			canJoinMeeting: false,
-			canShareAccessLinks: false,
-			canMakeModerator: false,
-			canKickParticipants: false,
-			canEndMeeting: false,
-			canPublishVideo: false,
-			canPublishAudio: false,
-			canShareScreen: false,
-			canReadChat: false,
-			canWriteChat: false,
-			canChangeVirtualBackground: false
-		};
 	}
 }

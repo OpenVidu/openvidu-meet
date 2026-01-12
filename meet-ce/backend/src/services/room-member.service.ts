@@ -439,7 +439,7 @@ export class RoomMemberService {
 	/**
 	 * Gets all permissions set to true.
 	 */
-	protected getAllPermissions(): MeetRoomMemberPermissions {
+	getAllPermissions(): MeetRoomMemberPermissions {
 		return {
 			canRecord: true,
 			canRetrieveRecordings: true,
@@ -455,6 +455,28 @@ export class RoomMemberService {
 			canReadChat: true,
 			canWriteChat: true,
 			canChangeVirtualBackground: true
+		};
+	}
+
+	/**
+	 * Gets all permissions set to false.
+	 */
+	getNoPermissions(): MeetRoomMemberPermissions {
+		return {
+			canRecord: false,
+			canRetrieveRecordings: false,
+			canDeleteRecordings: false,
+			canJoinMeeting: false,
+			canShareAccessLinks: false,
+			canMakeModerator: false,
+			canKickParticipants: false,
+			canEndMeeting: false,
+			canPublishVideo: false,
+			canPublishAudio: false,
+			canShareScreen: false,
+			canReadChat: false,
+			canWriteChat: false,
+			canChangeVirtualBackground: false
 		};
 	}
 
