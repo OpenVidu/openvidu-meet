@@ -15,3 +15,8 @@ content:
                     type: string
                     description: >
                         The refresh token to obtain a new access token when the current one expires.
+                mustChangePassword:
+                    type: boolean
+                    example: true
+                    description: >
+                        Indicates whether the user must change their password after login. Only present if password change is required.

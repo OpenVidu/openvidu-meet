@@ -166,3 +166,30 @@
                 $ref: '../../components/responses/internal/error-user-not-found.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+/users/{userId}/password:
+    put:
+        operationId: resetUserPassword
+        summary: Reset user password
+        description: >
+            Allows an admin to reset the password of a specific user.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/internal/user-id-path.yaml'
+        requestBody:
+            $ref: '../../components/requestBodies/internal/reset-password-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-reset-password.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-user-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
