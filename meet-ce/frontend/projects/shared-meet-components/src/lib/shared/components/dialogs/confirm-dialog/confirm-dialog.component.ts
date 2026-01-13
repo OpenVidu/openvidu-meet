@@ -23,8 +23,8 @@ import type { DialogOptions } from '../../../models/notification.model';
         MatDialogContent,
         MatDialogTitle
     ],
-    templateUrl: './dialog.component.html',
-    styleUrl: './dialog.component.scss',
+    templateUrl: './confirm-dialog.component.html',
+    styleUrl: './confirm-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DialogComponent {
