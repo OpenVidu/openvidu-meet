@@ -28,8 +28,8 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
-import { DeleteRoomDialogComponent } from '../../../../shared/components/dialogs/delete-room-dialog/delete-room-dialog.component';
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
+import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import {
 	RoomsListsComponent,
 	RoomTableAction,

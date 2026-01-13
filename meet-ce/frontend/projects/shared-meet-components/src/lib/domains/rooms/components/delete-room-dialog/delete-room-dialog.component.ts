@@ -2,16 +2,16 @@ import { ChangeDetectionStrategy, Component, Inject, inject } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
-	MAT_DIALOG_DATA,
-	MatDialogActions,
-	MatDialogContent,
-	MatDialogRef,
-	MatDialogTitle
+    MAT_DIALOG_DATA,
+    MatDialogActions,
+    MatDialogContent,
+    MatDialogRef,
+    MatDialogTitle
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
-import type { DeleteRoomDialogOptions } from '../../../models';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
+import type { DeleteRoomDialogOptions } from '../../../../shared/models';
 
 @Component({
 	selector: 'ov-delete-room-dialog',
