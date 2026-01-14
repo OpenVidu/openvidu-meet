@@ -115,6 +115,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberIds - Array of member identifiers
+	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns Array of found room members
 	 */
 	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string): Promise<MeetRoomMember[]> {

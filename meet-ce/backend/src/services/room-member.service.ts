@@ -230,6 +230,19 @@ export class RoomMemberService {
 			throw errorRoomMemberNotFound(roomId, memberId);
 		}
 
+		// If member is currently in a meeting, kick them out first
+		if (member.currentParticipantIdentity) {
+			try {
+				await this.kickParticipantFromMeeting(roomId, member.currentParticipantIdentity);
+				this.logger.info(
+					`Kicked participant '${member.currentParticipantIdentity}' from meeting before deleting member '${memberId}'`
+				);
+			} catch (error) {
+				this.logger.warn(`Failed to kick participant from meeting during member deletion:`, error);
+				// Continue with deletion even if kick fails
+			}
+		}
+
 		return this.roomMemberRepository.deleteByRoomAndMemberId(roomId, memberId);
 	}
 
@@ -247,7 +260,11 @@ export class RoomMemberService {
 		deleted: string[];
 		failed: { memberId: string; error: string }[];
 	}> {
-		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(roomId, memberIds, 'memberId');
+		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(
+			roomId,
+			memberIds,
+			'memberId,currentParticipantIdentity'
+		);
 		const foundMemberIds = membersToDelete.map((m) => m.memberId);
 
 		const failed = memberIds
@@ -255,6 +272,41 @@ export class RoomMemberService {
 			.map((id) => ({ memberId: id, error: 'Room member not found' }));
 
 		if (foundMemberIds.length > 0) {
+			// Kick participants that are currently in a meeting
+			const membersInMeeting = membersToDelete.filter((m) => m.currentParticipantIdentity);
+
+			if (membersInMeeting.length > 0) {
+				const KICK_BATCH_SIZE = 10;
+
+				// Process kicks in batches to avoid overwhelming the system
+				for (let i = 0; i < membersInMeeting.length; i += KICK_BATCH_SIZE) {
+					const batch = membersInMeeting.slice(i, i + KICK_BATCH_SIZE);
+
+					await Promise.allSettled(
+						batch.map(async (member) => {
+							try {
+								await this.kickParticipantFromMeeting(roomId, member.currentParticipantIdentity!);
+								this.logger.info(
+									`Kicked participant '${member.currentParticipantIdentity}' from meeting before deleting member '${member.memberId}'`
+								);
+							} catch (error) {
+								this.logger.warn(
+									`Failed to kick participant '${member.currentParticipantIdentity}' from meeting during bulk deletion:`,
+									error
+								);
+								// Continue with deletion even if kick fails
+							}
+						})
+					);
+
+					this.logger.verbose(`Processed batch of ${batch.length} participant kicks for room '${roomId}'`);
+				}
+
+				this.logger.info(
+					`Kicked ${membersInMeeting.length} participant(s) from meeting before bulk deletion in room '${roomId}'`
+				);
+			}
+
 			await this.roomMemberRepository.deleteByRoomIdAndMemberIds(roomId, foundMemberIds);
 		}
 
