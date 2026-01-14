@@ -33,8 +33,8 @@ recordingRouter.get(
 	'/',
 	withAuth(
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
 	authorizeRecordingAccess('canRetrieveRecordings'),
@@ -44,8 +44,8 @@ recordingRouter.delete(
 	'/',
 	withAuth(
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	authorizeRecordingAccess('canDeleteRecordings'),
@@ -55,8 +55,8 @@ recordingRouter.get(
 	'/download',
 	withAuth(
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	authorizeRecordingAccess('canRetrieveRecordings'),
@@ -73,8 +73,8 @@ recordingRouter.delete(
 	'/:recordingId',
 	withAuth(
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	withValidRecordingId,
 	authorizeRecordingAccess('canDeleteRecordings'),
@@ -91,8 +91,8 @@ recordingRouter.get(
 	'/:recordingId/url',
 	withAuth(
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingUrlReq,
 	authorizeRecordingAccess('canRetrieveRecordings'),

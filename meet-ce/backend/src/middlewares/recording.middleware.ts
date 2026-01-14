@@ -88,8 +88,8 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 	// This will allow API key, registered user and room member token access.
 	const authValidators = [
 		apiKeyValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER),
-		roomMemberTokenValidator
+		roomMemberTokenValidator,
+		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	];
 	return withAuth(...authValidators)(req, res, next);
 };
