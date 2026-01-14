@@ -1,8 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { WebComponentProperty } from '@openvidu-meet/typings';
-import { MeetingContextService } from '../../domains/meeting/services/meeting-context.service';
-import { RoomMemberService } from '../../domains/rooms/services/room-member.service';
+import { MEETING_CONTEXT_ADAPTER, ROOM_MEMBER_ADAPTER } from '../adapters';
 import { NavigationErrorReason } from '../models/navigation.model';
 import { AppDataService } from '../services/app-data.service';
 import { NavigationService } from '../services/navigation.service';
@@ -10,8 +9,8 @@ import { SessionStorageService } from '../services/session-storage.service';
 
 export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const meetingContextService = inject(MeetingContextService);
-	const roomMemberService = inject(RoomMemberService);
+	const meetingContextAdapter = inject(MEETING_CONTEXT_ADAPTER);
+	const roomMemberAdapter = inject(ROOM_MEMBER_ADAPTER);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const {
@@ -33,15 +32,15 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 		return navigationService.redirectToErrorPage(NavigationErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	meetingContextService.setRoomId(roomId);
-	meetingContextService.setRoomSecret(secret, true);
+	meetingContextAdapter.setRoomId(roomId);
+	meetingContextAdapter.setRoomSecret(secret, true);
 
 	if (e2eeKey) {
-		meetingContextService.setE2eeKey(e2eeKey);
+		meetingContextAdapter.setE2eeKey(e2eeKey);
 	}
 
 	if (participantName) {
-		roomMemberService.setParticipantName(participantName);
+		roomMemberAdapter.setParticipantName(participantName);
 	}
 
 	if (showOnlyRecordings === 'true') {
@@ -54,7 +53,7 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 export const extractRecordingQueryParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
-	const meetingContextService = inject(MeetingContextService);
+	const meetingContextAdapter = inject(MEETING_CONTEXT_ADAPTER);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret } = extractParams(route);
@@ -65,8 +64,8 @@ export const extractRecordingQueryParamsGuard: CanActivateFn = (route: Activated
 		return navigationService.redirectToErrorPage(NavigationErrorReason.MISSING_ROOM_SECRET);
 	}
 
-	meetingContextService.setRoomId(roomId);
-	meetingContextService.setRoomSecret(secret, true);
+	meetingContextAdapter.setRoomId(roomId);
+	meetingContextAdapter.setRoomSecret(secret, true);
 
 	return true;
 };
