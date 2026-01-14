@@ -24,6 +24,7 @@ export interface MeetRoomMember {
     baseRole: MeetRoomMemberRole; // The base role of the member in the room
     customPermissions?: Partial<MeetRoomMemberPermissions>; // Custom permissions for the member (if any)
     effectivePermissions: MeetRoomMemberPermissions; // Effective permissions for the member (base role + custom permissions)
+    currentParticipantIdentity?: string; // The participant identity if the member is currently in a meeting, undefined otherwise
 }
 
 /**

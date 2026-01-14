@@ -192,6 +192,32 @@ export class RoomMemberService {
 	}
 
 	/**
+	 * Updates the currentParticipantIdentity for a room member.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member
+	 * @param participantIdentity - The participant identity to set (or undefined to clear it)
+	 */
+	async updateCurrentParticipantIdentity(
+		roomId: string,
+		memberId: string,
+		participantIdentity: string | undefined
+	): Promise<void> {
+		const member = await this.getRoomMember(roomId, memberId);
+
+		if (!member) {
+			this.logger.warn(
+				`Cannot update currentParticipantIdentity: member '${memberId}' not found in room '${roomId}'`
+			);
+			return;
+		}
+
+		member.currentParticipantIdentity = participantIdentity;
+		await this.roomMemberRepository.update(member);
+		this.logger.info(`Updated currentParticipantIdentity for member '${memberId}' in room '${roomId}'`);
+	}
+
+	/**
 	 * Deletes a room member.
 	 *
 	 * @param roomId - The ID of the room

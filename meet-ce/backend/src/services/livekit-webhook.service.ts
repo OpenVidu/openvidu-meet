@@ -8,6 +8,7 @@ import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -18,7 +19,6 @@ import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
-import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -160,13 +160,31 @@ export class LivekitWebhookService {
 	/**
 	 *
 	 * Handles the 'participant_joined' event by gathering relevant room and participant information,
-	 * checking room status, and sending a data payload with room status information to the newly joined participant.
+	 * updating the room member's currentParticipantIdentity if applicable,
+	 * and sending a room status signal to OpenVidu components.
 	 * @param room - Information about the room where the participant joined.
 	 * @param participant - Information about the newly joined participant.
 	 */
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
 		// Skip if the participant is an egress participant
 		if (this.livekitService.isEgressParticipant(participant)) return;
+
+		// Update room member's currentParticipantIdentity if this is an identified member
+		if (participant.metadata) {
+			try {
+				const metadata = JSON.parse(participant.metadata);
+
+				if (metadata.memberId) {
+					await this.roomMemberService.updateCurrentParticipantIdentity(
+						room.name,
+						metadata.memberId,
+						participant.identity
+					);
+				}
+			} catch (error) {
+				this.logger.warn(`Failed to set room member currentParticipantIdentity:`, error);
+			}
+		}
 
 		try {
 			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
@@ -181,14 +199,32 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 * Handles the 'participant_left' event by releasing the participant's reserved name
-	 * to make it available for other participants.
+	 * Handles the 'participant_left' event by gathering relevant room and participant information,
+	 * clearing the participant identity from the room member if applicable,
+	 * and releasing any reserved participant names.
 	 * @param room - Information about the room where the participant left.
 	 * @param participant - Information about the participant who left.
 	 */
 	async handleParticipantLeft(room: Room, participant: ParticipantInfo) {
 		// Skip if the participant is an egress participant
 		if (this.livekitService.isEgressParticipant(participant)) return;
+
+		// Clear room member's currentParticipantIdentity if this is an identified member
+		if (participant.metadata) {
+			try {
+				const metadata = JSON.parse(participant.metadata);
+
+				if (metadata.memberId) {
+					await this.roomMemberService.updateCurrentParticipantIdentity(
+						room.name,
+						metadata.memberId,
+						undefined
+					);
+				}
+			} catch (error) {
+				this.logger.warn(`Failed to clear room member currentParticipantIdentity:`, error);
+			}
+		}
 
 		try {
 			// Release the participant's reserved name

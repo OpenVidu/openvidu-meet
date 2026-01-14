@@ -87,6 +87,10 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 		customPermissions: {
 			type: MeetRoomMemberPartialPermissionsSchema,
 			required: false
+		},
+		currentParticipantIdentity: {
+			type: String,
+			required: false
 		}
 	},
 	{
