@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import { WebComponentProperty } from '@openvidu-meet/typings';
+import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
 
 describe('OpenViduMeet WebComponent Attributes', () => {
@@ -20,6 +20,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	// IFRAME SETUP
 	// ==========================================
 	describe('Iframe Configuration', () => {
+		// Verify iframe 'allow' media permissions are set correctly for camera/microphone/display
 		it('should render iframe with correct media permissions', () => {
 			const iframe = component.shadowRoot?.querySelector('iframe');
 			expect(iframe).not.toBeNull();
@@ -33,6 +34,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(allowAttribute).toContain('compute-pressure');
 		});
 
+		// Ensure iframe element is present and is an HTMLIFrameElement in shadow DOM
 		it('should have iframe ready in shadow DOM', () => {
 			const iframe = component.shadowRoot?.querySelector('iframe');
 			expect(iframe).toBeInstanceOf(HTMLIFrameElement);
@@ -43,6 +45,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	// REQUIRED ATTRIBUTES (room-url | recording-url)
 	// ==========================================
 	describe('Required Attributes', () => {
+		// When no room or recording URL is provided, the component must not set the iframe src and should log an error
 		it('should reject iframe src when both room-url and recording-url are missing', () => {
 			const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -58,6 +61,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			consoleErrorSpy.mockRestore();
 		});
 
+		// Setting `room-url` attribute must result in iframe src being set to that URL
 		it('should set iframe src when room-url attribute is provided', () => {
 			const roomUrl = 'https://example.com/room/testRoom-123';
 			component.setAttribute(WebComponentProperty.ROOM_URL, roomUrl);
@@ -68,6 +72,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(iframe?.src).toBe(roomUrl);
 		});
 
+		// Setting `recording-url` attribute (without room-url) must set iframe src to recording URL
 		it('should set iframe src when recording-url attribute is provided', () => {
 			const recordingUrl = 'https://example.com/recordings/recording-abc-123';
 			component.setAttribute(WebComponentProperty.RECORDING_URL, recordingUrl);
@@ -78,6 +83,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(iframe?.src).toBe(recordingUrl);
 		});
 
+		// If both `room-url` and `recording-url` are present, `room-url` must take precedence
 		it('should prefer room-url over recording-url when both are provided', () => {
 			const roomUrl = 'https://example.com/room/testRoom-123';
 			const recordingUrl = 'https://example.com/recordings/recording-abc-123';
@@ -91,6 +97,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(iframe?.src).toBe(roomUrl);
 		});
 
+		// Extract and set target origin from `room-url`, propagate to managers
 		it('should extract origin from room-url and set as target origin', () => {
 			const domain = 'https://example.com';
 			const roomUrl = `${domain}/room/testRoom-123?secret=123456`;
@@ -103,6 +110,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect((component as any).eventsManager.targetIframeOrigin).toBe(domain);
 		});
 
+		// Extract and set target origin from `recording-url`, propagate to managers
 		it('should extract origin from recording-url and set as target origin', () => {
 			const domain = 'https://recordings.example.com';
 			const recordingUrl = `${domain}/recordings/recording-abc-123`;
@@ -115,6 +123,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect((component as any).eventsManager.targetIframeOrigin).toBe(domain);
 		});
 
+		// Updating the `room-url` attribute should update the iframe's src accordingly
 		it('should update iframe src when room-url attribute changes', () => {
 			const roomUrl1 = 'https://example.com/room/room-1';
 			const roomUrl2 = 'https://example.com/room/room-2';
@@ -139,6 +148,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	describe('Optional Attributes as Query Parameters', () => {
 		const baseRoomUrl = 'https://example.com/room/testRoom';
 
+		// Add `participant-name` attribute should append it as a query parameter to the iframe URL
 		it('should add participant-name as query parameter', () => {
 			const participantName = 'John Doe';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -151,6 +161,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.PARTICIPANT_NAME)).toBe(participantName);
 		});
 
+		// Add `e2ee-key` attribute should append it as a query parameter to the iframe URL
 		it('should add e2ee-key as query parameter', () => {
 			const e2eeKey = 'secret-encryption-key-123';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -163,6 +174,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.E2EE_KEY)).toBe(e2eeKey);
 		});
 
+		// Add `leave-redirect-url` attribute should append it as a query parameter to the iframe URL
 		it('should add leave-redirect-url as query parameter', () => {
 			const redirectUrl = 'https://example.com/goodbye';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -175,6 +187,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.LEAVE_REDIRECT_URL)).toBe(redirectUrl);
 		});
 
+		// Add `show-only-recordings` boolean-like attribute should be passed through as a query string
 		it('should add show-only-recordings as query parameter', () => {
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
 			component.setAttribute(WebComponentProperty.SHOW_ONLY_RECORDINGS, 'true');
@@ -186,6 +199,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.SHOW_ONLY_RECORDINGS)).toBe('true');
 		});
 
+		// Multiple optional attributes should all be included as query parameters
 		it('should add multiple optional attributes as query parameters', () => {
 			const participantName = 'Jane Smith';
 			const e2eeKey = 'encryption-key-456';
@@ -208,6 +222,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.SHOW_ONLY_RECORDINGS)).toBe('false');
 		});
 
+		// The base `room-url`/`recording-url` should not appear as query parameters
 		it('should NOT add room-url or recording-url as query parameters', () => {
 			const roomUrl = 'https://example.com/room/testRoom?secret=abc';
 			component.setAttribute(WebComponentProperty.ROOM_URL, roomUrl);
@@ -222,6 +237,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.has(WebComponentProperty.RECORDING_URL)).toBe(false);
 		});
 
+		// Existing query parameters in the provided `room-url` must be preserved and merged with new ones
 		it('should preserve existing query parameters in room-url', () => {
 			const roomUrl = 'https://example.com/room/testRoom?secret=abc123&role=moderator';
 			const participantName = 'Alice';
@@ -246,6 +262,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	// CUSTOM/UNKNOWN ATTRIBUTES
 	// ==========================================
 	describe('Custom Attributes as Query Parameters', () => {
+		// Arbitrary custom attributes present on the element should be forwarded as query parameters
 		it('should add custom attributes as query parameters', () => {
 			const baseRoomUrl = 'https://example.com/room/testRoom';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -261,6 +278,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get('another-param')).toBe('another-value');
 		});
 
+		// Attribute names containing dashes or special characters should be preserved in query params
 		it('should handle attribute names with special characters', () => {
 			const baseRoomUrl = 'https://example.com/room/testRoom';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -279,6 +297,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	// EDGE CASES
 	// ==========================================
 	describe('Edge Cases', () => {
+		// Empty string attribute values should still be included as query parameters (empty value)
 		it('should handle empty string attributes', () => {
 			const baseRoomUrl = 'https://example.com/room/testRoom';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -294,6 +313,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.PARTICIPANT_NAME)).toBe('');
 		});
 
+		// Values with spaces and special characters must be encoded and decoded properly in URLSearchParams
 		it('should handle special characters in attribute values', () => {
 			const baseRoomUrl = 'https://example.com/room/testRoom';
 			const specialName = 'User Name With Spaces & Special=Chars';
@@ -309,6 +329,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.PARTICIPANT_NAME)).toBe(specialName);
 		});
 
+		// Updating attributes after initial render should change the iframe src and include new params
 		it('should handle updating attributes after initial render', () => {
 			const baseRoomUrl = 'https://example.com/room/testRoom';
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
@@ -328,6 +349,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.PARTICIPANT_NAME)).toBe('Updated Name');
 		});
 
+		// An invalid URL should be caught and logged without throwing uncaught exceptions
 		it('should handle invalid URL gracefully', () => {
 			const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -348,6 +370,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 	// INTEGRATION TESTS
 	// ==========================================
 	describe('Integration Tests', () => {
+		// Full scenario: room-url with existing params and several optional attributes should be merged correctly
 		it('should handle complete real-world scenario with room-url and multiple attributes', () => {
 			const roomUrl = 'https://meet.example.com/room/team-standup?secret=xyz789';
 			const participantName = 'John Doe';
@@ -378,6 +401,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect((component as any).targetIframeOrigin).toBe('https://meet.example.com');
 		});
 
+		// Full scenario using `recording-url`: ensure base path and query params are correct and origin set
 		it('should handle complete real-world scenario with recording-url', () => {
 			const recordingUrl = 'https://recordings.example.com/view/rec-20231115-abc123';
 			const participantName = 'Viewer';

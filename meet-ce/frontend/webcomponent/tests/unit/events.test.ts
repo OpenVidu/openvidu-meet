@@ -20,6 +20,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		document.body.innerHTML = '';
 	});
 
+	// setTargetOrigin should update the target origin used to validate incoming messages
 	it('should update allowedOrigin when setAllowedOrigin is called', () => {
 		eventsManager.setTargetOrigin(testOrigin);
 
@@ -28,6 +29,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		expect((component as any).eventsManager.targetIframeOrigin).toBe(testOrigin);
 	});
 
+	// connectedCallback should register a 'message' listener on window for postMessage events
 	it('should register message event listener on connection', () => {
 		const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
 
@@ -36,6 +38,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
 	});
 
+	// Invalid message payloads should be ignored and not dispatched as component events
 	it('should ignore invalid messages', () => {
 		eventsManager.setTargetOrigin(testOrigin);
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
@@ -48,6 +51,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		expect(dispatchEventSpy).not.toHaveBeenCalled();
 	});
 
+	// Messages from origins other than the configured target should be ignored
 	it('should ignore messages from unknown origins', () => {
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
 		const event = new MessageEvent('message', {
@@ -59,6 +63,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		expect(dispatchEventSpy).not.toHaveBeenCalled();
 	});
 
+	// Valid messages from the allowed origin should be converted to CustomEvent and dispatched
 	it('should dispatch event for valid messages from allowed origin', () => {
 		eventsManager.setTargetOrigin(testOrigin);
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
@@ -76,6 +81,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		);
 	});
 
+	// Messages lacking an 'event' property should be ignored and not dispatch component events
 	it('should ignore messages without an event property', () => {
 		eventsManager.setTargetOrigin(testOrigin);
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
@@ -88,6 +94,7 @@ describe('OpenViduMeet WebComponent Events', () => {
 		expect(dispatchEventSpy).not.toHaveBeenCalled();
 	});
 
+	// cleanup() should remove the previously registered window 'message' listener
 	it('should remove message event listener on cleanup', () => {
 		const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 		eventsManager.cleanup();
