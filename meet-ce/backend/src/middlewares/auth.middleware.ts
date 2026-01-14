@@ -31,6 +31,12 @@ import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
  */
 export interface AuthValidator {
 	/**
+	 * Returns the priority of this validator (higher number = higher priority).
+	 * Priority order: apiKeyValidator (4) > roomMemberTokenValidator (3) > tokenAndRoleValidator (2) > allowAnonymous (1)
+	 */
+	getPriority(): number;
+
+	/**
 	 * Checks if the authentication credentials for this validator are present in the request.
 	 * This allows the middleware to skip validation for methods that are not being used.
 	 */
@@ -44,33 +50,40 @@ export interface AuthValidator {
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
- * First checks which authentication methods are present in the request, then validates only those methods.
+ * Validators are automatically sorted by priority: apiKeyValidator > roomMemberTokenValidator > tokenAndRoleValidator > allowAnonymous.
+ * Only validates the authentication methods that are present in the request.
  * If any of the validators grants access, the request is allowed to continue.
- * If none of the validators grants access, the request is rejected with the most recent error.
+ * If a validator is present but fails validation, the error is returned immediately.
+ * If none are present, the request is rejected with unauthorized error.
  *
  * @param validators List of validators to check if the request is authorized
  * @returns RequestHandler middleware
  */
 export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		let lastError: OpenViduMeetError | null = null;
+		// Sort validators by priority (descending)
+		const sortedValidators = [...validators].sort((a, b) => {
+			return b.getPriority() - a.getPriority();
+		});
 
-		for (const validator of validators) {
-			try {
-				if (await validator.isPresent(req)) {
+		for (const validator of sortedValidators) {
+			const isPresent = await validator.isPresent(req);
+
+			if (isPresent) {
+				try {
 					await validator.validate(req);
-					// If any validator grants access, allow the request to continue
+					// If validator grants access, allow the request to continue
 					return next();
-				}
-			} catch (error) {
-				if (error instanceof OpenViduMeetError) {
-					lastError = error;
+				} catch (error) {
+					// If a present validator fails, return the error immediately
+					const meetError = error instanceof OpenViduMeetError ? error : errorUnauthorized();
+					return rejectRequestFromMeetError(res, meetError);
 				}
 			}
 		}
 
-		lastError = lastError || errorUnauthorized();
-		return rejectRequestFromMeetError(res, lastError);
+		// No validator was present, return unauthorized
+		return rejectRequestFromMeetError(res, errorUnauthorized());
 	};
 };
 
@@ -82,6 +95,10 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
  */
 export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator => {
 	return {
+		getPriority(): number {
+			return 2;
+		},
+
 		async isPresent(req: Request): Promise<boolean> {
 			const token = getAccessToken(req);
 			return !!token;
@@ -138,6 +155,10 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
  * Validates room member tokens and sets the room member metadata in the session.
  */
 export const roomMemberTokenValidator: AuthValidator = {
+	getPriority(): number {
+		return 3;
+	},
+
 	async isPresent(req: Request): Promise<boolean> {
 		const token = getRoomMemberToken(req);
 		return !!token;
@@ -190,6 +211,10 @@ export const roomMemberTokenValidator: AuthValidator = {
  * Validates API keys from request headers.
  */
 export const apiKeyValidator: AuthValidator = {
+	getPriority(): number {
+		return 4;
+	},
+
 	async isPresent(req: Request): Promise<boolean> {
 		const apiKey = req.headers[INTERNAL_CONFIG.API_KEY_HEADER];
 		return !!apiKey;
@@ -226,6 +251,10 @@ export const apiKeyValidator: AuthValidator = {
  * Allows unauthenticated access with an anonymous user.
  */
 export const allowAnonymous: AuthValidator = {
+	getPriority(): number {
+		return 1;
+	},
+
 	async isPresent(): Promise<boolean> {
 		// Anonymous access is always available
 		return true;
