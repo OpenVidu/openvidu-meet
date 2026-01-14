@@ -188,7 +188,13 @@ export class RoomMemberService {
 			member.customPermissions = updates.customPermissions;
 		}
 
-		return this.roomMemberRepository.update(member);
+		const updatedMember = await this.roomMemberRepository.update(member);
+
+		if (updatedMember.currentParticipantIdentity) {
+			// TODO: Notify participant of role/permission changes if currently in a meeting
+		}
+
+		return updatedMember;
 	}
 
 	/**
