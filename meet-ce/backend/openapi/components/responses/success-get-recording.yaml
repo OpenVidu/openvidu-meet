@@ -11,6 +11,7 @@ content:
                     roomId: 'room-123'
                     roomName: 'room'
                     status: 'complete'
+                    layout: 'grid'
                     filename: 'room-123--XX445.mp4'
                     startDate: 1600000000000
                     endDate: 1600000003600
@@ -25,5 +26,6 @@ content:
                     roomId: 'room-456'
                     roomName: 'room'
                     status: 'active'
+                    layout: 'grid'
                     filename: 'room-456--QR789.mp4'
                     startDate: 1682500000000

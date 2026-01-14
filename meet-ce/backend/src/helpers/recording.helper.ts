@@ -1,5 +1,5 @@
 import { EgressStatus } from '@livekit/protocol';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
@@ -19,7 +19,7 @@ export class RecordingHelper {
 		const filename = RecordingHelper.extractFilename(egressInfo);
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 		const { roomName: roomId, errorCode, error, details } = egressInfo;
-
+		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
 		const roomService = container.get(RoomService);
 		const { roomName } = await roomService.getMeetRoom(roomId);
 
@@ -28,6 +28,7 @@ export class RecordingHelper {
 			roomId,
 			roomName,
 			// outputMode,
+			layout,
 			status,
 			filename,
 			startDate: startDateMs,
@@ -136,6 +137,23 @@ export class RecordingHelper {
 		const filename = RecordingHelper.extractFilename(egressInfo);
 		const uid = RecordingHelper.extractUidFromFilename(filename);
 		return `${meetRoomId}--${egressId}--${uid}`;
+	}
+
+	static extractRecordingLayout(egressInfo: EgressInfo): MeetRecordingLayout | undefined {
+		if (egressInfo.request.case !== 'roomComposite') return undefined;
+
+		const { layout } = egressInfo.request.value;
+
+		switch (layout) {
+			case 'grid':
+				return MeetRecordingLayout.GRID;
+			case 'speaker':
+				return MeetRecordingLayout.SPEAKER;
+			case 'single-speaker':
+				return MeetRecordingLayout.SINGLE_SPEAKER;
+			default:
+				return MeetRecordingLayout.GRID; // Default layout
+		}
 	}
 
 	/**

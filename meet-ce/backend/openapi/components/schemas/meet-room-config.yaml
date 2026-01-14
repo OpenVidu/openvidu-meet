@@ -35,9 +35,9 @@ MeetRecordingConfig:
                 - grid
                 - speaker
                 - single-speaker
-                - grid-light
-                - speaker-light
-                - single-speaker-light
+                # - grid-light
+                # - speaker-light
+                # - single-speaker-light
             default: grid
             example: grid
             description: |
@@ -45,9 +45,9 @@ MeetRecordingConfig:
                 - `grid`: All participants are shown in a grid layout.
                 - `speaker`: The active speaker is shown prominently, with other participants in smaller thumbnails.
                 - `single-speaker`: Only the active speaker is shown in the recording.
-                - `grid-light`: Similar to `grid` but with a light-themed background.
-                - `speaker-light`: Similar to `speaker` but with a light-themed background.
-                - `single-speaker-light`: Similar to `single-speaker` but with a light
+              # - `grid-light`: Similar to `grid` but with a light-themed background.
+              # - `speaker-light`: Similar to `speaker` but with a light-themed background.
+              # - `single-speaker-light`: Similar to `single-speaker` but with a light-themed background.
         allowAccessTo:
             type: string
             enum:

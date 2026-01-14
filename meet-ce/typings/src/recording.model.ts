@@ -30,8 +30,8 @@ export interface MeetRecordingInfo {
     roomId: string;
     roomName: string;
     // outputMode: MeetRecordingOutputMode;
-    // layout: MeetRecordingLayout;
     status: MeetRecordingStatus;
+    layout?: MeetRecordingLayout;
     filename?: string;
     startDate?: number;
     endDate?: number;
