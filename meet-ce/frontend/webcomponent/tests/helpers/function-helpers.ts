@@ -746,3 +746,94 @@ export const muteAudio = async (page: Page) => {
 export const sleep = (ms: number): Promise<void> => {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+/**
+ * Gets the webhook event object from webhook storage in sessionStorage.
+ * This allows comparing the actual room state with webhook payload data.
+ * @param page - Playwright page object
+ * @param roomId - The room ID to retrieve
+ * @param eventName - The webhook event name (e.g., 'meetingStarted')
+ * @returns The complete webhook event object from sessionStorage (with event, data, creationDate)
+ */
+export async function getRoomFromWebhookStorage(page: Page, roomId: string, eventName: string): Promise<any> {
+	// Wait a bit to ensure the webhook is saved to localStorage
+	await page.waitForTimeout(500);
+
+	const webhookEvent = await page.evaluate(
+		({ roomId, eventName }) => {
+			const data = sessionStorage.getItem('webhookEventsByRoom');
+			if (!data) {
+				console.log('No webhookEventsByRoom in sessionStorage');
+				return null;
+			}
+
+			const map = JSON.parse(data);
+			const events = map[roomId] || [];
+
+			console.log(`Looking for event '${eventName}' in room '${roomId}'`);
+			console.log('Available events:', events.map((e: any) => e.event));
+
+			// Find the specific event and return the complete event object
+			const event = events.find((e: any) => e.event === eventName);
+			if (!event) {
+				console.log(`Event '${eventName}' not found`);
+				return null;
+			}
+
+			return event; // Return the complete event { event, data, creationDate }
+		},
+		{ roomId, eventName }
+	);
+
+	if (!webhookEvent) {
+		throw new Error(`Webhook event '${eventName}' not found in sessionStorage for room '${roomId}'`);
+	}
+
+	return webhookEvent;
+}
+
+/**
+ * Gets a recording details from the Meet API
+ * @param recordingId - The recording ID to retrieve
+ * @returns The complete recording object from the API
+ */
+export async function getRecordingFromAPI(recordingId: string): Promise<any> {
+	const response = await fetch(`${MEET_API_URL}/api/v1/recordings/${recordingId}`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-api-key': MEET_API_KEY
+		}
+	});
+
+	if (!response.ok) {
+		const errorResponse = await response.json();
+		console.error('Error getting recording:', errorResponse);
+		throw new Error(`Failed to get recording: ${response.status}`);
+	}
+
+	return await response.json();
+}
+
+/**
+ * Gets the room details from the Meet API
+ * @param roomId
+ * @returns
+ */
+export async function getRoomFromAPI(roomId: string): Promise<any> {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-api-key': MEET_API_KEY
+		}
+	});
+
+	if (!response.ok) {
+		const errorResponse = await response.json();
+		console.error('Error getting room:', errorResponse);
+		throw new Error(`Failed to get room: ${response.status}`);
+	}
+
+	return await response.json();
+}
