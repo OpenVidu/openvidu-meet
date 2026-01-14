@@ -56,3 +56,9 @@ properties:
         description: >
             The complete set of effective permissions for this member. This object is calculated by applying the customPermissions
             overrides to the base role defaults, resulting in the final permissions that will be enforced.
+    currentParticipantIdentity:
+        type: string
+        example: 'alice_smith-1234'
+        description: |
+            The identity of the currently connected participant in the meeting associated with this room member.
+            This value is undefined if the member is not currently connected.

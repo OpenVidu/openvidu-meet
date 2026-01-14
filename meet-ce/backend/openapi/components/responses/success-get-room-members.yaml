@@ -61,6 +61,7 @@ content:
                               canReadChat: true
                               canWriteChat: true
                               canChangeVirtualBackground: true
+                          currentParticipantIdentity: 'bob-5678'
                     pagination:
                         isTruncated: false
                         maxItems: 10
