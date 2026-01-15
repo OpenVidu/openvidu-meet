@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal } from '@angular/core';
+import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,6 +16,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { setsAreEqual } from '../../../../shared/utils/array.utils';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
@@ -144,10 +145,18 @@ export class RoomsListsComponent implements OnInit {
 		effect(() => {
 			// Update selected rooms based on current rooms
 			const rooms = this.rooms();
-			const validIds = new Set(rooms.map((r) => r.roomId));
-			const filteredSelection = new Set([...this.selectedRooms()].filter((id) => validIds.has(id)));
-			this.selectedRooms.set(filteredSelection);
-			this.updateSelectionState();
+			const validRoomIds = new Set(rooms.map((r) => r.roomId));
+
+			// Use untracked to avoid creating a reactive dependency on selectedRooms
+			const currentSelection = untracked(() => this.selectedRooms());
+			const filteredSelection = new Set([...currentSelection].filter((id) => validRoomIds.has(id)));
+
+
+			// Only update if the selection has actually changed
+			if (!setsAreEqual(filteredSelection, currentSelection)) {
+				this.selectedRooms.set(filteredSelection);
+				this.updateSelectionState();
+			}
 
 			// Show message when no rooms match filters
 			this.showEmptyFilterMessage = rooms.length === 0 && this.hasActiveFilters();

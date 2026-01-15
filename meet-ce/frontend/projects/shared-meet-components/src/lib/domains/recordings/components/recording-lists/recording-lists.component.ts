@@ -1,14 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import {
-	Component,
-	computed,
-	effect,
-	EventEmitter,
-	input,
-	OnInit,
-	Output,
-	signal
-} from '@angular/core';
+import { Component, computed, effect, EventEmitter, input, OnInit, Output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,6 +17,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
+import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { formatBytes, formatDurationToHMS } from '../../../../shared/utils/format.utils';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 
@@ -155,10 +147,17 @@ export class RecordingListsComponent implements OnInit {
 		effect(() => {
 			// Update selected recordings based on current recordings
 			const recordings = this.recordings();
-			const validIds = new Set(recordings.map((r) => r.recordingId));
-			const filteredSelection = new Set([...this.selectedRecordings()].filter((id) => validIds.has(id)));
-			this.selectedRecordings.set(filteredSelection);
-			this.updateSelectionState();
+			const validRecordingIds = new Set(recordings.map((r) => r.recordingId));
+
+			// Use untracked to avoid circular dependency in effect
+			const currentSelection = untracked(() => this.selectedRecordings());
+			const filteredSelection = new Set([...currentSelection].filter((id) => validRecordingIds.has(id)));
+
+			// Only update if the selection has actually changed
+			if (!setsAreEqual(filteredSelection, currentSelection)) {
+				this.selectedRecordings.set(filteredSelection);
+				this.updateSelectionState();
+			}
 
 			// Show message when no recordings match filters
 			this.showEmptyFilterMessage = recordings.length === 0 && this.hasActiveFilters();
@@ -170,7 +169,7 @@ export class RecordingListsComponent implements OnInit {
 		this.updateDisplayedColumns();
 
 		// Calculate showEmptyFilterMessage based on initial state
-		this.showEmptyFilterMessage = this.recordings.length === 0 && this.hasActiveFilters();
+		this.showEmptyFilterMessage = this.recordings().length === 0 && this.hasActiveFilters();
 	}
 
 	// ===== INITIALIZATION METHODS =====
