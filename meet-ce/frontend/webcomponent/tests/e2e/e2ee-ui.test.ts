@@ -491,23 +491,16 @@ test.describe('E2EE UI Tests', () => {
 			expect(ownName2).toBe(participant2Name);
 			expect(ownName2).not.toContain('*');
 
-			// Close settings panel - click the close button
+			// Close settings panel
 			await Promise.all([
 				interactWithElementInIframe(page, '.panel-close-button', { action: 'click' }),
 				interactWithElementInIframe(page2, '.panel-close-button', { action: 'click' })
 			]);
-
-			// Wait a moment for the close action to initiate
-			await page.waitForTimeout(200);
-
-			// Close the more options menu first (this can interfere with panel closing)
-			await Promise.all([closeMoreOptionsMenu(page), closeMoreOptionsMenu(page2)]);
-
-			// Now wait for the settings panel to be fully hidden
 			await Promise.all([
-				waitForElementInIframe(page, 'ov-settings-panel', { state: 'hidden', timeout: 10000 }),
-				waitForElementInIframe(page2, 'ov-settings-panel', { state: 'hidden', timeout: 10000 })
+				waitForElementInIframe(page, 'ov-settings-panel', { state: 'hidden' }),
+				waitForElementInIframe(page2, 'ov-settings-panel', { state: 'hidden' })
 			]);
+			await Promise.all([closeMoreOptionsMenu(page), closeMoreOptionsMenu(page2)]);
 
 			// ===== CHECK CHAT MESSAGES =====
 			// Open chat

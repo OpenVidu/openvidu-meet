@@ -468,23 +468,12 @@ export const openMoreOptionsMenu = async (page: Page) => {
 	await waitForElementInIframe(page, '#toolbar', { state: 'visible' });
 	// Open more options menu
 	await interactWithElementInIframe(page, '#more-options-btn', { action: 'click' });
-	await waitForElementInIframe(page, '#more-options-menu', { state: 'visible', timeout: 5000 });
-	await page.waitForTimeout(300); // Wait for menu animation to complete
+	await page.waitForTimeout(500); // Wait for menu animation
 };
 
 export const closeMoreOptionsMenu = async (page: Page) => {
-	// Check if the menu is still visible before trying to close
-	const frameLocator = await getIframeInShadowDom(page);
-	const menu = frameLocator.locator('#more-options-menu');
-	const menuVisible = await menu.isVisible().catch(() => false);
-
-	if (menuVisible) {
-		// Click outside the menu to close it (using a safe click area)
-		await interactWithElementInIframe(page, 'body', { action: 'click' });
-		// Wait for menu to be hidden with a timeout
-		await waitForElementInIframe(page, '#more-options-menu', { state: 'hidden', timeout: 5000 });
-		await page.waitForTimeout(300); // Wait for close animation
-	}
+	await interactWithElementInIframe(page, 'body', { action: 'click' });
+	await page.waitForTimeout(500); // Wait for menu to close
 };
 
 // ==========================================
