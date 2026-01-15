@@ -67,12 +67,12 @@ export class RoomsComponent implements OnInit {
 	showInitialLoader = false;
 	isLoading = false;
 
-	initialFilters: RoomTableFilter = {
+	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
 		sortOrder: 'desc'
-	};
+	});
 
 	// Pagination
 	hasMoreRooms = false;
@@ -96,7 +96,7 @@ export class RoomsComponent implements OnInit {
 			this.showInitialLoader = true;
 		}, 200);
 
-		await this.loadRooms(this.initialFilters);
+		await this.loadRooms(this.initialFilters());
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;

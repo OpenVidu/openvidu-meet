@@ -1,4 +1,4 @@
-@if (!loading && rooms.length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && rooms().length === 0 && !showEmptyFilterMessage) {
 	<!-- Empty State -->
 	<div class="no-rooms-state">
 		<div class="empty-content">
@@ -18,7 +18,7 @@
 	<mat-toolbar class="rooms-toolbar" id="rooms-toolbar">
 		<!-- Left Section: Search -->
 		<div class="toolbar-left" id="toolbar-left">
-			@if (showSearchBox) {
+			@if (showSearchBox()) {
 				<mat-form-field class="search-field" appearance="outline" id="search-field">
 					<mat-label>Search rooms</mat-label>
 					<input
@@ -33,7 +33,7 @@
 						matSuffix
 						class="search-btn"
 						(click)="triggerSearch()"
-						[disabled]="loading || !nameFilterControl.value"
+						[disabled]="loading() || !nameFilterControl.value"
 						matTooltip="Search"
 						id="search-btn"
 					>
@@ -44,14 +44,14 @@
 		</div>
 
 		<!-- Center Section: Batch Actions (visible when items selected) -->
-		@if (showSelection && selectedRooms().size > 0) {
+		@if (showSelection() && selectedRooms().size > 0) {
 			<div class="toolbar-center" id="toolbar-center">
 				<div class="batch-actions" id="batch-actions">
 					<button
 						mat-icon-button
 						color="warn"
 						(click)="bulkDeleteSelected()"
-						[disabled]="loading"
+						[disabled]="loading()"
 						matTooltip="Delete selected rooms"
 						id="bulk-delete-btn"
 					>
@@ -68,7 +68,7 @@
 					mat-icon-button
 					class="clear-btn"
 					(click)="clearFilters()"
-					[disabled]="loading"
+					[disabled]="loading()"
 					matTooltip="Clear all filters"
 					id="clear-filters-btn"
 				>
@@ -80,7 +80,7 @@
 				mat-icon-button
 				class="refresh-btn"
 				(click)="refreshRooms()"
-				[disabled]="loading"
+				[disabled]="loading()"
 				matTooltip="Refresh rooms"
 				id="refresh-btn"
 			>
@@ -92,7 +92,7 @@
 				Create Room
 			</button>
 
-			@if (showFilters) {
+			@if (showFilters()) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms" id="filters-btn">
 					<mat-icon>tune</mat-icon>
 				</button>
@@ -117,12 +117,12 @@
 	</mat-toolbar>
 
 	<!-- Loading Spinner -->
-	@if (loading) {
+	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40"></mat-spinner>
 			<span>Loading rooms...</span>
 		</div>
-	} @else if (rooms.length === 0 && showEmptyFilterMessage) {
+	} @else if (rooms().length === 0 && showEmptyFilterMessage) {
 		<!-- No rooms match the current filters -->
 		<div class="no-rooms-state">
 			<div class="empty-content">
@@ -141,7 +141,7 @@
 		<div class="table-container" id="table-container">
 			<table
 				mat-table
-				[dataSource]="rooms"
+				[dataSource]="rooms()"
 				matSort
 				matSortDisableClear
 				[matSortActive]="currentSortField"
@@ -151,14 +151,14 @@
 				id="rooms-table"
 			>
 				<!-- Selection Column -->
-				@if (showSelection) {
+				@if (showSelection()) {
 					<ng-container matColumnDef="select">
 						<th mat-header-cell *matHeaderCellDef id="select-header">
 							<mat-checkbox
 								[checked]="allSelected()"
 								[indeterminate]="someSelected()"
 								(change)="toggleAllSelection()"
-								[disabled]="loading"
+								[disabled]="loading()"
 								id="select-all-checkbox"
 							>
 							</mat-checkbox>
@@ -168,7 +168,7 @@
 								<mat-checkbox
 									[checked]="isRoomSelected(room)"
 									(change)="toggleRoomSelection(room)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									id="select-room-{{ room.roomId }}"
 								>
 								</mat-checkbox>
@@ -309,7 +309,7 @@
 									mat-icon-button
 									matTooltip="Open Room"
 									(click)="openRoom(room)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									class="primary-action"
 									id="open-room-btn-{{ room.roomId }}"
 								>
@@ -323,7 +323,7 @@
 									mat-icon-button
 									matTooltip="Room Settings"
 									(click)="editRoom(room)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									id="edit-room-btn-{{ room.roomId }}"
 								>
 									<mat-icon class="ov-settings-icon">settings</mat-icon>
@@ -335,7 +335,7 @@
 								mat-icon-button
 								[matMenuTriggerFor]="actionsMenu"
 								matTooltip="More Actions"
-								[disabled]="loading"
+								[disabled]="loading()"
 								id="more-actions-btn-{{ room.roomId }}"
 							>
 								<mat-icon>more_vert</mat-icon>
@@ -406,13 +406,13 @@
 		</div>
 
 		<!-- Load More Section -->
-		@if (showLoadMore) {
+		@if (showLoadMore()) {
 			<div class="load-more-container" id="load-more-container">
 				<button
 					mat-button
 					class="load-more-btn"
 					(click)="loadMoreRooms()"
-					[disabled]="loading"
+					[disabled]="loading()"
 					id="load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>

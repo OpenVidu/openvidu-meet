@@ -48,7 +48,7 @@
 					[showRoomInfo]="false"
 					[showLoadMore]="hasMoreRecordings"
 					[roomName]="roomName"
-					[initialFilters]="initialFilters"
+					[initialFilters]="initialFilters()"
 					(recordingAction)="onRecordingAction($event)"
 					(loadMore)="loadMoreRecordings($event)"
 					(refresh)="refreshRecordings($event)"

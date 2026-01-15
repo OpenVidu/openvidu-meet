@@ -1,15 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import {
-	Component,
-	EventEmitter,
-	HostBinding,
-	Input,
-	OnChanges,
-	OnInit,
-	Output,
-	signal,
-	SimpleChanges
-} from '@angular/core';
+import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -98,20 +88,19 @@ export interface RoomTableFilter {
 	templateUrl: './rooms-lists.component.html',
 	styleUrl: './rooms-lists.component.scss'
 })
-export class RoomsListsComponent implements OnInit, OnChanges {
-	// Input properties
-	@Input() rooms: MeetRoom[] = [];
-	@Input() showSearchBox = true;
-	@Input() showFilters = true;
-	@Input() showSelection = true;
-	@Input() showLoadMore = false;
-	@Input() loading = false;
-	@Input() initialFilters: RoomTableFilter = {
+export class RoomsListsComponent implements OnInit {
+	rooms = input<MeetRoom[]>([]);
+	showSearchBox = input(true);
+	showFilters = input(true);
+	showSelection = input(true);
+	showLoadMore = input(false);
+	loading = input(false);
+	initialFilters = input<RoomTableFilter>({
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
 		sortOrder: 'desc'
-	};
+	});
 
 	// Host binding for styling when rooms are selected
 	@HostBinding('class.has-selections')
@@ -151,34 +140,33 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
 	];
 
-	constructor() {}
+	constructor() {
+		effect(() => {
+			// Update selected rooms based on current rooms
+			const rooms = this.rooms();
+			const validIds = new Set(rooms.map((r) => r.roomId));
+			const filteredSelection = new Set([...this.selectedRooms()].filter((id) => validIds.has(id)));
+			this.selectedRooms.set(filteredSelection);
+			this.updateSelectionState();
+
+			// Show message when no rooms match filters
+			this.showEmptyFilterMessage = rooms.length === 0 && this.hasActiveFilters();
+		});
+	}
 
 	ngOnInit() {
 		this.setupFilters();
 		this.updateDisplayedColumns();
 	}
 
-	ngOnChanges(changes: SimpleChanges) {
-		if (changes['rooms']) {
-			// Update selected rooms based on current rooms
-			const validIds = new Set(this.rooms.map((r) => r.roomId));
-			const filteredSelection = new Set([...this.selectedRooms()].filter((id) => validIds.has(id)));
-			this.selectedRooms.set(filteredSelection);
-			this.updateSelectionState();
-
-			// Show message when no rooms match filters
-			this.showEmptyFilterMessage = this.rooms.length === 0 && this.hasActiveFilters();
-		}
-	}
-
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Set up initial filter values
-		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
-		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
-		this.currentSortField = this.initialFilters.sortField;
-		this.currentSortOrder = this.initialFilters.sortOrder;
+		// Initialize from initialFilters input
+		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
+		this.statusFilterControl.setValue(this.initialFilters().statusFilter);
+		this.currentSortField = this.initialFilters().sortField;
+		this.currentSortOrder = this.initialFilters().sortOrder;
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.subscribe((value) => {
@@ -197,7 +185,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	private updateDisplayedColumns() {
 		this.displayedColumns = [];
 
-		if (this.showSelection) {
+		if (this.showSelection()) {
 			this.displayedColumns.push('select');
 		}
 
@@ -211,7 +199,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
-			this.rooms.forEach((room) => {
+			this.rooms().forEach((room) => {
 				if (this.canSelectRoom(room)) {
 					selected.add(room.roomId);
 				}
@@ -233,7 +221,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 	}
 
 	private updateSelectionState() {
-		const selectableRooms = this.rooms.filter((r) => this.canSelectRoom(r));
+		const selectableRooms = this.rooms().filter((r) => this.canSelectRoom(r));
 		const selectedCount = this.selectedRooms().size;
 		const selectableCount = selectableRooms.length;
 
@@ -251,7 +239,7 @@ export class RoomsListsComponent implements OnInit, OnChanges {
 
 	getSelectedRooms(): MeetRoom[] {
 		const selected = this.selectedRooms();
-		return this.rooms.filter((r) => selected.has(r.roomId));
+		return this.rooms().filter((r) => selected.has(r.roomId));
 	}
 
 	// ===== ACTION METHODS =====

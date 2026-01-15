@@ -40,7 +40,7 @@
 				[showFilters]="true"
 				[showSelection]="true"
 				[showLoadMore]="hasMoreRooms"
-				[initialFilters]="initialFilters"
+				[initialFilters]="initialFilters()"
 				(roomAction)="onRoomAction($event)"
 				(loadMore)="loadMoreRooms($event)"
 				(refresh)="refreshRooms($event)"
