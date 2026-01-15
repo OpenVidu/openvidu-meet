@@ -5,8 +5,8 @@ import packageInfo from '../../package.json';
 
 @Component({
 	selector: 'app-root',
-	templateUrl: './app.component.html',
-	styleUrls: ['./app.component.scss'],
+	template: ` <router-outlet></router-outlet> `,
+	styles: '',
 	imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
