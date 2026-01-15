@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 /**
  * Context information about an HTTP error
@@ -51,12 +51,12 @@ export class HttpErrorNotifierService {
 
 	/**
 	 * Attempts to recover from an HTTP error by consulting registered handlers.
-	 * Returns an Observable from the first handler that can recover, or EMPTY if none can handle it.
+	 * Returns an Observable from the first handler that can recover, or null if none can handle it.
 	 *
 	 * @param context The error context
-	 * @returns Observable to retry the request, or EMPTY if no handler can recover
+	 * @returns Observable to retry the request, or null if no handler can recover
 	 */
-	public handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> {
+	public handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> | null {
 		for (const handler of this.handlers) {
 			if (handler.canHandle(context)) {
 				return handler.handle(context);
@@ -64,6 +64,6 @@ export class HttpErrorNotifierService {
 		}
 
 		// No handler could handle this error
-		return EMPTY;
+		return null;
 	}
 }

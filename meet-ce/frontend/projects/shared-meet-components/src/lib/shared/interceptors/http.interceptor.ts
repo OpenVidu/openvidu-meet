@@ -52,17 +52,17 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	return next(req).pipe(
 		catchError((error: HttpErrorResponse) => {
 			// Attempt recovery through registered domain handlers
-			const recovery$ = httpErrorNotifier.handle({
+			const responseHandler$ = httpErrorNotifier.handle({
 				error,
 				request: req,
 				pageUrl,
 				next
 			});
 
-			// If a handler provided a recovery strategy, use it
+			// If a handler provided a response Observable, return it
 			// Otherwise, rethrow the error
-			if (recovery$) {
-				return recovery$;
+			if (responseHandler$) {
+				return responseHandler$;
 			}
 
 			return throwError(() => error);
