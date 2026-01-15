@@ -35,13 +35,7 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 
 export const appConfig: ApplicationConfig = {
 	providers: [
-		provideAppInitializer(() => {
-			const initializerFn = (
-				(themeService: ThemeService) => () =>
-					themeService.initializeTheme()
-			)(inject(ThemeService));
-			return initializerFn();
-		}),
+		provideAppInitializer(() => inject(ThemeService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
