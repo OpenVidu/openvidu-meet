@@ -491,6 +491,11 @@ test.describe('E2EE UI Tests', () => {
 			expect(ownName2).toBe(participant2Name);
 			expect(ownName2).not.toContain('*');
 
+			await Promise.all([
+				waitForElementInIframe(page, '.panel-close-button', { state: 'visible' }),
+				waitForElementInIframe(page2, '.panel-close-button', { state: 'visible' })
+			]);
+
 			// Close settings panel
 			await Promise.all([
 				interactWithElementInIframe(page, '.panel-close-button', { action: 'click' }),
@@ -747,7 +752,7 @@ test.describe('E2EE UI Tests', () => {
 			await interactWithElementInIframe(page, '#chat-input', { action: 'fill', value: secretMessage });
 			await interactWithElementInIframe(page, '#send-btn', { action: 'click' });
 
-			await page.waitForTimeout(20000)
+			await page.waitForTimeout(20000);
 			// Wait for message to be sent and received
 			// await Promise.all([
 			// 	waitForElementInIframe(page2, '#chat-panel-btn .mat-badge-content', { state: 'visible' }),

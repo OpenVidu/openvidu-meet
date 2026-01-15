@@ -468,6 +468,7 @@ export const openMoreOptionsMenu = async (page: Page) => {
 	await waitForElementInIframe(page, '#toolbar', { state: 'visible' });
 	// Open more options menu
 	await interactWithElementInIframe(page, '#more-options-btn', { action: 'click' });
+	await waitForElementInIframe(page, '#more-options-menu', { state: 'visible' });
 	await page.waitForTimeout(500); // Wait for menu animation
 };
 
