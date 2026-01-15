@@ -191,6 +191,7 @@ export class RoomsComponent implements OnInit {
 	}
 
 	async refreshRooms(filters: RoomTableFilter) {
+		this.nextPageToken = undefined;
 		await this.loadRooms(filters, true);
 	}
 

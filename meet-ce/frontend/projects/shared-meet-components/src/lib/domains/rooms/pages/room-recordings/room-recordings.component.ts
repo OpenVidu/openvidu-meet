@@ -164,6 +164,7 @@ export class RoomRecordingsComponent implements OnInit {
 	}
 
 	async refreshRecordings(filters: RecordingTableFilter) {
+		this.nextPageToken = undefined;
 		await this.loadRecordings(filters, true);
 	}
 
