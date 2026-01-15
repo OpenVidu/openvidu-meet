@@ -2,13 +2,12 @@ import { CommonModule, DatePipe } from '@angular/common';
 import {
 	Component,
 	computed,
+	effect,
 	EventEmitter,
-	Input,
-	OnChanges,
+	input,
 	OnInit,
 	Output,
-	signal,
-	SimpleChanges
+	signal
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -28,18 +27,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 import { formatBytes, formatDurationToHMS } from '../../../../shared/utils/format.utils';
-
-export interface RecordingTableAction {
-	recordings: MeetRecordingInfo[];
-	action: 'play' | 'download' | 'shareLink' | 'delete' | 'bulkDelete' | 'bulkDownload';
-}
-
-export interface RecordingTableFilter {
-	nameFilter: string;
-	statusFilter: MeetRecordingStatus | '';
-	sortField: 'roomName' | 'startDate' | 'duration' | 'size';
-	sortOrder: 'asc' | 'desc';
-}
+import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 
 /**
  * Reusable component for displaying a list of recordings with filtering, selection, and bulk operations.
@@ -88,23 +76,23 @@ export interface RecordingTableFilter {
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss'
 })
-export class RecordingListsComponent implements OnInit, OnChanges {
-	// Input properties
-	@Input() recordings: MeetRecordingInfo[] = [];
-	@Input() canDeleteRecordings = false;
-	@Input() showSearchBox = true;
-	@Input() showFilters = true;
-	@Input() showSelection = true;
-	@Input() showRoomInfo = true;
-	@Input() showLoadMore = false;
-	@Input() loading = false;
-	@Input() roomName?: string; // Optional: if provided, shows room-specific empty state message
-	@Input() initialFilters: RecordingTableFilter = {
+export class RecordingListsComponent implements OnInit {
+	recordings = input<MeetRecordingInfo[]>([]);
+	canDeleteRecordings = input(false);
+	showSearchBox = input(true);
+	showFilters = input(true);
+	showSelection = input(true);
+	showRoomInfo = input(true);
+	showLoadMore = input(false);
+	loading = input(false);
+	roomName = input<string | undefined>(undefined);
+	initialFilters = input<RecordingTableFilter>({
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: 'desc'
-	};
+	});
+
 	// Output events
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
 	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
@@ -161,36 +149,39 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
 	} as const;
 
-	constructor(private viewportService: ViewportService) {}
-
 	protected isMobileView = computed(() => this.viewportService.isMobileView());
 
-	ngOnInit() {
-		this.setupFilters();
-		this.updateDisplayedColumns();
-	}
-
-	ngOnChanges(changes: SimpleChanges) {
-		if (changes['recordings']) {
+	constructor(private viewportService: ViewportService) {
+		effect(() => {
 			// Update selected recordings based on current recordings
-			const validIds = new Set(this.recordings.map((r) => r.recordingId));
+			const recordings = this.recordings();
+			const validIds = new Set(recordings.map((r) => r.recordingId));
 			const filteredSelection = new Set([...this.selectedRecordings()].filter((id) => validIds.has(id)));
 			this.selectedRecordings.set(filteredSelection);
 			this.updateSelectionState();
 
 			// Show message when no recordings match filters
-			this.showEmptyFilterMessage = this.recordings.length === 0 && this.hasActiveFilters();
-		}
+			this.showEmptyFilterMessage = recordings.length === 0 && this.hasActiveFilters();
+		});
+	}
+
+	ngOnInit() {
+		this.setupFilters();
+		this.updateDisplayedColumns();
+
+		// Calculate showEmptyFilterMessage based on initial state
+		this.showEmptyFilterMessage = this.recordings.length === 0 && this.hasActiveFilters();
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Set up initial filter values
-		this.nameFilterControl.setValue(this.initialFilters.nameFilter);
-		this.statusFilterControl.setValue(this.initialFilters.statusFilter);
-		this.currentSortField = this.initialFilters.sortField;
-		this.currentSortOrder = this.initialFilters.sortOrder;
+		// Set up initial filter values from input signal
+		const filters = this.initialFilters();
+		this.nameFilterControl.setValue(filters.nameFilter);
+		this.statusFilterControl.setValue(filters.statusFilter);
+		this.currentSortField = filters.sortField;
+		this.currentSortOrder = filters.sortOrder;
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.subscribe((value) => {
@@ -209,10 +200,10 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	private updateDisplayedColumns() {
 		this.displayedColumns = [];
 
-		if (this.showSelection) {
+		if (this.showSelection()) {
 			this.displayedColumns.push('select');
 		}
-		if (this.showRoomInfo) {
+		if (this.showRoomInfo()) {
 			this.displayedColumns.push('roomInfo');
 		}
 
@@ -226,7 +217,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
-			this.recordings.forEach((recording) => {
+			this.recordings().forEach((recording) => {
 				if (this.canSelectRecording(recording)) {
 					selected.add(recording.recordingId);
 				}
@@ -248,7 +239,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	}
 
 	private updateSelectionState() {
-		const selectableRecordings = this.recordings.filter((r) => this.canSelectRecording(r));
+		const selectableRecordings = this.recordings().filter((r) => this.canSelectRecording(r));
 		const selectedCount = this.selectedRecordings().size;
 		const selectableCount = selectableRecordings.length;
 
@@ -266,7 +257,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 
 	getSelectedRecordings(): MeetRecordingInfo[] {
 		const selected = this.selectedRecordings();
-		return this.recordings.filter((r) => selected.has(r.recordingId));
+		return this.recordings().filter((r) => selected.has(r.recordingId));
 	}
 
 	// ===== ACTION METHODS =====
@@ -379,7 +370,7 @@ export class RecordingListsComponent implements OnInit, OnChanges {
 	}
 
 	canDeleteRecording(recording: MeetRecordingInfo): boolean {
-		return this.canDeleteRecordings && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
+		return this.canDeleteRecordings() && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
 	}
 
 	isRecordingFailed(recording: MeetRecordingInfo): boolean {

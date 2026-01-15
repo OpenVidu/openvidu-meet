@@ -5,11 +5,8 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import {
-	RecordingListsComponent,
-	RecordingTableAction,
-	RecordingTableFilter
-} from '../../components/recording-lists/recording-lists.component';
+import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
+import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
 
 @Component({
@@ -26,12 +23,12 @@ export class RecordingsComponent implements OnInit {
 	showInitialLoader = false;
 	isLoading = false;
 
-	initialFilters: RecordingTableFilter = {
+	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: 'desc'
-	};
+	});
 
 	// Pagination
 	hasMoreRecordings = false;
@@ -46,19 +43,25 @@ export class RecordingsComponent implements OnInit {
 		protected route: ActivatedRoute
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
+
+		// Get room ID from route query params and set initial filters before component initialization
+		const roomId = this.route.snapshot.queryParamMap.get('room-id');
+		if (roomId) {
+			this.initialFilters.set({
+				nameFilter: roomId,
+				statusFilter: '',
+				sortField: 'startDate',
+				sortOrder: 'desc'
+			});
+		}
 	}
 
 	async ngOnInit() {
-		const roomId = this.route.snapshot.queryParamMap.get('room-id');
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader = true;
 		}, 200);
 
-		// If a specific room ID is provided, filter recordings by that room
-		if (roomId) {
-			this.initialFilters.nameFilter = roomId;
-		}
-		await this.loadRecordings(this.initialFilters);
+		await this.loadRecordings(this.initialFilters());
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;

@@ -1,11 +1,11 @@
-@if (!loading && recordings.length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && recordings().length === 0 && !showEmptyFilterMessage) {
 	<!-- Empty State -->
 	<div class="no-recordings-state">
 		<div class="empty-content">
 			<h3>No recordings yet</h3>
-			@if (roomName) {
+			@if (roomName()) {
 				<p>
-					No recordings found for <strong>{{ roomName }}</strong
+					No recordings found for <strong>{{ roomName() }}</strong
 					>. Start a recording in this room to see them listed here.
 				</p>
 			} @else {
@@ -25,7 +25,7 @@
 		<!-- Left Section: Search -->
 		@if (!isMobileView()) {
 			<div class="toolbar-left">
-				@if (showSearchBox) {
+				@if (showSearchBox()) {
 					<mat-form-field class="search-field" appearance="outline">
 						<mat-label>Search recordings</mat-label>
 						<input
@@ -39,7 +39,7 @@
 							matSuffix
 							class="search-btn"
 							(click)="triggerSearch()"
-							[disabled]="loading || !nameFilterControl.value"
+							[disabled]="loading() || !nameFilterControl.value"
 							matTooltip="Search"
 						>
 							<mat-icon>search</mat-icon>
@@ -50,15 +50,15 @@
 		}
 
 		<!-- Center Section: Bulk Actions (visible when items selected) -->
-		@if (showSelection && selectedRecordings().size > 0) {
+		@if (showSelection() && selectedRecordings().size > 0) {
 			<div class="toolbar-center">
 				<div class="batch-actions">
-					@if (canDeleteRecordings) {
+					@if (canDeleteRecordings()) {
 						<button
 							mat-icon-button
 							color="warn"
 							(click)="bulkDeleteSelected()"
-							[disabled]="loading"
+							[disabled]="loading()"
 							matTooltip="Delete selected recordings"
 						>
 							<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
@@ -70,7 +70,7 @@
 					<button
 						mat-icon-button
 						(click)="bulkDownloadSelected()"
-						[disabled]="loading"
+						[disabled]="loading()"
 						matTooltip="Download selected recordings"
 					>
 						<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
@@ -88,7 +88,7 @@
 					mat-icon-button
 					class="clear-btn"
 					(click)="clearFilters()"
-					[disabled]="loading"
+					[disabled]="loading()"
 					matTooltip="Clear all filters"
 				>
 					<mat-icon>filter_alt_off</mat-icon>
@@ -99,13 +99,13 @@
 				mat-icon-button
 				class="refresh-btn"
 				(click)="refreshRecordings()"
-				[disabled]="loading"
+				[disabled]="loading()"
 				matTooltip="Refresh recordings"
 			>
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			@if (showFilters) {
+			@if (showFilters()) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter recordings">
 					<mat-icon>tune</mat-icon>
 				</button>
@@ -128,12 +128,12 @@
 	</mat-toolbar>
 
 	<!-- Loading Spinner -->
-	@if (loading) {
+	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40"></mat-spinner>
 			<span>Loading recordings...</span>
 		</div>
-	} @else if (recordings.length === 0 && showEmptyFilterMessage) {
+	} @else if (recordings().length === 0 && showEmptyFilterMessage) {
 		<!-- No recordings match the current filters -->
 		<div class="no-recordings-state">
 			<div class="empty-content">
@@ -151,12 +151,12 @@
 		@if (isMobileView()) {
 			<!-- Mobile Cards View -->
 			<div class="cards-container">
-				@for (recording of recordings; track recording.recordingId) {
+				@for (recording of recordings(); track recording.recordingId) {
 					<div class="recording-card" [class.selected-card]="isRecordingSelected(recording)">
 						<!-- Card Header with Selection and Status -->
 						<div class="card-header">
 							<div class="card-header-left">
-								@if (showSelection && canSelectRecording(recording)) {
+								@if (showSelection() && canSelectRecording(recording)) {
 									<mat-checkbox
 										[checked]="isRecordingSelected(recording)"
 										(change)="toggleRecordingSelection(recording)"
@@ -167,7 +167,7 @@
 									</mat-checkbox>
 								}
 
-								@if (showRoomInfo) {
+								@if (showRoomInfo()) {
 									<div class="room-info">
 										<div class="room-name">{{ recording.roomName }}</div>
 										<div class="room-id">{{ recording.recordingId }}</div>
@@ -233,7 +233,7 @@
 								<button
 									mat-icon-button
 									(click)="playRecording(recording)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									class="action-button play-button"
 									matTooltip="Play Recording"
 									id="play-recording-btn-{{ recording.recordingId }}"
@@ -246,7 +246,7 @@
 								<button
 									mat-icon-button
 									(click)="downloadRecording(recording)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									class="action-button download-button"
 									matTooltip="Download Recording"
 									id="download-recording-btn-{{ recording.recordingId }}"
@@ -259,7 +259,7 @@
 								<button
 									mat-icon-button
 									(click)="deleteRecording(recording)"
-									[disabled]="loading"
+									[disabled]="loading()"
 									class="action-button delete-button"
 									matTooltip="Delete Recording"
 									id="delete-recording-btn-{{ recording.recordingId }}"
@@ -270,7 +270,7 @@
 								<button
 									mat-icon-button
 									[matMenuTriggerFor]="cardActionsMenu"
-									[disabled]="loading"
+									[disabled]="loading()"
 									class="action-button more-button"
 									matTooltip="More Actions"
 									id="more-actions-btn-{{ recording.recordingId }}"
@@ -310,7 +310,7 @@
 			<div class="table-container">
 				<table
 					mat-table
-					[dataSource]="recordings"
+					[dataSource]="recordings()"
 					matSort
 					matSortDisableClear
 					[matSortActive]="currentSortField"
@@ -319,14 +319,14 @@
 					class="recordings-table"
 				>
 					<!-- Selection Column -->
-					@if (showSelection) {
+					@if (showSelection()) {
 						<ng-container matColumnDef="select">
 							<th mat-header-cell *matHeaderCellDef class="select-header">
 								<mat-checkbox
 									[checked]="allSelected()"
 									[indeterminate]="someSelected()"
 									(change)="toggleAllSelection()"
-									[disabled]="loading"
+									[disabled]="loading()"
 									[attr.aria-label]="allSelected() ? 'Deselect all' : 'Select all'"
 								>
 								</mat-checkbox>
@@ -336,7 +336,7 @@
 									<mat-checkbox
 										[checked]="isRecordingSelected(recording)"
 										(change)="toggleRecordingSelection(recording)"
-										[disabled]="loading"
+										[disabled]="loading()"
 										[attr.aria-label]="'Select recording ' + recording.recordingId"
 									>
 									</mat-checkbox>
@@ -346,7 +346,7 @@
 					}
 
 					<!-- Room Info Column -->
-					@if (showRoomInfo) {
+					@if (showRoomInfo()) {
 						<ng-container matColumnDef="roomInfo">
 							<th mat-header-cell *matHeaderCellDef mat-sort-header="roomName" class="room-header">
 								Room
@@ -416,35 +416,26 @@
 										matTooltip="Play Recording"
 										class="action-button play-button"
 										(click)="playRecording(recording)"
-										[disabled]="loading"
-										id="play-recording-btn-{{ recording.recordingId }}"
-									>
-										<mat-icon>play_arrow</mat-icon>
-									</button>
-								}
+									[disabled]="loading()"
+									id="play-recording-btn-{{ recording.recordingId }}"
+								>
+									<mat-icon>play_arrow</mat-icon>
+								</button>
+							}
 
-								<!-- Download Button -->
-								@if (canDownloadRecording(recording)) {
-									<button
-										mat-icon-button
-										matTooltip="Download Recording"
-										class="action-button download-button"
-										(click)="downloadRecording(recording)"
-										[disabled]="loading"
-										id="download-recording-btn-{{ recording.recordingId }}"
-									>
-										<mat-icon>download</mat-icon>
-									</button>
-								}
-
-								@if (isRecordingFailed(recording)) {
-									<button
-										class="delete-action"
+							<!-- Download Button -->
+							@if (canDownloadRecording(recording)) {
+								<button
+									mat-icon-button
+									matTooltip="Download Recording"
+									class="action-button download-button"
+									(click)="downloadRecording(recording)"
+									[disabled]="loading()"
 										mat-icon-button
 										matTooltip="Delete Recording"
 										class="action-button delete-button"
 										(click)="deleteRecording(recording)"
-										[disabled]="loading"
+								[disabled]="loading()"
 										id="delete-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>delete</mat-icon>
@@ -456,7 +447,7 @@
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
 										matTooltip="More Actions"
-										[disabled]="loading"
+									[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>more_vert</mat-icon>
@@ -501,13 +492,13 @@
 		}
 
 		<!-- Load More Section -->
-		@if (showLoadMore) {
+		@if (showLoadMore()) {
 			<div class="load-more-container" id="load-more-container">
 				<button
 					mat-button
 					class="load-more-btn"
 					(click)="loadMoreRecordings()"
-					[disabled]="loading"
+					[disabled]="loading()"
 					id="load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>
