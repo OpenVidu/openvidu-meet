@@ -13,7 +13,7 @@
 			<p class="prejoin-error-text">Unable to load the lobby. Please try reloading the page.</p>
 		</div>
 	}
-} @else {
+} @else if (!isMeetingLeft()) {
 	<ov-videoconference
 		[token]="roomMemberToken()!"
 		[prejoin]="true"
@@ -50,7 +50,7 @@
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"
 		(onParticipantConnected)="eventHandlerService.onParticipantConnected($event)"
-		(onParticipantLeft)="eventHandlerService.onParticipantLeft($event)"
+		(onParticipantLeft)="onParticipantLeft($event)"
 		(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked()"

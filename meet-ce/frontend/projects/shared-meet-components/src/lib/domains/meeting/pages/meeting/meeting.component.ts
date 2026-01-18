@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, ContentChild, effect, inject, OnInit, Signal } from '@angular/core';
+import { Component, computed, ContentChild, effect, inject, OnInit, signal, Signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -57,6 +57,11 @@ export class MeetingComponent implements OnInit {
 	 */
 	showLobby = true;
 	isLobbyReady = false;
+
+	/**
+	 * Controls whether to show the videoconference component
+	 */
+	protected isMeetingLeft = signal(false);
 
 	protected features: Signal<ApplicationFeatures>;
 	protected meetingService = inject(MeetingService);
@@ -194,6 +199,14 @@ export class MeetingComponent implements OnInit {
 
 	async onViewRecordingsClicked() {
 		window.open(`/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
+	}
+
+	/**
+	 * Handles the participant left event and hides the videoconference component
+	 */
+	protected onParticipantLeft(event: any): void {
+		this.isMeetingLeft.set(true);
+		this.eventHandlerService.onParticipantLeft(event);
 	}
 
 	/**
