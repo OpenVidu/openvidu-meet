@@ -13,6 +13,7 @@ export * from './mongoose-schemas/api-key.schema.js';
 export * from './mongoose-schemas/global-config.schema.js';
 export * from './mongoose-schemas/migration.schema.js';
 export * from './mongoose-schemas/recording.schema.js';
+export * from './mongoose-schemas/room-member.schema.js';
 export * from './mongoose-schemas/room.schema.js';
 export * from './mongoose-schemas/user.schema.js';
 
@@ -21,6 +22,6 @@ export * from './zod-schemas/auth.schema.js';
 export * from './zod-schemas/global-config.schema.js';
 export * from './zod-schemas/meeting.schema.js';
 export * from './zod-schemas/recording.schema.js';
+export * from './zod-schemas/room-member.schema.js';
 export * from './zod-schemas/room.schema.js';
 export * from './zod-schemas/user.schema.js';
-
