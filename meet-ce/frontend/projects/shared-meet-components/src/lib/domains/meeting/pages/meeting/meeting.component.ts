@@ -201,6 +201,12 @@ export class MeetingComponent implements OnInit {
 		window.open(`/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
 	}
 
+	onParticipantConnected(event: any): void {
+		// Play joined sound
+		this.meetingService.playParticipantJoinedSound();
+		this.eventHandlerService.onParticipantConnected(event);
+	}
+
 	/**
 	 * Handles the participant left event and hides the videoconference component
 	 */
