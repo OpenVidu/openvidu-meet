@@ -53,7 +53,7 @@ const MeetRecordingConfigSchema = new Schema(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
-			required: true
+			required: false
 		}
 	},
 	{ _id: false }

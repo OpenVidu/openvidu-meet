@@ -251,7 +251,7 @@ export class RoomService {
 	 * Updates the roles permissions of a specific meeting room.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
-	 * @param roles - The new roles permissions
+	 * @param roles - Partial roles config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
 	async updateMeetRoomRoles(roomId: string, roles: MeetRoomRolesConfig): Promise<MeetRoom> {
@@ -261,19 +261,8 @@ export class RoomService {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		if (roles.moderator) {
-			room.roles.moderator.permissions = {
-				...room.roles.moderator.permissions,
-				...roles.moderator.permissions
-			};
-		}
-
-		if (roles.speaker) {
-			room.roles.speaker.permissions = {
-				...room.roles.speaker.permissions,
-				...roles.speaker.permissions
-			};
-		}
+		// Merge existing roles with new roles (partial update)
+		room.roles = merge({}, room.roles, roles);
 
 		await this.roomRepository.update(room);
 		return room;
@@ -283,7 +272,7 @@ export class RoomService {
 	 * Updates the anonymous access configuration of a specific meeting room.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
-	 * @param anonymous - The new anonymous access configuration
+	 * @param anonymous - Partial anonymous config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
 	async updateMeetRoomAnonymous(roomId: string, anonymous: MeetRoomAnonymousConfig): Promise<MeetRoom> {
@@ -293,13 +282,8 @@ export class RoomService {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		if (anonymous.moderator) {
-			room.anonymous.moderator.enabled = anonymous.moderator.enabled;
-		}
-
-		if (anonymous.speaker) {
-			room.anonymous.speaker.enabled = anonymous.speaker.enabled;
-		}
+		// Merge existing anonymous config with new anonymous config (partial update)
+		room.anonymous = merge({}, room.anonymous, anonymous);
 
 		await this.roomRepository.update(room);
 		return room;

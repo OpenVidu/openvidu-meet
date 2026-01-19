@@ -9,10 +9,11 @@ export enum MeetRecordingStatus {
     ABORTED = 'aborted',
     LIMIT_REACHED = 'limit_reached'
 }
+
 export enum MeetRecordingLayout {
     GRID = 'grid',
     SPEAKER = 'speaker',
-    SINGLE_SPEAKER = 'single-speaker',
+    SINGLE_SPEAKER = 'single-speaker'
     // GRID_LIGHT = 'grid-light',
     // SPEAKER_LIGHT = 'speaker-light',
     // SINGLE_SPEAKER_LIGHT = 'single-speaker-light'
