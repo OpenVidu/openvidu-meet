@@ -44,6 +44,7 @@ content:
                         config:
                             recording:
                                 enabled: false
+                                layout: grid
                             chat:
                                 enabled: true
                             virtualBackground:
@@ -109,6 +110,7 @@ content:
                         config:
                             recording:
                                 enabled: false
+                                layout: grid
                             chat:
                                 enabled: true
                             virtualBackground:

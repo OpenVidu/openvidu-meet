@@ -29,6 +29,7 @@ content:
                         config:
                             recording:
                                 enabled: false
+                                layout: grid
                             chat:
                                 enabled: true
                             virtualBackground:
@@ -90,6 +91,7 @@ content:
                         config:
                             recording:
                                 enabled: false
+                                layout: grid
                             chat:
                                 enabled: true
                             virtualBackground:
@@ -149,10 +151,11 @@ content:
                         owner: 'admin'
                         creationDate: 1620000000000
                         config:
-                            chat:
-                                enabled: true
                             recording:
                                 enabled: false
+                                layout: grid
+                            chat:
+                                enabled: true
                             virtualBackground:
                                 enabled: true
                             e2ee:

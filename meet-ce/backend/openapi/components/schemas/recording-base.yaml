@@ -22,9 +22,9 @@ properties:
     status:
         type: string
         description: The status of the recording.
-        example: active
     layout:
         type: string
+        enum: ['grid', 'speaker', 'single-speaker']
         description: The layout of the recording.
         example: grid
     filename:
