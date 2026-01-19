@@ -22,6 +22,10 @@ properties:
         enum: ['starting', 'active', 'ending', 'complete', 'failed', 'aborted', 'limit_reached']
         example: 'active'
         description: The status of the recording.
+    layout:
+        type: string
+        example: 'grid'
+        description: The layout of the recording.
     filename:
         type: string
         example: 'room-123--XX445.mp4'

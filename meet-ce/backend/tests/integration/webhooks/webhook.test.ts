@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { MeetRecordingInfo, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
 import { Request } from 'express';
 import http from 'http';
 import {
@@ -148,6 +148,11 @@ describe('Webhook Integration Tests', () => {
 		expect(recordingStartedWebhook?.headers['x-timestamp']).toBeDefined();
 		expect(recordingStartedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
 		expect(data.status).toBe(MeetRecordingStatus.STARTING);
+		expect(data.layout).toBeDefined();
+
+		if (data.layout) {
+			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
+		}
 
 		// Check recording_updated webhook
 		const recordingUpdatedWebhook = receivedWebhooks.find(
@@ -163,6 +168,11 @@ describe('Webhook Integration Tests', () => {
 		expect(recordingUpdatedWebhook?.headers['x-timestamp']).toBeDefined();
 		expect(recordingUpdatedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_UPDATED);
 		expect(data.status).toBe(MeetRecordingStatus.ACTIVE);
+		expect(data.layout).toBeDefined();
+
+		if (data.layout) {
+			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
+		}
 
 		// Check recording_ended webhook
 		const recordingEndedWebhook = receivedWebhooks.find(
@@ -179,5 +189,10 @@ describe('Webhook Integration Tests', () => {
 		expect(recordingEndedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_ENDED);
 		expect(data.status).not.toBe(MeetRecordingStatus.ENDING);
 		expect(data.status).toBe(MeetRecordingStatus.COMPLETE);
+		expect(data.layout).toBeDefined();
+
+		if (data.layout) {
+			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
+		}
 	});
 });

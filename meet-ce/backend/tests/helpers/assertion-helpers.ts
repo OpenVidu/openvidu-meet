@@ -3,6 +3,7 @@ import {
 	MeetingEndAction,
 	MeetRecordingAccess,
 	MeetRecordingInfo,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAutoDeletionPolicy,
@@ -155,6 +156,7 @@ export const expectValidRoom = (
 		expect(room.config).toEqual({
 			recording: {
 				enabled: true,
+				layout: MeetRecordingLayout.GRID,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
 			chat: { enabled: true },
@@ -193,6 +195,12 @@ export const expectValidRecording = (
 	expect(recording.status).toBe(status);
 	expect(recording.filename).toBeDefined();
 	expect(recording.details).toBeDefined();
+	expect(recording.layout).toBeDefined();
+
+	// Validate layout is a valid value
+	if (recording.layout !== undefined) {
+		expect(Object.values(MeetRecordingLayout)).toContain(recording.layout);
+	}
 };
 
 export const expectValidRoomWithFields = (room: MeetRoom, fields: string[] = []) => {
@@ -371,9 +379,15 @@ export const expectValidStartRecordingResponse = (response: Response, roomId: st
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('status', 'active');
 	expect(response.body).toHaveProperty('filename');
+	expect(response.body).toHaveProperty('layout');
 	expect(response.body).not.toHaveProperty('duration');
 	expect(response.body).not.toHaveProperty('endDate');
 	expect(response.body).not.toHaveProperty('size');
+
+	// Validate layout is a valid value
+	if (response.body.layout !== undefined) {
+		expect(Object.values(MeetRecordingLayout)).toContain(response.body.layout);
+	}
 };
 
 export const expectValidStopRecordingResponse = (
@@ -391,6 +405,12 @@ export const expectValidStopRecordingResponse = (
 	expect(response.body).toHaveProperty('filename');
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('duration', expect.any(Number));
+	expect(response.body).toHaveProperty('layout');
+
+	// Validate layout is a valid value
+	if (response.body.layout !== undefined) {
+		expect(Object.values(MeetRecordingLayout)).toContain(response.body.layout);
+	}
 
 	expectValidRecordingLocationHeader(response);
 };
@@ -429,6 +449,16 @@ export const expectValidGetRecordingResponse = (
 			...(isRecFinished ? { details: expect.any(String) } : {})
 		})
 	);
+
+	// Validate layout property
+	expect(body).toHaveProperty('layout');
+
+	if (body.layout !== undefined) {
+		expect(body.layout).toBeDefined();
+		expect(typeof body.layout).toBe('string');
+		// Validate it's a valid MeetRecordingLayout value
+		expect(Object.values(MeetRecordingLayout)).toContain(body.layout);
+	}
 
 	expect(body.status).toBeDefined();
 

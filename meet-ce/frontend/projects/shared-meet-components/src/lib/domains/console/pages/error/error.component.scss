@@ -1,0 +1,220 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.error-page {
+	@include design-tokens.ov-theme-transition;
+	@include design-tokens.ov-flex-center;
+	min-height: 100vh;
+	background: var(--ov-meet-background-color);
+	padding: var(--ov-meet-spacing-lg);
+
+	.error-container {
+		@include design-tokens.ov-theme-transition;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xxl);
+		max-width: 800px;
+		width: 100%;
+
+		@include design-tokens.ov-tablet-down {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-xl);
+			text-align: center;
+		}
+
+		.error-content {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
+
+			.error-icon-section {
+				@include design-tokens.ov-flex-center;
+				justify-content: flex-start;
+
+				@include design-tokens.ov-tablet-down {
+					justify-content: center;
+				}
+
+				.error-main-icon {
+					@include design-tokens.ov-icon(xl);
+					color: var(--ov-meet-color-error);
+					background: rgba(var(--ov-meet-color-error), 0.1);
+					border-radius: var(--ov-meet-radius-circle);
+					padding: var(--ov-meet-spacing-md);
+					width: 64px;
+					height: 64px;
+					font-size: 32px;
+				}
+			}
+
+			.error-details {
+				.error-title {
+					margin: 0 0 var(--ov-meet-spacing-sm) 0;
+					font-size: var(--ov-meet-font-size-xxl);
+					font-weight: var(--ov-meet-font-weight-semibold);
+					color: var(--ov-meet-text-primary);
+					line-height: var(--ov-meet-line-height-tight);
+
+					@include design-tokens.ov-mobile-down {
+						font-size: var(--ov-meet-font-size-xl);
+					}
+				}
+
+				.error-message {
+					margin: 0;
+					font-size: var(--ov-meet-font-size-md);
+					color: var(--ov-meet-text-secondary);
+					line-height: var(--ov-meet-line-height-normal);
+					max-width: 400px;
+
+					@include design-tokens.ov-tablet-down {
+						max-width: none;
+					}
+
+					@include design-tokens.ov-mobile-down {
+						font-size: var(--ov-meet-font-size-sm);
+					}
+				}
+			}
+
+			.error-actions {
+				display: flex;
+				gap: var(--ov-meet-spacing-md);
+				margin-top: var(--ov-meet-spacing-md);
+
+				@include design-tokens.ov-tablet-down {
+					justify-content: center;
+				}
+
+				@include design-tokens.ov-mobile-down {
+					flex-direction: column;
+					align-items: center;
+				}
+
+				.action-button {
+					@include design-tokens.ov-button-base;
+					@include design-tokens.ov-flex-center;
+					gap: var(--ov-meet-spacing-xs);
+					min-width: 120px;
+
+					&.secondary {
+						color: var(--ov-meet-text-secondary);
+						border-color: var(--ov-meet-border-color);
+
+						&:hover {
+							color: var(--ov-meet-text-primary);
+							border-color: var(--ov-meet-text-primary);
+							background: var(--ov-meet-surface-hover);
+						}
+					}
+
+					mat-icon {
+						@include design-tokens.ov-icon(sm);
+					}
+
+					@include design-tokens.ov-mobile-down {
+						min-width: 200px;
+					}
+				}
+			}
+		}
+
+		.error-illustration {
+			flex: 1;
+			@include design-tokens.ov-flex-center;
+
+			@include design-tokens.ov-tablet-down {
+				order: -1;
+			}
+
+			.illustration-container {
+				@include design-tokens.ov-flex-center;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-lg);
+				opacity: 0.6;
+
+				.illustration-icon {
+					font-size: 120px;
+					width: 120px;
+					height: 120px;
+					color: var(--ov-meet-text-hint);
+
+					@include design-tokens.ov-mobile-down {
+						font-size: 80px;
+						width: 80px;
+						height: 80px;
+					}
+				}
+
+				.illustration-text {
+					display: flex;
+					flex-direction: column;
+					gap: var(--ov-meet-spacing-xs);
+					text-align: center;
+
+					.illustration-title {
+						font-size: var(--ov-meet-font-size-xl);
+						font-weight: var(--ov-meet-font-weight-bold);
+						color: var(--ov-meet-text-secondary);
+
+						@include design-tokens.ov-mobile-down {
+							font-size: var(--ov-meet-font-size-lg);
+						}
+					}
+
+					.illustration-subtitle {
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-text-hint);
+					}
+				}
+			}
+		}
+	}
+}
+
+// Animation states
+.fade-in {
+	animation: fadeIn 0.6s ease-out forwards;
+}
+
+// Enhanced responsive design
+@include design-tokens.ov-mobile-down {
+	.error-page {
+		padding: var(--ov-meet-spacing-md);
+
+		.error-container {
+			.error-content {
+				.error-details {
+					.error-title {
+						margin-bottom: var(--ov-meet-spacing-md);
+					}
+				}
+
+				.error-actions {
+					margin-top: var(--ov-meet-spacing-lg);
+
+					.action-button {
+						padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+						font-size: var(--ov-meet-font-size-md);
+					}
+				}
+			}
+		}
+	}
+}
+
+// Dark theme enhancements
+[data-theme='dark'] {
+	.error-page {
+		.error-container {
+			.error-content {
+				.error-icon-section {
+					.error-main-icon {
+						background: rgba(var(--ov-meet-color-error), 0.15);
+					}
+				}
+			}
+		}
+	}
+}

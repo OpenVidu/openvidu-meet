@@ -1,5 +1,5 @@
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 /**
@@ -24,8 +24,9 @@ const isDevEnvironment = (): boolean => {
 // Helper: walk up the directory tree looking for a predicate
 const findUp = (startDir: string, predicate: (d: string) => boolean): string | null => {
 	let dir = path.resolve(startDir);
+	let parent = path.dirname(dir);
 
-	while (true) {
+	while (dir !== parent) {
 		try {
 			if (predicate(dir)) {
 				return dir;
@@ -34,12 +35,11 @@ const findUp = (startDir: string, predicate: (d: string) => boolean): string | n
 			// ignore fs errors and continue climbing
 		}
 
-		const parent = path.dirname(dir);
-
-		if (parent === dir) return null;
-
 		dir = parent;
+		parent = path.dirname(dir);
 	}
+
+	return null;
 };
 
 const getBackendRoot = (): string => {
@@ -57,20 +57,25 @@ const getBackendRoot = (): string => {
 	}
 
 	// Otherwise, try to find upward a directory containing package.json and src
-	const pkgRoot = findUp(cwd, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+	const pkgRoot = findUp(
+		cwd,
+		(d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src'))
+	);
 
 	if (pkgRoot) return pkgRoot;
 
 	// Try using the file's directory as a fallback starting point
 	const fileDir = path.dirname(fileURLToPath(import.meta.url));
-	const pkgRootFromFile = findUp(fileDir, (d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src')));
+	const pkgRootFromFile = findUp(
+		fileDir,
+		(d) => fs.existsSync(path.join(d, 'package.json')) && fs.existsSync(path.join(d, 'src'))
+	);
 
 	if (pkgRootFromFile) return pkgRootFromFile;
 
 	// Last resort: assume two levels up from this file (previous behaviour)
 	return path.resolve(fileDir, '../..');
 };
-
 
 /**
  * Resolves the project root dynamically based on current environment.

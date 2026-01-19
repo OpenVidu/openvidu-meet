@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { baseRoutes } from '@openvidu-meet/shared-components';
-import { AppCeMeetingComponent } from './customization/pages/app-ce-meeting/app-ce-meeting.component';
 
 /**
  * CE routes configure the plugin system using library components.
@@ -8,6 +7,7 @@ import { AppCeMeetingComponent } from './customization/pages/app-ce-meeting/app-
  */
 const routes = baseRoutes;
 const meetingRoute = routes.find((route) => route.path === 'room/:room-id')!;
-meetingRoute.component = AppCeMeetingComponent;
+meetingRoute.loadComponent = () =>
+	import('./customization/pages/app-ce-meeting/app-ce-meeting.component').then((m) => m.AppCeMeetingComponent);
 
 export const ceRoutes: Routes = routes;

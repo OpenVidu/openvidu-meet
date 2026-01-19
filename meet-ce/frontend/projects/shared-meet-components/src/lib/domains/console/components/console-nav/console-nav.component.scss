@@ -1,0 +1,81 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+#dashboard-container,
+mat-sidenav-container {
+	height: 100%;
+	background-color: var(--ov-meet-background-color);
+}
+
+.page-content {
+	@extend .page-content;
+}
+
+mat-toolbar {
+	@extend .ov-nav-toolbar;
+}
+
+.toolbar-spacer {
+	@extend .toolbar-spacer;
+}
+
+.expanded {
+	width: 250px;
+}
+
+.collapsed {
+	width: 80px;
+}
+
+a {
+	padding: 0;
+}
+
+// Move the content down so that it won't be hidden by the toolbar
+mat-sidenav {
+	@extend .ov-sidenav;
+
+	.entry {
+		@extend .nav-entry;
+	}
+
+	.centeredEntry {
+		@extend .centered;
+	}
+}
+
+.mat-mdc-nav-list {
+	@extend .nav-list;
+}
+
+// Move the content down so that it won't be hidden by the toolbar
+mat-sidenav-content {
+	@extend .ov-sidenav-content;
+}
+
+.main-container {
+	@extend .main-container;
+}
+
+.section-title {
+	padding-bottom: 0;
+}
+
+.menu-button {
+	@extend .ov-menu-button;
+
+	&.active-nav-item {
+		@extend .active;
+	}
+}
+
+.menu-hr {
+	margin: 0 !important;
+}
+
+.version {
+	@extend .ov-nav-version;
+}
+
+.separator {
+	@extend .ov-nav-separator;
+}

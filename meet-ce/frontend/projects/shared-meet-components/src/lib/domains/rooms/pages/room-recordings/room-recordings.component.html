@@ -1,0 +1,62 @@
+<div class="ov-page-container">
+	<!-- Room Recordings Header -->
+	<div class="recordings-page-header fade-in">
+		<div class="quick-actions fade-in-delayed-more">
+			<button mat-button class="quick-action-button" (click)="goBackToRoom()">
+				<mat-icon>arrow_back</mat-icon>
+				<span>Back to Room</span>
+			</button>
+		</div>
+		<div class="recordings-header">
+			<mat-icon class="ov-recording-icon room-icon">video_library</mat-icon>
+			<div class="room-info">
+				<h1 class="room-title">
+					Recordings for room
+					<span class="room-name">
+						{{ roomName }}
+					</span>
+				</h1>
+			</div>
+		</div>
+	</div>
+
+	<!-- Loading State -->
+	@if (isInitializing && showInitialLoader) {
+		<div class="recordings-loading-container fade-in">
+			<div class="loading-card">
+				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
+				<h2 class="loading-title">Loading Recordings</h2>
+				<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
+			</div>
+		</div>
+	}
+
+	<!-- Content -->
+	@if (!isInitializing) {
+		<div class="recordings-content fade-in-delayed">
+			<div class="section-content">
+				<ov-recording-lists
+					[recordings]="recordings()"
+					[canDeleteRecordings]="canDeleteRecordings"
+					[loading]="isLoading"
+					[showSearchBox]="false"
+					[showFilters]="true"
+					[showSelection]="true"
+					[showRoomInfo]="false"
+					[showLoadMore]="hasMoreRecordings"
+					[roomName]="roomName"
+					[initialFilters]="initialFilters()"
+					(recordingAction)="onRecordingAction($event)"
+					(loadMore)="loadMoreRecordings($event)"
+					(refresh)="refreshRecordings($event)"
+					(filterChange)="refreshRecordings($event)"
+					class="recordings-list"
+				>
+				</ov-recording-lists>
+			</div>
+		</div>
+	}
+</div>

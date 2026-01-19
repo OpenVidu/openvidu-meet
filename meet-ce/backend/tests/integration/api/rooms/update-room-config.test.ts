@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetRecordingAccess, MeetRoomConfig, MeetSignalType } from '@openvidu-meet/typings';
+import { MeetRecordingAccess, MeetRecordingLayout, MeetRoomConfig, MeetSignalType } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import {
@@ -61,7 +61,10 @@ describe('Room API Tests', () => {
 				createdRoom.roomId,
 				{
 					roomId: createdRoom.roomId,
-					config: updatedConfig,
+					config: {
+						...updatedConfig,
+						recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }
+					},
 					timestamp: expect.any(Number)
 				},
 				{
@@ -76,7 +79,10 @@ describe('Room API Tests', () => {
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
 			expect(getResponse.status).toBe(200);
-			expect(getResponse.body.config).toEqual(updatedConfig);
+			expect(getResponse.body.config).toEqual({
+				...updatedConfig,
+				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
+			});
 		});
 
 		it('should allow partial config updates', async () => {
@@ -86,7 +92,8 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						layout: MeetRecordingLayout.SPEAKER
+						// allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -112,7 +119,9 @@ describe('Room API Tests', () => {
 
 			const expectedConfig: MeetRoomConfig = {
 				recording: {
-					enabled: false
+					enabled: false,
+					layout: MeetRecordingLayout.SPEAKER,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -185,25 +194,6 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
-		});
-
-		it('should fail when recording is enabled but allowAccessTo is missing', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'missing-access'
-			});
-
-			const invalidConfig = {
-				recording: {
-					enabled: true // Missing allowAccessTo
-				},
-				chat: { enabled: false },
-				virtualBackground: { enabled: false }
-			};
-			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig);
-
-			expect(response.status).toBe(422);
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('recording.allowAccessTo');
 		});
 	});
 });

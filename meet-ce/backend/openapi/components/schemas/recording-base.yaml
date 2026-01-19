@@ -22,6 +22,11 @@ properties:
     status:
         type: string
         description: The status of the recording.
+        example: active
+    layout:
+        type: string
+        description: The layout of the recording.
+        example: grid
     filename:
         type: string
         description: The name of the recording file.

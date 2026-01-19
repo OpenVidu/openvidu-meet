@@ -109,68 +109,9 @@ export interface StorageProvider {
  */
 export interface StorageKeyBuilder {
 	/**
-	 * Builds the key for global config storage.
-	 */
-	buildGlobalConfigKey(): string;
-
-	/**
-	 * Builds the key for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the meeting room
-	 */
-	buildMeetRoomKey(roomId: string): string;
-
-	/**
-	 * Builds the key for all meeting rooms.
-	 *
-	 * @param roomName - Optional name of the meeting room to filter by
-	 */
-	buildAllMeetRoomsKey(roomName?: string): string;
-
-	/**
-	 * Builds the key for archived room metadata.
-	 *
-	 * @param roomId - The unique identifier of the meeting room
-	 */
-	buildArchivedMeetRoomKey(roomId: string): string;
-
-	/**
 	 * Builds the key for a specific recording.
 	 *
 	 * @param recordingId - The unique identifier of the recording
 	 */
 	buildBinaryRecordingKey(recordingId: string): string;
-
-	/**
-	 * Builds the key for a specific recording metadata.
-	 *
-	 * @param recordingId - The unique identifier of the recording
-	 */
-	buildMeetRecordingKey(recordingId: string): string;
-
-	/**
-	 * Builds the key for all recordings in a room or globally.
-	 *
-	 * @param roomId - Optional room identifier to filter recordings by room
-	 */
-	buildAllMeetRecordingsKey(roomId?: string): string;
-
-	/**
-	 * Builds the key for access recording secrets.
-	 *
-	 * @param recordingId - The unique identifier of the recording
-	 */
-	buildAccessRecordingSecretsKey(recordingId: string): string;
-
-	/**
-	 * Builds the key for a specific user
-	 *
-	 * @param userId - The unique identifier of the user
-	 */
-	buildUserKey(userId: string): string;
-
-	/**
-	 * Builds Api Key
-	 */
-	buildApiKeysKey(): string;
 }

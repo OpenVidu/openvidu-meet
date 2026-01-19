@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { Document, model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 
@@ -42,6 +42,11 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 			type: String,
 			enum: Object.values(MeetRecordingStatus),
 			required: true
+		},
+		layout: {
+			type: String,
+			enum: Object.values(MeetRecordingLayout),
+			required: false
 		},
 		filename: {
 			type: String,

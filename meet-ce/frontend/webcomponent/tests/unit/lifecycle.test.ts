@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { WebComponentCommand } from '@openvidu-meet/typings';
 import { CommandsManager } from '../../src/components/CommandsManager';
 import { OpenViduMeet } from '../../src/components/OpenViduMeet';
 import '../../src/index';
-import { WebComponentCommand } from '@openvidu-meet/typings';
 
 describe('OpenViduMeet Event Handling', () => {
 	const testOrigin = window.location.origin;
@@ -22,6 +22,7 @@ describe('OpenViduMeet Event Handling', () => {
 		document.body.innerHTML = '';
 	});
 
+	// When a 'ready' message is received from the iframe origin, component should initialize via sendMessage
 	it('should call sendMessage when ready event is received', () => {
 		const sendMessageSpy = jest.spyOn(commandsManager, 'sendMessage' as keyof CommandsManager);
 
@@ -44,6 +45,7 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(sendMessageSpy).toHaveBeenCalledTimes(1);
 	});
 
+	// Incoming messages should be converted into custom events and dispatched from the component
 	it('should dispatch custom events when receiving messages', () => {
 		// Create a spy for dispatchEvent
 		const dispatchEventSpy = jest.spyOn(component, 'dispatchEvent');
@@ -72,6 +74,7 @@ describe('OpenViduMeet Event Handling', () => {
 		expect((dispatchEventSpy.mock.calls[0][0] as any).detail.foo).toBe('bar');
 	});
 
+	// disconnectedCallback should clear timeouts and call eventsManager.cleanup to free resources
 	it('should clean up resources when removed from DOM', () => {
 		// Set up spies
 		const clearTimeoutSpy = jest.spyOn(window, 'clearTimeout');
@@ -88,6 +91,7 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(eventsCleanupSpy).toHaveBeenCalled();
 	});
 
+	// showErrorState() should replace iframe with an error UI containing the provided message
 	it('should re-render when showing error state', () => {
 		document.body.appendChild(component);
 
@@ -107,6 +111,7 @@ describe('OpenViduMeet Event Handling', () => {
 		expect(errorContainer?.querySelector('.error-message')?.textContent).toBe('Test error');
 	});
 
+	// updateIframeSrc() should merge existing room URL query params with element attributes
 	it('should properly update iframe src with query parameters', () => {
 		document.body.appendChild(component);
 

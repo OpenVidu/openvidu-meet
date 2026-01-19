@@ -1,0 +1,424 @@
+@if (!loading() && rooms().length === 0 && !showEmptyFilterMessage) {
+	<!-- Empty State -->
+	<div class="no-rooms-state">
+		<div class="empty-content">
+			<h3>No rooms created yet</h3>
+			<p>No rooms found. Create your first room to start hosting meetings and manage your video conferences.</p>
+
+			<div class="getting-started-actions">
+				<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
+					<mat-icon>add</mat-icon>
+					Create Your First Room
+				</button>
+			</div>
+		</div>
+	</div>
+} @else {
+	<!-- Rooms Toolbar -->
+	<mat-toolbar class="rooms-toolbar" id="rooms-toolbar">
+		<!-- Left Section: Search -->
+		<div class="toolbar-left" id="toolbar-left">
+			@if (showSearchBox()) {
+				<mat-form-field class="search-field" appearance="outline" id="search-field">
+					<mat-label>Search rooms</mat-label>
+					<input
+						matInput
+						[formControl]="nameFilterControl"
+						placeholder="Search by room name"
+						id="search-input"
+						(keydown.enter)="triggerSearch()"
+					/>
+					<button
+						mat-icon-button
+						matSuffix
+						class="search-btn"
+						(click)="triggerSearch()"
+						[disabled]="loading() || !nameFilterControl.value"
+						matTooltip="Search"
+						id="search-btn"
+					>
+						<mat-icon>search</mat-icon>
+					</button>
+				</mat-form-field>
+			}
+		</div>
+
+		<!-- Center Section: Batch Actions (visible when items selected) -->
+		@if (showSelection() && selectedRooms().size > 0) {
+			<div class="toolbar-center" id="toolbar-center">
+				<div class="batch-actions" id="batch-actions">
+					<button
+						mat-icon-button
+						color="warn"
+						(click)="bulkDeleteSelected()"
+						[disabled]="loading()"
+						matTooltip="Delete selected rooms"
+						id="bulk-delete-btn"
+					>
+						<mat-icon [matBadge]="selectedRooms().size" matBadgePosition="below after"> delete </mat-icon>
+					</button>
+				</div>
+			</div>
+		}
+
+		<!-- Right Section: Actions -->
+		<div class="toolbar-right" id="toolbar-right">
+			@if (hasActiveFilters()) {
+				<button
+					mat-icon-button
+					class="clear-btn"
+					(click)="clearFilters()"
+					[disabled]="loading()"
+					matTooltip="Clear all filters"
+					id="clear-filters-btn"
+				>
+					<mat-icon>filter_alt_off</mat-icon>
+				</button>
+			}
+
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refreshRooms()"
+				[disabled]="loading()"
+				matTooltip="Refresh rooms"
+				id="refresh-btn"
+			>
+				<mat-icon>refresh</mat-icon>
+			</button>
+
+			<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
+				<mat-icon>add</mat-icon>
+				Create Room
+			</button>
+
+			@if (showFilters()) {
+				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms" id="filters-btn">
+					<mat-icon>tune</mat-icon>
+				</button>
+
+				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu filters-menu" id="filters-menu">
+					<div class="filter-content" (click)="$event.stopPropagation()" id="filter-content">
+						<h4>Filter by Status</h4>
+						<mat-form-field appearance="outline" id="status-filter-field">
+							<mat-label>Status</mat-label>
+							<mat-select [formControl]="statusFilterControl" id="status-filter-select">
+								@for (option of statusOptions; track option.value) {
+									<mat-option [value]="option.value" id="status-option-{{ option.value }}">{{
+										option.label
+									}}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+					</div>
+				</mat-menu>
+			}
+		</div>
+	</mat-toolbar>
+
+	<!-- Loading Spinner -->
+	@if (loading()) {
+		<div class="loading-container">
+			<mat-spinner diameter="40"></mat-spinner>
+			<span>Loading rooms...</span>
+		</div>
+	} @else if (rooms().length === 0 && showEmptyFilterMessage) {
+		<!-- No rooms match the current filters -->
+		<div class="no-rooms-state">
+			<div class="empty-content">
+				<h3>No rooms match your search criteria and/or filters</h3>
+				<p>Try adjusting or clearing your filters to see more rooms.</p>
+				<div class="getting-started-actions">
+					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
+						<mat-icon>filter_alt_off</mat-icon>
+						Clear Filters
+					</button>
+				</div>
+			</div>
+		</div>
+	} @else {
+		<!-- Rooms Table -->
+		<div class="table-container" id="table-container">
+			<table
+				mat-table
+				[dataSource]="rooms()"
+				matSort
+				matSortDisableClear
+				[matSortActive]="currentSortField"
+				[matSortDirection]="currentSortOrder"
+				(matSortChange)="onSortChange($event)"
+				class="rooms-table"
+				id="rooms-table"
+			>
+				<!-- Selection Column -->
+				@if (showSelection()) {
+					<ng-container matColumnDef="select">
+						<th mat-header-cell *matHeaderCellDef id="select-header">
+							<mat-checkbox
+								[checked]="allSelected()"
+								[indeterminate]="someSelected()"
+								(change)="toggleAllSelection()"
+								[disabled]="loading()"
+								id="select-all-checkbox"
+							>
+							</mat-checkbox>
+						</th>
+						<td mat-cell *matCellDef="let room" id="select-cell-{{ room.roomId }}">
+							@if (canSelectRoom(room)) {
+								<mat-checkbox
+									[checked]="isRoomSelected(room)"
+									(change)="toggleRoomSelection(room)"
+									[disabled]="loading()"
+									id="select-room-{{ room.roomId }}"
+								>
+								</mat-checkbox>
+							}
+						</td>
+					</ng-container>
+				}
+
+				<!-- Room Name Column -->
+				<ng-container matColumnDef="roomName">
+					<th
+						mat-header-cell
+						*matHeaderCellDef
+						mat-sort-header="roomName"
+						class="room-header"
+						id="room-name-header"
+					>
+						Room Name
+					</th>
+					<td mat-cell *matCellDef="let room" class="room-cell" id="room-name-cell-{{ room.roomId }}">
+						<div class="room-info" id="room-info-{{ room.roomId }}">
+							<span class="room-name" id="room-name-{{ room.roomId }}">{{ room.roomName }}</span>
+							<span class="room-id" id="room-id-{{ room.roomId }}">{{ room.roomId }}</span>
+						</div>
+					</td>
+				</ng-container>
+
+				<!-- Status Column -->
+				<ng-container matColumnDef="status">
+					<th mat-header-cell *matHeaderCellDef id="status-header">Status</th>
+					<td mat-cell *matCellDef="let room" id="status-cell-{{ room.roomId }}">
+						<div class="status-container" id="status-container-{{ room.roomId }}">
+							<div
+								class="status-badge"
+								[style.color]="getStatusColor(room)"
+								[matTooltip]="getStatusTooltip(room)"
+								id="status-badge-{{ room.roomId }}"
+							>
+								<mat-icon
+									class="status-icon"
+									[style.color]="getStatusColor(room)"
+									id="status-icon-{{ room.roomId }}"
+								>
+									{{ getStatusIcon(room) }}
+								</mat-icon>
+								<span class="status-label" id="status-label-{{ room.roomId }}">{{
+									getRoomStatus(room)
+								}}</span>
+							</div>
+
+							<!-- Meeting End Action Info Icon -->
+							@if (hasMeetingEndAction(room)) {
+								<mat-icon
+									class="meeting-end-info-icon"
+									[ngClass]="getMeetingEndActionClass(room)"
+									[matTooltip]="getMeetingEndActionTooltip(room)"
+									id="meeting-end-info-icon-{{ room.roomId }}"
+								>
+									info_outline
+								</mat-icon>
+							}
+						</div>
+					</td>
+				</ng-container>
+
+				<!-- Creation Date Column -->
+				<ng-container matColumnDef="creationDate">
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="creationDate" id="creation-date-header">
+						Created
+					</th>
+					<td mat-cell *matCellDef="let room" id="creation-date-cell-{{ room.roomId }}">
+						@if (room.creationDate) {
+							<div class="date-info" id="date-info-{{ room.roomId }}">
+								<span class="date" id="creation-date-{{ room.roomId }}">{{
+									room.creationDate | date: 'mediumDate'
+								}}</span>
+								<span class="time" id="creation-time-{{ room.roomId }}">{{
+									room.creationDate | date: 'shortTime'
+								}}</span>
+							</div>
+						} @else {
+							<span class="no-data" id="no-creation-date-{{ room.roomId }}">-</span>
+						}
+					</td>
+				</ng-container>
+
+				<!-- Auto Deletion Column -->
+				<ng-container matColumnDef="autoDeletion">
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="autoDeletionDate" id="auto-deletion-header">
+						Auto Deletion
+					</th>
+					<td mat-cell *matCellDef="let room" id="auto-deletion-cell-{{ room.roomId }}">
+						<div class="auto-deletion-content" id="auto-deletion-content-{{ room.roomId }}">
+							<div class="auto-deletion-info" id="auto-deletion-info-{{ room.roomId }}">
+								<div
+									class="deletion-badge"
+									[ngClass]="getAutoDeletionClass(room)"
+									[matTooltip]="getAutoDeletionTooltip(room)"
+									id="deletion-badge-{{ room.roomId }}"
+								>
+									<mat-icon
+										class="deletion-icon material-symbols-outlined"
+										id="deletion-icon-{{ room.roomId }}"
+										>{{ getAutoDeletionIcon(room) }}</mat-icon
+									>
+									<span class="deletion-text" id="deletion-text-{{ room.roomId }}">{{
+										getAutoDeletionStatus(room)
+									}}</span>
+								</div>
+
+								@if (hasAutoDeletion(room)) {
+									<div class="deletion-date-time" id="deletion-date-time-{{ room.roomId }}">
+										<div class="deletion-date" id="deletion-date-container-{{ room.roomId }}">
+											<span class="date" id="deletion-date-{{ room.roomId }}">{{
+												room.autoDeletionDate | date: 'mediumDate'
+											}}</span>
+										</div>
+										<div class="deletion-time" id="deletion-time-container-{{ room.roomId }}">
+											<span class="time" id="deletion-time-{{ room.roomId }}">{{
+												room.autoDeletionDate | date: 'shortTime'
+											}}</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					</td>
+				</ng-container>
+
+				<!-- Actions Column -->
+				<ng-container matColumnDef="actions">
+					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
+					<td mat-cell *matCellDef="let room" class="actions-cell" id="actions-cell-{{ room.roomId }}">
+						<div class="action-buttons" id="action-buttons-{{ room.roomId }}">
+							<!-- Open Room Button -->
+							@if (canOpenRoom(room)) {
+								<button
+									mat-icon-button
+									matTooltip="Open Room"
+									(click)="openRoom(room)"
+									[disabled]="loading()"
+									class="primary-action"
+									id="open-room-btn-{{ room.roomId }}"
+								>
+									<mat-icon>open_in_new</mat-icon>
+								</button>
+							}
+
+							<!-- Settings Button -->
+							@if (canEditRoom(room)) {
+								<button
+									mat-icon-button
+									matTooltip="Room Settings"
+									(click)="editRoom(room)"
+									[disabled]="loading()"
+									id="edit-room-btn-{{ room.roomId }}"
+								>
+									<mat-icon class="ov-settings-icon">settings</mat-icon>
+								</button>
+							}
+
+							<!-- More Actions Menu -->
+							<button
+								mat-icon-button
+								[matMenuTriggerFor]="actionsMenu"
+								matTooltip="More Actions"
+								[disabled]="loading()"
+								id="more-actions-btn-{{ room.roomId }}"
+							>
+								<mat-icon>more_vert</mat-icon>
+							</button>
+
+							<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
+								<button
+									mat-menu-item
+									(click)="viewRecordings(room)"
+									id="view-recordings-btn-{{ room.roomId }}"
+								>
+									<mat-icon class="ov-recording-icon">video_library</mat-icon>
+									<span>View Recordings</span>
+								</button>
+
+								@if (canOpenRoom(room)) {
+									<button
+										mat-menu-item
+										(click)="copyModeratorLink(room)"
+										id="copy-moderator-link-btn-{{ room.roomId }}"
+									>
+										<mat-icon>content_copy</mat-icon>
+										<span>Copy Moderator Link</span>
+									</button>
+									<button
+										mat-menu-item
+										(click)="copySpeakerLink(room)"
+										id="copy-speaker-link-btn-{{ room.roomId }}"
+									>
+										<mat-icon>content_copy</mat-icon>
+										<span>Copy Speaker Link</span>
+									</button>
+								}
+
+								<mat-divider id="actions-divider-{{ room.roomId }}"></mat-divider>
+
+								<button
+									mat-menu-item
+									(click)="toggleRoomStatus(room)"
+									[ngClass]="getRoomToggleIconClass(room)"
+									id="toggle-room-status-btn-{{ room.roomId }}"
+								>
+									<mat-icon>{{ getRoomToggleIcon(room) }}</mat-icon>
+									<span>{{ getRoomToggleLabel(room) }}</span>
+								</button>
+								<button
+									mat-menu-item
+									(click)="deleteRoom(room)"
+									class="delete-action"
+									id="delete-room-btn-{{ room.roomId }}"
+								>
+									<mat-icon>delete</mat-icon>
+									<span>Delete room</span>
+								</button>
+							</mat-menu>
+						</div>
+					</td>
+				</ng-container>
+
+				<tr mat-header-row *matHeaderRowDef="displayedColumns" id="table-header-row"></tr>
+				<tr
+					mat-row
+					*matRowDef="let row; columns: displayedColumns"
+					[class.selected-row]="isRoomSelected(row)"
+					id="table-row-{{ row.roomId }}"
+				></tr>
+			</table>
+		</div>
+
+		<!-- Load More Section -->
+		@if (showLoadMore()) {
+			<div class="load-more-container" id="load-more-container">
+				<button
+					mat-button
+					class="load-more-btn"
+					(click)="loadMoreRooms()"
+					[disabled]="loading()"
+					id="load-more-btn"
+				>
+					<mat-icon>expand_more</mat-icon>
+					<span>Load More Rooms</span>
+				</button>
+			</div>
+		}
+	}
+}

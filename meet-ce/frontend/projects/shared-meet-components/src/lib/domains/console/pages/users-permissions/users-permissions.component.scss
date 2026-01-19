@@ -1,0 +1,120 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.form-field-header {
+	position: relative;
+}
+
+.admin-auth-form {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--ov-meet-spacing-md, 16px);
+	align-items: start;
+
+	@media (max-width: 768px) {
+		grid-template-columns: 1fr;
+		gap: var(--ov-meet-spacing-sm, 12px);
+	}
+
+	.username-field,
+	.password-field {
+		width: 100%;
+
+		::ng-deep .mat-mdc-form-field {
+			width: 100%;
+		}
+
+		::ng-deep .input-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	.username-field {
+		::ng-deep {
+			.mat-mdc-form-field {
+				.mat-mdc-input-element:disabled {
+					color: var(--ov-meet-text-secondary, rgba(0, 0, 0, 0.6));
+				}
+			}
+		}
+	}
+
+	.password-field {
+		::ng-deep {
+			.mat-mdc-form-field {
+				.mat-mdc-floating-label {
+					&.mdc-floating-label--required::after {
+						content: ' *';
+						color: var(--ov-meet-error, #f44336);
+					}
+				}
+			}
+		}
+	}
+}
+
+.form-section {
+	margin-bottom: var(--ov-meet-spacing-lg, 24px);
+
+	.form-field-header {
+		margin-bottom: var(--ov-meet-spacing-sm, 12px);
+
+		h3 {
+			margin: 0 0 var(--ov-meet-spacing-xs, 8px) 0;
+			font-weight: 600;
+			color: var(--ov-meet-text-primary, rgba(0, 0, 0, 0.87));
+		}
+	}
+
+	.field-description {
+		margin: 0 0 var(--ov-meet-spacing-md, 16px) 0;
+		color: var(--ov-meet-text-secondary, rgba(0, 0, 0, 0.6));
+		font-size: 14px;
+		line-height: 1.4;
+	}
+}
+
+.mat-mdc-form-field {
+	width: 100%;
+
+	&.textarea-field {
+		::ng-deep .mat-mdc-text-field-wrapper {
+			min-height: 120px;
+		}
+	}
+
+	::ng-deep .mat-mdc-text-field-wrapper {
+		&.mdc-text-field--disabled {
+			background-color: var(--ov-meet-surface-variant);
+		}
+		border-radius: var(--ov-meet-border-radius-sm);
+	}
+
+	::ng-deep .mdc-notched-outline__leading,
+	::ng-deep .mdc-notched-outline__notch,
+	::ng-deep .mdc-notched-outline__trailing {
+		border-color: var(--ov-meet-border-color);
+	}
+}
+
+.mat-mdc-card-actions {
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl);
+	gap: var(--ov-meet-spacing-sm);
+	border-top: 1px solid var(--ov-meet-border-color);
+	margin: auto;
+
+	#revoke-key-btn {
+		color: var(--ov-meet-color-error);
+		border-color: var(--ov-meet-color-error);
+	}
+
+	@include design-tokens.ov-mobile-down {
+		flex-direction: column;
+
+		.mat-mdc-button,
+		.mat-mdc-raised-button,
+		.mat-mdc-stroked-button {
+			width: 100%;
+			margin: var(--ov-meet-spacing-xs) 0;
+		}
+	}
+}

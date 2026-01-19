@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAccess,
+	MeetRecordingLayout,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
 } from '@openvidu-meet/typings';
@@ -60,6 +61,7 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: false,
+						layout: MeetRecordingLayout.GRID,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: false },
@@ -95,7 +97,9 @@ describe('Room API Tests', () => {
 
 			const expectedConfig = {
 				recording: {
-					enabled: false
+					enabled: false,
+					layout: MeetRecordingLayout.GRID, // Default value
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
 				},
 				chat: { enabled: true }, // Default value
 				virtualBackground: { enabled: true }, // Default value
@@ -123,6 +127,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true, // Default value
+					layout: MeetRecordingLayout.GRID, // Default value
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
 				},
 				chat: { enabled: false },

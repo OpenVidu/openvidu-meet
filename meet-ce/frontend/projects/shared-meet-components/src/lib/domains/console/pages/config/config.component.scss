@@ -1,0 +1,230 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.ov-page-container {
+	button {
+		padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
+	}
+}
+
+// Theme Configuration Section
+.theme-config-card {
+	.theme-form {
+		@extend .ov-settings-form-section;
+
+		.full-width {
+			width: 100%;
+		}
+
+		.section-title {
+			margin: 0;
+		}
+
+		.theme-toggle {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 0 var(--ov-meet-spacing-md) var(--ov-meet-spacing-md) 0;
+
+			::ng-deep button {
+				padding: 0 !important;
+			}
+		}
+
+		// Input field styling
+		.mat-mdc-form-field {
+			margin-bottom: var(--ov-meet-spacing-lg);
+
+			::ng-deep .mat-mdc-text-field-wrapper {
+				&.mdc-text-field--disabled {
+					background-color: var(--ov-meet-surface-variant);
+				}
+				border-radius: var(--ov-meet-border-radius-sm);
+			}
+
+			::ng-deep .mdc-notched-outline__leading,
+			::ng-deep .mdc-notched-outline__notch,
+			::ng-deep .mdc-notched-outline__trailing {
+				border-color: var(--ov-meet-border-color);
+			}
+		}
+
+		// Color picker grid layout - responsive and clean
+		.color-picker-grid {
+			display: grid;
+			grid-template-columns: repeat(5, 1fr);
+			gap: var(--ov-meet-spacing-xl);
+			margin: var(--ov-meet-spacing-lg) 0;
+
+			// Tablet and larger - maintain 4 columns
+			@include design-tokens.ov-tablet-up {
+				gap: var(--ov-meet-spacing-xs);
+			}
+
+			// Small tablets - 2 columns
+			@include design-tokens.ov-tablet-down {
+				grid-template-columns: repeat(2, 1fr);
+				gap: var(--ov-meet-spacing-lg);
+			}
+
+			// Mobile - single column
+			@include design-tokens.ov-mobile-down {
+				grid-template-columns: 1fr;
+				gap: var(--ov-meet-spacing-md);
+			}
+		}
+
+		.color-picker-item {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			cursor: pointer;
+			transition:
+				transform 0.2s ease,
+				opacity 0.2s ease;
+			height: 140px;
+
+			&:hover {
+				transform: translateY(-2px);
+				// opacity: 0.9;
+			}
+
+			&:active {
+				transform: translateY(0);
+			}
+
+			.color-label-container {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-xs);
+				height: 48px;
+				text-align: center;
+				margin-bottom: var(--ov-meet-spacing-xs);
+			}
+
+			.color-label {
+				font-size: 0.875rem;
+				font-weight: 500;
+				color: var(--ov-meet-text-color-primary);
+				user-select: none;
+				line-height: 1.2;
+			}
+
+			.info-icon {
+				font-size: 16px;
+				width: 16px;
+				height: 16px;
+				color: var(--ov-meet-text-hint);
+				transition: color 0.2s ease;
+				cursor: help;
+				flex-shrink: 0;
+
+				&:hover {
+					color: var(--ov-meet-color-primary);
+				}
+			}
+
+			.color-circle-wrapper {
+				position: relative;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				.color-input {
+					position: absolute;
+					opacity: 0;
+					width: 80px;
+					height: 80px;
+					cursor: pointer;
+					border: none;
+					background: none;
+					z-index: 2;
+
+					// &::-webkit-color-swatch-wrapper {
+					// 	padding: 0;
+					// 	border: none;
+					// 	border-radius: 50%;
+					// }
+
+					// &::-webkit-color-swatch {
+					// 	border: none;
+					// 	border-radius: 50%;
+					// }
+
+					// &::-moz-color-swatch {
+					// 	border: none;
+					// 	border-radius: 50%;
+					// }
+				}
+
+				.color-circle {
+					width: 80px;
+					height: 80px;
+					border-radius: var(--ov-meet-radius-lg);
+					border: 3px solid var(--ov-meet-border-color);
+					position: relative;
+					z-index: 1;
+				}
+			}
+		}
+
+		// Reset colors section
+		.reset-colors-section {
+			display: flex;
+			justify-content: center;
+			margin-top: var(--ov-meet-spacing-lg);
+			padding-top: var(--ov-meet-spacing-lg);
+			border-top: 1px solid var(--ov-meet-border-color);
+
+			.reset-colors-btn {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-xs);
+				font-size: 0.875rem;
+				color: var(--ov-meet-text-color-secondary);
+				border-color: var(--ov-meet-border-color);
+
+				&:hover {
+					color: var(--ov-meet-color-error);
+					border-color: var(--ov-meet-color-error);
+				}
+
+				mat-icon {
+					font-size: 18px;
+					width: 18px;
+					height: 18px;
+				}
+			}
+		}
+	}
+}
+
+// Card Actions - responsive button layout
+.mat-mdc-card-actions {
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl);
+	gap: var(--ov-meet-spacing-sm);
+	border-top: 1px solid var(--ov-meet-border-color);
+	margin: auto;
+	display: flex;
+	flex-wrap: wrap;
+
+	@include design-tokens.ov-mobile-down {
+		flex-direction: column;
+
+		.mat-mdc-button,
+		.mat-mdc-raised-button,
+		.mat-mdc-stroked-button {
+			width: 100%;
+			margin: var(--ov-meet-spacing-xs) 0;
+		}
+	}
+
+	@include design-tokens.ov-tablet-up {
+		justify-content: flex-start;
+
+		button:first-child {
+			margin-right: auto;
+		}
+	}
+}

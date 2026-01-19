@@ -31,7 +31,7 @@ const escapeHtml = (unsafe: string): string => {
 };
 
 const getWebhookEventsFromStorage = (roomId: string): any[] => {
-    const data = localStorage.getItem('webhookEventsByRoom');
+    const data = sessionStorage.getItem('webhookEventsByRoom');
     if (!data) {
         return [];
     }
@@ -41,26 +41,16 @@ const getWebhookEventsFromStorage = (roomId: string): any[] => {
 };
 
 const saveWebhookEventToStorage = (roomId: string, event: any): void => {
-    const data = localStorage.getItem('webhookEventsByRoom');
+    const data = sessionStorage.getItem('webhookEventsByRoom');
     const map = data ? JSON.parse(data) : {};
     if (!map[roomId]) {
         map[roomId] = [];
     }
 
     map[roomId].push(event);
-    localStorage.setItem('webhookEventsByRoom', JSON.stringify(map));
+    sessionStorage.setItem('webhookEventsByRoom', JSON.stringify(map));
 };
 
-const clearWebhookEventsByRoom = (roomId: string): void => {
-    const data = localStorage.getItem('webhookEventsByRoom');
-    if (!data) return;
-
-    const map = JSON.parse(data);
-    if (map[roomId]) {
-        map[roomId] = [];
-        localStorage.setItem('webhookEventsByRoom', JSON.stringify(map));
-    }
-};
 
 const shouldShowWebhook = (event: any): boolean => {
     return showAllWebhooksCheckbox?.checked || event.data.roomId === roomId;
@@ -81,10 +71,6 @@ const listenWebhookServerEvents = () => {
         }
 
         addWebhookEventElement(event);
-
-        // Clean up the previous events
-        const isMeetingEnded = event.event === 'meetingEnded';
-        if (isMeetingEnded) clearWebhookEventsByRoom(webhookRoomId);
     });
 };
 

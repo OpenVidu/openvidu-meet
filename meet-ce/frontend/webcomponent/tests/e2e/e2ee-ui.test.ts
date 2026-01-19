@@ -302,12 +302,12 @@ test.describe('E2EE UI Tests', () => {
 			// Each participant should see an encryption error for the other's video
 			const videoPosterCount = await countElementsInIframe(page, '.encryption-error-poster');
 
-			//! FIXME: Temporarily expecting 2 posters due to audio and video streams (needs to be fixed in ov-components)
-			expect(videoPosterCount).toBe(2);
+			// With Smart Layout by default, audio are not in DOM, only video streams are.
+			expect(videoPosterCount).toBe(1);
 
 			const videoPosterCount2 = await countElementsInIframe(page2, '.encryption-error-poster');
-			//! FIXME: Temporarily expecting 2 posters due to audio and video streams (needs to be fixed in ov-components)
-			expect(videoPosterCount2).toBe(2);
+			// With Smart Layout by default, audio are not in DOM, only video streams are.
+			expect(videoPosterCount2).toBe(1);
 
 			// Add additional participant with correct key to verify they can see/hear each other
 			const page3 = await context.newPage();
@@ -342,8 +342,8 @@ test.describe('E2EE UI Tests', () => {
 			expect(videoCount3).toBeGreaterThanOrEqual(2);
 
 			const videoPosterCount3 = await countElementsInIframe(page3, '.encryption-error-poster');
-			//! FIXME: Temporarily expecting 2 posters due to audio and video streams (needs to be fixed in ov-components)
-			expect(videoPosterCount3).toBe(2);
+			// With Smart Layout by default, audio are not in DOM, only video streams are.
+			expect(videoPosterCount3).toBe(1);
 
 			// Cleanup participant 2
 			await Promise.all([leaveRoom(page2), leaveRoom(page3)]);
@@ -490,6 +490,11 @@ test.describe('E2EE UI Tests', () => {
 			expect(ownName1).not.toContain('*');
 			expect(ownName2).toBe(participant2Name);
 			expect(ownName2).not.toContain('*');
+
+			await Promise.all([
+				waitForElementInIframe(page, '.panel-close-button', { state: 'visible' }),
+				waitForElementInIframe(page2, '.panel-close-button', { state: 'visible' })
+			]);
 
 			// Close settings panel
 			await Promise.all([
@@ -747,7 +752,7 @@ test.describe('E2EE UI Tests', () => {
 			await interactWithElementInIframe(page, '#chat-input', { action: 'fill', value: secretMessage });
 			await interactWithElementInIframe(page, '#send-btn', { action: 'click' });
 
-			await page.waitForTimeout(20000)
+			await page.waitForTimeout(20000);
 			// Wait for message to be sent and received
 			// await Promise.all([
 			// 	waitForElementInIframe(page2, '#chat-panel-btn .mat-badge-content', { state: 'visible' }),

@@ -1,3 +1,5 @@
+import { MeetRecordingLayout } from './recording.model';
+
 /**
  * Interface representing the config for a room.
  */
@@ -14,6 +16,7 @@ export interface MeetRoomConfig {
  */
 export interface MeetRecordingConfig {
     enabled: boolean;
+    layout?: MeetRecordingLayout;
 }
 
 export interface MeetChatConfig {

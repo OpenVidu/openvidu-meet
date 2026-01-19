@@ -19,6 +19,7 @@ import {
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
+import merge from 'lodash.merge';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
@@ -69,7 +70,7 @@ export class RoomService {
 	/**
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
-	 * @param {MeetRoomOptions} options - The options for creating the OpenVidu room.
+	 * @param {MeetRoomOptions} roomOptions - The options for creating the OpenVidu room.
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
@@ -141,22 +142,6 @@ export class RoomService {
 			}
 		};
 
-		const defaultConfig: MeetRoomConfig = {
-			recording: { enabled: true },
-			chat: { enabled: true },
-			virtualBackground: { enabled: true },
-			e2ee: { enabled: false }
-		};
-		const roomConfig = {
-			...defaultConfig,
-			...config
-		};
-
-		// Disable recording if E2EE is enabled
-		if (roomConfig.e2ee.enabled && roomConfig.recording.enabled) {
-			roomConfig.recording.enabled = false;
-		}
-
 		const meetRoom: MeetRoom = {
 			roomId,
 			roomName: roomName!,
@@ -165,7 +150,7 @@ export class RoomService {
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
-			config: roomConfig,
+			config: config as MeetRoomConfig,
 			roles: roomRoles,
 			anonymous: anonymousConfig,
 			accessUrl: `/room/${roomId}`,
@@ -223,11 +208,8 @@ export class RoomService {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		// Merge the partial config with the existing config
-		room.config = {
-			...room.config,
-			...config
-		};
+		// Merge existing config with new config (partial update)
+		room.config = merge({}, room.config, config);
 
 		// Disable recording if E2EE is enabled
 		if (room.config.e2ee.enabled && room.config.recording.enabled) {

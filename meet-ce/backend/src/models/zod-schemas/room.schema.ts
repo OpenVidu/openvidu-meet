@@ -3,6 +3,7 @@ import {
 	MeetChatConfig,
 	MeetE2EEConfig,
 	MeetRecordingConfig,
+	MeetRecordingLayout,
 	MeetRoomAnonymousConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
@@ -33,7 +34,8 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 		});
 
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
-	enabled: z.boolean()
+	enabled: z.boolean(),
+	layout: z.nativeEnum(MeetRecordingLayout).optional()
 });
 
 const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
@@ -76,7 +78,11 @@ export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object(
 	themes: z.array(RoomThemeSchema).length(1, 'There must be exactly one theme defined')
 });
 
-const RoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
+/**
+ * Schema for updating room config (partial updates allowed)
+ * Used when updating an existing room's config - missing fields keep their current values
+ */
+const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
@@ -84,13 +90,51 @@ const RoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		e2ee: E2EEConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
-	.transform((data) => {
+	.transform((data: Partial<MeetRoomConfig>) => {
 		// Automatically disable recording when E2EE is enabled
 		if (data.e2ee?.enabled && data.recording?.enabled) {
-			data.recording.enabled = false;
+			data.recording = {
+				...data.recording,
+				enabled: false
+			};
 		}
 
 		return data;
+	});
+
+/**
+ * Schema for creating room config (applies defaults for missing fields)
+ * Used when creating a new room - missing fields get default values
+ *
+ * IMPORTANT: Using functions in .default() to avoid shared mutable state.
+ * Each call creates a new object instance instead of reusing the same reference.
+ */
+const CreateRoomConfigSchema = z
+	.object({
+		recording: RecordingConfigSchema.optional().default(() => ({
+			enabled: true,
+			layout: MeetRecordingLayout.GRID
+		})),
+		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
+		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
+		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false }))
+		// appearance: AppearanceConfigSchema,
+	})
+	.transform((data) => {
+		// Apply default layout if not provided
+		if (data.recording.layout === undefined) {
+			data.recording.layout = MeetRecordingLayout.GRID;
+		}
+
+		// Automatically disable recording when E2EE is enabled
+		if (data.e2ee.enabled && data.recording.enabled) {
+			data.recording = {
+				...data.recording,
+				enabled: false
+			};
+		}
+
+		return data as MeetRoomConfig;
 	});
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.nativeEnum(
@@ -148,10 +192,10 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		)
 		.optional(),
 	autoDeletionPolicy: RoomAutoDeletionPolicySchema.optional()
-		.default({
+		.default(() => ({
 			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
 			withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
-		})
+		}))
 		.refine(
 			(policy) => {
 				return !policy || policy.withMeeting !== MeetRoomDeletionPolicyWithMeeting.FAIL;
@@ -170,8 +214,11 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 				path: ['withRecordings']
 			}
 		),
-	config: RoomConfigSchema.optional().default({
-		recording: { enabled: true },
+	config: CreateRoomConfigSchema.optional().default({
+		recording: {
+			enabled: true,
+			layout: MeetRecordingLayout.GRID
+		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false }
@@ -253,7 +300,7 @@ export const BulkDeleteRoomsReqSchema = z.object({
 });
 
 export const UpdateRoomConfigReqSchema = z.object({
-	config: RoomConfigSchema
+	config: UpdateRoomConfigSchema
 });
 
 export const UpdateRoomRolesReqSchema = z.object({
