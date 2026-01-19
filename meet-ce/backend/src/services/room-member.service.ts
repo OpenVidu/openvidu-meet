@@ -190,8 +190,27 @@ export class RoomMemberService {
 
 		const updatedMember = await this.roomMemberRepository.update(member);
 
+		// If member is currently in a meeting, check if they still have permission to join
 		if (updatedMember.currentParticipantIdentity) {
-			// TODO: Notify participant of role/permission changes if currently in a meeting
+			const effectivePermissions = updatedMember.effectivePermissions;
+
+			if (!effectivePermissions.canJoinMeeting) {
+				// Member lost permission to join meeting, kick them out
+				try {
+					await this.kickParticipantFromMeeting(roomId, updatedMember.currentParticipantIdentity);
+					this.logger.info(
+						`Kicked participant '${updatedMember.currentParticipantIdentity}' from meeting after losing canJoinMeeting permission (member '${memberId}' in room '${roomId}')`
+					);
+				} catch (error) {
+					this.logger.warn(
+						`Failed to kick participant '${updatedMember.currentParticipantIdentity}' from meeting after permission update:`,
+						error
+					);
+					// Don't throw error, update was already saved
+				}
+			} else {
+				// TODO: Notify participant of role/permission changes if currently in a meeting
+			}
 		}
 
 		return updatedMember;
