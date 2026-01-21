@@ -49,7 +49,7 @@ const AuthenticationConfigSchema = new Schema(
 		},
 		oauthProviders: {
 			type: [OAuthProviderConfigSchema],
-			required: false
+			required: true
 		}
 	},
 	{ _id: false }

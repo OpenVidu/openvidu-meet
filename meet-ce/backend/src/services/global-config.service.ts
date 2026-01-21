@@ -207,7 +207,8 @@ export class GlobalConfigService {
 			},
 			securityConfig: {
 				authentication: {
-					allowUserCreation: true
+					allowUserCreation: true,
+					oauthProviders: []
 				}
 			},
 			roomsConfig: {

@@ -8,9 +8,9 @@ export interface AuthenticationConfig {
     allowUserCreation: boolean;
 
     /**
-     * Optional list of allowed OAuth providers for user registration.
+     * List of allowed OAuth providers for user registration.
      */
-    oauthProviders?: OAuthProviderConfig[];
+    oauthProviders: OAuthProviderConfig[];
 }
 
 /**
