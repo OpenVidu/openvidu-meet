@@ -1,5 +1,4 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
@@ -19,7 +18,6 @@ export class MeetingContextService {
 	private readonly featureConfigService = inject(FeatureConfigurationService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
-	private readonly destroyRef = inject(DestroyRef);
 
 	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
