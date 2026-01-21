@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LoggerService } from 'openvidu-components-angular';
+import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 
@@ -22,6 +23,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
+	protected captionService = inject(MeetingCaptionsService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 	protected readonly copyLinkTooltip = 'Copy the meeting link';
 	protected readonly copyLinkText = 'Copy meeting link';
@@ -29,16 +31,14 @@ export class MeetingToolbarExtraButtonsComponent {
 	/**
 	 * Whether to show the copy link button
 	 */
-	protected showCopyLinkButton = computed(() => {
-		return this.meetingContextService.canModerateRoom();
-	});
+	protected showCopyLinkButton = computed(() => this.meetingContextService.canModerateRoom());
 
 	/**
 	 * Whether the device is mobile (affects button style)
 	 */
-	protected isMobile = computed(() => {
-		return this.meetingContextService.isMobile();
-	});
+	protected isMobile = computed(() => this.meetingContextService.isMobile());
+
+	protected areCaptionsEnabled = computed(() => this.captionService.areCaptionsEnabled());
 
 	onCopyLinkClick(): void {
 		const room = this.meetingContextService.meetRoom();
@@ -48,5 +48,9 @@ export class MeetingToolbarExtraButtonsComponent {
 		}
 
 		this.meetingService.copyMeetingSpeakerLink(room);
+	}
+
+	onCaptionsClick(): void {
+		this.captionService.areCaptionsEnabled() ? this.captionService.disable() : this.captionService.enable();
 	}
 }

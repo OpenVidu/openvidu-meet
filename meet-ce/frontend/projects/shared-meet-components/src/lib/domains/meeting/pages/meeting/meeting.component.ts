@@ -5,26 +5,24 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {
 	OpenViduComponentsUiModule,
-	OpenViduService,
 	OpenViduThemeMode,
 	OpenViduThemeService,
 	Room,
-	Track,
-	ViewportService
+	Track
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
 import { ApplicationFeatures } from '../../../../shared/models/app.model';
 import { FeatureConfigurationService } from '../../../../shared/services/feature-configuration.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { SoundService } from '../../../../shared/services/sound.service';
 import { RoomMemberService } from '../../../rooms/services/room-member.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
-import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
-import { MeetingService } from '../../services/meeting.service';
 
 @Component({
 	selector: 'ov-meeting',
@@ -39,7 +37,7 @@ import { MeetingService } from '../../services/meeting.service';
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
 })
 export class MeetingComponent implements OnInit {
 	protected _participantItem?: MeetingParticipantItemComponent;
@@ -64,18 +62,16 @@ export class MeetingComponent implements OnInit {
 	protected isMeetingLeft = signal(false);
 
 	protected features: Signal<ApplicationFeatures>;
-	protected meetingService = inject(MeetingService);
 	protected participantService = inject(RoomMemberService);
 	protected featureConfService = inject(FeatureConfigurationService);
-	protected wcManagerService = inject(MeetingWebComponentManagerService);
-	protected openviduService = inject(OpenViduService);
-	protected viewportService = inject(ViewportService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected configService = inject(GlobalConfigService);
 	protected notificationService = inject(NotificationService);
 	protected lobbyService = inject(MeetingLobbyService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
+	protected captionsService = inject(MeetingCaptionsService);
+	protected soundService = inject(SoundService);
 	protected destroy$ = new Subject<void>();
 
 	// === LOBBY PHASE COMPUTED SIGNALS (when showLobby = true) ===
@@ -150,6 +146,9 @@ export class MeetingComponent implements OnInit {
 
 		// Clear meeting context when component is destroyed
 		this.meetingContextService.clearContext();
+
+		// Cleanup captions service
+		this.captionsService.destroy();
 	}
 
 	// async onRoomConnected() {
@@ -177,6 +176,14 @@ export class MeetingComponent implements OnInit {
 		// Store LiveKit room in context
 		this.meetingContextService.setLkRoom(lkRoom);
 
+		// Initialize captions service
+		this.captionsService.initialize(lkRoom, {
+			maxVisibleCaptions: 3,
+			finalCaptionDuration: 5000,
+			interimCaptionDuration: 3000,
+			showInterimTranscriptions: true
+		});
+
 		// Setup LK room event listeners
 		this.eventHandlerService.setupRoomListeners(lkRoom);
 	}
@@ -199,6 +206,12 @@ export class MeetingComponent implements OnInit {
 
 	async onViewRecordingsClicked() {
 		window.open(`/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
+	}
+
+	onParticipantConnected(event: any): void {
+		// Play joined sound
+		this.soundService.playParticipantJoinedSound();
+		this.eventHandlerService.onParticipantConnected(event);
 	}
 
 	/**

@@ -49,7 +49,7 @@
 		[showThemeSelector]="features().showThemeSelector"
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"
-		(onParticipantConnected)="eventHandlerService.onParticipantConnected($event)"
+		(onParticipantConnected)="onParticipantConnected($event)"
 		(onParticipantLeft)="onParticipantLeft($event)"
 		(onRecordingStartRequested)="eventHandlerService.onRecordingStartRequested($event)"
 		(onRecordingStopRequested)="eventHandlerService.onRecordingStopRequested($event)"

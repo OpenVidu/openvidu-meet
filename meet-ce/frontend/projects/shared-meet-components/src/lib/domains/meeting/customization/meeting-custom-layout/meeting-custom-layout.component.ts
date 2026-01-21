@@ -1,9 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ILogger, LoggerService, OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from 'openvidu-components-angular';
-import { HiddenParticipantsIndicatorComponent, ShareMeetingLinkComponent } from '../../components';
-import { CustomParticipantModel } from '../../models';
-import { MeetingContextService, MeetingLayoutService, MeetingService } from '../../services';
+import {
+	ILogger,
+	LoggerService,
+	OpenViduComponentsUiModule,
+	PanelService,
+	PanelType,
+	ParticipantModel
+} from 'openvidu-components-angular';
+import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
+import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
+import { CustomParticipantModel } from '../../models/custom-participant.model';
+import { MeetingCaptionsService } from '../../services/meeting-captions.service';
+import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingLayoutService } from '../../services/meeting-layout.service';
+import { MeetingService } from '../../services/meeting.service';
+import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.component';
 
 @Component({
 	selector: 'ov-meeting-custom-layout',
@@ -11,7 +23,8 @@ import { MeetingContextService, MeetingLayoutService, MeetingService } from '../
 		CommonModule,
 		OpenViduComponentsUiModule,
 		ShareMeetingLinkComponent,
-		HiddenParticipantsIndicatorComponent
+		HiddenParticipantsIndicatorComponent,
+		MeetingCaptionsComponent
 	],
 	templateUrl: './meeting-custom-layout.component.html',
 	styleUrl: './meeting-custom-layout.component.scss'
@@ -22,6 +35,7 @@ export class MeetingCustomLayoutComponent {
 	protected readonly meetingContextService = inject(MeetingContextService);
 	protected readonly meetingService = inject(MeetingService);
 	protected readonly panelService = inject(PanelService);
+	protected readonly captionsService = inject(MeetingCaptionsService);
 	protected readonly linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
@@ -35,6 +49,10 @@ export class MeetingCustomLayoutComponent {
 		const hasNoRemotes = this.meetingContextService.remoteParticipants().length === 0;
 		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
 	});
+
+	protected readonly shouldShowCaptions = computed(() => this.captionsService.areCaptionsEnabled());
+
+	protected readonly captions = computed(() => this.captionsService.captions());
 
 	protected readonly isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
 
@@ -97,39 +115,36 @@ export class MeetingCustomLayoutComponent {
 	}
 
 	private setupVisibleParticipantsUpdate(): void {
-		effect(
-			() => {
-				const allRemotes = this.meetingContextService.remoteParticipants();
+		effect(() => {
+			const allRemotes = this.meetingContextService.remoteParticipants();
 
-				if (!this.isSmartMosaicActive()) {
-					this._visibleRemoteParticipants.set(allRemotes);
-					return;
-				}
+			if (!this.isSmartMosaicActive()) {
+				this._visibleRemoteParticipants.set(allRemotes);
+				return;
+			}
 
-				const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
-				const availableIds = new Set(participantMap.keys());
-				const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+			const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
+			const availableIds = new Set(participantMap.keys());
+			const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
 
-				// Include screen sharers in the display list, even if they are not active speakers
-				const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
-				const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
+			// Include screen sharers in the display list, even if they are not active speakers
+			const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
+			const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
 
-				this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
+			this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
 
-				const visibleParticipants = this.displayedParticipantIds
-					.map((id) => participantMap.get(id))
-					.filter((p): p is CustomParticipantModel => p !== undefined);
+			const visibleParticipants = this.displayedParticipantIds
+				.map((id) => participantMap.get(id))
+				.filter((p): p is CustomParticipantModel => p !== undefined);
 
-				// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
-				// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
-				const proxiedParticipants = visibleParticipants.map((p) => {
-					const showCamera = targetIds.has(p.identity);
-					return this.getOrCreateVideoOnlyProxy(p, showCamera);
-				});
-				this._visibleRemoteParticipants.set(proxiedParticipants);
-			},
-			{ allowSignalWrites: true }
-		);
+			// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
+			// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
+			const proxiedParticipants = visibleParticipants.map((p) => {
+				const showCamera = targetIds.has(p.identity);
+				return this.getOrCreateVideoOnlyProxy(p, showCamera);
+			});
+			this._visibleRemoteParticipants.set(proxiedParticipants);
+		});
 	}
 
 	private getOrCreateVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {

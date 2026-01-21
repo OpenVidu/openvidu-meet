@@ -1,5 +1,9 @@
 @use '../../../../../../../../src/assets/styles/design-tokens';
 
+.main-container {
+	height: 100%;
+}
+
 .remote-participant {
 	height: -webkit-fill-available;
 	height: -moz-available;
@@ -8,9 +12,11 @@
 .container {
 	height: 100%;
 }
-.withCaptions {
-	height: calc(100% - var(--ov-captions-height, 250px)) !important;
+
+.withFooter {
+	height: calc(100% - var(--ov-footer-height, 250px)) !important;
 }
+
 .withMargin {
 	margin: 0px 5px;
 	max-height: calc(100% - 5px) !important;

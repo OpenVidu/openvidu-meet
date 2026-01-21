@@ -1,6 +1,17 @@
 import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { ParticipantModel, ParticipantProperties } from 'openvidu-components-angular';
 
+/**
+ * Interface for computed participant display properties
+ */
+export interface ParticipantDisplayProperties {
+	showModeratorBadge: boolean;
+	showModerationControls: boolean;
+	showMakeModeratorButton: boolean;
+	showUnmakeModeratorButton: boolean;
+	showKickButton: boolean;
+}
+
 // Represents a participant in the application.
 export class CustomParticipantModel extends ParticipantModel {
 	// Indicates the original role of the participant.

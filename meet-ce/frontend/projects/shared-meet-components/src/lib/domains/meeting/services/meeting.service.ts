@@ -27,6 +27,7 @@ export class MeetingService {
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 
+
 	/**
 	 * Ends a meeting by its room ID.
 	 *

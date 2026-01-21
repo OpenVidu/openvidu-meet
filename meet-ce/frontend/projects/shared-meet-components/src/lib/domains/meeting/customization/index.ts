@@ -1,3 +1,4 @@
+export * from './meeting-captions/meeting-captions.component';
 export * from './meeting-custom-layout/meeting-custom-layout.component';
 export * from './meeting-invite-panel/meeting-invite-panel.component';
 export * from './meeting-participant-item/meeting-participant-item.component';
