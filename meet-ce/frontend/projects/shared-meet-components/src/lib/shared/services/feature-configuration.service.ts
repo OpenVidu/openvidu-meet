@@ -3,8 +3,7 @@ import {
 	MeetAppearanceConfig,
 	MeetRoomConfig,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
-	TrackSource
+	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { ApplicationFeatures } from '../models/app.model';
@@ -121,24 +120,23 @@ export class FeatureConfigurationService {
 		if (permissions) {
 			// Only restrict if the feature is already enabled
 			if (features.showRecordingPanel) {
-				features.canRecordRoom = permissions.meet.canRecord;
-				features.canRetrieveRecordings = permissions.meet.canRetrieveRecordings;
+				features.canRecordRoom = permissions.canRecord;
+				features.canRetrieveRecordings = permissions.canRetrieveRecordings;
 			}
 			if (features.showChat) {
-				features.showChat = permissions.meet.canChat;
+				features.showChat = permissions.canReadChat;
+				// TODO: Handle canWriteChat permissions
 			}
 			if (features.showBackgrounds) {
-				features.showBackgrounds = permissions.meet.canChangeVirtualBackground;
+				features.showBackgrounds = permissions.canChangeVirtualBackground;
 			}
 
 			// Media features
-			const canPublish = permissions.livekit.canPublish;
-			const canPublishSources = permissions.livekit.canPublishSources ?? [];
-			features.videoEnabled = canPublish || canPublishSources.includes(TrackSource.CAMERA);
-			features.audioEnabled = canPublish || canPublishSources.includes(TrackSource.MICROPHONE);
+			features.videoEnabled = permissions.canPublishVideo;
+			features.audioEnabled = permissions.canPublishAudio;
+			features.showScreenShare = permissions.canShareScreen;
 			features.showCamera = features.videoEnabled;
 			features.showMicrophone = features.audioEnabled;
-			features.showScreenShare = canPublish || canPublishSources.includes(TrackSource.SCREEN_SHARE);
 		}
 
 		// Apply role-based configurations
