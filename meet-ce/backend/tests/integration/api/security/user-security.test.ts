@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { changePassword, loginAdminUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
 
@@ -18,18 +18,18 @@ describe('User API Security Tests', () => {
 		let adminAccessToken: string;
 
 		beforeAll(async () => {
-			adminAccessToken = await loginUser();
+			adminAccessToken = await loginAdminUser();
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/profile`)
+				.get(`${USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${USERS_PATH}/profile`);
+			const response = await request(app).get(`${USERS_PATH}/me`);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -43,7 +43,7 @@ describe('User API Security Tests', () => {
 		let adminAccessToken: string;
 
 		beforeAll(async () => {
-			adminAccessToken = await loginUser();
+			adminAccessToken = await loginAdminUser();
 		});
 
 		it('should succeed when user is authenticated as admin', async () => {

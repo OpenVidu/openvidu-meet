@@ -8,7 +8,7 @@ import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
-	loginUser,
+	loginAdminUser,
 	startTestServer,
 	updateParticipantMetadata
 } from '../../../helpers/request-helpers.js';
@@ -24,7 +24,7 @@ describe('Meeting API Security Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginUser();
+		adminAccessToken = await loginAdminUser();
 	});
 
 	beforeEach(async () => {
@@ -82,8 +82,9 @@ describe('Meeting API Security Tests', () => {
 		beforeEach(async () => {
 			const metadata: MeetRoomMemberTokenMetadata = {
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				role: MeetRoomMemberRole.SPEAKER,
-				permissions: getPermissions(roomData.room.roomId, MeetRoomMemberRole.SPEAKER, true, true).meet
+				roomId: roomData.room.roomId,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				effectivePermissions: getPermissions(MeetRoomMemberRole.SPEAKER)
 			};
 			await updateParticipantMetadata(roomData.room.roomId, PARTICIPANT_NAME, metadata);
 		});

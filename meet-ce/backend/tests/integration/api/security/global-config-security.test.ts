@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthType, MeetRoomThemeMode } from '@openvidu-meet/typings';
+import { MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { loginUser, restoreDefaultGlobalConfig, startTestServer } from '../../../helpers/request-helpers.js';
+import { loginAdminUser, restoreDefaultGlobalConfig, startTestServer } from '../../../helpers/request-helpers.js';
 
 const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
 
@@ -14,7 +14,7 @@ describe('Global Config API Security Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginUser();
+		adminAccessToken = await loginAdminUser();
 	});
 
 	describe('Update Webhook Config Tests', () => {
@@ -71,10 +71,8 @@ describe('Global Config API Security Tests', () => {
 	describe('Update Security Config Tests', () => {
 		const securityConfig = {
 			authentication: {
-				authMethod: {
-					type: AuthType.SINGLE_USER
-				},
-				authModeToAccessRoom: AuthMode.ALL_USERS
+				allowUserCreation: true,
+				oauthProviders: []
 			}
 		};
 
