@@ -1,40 +1,49 @@
 @if (meetingContextService.lkRoom()) {
-	<ov-layout [ovRemoteParticipants]="visibleRemoteParticipants()">
-		@if (shouldShowLinkOverlay()) {
-			<ng-container *ovLayoutAdditionalElements>
-				<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
-					<ov-share-meeting-link
-						class="main-share-meeting-link"
-						[title]="linkOverlayConfig.title"
-						[subtitle]="linkOverlayConfig.subtitle"
-						[titleSize]="linkOverlayConfig.titleSize"
-						[titleWeight]="linkOverlayConfig.titleWeight"
-						[meetingUrl]="meetingUrl()"
-						(copyClicked)="onCopyMeetingLinkClicked()"
-					></ov-share-meeting-link>
-				</div>
-			</ng-container>
-		} @else if (isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
-			<!-- Use bottom slot to position indicator at the end -->
-			<ng-container *ovLayoutAdditionalElements="'bottom'">
-				<div
-					[ngClass]="{
-						'OV_top-bar': showTopBarHiddenParticipantsIndicator(),
-						OV_last: !showTopBarHiddenParticipantsIndicator()
-					}"
-				>
-					<ov-hidden-participants-indicator
-						(clicked)="toggleParticipantsPanel()"
-						[count]="hiddenParticipantsCount()"
-						[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"
-						[hiddenParticipantNames]="hiddenParticipantNames()"
-					/>
-				</div>
-			</ng-container>
-		}
+	<div class="main-container" [ngClass]="{ withFooter: shouldShowCaptions() }">
+		<ov-layout
+			[ovRemoteParticipants]="visibleRemoteParticipants()"
+			[ngClass]="{ withFooter: shouldShowCaptions() }"
+		>
+			@if (shouldShowLinkOverlay()) {
+				<ng-container *ovLayoutAdditionalElements>
+					<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
+						<ov-share-meeting-link
+							class="main-share-meeting-link"
+							[title]="linkOverlayConfig.title"
+							[subtitle]="linkOverlayConfig.subtitle"
+							[titleSize]="linkOverlayConfig.titleSize"
+							[titleWeight]="linkOverlayConfig.titleWeight"
+							[meetingUrl]="meetingUrl()"
+							(copyClicked)="onCopyMeetingLinkClicked()"
+						></ov-share-meeting-link>
+					</div>
+				</ng-container>
+			} @else if (isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
+				<!-- Use bottom slot to position indicator at the end -->
+				<ng-container *ovLayoutAdditionalElements="'bottom'">
+					<div
+						[ngClass]="{
+							'OV_top-bar': showTopBarHiddenParticipantsIndicator(),
+							OV_last: !showTopBarHiddenParticipantsIndicator()
+						}"
+					>
+						<ov-hidden-participants-indicator
+							(clicked)="toggleParticipantsPanel()"
+							[count]="hiddenParticipantsCount()"
+							[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"
+							[hiddenParticipantNames]="hiddenParticipantNames()"
+						/>
+					</div>
+				</ng-container>
+			}
 
-		<ng-template #stream let-track>
-			<ov-stream [track]="track"></ov-stream>
-		</ng-template>
-	</ov-layout>
+			<ng-template #stream let-track>
+				<ov-stream [track]="track"></ov-stream>
+			</ng-template>
+		</ov-layout>
+	</div>
+	<!-- Live Captions Component -->
+	@if (shouldShowCaptions()) {
+		<ov-meeting-captions [captions]="captions()"></ov-meeting-captions>
+	}
 }

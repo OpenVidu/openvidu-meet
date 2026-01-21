@@ -20,6 +20,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { RoomMemberService } from '../../../rooms/services/room-member.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
@@ -76,6 +77,7 @@ export class MeetingComponent implements OnInit {
 	protected lobbyService = inject(MeetingLobbyService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
+	protected captionsService = inject(MeetingCaptionsService);
 	protected destroy$ = new Subject<void>();
 
 	// === LOBBY PHASE COMPUTED SIGNALS (when showLobby = true) ===
@@ -150,6 +152,9 @@ export class MeetingComponent implements OnInit {
 
 		// Clear meeting context when component is destroyed
 		this.meetingContextService.clearContext();
+
+		// Cleanup captions service
+		this.captionsService.destroy();
 	}
 
 	// async onRoomConnected() {
@@ -176,6 +181,14 @@ export class MeetingComponent implements OnInit {
 
 		// Store LiveKit room in context
 		this.meetingContextService.setLkRoom(lkRoom);
+
+		// Initialize captions service
+		this.captionsService.initialize(lkRoom, {
+			maxVisibleCaptions: 3,
+			finalCaptionDuration: 5000,
+			interimCaptionDuration: 3000,
+			showInterimTranscriptions: true
+		});
 
 		// Setup LK room event listeners
 		this.eventHandlerService.setupRoomListeners(lkRoom);

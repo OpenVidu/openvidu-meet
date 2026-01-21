@@ -1,0 +1,202 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// =============================================================================
+// CAPTIONS CONTAINER - Responsive to panel width changes
+// =============================================================================
+
+.captions-container {
+	pointer-events: none;
+	justify-content: center;
+	padding: 0px;
+	width: 100%;
+	height: var(--ov-footer-height, 250px) !important;
+	// Transition for smooth width changes when panel opens/closes
+	transition: padding 200ms ease-in-out;
+
+	@include design-tokens.ov-tablet-down {
+		bottom: 100px;
+	}
+
+	@include design-tokens.ov-mobile-down {
+		bottom: 90px;
+	}
+}
+
+// =============================================================================
+// CAPTIONS WRAPPER
+// =============================================================================
+
+.captions-wrapper {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center; // Center vertically when single caption
+	gap: 8px;
+	padding: 20px;
+	max-width: calc(100% - 40px);
+	width: calc(100% - 40px);
+	height: 100%;
+	margin: auto;
+
+	// CRITICAL: Fixed max-height to prevent overflow
+	// This is the total available space for ALL captions combined
+	max-height: 230px;
+	overflow: hidden; // Never allow scroll or overflow
+
+	// Wide screens: Limit width to prevent very long text lines
+	// Reduces eye movement required to follow captions
+	@media (min-width: 1400px) {
+		max-width: 900px;
+		padding: 20px 60px;
+	}
+
+	@media (min-width: 1800px) {
+		max-width: 1000px;
+		padding: 20px 100px;
+	}
+
+	@include design-tokens.ov-tablet-down {
+		max-width: calc(100% - 40px);
+		padding: 15px;
+	}
+
+	@include design-tokens.ov-mobile-down {
+		padding: 10px;
+	}
+
+	// When only one caption, it should fill available space and center
+	&.single-caption {
+		justify-content: center;
+
+		.caption-item {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+	}
+}
+
+.caption-item {
+	pointer-events: auto;
+	display: inline-block;
+	text-align: center;
+	max-width: 100%;
+	padding: 0;
+	font-family: var(--ov-meet-font-family);
+	transition:
+		opacity 200ms ease-in-out,
+		transform 200ms ease-in-out;
+
+	&.caption-entering {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	&.caption-active {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	&.caption-leaving {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	&.caption-interim .caption-text {
+		opacity: 0.85;
+	}
+}
+
+// =============================================================================
+// CAPTION TEXT CONTAINER - Scrollable wrapper with fixed height
+// =============================================================================
+
+.caption-text-container {
+	// CRITICAL: Fixed max-height with scroll to contain long monologues
+	max-height: 140px;
+	overflow-y: auto;
+	overflow-x: hidden;
+
+	// Hide scrollbar but keep functionality (desktop only)
+	scrollbar-width: none; // Firefox
+	-ms-overflow-style: none; // IE/Edge
+
+	&::-webkit-scrollbar {
+		display: none; // Chrome/Safari
+	}
+
+	// Responsive max-heights
+	@include design-tokens.ov-tablet-down {
+		max-height: 100px;
+	}
+
+	@include design-tokens.ov-mobile-down {
+		max-height: 100%;
+		// CRITICAL: Disable touch scroll on mobile to prevent accidental scrolling
+		overflow-y: hidden;
+		touch-action: none;
+		-webkit-overflow-scrolling: auto;
+	}
+}
+
+// =============================================================================
+// CAPTION SPEAKER NAME - Inline bold text (not separate element)
+// =============================================================================
+
+.caption-speaker {
+	display: inline;
+	font-weight: 400;
+	font-size: 16px;
+	margin-right: 6px;
+	font-style: italic;
+	// Inherits all other styles from .caption-text parent
+}
+
+
+.caption-text {
+	display: inline;
+	font-size: 20px;
+	font-weight: 500;
+	line-height: 1.5;
+	color: #ffffff;
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 4px 8px;
+	border-radius: 4px;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+	text-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.9),
+		0 0 8px rgba(0, 0, 0, 0.5);
+
+	// Ensure text wraps properly within the scrollable container
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	word-break: break-word;
+
+	@include design-tokens.ov-tablet-down {
+		font-size: 18px;
+		padding: 3px 7px;
+	}
+
+	@include design-tokens.ov-mobile-down {
+		font-size: 16px;
+		padding: 3px 6px;
+		line-height: 1.4;
+	}
+}
+
+// =============================================================================
+// REDUCED MOTION SUPPORT
+// =============================================================================
+
+@media (prefers-reduced-motion: reduce) {
+	.caption-item {
+		transition: opacity 50ms ease-in-out;
+
+		&.caption-entering,
+		&.caption-leaving {
+			transform: none;
+		}
+	}
+}

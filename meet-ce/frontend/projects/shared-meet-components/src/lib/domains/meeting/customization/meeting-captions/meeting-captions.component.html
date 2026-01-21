@@ -1,0 +1,23 @@
+<div class="captions-container">
+	<div class="captions-wrapper" [class.single-caption]="captions().length === 1">
+		@for (caption of captions(); track trackByCaption($index, caption)) {
+			<div
+				[ngClass]="getCaptionClasses(caption)"
+				[attr.data-caption-id]="caption.id"
+				role="region"
+				aria-live="polite"
+				[attr.aria-label]="'Caption from ' + caption.participantName"
+			>
+				<!-- Scrollable container for caption text -->
+				<div class="caption-text-container" #captionTextContainer>
+					<div class="caption-text" [class.caption-text-interim]="!caption.isFinal">
+						<span class="caption-speaker" [style.color]="caption.participantColor">
+							{{ caption.participantName }}:
+						</span>
+						{{ caption.text }}
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+</div>
