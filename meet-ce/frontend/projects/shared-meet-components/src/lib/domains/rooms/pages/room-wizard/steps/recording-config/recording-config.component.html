@@ -39,19 +39,6 @@
 							<p class="access-description">Choose who can access and view the recordings</p>
 						</div>
 					</div>
-
-					<mat-form-field appearance="outline" class="access-selector">
-						<mat-label>Who can access recordings</mat-label>
-						<mat-select formControlName="allowAccessTo">
-							@for (accessOption of recordingAccessOptions; track accessOption.value) {
-								<mat-option [value]="accessOption.value">
-									<div class="access-option">
-										<span class="access-desc">{{ accessOption.label }}</span>
-									</div>
-								</mat-option>
-							}
-						</mat-select>
-					</mat-form-field>
 				</div>
 			}
 		</form>

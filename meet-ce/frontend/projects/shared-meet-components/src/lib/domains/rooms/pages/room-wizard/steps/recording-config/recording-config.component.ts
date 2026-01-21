@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-import { MeetRecordingAccess, MeetRoomOptions } from '@openvidu-meet/typings';
+import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 import {
 	SelectableCardComponent,
@@ -14,11 +14,6 @@ import {
 	SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-
-interface RecordingAccessOption {
-	value: MeetRecordingAccess;
-	label: string;
-}
 
 @Component({
 	selector: 'ov-recording-config',
@@ -56,20 +51,6 @@ export class RecordingConfigComponent implements OnDestroy {
 			title: 'No Recording',
 			description: 'Room will not be recorded. Participants can join without recording concerns.',
 			icon: 'videocam_off'
-		}
-	];
-	recordingAccessOptions: RecordingAccessOption[] = [
-		{
-			value: MeetRecordingAccess.ADMIN,
-			label: 'Only Admin'
-		},
-		{
-			value: MeetRecordingAccess.ADMIN_MODERATOR,
-			label: 'Admin and Moderators'
-		},
-		{
-			value: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER,
-			label: 'Admin, Moderators and Speakers'
 		}
 	];
 

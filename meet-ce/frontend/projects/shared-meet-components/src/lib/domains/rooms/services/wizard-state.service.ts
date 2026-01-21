@@ -1,7 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import {
-	MeetRecordingAccess,
 	MeetRecordingLayout,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -14,8 +13,7 @@ import { WizardNavigationConfig, WizardStep } from '../models';
 const DEFAULT_CONFIG: MeetRoomConfig = {
 	recording: {
 		enabled: true,
-		layout: MeetRecordingLayout.GRID,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		layout: MeetRecordingLayout.GRID
 	},
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
@@ -159,8 +157,7 @@ export class RoomWizardStateService {
 				isActive: editMode, // Only active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled',
-					allowAccessTo: initialRoomOptions.config!.recording!.allowAccessTo
+					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled'
 				})
 			},
 			{
