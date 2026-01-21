@@ -217,36 +217,36 @@ export class MeetingEventHandlerService {
 	 * Updates feature config and refreshes room member token if needed.
 	 * Obtains roomId and roomSecret from MeetingContextService.
 	 */
-	private async handleRoomConfigUpdated(event: MeetRoomConfigUpdatedPayload): Promise<void> {
-		const { config } = event;
+	// private async handleRoomConfigUpdated(event: MeetRoomConfigUpdatedPayload): Promise<void> {
+	// 	const { config } = event;
 
-		// Update feature configuration
-		this.featureConfService.setRoomConfig(config);
+	// 	// Update feature configuration
+	// 	this.featureConfService.setRoomConfig(config);
 
-		// Refresh room member token if recording is enabled
-		if (config.recording.enabled) {
-			try {
-				const roomId = this.meetingContext.roomId();
-				const roomSecret = this.meetingContext.roomSecret();
-				const participantName = this.roomMemberService.getParticipantName();
-				const participantIdentity = this.roomMemberService.getParticipantIdentity();
+	// 	// Refresh room member token if recording is enabled
+	// 	if (config.recording.enabled) {
+	// 		try {
+	// 			const roomId = this.meetingContext.roomId();
+	// 			const roomSecret = this.meetingContext.roomSecret();
+	// 			const participantName = this.roomMemberService.getParticipantName();
+	// 			const participantIdentity = this.roomMemberService.getParticipantIdentity();
 
-				if (!roomId || !roomSecret) {
-					console.error('Room ID or secret not available for token refresh');
-					return;
-				}
+	// 			if (!roomId || !roomSecret) {
+	// 				console.error('Room ID or secret not available for token refresh');
+	// 				return;
+	// 			}
 
-				await this.roomMemberService.generateToken(roomId, {
-					secret: roomSecret,
-					grantJoinMeetingPermission: true,
-					participantName,
-					participantIdentity
-				});
-			} catch (error) {
-				console.error('Error refreshing room member token:', error);
-			}
-		}
-	}
+	// 			await this.roomMemberService.generateToken(roomId, {
+	// 				secret: roomSecret,
+	// 				grantJoinMeetingPermission: true,
+	// 				participantName,
+	// 				participantIdentity
+	// 			});
+	// 		} catch (error) {
+	// 			console.error('Error refreshing room member token:', error);
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Handles participant role updated event.
