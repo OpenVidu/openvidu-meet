@@ -82,7 +82,10 @@ export const MEET_ENV = {
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
-	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
+	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
+
+	// Agent Speech Processing configuration
+	AGENT_SPEECH_PROCESSING_NAME: process.env.MEET_AGENT_SPEECH_PROCESSING_NAME || '',
 };
 
 export function checkModuleEnabled() {

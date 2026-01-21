@@ -1,3 +1,4 @@
+import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
 import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
@@ -63,6 +64,18 @@ export class TokenService {
 
 		if (grants) {
 			at.addGrant(grants);
+		}
+
+		if (MEET_ENV.AGENT_SPEECH_PROCESSING_NAME) {
+
+			this.logger.debug('Adding speech processing agent dispatch to token', MEET_ENV.AGENT_SPEECH_PROCESSING_NAME);
+			at.roomConfig = new RoomConfiguration({
+				agents: [
+					new RoomAgentDispatch({
+						agentName: MEET_ENV.AGENT_SPEECH_PROCESSING_NAME
+					})
+				]
+			});
 		}
 
 		return await at.toJwt();
