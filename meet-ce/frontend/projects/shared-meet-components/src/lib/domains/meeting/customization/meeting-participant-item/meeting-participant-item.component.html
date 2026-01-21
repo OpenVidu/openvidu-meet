@@ -7,7 +7,7 @@
 			<ng-container *ovParticipantPanelParticipantBadge>
 				@if (ctx.showModeratorBadge) {
 					<span class="moderator-badge" [attr.id]="'moderator-badge-' + participantContext.sid">
-						<mat-icon [matTooltip]="moderatorBadgeTooltip" class="material-symbols-outlined">
+						<mat-icon [matTooltip]="'Moderator'" class="material-symbols-outlined">
 							shield_person
 						</mat-icon>
 					</span>
@@ -26,7 +26,7 @@
 						<button
 							mat-icon-button
 							(click)="onMakeModeratorClick(participantContext, localParticipant)"
-							[matTooltip]="makeModeratorTooltip"
+							[matTooltip]="'Make participant moderator'"
 							class="make-moderator-btn"
 							[attr.id]="'make-moderator-btn-' + participantContext.sid"
 						>
@@ -39,7 +39,7 @@
 						<button
 							mat-icon-button
 							(click)="onUnmakeModeratorClick(participantContext, localParticipant)"
-							[matTooltip]="unmakeModeratorTooltip"
+							[matTooltip]="'Unmake participant moderator'"
 							class="remove-moderator-btn"
 							[attr.id]="'remove-moderator-btn-' + participantContext.sid"
 						>
@@ -52,7 +52,7 @@
 						<button
 							mat-icon-button
 							(click)="onKickParticipantClick(participantContext, localParticipant)"
-							[matTooltip]="kickParticipantTooltip"
+							[matTooltip]="'Kick participant'"
 							class="force-disconnect-btn"
 							[attr.id]="'kick-participant-btn-' + participantContext.sid"
 						>

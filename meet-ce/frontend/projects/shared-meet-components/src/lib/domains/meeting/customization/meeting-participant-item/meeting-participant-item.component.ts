@@ -5,19 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
-import { CustomParticipantModel } from '../../models';
+import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
 import { MeetingService } from '../../services/meeting.service';
-
-/**
- * Interface for computed participant display properties
- */
-export interface ParticipantDisplayProperties {
-	showModeratorBadge: boolean;
-	showModerationControls: boolean;
-	showMakeModeratorButton: boolean;
-	showUnmakeModeratorButton: boolean;
-	showKickButton: boolean;
-}
 
 /**
  * Reusable component for displaying participant panel items with moderation controls.
@@ -36,12 +25,6 @@ export class MeetingParticipantItemComponent {
 	protected meetingService: MeetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
-
-	// Tooltips (could be made configurable in the future if needed)
-	protected readonly moderatorBadgeTooltip = 'Moderator';
-	protected readonly makeModeratorTooltip = 'Make participant moderator';
-	protected readonly unmakeModeratorTooltip = 'Unmake participant moderator';
-	protected readonly kickParticipantTooltip = 'Kick participant';
 
 	/**
 	 * Get or compute display properties for a participant
