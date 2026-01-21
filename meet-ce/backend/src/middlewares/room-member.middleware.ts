@@ -5,6 +5,9 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
+	errorRoomMemberNotFound,
+	errorRoomNotFound,
+	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
@@ -22,6 +25,19 @@ import { allowAnonymous, AuthValidator, tokenAndRoleValidator, withAuth } from '
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 	const memberId = req.params.memberId as string;
+
+	// Fail fast if room or member does not exist
+	try {
+		const roomMemberService = container.get(RoomMemberService);
+		const isMember = await roomMemberService.isRoomMember(roomId, memberId);
+
+		if (!isMember) {
+			const error = errorRoomMemberNotFound(roomId, memberId);
+			return rejectRequestFromMeetError(res, error);
+		}
+	} catch (error) {
+		return handleError(res, error, 'checking if member exists in room');
+	}
 
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
@@ -50,17 +66,21 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 			return next();
 		}
 
-		// Allow if user is room owner
-		const roomService = container.get(RoomService);
-		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+		try {
+			// Allow if user is room owner
+			const roomService = container.get(RoomService);
+			const isOwner = await roomService.isRoomOwner(roomId, user.userId);
 
-		if (isOwner) {
-			return next();
-		}
+			if (isOwner) {
+				return next();
+			}
 
-		if (user.userId === memberId) {
-			// If the user is trying to access their own member info, allow it
-			return next();
+			// Allow if user is accessing their own member info
+			if (user.userId === memberId) {
+				return next();
+			}
+		} catch (error) {
+			return handleError(res, error, 'checking room ownership');
 		}
 	}
 
@@ -96,43 +116,58 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 	const { roomId } = req.params;
 	const { secret } = req.body as MeetRoomMemberTokenOptions;
 
-	const requestSessionService = container.get(RequestSessionService);
 	const roomService = container.get(RoomService);
-	const roomMemberService = container.get(RoomMemberService);
+	const roomExists = await roomService.meetRoomExists(roomId);
 
+	// Fail fast if room does not exist
+	if (!roomExists) {
+		const error = errorRoomNotFound(roomId);
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
 
 	const forbiddenError = errorInsufficientPermissions();
 
 	// Scenario 1: Secret provided (Anonymous access or Member ID)
 	if (secret) {
-		// Check if secret matches any room access URL secret
-		const isValidSecret = await roomService.isValidRoomSecret(roomId, secret);
+		try {
+			// Check if secret matches any room access URL secret
+			const isValidSecret = await roomService.isValidRoomSecret(roomId, secret);
 
-		if (isValidSecret) {
-			return next();
+			if (isValidSecret) {
+				return next();
+			}
+
+			// Check if secret is a memberId
+			const roomMemberService = container.get(RoomMemberService);
+			const isMember = await roomMemberService.isRoomMember(roomId, secret);
+
+			if (isMember) {
+				return next();
+			}
+
+			const error = errorInvalidRoomSecret(roomId, secret);
+			return rejectRequestFromMeetError(res, error);
+		} catch (error) {
+			return handleError(res, error, 'checking room secret');
 		}
-
-		// Check if secret is a memberId
-		const isMember = await roomMemberService.isRoomMember(roomId, secret);
-
-		if (isMember) {
-			return next();
-		}
-
-		const error = errorInvalidRoomSecret(roomId, secret);
-		return rejectRequestFromMeetError(res, error);
 	}
 
 	// Scenario 2: No secret provided (Authenticated User)
 	if (user) {
-		const canAccess = await roomService.canUserAccessRoom(roomId, user);
+		try {
+			const canAccess = await roomService.canUserAccessRoom(roomId, user);
 
-		if (!canAccess) {
-			return rejectRequestFromMeetError(res, forbiddenError);
+			if (!canAccess) {
+				return rejectRequestFromMeetError(res, forbiddenError);
+			}
+
+			return next();
+		} catch (error) {
+			return handleError(res, error, 'checking user access to room');
 		}
-
-		return next();
 	}
 
 	return rejectRequestFromMeetError(res, forbiddenError);
@@ -146,6 +181,15 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 export const withRoomMemberPermission = (permission: keyof MeetRoomMemberPermissions) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const roomId = MeetRoomHelper.getRoomIdFromRequest(req);
+
+		const roomService = container.get(RoomService);
+		const roomExists = await roomService.meetRoomExists(roomId!);
+
+		// Fail fast if room does not exist
+		if (!roomExists) {
+			const error = errorRoomNotFound(roomId!);
+			return rejectRequestFromMeetError(res, error);
+		}
 
 		const requestSessionService = container.get(RequestSessionService);
 		const memberRoomId = requestSessionService.getRoomIdFromMember();

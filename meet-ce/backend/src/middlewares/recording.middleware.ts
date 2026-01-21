@@ -158,21 +158,25 @@ export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermiss
 				return next();
 			}
 
-			// Check if owner
-			const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+			try {
+				// Check if owner
+				const isOwner = await roomService.isRoomOwner(roomId, user.userId);
 
-			if (isOwner) {
-				return next();
+				if (isOwner) {
+					return next();
+				}
+
+				// Check if member with permissions
+				const member = await roomMemberService.getRoomMember(roomId, user.userId);
+
+				if (member && member.effectivePermissions[permission]) {
+					return next();
+				}
+
+				return rejectRequestFromMeetError(res, forbiddenError);
+			} catch (error) {
+				return handleError(res, error, 'checking user access to room');
 			}
-
-			// Check if member with permissions
-			const member = await roomMemberService.getRoomMember(roomId, user.userId);
-
-			if (member && member.effectivePermissions[permission]) {
-				return next();
-			}
-
-			return rejectRequestFromMeetError(res, forbiddenError);
 		}
 
 		// Otherwise, reject the request

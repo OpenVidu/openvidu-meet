@@ -1,7 +1,12 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { errorInsufficientPermissions, rejectRequestFromMeetError } from '../models/error.model.js';
+import {
+	errorInsufficientPermissions,
+	errorRoomNotFound,
+	handleError,
+	rejectRequestFromMeetError
+} from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 
@@ -14,6 +19,15 @@ import { RoomService } from '../services/room.service.js';
  */
 export const authorizeRoomAccess = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
+
+	const roomService = container.get(RoomService);
+	const roomExists = await roomService.meetRoomExists(roomId);
+
+	// Fail fast if room does not exist
+	if (!roomExists) {
+		const error = errorRoomNotFound(roomId);
+		return rejectRequestFromMeetError(res, error);
+	}
 
 	const requestSessionService = container.get(RequestSessionService);
 	const memberRoomId = requestSessionService.getRoomIdFromMember();
@@ -33,14 +47,17 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 
 	// Registered User
 	if (user) {
-		const roomService = container.get(RoomService);
-		const canAccess = await roomService.canUserAccessRoom(roomId, user);
+		try {
+			const canAccess = await roomService.canUserAccessRoom(roomId, user);
 
-		if (!canAccess) {
-			return rejectRequestFromMeetError(res, forbiddenError);
+			if (!canAccess) {
+				return rejectRequestFromMeetError(res, forbiddenError);
+			}
+
+			return next();
+		} catch (error) {
+			return handleError(res, error, 'checking user access to room');
 		}
-
-		return next();
 	}
 
 	// If there is no token and no user, reject the request
@@ -55,6 +72,15 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 export const authorizeRoomManagement = async (req: Request, res: Response, next: NextFunction) => {
 	const roomId = req.params.roomId as string;
 
+	const roomService = container.get(RoomService);
+	const roomExists = await roomService.meetRoomExists(roomId);
+
+	// Fail fast if room does not exist
+	if (!roomExists) {
+		const error = errorRoomNotFound(roomId);
+		return rejectRequestFromMeetError(res, error);
+	}
+
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
 
@@ -68,12 +94,15 @@ export const authorizeRoomManagement = async (req: Request, res: Response, next:
 		return next();
 	}
 
-	const roomService = container.get(RoomService);
-	const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+	try {
+		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
 
-	if (isOwner) {
-		return next();
+		if (isOwner) {
+			return next();
+		}
+
+		return rejectRequestFromMeetError(res, forbiddenError);
+	} catch (error) {
+		return handleError(res, error, 'checking room ownership');
 	}
-
-	return rejectRequestFromMeetError(res, forbiddenError);
 };
