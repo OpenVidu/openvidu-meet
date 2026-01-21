@@ -151,13 +151,13 @@ export class MeetingContextService {
 		effect(() => {
 			const localParticipant = this.ovParticipantService.localParticipantSignal();
 			this._localParticipant.set(localParticipant as CustomParticipantModel);
-		}, { allowSignalWrites: true });
+		});
 
 		// Sync remote participants signal
 		effect(() => {
 			const remoteParticipants = this.ovParticipantService.remoteParticipantsSignal();
 			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
-		}, { allowSignalWrites: true });
+		});
 	}
 
 	/**

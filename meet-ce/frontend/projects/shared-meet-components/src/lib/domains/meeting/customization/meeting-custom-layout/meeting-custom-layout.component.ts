@@ -115,39 +115,36 @@ export class MeetingCustomLayoutComponent {
 	}
 
 	private setupVisibleParticipantsUpdate(): void {
-		effect(
-			() => {
-				const allRemotes = this.meetingContextService.remoteParticipants();
+		effect(() => {
+			const allRemotes = this.meetingContextService.remoteParticipants();
 
-				if (!this.isSmartMosaicActive()) {
-					this._visibleRemoteParticipants.set(allRemotes);
-					return;
-				}
+			if (!this.isSmartMosaicActive()) {
+				this._visibleRemoteParticipants.set(allRemotes);
+				return;
+			}
 
-				const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
-				const availableIds = new Set(participantMap.keys());
-				const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+			const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
+			const availableIds = new Set(participantMap.keys());
+			const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
 
-				// Include screen sharers in the display list, even if they are not active speakers
-				const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
-				const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
+			// Include screen sharers in the display list, even if they are not active speakers
+			const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
+			const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
 
-				this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
+			this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
 
-				const visibleParticipants = this.displayedParticipantIds
-					.map((id) => participantMap.get(id))
-					.filter((p): p is CustomParticipantModel => p !== undefined);
+			const visibleParticipants = this.displayedParticipantIds
+				.map((id) => participantMap.get(id))
+				.filter((p): p is CustomParticipantModel => p !== undefined);
 
-				// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
-				// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
-				const proxiedParticipants = visibleParticipants.map((p) => {
-					const showCamera = targetIds.has(p.identity);
-					return this.getOrCreateVideoOnlyProxy(p, showCamera);
-				});
-				this._visibleRemoteParticipants.set(proxiedParticipants);
-			},
-			{ allowSignalWrites: true }
-		);
+			// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
+			// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
+			const proxiedParticipants = visibleParticipants.map((p) => {
+				const showCamera = targetIds.has(p.identity);
+				return this.getOrCreateVideoOnlyProxy(p, showCamera);
+			});
+			this._visibleRemoteParticipants.set(proxiedParticipants);
+		});
 	}
 
 	private getOrCreateVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
