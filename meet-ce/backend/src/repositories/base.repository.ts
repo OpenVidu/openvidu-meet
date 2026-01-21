@@ -228,20 +228,29 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	/**
 	 * Deletes multiple documents matching the given filter.
 	 * @param filter - MongoDB query filter
-	 * @throws Error if no documents were found or deleted
+	 * @param failIfEmpty - Whether to throw error if no documents are found (default: true)
+	 * @throws Error if no documents were found or deleted (only when failIfEmpty is true)
 	 */
-	protected async deleteMany(filter: FilterQuery<TDocument> = {}): Promise<void> {
+	protected async deleteMany(filter: FilterQuery<TDocument> = {}, failIfEmpty = true): Promise<void> {
 		try {
 			const result = await this.model.deleteMany(filter).exec();
 			const deletedCount = result.deletedCount || 0;
 
 			if (deletedCount === 0) {
-				this.logger.error('No documents found to delete with filter:', filter);
-				throw new Error('No documents found for deletion');
+				if (failIfEmpty) {
+					this.logger.error('No documents found to delete with filter:', filter);
+					throw new Error('No documents found for deletion');
+				} else {
+					this.logger.debug('No documents found to delete with filter:', filter);
+				}
+			} else {
+				this.logger.debug(`Deleted ${deletedCount} documents`);
+			}
+		} catch (error) {
+			if (error instanceof Error && error.message === 'No documents found for deletion') {
+				throw error;
 			}
 
-			this.logger.debug(`Deleted ${deletedCount} documents`);
-		} catch (error) {
 			this.logger.error('Error deleting documents:', error);
 			throw error;
 		}
