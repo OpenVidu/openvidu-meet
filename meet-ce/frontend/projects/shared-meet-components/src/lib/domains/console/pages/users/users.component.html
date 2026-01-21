@@ -1,12 +1,10 @@
 <div class="ov-page-container ov-mb-xxl">
 	<div class="page-header">
 		<div class="title">
-			<mat-icon class="material-symbols-outlined ov-users-permissions">passkey</mat-icon>
-			<h1>Users & Permissions</h1>
+			<mat-icon class="material-symbols-outlined ov-users">group</mat-icon>
+			<h1>Users</h1>
 		</div>
-		<p class="subtitle">
-			Manage who can access your video meeting rooms and control their permissions.
-		</p>
+		<p class="subtitle">Manage your users, control access, and register new accounts.</p>
 	</div>
 
 	@if (isLoading()) {
@@ -80,8 +78,8 @@
 							<div class="form-field-header">
 								<h3>Administrator Password</h3>
 								<p class="field-description">
-									Update your administrator password to keep your account secure.
-									We recommend using a strong, unique password.
+									Update your administrator password to keep your account secure. We recommend using a
+									strong, unique password.
 								</p>
 							</div>
 
@@ -139,7 +137,10 @@
 									>
 										<mat-icon>{{ showNewPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
 									</button>
-									<mat-hint>Minimum 5 characters. We recommend using letters, numbers, and symbols</mat-hint>
+									<mat-hint
+										>Minimum 5 characters. We recommend using letters, numbers, and
+										symbols</mat-hint
+									>
 									@if (getNewPasswordError()) {
 										<mat-error>{{ getNewPasswordError() }}</mat-error>
 									}
@@ -187,50 +188,6 @@
 					</button>
 				</mat-card-actions>
 			</mat-card>
-
-			<!-- Access & Permissions Section -->
-			<!-- <mat-card class="section-card access-section">
-				<mat-card-header>
-					<div mat-card-avatar>
-						<mat-icon class="section-icon">security</mat-icon>
-					</div>
-					<mat-card-title>Access & Permissions</mat-card-title>
-				</mat-card-header>
-
-				<mat-divider class="section-divider"></mat-divider>
-
-				<mat-card-content>
-					<form [formGroup]="accessSettingsForm" (ngSubmit)="onSaveAccessSettings()"> -->
-			<!-- Authentication for joining room -->
-			<!-- <div class="form-section">
-							<div class="form-field-header">
-								<h3>Authentication for joining room</h3>
-							</div>
-							<p class="field-description">Choose which users must authenticate for joining room.</p>
-
-							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="auth-select-field">
-								<mat-label>Select...</mat-label>
-								<mat-select formControlName="authModeToAccessRoom">
-									@for (option of authModeOptions; track option.value) {
-										<mat-option [value]="option.value">{{ option.label }}</mat-option>
-									}
-								</mat-select>
-							</mat-form-field>
-						</div>
-					</form>
-				</mat-card-content>
-				<mat-card-actions>
-					<button
-						mat-button
-						type="submit"
-						(click)="onSaveAccessSettings()"
-						[disabled]="!hasAccessSettingsChanges()"
-						class="primary-button"
-					>
-						Save configuration
-					</button>
-				</mat-card-actions>
-			</mat-card> -->
 		</div>
 	}
 </div>

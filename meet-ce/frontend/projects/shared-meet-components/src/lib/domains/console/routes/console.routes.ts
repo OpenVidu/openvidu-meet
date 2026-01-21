@@ -25,6 +25,19 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 	...recordingsConsoleRoutes,
 	{
 		route: {
+			path: 'users',
+			loadComponent: () => import('../pages/users/users.component').then((m) => m.UsersComponent)
+		},
+		navMetadata: {
+			label: 'Users',
+			route: 'users',
+			icon: 'group',
+			iconClass: 'ov-users material-symbols-outlined',
+			order: 4
+		}
+	},
+	{
+		route: {
 			path: 'embedded',
 			loadComponent: () => import('../pages/embedded/embedded.component').then((m) => m.EmbeddedComponent)
 		},
@@ -33,20 +46,6 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 			route: 'embedded',
 			icon: 'code_blocks',
 			iconClass: 'material-symbols-outlined ov-developer-icon',
-			order: 4
-		}
-	},
-	{
-		route: {
-			path: 'users-permissions',
-			loadComponent: () =>
-				import('../pages/users-permissions/users-permissions.component').then((m) => m.UsersPermissionsComponent)
-		},
-		navMetadata: {
-			label: 'Users & Permissions',
-			route: 'users-permissions',
-			icon: 'passkey',
-			iconClass: 'ov-users-permissions material-symbols-outlined',
 			order: 5
 		}
 	},
