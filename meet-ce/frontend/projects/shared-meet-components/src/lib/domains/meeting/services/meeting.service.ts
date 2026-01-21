@@ -27,14 +27,6 @@ export class MeetingService {
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 
-	/**
-	 * Plays a sound to indicate that a participant has joined the meeting.
-	 */
-	playParticipantJoinedSound(): void {
-		const audio = new Audio('/assets/sounds/participant-joined.mp3');
-		audio.volume = 0.5;
-		audio.play();
-	}
 
 	/**
 	 * Ends a meeting by its room ID.
