@@ -205,8 +205,8 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private openRoom(room: MeetRoom) {
-		window.open(room.moderatorUrl, '_blank');
+	private openRoom({ accessUrl }: MeetRoom) {
+		window.open(accessUrl, '_blank');
 	}
 
 	private async editRoomConfig(room: MeetRoom) {
@@ -218,13 +218,13 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private copyModeratorLink(room: MeetRoom) {
-		this.clipboard.copy(room.moderatorUrl);
+	private copyModeratorLink({ accessUrl }: MeetRoom) {
+		this.clipboard.copy(accessUrl);
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	private copySpeakerLink(room: MeetRoom) {
-		this.clipboard.copy(room.speakerUrl);
+	private copySpeakerLink({ accessUrl }: MeetRoom) {
+		this.clipboard.copy(accessUrl);
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 

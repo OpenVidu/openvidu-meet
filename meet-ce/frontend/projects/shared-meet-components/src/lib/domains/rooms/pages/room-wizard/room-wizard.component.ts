@@ -131,10 +131,10 @@ export class RoomWizardComponent implements OnInit {
 	async createRoomBasic(roomName?: string) {
 		try {
 			// Create room with basic config including e2ee: false (default settings)
-			const { moderatorUrl } = await this.roomService.createRoom({ roomName });
+			const { accessUrl } = await this.roomService.createRoom({ roomName });
 
 			// Extract the path and query parameters from the moderator URL and navigate to it
-			const url = new URL(moderatorUrl);
+			const url = new URL(accessUrl);
 			const pathWithParams = url.pathname + url.search + url.hash;
 			await this.navigationService.redirectTo(pathWithParams);
 		} catch (error) {
@@ -162,10 +162,10 @@ export class RoomWizardComponent implements OnInit {
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
-				const { moderatorUrl } = await this.roomService.createRoom(roomOptions);
+				const { accessUrl } = await this.roomService.createRoom(roomOptions);
 
 				// Extract the path and query parameters from the moderator URL and navigate to it
-				const url = new URL(moderatorUrl);
+				const url = new URL(accessUrl);
 				const pathWithParams = url.pathname + url.search + url.hash;
 				await this.navigationService.redirectTo(pathWithParams);
 			}
