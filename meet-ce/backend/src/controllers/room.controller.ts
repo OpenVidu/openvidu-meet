@@ -55,7 +55,7 @@ export const getRoom = async (req: Request, res: Response) => {
 		logger.verbose(`Getting room '${roomId}'`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId, fields);
+		const room = await roomService.getMeetRoom(roomId, fields, true);
 
 		return res.status(200).json(room);
 	} catch (error) {

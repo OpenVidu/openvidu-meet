@@ -370,9 +370,11 @@ export class RoomService {
 	 * Retrieves an OpenVidu room by its name.
 	 *
 	 * @param roomId - The name of the room to retrieve.
+	 * @param fields - Optional fields to retrieve from the room.
+	 * @param checkPermissions - Whether to check permissions and remove sensitive properties. Defaults to false.
 	 * @returns A promise that resolves to an {@link MeetRoom} object.
 	 */
-	async getMeetRoom(roomId: string, fields?: string): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, fields?: string, checkPermissions = false): Promise<MeetRoom> {
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
@@ -380,11 +382,13 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		// Remove anonymous access info if the authenticated room member does not have permission to share access links
-		const permissions = await this.getAuthenticatedRoomMemberPermissions(roomId);
+		if (checkPermissions) {
+			// Remove anonymous access info if the authenticated room member does not have permission to share access links
+			const permissions = await this.getAuthenticatedRoomMemberPermissions(roomId);
 
-		if (room.anonymous && !permissions.canShareAccessLinks) {
-			delete (room as Partial<MeetRoom>).anonymous;
+			if (room.anonymous && !permissions.canShareAccessLinks) {
+				delete (room as Partial<MeetRoom>).anonymous;
+			}
 		}
 
 		return room;
