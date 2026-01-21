@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
 	LeftEventReason,
 	MeetParticipantRoleUpdatedPayload,
-	MeetRoomConfigUpdatedPayload,
+	MeetRoomMemberRole,
 	MeetSignalType,
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
@@ -20,7 +20,9 @@ import {
 } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { NotificationService } from '../../../shared/services/notification.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { SoundService } from '../../../shared/services/sound.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberService } from '../../rooms/services/room-member.service';
@@ -43,6 +45,8 @@ export class MeetingEventHandlerService {
 	protected tokenStorageService = inject(TokenStorageService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);
 	protected navigationService = inject(NavigationService);
+	protected notificationService = inject(NotificationService);
+	protected soundService = inject(SoundService);
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -93,6 +97,7 @@ export class MeetingEventHandlerService {
 
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
 							await this.handleParticipantRoleUpdated(event);
+							this.showParticipantRoleUpdatedNotification(event);
 							break;
 					}
 				} catch (error) {
@@ -291,6 +296,14 @@ export class MeetingEventHandlerService {
 				this.meetingContext.incrementParticipantsVersion();
 			}
 		}
+	}
+
+	private showParticipantRoleUpdatedNotification(event: MeetParticipantRoleUpdatedPayload): void {
+		const { newRole } = event as MeetParticipantRoleUpdatedPayload;
+		this.notificationService.showSnackbar(`You have been assigned the role of ${newRole.toUpperCase()}`);
+		newRole === MeetRoomMemberRole.MODERATOR
+			? this.soundService.playParticipantRoleUpgradedSound()
+			: this.soundService.playParticipantRoleDowngradedSound();
 	}
 
 	/**
