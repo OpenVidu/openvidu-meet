@@ -808,10 +808,11 @@ export class RoomService {
 	 * @param roomId - The ID of the room
 	 * @param userId - The ID of the user
 	 * @returns A promise that resolves to true if the user is the owner, false otherwise
+	 * @throws Error if room not found
 	 */
 	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-		return room?.owner === userId;
+		const room = await this.getMeetRoom(roomId);
+		return room.owner === userId;
 	}
 
 	/**
@@ -820,12 +821,10 @@ export class RoomService {
 	 * @param roomId - The ID of the room
 	 * @param secret - The secret to validate
 	 * @returns A promise that resolves to true if the secret is valid, false otherwise
+	 * @throws Error if room not found
 	 */
 	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-
-		if (!room) return false;
-
+		const room = await this.getMeetRoom(roomId);
 		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 		return secret === moderatorSecret || secret === speakerSecret;
 	}
@@ -835,9 +834,9 @@ export class RoomService {
 	 *
 	 * - If there's no authenticated user nor room member token, returns all permissions.
 	 *   This is necessary for methods invoked by system processes (e.g., room auto-deletion).
+	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a registered room member, their permissions are obtained from their room member info.
-	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
 	 *
 	 * @param roomId The ID of the room.
 	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
@@ -849,6 +848,12 @@ export class RoomService {
 
 		if (!user && !memberRoomId) {
 			return roomMemberService.getAllPermissions();
+		}
+
+		// Room member token
+		if (memberRoomId === roomId) {
+			const permissions = this.requestSessionService.getRoomMemberPermissions();
+			return permissions!;
 		}
 
 		// Registered user
@@ -868,12 +873,6 @@ export class RoomService {
 			}
 		}
 
-		// Room member token
-		if (memberRoomId === roomId) {
-			const permissions = this.requestSessionService.getRoomMemberPermissions();
-			return permissions!;
-		}
-
 		return roomMemberService.getNoPermissions();
 	}
 
@@ -883,17 +882,26 @@ export class RoomService {
 	 * @param roomId The ID of the room to check access for.
 	 * @param user The user object containing user details and role.
 	 * @returns A promise that resolves to true if the user can access the room, false otherwise.
+	 * @throws Error if room not found
 	 */
 	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
+		// Verify room exists first (throws 404 if not found)
+		const room = await this.getMeetRoom(roomId);
+
 		if (user.role === MeetUserRole.ADMIN) {
 			// Admins can access all rooms
 			return true;
 		}
 
 		// Users can access rooms they own or are members of
-		const isOwner = await this.isRoomOwner(roomId, user.userId);
+		const isOwner = room.owner === user.userId;
+
+		if (isOwner) {
+			return true;
+		}
+
 		const roomMemberService = await this.getRoomMemberService();
 		const isMember = await roomMemberService.isRoomMember(roomId, user.userId);
-		return isOwner || isMember;
+		return isMember;
 	}
 }

@@ -299,13 +299,22 @@ export class RecordingService {
 				}
 			} else {
 				// Check room member permissions for each recording if no roomId filter is applied
-				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(recRoomId);
+				try {
+					const permissions = await roomService.getAuthenticatedRoomMemberPermissions(recRoomId);
 
-				if (!permissions.canDeleteRecordings) {
-					this.logger.warn(`Insufficient permissions to delete recording '${recordingId}'`);
+					if (!permissions.canDeleteRecordings) {
+						this.logger.warn(`Insufficient permissions to delete recording '${recordingId}'`);
+						failedRecordings.add({
+							recordingId,
+							error: `Insufficient permissions to delete recording '${recordingId}'`
+						});
+						continue;
+					}
+				} catch (error) {
+					this.logger.error(`Error checking permissions for recording '${recordingId}': ${error}`);
 					failedRecordings.add({
 						recordingId,
-						error: `Insufficient permissions to delete recording '${recordingId}'`
+						error: `Room associated with recording '${recordingId}' not found`
 					});
 					continue;
 				}

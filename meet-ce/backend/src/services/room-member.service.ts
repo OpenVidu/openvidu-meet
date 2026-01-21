@@ -123,8 +123,11 @@ export class RoomMemberService {
 	 * @param roomId - The ID of the room
 	 * @param memberId - The ID of the member
 	 * @returns A promise that resolves to true if the user is a member, false otherwise
+	 * @throws Error if room not found
 	 */
 	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
+		// Verify room exists first
+		await this.roomService.getMeetRoom(roomId);
 		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
 		return !!member;
 	}
@@ -487,7 +490,7 @@ export class RoomMemberService {
 			}
 		}
 
-		const livekitPermissions = await this.getLiveKitPermissions(roomId, effectivePermissions);
+		const livekitPermissions = this.getLiveKitPermissions(roomId, effectivePermissions);
 		const tokenMetadata: MeetRoomMemberTokenMetadata = {
 			livekitUrl: MEET_ENV.LIVEKIT_URL,
 			roomId,
@@ -539,6 +542,7 @@ export class RoomMemberService {
 	 * @param roomId - The unique identifier of the room to check
 	 * @param secret - The secret to validate against the room's moderator and speaker secrets
 	 * @returns A promise that resolves to the room member role (MODERATOR or SPEAKER) if the secret is valid
+	 * @throws Error if room not found
 	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
@@ -606,10 +610,7 @@ export class RoomMemberService {
 	 * @param roomId - The ID of the room
 	 * @returns The LiveKit permissions for the room member
 	 */
-	protected async getLiveKitPermissions(
-		roomId: string,
-		permissions: MeetRoomMemberPermissions
-	): Promise<LiveKitPermissions> {
+	protected getLiveKitPermissions(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
 		const canPublishSources: TrackSource[] = [];
 
 		if (permissions.canPublishAudio) {
