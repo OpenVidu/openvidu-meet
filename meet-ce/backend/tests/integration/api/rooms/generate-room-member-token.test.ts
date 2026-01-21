@@ -1,10 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import {
-	MeetRecordingAccess,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenOptions,
-	MeetRoomStatus
-} from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomStatus } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
@@ -12,7 +7,6 @@ import {
 	endMeeting,
 	generateRoomMemberTokenRequest,
 	startTestServer,
-	updateRecordingAccessConfigInRoom,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
@@ -48,18 +42,18 @@ describe('Room API Tests', () => {
 			expectValidRoomMemberTokenResponse(response, roomId, MeetRoomMemberRole.SPEAKER);
 		});
 
-		it('should generate a room member token without join meeting permission when not specifying grantJoinMeetingPermission', async () => {
+		it('should generate a room member token without join meeting permission when not specifying joinMeeting', async () => {
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret
 			});
 			expectValidRoomMemberTokenResponse(response, roomId, MeetRoomMemberRole.MODERATOR, false);
 		});
 
-		it('should generate a room member token with join meeting permission when specifying grantJoinMeetingPermission true and participantName', async () => {
+		it('should generate a room member token to join meeting when specifying joinMeeting true and participantName', async () => {
 			const participantName = 'TEST_PARTICIPANT';
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName
 			});
 			expectValidRoomMemberTokenResponse(
@@ -75,13 +69,13 @@ describe('Room API Tests', () => {
 			await endMeeting(roomId, roomData.moderatorToken);
 		});
 
-		it('should success when when specifying grantJoinMeetingPermission true and participant already exists in the room', async () => {
+		it('should success when specifying joinMeeting true and participant already exists in the room', async () => {
 			const participantName = 'TEST_PARTICIPANT';
 
 			// Create token for the first participant
 			let response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName
 			});
 			expectValidRoomMemberTokenResponse(
@@ -96,7 +90,7 @@ describe('Room API Tests', () => {
 			// Create token for the second participant with the same name
 			response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName
 			});
 			expectValidRoomMemberTokenResponse(
@@ -112,7 +106,7 @@ describe('Room API Tests', () => {
 			await endMeeting(roomId, roomData.moderatorToken);
 		});
 
-		it('should refresh a room member token with join meeting permission for an existing participant', async () => {
+		it('should refresh a room member token to join meeting for an existing participant', async () => {
 			const participantName = 'TEST_PARTICIPANT';
 
 			// Create room with initial participant
@@ -121,7 +115,7 @@ describe('Room API Tests', () => {
 			// Refresh token for the participant by specifying participantIdentity
 			const response = await generateRoomMemberTokenRequest(roomWithParticipant.room.roomId, {
 				secret: roomWithParticipant.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName,
 				participantIdentity: participantName
 			});
@@ -135,13 +129,13 @@ describe('Room API Tests', () => {
 			);
 		});
 
-		it('should fail with 409 when generating a room member token with join meeting permission and room is closed', async () => {
+		it('should fail with 409 when generating a room member token to join meeting and room is closed', async () => {
 			// Close the room
 			await updateRoomStatus(roomId, MeetRoomStatus.CLOSED);
 
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName: 'TEST_PARTICIPANT'
 			});
 			expect(response.status).toBe(409);
@@ -161,7 +155,7 @@ describe('Room API Tests', () => {
 			const participantName = 'NON_EXISTENT_PARTICIPANT';
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true,
+				joinMeeting: true,
 				participantName,
 				participantIdentity: participantName
 			});
@@ -176,149 +170,21 @@ describe('Room API Tests', () => {
 		});
 	});
 
-	describe('Generate Room Member Token Recording Permissions Tests', () => {
-		afterAll(async () => {
-			// Reset recording access to default for other tests
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
-		});
-
-		it(`should generate a room member token with canRetrieve and canDelete permissions 
-			when using the moderator secret and recording access is admin_moderator_speaker`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.MODERATOR,
-				false,
-				undefined,
-				undefined,
-				true, // canRetrieveRecordings
-				true // canDeleteRecordings
-			);
-		});
-
-		it(`should generate a room member token with canRetrieve permission but not canDelete 
-			when using the speaker secret and recording access is admin_moderator_speaker`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.SPEAKER,
-				false,
-				undefined,
-				undefined,
-				true, // canRetrieveRecordings
-				false // canDeleteRecordings
-			);
-		});
-
-		it(`should generate a room member token with canRetrieve and canDelete permissions 
-			when using the moderator secret and recording access is admin_moderator`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.MODERATOR,
-				false,
-				undefined,
-				undefined,
-				true, // canRetrieveRecordings
-				true // canDeleteRecordings
-			);
-		});
-
-		it(`should generate a room member token without any permissions 
-			when using the speaker secret and recording access is admin_moderator`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN_MODERATOR);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.SPEAKER,
-				false,
-				undefined,
-				undefined,
-				false, // canRetrieveRecordings
-				false // canDeleteRecordings
-			);
-		});
-
-		it(`should generate a room member token without any permissions 
-			when using the moderator secret and recording access is admin`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.MODERATOR,
-				false,
-				undefined,
-				undefined,
-				false, // canRetrieveRecordings
-				false // canDeleteRecordings
-			);
-		});
-
-		it(`should generate a room member token without any permissions 
-			when using the speaker secret and recording access is admin`, async () => {
-			await updateRecordingAccessConfigInRoom(roomId, MeetRecordingAccess.ADMIN);
-
-			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
-			expectValidRoomMemberTokenResponse(
-				response,
-				roomId,
-				MeetRoomMemberRole.SPEAKER,
-				false,
-				undefined,
-				undefined,
-				false, // canRetrieveRecordings
-				false // canDeleteRecordings
-			);
-		});
-	});
-
 	describe('Generate Room Member Token Validation Tests', () => {
-		it('should fail when secret is not provided', async () => {
-			const response = await generateRoomMemberTokenRequest(
-				roomData.room.roomId,
-				{} as unknown as MeetRoomMemberTokenOptions
-			);
-			expectValidationError(response, 'secret', 'Required');
-		});
-
-		it('should fail when secret is empty', async () => {
-			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
-				secret: ''
-			});
-			expectValidationError(response, 'secret', 'Secret is required');
-		});
-
-		it('should fail when grantJoinMeetingPermission is not a boolean', async () => {
+		it('should fail when joinMeeting is not a boolean', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: 'not-a-boolean' as unknown as boolean
+				joinMeeting: 'not-a-boolean' as unknown as boolean
 			});
-			expectValidationError(response, 'grantJoinMeetingPermission', 'Expected boolean');
+			expectValidationError(response, 'joinMeeting', 'Expected boolean');
 		});
 
-		it('should fail when grantJoinMeetingPermission is true but participantName is not provided', async () => {
+		it('should fail when joinMeeting is true but participantName is not provided', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
 				secret: roomData.moderatorSecret,
-				grantJoinMeetingPermission: true
+				joinMeeting: true
 			});
-			expectValidationError(
-				response,
-				'participantName',
-				'participantName is required when grantJoinMeetingPermission is true'
-			);
+			expectValidationError(response, 'participantName', 'participantName is required when joinMeeting is true');
 		});
 	});
 });

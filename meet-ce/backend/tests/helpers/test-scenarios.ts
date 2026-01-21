@@ -37,8 +37,8 @@ export const setupSingleRoom = async (
 	// Extract the room secrets and generate room member tokens
 	const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 	const [moderatorToken, speakerToken] = await Promise.all([
-		generateRoomMemberToken(room.roomId, { secret: moderatorSecret, grantJoinMeetingPermission: false }),
-		generateRoomMemberToken(room.roomId, { secret: speakerSecret, grantJoinMeetingPermission: false })
+		generateRoomMemberToken(room.roomId, { secret: moderatorSecret, joinMeeting: false }),
+		generateRoomMemberToken(room.roomId, { secret: speakerSecret, joinMeeting: false })
 	]);
 
 	// Join participant if needed

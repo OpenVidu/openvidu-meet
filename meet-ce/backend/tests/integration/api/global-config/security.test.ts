@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthType, SecurityConfig } from '@openvidu-meet/typings';
+import { SecurityConfig } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	getSecurityConfig,
@@ -19,12 +19,10 @@ describe('Security Config API Tests', () => {
 
 	describe('Update security config', () => {
 		it('should update security config with valid complete data', async () => {
-			const validConfig = {
+			const validConfig: SecurityConfig = {
 				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.ALL_USERS
+					allowUserCreation: true,
+					oauthProviders: []
 				}
 			};
 			let response = await updateSecurityConfig(validConfig);
@@ -39,75 +37,57 @@ describe('Security Config API Tests', () => {
 	});
 
 	describe('Update security config validation', () => {
-		it('should reject when authModeToAccessRoom is not a valid enum value', async () => {
+		it('should reject when allowUserCreation is not a boolean', async () => {
 			const response = await updateSecurityConfig({
 				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: 'invalid'
+					allowUserCreation: 'invalid'
 				}
 			} as unknown as SecurityConfig);
-
-			expectValidationError(
-				response,
-				'authentication.authModeToAccessRoom',
-				"Invalid enum value. Expected 'none' | 'moderators_only' | 'all_users', received 'invalid'"
-			);
+			expectValidationError(response, 'authentication.allowUserCreation', 'Expected boolean, received string');
 		});
 
-		it('should reject when authType is not a valid enum value', async () => {
+		it('should reject when oauthProviders is not an array', async () => {
 			const response = await updateSecurityConfig({
 				authentication: {
-					authMethod: {
-						type: 'invalid'
-					},
-					authModeToAccessRoom: AuthMode.ALL_USERS
+					allowUserCreation: true,
+					oauthProviders: 'invalid'
 				}
 			} as unknown as SecurityConfig);
-
-			expectValidationError(
-				response,
-				'authentication.authMethod.type',
-				"Invalid enum value. Expected 'single_user', received 'invalid'"
-			);
+			expectValidationError(response, 'authentication.oauthProviders', 'Expected array, received string');
 		});
 
-		it('should reject when authModeToAccessRoom or authMethod are not provided', async () => {
-			let response = await updateSecurityConfig({
+		it('should reject when allowUserCreation is not provided', async () => {
+			const response = await updateSecurityConfig({
 				authentication: {
-					authModeToAccessRoom: AuthMode.NONE
+					oauthProviders: []
 				}
 			} as unknown as SecurityConfig);
-			expectValidationError(response, 'authentication.authMethod', 'Required');
+			expectValidationError(response, 'authentication.allowUserCreation', 'Required');
+		});
 
-			response = await updateSecurityConfig({
+		it('should reject when oauthProviders is not provided', async () => {
+			const response = await updateSecurityConfig({
 				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					}
+					allowUserCreation: true
 				}
-			} as unknown as SecurityConfig);
-			expectValidationError(response, 'authentication.authModeToAccessRoom', 'Required');
+			} as SecurityConfig);
+			expectValidationError(response, 'authentication.oauthProviders', 'Required');
 		});
 
 		it('should reject when authentication is not an object', async () => {
 			const response = await updateSecurityConfig({
 				authentication: 'invalid'
 			} as unknown as SecurityConfig);
-
 			expectValidationError(response, 'authentication', 'Expected object, received string');
 		});
 	});
 
 	describe('Get security config', () => {
 		it('should return security config when authenticated as admin', async () => {
-			const defaultConfig = {
+			const defaultConfig: SecurityConfig = {
 				authentication: {
-					authMethod: {
-						type: AuthType.SINGLE_USER
-					},
-					authModeToAccessRoom: AuthMode.NONE
+					allowUserCreation: true,
+					oauthProviders: []
 				}
 			};
 

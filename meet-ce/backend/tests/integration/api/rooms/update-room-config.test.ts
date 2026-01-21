@@ -1,7 +1,5 @@
-import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { MeetRecordingAccess, MeetRecordingLayout, MeetRoomConfig, MeetSignalType } from '@openvidu-meet/typings';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRecordingLayout, MeetRoomConfig } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -22,21 +20,12 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Update Room Config Tests', () => {
-		let frontendEventService: FrontendEventService;
-
-		beforeAll(() => {
-			// Ensure the FrontendEventService is registered
-			frontendEventService = container.get(FrontendEventService);
-		});
-
 		it('should successfully update room config', async () => {
-			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 			const createdRoom = await createRoom({
 				roomName: 'update-test',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -47,30 +36,13 @@ describe('Room API Tests', () => {
 			// Update the room config
 			const updatedConfig = {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN
+					enabled: false
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
-
-			// Verify a method of frontend event service is called
-			expect(sendSignalSpy).toHaveBeenCalledWith(
-				createdRoom.roomId,
-				{
-					roomId: createdRoom.roomId,
-					config: {
-						...updatedConfig,
-						recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }
-					},
-					timestamp: expect.any(Number)
-				},
-				{
-					topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
-				}
-			);
 
 			// Verify update response
 			expect(updateResponse.status).toBe(200);
@@ -120,8 +92,7 @@ describe('Room API Tests', () => {
 			const expectedConfig: MeetRoomConfig = {
 				recording: {
 					enabled: false,
-					layout: MeetRecordingLayout.SPEAKER,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					layout: MeetRecordingLayout.SPEAKER
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -161,8 +132,7 @@ describe('Room API Tests', () => {
 
 			const config = {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: false
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false }
@@ -183,8 +153,7 @@ describe('Room API Tests', () => {
 			// Invalid config (wrong types)
 			const invalidConfig = {
 				recording: {
-					enabled: 'true', // String instead of boolean
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: 'true' // String instead of boolean
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false }

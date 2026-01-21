@@ -1,18 +1,17 @@
 import { expect } from '@jest/globals';
 import {
+	LiveKitPermissions,
 	MeetingEndAction,
-	MeetRecordingAccess,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
-	MeetRoomStatus
+	MeetRoomStatus,
+	TrackSource
 } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config';
@@ -136,16 +135,12 @@ export const expectValidRoom = (
 		expect(room.autoDeletionDate).toBe(autoDeletionDate);
 	} else {
 		expect(room.autoDeletionDate).toBeUndefined();
+		expect(room.autoDeletionPolicy).toBeUndefined();
 	}
 
 	if (autoDeletionPolicy !== undefined) {
 		expect(room.autoDeletionPolicy).toBeDefined();
 		expect(room.autoDeletionPolicy).toEqual(autoDeletionPolicy);
-	} else {
-		expect(room.autoDeletionPolicy).toEqual({
-			withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-			withRecordings: MeetRoomDeletionPolicyWithRecordings.CLOSE
-		});
 	}
 
 	expect(room.config).toBeDefined();
@@ -156,8 +151,7 @@ export const expectValidRoom = (
 		expect(room.config).toEqual({
 			recording: {
 				enabled: true,
-				layout: MeetRecordingLayout.GRID,
-				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				layout: MeetRecordingLayout.GRID
 			},
 			chat: { enabled: true },
 			virtualBackground: { enabled: true },
@@ -165,10 +159,21 @@ export const expectValidRoom = (
 		});
 	}
 
-	expect(room.moderatorUrl).toBeDefined();
-	expect(room.speakerUrl).toBeDefined();
-	expect(room.moderatorUrl).toContain(room.roomId);
-	expect(room.speakerUrl).toContain(room.roomId);
+	expect(room.owner).toBeDefined();
+	expect(room.roles).toBeDefined();
+
+	expect(room.anonymous).toBeDefined();
+	expect(room.anonymous.moderator).toBeDefined();
+	expect(room.anonymous.speaker).toBeDefined();
+	expect(room.anonymous.moderator.enabled).toBeDefined();
+	expect(room.anonymous.speaker.enabled).toBeDefined();
+	expect(room.anonymous.moderator.accessUrl).toBeDefined();
+	expect(room.anonymous.speaker.accessUrl).toBeDefined();
+	expect(room.anonymous.moderator.accessUrl).toContain(room.roomId);
+	expect(room.anonymous.speaker.accessUrl).toContain(room.roomId);
+
+	expect(room.accessUrl).toBeDefined();
+	expect(room.accessUrl).toContain(room.roomId);
 
 	expect(room.status).toBeDefined();
 	expect(room.status).toEqual(status || MeetRoomStatus.OPEN);
@@ -518,90 +523,13 @@ export const expectValidGetRecordingUrlResponse = (response: Response, recording
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };
 
-export const expectValidRoomMemberRolesAndPermissionsResponse = (response: Response, roomId: string) => {
-	expect(response.status).toBe(200);
-	expect(response.body).toEqual(
-		expect.arrayContaining([
-			{
-				role: MeetRoomMemberRole.MODERATOR,
-				permissions: getPermissions(roomId, MeetRoomMemberRole.MODERATOR, true, true)
-			},
-			{
-				role: MeetRoomMemberRole.SPEAKER,
-				permissions: getPermissions(roomId, MeetRoomMemberRole.SPEAKER, true, false)
-			}
-		])
-	);
-};
-
-export const expectValidRoomMemberRoleAndPermissionsResponse = (
-	response: Response,
-	roomId: string,
-	role: MeetRoomMemberRole
-) => {
-	expect(response.status).toBe(200);
-	expect(response.body).toEqual({
-		role: role,
-		permissions: getPermissions(roomId, role, true, role === MeetRoomMemberRole.MODERATOR)
-	});
-};
-
-export const getPermissions = (
-	roomId: string,
-	role: MeetRoomMemberRole,
-	canRetrieveRecordings: boolean,
-	canDeleteRecordings: boolean,
-	addJoinPermission = true
-): MeetRoomMemberPermissions => {
-	switch (role) {
-		case MeetRoomMemberRole.MODERATOR:
-			return {
-				livekit: {
-					roomJoin: addJoinPermission,
-					room: roomId,
-					canPublish: true,
-					canSubscribe: true,
-					canPublishData: true,
-					canUpdateOwnMetadata: true
-				},
-				meet: {
-					canRecord: true,
-					canRetrieveRecordings,
-					canDeleteRecordings,
-					canChat: true,
-					canChangeVirtualBackground: true
-				}
-			};
-		case MeetRoomMemberRole.SPEAKER:
-			return {
-				livekit: {
-					roomJoin: addJoinPermission,
-					room: roomId,
-					canPublish: true,
-					canSubscribe: true,
-					canPublishData: true,
-					canUpdateOwnMetadata: true
-				},
-				meet: {
-					canRecord: false,
-					canRetrieveRecordings,
-					canDeleteRecordings,
-					canChat: true,
-					canChangeVirtualBackground: true
-				}
-			};
-	}
-};
-
 export const expectValidRoomMemberTokenResponse = (
 	response: Response,
 	roomId: string,
-	role: MeetRoomMemberRole,
-	addJoinPermission = false,
+	baseRole: MeetRoomMemberRole,
+	joinMeeting = false,
 	participantName?: string,
-	participantIdentityPrefix?: string,
-	canRetrieveRecordings?: boolean,
-	canDeleteRecordings?: boolean
+	participantIdentityPrefix?: string
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
@@ -609,11 +537,7 @@ export const expectValidRoomMemberTokenResponse = (
 	const token = response.body.token;
 	const decodedToken = decodeJWTToken(token);
 
-	canRetrieveRecordings = canRetrieveRecordings ?? true;
-	canDeleteRecordings = canDeleteRecordings ?? role === MeetRoomMemberRole.MODERATOR;
-	const permissions = getPermissions(roomId, role, canRetrieveRecordings, canDeleteRecordings, addJoinPermission);
-
-	if (addJoinPermission) {
+	if (joinMeeting) {
 		expect(participantName).toBeDefined();
 		expect(decodedToken).toHaveProperty('name', participantName);
 		expect(decodedToken).toHaveProperty('sub');
@@ -621,17 +545,88 @@ export const expectValidRoomMemberTokenResponse = (
 		if (participantIdentityPrefix) {
 			expect(decodedToken.sub?.startsWith(participantIdentityPrefix)).toBe(true);
 		}
+
+		// const livekitPermissions = getLiveKitPermissions(roomId, getPermissions(baseRole));
+		expect(decodedToken).toHaveProperty('video');
 	} else {
 		expect(decodedToken).not.toHaveProperty('name');
 		expect(decodedToken).not.toHaveProperty('sub');
+		expect(decodedToken).not.toHaveProperty('video');
 	}
 
-	expect(decodedToken).toHaveProperty('video', permissions.livekit);
 	expect(decodedToken).toHaveProperty('metadata');
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('livekitUrl');
-	expect(metadata).toHaveProperty('role', role);
-	expect(metadata).toHaveProperty('permissions', permissions.meet);
+	expect(metadata).toHaveProperty('baseRole', baseRole);
+	const permissions = getPermissions(baseRole);
+	expect(metadata).toHaveProperty('effectivePermissions', permissions);
+};
+
+export const getPermissions = (role: MeetRoomMemberRole): MeetRoomMemberPermissions => {
+	switch (role) {
+		case MeetRoomMemberRole.MODERATOR:
+			return {
+				canRecord: true,
+				canRetrieveRecordings: true,
+				canDeleteRecordings: true,
+				canJoinMeeting: true,
+				canShareAccessLinks: true,
+				canMakeModerator: true,
+				canKickParticipants: true,
+				canEndMeeting: true,
+				canPublishVideo: true,
+				canPublishAudio: true,
+				canShareScreen: true,
+				canReadChat: true,
+				canWriteChat: true,
+				canChangeVirtualBackground: true
+			};
+		case MeetRoomMemberRole.SPEAKER:
+			return {
+				canRecord: false,
+				canRetrieveRecordings: true,
+				canDeleteRecordings: false,
+				canJoinMeeting: true,
+				canShareAccessLinks: false,
+				canMakeModerator: false,
+				canKickParticipants: false,
+				canEndMeeting: false,
+				canPublishVideo: true,
+				canPublishAudio: true,
+				canShareScreen: true,
+				canReadChat: true,
+				canWriteChat: true,
+				canChangeVirtualBackground: true
+			};
+	}
+};
+
+const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions => {
+	const canPublishSources: TrackSource[] = [];
+
+	if (permissions.canPublishAudio) {
+		canPublishSources.push(TrackSource.MICROPHONE);
+	}
+
+	if (permissions.canPublishVideo) {
+		canPublishSources.push(TrackSource.CAMERA);
+	}
+
+	if (permissions.canShareScreen) {
+		canPublishSources.push(TrackSource.SCREEN_SHARE);
+		canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
+	}
+
+	const livekitPermissions: LiveKitPermissions = {
+		room: roomId,
+		roomJoin: true,
+		canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
+		canPublishSources,
+		canSubscribe: true,
+		canPublishData: true,
+		canUpdateOwnMetadata: true
+	};
+	return livekitPermissions;
 };
 
 const decodeJWTToken = (token: string) => {

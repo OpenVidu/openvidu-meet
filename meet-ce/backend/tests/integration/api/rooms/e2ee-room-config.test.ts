@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRoom } from '@openvidu-meet/typings';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -48,8 +48,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test E2EE Enabled',
 				config: {
 					recording: {
-						enabled: true, // This should be automatically disabled
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true // This should be automatically disabled
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -87,8 +86,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test E2EE Update',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -122,8 +120,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test Invalid E2EE',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -145,8 +142,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test Invalid E2EE Enabled',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -174,8 +170,7 @@ describe('E2EE Room Configuration Tests', () => {
 
 			const { status, body } = await updateRoomConfig(room.roomId, {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: false
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -201,8 +196,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'E2EE Enabled Room',
 				config: {
 					recording: {
-						enabled: false,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: false
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -214,8 +208,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'E2EE Disabled Room',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },

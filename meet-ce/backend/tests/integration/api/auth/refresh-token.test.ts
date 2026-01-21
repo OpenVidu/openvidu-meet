@@ -14,7 +14,7 @@ describe('Authentication API Tests', () => {
 	});
 
 	describe('Refresh Token Tests', () => {
-		it('should successfully refresh token with valid refresh token', async () => {
+		it('should successfully refresh access token with valid refresh token', async () => {
 			// First, login to get a valid refresh token
 			const loginResponse = await request(app)
 				.post(`${AUTH_PATH}/login`)

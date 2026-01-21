@@ -1,14 +1,14 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { changePassword, loginAdminUser, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Users API Tests', () => {
 	let adminAccessToken: string;
 
 	beforeAll(async () => {
 		await startTestServer();
-		adminAccessToken = await loginUser();
+		adminAccessToken = await loginAdminUser();
 	});
 
 	describe('Change Password Tests', () => {

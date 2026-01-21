@@ -15,7 +15,7 @@ describe('Authentication API Tests', () => {
 	});
 
 	describe('Login Tests', () => {
-		it('should successfully login with valid credentials', async () => {
+		it('should successfully login with valid root admin credentials', async () => {
 			const response = await request(app)
 				.post(`${AUTH_PATH}/login`)
 				.send({

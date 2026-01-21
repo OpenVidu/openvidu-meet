@@ -33,11 +33,12 @@ describe('Meetings API Tests', () => {
 	});
 
 	describe('Update Participant Tests', () => {
-		const setParticipantMetadata = async (roomId: string, role: MeetRoomMemberRole) => {
+		const setParticipantMetadata = async (roomId: string, baseRole: MeetRoomMemberRole) => {
 			const metadata: MeetRoomMemberTokenMetadata = {
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				role,
-				permissions: getPermissions(roomId, role, true, true).meet
+				roomId,
+				baseRole,
+				effectivePermissions: getPermissions(baseRole)
 			};
 			await updateParticipantMetadata(roomId, participantIdentity, metadata);
 		};
@@ -65,7 +66,10 @@ describe('Meetings API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.MODERATOR);
+			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
+			expect(metadata).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
+			const permissions = getPermissions(MeetRoomMemberRole.MODERATOR);
+			expect(metadata).toHaveProperty('effectivePermissions', permissions);
 
 			// Verify sendSignal method has been called twice
 			expect(sendSignalSpy).toHaveBeenCalledTimes(2);
@@ -119,7 +123,10 @@ describe('Meetings API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.SPEAKER);
+			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
+			expect(metadata).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
+			const permissions = getPermissions(MeetRoomMemberRole.SPEAKER);
+			expect(metadata).toHaveProperty('effectivePermissions', permissions);
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {

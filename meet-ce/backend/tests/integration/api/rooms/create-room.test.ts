@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingLayout,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
@@ -61,8 +60,7 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: false,
-						layout: MeetRecordingLayout.GRID,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						layout: MeetRecordingLayout.GRID
 					},
 					chat: { enabled: false },
 					virtualBackground: { enabled: true },
@@ -98,8 +96,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: false,
-					layout: MeetRecordingLayout.GRID, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
+					layout: MeetRecordingLayout.GRID // Default value
 				},
 				chat: { enabled: true }, // Default value
 				virtualBackground: { enabled: true }, // Default value
@@ -127,8 +124,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true, // Default value
-					layout: MeetRecordingLayout.GRID, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
+					layout: MeetRecordingLayout.GRID // Default value
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
@@ -492,8 +488,7 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate,
 				config: {
 					recording: {
-						enabled: 'yes', // invalid boolean
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: 'yes' // invalid boolean
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true }

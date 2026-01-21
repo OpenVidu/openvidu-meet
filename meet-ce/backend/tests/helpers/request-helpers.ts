@@ -1,8 +1,6 @@
 import { expect } from '@jest/globals';
 import {
-	AuthMode,
 	MeetAppearanceConfig,
-	MeetRecordingAccess,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
@@ -30,13 +28,6 @@ import { GlobalConfigService } from '../../src/services/global-config.service.js
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 
-const CREDENTIALS = {
-	admin: {
-		username: MEET_ENV.INITIAL_ADMIN_USER,
-		password: MEET_ENV.INITIAL_ADMIN_PASSWORD
-	}
-};
-
 let app: Express;
 const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
@@ -58,7 +49,7 @@ export const startTestServer = async (): Promise<Express> => {
 export const generateApiKey = async (): Promise<string> => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -71,7 +62,7 @@ export const generateApiKey = async (): Promise<string> => {
 export const getApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -82,7 +73,7 @@ export const getApiKeys = async () => {
 export const deleteApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -115,7 +106,7 @@ export const getRoomsAppearanceConfig = async () => {
 export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppearanceConfig }) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -126,7 +117,7 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 export const getWebbhookConfig = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -137,7 +128,7 @@ export const getWebbhookConfig = async () => {
 export const updateWebbhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -165,23 +156,12 @@ export const getSecurityConfig = async () => {
 export const updateSecurityConfig = async (config: SecurityConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(config);
 	return response;
-};
-
-export const changeSecurityConfig = async (authMode: AuthMode) => {
-	// Get current config to avoid overwriting other properties
-	let response = await getSecurityConfig();
-	expect(response.status).toBe(200);
-	const currentConfig = response.body;
-
-	currentConfig.authentication.authModeToAccessRoom = authMode;
-	response = await updateSecurityConfig(currentConfig);
-	expect(response.status).toBe(200);
 };
 
 export const restoreDefaultGlobalConfig = async () => {
@@ -191,25 +171,28 @@ export const restoreDefaultGlobalConfig = async () => {
 };
 
 /**
- * Logs in a user and returns the access token in the format "Bearer <token>"
+ * Logs in admin user and returns the access token in the format "Bearer <token>"
  */
-export const loginUser = async (): Promise<string> => {
+export const loginAdminUser = async (): Promise<string> => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
-		.send(CREDENTIALS.admin)
+		.send({
+			username: MEET_ENV.INITIAL_ADMIN_USER,
+			password: MEET_ENV.INITIAL_ADMIN_PASSWORD
+		})
 		.expect(200);
 
 	expect(response.body).toHaveProperty('accessToken');
 	return `Bearer ${response.body.accessToken}`;
 };
 
-export const getProfile = async (accessToken: string) => {
+export const getMe = async (accessToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/me`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 };
@@ -282,16 +265,6 @@ export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomC
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ config });
-};
-
-export const updateRecordingAccessConfigInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
-	const response = await updateRoomConfig(roomId, {
-		recording: {
-			enabled: true,
-			allowAccessTo: recordingAccess
-		}
-	});
-	expect(response.status).toBe(200);
 };
 
 export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) => {
@@ -368,14 +341,14 @@ export const runExpiredRoomsGC = async () => {
  * Runs the inconsistent rooms garbage collector.
  *
  * This function retrieves the RoomScheduledTasksService from the dependency injection container
- * and calls its checkInconsistentRooms method to clean up inconsistent rooms.
+ * and calls its validateRoomsStatusGC method to clean up inconsistent rooms.
  * It then waits for 1 second before completing.
  */
 export const executeRoomStatusValidationGC = async () => {
 	checkAppIsRunning();
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
-	await (roomTaskScheduler as any)['validateRoomsStatusGC']();
+	await (roomTaskScheduler)['validateRoomsStatusGC']();
 	await sleep('1s');
 };
 
@@ -386,33 +359,11 @@ export const runReleaseActiveRecordingLock = async (roomId: string) => {
 	await recordingService.releaseRecordingLockIfNoEgress(roomId);
 };
 
-export const getRoomMemberRoles = async (roomId: string) => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles`)
-		.send();
-	return response;
-};
-
-export const getRoomMemberRoleBySecret = async (roomId: string, secret: string) => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles/${secret}`)
-		.send();
-	return response;
-};
-
 export const generateRoomMemberTokenRequest = async (roomId: string, tokenOptions: MeetRoomMemberTokenOptions) => {
 	checkAppIsRunning();
 
-	// Disable authentication to generate the token
-	await changeSecurityConfig(AuthMode.NONE);
-
-	// Generate the room member token
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/token`)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token`)
 		.send(tokenOptions);
 	return response;
 };
@@ -760,7 +711,7 @@ export const deleteAllRecordings = async () => {
 export const getAnalytics = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const accessToken = await loginAdminUser();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)

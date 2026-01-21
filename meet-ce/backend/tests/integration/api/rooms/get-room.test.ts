@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingLayout } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
 	expectSuccessRoomResponse,
@@ -38,8 +38,7 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: true,
-						layout: MeetRecordingLayout.SPEAKER,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						layout: MeetRecordingLayout.SPEAKER
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: false },

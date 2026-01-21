@@ -164,7 +164,7 @@ describe('Recording API Tests', () => {
 		it('should handle empty recordingIds array gracefully', async () => {
 			const response = await bulkDeleteRecordings([]);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 
 		it('should reject a CSV string with invalid format', async () => {
@@ -178,7 +178,7 @@ describe('Recording API Tests', () => {
 			const invalidRecordingIds = ['', '   '];
 			const response = await bulkDeleteRecordings(invalidRecordingIds);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 
 		it('should reject an array with mixed valid and totally invalid IDs', async () => {

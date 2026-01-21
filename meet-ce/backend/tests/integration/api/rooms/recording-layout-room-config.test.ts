@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingLayout } from '@openvidu-meet/typings';
 import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
@@ -27,8 +27,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true,
-					layout: MeetRecordingLayout.GRID, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					layout: MeetRecordingLayout.GRID // Default value
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -43,8 +42,7 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: true,
-						layout: MeetRecordingLayout.SPEAKER,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						layout: MeetRecordingLayout.SPEAKER
 					}
 				}
 			};
@@ -54,8 +52,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true,
-					layout: MeetRecordingLayout.SPEAKER,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					layout: MeetRecordingLayout.SPEAKER
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -70,8 +67,7 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: true,
-						layout: MeetRecordingLayout.SINGLE_SPEAKER,
-						allowAccessTo: MeetRecordingAccess.ADMIN
+						layout: MeetRecordingLayout.SINGLE_SPEAKER
 					}
 				}
 			};
@@ -81,8 +77,7 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true,
-					layout: MeetRecordingLayout.SINGLE_SPEAKER,
-					allowAccessTo: MeetRecordingAccess.ADMIN
+					layout: MeetRecordingLayout.SINGLE_SPEAKER
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },

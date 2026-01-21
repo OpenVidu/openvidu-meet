@@ -5,7 +5,7 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
 	generateApiKey,
 	getApiKeys,
-	loginUser,
+	loginAdminUser,
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -18,7 +18,7 @@ describe('API Keys API Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginUser();
+		adminAccessToken = await loginAdminUser();
 	});
 
 	afterAll(async () => {
