@@ -239,17 +239,14 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 	const requestSessionService = container.get(RequestSessionService);
 
-	const recordingIds = req.query.recordingIds as string;
-	const recordingIdsArray = (recordingIds as string).split(',');
-
-	// Filter recording IDs if a room ID is provided
-	let validRecordingIds = recordingIdsArray;
+	const { recordingIds } = req.query as { recordingIds: string[] };
+	let validRecordingIds = recordingIds;
 
 	// If room member token is present, download only recordings for the room associated with the token
 	const roomId = requestSessionService.getRoomIdFromMember();
 
 	if (roomId) {
-		validRecordingIds = recordingIdsArray.filter((recordingId) => {
+		validRecordingIds = recordingIds.filter((recordingId) => {
 			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 			const isValid = recRoomId === roomId;
 
