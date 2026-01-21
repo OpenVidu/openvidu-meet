@@ -2,23 +2,65 @@
  * Defines permissions for a room member.
  */
 export interface MeetRoomMemberPermissions {
-    canRecord: boolean; // Can start/stop recording the meeting.
-    canRetrieveRecordings: boolean; // Can list and play recordings.
-    canDeleteRecordings: boolean; // Can delete recordings.
+	/**
+	 * Can start/stop recording the meeting.
+	 */
+	canRecord: boolean;
+	/**
+	 * Can list and play recordings.
+	 */
+	canRetrieveRecordings: boolean;
+	/**
+	 * Can delete recordings.
+	 */
+	canDeleteRecordings: boolean;
 
-    canJoinMeeting: boolean; // Can join the meeting.
+	/**
+	 * Can join the meeting.
+	 */
+	canJoinMeeting: boolean;
 
-    canShareAccessLinks: boolean; // Can share access links to invite others.
-    canMakeModerator: boolean; // Can promote other participants to moderator role.
-    canKickParticipants: boolean; // Can remove other participants from the meeting.
-    canEndMeeting: boolean; // Can end the meeting for all participants.
+	/**
+	 * Can share access links to invite others.
+	 */
+	canShareAccessLinks: boolean;
+	/**
+	 * Can promote other participants to moderator role.
+	 */
+	canMakeModerator: boolean;
+	/**
+	 * Can remove other participants from the meeting.
+	 */
+	canKickParticipants: boolean;
+	/**
+	 * Can end the meeting for all participants.
+	 */
+	canEndMeeting: boolean;
 
-    canPublishVideo: boolean; // Can publish video in the meeting.
-    canPublishAudio: boolean; // Can publish audio in the meeting.
-    canShareScreen: boolean; // Can share screen in the meeting.
+	/**
+	 * Can publish video in the meeting.
+	 */
+	canPublishVideo: boolean;
+	/**
+	 * Can publish audio in the meeting.
+	 */
+	canPublishAudio: boolean;
+	/**
+	 * Can share screen in the meeting.
+	 */
+	canShareScreen: boolean;
 
-    canReadChat: boolean; // Can read chat messages in the meeting.
-    canWriteChat: boolean; // Can send chat messages in the meeting.
+	/**
+	 * Can read chat messages in the meeting.
+	 */
+	canReadChat: boolean;
+	/**
+	 * Can send chat messages in the meeting.
+	 */
+	canWriteChat: boolean;
 
-    canChangeVirtualBackground: boolean; // Can change the virtual background.
+	/**
+	 * Can change the virtual background.
+	 */
+	canChangeVirtualBackground: boolean;
 }
