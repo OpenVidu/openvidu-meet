@@ -44,6 +44,9 @@ export class RoomConfigComponent implements OnDestroy {
 				},
 				e2ee: {
 					enabled: formValue.e2eeEnabled ?? false
+				},
+				captions: {
+					enabled: formValue.captionsEnabled ?? false
 				}
 			}
 		};
@@ -102,6 +105,11 @@ export class RoomConfigComponent implements OnDestroy {
 		this.configForm.patchValue({ virtualBackgroundEnabled: isEnabled });
 	}
 
+	onCaptionsToggleChange(event: any): void {
+		const isEnabled = event.checked;
+		this.configForm.patchValue({ captionsEnabled: isEnabled });
+	}
+
 	get chatEnabled(): boolean {
 		return this.configForm.value.chatEnabled || false;
 	}
@@ -112,5 +120,9 @@ export class RoomConfigComponent implements OnDestroy {
 
 	get e2eeEnabled(): boolean {
 		return this.configForm.value.e2eeEnabled ?? false;
+	}
+
+	get captionsEnabled(): boolean {
+		return this.configForm.value.captionsEnabled ?? false;
 	}
 }

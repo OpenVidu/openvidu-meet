@@ -50,7 +50,7 @@ export class MeetingCustomLayoutComponent {
 		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
 	});
 
-	protected readonly shouldShowCaptions = computed(() => this.captionsService.areCaptionsEnabled());
+	protected readonly areCaptionsEnabledByUser = computed(() => this.captionsService.areCaptionsEnabledByUser());
 
 	protected readonly captions = computed(() => this.captionsService.captions());
 

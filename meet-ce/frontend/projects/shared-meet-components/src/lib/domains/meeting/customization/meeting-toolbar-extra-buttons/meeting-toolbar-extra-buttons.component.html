@@ -1,25 +1,25 @@
 <!-- Captions button -->
-@if (isMobile()) {
-	<!-- On mobile, the captions button will be inside a menu -->
-	<button id="captions-button" mat-menu-item (click)="onCaptionsClick()" [disableRipple]="true">
-		<mat-icon class="material-symbols-outlined">{{
-			areCaptionsEnabled() ? 'subtitles_off' : 'subtitles'
-		}}</mat-icon>
-		<span class="button-text">
-			{{ areCaptionsEnabled() ? 'Disable live captions' : 'Enable live captions' }}
-		</span>
-	</button>
-} @else {
-	<button
-		id="captions-button"
-		[ngClass]="areCaptionsEnabled() ? 'active' : ''"
-		mat-icon-button
-		(click)="onCaptionsClick()"
-		[disableRipple]="true"
-		[matTooltip]="areCaptionsEnabled() ? 'Disable live captions' : 'Enable live captions'"
-	>
-		<mat-icon>{{ areCaptionsEnabled() ? 'subtitles_off' : 'subtitles' }}</mat-icon>
-	</button>
+@if (showCaptionsButton()) {
+	@if (isMobile()) {
+		<!-- On mobile, the captions button will be inside a menu -->
+		<button id="captions-button" mat-menu-item (click)="onCaptionsClick()" [disableRipple]="true">
+			<mat-icon class="material-symbols-outlined">subtitles</mat-icon>
+			<span class="button-text">
+				{{ areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions' }}
+			</span>
+		</button>
+	} @else {
+		<button
+			id="captions-button"
+			[ngClass]="areCaptionsEnabledByUser() ? 'active' : ''"
+			mat-icon-button
+			(click)="onCaptionsClick()"
+			[disableRipple]="true"
+			[matTooltip]="areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions'"
+		>
+			<mat-icon>subtitles</mat-icon>
+		</button>
+	}
 }
 
 <!-- Copy Link Button -->

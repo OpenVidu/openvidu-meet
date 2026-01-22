@@ -187,6 +187,14 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Returns whether captions feature is allowed in the room
+	 * @returns true if captions feature is allowed, false otherwise
+	 */
+	areCaptionsAllowed(): boolean {
+		return this.featureConfigService.features().showCaptions;
+	}
+
+	/**
 	 * Sets the room secret in context
 	 * @param secret The room secret
 	 * @param updateStorage Whether to persist in SessionStorage (default: false)

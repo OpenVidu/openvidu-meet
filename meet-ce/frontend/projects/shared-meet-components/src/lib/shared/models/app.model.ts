@@ -31,6 +31,7 @@ export interface ApplicationFeatures {
 	showRecordingPanel: boolean;
 	showChat: boolean;
 	showBackgrounds: boolean;
+	showCaptions: boolean;
 	showParticipantList: boolean;
 	showSettings: boolean;
 	showFullscreen: boolean;

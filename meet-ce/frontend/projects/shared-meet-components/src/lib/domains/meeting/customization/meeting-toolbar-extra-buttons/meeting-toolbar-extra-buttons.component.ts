@@ -34,11 +34,16 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected showCopyLinkButton = computed(() => this.meetingContextService.canModerateRoom());
 
 	/**
+	 * Whether to show the captions button
+	 */
+	protected showCaptionsButton = computed(() => this.meetingContextService.areCaptionsAllowed());
+
+	/**
 	 * Whether the device is mobile (affects button style)
 	 */
 	protected isMobile = computed(() => this.meetingContextService.isMobile());
 
-	protected areCaptionsEnabled = computed(() => this.captionService.areCaptionsEnabled());
+	protected areCaptionsEnabledByUser = computed(() => this.captionService.areCaptionsEnabledByUser());
 
 	onCopyLinkClick(): void {
 		const room = this.meetingContextService.meetRoom();
@@ -51,6 +56,6 @@ export class MeetingToolbarExtraButtonsComponent {
 	}
 
 	onCaptionsClick(): void {
-		this.captionService.areCaptionsEnabled() ? this.captionService.disable() : this.captionService.enable();
+		this.captionService.areCaptionsEnabledByUser() ? this.captionService.disable() : this.captionService.enable();
 	}
 }

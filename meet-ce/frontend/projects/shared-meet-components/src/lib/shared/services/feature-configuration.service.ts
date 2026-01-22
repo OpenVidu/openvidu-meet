@@ -22,6 +22,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showRecordingPanel: true,
 	showChat: true,
 	showBackgrounds: true,
+	showCaptions: false,
 	showParticipantList: true,
 	showSettings: true,
 	showFullscreen: true,
@@ -115,6 +116,7 @@ export class FeatureConfigurationService {
 			features.showRecordingPanel = roomConfig.recording.enabled;
 			features.showChat = roomConfig.chat.enabled;
 			features.showBackgrounds = roomConfig.virtualBackground.enabled;
+			features.showCaptions = roomConfig.captions?.enabled ?? false;
 		}
 
 		// Apply room member permissions (these can restrict enabled features)
@@ -130,7 +132,6 @@ export class FeatureConfigurationService {
 			if (features.showBackgrounds) {
 				features.showBackgrounds = permissions.meet.canChangeVirtualBackground;
 			}
-
 			// Media features
 			const canPublish = permissions.livekit.canPublish;
 			const canPublishSources = permissions.livekit.canPublishSources ?? [];

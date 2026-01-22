@@ -61,6 +61,30 @@
 					</mat-card-content>
 				</mat-card>
 
+				<!-- Captions Card -->
+				<mat-card class="config-card">
+					<mat-card-content>
+						<div class="card-header">
+							<div class="icon-title-group">
+								<mat-icon class="feature-icon">closed_caption</mat-icon>
+								<div class="title-group">
+									<h4 class="card-title">Captions</h4>
+									<p class="card-description">
+										Enable live transcription to display captions during the meeting
+									</p>
+								</div>
+							</div>
+							<mat-slide-toggle
+								[checked]="captionsEnabled"
+								(change)="onCaptionsToggleChange($event)"
+								color="primary"
+								class="feature-toggle"
+							>
+							</mat-slide-toggle>
+						</div>
+					</mat-card-content>
+				</mat-card>
+
 				<!-- Chat Settings Card -->
 				<mat-card class="config-card">
 					<mat-card-content>
