@@ -2,11 +2,20 @@ import { MeetUser, MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole }
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
-import { errorInvalidPassword, errorUserAlreadyExists, errorUserNotFound } from '../models/error.model.js';
+import {
+	errorCannotDeleteOwnAccount,
+	errorCannotDeleteRootAdmin,
+	errorCannotResetOwnPassword,
+	errorCannotResetRootAdminPassword,
+	errorInvalidPassword,
+	errorUserAlreadyExists,
+	errorUserNotFound
+} from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { LoggerService } from './logger.service.js';
+import { RequestSessionService } from './request-session.service.js';
 
 @injectable()
 export class UserService {
@@ -14,7 +23,8 @@ export class UserService {
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(UserRepository) protected userRepository: UserRepository,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
-		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
 	/**
@@ -116,6 +126,18 @@ export class UserService {
 	 * @param newPassword - The new temporary password set by admin
 	 */
 	async resetUserPassword(userId: string, newPassword: string): Promise<void> {
+		// Prevent resetting own password (use change-password endpoint instead)
+		const authenticatedUser = this.requestSessionService.getAuthenticatedUser();
+
+		if (authenticatedUser && authenticatedUser.userId === userId) {
+			throw errorCannotResetOwnPassword();
+		}
+
+		// Prevent resetting password for the root admin user
+		if (userId === MEET_ENV.INITIAL_ADMIN_USER) {
+			throw errorCannotResetRootAdminPassword();
+		}
+
 		const user = await this.userRepository.findByUserId(userId);
 
 		if (!user) {
@@ -130,6 +152,18 @@ export class UserService {
 	}
 
 	async deleteUser(userId: string): Promise<void> {
+		// Prevent deleting the root admin user
+		if (userId === MEET_ENV.INITIAL_ADMIN_USER) {
+			throw errorCannotDeleteRootAdmin();
+		}
+
+		// Prevent self-deletion
+		const authenticatedUser = this.requestSessionService.getAuthenticatedUser();
+
+		if (authenticatedUser && authenticatedUser.userId === userId) {
+			throw errorCannotDeleteOwnAccount();
+		}
+
 		const user = await this.userRepository.findByUserId(userId);
 
 		if (!user) {
@@ -147,12 +181,35 @@ export class UserService {
 	async bulkDeleteUsers(
 		userIds: string[]
 	): Promise<{ deleted: string[]; failed: { userId: string; error: string }[] }> {
-		const usersToDelete = await this.userRepository.findByUserIds(userIds);
+		const rootAdminUserId = MEET_ENV.INITIAL_ADMIN_USER;
+		const authenticatedUser = this.requestSessionService.getAuthenticatedUser();
+
+		// Filter out the root admin user and authenticated user from the deletion list
+		const failed: { userId: string; error: string }[] = [];
+		let filteredUserIds = [...userIds];
+
+		if (userIds.includes(rootAdminUserId)) {
+			failed.push({ userId: rootAdminUserId, error: 'Cannot delete the root admin user' });
+			filteredUserIds = filteredUserIds.filter((id) => id !== rootAdminUserId);
+		}
+
+		if (
+			authenticatedUser &&
+			authenticatedUser?.userId !== rootAdminUserId &&
+			userIds.includes(authenticatedUser.userId)
+		) {
+			failed.push({ userId: authenticatedUser.userId, error: 'Cannot delete your own account' });
+			filteredUserIds = filteredUserIds.filter((id) => id !== authenticatedUser.userId);
+		}
+
+		const usersToDelete = await this.userRepository.findByUserIds(filteredUserIds);
 		const foundUserIds = usersToDelete.map((u) => u.userId);
 
-		const failed = userIds
-			.filter((id) => !foundUserIds.includes(id))
-			.map((id) => ({ userId: id, error: 'User not found' }));
+		failed.push(
+			...filteredUserIds
+				.filter((id) => !foundUserIds.includes(id))
+				.map((id) => ({ userId: id, error: 'User not found' }))
+		);
 
 		if (foundUserIds.length > 0) {
 			// Clean up resources for all users in batches

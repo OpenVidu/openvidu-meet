@@ -217,6 +217,38 @@ export const errorUserAlreadyExists = (userId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('User Error', `User '${userId}' already exists`, 409);
 };
 
+export const errorCannotResetRootAdminPassword = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot reset password for the root admin user. The root admin must change their own password.',
+		403
+	);
+};
+
+export const errorCannotResetOwnPassword = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot reset your own password. Please use the change-password endpoint to change your password.',
+		403
+	);
+};
+
+export const errorCannotDeleteRootAdmin = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot delete the root admin user. This account is required for system administration.',
+		403
+	);
+};
+
+export const errorCannotDeleteOwnAccount = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot delete your own account. Please have another administrator delete your account if needed.',
+		403
+	);
+};
+
 // Room errors
 
 export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
