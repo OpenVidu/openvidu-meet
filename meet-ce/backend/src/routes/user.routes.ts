@@ -8,7 +8,8 @@ import {
 	validateChangePasswordReq,
 	validateCreateUserReq,
 	validateGetUsersReq,
-	validateResetUserPasswordReq
+	validateResetUserPasswordReq,
+	validateUpdateUserRoleReq
 } from '../middlewares/request-validators/user-validator.middleware.js';
 
 export const userRouter: Router = Router();
@@ -48,5 +49,11 @@ userRouter.put(
 	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
 	validateResetUserPasswordReq,
 	userCtrl.resetUserPassword
+);
+userRouter.put(
+	'/:userId/role',
+	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
+	validateUpdateUserRoleReq,
+	userCtrl.updateUserRole
 );
 userRouter.delete('/:userId', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), userCtrl.deleteUser);

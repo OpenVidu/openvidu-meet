@@ -4,6 +4,7 @@ import {
 	BulkDeleteUsersReqSchema,
 	ChangePasswordReqSchema,
 	ResetUserPasswordReqSchema,
+	UpdateUserRoleReqSchema,
 	UserFiltersSchema,
 	UserOptionsSchema
 } from '../../models/zod-schemas/user.schema.js';
@@ -57,6 +58,17 @@ export const validateChangePasswordReq = (req: Request, res: Response, next: Nex
 
 export const validateResetUserPasswordReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = ResetUserPasswordReqSchema.safeParse(req.body);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.body = data;
+	next();
+};
+
+export const validateUpdateUserRoleReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateUserRoleReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

@@ -249,6 +249,22 @@ export const errorCannotDeleteOwnAccount = (): OpenViduMeetError => {
 	);
 };
 
+export const errorCannotChangeRootAdminRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot change the role of the root admin user. This account must retain administrative privileges.',
+		403
+	);
+};
+
+export const errorCannotChangeOwnRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot change your own role. Please have another administrator change your role if needed.',
+		403
+	);
+};
+
 // Room errors
 
 export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {

@@ -1,4 +1,4 @@
-import { MeetUserFilters, MeetUserOptions } from '@openvidu-meet/typings';
+import { MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -147,6 +147,26 @@ export const resetUserPassword = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		handleError(res, error, 'resetting user password');
+	}
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+	const { role } = req.body as { role: MeetUserRole };
+
+	const logger = container.get(LoggerService);
+	logger.verbose(`Admin updating role for user '${userId}' to '${role}'`);
+
+	try {
+		const userService = container.get(UserService);
+		const user = await userService.changeUserRole(userId, role);
+
+		return res.status(200).json({
+			message: `Role for user '${userId}' updated successfully to '${role}'`,
+			user: userService.convertToDTO(user)
+		});
+	} catch (error) {
+		handleError(res, error, 'updating user role');
 	}
 };
 

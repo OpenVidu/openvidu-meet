@@ -3,6 +3,8 @@ import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import {
+	errorCannotChangeOwnRole,
+	errorCannotChangeRootAdminRole,
 	errorCannotDeleteOwnAccount,
 	errorCannotDeleteRootAdmin,
 	errorCannotResetOwnPassword,
@@ -149,6 +151,38 @@ export class UserService {
 
 		await this.userRepository.update(user);
 		this.logger.info(`Password reset for user '${userId}' by admin. User must change password on next login.`);
+	}
+
+	/**
+	 * Change user role by admin.
+	 *
+	 * @param userId - The ID of the user whose role will be changed
+	 * @param newRole - The new role to assign to the user
+	 */
+	async changeUserRole(userId: string, newRole: MeetUserRole): Promise<MeetUser> {
+		// Prevent changing role of the root admin user
+		if (userId === MEET_ENV.INITIAL_ADMIN_USER) {
+			throw errorCannotChangeRootAdminRole();
+		}
+
+		// Prevent changing own role
+		const authenticatedUser = this.requestSessionService.getAuthenticatedUser();
+
+		if (authenticatedUser && authenticatedUser.userId === userId) {
+			throw errorCannotChangeOwnRole();
+		}
+
+		const user = await this.userRepository.findByUserId(userId);
+
+		if (!user) {
+			throw errorUserNotFound(userId);
+		}
+
+		user.role = newRole;
+		await this.userRepository.update(user);
+
+		this.logger.info(`Role for user '${userId}' changed to '${newRole}' by admin`);
+		return user;
 	}
 
 	async deleteUser(userId: string): Promise<void> {

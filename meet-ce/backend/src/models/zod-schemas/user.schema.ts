@@ -58,3 +58,7 @@ export const ChangePasswordReqSchema = z.object({
 export const ResetUserPasswordReqSchema = z.object({
 	newPassword: z.string().min(5, 'New password must be at least 5 characters long')
 });
+
+export const UpdateUserRoleReqSchema = z.object({
+	role: z.nativeEnum(MeetUserRole)
+});
