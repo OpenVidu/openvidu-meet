@@ -106,6 +106,20 @@ const MeetE2EEConfigSchema = new Schema(
 );
 
 /**
+ * Mongoose schema for MeetRoom captions configuration.
+ */
+const MeetCaptionsConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true,
+			default: false
+		}
+	},
+	{ _id: false }
+);
+
+/**
  * Sub-schema for room theme configuration.
  */
 const MeetRoomThemeSchema = new Schema(
@@ -179,6 +193,11 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		e2ee: {
 			type: MeetE2EEConfigSchema,
+			required: true,
+			default: { enabled: false }
+		},
+		captions: {
+			type: MeetCaptionsConfigSchema,
 			required: true,
 			default: { enabled: false }
 		}

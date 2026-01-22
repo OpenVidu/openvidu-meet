@@ -85,7 +85,7 @@ export const MEET_ENV = {
 	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
 
 	// Agent Speech Processing configuration
-	AGENT_SPEECH_PROCESSING_NAME: process.env.MEET_AGENT_SPEECH_PROCESSING_NAME || '',
+	CAPTIONS_ENABLED: process.env.MEET_CAPTIONS || 'true',
 };
 
 export function checkModuleEnabled() {

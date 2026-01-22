@@ -42,7 +42,8 @@ export class TokenService {
 		role: MeetRoomMemberRole,
 		permissions: MeetRoomMemberPermissions,
 		participantName?: string,
-		participantIdentity?: string
+		participantIdentity?: string,
+		roomWithCaptions = false
 	): Promise<string> {
 		const metadata: MeetRoomMemberTokenMetadata = {
 			livekitUrl: MEET_ENV.LIVEKIT_URL,
@@ -56,23 +57,36 @@ export class TokenService {
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(metadata)
 		};
-		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
+		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant, roomWithCaptions);
 	}
 
-	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {
+	private async generateJwtToken(
+		tokenOptions: AccessTokenOptions,
+		grants?: VideoGrant,
+		roomWithCaptions = false
+	): Promise<string> {
 		const at = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, tokenOptions);
 
 		if (grants) {
 			at.addGrant(grants);
 		}
 
-		if (MEET_ENV.AGENT_SPEECH_PROCESSING_NAME) {
+		const captionsEnabledInEnv = MEET_ENV.CAPTIONS_ENABLED === 'true';
+		const captionsEnabledInRoom = Boolean(roomWithCaptions);
 
-			this.logger.debug('Adding speech processing agent dispatch to token', MEET_ENV.AGENT_SPEECH_PROCESSING_NAME);
+		// Warn if configuration is inconsistent
+		if (!captionsEnabledInEnv && captionsEnabledInRoom) {
+			this.logger.warn(
+				`Captions feature is disabled in environment but Room is created with captions enabled. Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
+			);
+		}
+
+		if (captionsEnabledInEnv && captionsEnabledInRoom) {
+			this.logger.debug('Activating Captions Agent. Configuring Room Agent Dispatch.');
 			at.roomConfig = new RoomConfiguration({
 				agents: [
 					new RoomAgentDispatch({
-						agentName: MEET_ENV.AGENT_SPEECH_PROCESSING_NAME
+						agentName: INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
 					})
 				]
 			});

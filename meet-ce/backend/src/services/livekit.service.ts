@@ -1,3 +1,4 @@
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import {
 	CreateOptions,
@@ -400,8 +401,11 @@ export class LiveKitService {
 		}
 	}
 
-	isEgressParticipant(participant: ParticipantInfo): boolean {
-		// TODO: Remove deprecated warning by using ParticipantInfo_Kind: participant.kind === ParticipantInfo_Kind.EGRESS;
-		return participant.identity.startsWith('EG_') && participant.permission?.recorder === true;
+	/**
+	 * Checks if a participant is a standard participant (web clients).
+	 * @param participant
+	 */
+	isStandardParticipant(participant: ParticipantInfo): boolean {
+		return participant.kind === ParticipantInfo_Kind.STANDARD;
 	}
 }

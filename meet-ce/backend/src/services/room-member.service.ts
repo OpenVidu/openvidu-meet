@@ -133,9 +133,10 @@ export class RoomMemberService {
 
 		// Get participant permissions (with join meeting)
 		const permissions = await this.getRoomMemberPermissions(roomId, role, true);
+		const withCaptions = room.config.captions.enabled ?? false;
 
 		// Generate token with participant name
-		return this.tokenService.generateRoomMemberToken(role, permissions, participantName, participantIdentity);
+		return this.tokenService.generateRoomMemberToken(role, permissions, participantName, participantIdentity, withCaptions);
 	}
 
 	/**

@@ -35,6 +35,8 @@ content:
                                   enabled: true
                               e2ee:
                                   enabled: false
+                              captions:
+                                  enabled: false
                           roles:
                               moderator:
                                   permissions:

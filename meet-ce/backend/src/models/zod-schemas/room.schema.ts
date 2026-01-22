@@ -7,6 +7,7 @@ import {
 	MeetRecordingConfig,
 	MeetRecordingLayout,
 	MeetRoomAutoDeletionPolicy,
+	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -55,6 +56,10 @@ const E2EEConfigSchema: z.ZodType<MeetE2EEConfig> = z.object({
 	enabled: z.boolean()
 });
 
+const CaptionsConfigSchema: z.ZodType<MeetRoomCaptionsConfig> = z.object({
+	enabled: z.boolean()
+});
+
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.nativeEnum(MeetRoomThemeMode);
 
 const hexColorSchema = z
@@ -92,7 +97,8 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
-		e2ee: E2EEConfigSchema.optional()
+		e2ee: E2EEConfigSchema.optional(),
+		captions: CaptionsConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
@@ -123,7 +129,8 @@ const CreateRoomConfigSchema = z
 		})),
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
-		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false }))
+		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
+		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: false }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -207,7 +214,8 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
-		e2ee: { enabled: false }
+		e2ee: { enabled: false },
+		captions: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()
