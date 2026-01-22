@@ -53,7 +53,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: true }
+					e2ee: { enabled: true },
+					captions: { enabled: false }
 				}
 			};
 
@@ -92,7 +93,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: false }
 				}
 			});
 
@@ -127,7 +129,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: 'invalid-e2ee' // Should be an object
+					e2ee: 'invalid-e2ee', // Should be an object
+					captions: { enabled: false }
 				}
 			};
 
@@ -150,7 +153,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: 'yes' } // Should be a boolean
+					e2ee: { enabled: 'yes' }, // Should be a boolean
+					captions: { enabled: false }
 				}
 			};
 
@@ -179,7 +183,8 @@ describe('E2EE Room Configuration Tests', () => {
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: true }
+				e2ee: { enabled: true },
+				captions: { enabled: false }
 			});
 
 			expect(status).toBe(200);
@@ -206,7 +211,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: true }
+					e2ee: { enabled: true },
+					captions: { enabled: false }
 				}
 			});
 
@@ -219,7 +225,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: false }
 				}
 			});
 

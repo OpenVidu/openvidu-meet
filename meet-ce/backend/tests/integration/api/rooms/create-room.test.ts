@@ -66,7 +66,8 @@ describe('Room API Tests', () => {
 					},
 					chat: { enabled: false },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: true }
+					e2ee: { enabled: true },
+					captions: { enabled: false }
 				}
 			};
 
@@ -89,6 +90,9 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: false
+					},
+					captions: {
+						enabled: true
 					}
 				}
 			};
@@ -103,7 +107,8 @@ describe('Room API Tests', () => {
 				},
 				chat: { enabled: true }, // Default value
 				virtualBackground: { enabled: true }, // Default value
-				e2ee: { enabled: false } // Default value
+				e2ee: { enabled: false }, // Default value
+				captions: { enabled: true }
 			};
 			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
 		});
@@ -132,7 +137,8 @@ describe('Room API Tests', () => {
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
-				e2ee: { enabled: false } // Default value
+				e2ee: { enabled: false }, // Default value
+				captions: { enabled: false } // Default value
 			};
 			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
 		});
