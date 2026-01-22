@@ -26,6 +26,8 @@ paths:
         $ref: './paths/internal/users.yaml#/~1users~1{userId}'
     /users/{userId}/password:
         $ref: './paths/internal/users.yaml#/~1users~1{userId}~1password'
+    /users/{userId}/role:
+        $ref: './paths/internal/users.yaml#/~1users~1{userId}~1role'
     /config/webhooks:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1webhooks'
     /config/webhooks/test:

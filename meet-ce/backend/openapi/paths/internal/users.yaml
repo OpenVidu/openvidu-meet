@@ -149,6 +149,8 @@
 
             This operation will remove the user account and may affect rooms and resources
             associated with this user.
+
+            > **Note:** Cannot delete your own user account or the root admin user.
         tags:
             - Internal API - Users
         security:
@@ -170,8 +172,10 @@
     put:
         operationId: resetUserPassword
         summary: Reset user password
-        description: >
+        description: |
             Allows an admin to reset the password of a specific user.
+
+            > **Note:** Cannot reset your own password using this endpoint. Use the `change-password` endpoint instead.
         tags:
             - Internal API - Users
         security:
@@ -183,6 +187,35 @@
         responses:
             '200':
                 $ref: '../../components/responses/internal/success-reset-password.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-user-not-found.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+/users/{userId}/role:
+    put:
+        operationId: updateUserRole
+        summary: Update user role
+        description: |
+            Allows an admin to change the role of a specific user.
+
+            > **Note:** Cannot change your own role or the role of the root admin user.
+        tags:
+            - Internal API - Users
+        security:
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/internal/user-id-path.yaml'
+        requestBody:
+            $ref: '../../components/requestBodies/internal/update-user-role-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-update-user-role.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
