@@ -92,8 +92,8 @@ roomRouter.put(
 	'/:roomId/config',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateUpdateRoomConfigReq,
+	authorizeRoomManagement,
 	roomCtrl.updateRoomConfig
 );
 
@@ -101,24 +101,24 @@ roomRouter.put(
 	'/:roomId/status',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateUpdateRoomStatusReq,
+	authorizeRoomManagement,
 	roomCtrl.updateRoomStatus
 );
 roomRouter.put(
 	'/:roomId/roles',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateUpdateRoomRolesReq,
+	authorizeRoomManagement,
 	roomCtrl.updateRoomRoles
 );
 roomRouter.put(
 	'/:roomId/anonymous',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateUpdateRoomAnonymousReq,
+	authorizeRoomManagement,
 	roomCtrl.updateRoomAnonymous
 );
 
@@ -127,24 +127,24 @@ roomRouter.post(
 	'/:roomId/members',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateCreateRoomMemberReq,
+	authorizeRoomManagement,
 	roomMemberCtrl.createRoomMember
 );
 roomRouter.get(
 	'/:roomId/members',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateGetRoomMembersReq,
+	authorizeRoomManagement,
 	roomMemberCtrl.getRoomMembers
 );
 roomRouter.delete(
 	'/:roomId/members',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateBulkDeleteRoomMembersReq,
+	authorizeRoomManagement,
 	roomMemberCtrl.bulkDeleteRoomMembers
 );
 
@@ -159,8 +159,8 @@ roomRouter.put(
 	'/:roomId/members/:memberId',
 	withAuth(apiKeyValidator, tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	authorizeRoomManagement,
 	validateUpdateRoomMemberReq,
+	authorizeRoomManagement,
 	roomMemberCtrl.updateRoomMember
 );
 roomRouter.delete(
