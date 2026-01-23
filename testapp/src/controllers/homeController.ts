@@ -173,6 +173,9 @@ const processFormConfig = (body: any): any => {
         },
         e2ee: {
             enabled: body['config.e2ee.enabled'] === 'on'
+        },
+        captions: {
+            enabled: body['config.captions.enabled'] === 'on'
         }
     };
 
