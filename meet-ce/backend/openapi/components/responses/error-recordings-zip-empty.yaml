@@ -1,8 +1,8 @@
-description: Recordings not from the same room
+description: Recordings not available for ZIP download
 content:
     application/json:
         schema:
             $ref: ../schemas/error.yaml
         example:
             error: 'Recording Error'
-            message: 'None of the provided recording IDs belong to room "room123"'
+            message: 'None of the provided recordings are available for ZIP download'
