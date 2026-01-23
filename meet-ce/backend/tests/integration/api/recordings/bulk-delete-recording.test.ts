@@ -112,13 +112,13 @@ describe('Recording API Tests', () => {
 			expect(deleteResponse.status).toBe(200);
 		});
 
-		it('should only delete recordings belonging to the room when using a recording token', async () => {
+		it('should only delete recordings belonging to the room when using a room member token', async () => {
 			// Create a room and start a recording
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 			const recordingId = roomData.recordingId!;
 
-			// Generate a recording token for the room
+			// Generate a room member token
 			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 
 			// Create another room and start a recording
@@ -135,9 +135,7 @@ describe('Recording API Tests', () => {
 				failed: [
 					{
 						recordingId: otherRecordingId,
-						error: expect.stringContaining(
-							`Recording '${otherRecordingId}' does not belong to room '${roomId}'`
-						)
+						error: expect.stringContaining('Insufficient permissions to access this resource')
 					}
 				]
 			});

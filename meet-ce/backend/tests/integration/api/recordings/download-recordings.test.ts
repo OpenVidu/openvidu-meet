@@ -55,7 +55,7 @@ describe('Recording API Tests', () => {
 			});
 		});
 
-		it('should only include recordings from the room when using a recording token', async () => {
+		it('should only include recordings from the room when using a room member token', async () => {
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 			const recordingId = roomData.recordingId!;
@@ -84,7 +84,7 @@ describe('Recording API Tests', () => {
 
 			expect(res.status).toBe(400);
 			expect(res.body).toHaveProperty('error');
-			expect(res.body.message).toContain(`None of the provided recording IDs belong to room '${roomId}'`);
+			expect(res.body.message).toContain('None of the provided recordings are available for ZIP download');
 		});
 	});
 

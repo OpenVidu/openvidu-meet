@@ -54,12 +54,12 @@ describe('Recordings API Tests', () => {
 			expectSuccessListRecordingResponse(response, 1, false, false);
 		});
 
-		it('should return a list of recordings belonging to the room when using recording token', async () => {
+		it('should return a list of recordings belonging to the room when using room member token', async () => {
 			// Create a room and start a recording
 			let roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 
-			// Generate a recording token for the room
+			// Generate a room member token for the room
 			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.speakerSecret });
 
 			// Create a new room and start a recording
