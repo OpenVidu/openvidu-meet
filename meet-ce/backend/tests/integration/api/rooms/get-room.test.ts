@@ -43,7 +43,8 @@ describe('Room API Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: false },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			};
 			// Create a room with custom config

@@ -32,7 +32,8 @@ describe('Room API Tests', () => {
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: false }
+				e2ee: { enabled: false },
+				captions: { enabled: false }
 			};
 			expectValidRoom(room, 'Room with Default Layout', 'room_with_default_layout', expectedConfig);
 		});
@@ -59,7 +60,8 @@ describe('Room API Tests', () => {
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: false }
+				e2ee: { enabled: false },
+				captions: { enabled: false }
 			};
 			expectValidRoom(room, 'Speaker Layout Room', 'speaker_layout_room', expectedConfig);
 		});
@@ -86,7 +88,8 @@ describe('Room API Tests', () => {
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: false }
+				e2ee: { enabled: false },
+				captions: { enabled: false }
 			};
 			expectValidRoom(room, 'Single Speaker Layout Room', 'single_speaker_layout_room', expectedConfig);
 		});
