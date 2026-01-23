@@ -3,7 +3,8 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
-	MeetRoomConfig
+	MeetRoomConfig,
+	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
@@ -17,6 +18,7 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
+	errorInsufficientPermissions,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
 	errorRecordingCannotBeStoppedWhileStarting,
@@ -265,69 +267,63 @@ export class RecordingService {
 	}
 
 	/**
+	 * Validates if the authenticated user has permission to access a specific recording.
+	 * First checks if the recording exists, then validates user permissions.
+	 *
+	 * @param recordingId The recording identifier to validate.
+	 * @param permission The permission to check.
+	 * @returns The recording info if accessible.
+	 * @throws Error if recording not found or insufficient permissions.
+	 */
+	async validateRecordingAccess(
+		recordingId: string,
+		permission: keyof MeetRoomMemberPermissions
+	): Promise<MeetRecordingInfo> {
+		// First, check if the recording exists
+		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+
+		if (!recordingInfo) {
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		// Extract roomId from the recording info
+		const { roomId: recRoomId } = recordingInfo;
+
+		// Check room member permissions for the room associated with the recording
+		const roomService = await this.getRoomService();
+		const permissions = await roomService.getAuthenticatedRoomMemberPermissions(recRoomId);
+
+		if (!permissions[permission]) {
+			this.logger.warn(`Insufficient permissions to access recording '${recordingId}'`);
+			throw errorInsufficientPermissions();
+		}
+
+		return recordingInfo;
+	}
+
+	/**
 	 * Deletes multiple recordings in bulk from MongoDB and blob storage.
 	 * For each provided recordingId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
 	 * @param recordingIds Array of recording identifiers.
-	 * @param roomId Optional room identifier to delete only recordings from a specific room.
 	 * @returns An object containing:
 	 * - `deleted`: An array of successfully deleted recording IDs.
-	 * - `notDeleted`: An array of objects containing recording IDs and error messages for those that could not be deleted.
+	 * - `failed`: An array of objects containing recording IDs and error messages for those that could not be deleted.
 	 */
 	async bulkDeleteRecordings(
-		recordingIds: string[],
-		roomId?: string
+		recordingIds: string[]
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
-		const roomService = await this.getRoomService();
-
 		const validRecordingIds: Set<string> = new Set<string>();
 		const deletedRecordings: Set<string> = new Set<string>();
 		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
 
+		// Process each recording: first check existence, then permissions, then deletability
 		for (const recordingId of recordingIds) {
-			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-
-			// If a roomId is provided, only process recordings from that room
-			if (roomId) {
-				if (recRoomId !== roomId) {
-					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-					failedRecordings.add({
-						recordingId,
-						error: `Recording '${recordingId}' does not belong to room '${roomId}'`
-					});
-					continue;
-				}
-			} else {
-				// Check room member permissions for each recording if no roomId filter is applied
-				try {
-					const permissions = await roomService.getAuthenticatedRoomMemberPermissions(recRoomId);
-
-					if (!permissions.canDeleteRecordings) {
-						this.logger.warn(`Insufficient permissions to delete recording '${recordingId}'`);
-						failedRecordings.add({
-							recordingId,
-							error: `Insufficient permissions to delete recording '${recordingId}'`
-						});
-						continue;
-					}
-				} catch (error) {
-					this.logger.error(`Error checking permissions for recording '${recordingId}': ${error}`);
-					failedRecordings.add({
-						recordingId,
-						error: `Room associated with recording '${recordingId}' not found`
-					});
-					continue;
-				}
-			}
-
 			try {
-				// Check if the recording exists and can be deleted
-				const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+				// Validate recording exists and user has permission to delete
+				const recordingInfo = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings');
 
-				if (!recordingInfo) {
-					throw errorRecordingNotFound(recordingId);
-				}
-
+				// Check if the recording can be deleted (must be stopped)
 				if (!RecordingHelper.canBeDeleted(recordingInfo)) {
 					throw errorRecordingNotStopped(recordingId);
 				}
@@ -397,7 +393,6 @@ export class RecordingService {
 
 						if (recording.status !== MeetRecordingStatus.COMPLETE) {
 							this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
-							this.logger.warn(`ABORTING RECORDING '${recordingId}'`);
 							await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
 						}
 
@@ -423,49 +418,12 @@ export class RecordingService {
 				`Found ${allRecordingIds.length} recordings for room '${roomId}', proceeding with deletion`
 			);
 
-			// Attempt initial deletion
-			let remainingRecordings = [...allRecordingIds];
-			let retryCount = 0;
-			const maxRetries = 3;
-			const retryDelayMs = 1000;
-
-			while (remainingRecordings.length > 0 && retryCount < maxRetries) {
-				if (retryCount > 0) {
-					this.logger.info(
-						`Retry ${retryCount}/${maxRetries}: attempting to delete ${remainingRecordings.length} remaining recordings`
-					);
-					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
-				}
-
-				const { failed } = await this.bulkDeleteRecordings(remainingRecordings, roomId);
-
-				if (failed.length === 0) {
-					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
-					return;
-				}
-
-				// Prepare for retry with failed recordings
-				remainingRecordings = failed.map((failed) => failed.recordingId);
-				retryCount++;
-
-				this.logger.warn(
-					`${failed.length} recordings failed to delete for room '${roomId}': ${remainingRecordings.join(', ')}`
-				);
-
-				if (retryCount < maxRetries) {
-					this.logger.info(`Will retry deletion in ${retryDelayMs * retryCount}ms`);
-				}
-			}
-
-			// Final check and logging
-			if (remainingRecordings.length > 0) {
-				this.logger.error(
-					`Failed to delete ${remainingRecordings.length} recordings for room '${roomId}' after ${maxRetries} attempts: ${remainingRecordings.join(', ')}`
-				);
-				throw new Error(
-					`Failed to delete all recordings for room '${roomId}'. ${remainingRecordings.length} recordings could not be deleted.`
-				);
-			}
+			// Delete recordings metadata from MongoDB and media files from blob storage
+			await Promise.all([
+				this.recordingRepository.deleteByRecordingIds(allRecordingIds),
+				this.blobStorageService.deleteRecordingMediaBatch(allRecordingIds)
+			]);
+			this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
 		} catch (error) {
 			this.logger.error(`Error deleting all recordings for room '${roomId}': ${error}`);
 			throw error;

@@ -175,10 +175,10 @@ export const errorInvalidRecordingSecret = (recordingId: string, secret: string)
 	);
 };
 
-export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetError => {
+export const errorRecordingsZipEmpty = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',
-		`None of the provided recording IDs belong to room '${roomId}'`,
+		'None of the provided recordings are available for ZIP download',
 		400
 	);
 };

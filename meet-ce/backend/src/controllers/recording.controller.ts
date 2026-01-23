@@ -1,18 +1,17 @@
+import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
-	errorRecordingsNotFromSameRoom,
+	errorRecordingsZipEmpty,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
-import { RequestSessionService } from '../services/request-session.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const startRecording = async (req: Request, res: Response) => {
@@ -77,16 +76,12 @@ export const getRecordings = async (req: Request, res: Response) => {
 export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
 	const { recordingIds } = req.query as { recordingIds: string[] };
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		// If room member token is present, delete only recordings for the room associated with the token
-		const roomId = requestSessionService.getRoomIdFromMember();
-
-		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIds, roomId);
+		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIds);
 
 		// All recordings were successfully deleted
 		if (deleted.length > 0 && failed.length === 0) {
@@ -237,34 +232,27 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
 
 	const { recordingIds } = req.query as { recordingIds: string[] };
-	let validRecordingIds = recordingIds;
+	const validRecordings: MeetRecordingInfo[] = [];
 
-	// If room member token is present, download only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromMember();
+	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);
 
-	if (roomId) {
-		validRecordingIds = recordingIds.filter((recordingId) => {
-			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-			const isValid = recRoomId === roomId;
-
-			if (!isValid) {
-				logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-			}
-
-			return isValid;
-		});
+	// Validate each recording: first check existence, then permissions
+	for (const recordingId of recordingIds) {
+		try {
+			const recordingInfo = await recordingService.validateRecordingAccess(recordingId, 'canRetrieveRecordings');
+			validRecordings.push(recordingInfo);
+		} catch (error) {
+			logger.warn(`Skipping recording '${recordingId}' for ZIP`);
+		}
 	}
 
-	if (validRecordingIds.length === 0) {
-		logger.warn(`None of the provided recording IDs belong to room '${roomId}'`);
-		const error = errorRecordingsNotFromSameRoom(roomId!);
+	if (validRecordings.length === 0) {
+		logger.error(`None of the provided recording IDs are available for ZIP download`);
+		const error = errorRecordingsZipEmpty();
 		return rejectRequestFromMeetError(res, error);
 	}
-
-	logger.info(`Creating ZIP for recordings: ${recordingIds}`);
 
 	res.setHeader('Content-Type', 'application/zip');
 	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
@@ -280,13 +268,14 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	// Pipe the archive to the response
 	archive.pipe(res);
 
-	for (const recordingId of validRecordingIds) {
+	for (const recording of validRecordings) {
+		const recordingId = recording.recordingId;
+
 		try {
 			logger.debug(`Adding recording '${recordingId}' to ZIP`);
 			const result = await recordingService.getRecordingAsStream(recordingId);
-			const recordingInfo = await recordingService.getRecording(recordingId, 'filename');
 
-			const filename = recordingInfo.filename || `${recordingId}.mp4`;
+			const filename = recording.filename || `${recordingId}.mp4`;
 			archive.append(result.fileStream, { name: filename });
 		} catch (error) {
 			logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
