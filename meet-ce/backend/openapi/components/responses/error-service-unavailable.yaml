@@ -2,7 +2,7 @@ description: Service Unavailable — The recording service is unavailable
 content:
     application/json:
         schema:
-            $ref: '../../schemas/error.yaml'
+            $ref: '../schemas/error.yaml'
         examples:
             starting_timeout:
                 summary: Recording service timed out

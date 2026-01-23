@@ -14,7 +14,7 @@ import { authRouter } from './routes/auth.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
 import { livekitWebhookRouter } from './routes/livekit.routes.js';
 import { internalMeetingRouter } from './routes/meeting.routes.js';
-import { internalRecordingRouter, recordingRouter } from './routes/recording.routes.js';
+import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { userRouter } from './routes/user.routes.js';
 import {
@@ -89,7 +89,7 @@ const createApp = () => {
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
+	// app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
 	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);
 

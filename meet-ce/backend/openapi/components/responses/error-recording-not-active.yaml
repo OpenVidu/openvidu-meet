@@ -2,7 +2,7 @@ description: Conflict — The recording is starting or already stopped
 content:
     application/json:
         schema:
-            $ref: '../../schemas/error.yaml'
+            $ref: '../schemas/error.yaml'
         examples:
             starting_recording:
                 summary: Recording is starting

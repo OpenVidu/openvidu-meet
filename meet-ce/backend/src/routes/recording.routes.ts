@@ -79,25 +79,24 @@ recordingRouter.get(
 	withCanRetrieveRecordingsPermission,
 	recordingCtrl.getRecordingUrl
 );
-
-// Internal Recording Routes
-export const internalRecordingRouter: Router = Router();
-internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
-internalRecordingRouter.use(bodyParser.json());
-
-internalRecordingRouter.post(
+recordingRouter.post(
 	'/',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	validateStartRecordingReq,
 	withRecordingEnabled,
-	withAuth(roomMemberTokenValidator),
 	withCanRecordPermission,
 	recordingCtrl.startRecording
 );
-internalRecordingRouter.post(
+recordingRouter.post(
 	'/:recordingId/stop',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRecordingId,
 	withRecordingEnabled,
-	withAuth(roomMemberTokenValidator),
 	withCanRecordPermission,
 	recordingCtrl.stopRecording
 );
+
+// Internal Recording Routes
+// export const internalRecordingRouter: Router = Router();
+// internalRecordingRouter.use(bodyParser.urlencoded({ extended: true }));
+// internalRecordingRouter.use(bodyParser.json());

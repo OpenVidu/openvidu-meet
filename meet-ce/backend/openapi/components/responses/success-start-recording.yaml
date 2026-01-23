@@ -2,7 +2,7 @@ description: Successfully created the OpenVidu Meet recording
 content:
     application/json:
         schema:
-            $ref: '../../schemas/meet-recording.yaml'
+            $ref: '../schemas/meet-recording.yaml'
         example:
             recordingId: 'room-123--EG_XYZ--XX445'
             roomId: 'room-123'

@@ -100,7 +100,7 @@ export const setupSingleRoomWithRecording = async (
 	roomName = 'TEST_ROOM'
 ): Promise<RoomData> => {
 	const roomData = await setupSingleRoom(true, roomName);
-	const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
+	const response = await startRecording(roomData.room.roomId);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	roomData.recordingId = response.body.recordingId;
 
@@ -110,7 +110,7 @@ export const setupSingleRoomWithRecording = async (
 	}
 
 	if (stopRecordingCond) {
-		await stopRecording(roomData.recordingId!, roomData.moderatorToken);
+		await stopRecording(roomData.recordingId!);
 	}
 
 	return roomData;
@@ -145,7 +145,7 @@ export const setupMultiRecordingsTestContext = async (
 		}
 
 		// Send start recording request
-		const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
+		const response = await startRecording(roomData.room.roomId);
 		expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 
 		// Store the recordingId in context
@@ -162,7 +162,7 @@ export const setupMultiRecordingsTestContext = async (
 	// Stop recordings for the first numStops rooms
 	const stopPromises = startedRooms.slice(0, numStops).map(async (roomData) => {
 		if (roomData.recordingId) {
-			await stopRecording(roomData.recordingId, roomData.moderatorToken);
+			await stopRecording(roomData.recordingId);
 			console.log(`Recording stopped for room ${roomData.room.roomId}`);
 			return roomData.recordingId;
 		}

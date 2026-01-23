@@ -11,7 +11,7 @@ import { RecordingShareDialogComponent } from '../components/recording-share-dia
 })
 export class RecordingService {
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
-	protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
+	// protected readonly INTERNAL_RECORDINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/recordings`;
 
 	protected log;
 
@@ -32,7 +32,7 @@ export class RecordingService {
 	 */
 	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
 		try {
-			return this.httpService.postRequest(this.INTERNAL_RECORDINGS_API, { roomId });
+			return this.httpService.postRequest(this.RECORDINGS_API, { roomId });
 		} catch (error) {
 			console.error('Error starting recording:', error);
 			throw error;
@@ -51,7 +51,7 @@ export class RecordingService {
 		}
 
 		try {
-			const path = `${this.INTERNAL_RECORDINGS_API}/${recordingId}/stop`;
+			const path = `${this.RECORDINGS_API}/${recordingId}/stop`;
 			return this.httpService.postRequest(path, {});
 		} catch (error) {
 			console.error('Error stopping recording:', error);

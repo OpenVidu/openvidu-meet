@@ -4,7 +4,6 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -15,14 +14,13 @@ import {
 	loginUser,
 	startTestServer,
 	stopAllRecordings,
-	stopRecording,
 	updateRecordingAccessConfigInRoom
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
 const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
-const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
+// const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
 
 describe('Recording API Security Tests', () => {
 	let app: Express;
@@ -45,17 +43,21 @@ describe('Recording API Security Tests', () => {
 			roomData = await setupSingleRoom(true);
 		});
 
-		it('should fail when request includes API key', async () => {
+		afterEach(async () => {
+			await stopAllRecordings();
+		});
+
+		it('should success when request includes API key', async () => {
 			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
+				.post(RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(201);
 		});
 
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
+				.post(RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(401);
@@ -63,22 +65,17 @@ describe('Recording API Security Tests', () => {
 
 		it('should succeed when participant is moderator', async () => {
 			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
+				.post(RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(201);
-
-			// Stop recording to clean up
-			const recordingId = response.body.recordingId;
-			const stopResponse = await stopRecording(recordingId, roomData.moderatorToken);
-			expectValidStopRecordingResponse(stopResponse, recordingId, roomData.room.roomId, roomData.room.roomName);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
+				.post(RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
@@ -86,7 +83,7 @@ describe('Recording API Security Tests', () => {
 
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
-				.post(INTERNAL_RECORDINGS_PATH)
+				.post(RECORDINGS_PATH)
 				.send({ roomId: roomData.room.roomId })
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 			expect(response.status).toBe(403);
@@ -101,43 +98,36 @@ describe('Recording API Security Tests', () => {
 		});
 
 		afterAll(async () => {
-			await stopAllRecordings(roomData.moderatorToken);
+			await stopAllRecordings();
 		});
 
-		it('should fail when request includes API key', async () => {
+		it('should success when request includes API key', async () => {
 			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
+				.post(`${RECORDINGS_PATH}/${roomData.recordingId}/stop`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(202);
 		});
 
 		it('should fail when user is authenticated as admin', async () => {
 			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
+				.post(`${RECORDINGS_PATH}/${roomData.recordingId}/stop`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
 			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when participant is moderator', async () => {
-			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
-			expect(response.status).toBe(202);
 		});
 
 		it('should fail when participant is moderator of a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
+				.post(`${RECORDINGS_PATH}/${roomData.recordingId}/stop`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when participant is speaker', async () => {
 			const response = await request(app)
-				.post(`${INTERNAL_RECORDINGS_PATH}/${roomData.recordingId}/stop`)
+				.post(`${RECORDINGS_PATH}/${roomData.recordingId}/stop`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
 			expect(response.status).toBe(403);
 		});

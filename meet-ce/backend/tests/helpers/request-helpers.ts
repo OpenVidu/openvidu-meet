@@ -581,21 +581,21 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	return response;
 };
 
-export const startRecording = async (roomId: string, moderatorToken: string) => {
+export const startRecording = async (roomId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`)
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ roomId });
 };
 
-export const stopRecording = async (recordingId: string, moderatorToken: string) => {
+export const stopRecording = async (recordingId: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 	await sleep('2.5s');
 
@@ -685,7 +685,7 @@ export const downloadRecordings = async (
 	return await req;
 };
 
-export const stopAllRecordings = async (moderatorToken: string) => {
+export const stopAllRecordings = async () => {
 	checkAppIsRunning();
 
 	const response = await getAllRecordings();
@@ -701,8 +701,8 @@ export const stopAllRecordings = async (moderatorToken: string) => {
 	console.log(`Stopping ${recordingIds.length} recordings...`, recordingIds);
 	const tasks = recordingIds.map((recordingId: string) =>
 		request(app)
-			.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
-			.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+			.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 			.send()
 	);
 	const results = await Promise.all(tasks);

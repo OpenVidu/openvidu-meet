@@ -48,11 +48,7 @@ describe('Recording API Tests', () => {
 
 		it('should get an ACTIVE recording status', async () => {
 			const contextAux = await setupMultiRecordingsTestContext(1, 1, 0);
-			const {
-				room: roomAux,
-				recordingId: recordingIdAux = '',
-				moderatorToken: moderatorTokenAux
-			} = contextAux.getRoomByIndex(0)!;
+			const { room: roomAux, recordingId: recordingIdAux = '' } = contextAux.getRoomByIndex(0)!;
 			const response = await getRecording(recordingIdAux);
 
 			expectValidGetRecordingResponse(
@@ -63,7 +59,7 @@ describe('Recording API Tests', () => {
 				MeetRecordingStatus.ACTIVE
 			);
 
-			await stopAllRecordings(moderatorTokenAux);
+			await stopAllRecordings();
 		});
 
 		it('should return 404 when recording does not exist', async () => {

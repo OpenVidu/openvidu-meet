@@ -46,9 +46,20 @@ export const withCanRecordPermission = async (req: Request, res: Response, next:
 
 	const requestSessionService = container.get(RequestSessionService);
 	const tokenRoomId = requestSessionService.getRoomIdFromToken();
+
+	/**
+	 * If there is no token, the user is allowed to access the resource because one of the following reasons:
+	 *
+	 * - The request is invoked using the API key.
+	 * - The user is admin.
+	 */
+	if (!tokenRoomId) {
+		return next();
+	}
+
 	const permissions = requestSessionService.getRoomMemberMeetPermissions();
 
-	if (!tokenRoomId || !permissions) {
+	if (!permissions) {
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
