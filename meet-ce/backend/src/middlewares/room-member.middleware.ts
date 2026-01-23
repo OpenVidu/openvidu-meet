@@ -1,7 +1,6 @@
 import { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
@@ -46,20 +45,21 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 
 	const forbiddenError = errorInsufficientPermissions();
 
-	// Scenario 1: Room Member Token
+	// Room Member Token
 	if (memberRoomId) {
 		// Check if the token belongs to the requested room
-		if (memberRoomId !== roomId) {
+		// and if the memberId matches the requested member
+		const isSameRoom = memberRoomId === roomId;
+		const isSameMember = currentMemberId === memberId;
+
+		if (!isSameRoom || !isSameMember) {
 			return rejectRequestFromMeetError(res, forbiddenError);
 		}
 
-		// Check if the token belongs to the requested member (self access)
-		if (currentMemberId === memberId) {
-			return next();
-		}
+		return next();
 	}
 
-	// Scenario 2: Registered User
+	// Registered User
 	if (user) {
 		// Allow if user is admin
 		if (user.role === MeetUserRole.ADMIN) {
@@ -67,18 +67,17 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 		}
 
 		try {
-			// Allow if user is room owner
+			// Check if user is room owner
+			// or is accessing their own member info
 			const roomService = container.get(RoomService);
 			const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+			const isSameMember = user.userId === memberId;
 
-			if (isOwner) {
-				return next();
+			if (!isOwner && !isSameMember) {
+				return rejectRequestFromMeetError(res, forbiddenError);
 			}
 
-			// Allow if user is accessing their own member info
-			if (user.userId === memberId) {
-				return next();
-			}
+			return next();
 		} catch (error) {
 			return handleError(res, error, 'checking room ownership');
 		}
@@ -110,7 +109,7 @@ export const setupRoomMemberTokenAuthentication = async (req: Request, res: Resp
  * Middleware to authorize the generation of a room member token.
  *
  * - If a secret is provided, it checks if it matches a valid room secret (anonymous access) or if it corresponds to a room member.
- * - If no secret is provided, it checks if the authenticated user has permissions to access the room (Admin, Owner, or Member).
+ * - If no secret is provided, it checks if the authenticated user has permissions to access the room (admin, owner, or member).
  */
 export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Response, next: NextFunction) => {
 	const { roomId } = req.params;
@@ -180,7 +179,7 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
  */
 export const withRoomMemberPermission = (permission: keyof MeetRoomMemberPermissions) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		const roomId = MeetRoomHelper.getRoomIdFromRequest(req);
+		const roomId = req.params.roomId as string;
 
 		const roomService = container.get(RoomService);
 		const roomExists = await roomService.meetRoomExists(roomId!);
@@ -195,12 +194,12 @@ export const withRoomMemberPermission = (permission: keyof MeetRoomMemberPermiss
 		const memberRoomId = requestSessionService.getRoomIdFromMember();
 		const permissions = requestSessionService.getRoomMemberPermissions();
 
-		if (!memberRoomId || !permissions) {
-			const error = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, error);
-		}
+		// Check if room member belongs to the requested room
+		// and has the required permission
+		const sameRoom = memberRoomId === roomId;
+		const hasPermission = permissions && permissions[permission];
 
-		if (memberRoomId !== roomId || !permissions[permission]) {
+		if (!sameRoom || !hasPermission) {
 			const error = errorInsufficientPermissions();
 			return rejectRequestFromMeetError(res, error);
 		}

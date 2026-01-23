@@ -1,7 +1,6 @@
 import { MeetRoomMemberPermissions, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
-import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
@@ -12,7 +11,6 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
-import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
 import {
 	allowAnonymous,
@@ -22,12 +20,15 @@ import {
 	withAuth
 } from './auth.middleware.js';
 
+/**
+ * Middleware to ensure that recording is enabled for the specified room.
+ */
 export const withRecordingEnabled = async (req: Request, res: Response, next: NextFunction) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
 	try {
-		const roomId = MeetRoomHelper.getRoomIdFromRequest(req);
+		const { roomId } = req.body as { roomId: string };
 		const room = await roomService.getMeetRoom(roomId!);
 
 		if (!room.config.recording.enabled) {
@@ -38,7 +39,7 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 
 		return next();
 	} catch (error) {
-		handleError(res, error, 'checking recording config');
+		handleError(res, error, 'checking room recording config');
 	}
 };
 
@@ -95,91 +96,104 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 };
 
 /**
- * Middleware to authorize recording access (retrieval or deletion).
+ * Middleware to authorize access (retrieval or deletion) for a single recording.
  *
- * - If a secret is provided in the request query, and allowSecretAccess is true,
- *   it assumes the secret has been validated and grants access.
- * - If a Room Member Token is used, it checks that the token's roomId matches the requested roomId
- *   and that the member has the required permission.
- * - If a registered user is authenticated, it checks their role and whether they are the owner or a member of the room
- *   with the required permission.
- * - If neither a valid token nor an authenticated user is present, it rejects the request.
+ * - If a secret is provided in the request query, it is assumed to have been validated already.
+ *   In that case, access is granted directly for retrieval requests.
+ * - If no secret is provided, the recording's existence and permissions are checked
+ *   based on the authenticated context (room member token or registered user).
  *
  * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
- * @param allowSecretAccess - Whether to allow access based on a valid secret in the query.
  */
-export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermissions, allowSecretAccess = false) => {
+export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermissions) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		const roomId = MeetRoomHelper.getRoomIdFromRequest(req);
-		const secret = req.query.secret as string;
+		const recordingId = req.params.recordingId as string;
+		const secret = req.query.secret as string | undefined;
 
-		// If allowSecretAccess is true and a secret is provided,
-		// we assume it has been validated by setupRecordingAuthentication.
-		if (allowSecretAccess && secret) {
+		// If a secret is provided, we assume it has been validated by setupRecordingAuthentication.
+		// In that case, grant access directly for retrieval requests.
+		if (secret && permission === 'canRetrieveRecordings') {
 			return next();
 		}
 
-		const requestSessionService = container.get(RequestSessionService);
-		const roomService = container.get(RoomService);
-		const roomMemberService = container.get(RoomMemberService);
-
-		const memberRoomId = requestSessionService.getRoomIdFromMember();
-		const user = requestSessionService.getAuthenticatedUser();
-
-		const forbiddenError = errorInsufficientPermissions();
-
-		// Case 1: Room Member Token
-		if (memberRoomId) {
-			const permissions = requestSessionService.getRoomMemberPermissions();
-
-			if (!permissions) {
-				return rejectRequestFromMeetError(res, forbiddenError);
-			}
-
-			const sameRoom = roomId ? memberRoomId === roomId : true;
-
-			if (!sameRoom || !permissions[permission]) {
-				return rejectRequestFromMeetError(res, forbiddenError);
-			}
-
+		try {
+			// Check recording existence and permissions based on the authenticated context
+			const recordingService = container.get(RecordingService);
+			await recordingService.validateRecordingAccess(recordingId, permission);
 			return next();
+		} catch (error) {
+			return handleError(res, error, 'checking recording permissions');
 		}
-
-		// Case 2: Authenticated User
-		if (user) {
-			// If no roomId is specified, we are in a listing/bulk request
-			// Each recording's room ownership and permissions will be checked individually
-			if (!roomId) {
-				return next();
-			}
-
-			// Admins can always access
-			if (user.role === MeetUserRole.ADMIN) {
-				return next();
-			}
-
-			try {
-				// Check if owner
-				const isOwner = await roomService.isRoomOwner(roomId, user.userId);
-
-				if (isOwner) {
-					return next();
-				}
-
-				// Check if member with permissions
-				const member = await roomMemberService.getRoomMember(roomId, user.userId);
-
-				if (member && member.effectivePermissions[permission]) {
-					return next();
-				}
-
-				return rejectRequestFromMeetError(res, forbiddenError);
-			} catch (error) {
-				return handleError(res, error, 'checking user access to room');
-			}
-		}
-
-		// Otherwise, reject the request
-		return rejectRequestFromMeetError(res, forbiddenError);
 	};
+};
+
+/**
+ * Middleware to authorize access (retrieval or deletion) for multiple recordings.
+ *
+ * - If a room member token is present, checks if the member has the specified permission.
+ * - If no room member token is present, each recording's permissions will be checked individually later.
+ *
+ * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
+ */
+export const authorizeBulkRecordingAccess = (permission: keyof MeetRoomMemberPermissions) => {
+	return async (_req: Request, res: Response, next: NextFunction) => {
+		const requestSessionService = container.get(RequestSessionService);
+		const memberRoomId = requestSessionService.getRoomIdFromMember();
+
+		// If there is no room member token,
+		// each recording's permissions will be checked individually later
+		if (!memberRoomId) {
+			return next();
+		}
+
+		// If there is a room member token, check permissions now
+		// because they have the same permissions for all recordings in the room associated with the token
+		const permissions = requestSessionService.getRoomMemberPermissions();
+
+		if (!permissions || !permissions[permission]) {
+			const forbiddenError = errorInsufficientPermissions();
+			return rejectRequestFromMeetError(res, forbiddenError);
+		}
+
+		return next();
+	};
+};
+
+/**
+ * Middleware to authorize control actions (start/stop) for recordings.
+ *
+ * - For starting a recording, checks if the authenticated user has 'canRecord' permission in the target room.
+ * - For stopping a recording, checks if the recording exists and if the authenticated user has 'canRecord' permission.
+ */
+export const authorizeRecordingControl = async (req: Request, res: Response, next: NextFunction) => {
+	const recordingId = req.params.recordingId as string | undefined;
+
+	if (!recordingId) {
+		// Start recording
+		const { roomId } = req.body as { roomId: string };
+
+		try {
+			// Check that the authenticated user has 'canRecord' permission in the target room
+			const roomService = container.get(RoomService);
+			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+
+			if (!permissions['canRecord']) {
+				throw errorInsufficientPermissions();
+			}
+
+			return next();
+		} catch (error) {
+			return handleError(res, error, 'checking recording permissions');
+		}
+	} else {
+		// Stop recording
+		try {
+			// Check that the recording exists and the authenticated user has 'canRecord' permission
+			const recordingService = container.get(RecordingService);
+			await recordingService.validateRecordingAccess(recordingId, 'canRecord');
+			return next();
+		} catch (error) {
+			return handleError(res, error, 'checking recording permissions');
+		}
+	}
 };

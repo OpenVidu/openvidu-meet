@@ -9,7 +9,9 @@ import {
 	withAuth
 } from '../middlewares/auth.middleware.js';
 import {
+	authorizeBulkRecordingAccess,
 	authorizeRecordingAccess,
+	authorizeRecordingControl,
 	setupRecordingAuthentication,
 	withRecordingEnabled
 } from '../middlewares/recording.middleware.js';
@@ -22,7 +24,6 @@ import {
 	validateStartRecordingReq,
 	withValidRecordingId
 } from '../middlewares/request-validators/recording-validator.middleware.js';
-import { withRoomMemberPermission } from '../middlewares/room-member.middleware.js';
 
 export const recordingRouter: Router = Router();
 recordingRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -37,7 +38,7 @@ recordingRouter.get(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
-	authorizeRecordingAccess('canRetrieveRecordings'),
+	authorizeBulkRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
@@ -48,7 +49,7 @@ recordingRouter.delete(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
-	authorizeRecordingAccess('canDeleteRecordings'),
+	authorizeBulkRecordingAccess('canDeleteRecordings'),
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
@@ -59,14 +60,14 @@ recordingRouter.get(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
-	authorizeRecordingAccess('canRetrieveRecordings'),
+	authorizeBulkRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.downloadRecordingsZip
 );
 recordingRouter.get(
 	'/:recordingId',
 	validateGetRecordingReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings', true),
+	authorizeRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.getRecording
 );
 recordingRouter.delete(
@@ -84,7 +85,7 @@ recordingRouter.get(
 	'/:recordingId/media',
 	validateGetRecordingMediaReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings', true),
+	authorizeRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.getRecordingMedia
 );
 recordingRouter.get(
@@ -106,17 +107,16 @@ internalRecordingRouter.use(bodyParser.json());
 
 internalRecordingRouter.post(
 	'/',
+	withAuth(roomMemberTokenValidator),
 	validateStartRecordingReq,
 	withRecordingEnabled,
-	withAuth(roomMemberTokenValidator),
-	withRoomMemberPermission('canRecord'),
+	authorizeRecordingControl,
 	recordingCtrl.startRecording
 );
 internalRecordingRouter.post(
 	'/:recordingId/stop',
-	withValidRecordingId,
-	withRecordingEnabled,
 	withAuth(roomMemberTokenValidator),
-	withRoomMemberPermission('canRecord'),
+	withValidRecordingId,
+	authorizeRecordingControl,
 	recordingCtrl.stopRecording
 );

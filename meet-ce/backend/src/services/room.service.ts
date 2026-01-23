@@ -832,11 +832,11 @@ export class RoomService {
 	/**
 	 * Retrieves the permissions of the authenticated room member.
 	 *
-	 * - If there's no authenticated user nor room member token, returns all permissions.
-	 *   This is necessary for methods invoked by system processes (e.g., room auto-deletion).
 	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a registered room member, their permissions are obtained from their room member info.
+	 * - If there's no authenticated user nor room member token, returns all permissions.
+	 *   This is necessary for methods invoked by system processes (e.g., room auto-deletion).
 	 *
 	 * @param roomId The ID of the room.
 	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
@@ -846,14 +846,13 @@ export class RoomService {
 		const user = this.requestSessionService.getAuthenticatedUser();
 		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
 
-		if (!user && !memberRoomId) {
-			return roomMemberService.getAllPermissions();
-		}
-
 		// Room member token
-		if (memberRoomId === roomId) {
-			const permissions = this.requestSessionService.getRoomMemberPermissions();
-			return permissions!;
+		if (memberRoomId) {
+			if (memberRoomId !== roomId) {
+				return roomMemberService.getNoPermissions();
+			}
+
+			return this.requestSessionService.getRoomMemberPermissions()!;
 		}
 
 		// Registered user
@@ -868,12 +867,15 @@ export class RoomService {
 
 			const member = await roomMemberService.getRoomMember(roomId, user.userId);
 
-			if (member) {
-				return member.effectivePermissions;
+			if (!member) {
+				return roomMemberService.getNoPermissions();
 			}
+
+			return member.effectivePermissions;
 		}
 
-		return roomMemberService.getNoPermissions();
+		// No authenticated user nor room member token - return all permissions for system processes
+		return roomMemberService.getAllPermissions();
 	}
 
 	/**

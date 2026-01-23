@@ -97,11 +97,11 @@ export const authorizeRoomManagement = async (req: Request, res: Response, next:
 	try {
 		const isOwner = await roomService.isRoomOwner(roomId, user.userId);
 
-		if (isOwner) {
-			return next();
+		if (!isOwner) {
+			return rejectRequestFromMeetError(res, forbiddenError);
 		}
 
-		return rejectRequestFromMeetError(res, forbiddenError);
+		return next();
 	} catch (error) {
 		return handleError(res, error, 'checking room ownership');
 	}
