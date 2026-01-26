@@ -92,10 +92,10 @@ export const deleteUser = async (req: Request, res: Response) => {
 };
 
 export const bulkDeleteUsers = async (req: Request, res: Response) => {
-	const { userIds } = req.body as { userIds: string[] };
+	const { userIds } = req.query as { userIds: string[] };
 
 	const logger = container.get(LoggerService);
-	logger.verbose(`Deleting users with IDs: ${userIds.join(', ')}`);
+	logger.verbose(`Deleting users: ${userIds}`);
 
 	try {
 		const userService = container.get(UserService);

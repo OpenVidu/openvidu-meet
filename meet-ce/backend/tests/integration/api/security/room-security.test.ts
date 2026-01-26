@@ -1,34 +1,26 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { AuthMode, MeetRecordingAccess } from '@openvidu-meet/typings';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import {
-	changeSecurityConfig,
-	createRoom,
-	deleteAllRooms,
-	loginUser,
-	sleep,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { RoomData } from '../../../interfaces/scenarios.js';
+import { deleteAllRooms, deleteAllUsers, sleep, startTestServer } from '../../../helpers/request-helpers.js';
+import { setupRoomWithTestUsers, setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
-const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;
 
 describe('Room API Security Tests', () => {
 	let app: Express;
-	let adminAccessToken: string;
+	let testUsers: TestUsers;
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginUser();
+		testUsers = await setupTestUsers();
 	});
 
 	afterAll(async () => {
 		await deleteAllRooms();
+		await deleteAllUsers();
 	});
 
 	describe('Create Room Tests', () => {
@@ -40,12 +32,28 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(201);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send({});
 			expect(response.status).toBe(201);
+		});
+
+		it('should succeed when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({});
+			expect(response.status).toBe(201);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({});
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -62,10 +70,24 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 		});
 
@@ -73,14 +95,29 @@ describe('Room API Security Tests', () => {
 			const response = await request(app).get(ROOMS_PATH);
 			expect(response.status).toBe(401);
 		});
+
+		it('should fail when using room member token', async () => {
+			const roomData = await setupSingleRoom();
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+		});
 	});
 
 	describe('Bulk Delete Rooms Tests', () => {
+		let roomData: RoomData;
 		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
-		beforeEach(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
+		const recreateRoom = async () => {
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
+		};
+
+		beforeAll(async () => {
+			await recreateRoom();
 		});
 
 		it('should succeed when request includes API key', async () => {
@@ -89,96 +126,188 @@ describe('Room API Security Tests', () => {
 				.query({ roomIds: roomId })
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.delete(ROOMS_PATH)
 				.query({ roomIds: roomId })
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+			expect(response.status).toBe(400);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(ROOMS_PATH).query({ roomIds: roomId });
 			expect(response.status).toBe(401);
 		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+			// No need to recreate - room was not deleted
+		});
 	});
 
 	describe('Get Room Tests', () => {
 		let roomData: RoomData;
+		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupSingleRoom();
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
 		});
 
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+		});
+
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}`);
+			const response = await request(app).get(`${ROOMS_PATH}/${roomId}`);
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is moderator', async () => {
+		it('should succeed when using room member token', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is moderator of a different room', async () => {
+		it('should fail when using room member token from a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
 		});
 
-		it('should succeed when user is speaker', async () => {
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
-			expect(response.status).toBe(200);
-		});
+		it('should fail when room member token is expired, even if user access token is valid', async () => {
+			// Set short room member token expiration
+			const initialTokenExpiration = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
+			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
 
-		it('should succeed when user is authenticated but has expired token, and has valid room member token', async () => {
-			// Set short access token expiration
-			const initialTokenExpiration = INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION;
-			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = '1s';
-
-			const expiredAccessToken = await loginUser();
+			const newRoomData = await setupSingleRoom();
 			await sleep('2s'); // Ensure the token is expired
 
 			// Restore original expiration after setup
-			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
 
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, expiredAccessToken)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
-			expect(response.status).toBe(200);
+				.get(`${ROOMS_PATH}/${newRoomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
+			expect(response.status).toBe(401);
 		});
 	});
 
 	describe('Delete Room Tests', () => {
+		let roomData: RoomData;
 		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
-		beforeEach(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
+		const recreateRoom = async () => {
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
+		};
+
+		beforeAll(async () => {
+			await recreateRoom();
 		});
 
 		it('should succeed when request includes API key', async () => {
@@ -186,76 +315,156 @@ describe('Room API Security Tests', () => {
 				.delete(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.delete(`${ROOMS_PATH}/${roomId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+			expect(response.status).toBe(200);
+
+			// Recreate room for next test since it was deleted
+			await recreateRoom();
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+			// No need to recreate - room was not deleted
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).delete(`${ROOMS_PATH}/${roomId}`);
 			expect(response.status).toBe(401);
+			// No need to recreate - room was not deleted
+		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.delete(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+			// No need to recreate - room was not deleted
 		});
 	});
 
 	describe('Get Room Config Tests', () => {
 		let roomData: RoomData;
+		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupSingleRoom();
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
 		});
 
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
+		});
+
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${ROOMS_PATH}/${roomData.room.roomId}/config`);
+			const response = await request(app).get(`${ROOMS_PATH}/${roomId}/config`);
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is moderator', async () => {
+		it('should succeed when using room member token', async () => {
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is moderator of a different room', async () => {
+		it('should fail when using room member token from a different room', async () => {
 			const newRoomData = await setupSingleRoom();
 
 			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(403);
-		});
-
-		it('should succeed when user is speaker', async () => {
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.speakerToken);
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when user is speaker of a different room', async () => {
-			const newRoomData = await setupSingleRoom();
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${roomData.room.roomId}/config`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.speakerToken);
 			expect(response.status).toBe(403);
 		});
 	});
@@ -263,18 +472,20 @@ describe('Room API Security Tests', () => {
 	describe('Update Room Config Tests', () => {
 		const roomConfig = {
 			recording: {
-				enabled: false,
-				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				enabled: false
 			},
 			chat: { enabled: true },
 			virtualBackground: { enabled: true }
 		};
 
+		let roomData: RoomData;
 		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
 		it('should succeed when request includes API key', async () => {
@@ -285,26 +496,77 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/config`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send({ config: roomConfig });
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/config`).send({ config: roomConfig });
 			expect(response.status).toBe(401);
 		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
+				.send({ config: roomConfig });
+			expect(response.status).toBe(401);
+		});
 	});
 
 	describe('Update Room Status Tests', () => {
+		let roomData: RoomData;
 		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
 		it('should succeed when request includes API key', async () => {
@@ -315,144 +577,227 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.put(`${ROOMS_PATH}/${roomId}/status`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send({ status: 'open' });
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
 			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/status`).send({ status: 'open' });
 			expect(response.status).toBe(401);
 		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/status`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
+				.send({ status: 'open' });
+			expect(response.status).toBe(401);
+		});
 	});
 
-	describe('Generate Room Member Token Tests', () => {
+	describe('Update Room Roles Tests', () => {
 		let roomData: RoomData;
-
-		beforeAll(async () => {
-			roomData = await setupSingleRoom();
-		});
-
-		it('should succeed when no authentication is required and user is speaker', async () => {
-			await changeSecurityConfig(AuthMode.NONE);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.speakerSecret
-			});
-			expect(response.status).toBe(200);
-		});
-
-		it('should succeed when no authentication is required and user is moderator', async () => {
-			await changeSecurityConfig(AuthMode.NONE);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.moderatorSecret
-			});
-			expect(response.status).toBe(200);
-		});
-
-		it('should succeed when authentication is required for moderator and user is speaker', async () => {
-			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.speakerSecret
-			});
-			expect(response.status).toBe(200);
-		});
-
-		it('should succeed when authentication is required for moderator, user is moderator and authenticated', async () => {
-			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
-
-			const response = await request(app)
-				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
-				.send({
-					secret: roomData.moderatorSecret
-				});
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when authentication is required for moderator and user is moderator but not authenticated', async () => {
-			await changeSecurityConfig(AuthMode.MODERATORS_ONLY);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.moderatorSecret
-			});
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when authentication is required for all users, user is speaker and authenticated', async () => {
-			await changeSecurityConfig(AuthMode.ALL_USERS);
-
-			const response = await request(app)
-				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
-				.send({
-					secret: roomData.speakerSecret
-				});
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when authentication is required for all users and user is speaker but not authenticated', async () => {
-			await changeSecurityConfig(AuthMode.ALL_USERS);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.speakerSecret
-			});
-			expect(response.status).toBe(401);
-		});
-
-		it('should succeed when authentication is required for all users, user is moderator and authenticated', async () => {
-			await changeSecurityConfig(AuthMode.ALL_USERS);
-
-			const response = await request(app)
-				.post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
-				.send({
-					secret: roomData.moderatorSecret
-				});
-			expect(response.status).toBe(200);
-		});
-
-		it('should fail when authentication is required for all users and user is moderator but not authenticated', async () => {
-			await changeSecurityConfig(AuthMode.ALL_USERS);
-
-			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/token`).send({
-				secret: roomData.moderatorSecret
-			});
-			expect(response.status).toBe(401);
-		});
-	});
-
-	describe('Get Room Member Roles and Permissions Tests', () => {
 		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			const room = await createRoom();
-			roomId = room.roomId;
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
-		it('should succeed if user is not authenticated', async () => {
-			const response = await request(app).get(`${INTERNAL_ROOMS_PATH}/${roomId}/roles`);
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ roles: {} });
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as ADMIN', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/roles`).send({ roles: {} });
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/roles`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
+				.send({ roles: {} });
+			expect(response.status).toBe(401);
 		});
 	});
 
-	describe('Get Room Member Role and Permissions Tests', () => {
+	describe('Update Room Anonymous Config Tests', () => {
 		let roomData: RoomData;
+		let roomId: string;
+		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupSingleRoom();
+			roomData = await setupRoomWithTestUsers();
+			roomId = roomData.room.roomId;
+			roomUsers = roomData.users!;
 		});
 
-		it('should succeed if user is not authenticated', async () => {
-			const response = await request(app).get(
-				`${INTERNAL_ROOMS_PATH}/${roomData.room.roomId}/roles/${roomData.moderatorSecret}`
-			);
+		it('should succeed when request includes API key', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send({ anonymous: {} });
 			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as ADMIN', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(200);
+		});
+
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is not authenticated', async () => {
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/anonymous`).send({ anonymous: {} });
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when using room member token', async () => {
+			const response = await request(app)
+				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
+				.send({ anonymous: {} });
+			expect(response.status).toBe(401);
 		});
 	});
 });
