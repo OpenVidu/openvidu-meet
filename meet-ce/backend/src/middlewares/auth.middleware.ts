@@ -135,11 +135,11 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 
 			// Check if password change is required
 			if (user.mustChangePassword) {
-				// Allow only change password endpoint when password change is required
+				// Allow only change-password and me endpoints
 				const requestPath = req.path;
-				const allowedPath = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`;
+				const allowedPaths = ['/change-password', '/me'];
 
-				if (requestPath !== allowedPath) {
+				if (!allowedPaths.includes(requestPath)) {
 					throw errorPasswordChangeRequired();
 				}
 			}
