@@ -4,14 +4,18 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
+	MeetRoomAnonymousConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
+	MeetRoomRolesConfig,
 	MeetRoomStatus,
+	MeetUserOptions,
 	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
@@ -45,6 +49,8 @@ export const startTestServer = async (): Promise<Express> => {
 	await initializeEagerServices();
 	return app;
 };
+
+// API KEY HELPERS
 
 export const generateApiKey = async (): Promise<string> => {
 	checkAppIsRunning();
@@ -93,6 +99,8 @@ export const restoreDefaultApiKeys = async () => {
 
 	await apiKeyService.initializeApiKey();
 };
+
+// GLOBAL CONFIG HELPERS
 
 export const getRoomsAppearanceConfig = async () => {
 	checkAppIsRunning();
@@ -170,22 +178,63 @@ export const restoreDefaultGlobalConfig = async () => {
 	await configService['saveGlobalConfig'](defaultGlobalConfig);
 };
 
+// AUTH HELPERS
+
 /**
- * Logs in admin user and returns the access token in the format "Bearer <token>"
+ * Logs in a user and returns the access token in the format "Bearer <token>"
  */
-export const loginAdminUser = async (): Promise<string> => {
+export const loginUser = async (userId: string, password: string): Promise<string> => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
 		.send({
-			username: MEET_ENV.INITIAL_ADMIN_USER,
-			password: MEET_ENV.INITIAL_ADMIN_PASSWORD
+			userId,
+			password
 		})
 		.expect(200);
 
 	expect(response.body).toHaveProperty('accessToken');
 	return `Bearer ${response.body.accessToken}`;
+};
+
+/**
+ * Logs in admin user and returns the access token in the format "Bearer <token>"
+ */
+export const loginAdminUser = async (): Promise<string> => {
+	return loginUser(MEET_ENV.INITIAL_ADMIN_USER, MEET_ENV.INITIAL_ADMIN_PASSWORD);
+};
+
+// USER HELPERS
+
+export const createUser = async (options: MeetUserOptions) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send(options);
+};
+
+export const getUsers = async (query: Record<string, unknown> = {}) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.query(query);
+};
+
+export const getUser = async (userId: string) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send();
 };
 
 export const getMe = async (accessToken: string) => {
@@ -206,14 +255,98 @@ export const changePassword = async (currentPassword: string, newPassword: strin
 		.send({ currentPassword, newPassword });
 };
 
-export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
+/**
+ * Changes the password for the authenticated user after first login
+ * and returns the access token in the format "Bearer <token>"
+ */
+export const changePasswordAfterFirstLogin = async (
+	currentPassword: string,
+	newPassword: string,
+	accessToken: string
+): Promise<string> => {
+	const response = await changePassword(currentPassword, newPassword, accessToken);
+	expect(response.status).toBe(200);
+
+	expect(response.body).toHaveProperty('accessToken');
+	return `Bearer ${response.body.accessToken}`;
+};
+
+export const resetUserPassword = async (userId: string, newPassword: string) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send(options)
-		.expect(201);
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send({ newPassword });
+};
+
+export const updateUserRole = async (userId: string, role: string) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send({ role });
+};
+
+export const deleteUser = async (userId: string) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send();
+};
+
+export const bulkDeleteUsers = async (userIds: string[]) => {
+	checkAppIsRunning();
+
+	const accessToken = await loginAdminUser();
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.query({ userIds: userIds.join(',') });
+};
+
+export const deleteAllUsers = async () => {
+	checkAppIsRunning();
+
+	let nextPageToken: string | undefined;
+
+	do {
+		const response = await getUsers({ fields: 'userId', maxItems: 100, nextPageToken });
+		expect(response.status).toBe(200);
+
+		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
+		const userIds = response.body.users
+			.map((user: { userId: string }) => user.userId)
+			.filter((userId: string) => userId !== MEET_ENV.INITIAL_ADMIN_USER);
+
+		if (userIds.length === 0) {
+			break;
+		}
+
+		await bulkDeleteUsers(userIds);
+	} while (nextPageToken);
+};
+
+// ROOM HELPERS
+
+export const createRoom = async (options: MeetRoomOptions = {}, accessToken?: string): Promise<MeetRoom> => {
+	checkAppIsRunning();
+
+	const req = request(app).post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`).send(options).expect(201);
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	const response = await req;
 	return response.body;
 };
 
@@ -274,6 +407,24 @@ export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) =
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ status });
+};
+
+export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRolesConfig) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send({ rolesConfig });
+};
+
+export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig: MeetRoomAnonymousConfig) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/anonymous`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send({ anonymousConfig });
 };
 
 export const deleteRoom = async (roomId: string, query: Record<string, unknown> = {}) => {
@@ -348,15 +499,63 @@ export const executeRoomStatusValidationGC = async () => {
 	checkAppIsRunning();
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
-	await (roomTaskScheduler)['validateRoomsStatusGC']();
+	await roomTaskScheduler['validateRoomsStatusGC']();
 	await sleep('1s');
 };
 
-export const runReleaseActiveRecordingLock = async (roomId: string) => {
+// ROOM MEMBER HELPERS
+
+export const createRoomMember = async (roomId: string, memberOptions: MeetRoomMemberOptions) => {
 	checkAppIsRunning();
 
-	const recordingService = container.get(RecordingService);
-	await recordingService.releaseRecordingLockIfNoEgress(roomId);
+	return await request(app)
+		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(memberOptions);
+};
+
+export const getRoomMembers = async (roomId: string, query: Record<string, unknown> = {}) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(query);
+};
+
+export const getRoomMember = async (roomId: string, memberId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+};
+
+export const updateRoomMember = async (roomId: string, memberId: string, updates: Record<string, unknown>) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(updates);
+};
+
+export const deleteRoomMember = async (roomId: string, memberId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send();
+};
+
+export const bulkDeleteRoomMembers = async (roomId: string, memberIds: string[]) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query({ memberIds: memberIds.join(',') });
 };
 
 export const generateRoomMemberTokenRequest = async (roomId: string, tokenOptions: MeetRoomMemberTokenOptions) => {
@@ -382,6 +581,8 @@ export const generateRoomMemberToken = async (
 	return `Bearer ${response.body.token}`;
 };
 
+// MEETING HELPERS
+
 /**
  * Adds a fake participant to a LiveKit room for testing purposes.
  *
@@ -389,6 +590,7 @@ export const generateRoomMemberToken = async (
  * @param participantIdentity The identity for the fake participant
  */
 export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
+	await ensureLivekitCliInstalled();
 	const process = spawn('lk', [
 		'room',
 		'join',
@@ -438,54 +640,6 @@ export const updateParticipantMetadata = async (
 	await sleep('1s');
 };
 
-/**
- * Verifies that the LiveKit CLI tool 'lk' is installed and accessible
- * @throws Error if 'lk' command is not found
- */
-const ensureLivekitCliInstalled = async (): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		const checkProcess = spawn('lk', ['--version'], {
-			stdio: 'pipe'
-		});
-
-		let hasResolved = false;
-
-		const resolveOnce = (success: boolean, message?: string) => {
-			if (hasResolved) return;
-
-			hasResolved = true;
-
-			if (success) {
-				resolve();
-			} else {
-				reject(new Error(message || 'LiveKit CLI check failed'));
-			}
-		};
-
-		checkProcess.on('error', (error) => {
-			if (error.message.includes('ENOENT')) {
-				resolveOnce(false, '❌ LiveKit CLI tool "lk" is not installed or not in PATH.');
-			} else {
-				resolveOnce(false, `Failed to check LiveKit CLI: ${error.message}`);
-			}
-		});
-
-		checkProcess.on('exit', (code) => {
-			if (code === 0) {
-				resolveOnce(true);
-			} else {
-				resolveOnce(false, `LiveKit CLI exited with code ${code}`);
-			}
-		});
-
-		// Timeout after 5 seconds
-		setTimeout(() => {
-			checkProcess.kill();
-			resolveOnce(false, 'LiveKit CLI check timed out');
-		}, 5000);
-	});
-};
-
 export const disconnectFakeParticipants = async () => {
 	fakeParticipantsProcesses.forEach((process, participant) => {
 		process.kill();
@@ -532,6 +686,8 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	return response;
 };
 
+// RECORDING HELPERS
+
 export const startRecording = async (roomId: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
@@ -551,6 +707,51 @@ export const stopRecording = async (recordingId: string, moderatorToken: string)
 	await sleep('2.5s');
 
 	return response;
+};
+
+export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(query);
+};
+
+export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+};
+
+export const downloadRecordings = async (
+	recordingIds: string[],
+	asBuffer = true,
+	roomMemberToken?: string
+): Promise<Response> => {
+	checkAppIsRunning();
+
+	const req = request(app)
+		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
+		.query({ recordingIds: recordingIds.join(',') });
+
+	if (roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	if (asBuffer) {
+		return await req.buffer().parse((res, cb) => {
+			const data: Buffer[] = [];
+			res.on('data', (chunk) => data.push(chunk));
+			res.on('end', () => cb(null, Buffer.concat(data)));
+		});
+	}
+
+	return await req;
 };
 
 export const getRecording = async (recordingId: string) => {
@@ -608,34 +809,6 @@ export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberTok
 	return await req;
 };
 
-export const downloadRecordings = async (
-	recordingIds: string[],
-	asBuffer = true,
-	roomMemberToken?: string
-): Promise<Response> => {
-	checkAppIsRunning();
-
-	const req = request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
-		.query({ recordingIds: recordingIds.join(',') });
-
-	if (roomMemberToken) {
-		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
-	} else {
-		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-	}
-
-	if (asBuffer) {
-		return await req.buffer().parse((res, cb) => {
-			const data: Buffer[] = [];
-			res.on('data', (chunk) => data.push(chunk));
-			res.on('end', () => cb(null, Buffer.concat(data)));
-		});
-	}
-
-	return await req;
-};
-
 export const stopAllRecordings = async (moderatorToken: string) => {
 	checkAppIsRunning();
 
@@ -665,23 +838,6 @@ export const stopAllRecordings = async (moderatorToken: string) => {
 	await sleep('1s');
 };
 
-export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.query(query);
-};
-
-export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
-};
-
 export const deleteAllRecordings = async () => {
 	checkAppIsRunning();
 
@@ -708,6 +864,15 @@ export const deleteAllRecordings = async () => {
 	} while (nextPageToken);
 };
 
+export const runReleaseActiveRecordingLock = async (roomId: string) => {
+	checkAppIsRunning();
+
+	const recordingService = container.get(RecordingService);
+	await recordingService.releaseRecordingLockIfNoEgress(roomId);
+};
+
+// ANALYTICS HELPERS
+
 export const getAnalytics = async () => {
 	checkAppIsRunning();
 
@@ -726,4 +891,52 @@ const checkAppIsRunning = () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
+};
+
+/**
+ * Verifies that the LiveKit CLI tool 'lk' is installed and accessible
+ * @throws Error if 'lk' command is not found
+ */
+const ensureLivekitCliInstalled = async (): Promise<void> => {
+	return new Promise((resolve, reject) => {
+		const checkProcess = spawn('lk', ['--version'], {
+			stdio: 'pipe'
+		});
+
+		let hasResolved = false;
+
+		const resolveOnce = (success: boolean, message?: string) => {
+			if (hasResolved) return;
+
+			hasResolved = true;
+
+			if (success) {
+				resolve();
+			} else {
+				reject(new Error(message || 'LiveKit CLI check failed'));
+			}
+		};
+
+		checkProcess.on('error', (error) => {
+			if (error.message.includes('ENOENT')) {
+				resolveOnce(false, '❌ LiveKit CLI tool "lk" is not installed or not in PATH.');
+			} else {
+				resolveOnce(false, `Failed to check LiveKit CLI: ${error.message}`);
+			}
+		});
+
+		checkProcess.on('exit', (code) => {
+			if (code === 0) {
+				resolveOnce(true);
+			} else {
+				resolveOnce(false, `LiveKit CLI exited with code ${code}`);
+			}
+		});
+
+		// Timeout after 5 seconds
+		setTimeout(() => {
+			checkProcess.kill();
+			resolveOnce(false, 'LiveKit CLI check timed out');
+		}, 5000);
+	});
 };
