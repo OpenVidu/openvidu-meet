@@ -304,10 +304,30 @@ describe('Room API Tests', () => {
 
 				// End meeting and check that the room is closed and recordings are not deleted
 				await endMeeting(roomId, moderatorToken);
-				const roomResponse = await getRoom(roomId);
-				expect(roomResponse.status).toBe(200);
+
+				// Wait for the room to be closed (with retry logic to avoid flakiness in CI)
+				let roomResponse;
+				let attempts = 0;
+				const maxAttempts = 10;
+				const retryDelay = 500; // 500ms between retries
+
+				while (attempts < maxAttempts) {
+					roomResponse = await getRoom(roomId);
+
+					if (roomResponse.status === 200 && roomResponse.body.status === MeetRoomStatus.CLOSED) {
+						break;
+					}
+
+					attempts++;
+
+					if (attempts < maxAttempts) {
+						await new Promise(resolve => setTimeout(resolve, retryDelay));
+					}
+				}
+
+				expect(roomResponse!.status).toBe(200);
 				expectValidRoom(
-					roomResponse.body,
+					roomResponse!.body,
 					roomName,
 					undefined,
 					undefined,
