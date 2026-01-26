@@ -15,16 +15,19 @@ const jestConfig = {
 		'^(\\.{1,2}/.*)\\.js$': '$1' // Allow importing js files and resolving to ts files
 	},
 	transform: {
-		'^.+\\.tsx?$': ['ts-jest', {
-			tsconfig: {
-				module: 'esnext',
-				moduleResolution: 'node16',
-				esModuleInterop: true,
-				allowSyntheticDefaultImports: true,
-				isolatedModules: true
-			},
-			useESM: true
-		}]
+		'^.+\\.tsx?$': [
+			'ts-jest',
+			{
+				tsconfig: {
+					module: 'esnext',
+					moduleResolution: 'node16',
+					esModuleInterop: true,
+					allowSyntheticDefaultImports: true,
+					isolatedModules: true
+				},
+				useESM: true
+			}
+		]
 	}
 };
 
