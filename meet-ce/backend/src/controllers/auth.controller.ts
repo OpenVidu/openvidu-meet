@@ -17,10 +17,10 @@ import { getRefreshToken } from '../utils/token.utils.js';
 export const login = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Login request received');
-	const { username, password } = req.body as { username: string; password: string };
+	const { userId, password } = req.body as { userId: string; password: string };
 
 	const userService = container.get(UserService);
-	const user = await userService.authenticateUser(username, password);
+	const user = await userService.authenticateUser(userId, password);
 
 	if (!user) {
 		logger.warn('Login failed');
@@ -36,9 +36,9 @@ export const login = async (req: Request, res: Response) => {
 			// Generate temporary token with limited TTL, no refresh token
 			const accessToken = await tokenService.generateAccessToken(user, true);
 
-			logger.info(`Login succeeded for user '${username}', but password change is required`);
+			logger.info(`Login succeeded for user '${userId}', but password change is required`);
 			return res.status(200).json({
-				message: `User '${username}' logged in successfully, but password change is required`,
+				message: `User '${userId}' logged in successfully, but password change is required`,
 				accessToken,
 				mustChangePassword: true
 			});
@@ -48,9 +48,9 @@ export const login = async (req: Request, res: Response) => {
 		const accessToken = await tokenService.generateAccessToken(user);
 		const refreshToken = await tokenService.generateRefreshToken(user);
 
-		logger.info(`Login succeeded for user '${username}'`);
+		logger.info(`Login succeeded for user '${userId}'`);
 		return res.status(200).json({
-			message: `User '${username}' logged in successfully`,
+			message: `User '${userId}' logged in successfully`,
 			accessToken,
 			refreshToken
 		});
