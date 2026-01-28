@@ -472,26 +472,32 @@ export class RoomMemberService {
 
 		if (secret) {
 			// Case 1: Secret provided (Anonymous access or External Member)
-			const isValidSecret = await this.roomService.isValidRoomSecret(roomId, secret);
+			const isExternalMemberId = secret.startsWith('ext-');
 
-			if (isValidSecret) {
+			if (isExternalMemberId) {
+				// If secret is a external member ID, fetch the member and assign their role and permissions
+				const member = await this.getRoomMember(roomId, secret);
+
+				if (!member) {
+					throw errorInvalidRoomSecret(roomId, secret);
+				}
+
+				memberId = member.memberId;
+				baseRole = member.baseRole;
+				customPermissions = member.customPermissions;
+				effectivePermissions = member.effectivePermissions;
+			} else {
+				const isValidSecret = await this.roomService.isValidRoomSecret(roomId, secret);
+
+				if (!isValidSecret) {
+					throw errorInvalidRoomSecret(roomId, secret);
+				}
+
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
 				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
 
 				const room = await this.roomService.getMeetRoom(roomId);
 				effectivePermissions = room.roles[baseRole].permissions;
-			} else {
-				// If secret is a memberId, fetch the member and assign their role and permissions
-				const member = await this.getRoomMember(roomId, secret);
-
-				if (member) {
-					memberId = member.memberId;
-					baseRole = member.baseRole;
-					customPermissions = member.customPermissions;
-					effectivePermissions = member.effectivePermissions;
-				} else {
-					throw errorInvalidRoomSecret(roomId, secret);
-				}
 			}
 		} else {
 			// Case 2: Authenticated user
@@ -512,14 +518,14 @@ export class RoomMemberService {
 				// If user is a member, fetch their role and permissions
 				const member = await this.getRoomMember(roomId, user.userId);
 
-				if (member) {
-					memberId = user.userId;
-					baseRole = member.baseRole;
-					customPermissions = member.customPermissions;
-					effectivePermissions = member.effectivePermissions;
-				} else {
+				if (!member) {
 					throw errorUnauthorized();
 				}
+
+				memberId = user.userId;
+				baseRole = member.baseRole;
+				customPermissions = member.customPermissions;
+				effectivePermissions = member.effectivePermissions;
 			}
 		}
 
@@ -533,9 +539,9 @@ export class RoomMemberService {
 				customPermissions,
 				memberId
 			);
-		} else {
-			return this.generateToken(roomId, baseRole, effectivePermissions, customPermissions, memberId);
 		}
+
+		return this.generateToken(roomId, baseRole, effectivePermissions, customPermissions, memberId);
 	}
 
 	/**
