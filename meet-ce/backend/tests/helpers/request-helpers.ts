@@ -558,13 +558,22 @@ export const bulkDeleteRoomMembers = async (roomId: string, memberIds: string[])
 		.query({ memberIds: memberIds.join(',') });
 };
 
-export const generateRoomMemberTokenRequest = async (roomId: string, tokenOptions: MeetRoomMemberTokenOptions) => {
+export const generateRoomMemberTokenRequest = async (
+	roomId: string,
+	tokenOptions: MeetRoomMemberTokenOptions,
+	accessToken?: string
+) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
+	const req = request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token`)
 		.send(tokenOptions);
-	return response;
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	}
+
+	return await req;
 };
 
 /**
@@ -572,9 +581,10 @@ export const generateRoomMemberTokenRequest = async (roomId: string, tokenOption
  */
 export const generateRoomMemberToken = async (
 	roomId: string,
-	tokenOptions: MeetRoomMemberTokenOptions
+	tokenOptions: MeetRoomMemberTokenOptions,
+	accessToken?: string
 ): Promise<string> => {
-	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions);
+	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions, accessToken);
 	expect(response.status).toBe(200);
 
 	expect(response.body).toHaveProperty('token');
@@ -783,6 +793,25 @@ export const getRecordingUrl = async (recordingId: string, privateAccess = false
 		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`)
 		.query({ privateAccess })
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+};
+
+/**
+ * Retrieves the access secret for a specific recording by parsing the recording URL.
+ *
+ * @param recordingId - The unique identifier of the recording
+ * @param privateAccess - Whether to request a private access URL
+ * @returns A Promise that resolves to the access secret string
+ */
+export const getRecordingAccessSecret = async (recordingId: string, privateAccess = false): Promise<string> => {
+	const response = await getRecordingUrl(recordingId, privateAccess);
+	expect(response.status).toBe(200);
+	const recordingUrl = response.body.url;
+	expect(recordingUrl).toBeDefined();
+
+	// Parse the URL to extract the secret from the query parameters
+	const parsedUrl = new URL(recordingUrl);
+	const secret = parsedUrl.searchParams.get('secret');
+	return secret!;
 };
 
 export const deleteRecording = async (recordingId: string) => {

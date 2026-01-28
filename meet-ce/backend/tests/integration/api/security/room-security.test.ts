@@ -4,7 +4,7 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { deleteAllRooms, deleteAllUsers, sleep, startTestServer } from '../../../helpers/request-helpers.js';
-import { setupRoomWithTestUsers, setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
@@ -63,11 +63,24 @@ describe('Room API Security Tests', () => {
 	});
 
 	describe('Get Rooms Tests', () => {
+		let roomData: RoomData;
+		let roomUsers: RoomTestUsers;
+
+		beforeAll(async () => {
+			// Ensure no rooms exist before tests
+			await deleteAllRooms();
+
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
+			roomUsers = roomData.users!;
+		});
+
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
@@ -75,20 +88,47 @@ describe('Room API Security Tests', () => {
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
 		});
 
-		it('should succeed when user is authenticated as USER', async () => {
+		it('should succeed when user is authenticated as USER and is room owner', async () => {
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
+		});
+
+		it('should succeed when user is authenticated as USER and is room member', async () => {
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
+		});
+
+		it('should not return rooms when user is authenticated as USER without access to any rooms', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
 			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(0);
 		});
 
-		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {
+		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
+		});
+
+		it('should not return rooms when user is authenticated as ROOM_MEMBER without access to any rooms', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(0);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -111,7 +151,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		const recreateRoom = async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		};
@@ -162,6 +203,15 @@ describe('Room API Security Tests', () => {
 			// No need to recreate - room was not deleted
 		});
 
+		it('should fail when user is authenticated as USER without access to the room', async () => {
+			const response = await request(app)
+				.delete(ROOMS_PATH)
+				.query({ roomIds: roomId })
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(400);
+			// No need to recreate - room was not deleted
+		});
+
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
 				.delete(ROOMS_PATH)
@@ -201,7 +251,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});
@@ -301,7 +352,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		const recreateRoom = async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		};
@@ -393,7 +445,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});
@@ -483,7 +536,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});
@@ -564,7 +618,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});
@@ -645,7 +700,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});
@@ -726,7 +782,8 @@ describe('Room API Security Tests', () => {
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
-			roomData = await setupRoomWithTestUsers();
+			roomData = await setupSingleRoom();
+			roomData = await setupTestUsersForRoom(roomData);
 			roomId = roomData.room.roomId;
 			roomUsers = roomData.users!;
 		});

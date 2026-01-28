@@ -53,6 +53,12 @@ export interface RoomTestUsers {
 	/** User with USER role who is a member of the room (not owner) */
 	userMember: UserData;
 
+	/** Room member details for userMember */
+	userMemberDetails: RoomMemberData;
+
 	/** User with ROOM_MEMBER role who is a member of the room */
 	roomMember: UserData;
+
+	/** Room member details for roomMember */
+	roomMemberDetails: RoomMemberData;
 }
