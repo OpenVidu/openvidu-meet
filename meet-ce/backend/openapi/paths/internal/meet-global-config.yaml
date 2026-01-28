@@ -139,3 +139,20 @@
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
+
+/config/captions:
+    get:
+        operationId: getCaptionsConfig
+        summary: Get captions config
+        description: >
+            Retrieves the captions configuration from the environment variable MEET_CAPTIONS_ENABLED.
+            This endpoint returns whether captions are enabled in the system.
+        tags:
+            - Internal API - Global Config
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-get-captions-config.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

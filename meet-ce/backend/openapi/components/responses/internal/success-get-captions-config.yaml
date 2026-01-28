@@ -1,0 +1,5 @@
+description: Successfully retrieved captions config
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/internal/global-captions-config.yaml'

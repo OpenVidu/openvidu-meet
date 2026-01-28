@@ -184,6 +184,13 @@ export const changeSecurityConfig = async (authMode: AuthMode) => {
 	expect(response.status).toBe(200);
 };
 
+export const getCaptionsConfig = async () => {
+	checkAppIsRunning();
+
+	const response = await request(app).get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/captions`).send();
+	return response;
+};
+
 export const restoreDefaultGlobalConfig = async () => {
 	const configService = container.get(GlobalConfigService);
 	const defaultGlobalConfig = configService['getDefaultConfig']();

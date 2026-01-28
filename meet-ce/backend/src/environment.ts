@@ -79,13 +79,14 @@ export const MEET_ENV = {
 	REDIS_SENTINEL_PASSWORD: process.env.MEET_REDIS_SENTINEL_PASSWORD ?? '',
 	REDIS_SENTINEL_MASTER_NAME: process.env.MEET_REDIS_SENTINEL_MASTER_NAME ?? 'openvidu',
 
+	// Live Captions configuration
+	CAPTIONS_ENABLED: process.env.MEET_CAPTIONS_ENABLED || 'false',
+
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
 	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
 
-	// Agent Speech Processing configuration
-	CAPTIONS_ENABLED: process.env.MEET_CAPTIONS || 'true',
 };
 
 export function checkModuleEnabled() {

@@ -1,0 +1,8 @@
+type: object
+properties:
+    enabled:
+        type: boolean
+        description: Indicates whether captions are enabled in the system
+        example: true
+required:
+    - enabled
