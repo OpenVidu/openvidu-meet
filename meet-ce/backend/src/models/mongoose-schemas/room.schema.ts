@@ -113,7 +113,7 @@ const MeetCaptionsConfigSchema = new Schema(
 		enabled: {
 			type: Boolean,
 			required: true,
-			default: false
+			default: true
 		}
 	},
 	{ _id: false }

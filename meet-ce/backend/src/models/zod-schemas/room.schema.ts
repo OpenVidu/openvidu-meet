@@ -130,7 +130,7 @@ const CreateRoomConfigSchema = z
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
-		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: false }))
+		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -215,7 +215,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: false }
+		captions: { enabled: true }
 	})
 	// maxParticipants: z
 	// 	.number()

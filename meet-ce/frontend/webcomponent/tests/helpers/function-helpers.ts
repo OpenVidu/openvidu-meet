@@ -164,7 +164,7 @@ const getDefaultRoomConfig = (): MeetRoomConfig => ({
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
-	captions: { enabled: false }
+	captions: { enabled: true }
 });
 
 // Helper function to create a room for testing

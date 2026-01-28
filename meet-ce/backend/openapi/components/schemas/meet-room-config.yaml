@@ -88,8 +88,8 @@ MeetCaptionsConfig:
     properties:
         enabled:
             type: boolean
-            default: false
-            example: false
+            default: true
+            example: true
             description: >
                 If true, the room will have live captions enabled.<br/>
                 This allows participants to see real-time captions of the all participants' speech during the meeting.<br/>

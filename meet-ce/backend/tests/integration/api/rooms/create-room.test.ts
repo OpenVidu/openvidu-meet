@@ -138,7 +138,7 @@ describe('Room API Tests', () => {
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: false }, // Default value
-				captions: { enabled: false } // Default value
+				captions: { enabled: true } // Default value
 			};
 			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
 		});

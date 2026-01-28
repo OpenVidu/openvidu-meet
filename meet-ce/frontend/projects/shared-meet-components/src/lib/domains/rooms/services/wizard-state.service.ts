@@ -20,7 +20,7 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
-	captions: { enabled: false }
+	captions: { enabled: true }
 };
 
 /**

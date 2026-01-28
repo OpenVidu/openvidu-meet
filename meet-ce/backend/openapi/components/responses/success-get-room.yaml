@@ -27,7 +27,7 @@ content:
                         e2ee:
                             enabled: false
                         captions:
-                            enabled: false
+                            enabled: true
                     roles:
                         moderator:
                             permissions:
