@@ -71,17 +71,22 @@ export class TokenService {
 			at.addGrant(grants);
 		}
 
-		const captionsEnabledInEnv = MEET_ENV.CAPTIONS_ENABLED === 'true';
+		const captionsEnabledGlobally = MEET_ENV.CAPTIONS_ENABLED === 'true';
 		const captionsEnabledInRoom = Boolean(roomWithCaptions);
 
 		// Warn if configuration is inconsistent
-		if (!captionsEnabledInEnv && captionsEnabledInRoom) {
-			this.logger.warn(
-				`Captions feature is disabled in environment but Room is created with captions enabled. Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
-			);
+		if (!captionsEnabledGlobally) {
+			if (captionsEnabledInRoom) {
+				this.logger.warn(
+					`Captions feature is disabled in environment but Room is created with captions enabled. ` +
+						`Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
+				);
+			}
+
+			return await at.toJwt();
 		}
 
-		if (captionsEnabledInEnv && captionsEnabledInRoom) {
+		if (captionsEnabledInRoom) {
 			this.logger.debug('Activating Captions Agent. Configuring Room Agent Dispatch.');
 			at.roomConfig = new RoomConfiguration({
 				agents: [
