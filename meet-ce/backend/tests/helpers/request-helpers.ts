@@ -588,13 +588,19 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	return response;
 };
 
-export const startRecording = async (roomId: string) => {
+export const startRecording = async (roomId: string, config?: { layout?: string }) => {
 	checkAppIsRunning();
+
+	const body: { roomId: string; config?: { layout?: string } } = { roomId };
+
+	if (config) {
+		body.config = config;
+	}
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send({ roomId });
+		.send(body);
 };
 
 export const stopRecording = async (recordingId: string) => {

@@ -4,6 +4,14 @@
         summary: Start a recording
         description: >
             Start a new recording for an OpenVidu Meet room with the specified room ID.
+
+
+            By default, the recording will use the configuration defined in the room's settings.
+            However, you can optionally provide a configuration override in the request body to customize
+            the recording settings (e.g., layout) for this specific recording session.
+
+
+            If a configuration override is provided, those values will take precedence over the room's configuration.
         tags:
             - OpenVidu Meet - Recordings
         security:

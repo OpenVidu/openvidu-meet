@@ -9,3 +9,22 @@ content:
                     type: string
                     description: The unique identifier of the room to record.
                     example: 'room-123'
+                config:
+                    type: object
+                    description: |
+                        Optional configuration to override the room's recording configuration for this specific recording.
+                        If not provided, the recording will use the configuration defined in the room's config.
+                    properties:
+                        layout:
+                            type: string
+                            enum:
+                                - grid
+                                - speaker
+                                - single-speaker
+                            example: speaker
+                            description: |
+                                Defines the layout of the recording. This will override the room's default recording layout.
+                                Options are:
+                                - `grid`: All participants are shown in a grid layout.
+                                - `speaker`: The active speaker is shown prominently, with other participants in smaller thumbnails.
+                                - `single-speaker`: Only the active speaker is shown in the recording.

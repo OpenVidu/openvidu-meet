@@ -14,6 +14,7 @@ content:
             roomId: 'room-123'
             roomName: 'room'
             status: 'ending'
+            layout: 'speaker'
             filename: 'room-123--XX445.mp4'
             startDate: 1600000000000
             details: 'End reason: StopEgress API'

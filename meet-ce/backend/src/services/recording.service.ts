@@ -1,6 +1,7 @@
 import {
 	MeetRecordingFilters,
 	MeetRecordingInfo,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomConfig
@@ -51,7 +52,10 @@ export class RecordingService {
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
-	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
+	async startRecording(
+		roomId: string,
+		configOverride?: { layout?: MeetRecordingLayout }
+	): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
 		let eventListener!: (info: Record<string, unknown>) => void;
 		let recordingId = '';
@@ -106,7 +110,7 @@ export class RecordingService {
 
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
-					const options = this.generateCompositeOptionsFromRequest(room.config);
+					const options = this.generateCompositeOptionsFromRequest(room.config, configOverride);
 					const output = this.generateFileOutputFromRequest(roomId);
 					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
@@ -700,13 +704,20 @@ export class RecordingService {
 
 	/**
 	 * Generates composite options for recording based on the provided room configuration.
+	 * If configOverride is provided, its values will take precedence over room configuration.
 	 *
 	 * @param roomConfig  The room configuration
+	 * @param configOverride  Optional configuration override from the request
 	 * @returns The generated RoomCompositeOptions object.
 	 */
-	protected generateCompositeOptionsFromRequest({ recording }: MeetRoomConfig): RoomCompositeOptions {
+	protected generateCompositeOptionsFromRequest(
+		roomConfig: MeetRoomConfig,
+		configOverride?: { layout?: MeetRecordingLayout }
+	): RoomCompositeOptions {
+		const roomRecordingConfig = roomConfig.recording;
+		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
 		return {
-			layout: recording.layout
+			layout
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false

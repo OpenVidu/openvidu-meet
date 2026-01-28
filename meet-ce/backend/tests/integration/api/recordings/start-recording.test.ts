@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoom } from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRoom } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
@@ -205,6 +205,79 @@ describe('Recording API Tests', () => {
 			setInternalConfig({
 				RECORDING_STARTED_TIMEOUT: '30s'
 			});
+		});
+	});
+
+	describe('Start Recording with Config Override', () => {
+		beforeAll(async () => {
+			// Create a room and join a participant
+			context = await setupMultiRoomTestContext(1, true);
+			({ room } = context.getRoomByIndex(0)!);
+		});
+
+		afterEach(async () => {
+			await disconnectFakeParticipants();
+			await stopAllRecordings();
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			context = null;
+		});
+
+		it('should start recording with default room layout when no config override is provided', async () => {
+			const response = await startRecording(room.roomId);
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
+			// Verify the recording uses the room's default layout (grid)
+			expect(response.body.layout).toBe(MeetRecordingLayout.GRID);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it('should override room layout when config with layout is provided', async () => {
+			const response = await startRecording(room.roomId, { layout: MeetRecordingLayout.SPEAKER });
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
+			// Verify the recording uses the overridden layout
+			expect(response.body.layout).toBe(MeetRecordingLayout.SPEAKER);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it('should override room layout with single-speaker layout', async () => {
+			const response = await startRecording(room.roomId, { layout: MeetRecordingLayout.SINGLE_SPEAKER });
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
+			// Verify the recording uses the overridden layout
+			expect(response.body.layout).toBe(MeetRecordingLayout.SINGLE_SPEAKER);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it('should reject invalid layout in config override', async () => {
+			const response = await startRecording(room.roomId, { layout: 'invalid-layout' });
+
+			expectValidationError(response, 'config.layout', 'Invalid enum value');
+		});
+
+		it('should accept empty config object and use room defaults', async () => {
+			const response = await startRecording(room.roomId, {});
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
+			// Verify the recording uses the room's default layout
+			expect(response.body.layout).toBe(MeetRecordingLayout.GRID);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
 		});
 	});
 });

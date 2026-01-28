@@ -18,11 +18,11 @@ import { getBaseUrl } from '../utils/url.utils.js';
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const { roomId } = req.body;
+	const { roomId, config } = req.body;
 	logger.info(`Starting recording in room '${roomId}'`);
 
 	try {
-		const recordingInfo = await recordingService.startRecording(roomId);
+		const recordingInfo = await recordingService.startRecording(roomId, config);
 		res.setHeader(
 			'Location',
 			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
