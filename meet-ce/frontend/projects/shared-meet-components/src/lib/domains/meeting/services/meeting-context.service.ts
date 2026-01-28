@@ -187,11 +187,11 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Returns whether captions feature is allowed in the room
-	 * @returns true if captions feature is allowed, false otherwise
+	 * Returns the captions status based on room and global configuration
+	 * @returns CaptionsStatus ('HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING')
 	 */
-	areCaptionsAllowed(): boolean {
-		return this.featureConfigService.features().showCaptions;
+	getCaptionsStatus() {
+		return this.featureConfigService.features().captionsStatus;
 	}
 
 	/**

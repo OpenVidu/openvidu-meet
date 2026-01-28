@@ -76,4 +76,19 @@ export class GlobalConfigService {
 		const path = `${this.GLOBAL_CONFIG_API}/rooms/appearance`;
 		await this.httpService.putRequest(path, { appearance: config });
 	}
+
+	private async getCaptionsConfig(): Promise<{ enabled: boolean }> {
+		const path = `${this.GLOBAL_CONFIG_API}/captions`;
+		return await this.httpService.getRequest<{ enabled: boolean }>(path);
+	}
+
+	async loadCaptionsConfig(): Promise<void> {
+		try {
+			const config = await this.getCaptionsConfig();
+			this.featureConfService.setCaptionsGlobalConfig(config.enabled);
+		} catch (error) {
+			this.log.e('Error loading captions config:', error);
+			throw error;
+		}
+	}
 }

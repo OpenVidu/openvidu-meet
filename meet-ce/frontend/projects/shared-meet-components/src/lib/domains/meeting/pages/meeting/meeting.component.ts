@@ -120,7 +120,10 @@ export class MeetingComponent implements OnInit {
 			if (token && this.showLobby) {
 				// The meeting view must be shown before loading the appearance config
 				this.showLobby = false;
-				await this.configService.loadRoomsAppearanceConfig();
+				await Promise.all([
+					this.configService.loadRoomsAppearanceConfig(),
+					this.configService.loadCaptionsConfig()
+				]);
 			}
 		});
 	}

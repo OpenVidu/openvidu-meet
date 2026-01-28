@@ -2,10 +2,20 @@
 @if (showCaptionsButton()) {
 	@if (isMobile()) {
 		<!-- On mobile, the captions button will be inside a menu -->
-		<button id="captions-button" mat-menu-item (click)="onCaptionsClick()" [disableRipple]="true">
+		<button
+			id="captions-button"
+			mat-menu-item
+			(click)="onCaptionsClick()"
+			[disabled]="isCaptionsButtonDisabled()"
+			[disableRipple]="true"
+		>
 			<mat-icon class="material-symbols-outlined">subtitles</mat-icon>
 			<span class="button-text">
-				{{ areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions' }}
+				@if (isCaptionsButtonDisabled()) {
+					Live captions (disabled by admin)
+				} @else {
+					{{ areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions' }}
+				}
 			</span>
 		</button>
 	} @else {
@@ -14,10 +24,22 @@
 			[ngClass]="areCaptionsEnabledByUser() ? 'active' : ''"
 			mat-icon-button
 			(click)="onCaptionsClick()"
+			[disabled]="isCaptionsButtonDisabled()"
+			[disabledInteractive]="isCaptionsButtonDisabled()"
 			[disableRipple]="true"
-			[matTooltip]="areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions'"
+			[matTooltip]="
+				isCaptionsButtonDisabled()
+					? 'Live captions are disabled by admin'
+					: areCaptionsEnabledByUser()
+						? 'Disable live captions'
+						: 'Enable live captions'
+			"
 		>
-			<mat-icon>subtitles</mat-icon>
+			@if (isCaptionsButtonDisabled()) {
+				<mat-icon>subtitles_off</mat-icon>
+			} @else {
+				<mat-icon>subtitles</mat-icon>
+			}
 		</button>
 	}
 }

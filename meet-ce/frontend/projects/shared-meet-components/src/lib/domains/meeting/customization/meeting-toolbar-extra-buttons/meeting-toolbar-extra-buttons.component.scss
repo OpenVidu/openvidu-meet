@@ -3,3 +3,7 @@
 #captions-button.active {
 	background-color: var(--ov-accent-action-color);
 }
+
+#captions-button.mat-mdc-button-disabled {
+	opacity: 0.5;
+}

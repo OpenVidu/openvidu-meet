@@ -1,13 +1,14 @@
 import { computed, Injectable, signal } from '@angular/core';
 import {
 	MeetAppearanceConfig,
+	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import { ApplicationFeatures } from '../models/app.model';
+import { ApplicationFeatures, CaptionsStatus } from '../models/app.model';
 
 /**
  * Base configuration for default features
@@ -22,7 +23,7 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 	showRecordingPanel: true,
 	showChat: true,
 	showBackgrounds: true,
-	showCaptions: false,
+	captionsStatus: 'ENABLED',
 	showParticipantList: true,
 	showSettings: true,
 	showFullscreen: true,
@@ -52,6 +53,7 @@ export class FeatureConfigurationService {
 	protected roomMemberRole = signal<MeetRoomMemberRole | undefined>(undefined);
 	protected roomMemberPermissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	protected appearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
+	protected captionsGlobalConfig = signal<boolean>(false);
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<ApplicationFeatures>(() =>
@@ -59,7 +61,8 @@ export class FeatureConfigurationService {
 			this.roomConfig(),
 			this.roomMemberRole(),
 			this.roomMemberPermissions(),
-			this.appearanceConfig()
+			this.appearanceConfig(),
+			this.captionsGlobalConfig()
 		)
 	);
 
@@ -100,13 +103,22 @@ export class FeatureConfigurationService {
 	}
 
 	/**
+	 * Updates captions global config
+	 */
+	setCaptionsGlobalConfig(enabled: boolean): void {
+		this.log.d('Updating captions global config', enabled);
+		this.captionsGlobalConfig.set(enabled);
+	}
+
+	/**
 	 * Core logic to calculate features based on all configurations
 	 */
 	protected calculateFeatures(
 		roomConfig?: MeetRoomConfig,
 		role?: MeetRoomMemberRole,
 		permissions?: MeetRoomMemberPermissions,
-		appearanceConfig?: MeetAppearanceConfig
+		appearanceConfig?: MeetAppearanceConfig,
+		captionsGlobalEnabled: boolean = false
 	): ApplicationFeatures {
 		// Start with default configuration
 		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
@@ -116,7 +128,7 @@ export class FeatureConfigurationService {
 			features.showRecordingPanel = roomConfig.recording.enabled;
 			features.showChat = roomConfig.chat.enabled;
 			features.showBackgrounds = roomConfig.virtualBackground.enabled;
-			features.showCaptions = roomConfig.captions?.enabled ?? false;
+			features.captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
 		}
 
 		// Apply room member permissions (these can restrict enabled features)
@@ -165,6 +177,22 @@ export class FeatureConfigurationService {
 	}
 
 	/**
+	 * Computes the captions status based on room and global configuration
+	 * HIDDEN: room config disabled
+	 * ENABLED: room config enabled AND global config enabled
+	 * DISABLED_WITH_WARNING: room config enabled BUT global config disabled
+	 */
+	protected computeCaptionsStatus(
+		roomCaptionsConfig: MeetRoomCaptionsConfig | undefined,
+		globalEnabled: boolean
+	): CaptionsStatus {
+		if (!roomCaptionsConfig?.enabled) {
+			return 'HIDDEN';
+		}
+		return globalEnabled ? 'ENABLED' : 'DISABLED_WITH_WARNING';
+	}
+
+	/**
 	 * Resets all configurations to their initial values
 	 */
 	reset(): void {
@@ -172,5 +200,6 @@ export class FeatureConfigurationService {
 		this.roomMemberRole.set(undefined);
 		this.roomMemberPermissions.set(undefined);
 		this.appearanceConfig.set(undefined);
+		this.captionsGlobalConfig.set(false);
 	}
 }

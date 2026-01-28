@@ -17,6 +17,11 @@ export enum Edition {
 }
 
 /**
+ * Status of captions feature based on room and global configuration
+ */
+export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
+
+/**
  * Interface that defines all available features in the application
  */
 export interface ApplicationFeatures {
@@ -31,7 +36,7 @@ export interface ApplicationFeatures {
 	showRecordingPanel: boolean;
 	showChat: boolean;
 	showBackgrounds: boolean;
-	showCaptions: boolean;
+	captionsStatus: CaptionsStatus;
 	showParticipantList: boolean;
 	showSettings: boolean;
 	showFullscreen: boolean;
