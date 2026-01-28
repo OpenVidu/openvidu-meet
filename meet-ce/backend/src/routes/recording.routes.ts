@@ -9,7 +9,6 @@ import {
 	withAuth
 } from '../middlewares/auth.middleware.js';
 import {
-	authorizeBulkRecordingAccess,
 	authorizeRecordingAccess,
 	authorizeRecordingControl,
 	setupRecordingAuthentication,
@@ -38,7 +37,6 @@ recordingRouter.get(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
-	authorizeBulkRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(
@@ -49,7 +47,6 @@ recordingRouter.delete(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
-	authorizeBulkRecordingAccess('canDeleteRecordings'),
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
@@ -60,14 +57,13 @@ recordingRouter.get(
 		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
-	authorizeBulkRecordingAccess('canRetrieveRecordings'),
 	recordingCtrl.downloadRecordingsZip
 );
 recordingRouter.get(
 	'/:recordingId',
 	validateGetRecordingReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings'),
+	authorizeRecordingAccess('canRetrieveRecordings', true),
 	recordingCtrl.getRecording
 );
 recordingRouter.delete(
@@ -85,7 +81,7 @@ recordingRouter.get(
 	'/:recordingId/media',
 	validateGetRecordingMediaReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings'),
+	authorizeRecordingAccess('canRetrieveRecordings', true),
 	recordingCtrl.getRecordingMedia
 );
 recordingRouter.get(

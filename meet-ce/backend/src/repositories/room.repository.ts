@@ -69,18 +69,6 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
-	 * Finds rooms by their roomIds.
-	 * Returns rooms with enriched URLs (including base URL).
-	 *
-	 * @param roomIds - Array of room identifiers
-	 * @param fields - Comma-separated list of fields to include in the result
-	 * @returns Array of found rooms
-	 */
-	async findByRoomIds(roomIds: string[], fields?: string): Promise<TRoom[]> {
-		return await this.findAll({ roomId: { $in: roomIds } }, fields);
-	}
-
-	/**
 	 * Finds rooms owned by a specific user.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *
@@ -132,11 +120,11 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 		const filter: Record<string, unknown> = {};
 
 		// Handle owner and roomIds with $or when both are present
-		if (owner && roomIds && roomIds.length > 0) {
+		if (owner && roomIds) {
 			filter.$or = [{ owner }, { roomId: { $in: roomIds } }];
 		} else if (owner) {
 			filter.owner = owner;
-		} else if (roomIds && roomIds.length > 0) {
+		} else if (roomIds) {
 			filter.roomId = { $in: roomIds };
 		}
 

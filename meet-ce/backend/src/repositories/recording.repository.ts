@@ -120,7 +120,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 		// Build base filter
 		const filter: Record<string, unknown> = {};
 
-		if (roomIds && roomIds.length > 0) {
+		if (roomIds) {
 			// Filter by multiple room IDs
 			filter.roomId = { $in: roomIds };
 		}

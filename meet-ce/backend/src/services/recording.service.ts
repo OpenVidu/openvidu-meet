@@ -231,30 +231,24 @@ export class RecordingService {
 		nextPageToken?: string;
 	}> {
 		try {
-			const memberRoomId = this.requestSessionService.getRoomIdFromMember();
-			const queryOptions: MeetRecordingFilters & { roomIds?: string[]; owner?: string } = { ...filters };
+			const queryOptions: MeetRecordingFilters & { roomIds?: string[] } = { ...filters };
 
-			// If room member token is present, retrieve only recordings for the room associated with the token
-			if (memberRoomId) {
-				queryOptions.roomId = memberRoomId;
-			} else {
-				// Get accessible room IDs based on user role and permissions
-				const roomService = await this.getRoomService();
-				const accessibleRoomIds = await roomService.getAccessibleRoomIds('canRetrieveRecordings');
+			// Get accessible room IDs based on authenticated user and their permissions
+			const roomService = await this.getRoomService();
+			const accessibleRoomIds = await roomService.getAccessibleRoomIds('canRetrieveRecordings');
 
-				if (accessibleRoomIds !== null) {
-					if (accessibleRoomIds.length === 0) {
-						// User has no access to any rooms, return empty result
-						return {
-							recordings: [],
-							isTruncated: false
-						};
-					}
-
-					// Apply roomIds filter
-					queryOptions.roomIds = accessibleRoomIds;
+			// If accessibleRoomIds is null, user is ADMIN and no filter is applied
+			if (accessibleRoomIds !== null) {
+				if (accessibleRoomIds.length === 0) {
+					// User has no access to any rooms, return empty result
+					return {
+						recordings: [],
+						isTruncated: false
+					};
 				}
-				// If accessibleRoomIds is null, user is ADMIN and no filter is applied
+
+				// Apply roomIds filter
+				queryOptions.roomIds = accessibleRoomIds;
 			}
 
 			const response = await this.recordingRepository.find(queryOptions);

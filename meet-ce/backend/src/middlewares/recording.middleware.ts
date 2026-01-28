@@ -10,7 +10,6 @@ import {
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
-import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import {
 	allowAnonymous,
@@ -98,21 +97,26 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 /**
  * Middleware to authorize access (retrieval or deletion) for a single recording.
  *
- * - If a secret is provided in the request query, it is assumed to have been validated already.
- *   In that case, access is granted directly for retrieval requests.
+ * - If a valid secret is provided in the query and `allowAccessWithSecret` is true,
+ *   access is granted directly for retrieval requests.
  * - If no secret is provided, the recording's existence and permissions are checked
  *   based on the authenticated context (room member token or registered user).
  *
  * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
+ * @param allowAccessWithSecret - Whether to allow access based on a valid secret in the query.
  */
-export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermissions) => {
+export const authorizeRecordingAccess = (
+	permission: keyof MeetRoomMemberPermissions,
+	allowAccessWithSecret = false
+) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const recordingId = req.params.recordingId as string;
 		const secret = req.query.secret as string | undefined;
 
-		// If a secret is provided, we assume it has been validated by setupRecordingAuthentication.
+		// If allowAccessWithSecret is true and a secret is provided,
+		// we assume that the secret has been validated by setupRecordingAuthentication.
 		// In that case, grant access directly for retrieval requests.
-		if (secret && permission === 'canRetrieveRecordings') {
+		if (allowAccessWithSecret && secret && permission === 'canRetrieveRecordings') {
 			return next();
 		}
 
@@ -124,38 +128,6 @@ export const authorizeRecordingAccess = (permission: keyof MeetRoomMemberPermiss
 		} catch (error) {
 			return handleError(res, error, 'checking recording permissions');
 		}
-	};
-};
-
-/**
- * Middleware to authorize access (retrieval or deletion) for multiple recordings.
- *
- * - If a room member token is present, checks if the member has the specified permission.
- * - If no room member token is present, each recording's permissions will be checked individually later.
- *
- * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
- */
-export const authorizeBulkRecordingAccess = (permission: keyof MeetRoomMemberPermissions) => {
-	return async (_req: Request, res: Response, next: NextFunction) => {
-		const requestSessionService = container.get(RequestSessionService);
-		const memberRoomId = requestSessionService.getRoomIdFromMember();
-
-		// If there is no room member token,
-		// each recording's permissions will be checked individually later
-		if (!memberRoomId) {
-			return next();
-		}
-
-		// If there is a room member token, check permissions now
-		// because they have the same permissions for all recordings in the room associated with the token
-		const permissions = requestSessionService.getRoomMemberPermissions();
-
-		if (!permissions || !permissions[permission]) {
-			const forbiddenError = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, forbiddenError);
-		}
-
-		return next();
 	};
 };
 

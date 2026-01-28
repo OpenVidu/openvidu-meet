@@ -321,8 +321,8 @@ export class RoomService {
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const user = this.requestSessionService.getAuthenticatedUser();
 		const queryOptions: MeetRoomFilters & { roomIds?: string[]; owner?: string } = { ...filters };
+		const user = this.requestSessionService.getAuthenticatedUser();
 
 		// Admin can see all rooms - no additional filters needed
 		if (user && user.role !== MeetUserRole.ADMIN) {
@@ -342,10 +342,32 @@ export class RoomService {
 	/**
 	 * Gets the list of room IDs accessible by the authenticated user based on their role and permissions.
 	 *
+	 * - If the request is made with a room member token, only that room ID is returned (if permissions allow).
+	 * - If the user is an ADMIN, null is returned indicating access to all rooms.
+	 * - If the user is a USER, room IDs they own and are members of are returned.
+	 * - If the user is a ROOM_MEMBER, only room IDs they are members of are returned.
+	 * 
 	 * @param permission - Optional permission to filter rooms (e.g., 'canRetrieveRecordings')
-	 * @returns A promise that resolves to an array of accessible room IDs, or null if user is ADMIN (no filter needed)
+	 * @returns A promise that resolves to an array of accessible room IDs, or null if user is ADMIN
 	 */
 	async getAccessibleRoomIds(permission?: keyof MeetRoomMemberPermissions): Promise<string[] | null> {
+		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
+
+		// If request is made with room member token, 
+		// the only accessible room is the one associated with the token
+		if (memberRoomId) {
+			// Check permissions from token if specified
+			if (permission) {
+				const permissions = this.requestSessionService.getRoomMemberPermissions();
+
+				if (!permissions || !permissions[permission]) {
+					return [];
+				}
+			}
+
+			return [memberRoomId];
+		}
+
 		const user = this.requestSessionService.getAuthenticatedUser();
 
 		// Admin has access to all rooms
