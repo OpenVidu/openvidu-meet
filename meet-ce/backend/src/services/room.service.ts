@@ -263,8 +263,12 @@ export class RoomService {
 
 		// Merge existing roles with new roles (partial update)
 		room.roles = merge({}, room.roles, roles);
-
 		await this.roomRepository.update(room);
+
+		// Update existing room members with new effective permissions
+		const roomMemberService = await this.getRoomMemberService();
+		await roomMemberService.updateAllRoomMemberPermissions(roomId, room.roles);
+
 		return room;
 	}
 

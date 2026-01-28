@@ -7,12 +7,14 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
+	MeetRoomRoles,
 	MeetRoomStatus,
 	MeetUserRole,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
+import merge from 'lodash.merge';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { MEET_ENV } from '../environment.js';
@@ -105,6 +107,10 @@ export class RoomMemberService {
 			throw new Error('Either userId or name must be provided');
 		}
 
+		// Compute effective permissions
+		const room = await this.roomService.getMeetRoom(roomId);
+		const effectivePermissions = this.computeEffectivePermissions(room.roles, baseRole, customPermissions);
+
 		const roomMember = {
 			memberId,
 			roomId,
@@ -112,9 +118,27 @@ export class RoomMemberService {
 			membershipDate: Date.now(),
 			accessUrl,
 			baseRole,
-			customPermissions
+			customPermissions,
+			effectivePermissions
 		};
 		return this.roomMemberRepository.create(roomMember);
+	}
+
+	/**
+	 * Computes effective permissions by merging base role permissions with custom permissions.
+	 *
+	 * @param roomRoles - The room roles configuration
+	 * @param baseRole - The base role of the member
+	 * @param customPermissions - Optional custom permissions that override the base role
+	 * @returns The effective permissions object
+	 */
+	protected computeEffectivePermissions(
+		roomRoles: MeetRoomRoles,
+		baseRole: MeetRoomMemberRole,
+		customPermissions?: Partial<MeetRoomMemberPermissions>
+	): MeetRoomMemberPermissions {
+		const basePermissions = roomRoles[baseRole].permissions;
+		return merge({}, basePermissions, customPermissions);
 	}
 
 	/**
@@ -191,6 +215,14 @@ export class RoomMemberService {
 			member.customPermissions = updates.customPermissions;
 		}
 
+		// Recompute effective permissions
+		const room = await this.roomService.getMeetRoom(roomId);
+		member.effectivePermissions = this.computeEffectivePermissions(
+			room.roles,
+			member.baseRole,
+			member.customPermissions
+		);
+
 		const updatedMember = await this.roomMemberRepository.update(member);
 
 		// If member is currently in a meeting, check if they still have permission to join
@@ -217,6 +249,85 @@ export class RoomMemberService {
 		}
 
 		return updatedMember;
+	}
+
+	/**
+	 * Updates effective permissions for all members of a room based on the new room roles permissions.
+	 * This method should be called when room roles are updated to ensure all members
+	 * have their effective permissions recalculated.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param roomRoles - The updated room roles configuration
+	 * @returns A promise that resolves when all members have been updated
+	 */
+	async updateAllRoomMemberPermissions(roomId: string, roomRoles: MeetRoomRoles): Promise<void> {
+		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
+
+		const BATCH_SIZE = 20; // Process members in smaller batches
+		let nextPageToken: string | undefined;
+		let totalUpdated = 0;
+		let batchNumber = 0;
+
+		do {
+			batchNumber++;
+
+			// Get a batch of members
+			const {
+				members,
+				isTruncated,
+				nextPageToken: token
+			} = await this.getAllRoomMembers(roomId, {
+				maxItems: BATCH_SIZE,
+				nextPageToken
+			});
+
+			if (members.length === 0) {
+				break;
+			}
+
+			this.logger.verbose(`Processing batch ${batchNumber} with ${members.length} members in room '${roomId}'`);
+
+			// Update each member's effective permissions in this batch
+			const updatePromises = members.map(async (member) => {
+				try {
+					// Recalculate effective permissions based on new room roles
+					const effectivePermissions = this.computeEffectivePermissions(
+						roomRoles,
+						member.baseRole,
+						member.customPermissions
+					);
+
+					// Update the member with new effective permissions
+					member.effectivePermissions = effectivePermissions;
+					await this.roomMemberRepository.update(member);
+
+					this.logger.verbose(
+						`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
+					);
+				} catch (error) {
+					this.logger.error(
+						`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
+						error
+					);
+					// Continue with other members even if one fails
+				}
+			});
+
+			// Wait for all updates in this batch to complete before moving to the next batch
+			await Promise.all(updatePromises);
+
+			totalUpdated += members.length;
+			nextPageToken = isTruncated ? token : undefined;
+
+			this.logger.verbose(`Completed batch ${batchNumber}, total updated: ${totalUpdated} members`);
+		} while (nextPageToken);
+
+		if (totalUpdated === 0) {
+			this.logger.verbose(`No members found in room '${roomId}' to update`);
+			return;
+		}
+
+		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
 	}
 
 	/**

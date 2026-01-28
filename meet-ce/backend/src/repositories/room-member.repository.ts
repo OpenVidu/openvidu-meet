@@ -1,51 +1,30 @@
-import {
-	MeetRoomMember,
-	MeetRoomMemberFilters,
-	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
-	MeetRoomRoles
-} from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { errorRoomNotFound } from '../models/error.model.js';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
-import { RoomRepository } from './room.repository.js';
 
 /**
  * Repository for managing MeetRoomMember entities in MongoDB.
  * Handles the storage and retrieval of room members.
  */
 @injectable()
-export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoomMemberDocument> {
-	private currentRoomRoles: MeetRoomRoles | undefined;
-
-	constructor(
-		@inject(LoggerService) logger: LoggerService,
-		@inject(RoomRepository) private roomRepository: RoomRepository
-	) {
+export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomMember> extends BaseRepository<
+	TRoomMember,
+	MeetRoomMemberDocument
+> {
+	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetRoomMemberModel);
 	}
 
 	/**
 	 * Transforms a MongoDB document into a domain room member object.
-	 * Computes effective permissions based on base role and custom permissions.
 	 *
 	 * @param document - The MongoDB document
 	 * @returns Room member with computed permissions
 	 */
-	protected toDomain(document: MeetRoomMemberDocument): MeetRoomMember {
-		const doc = document.toObject();
-		const effectivePermissions = this.computeEffectivePermissions(
-			this.currentRoomRoles!,
-			doc.baseRole,
-			doc.customPermissions
-		);
-
-		return {
-			...doc,
-			effectivePermissions
-		};
+	protected toDomain(document: MeetRoomMemberDocument): TRoomMember {
+		return document.toObject() as TRoomMember;
 	}
 
 	/**
@@ -54,18 +33,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param member - The room member data to add
 	 * @returns The created room member
 	 */
-	async create(member: Omit<MeetRoomMember, 'effectivePermissions'>): Promise<MeetRoomMember> {
-		const room = await this.roomRepository.findByRoomId(member.roomId);
-
-		if (!room) {
-			throw errorRoomNotFound(member.roomId);
-		}
-
-		this.currentRoomRoles = room.roles;
-		const document = await this.createDocument(member as MeetRoomMember);
-		const domain = this.toDomain(document);
-		this.currentRoomRoles = undefined;
-		return domain;
+	async create(member: TRoomMember): Promise<TRoomMember> {
+		const document = await this.createDocument(member as TRoomMember);
+		return this.toDomain(document);
 	}
 
 	/**
@@ -75,18 +45,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @returns The updated room member
 	 * @throws Error if room member not found
 	 */
-	async update(member: MeetRoomMember): Promise<MeetRoomMember> {
-		const room = await this.roomRepository.findByRoomId(member.roomId);
-
-		if (!room) {
-			throw errorRoomNotFound(member.roomId);
-		}
-
-		this.currentRoomRoles = room.roles;
+	async update(member: TRoomMember): Promise<TRoomMember> {
 		const document = await this.updateOne({ roomId: member.roomId, memberId: member.memberId }, member);
-		const domain = this.toDomain(document);
-		this.currentRoomRoles = undefined;
-		return domain;
+		return this.toDomain(document);
 	}
 
 	/**
@@ -96,18 +57,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param memberId - The ID of the member
 	 * @returns The room member or null if not found
 	 */
-	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-
-		if (!room) {
-			return null;
-		}
-
-		this.currentRoomRoles = room.roles;
+	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<TRoomMember | null> {
 		const document = await this.findOne({ roomId, memberId });
-		const domain = document ? this.toDomain(document) : null;
-		this.currentRoomRoles = undefined;
-		return domain;
+		return document ? this.toDomain(document) : null;
 	}
 
 	/**
@@ -118,7 +70,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string): Promise<MeetRoomMember[]> {
+	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string): Promise<TRoomMember[]> {
 		return await this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
 	}
 
@@ -135,46 +87,23 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 	/**
 	 * Gets all room IDs where a member has a specific permission enabled.
-	 * Takes into account both base role permissions and custom permissions.
 	 *
 	 * @param memberId - The ID of the member (userId)
-	 * @param permission - The permission key to check (e.g., 'canRetrieveRecordings')
+	 * @param permission - The permission key to check
 	 * @returns Array of room IDs where the member has the specified permission
 	 */
 	async getRoomIdsByMemberIdWithPermission(
 		memberId: string,
 		permission: keyof MeetRoomMemberPermissions
 	): Promise<string[]> {
-		// Get all memberships for this user
-		const members = await this.findAll({ memberId }, 'roomId,baseRole,customPermissions');
-
-		if (members.length === 0) {
-			return [];
-		}
-
-		// Fetch all rooms
-		const roomIds = members.map((m) => m.roomId);
-		const rooms = await this.roomRepository.findByRoomIds(roomIds, 'roomId,roles');
-		const roomsMap = new Map(rooms.map((room) => [room.roomId, room]));
-
-		// Filter members where the permission is enabled
-		const roomIdsWithPermission: string[] = [];
-
-		for (const member of members) {
-			const room = roomsMap.get(member.roomId);
-
-			if (!room) continue;
-
-			// Compute effective permissions
-			const basePermissions = room.roles[member.baseRole].permissions;
-			const effectivePermission = member.customPermissions?.[permission] ?? basePermissions[permission];
-
-			if (effectivePermission) {
-				roomIdsWithPermission.push(member.roomId);
-			}
-		}
-
-		return roomIdsWithPermission;
+		const members = await this.findAll(
+			{
+				memberId,
+				[`effectivePermissions.${permission}`]: true
+			},
+			'roomId'
+		);
+		return members.map((member) => member.roomId);
 	}
 
 	/**
@@ -194,18 +123,10 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		roomId: string,
 		options: MeetRoomMemberFilters = {}
 	): Promise<{
-		members: MeetRoomMember[];
+		members: TRoomMember[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-
-		if (!room) {
-			throw errorRoomNotFound(roomId);
-		}
-
-		this.currentRoomRoles = room.roles;
-
 		const {
 			name,
 			fields,
@@ -233,8 +154,6 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 			},
 			fields
 		);
-
-		this.currentRoomRoles = undefined;
 
 		return {
 			members: result.items,
@@ -284,34 +203,5 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 */
 	async deleteAllByMemberId(memberId: string): Promise<void> {
 		await this.deleteMany({ memberId }, false);
-	}
-
-	// ==========================================
-	// PRIVATE HELPER METHODS
-	// ==========================================
-
-	/**
-	 * Computes effective permissions by merging base role permissions with custom permissions.
-	 *
-	 * @param roomRoles - The room roles configuration
-	 * @param baseRole - The base role of the member
-	 * @param customPermissions - Optional custom permissions that override the base role
-	 * @returns The effective permissions object
-	 */
-	private computeEffectivePermissions(
-		roomRoles: MeetRoomRoles,
-		baseRole: MeetRoomMemberRole,
-		customPermissions?: Partial<MeetRoomMemberPermissions>
-	): MeetRoomMemberPermissions {
-		const basePermissions = roomRoles[baseRole].permissions;
-
-		if (!customPermissions) {
-			return basePermissions;
-		}
-
-		return {
-			...basePermissions,
-			...customPermissions
-		};
 	}
 }

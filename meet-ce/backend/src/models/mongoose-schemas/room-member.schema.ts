@@ -7,7 +7,7 @@ import { INTERNAL_CONFIG } from '../../config/internal-config.js';
  * Extends the MeetRoomMember interface with MongoDB Document functionality.
  * Note: effectivePermissions is computed, not stored.
  */
-export interface MeetRoomMemberDocument extends Omit<MeetRoomMember, 'effectivePermissions'>, Document {
+export interface MeetRoomMemberDocument extends MeetRoomMember, Document {
 	/** Schema version for migration tracking (internal use only) */
 	schemaVersion?: number;
 }
@@ -87,6 +87,10 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 		customPermissions: {
 			type: MeetRoomMemberPartialPermissionsSchema,
 			required: false
+		},
+		effectivePermissions: {
+			type: MeetRoomMemberPermissionsSchema,
+			required: true
 		},
 		currentParticipantIdentity: {
 			type: String,
