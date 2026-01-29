@@ -128,6 +128,7 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
 	roomId: z.string(),
+	memberId: z.string().optional(),
 	baseRole: RoomMemberRoleSchema,
 	customPermissions: PartialMeetPermissionsSchema.optional(),
 	effectivePermissions: MeetPermissionsSchema

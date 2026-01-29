@@ -137,7 +137,6 @@ describe('Room API Security Tests', () => {
 		});
 
 		it('should fail when using room member token', async () => {
-			const roomData = await setupSingleRoom();
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);

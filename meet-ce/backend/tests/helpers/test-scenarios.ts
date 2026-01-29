@@ -135,7 +135,7 @@ export const setupSingleRoomWithRecording = async (
 /**
  * Creates a completed recording in an existing room.
  * Starts a recording, optionally waits for a delay, then stops it.
- * 
+ *
  * Note: The room must already exist and have an active meeting with participants.
  *
  * @param roomData  The room data where the recording will be created
@@ -420,7 +420,7 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 				userId: userMember.user.userId,
 				baseRole: MeetRoomMemberRole.MODERATOR
 			},
-			userOwner.accessToken
+			userMember.accessToken
 		),
 		setupRoomMember(
 			roomData.room.roomId,
@@ -428,7 +428,7 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 				userId: roomMember.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER
 			},
-			userOwner.accessToken
+			roomMember.accessToken
 		)
 	]);
 	const testUsers: RoomTestUsers = {

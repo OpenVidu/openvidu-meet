@@ -100,10 +100,10 @@ export const bulkDeleteRoomMembers = async (req: Request, res: Response) => {
 	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId } = req.params;
-	const { memberIds } = req.body;
+	const { memberIds } = req.query as { memberIds: string[] };
 
 	try {
-		logger.verbose(`Deleting members from room '${roomId}' with IDs: ${memberIds.join(', ')}`);
+		logger.verbose(`Deleting members from room '${roomId}' with IDs: ${memberIds}`);
 		const { deleted, failed } = await roomMemberService.bulkDeleteRoomMembers(roomId, memberIds);
 
 		// All room members were successfully deleted
