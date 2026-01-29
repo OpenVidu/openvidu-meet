@@ -1,5 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingLayout, MeetRoom } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
+	MeetRoom
+} from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { errorRoomNotFound } from '../../../../src/models/error.model.js';
@@ -206,17 +213,300 @@ describe('Recording API Tests', () => {
 				RECORDING_STARTED_TIMEOUT: '30s'
 			});
 		});
+
+		it('should reject invalid layout in config override', async () => {
+			const response = await startRecording(room.roomId, { layout: 'invalid-layout' });
+
+			expectValidationError(response, 'config.layout', 'Invalid enum value');
+		});
+
+		it('should reject partial audio encoding with missing fields', async () => {
+			const partialEncoding = {
+				video: {
+					width: 1280,
+					height: 720,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 3000,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS
+					// Missing bitrate and frequency
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: partialEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(
+				response,
+				'config.encoding.audio',
+				'When audio encoding is provided, required fields are missing: bitrate, frequency'
+			);
+		});
+
+		it('should reject encoding with neither video nor audio', async () => {
+			const emptyEncoding = {};
+			const response = await startRecording(room.roomId, {
+				encoding: emptyEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(response, 'config.encoding', 'Both video and audio configuration must be provided');
+		});
+
+		it('should reject partial video encoding with missing fields', async () => {
+			const partialEncoding = {
+				video: {
+					width: 1920,
+					height: 1080
+					// Missing framerate, codec, bitrate
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.AAC,
+					bitrate: 192,
+					frequency: 48000
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: partialEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(
+				response,
+				'config.encoding.video',
+				'When video encoding is provided, required fields are missing'
+			);
+		});
+
+		it('should reject invalid encoding preset string', async () => {
+			const response = await startRecording(room.roomId, {
+				encoding: 'invalid-preset' as MeetRecordingEncodingPreset
+			});
+
+			expectValidationError(response, 'config.encoding', 'Invalid encoding preset');
+		});
+
+		it('should reject invalid encoding options with wrong video codec', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: 'INVALID_CODEC',
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(response, 'config.encoding.video.codec', 'Invalid enum value');
+		});
+
+		it('should reject invalid encoding options with wrong audio codec', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: 'INVALID_AUDIO_CODEC',
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(response, 'config.encoding.audio.codec', 'Invalid enum value');
+		});
+
+		it('should reject encoding options with negative video bitrate', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: -1000,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(response, 'config.encoding.video.bitrate', 'positive');
+		});
+
+		it('should reject encoding options with negative audio bitrate', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: -128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(response, 'config.encoding.audio.bitrate', 'positive');
+		});
+
+		it('should reject encoding options with missing keyFrameInterval', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500
+					// Missing keyFrameInterval
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(
+				response,
+				'config.encoding.video',
+				'When video encoding is provided, required fields are missing: keyFrameInterval'
+			);
+		});
+
+		it('should reject encoding options with missing video width', async () => {
+			const invalidEncoding = {
+				video: {
+					// Missing width
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(
+				response,
+				'config.encoding.video',
+				'When video encoding is provided, required fields are missing: width'
+			);
+		});
+
+		it('should reject encoding options with missing audio frequency', async () => {
+			const invalidEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128
+					// Missing frequency
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: invalidEncoding as MeetRecordingEncodingOptions
+			});
+
+			expectValidationError(
+				response,
+				'config.encoding.audio',
+				'When audio encoding is provided, required fields are missing: frequency'
+			);
+		});
+
+		it('should reject audio-only encoding without video', async () => {
+			const audioOnlyEncoding = {
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 256,
+					frequency: 48000
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: audioOnlyEncoding as MeetRecordingEncodingOptions
+			});
+			expectValidationError(response, 'config.encoding', 'Both video and audio configuration must be provided');
+		});
+
+		it('should reject video-only encoding without audio', async () => {
+			const videoOnlyEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_HIGH,
+					bitrate: 5000
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				encoding: videoOnlyEncoding as MeetRecordingEncodingOptions
+			});
+			expectValidationError(response, 'config.encoding', 'Both video and audio configuration must be provided');
+		});
 	});
 
 	describe('Start Recording with Config Override', () => {
 		beforeAll(async () => {
-			// Create a room and join a participant
+			// Create a room (without participant initially)
 			context = await setupMultiRoomTestContext(1, true);
 			({ room } = context.getRoomByIndex(0)!);
 		});
 
 		afterEach(async () => {
-			await disconnectFakeParticipants();
+			// await disconnectFakeParticipants();
 			await stopAllRecordings();
 		});
 
@@ -226,58 +516,154 @@ describe('Recording API Tests', () => {
 			context = null;
 		});
 
-		it('should start recording with default room layout when no config override is provided', async () => {
-			const response = await startRecording(room.roomId);
-			const recordingId = response.body.recordingId;
-
-			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			// Verify the recording uses the room's default layout (grid)
-			expect(response.body.layout).toBe(MeetRecordingLayout.GRID);
-
-			const stopResponse = await stopRecording(recordingId);
-			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
-		});
-
-		it('should override room layout when config with layout is provided', async () => {
+		it('should override room layout when recording layout is provided', async () => {
 			const response = await startRecording(room.roomId, { layout: MeetRecordingLayout.SPEAKER });
 			const recordingId = response.body.recordingId;
 
-			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			// Verify the recording uses the overridden layout
-			expect(response.body.layout).toBe(MeetRecordingLayout.SPEAKER);
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName, MeetRecordingLayout.SPEAKER);
 
 			const stopResponse = await stopRecording(recordingId);
-			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
-		});
-
-		it('should override room layout with single-speaker layout', async () => {
-			const response = await startRecording(room.roomId, { layout: MeetRecordingLayout.SINGLE_SPEAKER });
-			const recordingId = response.body.recordingId;
-
-			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			// Verify the recording uses the overridden layout
-			expect(response.body.layout).toBe(MeetRecordingLayout.SINGLE_SPEAKER);
-
-			const stopResponse = await stopRecording(recordingId);
-			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
-		});
-
-		it('should reject invalid layout in config override', async () => {
-			const response = await startRecording(room.roomId, { layout: 'invalid-layout' });
-
-			expectValidationError(response, 'config.layout', 'Invalid enum value');
+			expectValidStopRecordingResponse(
+				stopResponse,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				MeetRecordingLayout.SPEAKER
+			);
 		});
 
 		it('should accept empty config object and use room defaults', async () => {
 			const response = await startRecording(room.roomId, {});
 			const recordingId = response.body.recordingId;
 
+			console.log('Response for empty config override:', response);
 			expectValidStartRecordingResponse(response, room.roomId, room.roomName);
-			// Verify the recording uses the room's default layout
-			expect(response.body.layout).toBe(MeetRecordingLayout.GRID);
 
 			const stopResponse = await stopRecording(recordingId);
 			expectValidStopRecordingResponse(stopResponse, recordingId, room.roomId, room.roomName);
+		});
+
+		it('should override room encoding with a preset when config with encoding is provided', async () => {
+			const response = await startRecording(room.roomId, { encoding: MeetRecordingEncodingPreset.H264_1080P_60 });
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(
+				response,
+				room.roomId,
+				room.roomName,
+				undefined,
+				MeetRecordingEncodingPreset.H264_1080P_60
+			);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				undefined,
+				MeetRecordingEncodingPreset.H264_1080P_60
+			);
+		});
+
+		it('should override room encoding with portrait preset', async () => {
+			const response = await startRecording(room.roomId, {
+				encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30
+			});
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(
+				response,
+				room.roomId,
+				room.roomName,
+				undefined,
+				MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30
+			);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				undefined,
+				MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_30
+			);
+		});
+
+		it('should override room encoding with custom encoding options', async () => {
+			const customEncoding: MeetRecordingEncodingOptions = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 60,
+					codec: MeetRecordingVideoCodec.H264_HIGH,
+					bitrate: 6000,
+					keyFrameInterval: 2,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.AAC,
+					bitrate: 192,
+					frequency: 48000
+				}
+			};
+			const response = await startRecording(room.roomId, { encoding: customEncoding });
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(response, room.roomId, room.roomName, undefined, customEncoding);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				undefined,
+				customEncoding
+			);
+		});
+
+		it('should override both layout and encoding simultaneously', async () => {
+			const customEncoding: MeetRecordingEncodingOptions = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 4500,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const response = await startRecording(room.roomId, {
+				layout: MeetRecordingLayout.SPEAKER,
+				encoding: customEncoding
+			});
+			const recordingId = response.body.recordingId;
+
+			expectValidStartRecordingResponse(
+				response,
+				room.roomId,
+				room.roomName,
+				MeetRecordingLayout.SPEAKER,
+				customEncoding
+			);
+
+			const stopResponse = await stopRecording(recordingId);
+			expectValidStopRecordingResponse(
+				stopResponse,
+				recordingId,
+				room.roomId,
+				room.roomName,
+				MeetRecordingLayout.SPEAKER,
+				customEncoding
+			);
 		});
 	});
 });

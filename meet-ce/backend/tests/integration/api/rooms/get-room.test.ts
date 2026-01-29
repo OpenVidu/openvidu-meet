@@ -1,5 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRecordingLayout } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAccess,
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec
+} from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
 	expectSuccessRoomResponse,
@@ -39,6 +45,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER,
+						encoding: MeetRecordingEncodingPreset.H264_1080P_30,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
@@ -105,6 +112,55 @@ describe('Room API Tests', () => {
 			const response = await getRoom(roomData.room.roomId, undefined, roomData.speakerToken);
 			expect(response.status).toBe(200);
 			expect(response.body.moderatorUrl).toBeUndefined();
+		});
+
+		it('should retrieve a room with encoding preset', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'encoding-preset-test',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_1080P_60
+					}
+				}
+			});
+
+			const response = await getRoom(createdRoom.roomId);
+			expect(response.status).toBe(200);
+			expect(response.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
+		});
+
+		it('should retrieve a room with advanced encoding options', async () => {
+			const advancedEncoding = {
+				video: {
+					width: 1920,
+					height: 1080,
+					framerate: 60,
+					codec: MeetRecordingVideoCodec.H264_HIGH,
+					bitrate: 5000,
+					keyFrameInterval: 2,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.AAC,
+					bitrate: 192,
+					frequency: 48000
+				}
+			};
+
+			const createdRoom = await createRoom({
+				roomName: 'advanced-encoding-test',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: advancedEncoding
+					}
+				}
+			});
+
+			const response = await getRoom(createdRoom.roomId);
+			expect(response.status).toBe(200);
+			expect(response.body.config.recording.encoding).toMatchObject(advancedEncoding);
 		});
 
 		it('should return 404 for a non-existent room', async () => {

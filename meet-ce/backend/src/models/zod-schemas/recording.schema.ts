@@ -1,6 +1,6 @@
 import { MeetRecordingFilters, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { z } from 'zod';
-import { nonEmptySanitizedRoomId } from './room.schema.js';
+import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
 
 export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
@@ -51,9 +51,12 @@ export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 
 export const StartRecordingReqSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
-	config: z.object({
-		layout: z.nativeEnum(MeetRecordingLayout).optional()
-	}).optional()
+	config: z
+		.object({
+			layout: z.nativeEnum(MeetRecordingLayout).optional(),
+			encoding: encodingValidator.optional()
+		})
+		.optional()
 });
 
 export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({

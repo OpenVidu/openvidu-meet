@@ -4,8 +4,12 @@ import {
 	MeetE2EEConfig,
 	MeetPermissions,
 	MeetRecordingAccess,
+	MeetRecordingAudioCodec,
 	MeetRecordingConfig,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
@@ -36,11 +40,122 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
+// Encoding options validation - both video and audio are required with all their fields
+export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.object({
+	video: z.object({
+		width: z.number().positive('Video width must be a positive number'),
+		height: z.number().positive('Video height must be a positive number'),
+		framerate: z.number().positive('Video framerate must be a positive number'),
+		codec: z.nativeEnum(MeetRecordingVideoCodec),
+		bitrate: z.number().positive('Video bitrate must be a positive number'),
+		keyFrameInterval: z.number().positive('Video keyFrameInterval must be a positive number'),
+		depth: z.number().positive('Video depth must be a positive number')
+	}),
+	audio: z.object({
+		codec: z.nativeEnum(MeetRecordingAudioCodec),
+		bitrate: z.number().positive('Audio bitrate must be a positive number'),
+		frequency: z.number().positive('Audio frequency must be a positive number')
+	})
+});
+
+/**
+ * Custom encoding validator to handle both preset strings and encoding objects.
+ * Used in RecordingConfigSchema
+ */
+export const encodingValidator = z.any().superRefine((value, ctx) => {
+	// If undefined, skip validation (it's optional)
+	if (value === undefined) {
+		return;
+	}
+
+	// Check if it's a string preset
+	if (typeof value === 'string') {
+		const presetValues = Object.values(MeetRecordingEncodingPreset);
+
+		if (!presetValues.includes(value as MeetRecordingEncodingPreset)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: `Invalid encoding preset. Must be one of: ${presetValues.join(', ')}`
+			});
+		}
+
+		return;
+	}
+
+	// If it's not a string, it must be an encoding object
+	if (typeof value !== 'object' || value === null) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Encoding must be either a preset string or an encoding configuration object'
+		});
+		return;
+	}
+
+	// Both video and audio must be provided
+	if (!value.video || !value.audio) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Both video and audio configuration must be provided when using encoding options'
+		});
+		return;
+	}
+
+	if (value.video === null || typeof value.video !== 'object') {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Video encoding must be a valid object'
+		});
+		return;
+	}
+
+	if (value.audio === null || typeof value.audio !== 'object') {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Audio encoding must be a valid object'
+		});
+		return;
+	}
+
+	// Check video fields
+	const requiredVideoFields = ['width', 'height', 'framerate', 'codec', 'bitrate', 'keyFrameInterval', 'depth'];
+	const missingVideoFields = requiredVideoFields.filter((field) => !(field in value.video));
+
+	if (missingVideoFields.length > 0) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `When video encoding is provided, required fields are missing: ${missingVideoFields.join(', ')}`,
+			path: ['video']
+		});
+	}
+
+	// Check audio fields
+	const requiredAudioFields = ['codec', 'bitrate', 'frequency'];
+	const missingAudioFields = requiredAudioFields.filter((field) => !(field in value.audio));
+
+	if (missingAudioFields.length > 0) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `When audio encoding is provided, required fields are missing: ${missingAudioFields.join(', ')}`,
+			path: ['audio']
+		});
+	}
+
+	// Validate the actual types and values using the schema
+	const result = EncodingOptionsSchema.safeParse(value);
+
+	if (!result.success) {
+		result.error.issues.forEach((issue) => {
+			ctx.addIssue(issue);
+		});
+	}
+});
+
 const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.nativeEnum(MeetRecordingAccess);
 
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
 	layout: z.nativeEnum(MeetRecordingLayout).optional(),
+	encoding: encodingValidator.optional(),
 	allowAccessTo: RecordingAccessSchema.optional()
 });
 
@@ -125,6 +240,7 @@ const CreateRoomConfigSchema = z
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30,
 			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		})),
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
@@ -137,6 +253,11 @@ const CreateRoomConfigSchema = z
 		// Apply default layout if not provided
 		if (data.recording.layout === undefined) {
 			data.recording.layout = MeetRecordingLayout.GRID;
+		}
+
+		// Apply default encoding if not provided
+		if (data.recording.encoding === undefined) {
+			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
 		// Apply default allowAccessTo if not provided
@@ -210,6 +331,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		recording: {
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30,
 			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		},
 		chat: { enabled: true },

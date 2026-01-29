@@ -19,6 +19,7 @@ content:
                         recording:
                             enabled: false
                             layout: grid
+                            encoding: H264_720P_30
                             allowAccessTo: admin_moderator_speaker
                         chat:
                             enabled: true
@@ -83,6 +84,15 @@ content:
                         recording:
                             enabled: false
                             layout: grid
+                            encoding:
+                                video:
+                                    width: 1920
+                                    height: 1080
+                                    framerate: 30
+                                    codec: H264_MAIN
+                                audio:
+                                    codec: OPUS
+                                    bitrate: 128
                             allowAccessTo: admin_moderator_speaker
                         chat:
                             enabled: true

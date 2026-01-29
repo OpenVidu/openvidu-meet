@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, it } from '@jest/globals';
 import { MeetRecordingAccess, MeetRecordingLayout } from '@openvidu-meet/typings';
-import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import { DEFAULT_RECORDING_ENCODING_PRESET, DEFAULT_RECORDING_LAYOUT, expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Room API Tests', () => {
@@ -27,7 +27,8 @@ describe('Room API Tests', () => {
 			const expectedConfig = {
 				recording: {
 					enabled: true,
-					layout: MeetRecordingLayout.GRID, // Default value
+					layout: DEFAULT_RECORDING_LAYOUT,
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chat: { enabled: true },
@@ -56,6 +57,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: MeetRecordingLayout.SPEAKER,
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET,
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				chat: { enabled: true },
@@ -84,6 +86,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: MeetRecordingLayout.SINGLE_SPEAKER,
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET,
 					allowAccessTo: MeetRecordingAccess.ADMIN
 				},
 				chat: { enabled: true },

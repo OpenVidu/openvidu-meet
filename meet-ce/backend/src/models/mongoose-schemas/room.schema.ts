@@ -1,5 +1,6 @@
 import {
 	MeetRecordingAccess,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -55,6 +56,27 @@ const MeetRecordingConfigSchema = new Schema(
 			enum: Object.values(MeetRecordingLayout),
 			required: true,
 			default: MeetRecordingLayout.GRID
+		},
+		encoding: {
+			type: Schema.Types.Mixed,
+			required: false,
+			encoding: {
+				type: Schema.Types.Mixed,
+				required: true,
+				default: MeetRecordingEncodingPreset.H264_720P_30,
+				validate: {
+					validator: (value: any) => {
+						if (!value) return true;
+
+						if (typeof value === 'string') return true;
+
+						if (typeof value === 'object') return value.video || value.audio;
+
+						return false;
+					},
+					message: 'Encoding must be a preset string or options object'
+				}
+			}
 		},
 		allowAccessTo: {
 			type: String,

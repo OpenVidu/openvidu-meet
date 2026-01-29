@@ -3,6 +3,8 @@ import {
 	AuthMode,
 	MeetAppearanceConfig,
 	MeetRecordingAccess,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
@@ -588,10 +590,22 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	return response;
 };
 
-export const startRecording = async (roomId: string, config?: { layout?: string }) => {
+export const startRecording = async (
+	roomId: string,
+	config?: {
+		layout?: string;
+		encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+	}
+) => {
 	checkAppIsRunning();
 
-	const body: { roomId: string; config?: { layout?: string } } = { roomId };
+	const body: {
+		roomId: string;
+		config?: {
+			layout?: string;
+			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+		};
+	} = { roomId };
 
 	if (config) {
 		body.config = config;

@@ -72,13 +72,13 @@ describe('E2EE Room Configuration Tests', () => {
 				e2ee: { enabled: true }
 			});
 
-			const { room, moderatorToken } = context.getRoomByIndex(0)!;
+			const { room } = context.getRoomByIndex(0)!;
 
 			// Try to start recording (should fail because recording is not enabled in room config)
-			const response = await startRecording(room.roomId, moderatorToken);
+			const response = await startRecording(room.roomId);
 
-			// The endpoint returns 404 when the recording endpoint doesn't exist for disabled recording rooms
-			expect(403).toBe(response.status);
+			// The endpoint returns 403 when the recording endpoint doesn't exist for disabled recording rooms
+			expect(response.status).toBe(403);
 			expect(response.body.message).toBe(`Recording is disabled for room '${room.roomId}'`);
 		});
 

@@ -28,3 +28,8 @@ content:
                                 - `grid`: All participants are shown in a grid layout.
                                 - `speaker`: The active speaker is shown prominently, with other participants in smaller thumbnails.
                                 - `single-speaker`: Only the active speaker is shown in the recording.
+                        encoding:
+                          description: Defines the encoding settings for the recording. This will override the room's default recording encoding.
+                          oneOf:
+                              - $ref: '../schemas/meet-room-config.yaml#/MeetRecordingEncodingPreset'
+                              - $ref: '../schemas/meet-room-config.yaml#/MeetRecordingEncodingOptions'

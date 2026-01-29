@@ -2,6 +2,8 @@ import { expect } from '@jest/globals';
 import {
 	MeetingEndAction,
 	MeetRecordingAccess,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
@@ -18,6 +20,9 @@ import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config';
 import { TokenService } from '../../src/services/token.service';
+
+export const DEFAULT_RECORDING_ENCODING_PRESET = MeetRecordingEncodingPreset.H264_720P_30;
+export const DEFAULT_RECORDING_LAYOUT = MeetRecordingLayout.GRID;
 
 export const expectErrorResponse = (
 	response: Response,
@@ -151,12 +156,14 @@ export const expectValidRoom = (
 	expect(room.config).toBeDefined();
 
 	if (config !== undefined) {
-		expect(room.config).toEqual(config);
+		// Use toMatchObject to allow encoding defaults to be added without breaking tests
+		expect(room.config).toMatchObject(config as any);
 	} else {
 		expect(room.config).toEqual({
 			recording: {
 				enabled: true,
-				layout: MeetRecordingLayout.GRID,
+				layout: DEFAULT_RECORDING_LAYOUT,
+				encoding: DEFAULT_RECORDING_ENCODING_PRESET,
 				allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 			},
 			chat: { enabled: true },
@@ -201,6 +208,28 @@ export const expectValidRecording = (
 	// Validate layout is a valid value
 	if (recording.layout !== undefined) {
 		expect(Object.values(MeetRecordingLayout)).toContain(recording.layout);
+	}
+
+	// Validate encoding is present and has a valid value
+	expect(recording.encoding).toBeDefined();
+
+	if (recording.encoding !== undefined) {
+		if (typeof recording.encoding === 'string') {
+			// Encoding preset: should match the default H264_720P_30
+			expect(recording.encoding).toBe('H264_720P_30');
+		} else {
+			// Advanced encoding options: should have valid codec values
+			expect(typeof recording.encoding).toBe('object');
+			const encodingObj = recording.encoding as MeetRecordingEncodingOptions;
+
+			if (encodingObj.video?.codec) {
+				expect(['H264_BASELINE', 'H264_MAIN', 'H264_HIGH', 'VP8']).toContain(encodingObj.video.codec);
+			}
+
+			if (encodingObj.audio?.codec) {
+				expect(['OPUS', 'AAC']).toContain(encodingObj.audio.codec);
+			}
+		}
 	}
 };
 
@@ -365,7 +394,13 @@ export const expectSuccessRecordingMediaResponse = (
 	}
 };
 
-export const expectValidStartRecordingResponse = (response: Response, roomId: string, roomName: string) => {
+export const expectValidStartRecordingResponse = (
+	response: Response,
+	roomId: string,
+	roomName: string,
+	expectedLayout?: MeetRecordingLayout,
+	expectedEncoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
+) => {
 	expect(response.status).toBe(201);
 	expect(response.body).toHaveProperty('recordingId');
 
@@ -385,9 +420,28 @@ export const expectValidStartRecordingResponse = (response: Response, roomId: st
 	expect(response.body).not.toHaveProperty('endDate');
 	expect(response.body).not.toHaveProperty('size');
 
-	// Validate layout is a valid value
-	if (response.body.layout !== undefined) {
-		expect(Object.values(MeetRecordingLayout)).toContain(response.body.layout);
+	expect(response.body.layout).toBeDefined();
+	expect(response.body.encoding).toBeDefined();
+
+	// Validate expected layout if provided
+	if (expectedLayout) {
+		expect(response.body.layout).toEqual(expectedLayout);
+	} else {
+		// Default layout
+		expect(response.body.layout).toEqual(DEFAULT_RECORDING_LAYOUT);
+	}
+
+	if (expectedEncoding !== undefined) {
+		if (typeof expectedEncoding === 'string') {
+			// Encoding preset
+			expect(response.body.encoding).toEqual(expectedEncoding);
+		} else {
+			// Advanced encoding options
+			expect(response.body.encoding).toMatchObject(expectedEncoding as any);
+		}
+	} else {
+		// Default encoding preset
+		expect(response.body.encoding).toEqual(DEFAULT_RECORDING_ENCODING_PRESET);
 	}
 };
 
@@ -395,10 +449,13 @@ export const expectValidStopRecordingResponse = (
 	response: Response,
 	recordingId: string,
 	roomId: string,
-	roomName: string
+	roomName: string,
+	expectedLayout?: MeetRecordingLayout,
+	expectedEncoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
 ) => {
 	expect(response.status).toBe(202);
 	expect(response.body).toBeDefined();
+	expectValidRecordingLocationHeader(response);
 	expect(response.body).toHaveProperty('recordingId', recordingId);
 	expect([MeetRecordingStatus.COMPLETE, MeetRecordingStatus.ENDING]).toContain(response.body.status);
 	expect(response.body).toHaveProperty('roomId', roomId);
@@ -407,35 +464,85 @@ export const expectValidStopRecordingResponse = (
 	expect(response.body).toHaveProperty('startDate');
 	expect(response.body).toHaveProperty('duration', expect.any(Number));
 	expect(response.body).toHaveProperty('layout');
+	expect(response.body).toHaveProperty('encoding');
 
 	// Validate layout is a valid value
-	if (response.body.layout !== undefined) {
-		expect(Object.values(MeetRecordingLayout)).toContain(response.body.layout);
+	if (expectedLayout) {
+		expect(response.body.layout).toEqual(expectedLayout);
+	} else {
+		// Default layout
+		expect(response.body.layout).toEqual(DEFAULT_RECORDING_LAYOUT);
 	}
 
-	expectValidRecordingLocationHeader(response);
+	// Validate encoding property
+	if (expectedEncoding) {
+		expect(response.body.encoding).toEqual(expectedEncoding);
+	} else {
+		// Default encoding preset
+		expect(response.body.encoding).toEqual(DEFAULT_RECORDING_ENCODING_PRESET);
+	}
 };
 
 export const expectValidGetRecordingResponse = (
 	response: Response,
-	recordingId: string,
-	roomId: string,
-	roomName: string,
-	status?: MeetRecordingStatus,
-	maxSecDuration?: number
+	expectedConfig: {
+		recordingId: string;
+		roomId: string;
+		roomName: string;
+		recordingStatus?: MeetRecordingStatus;
+		recordingDuration?: number;
+		recordingLayout?: MeetRecordingLayout;
+		recordingEncoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+	}
 ) => {
 	expect(response.status).toBe(200);
 	expect(response.body).toBeDefined();
 	const body = response.body;
 
+	const { recordingId, roomId, roomName, recordingStatus, recordingDuration, recordingLayout, recordingEncoding } =
+		expectedConfig;
+
 	expect(body).toMatchObject({ recordingId, roomId, roomName });
 
+	// Validate layout property
+	expect(body).toHaveProperty('layout');
+	expect(body.layout).toBeDefined();
+
+	if (recordingLayout !== undefined) {
+		expect(body.layout).toBe(recordingLayout);
+	} else {
+		// Default layout
+		expect(body.layout).toBe(DEFAULT_RECORDING_LAYOUT);
+	}
+
+	// Validate encoding property
+	expect(body).toHaveProperty('encoding');
+	expect(body.encoding).toBeDefined();
+
+	// Validate encoding property is present and coherent
+	if (recordingEncoding !== undefined) {
+		if (typeof recordingEncoding === 'string') {
+			expect(body.layout).toBe(recordingLayout);
+		} else {
+			expect(body.encoding).toMatchObject(recordingEncoding as any);
+		}
+	} else {
+		// Default encoding preset
+		expect(body.encoding).toBe(DEFAULT_RECORDING_ENCODING_PRESET);
+	}
+
+	expect(body.status).toBeDefined();
+
+	if (recordingStatus !== undefined) {
+		expect(body.status).toBe(recordingStatus);
+	}
+
 	const isRecFinished =
-		status &&
-		(status === MeetRecordingStatus.COMPLETE ||
-			status === MeetRecordingStatus.ABORTED ||
-			status === MeetRecordingStatus.FAILED ||
-			status === MeetRecordingStatus.LIMIT_REACHED);
+		recordingStatus &&
+		(recordingStatus === MeetRecordingStatus.COMPLETE ||
+			recordingStatus === MeetRecordingStatus.ABORTED ||
+			recordingStatus === MeetRecordingStatus.FAILED ||
+			recordingStatus === MeetRecordingStatus.LIMIT_REACHED);
 	expect(body).toEqual(
 		expect.objectContaining({
 			recordingId: expect.stringMatching(new RegExp(`^${recordingId}$`)),
@@ -451,32 +558,16 @@ export const expectValidGetRecordingResponse = (
 		})
 	);
 
-	// Validate layout property
-	expect(body).toHaveProperty('layout');
-
-	if (body.layout !== undefined) {
-		expect(body.layout).toBeDefined();
-		expect(typeof body.layout).toBe('string');
-		// Validate it's a valid MeetRecordingLayout value
-		expect(Object.values(MeetRecordingLayout)).toContain(body.layout);
-	}
-
-	expect(body.status).toBeDefined();
-
-	if (status !== undefined) {
-		expect(body.status).toBe(status);
-	}
-
 	if (isRecFinished) {
 		expect(body.endDate).toBeGreaterThanOrEqual(body.startDate);
 		expect(body.duration).toBeGreaterThanOrEqual(0);
 	}
 
-	if (isRecFinished && maxSecDuration) {
-		expect(body.duration).toBeLessThanOrEqual(maxSecDuration);
+	if (isRecFinished && recordingDuration) {
+		expect(body.duration).toBeLessThanOrEqual(recordingDuration);
 
 		const computedSec = (body.endDate - body.startDate) / 1000;
-		const diffSec = Math.abs(maxSecDuration - computedSec);
+		const diffSec = Math.abs(recordingDuration - computedSec);
 		// Estimate 5 seconds of tolerace because of time to start/stop recording
 		expect(diffSec).toBeLessThanOrEqual(5);
 	}

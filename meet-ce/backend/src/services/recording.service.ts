@@ -1,4 +1,6 @@
 import {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -13,6 +15,7 @@ import { Readable } from 'stream';
 import { uid } from 'uid';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
@@ -54,7 +57,10 @@ export class RecordingService {
 
 	async startRecording(
 		roomId: string,
-		configOverride?: { layout?: MeetRecordingLayout }
+		configOverride?: {
+			layout?: MeetRecordingLayout;
+			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+		}
 	): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
 		let eventListener!: (info: Record<string, unknown>) => void;
@@ -712,16 +718,22 @@ export class RecordingService {
 	 */
 	protected generateCompositeOptionsFromRequest(
 		roomConfig: MeetRoomConfig,
-		configOverride?: { layout?: MeetRecordingLayout }
+		configOverride?: {
+			layout?: MeetRecordingLayout;
+			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+		}
 	): RoomCompositeOptions {
 		const roomRecordingConfig = roomConfig.recording;
 		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
+		const encoding = configOverride?.encoding ?? roomRecordingConfig.encoding;
+		const encodingOptions = EncodingConverter.toLivekit(encoding);
+
 		return {
-			layout
+			layout,
+			encodingOptions
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false
-			// encodingOptions
 		};
 	}
 

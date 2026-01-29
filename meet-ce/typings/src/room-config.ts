@@ -1,4 +1,4 @@
-import { MeetRecordingLayout } from './recording.model';
+import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingLayout } from './recording.model';
 
 /**
  * Interface representing the config for a room.
@@ -18,6 +18,11 @@ export interface MeetRoomConfig {
 export interface MeetRecordingConfig {
 	enabled: boolean;
 	layout?: MeetRecordingLayout;
+	/**
+	 * Encoding configuration: use a preset string for common scenarios,
+	 * or provide detailed options for fine-grained control.
+	 */
+	encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 	allowAccessTo?: MeetRecordingAccess;
 }
 

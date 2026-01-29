@@ -1,7 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAccess,
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings
 } from '@openvidu-meet/typings';
@@ -10,7 +14,12 @@ import ms from 'ms';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import {
+	DEFAULT_RECORDING_ENCODING_PRESET,
+	DEFAULT_RECORDING_LAYOUT,
+	expectValidRoom,
+	expectValidationError
+} from '../../../helpers/assertion-helpers.js';
 import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
@@ -62,6 +71,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: false,
 						layout: MeetRecordingLayout.GRID,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: false },
@@ -103,6 +113,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: false,
 					layout: MeetRecordingLayout.GRID, // Default value
+					encoding: MeetRecordingEncodingPreset.H264_720P_30, // Default value
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
 				},
 				chat: { enabled: true }, // Default value
@@ -133,6 +144,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true, // Default value
 					layout: MeetRecordingLayout.GRID, // Default value
+					encoding: MeetRecordingEncodingPreset.H264_720P_30, // Default value
 					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
 				},
 				chat: { enabled: false },
@@ -283,6 +295,150 @@ describe('Room API Tests', () => {
 				roomName: '🎉🎊🎈'
 			});
 			expectValidRoom(room, '🎉🎊🎈', 'room');
+		});
+	});
+
+	describe('Recording Encoding Configuration Tests', () => {
+		it('Should create a room without encoding and return default value', async () => {
+			const payload = {
+				roomName: 'Room without encoding',
+				config: {
+					recording: {
+						enabled: true
+						// No encoding specified
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true,
+					layout: DEFAULT_RECORDING_LAYOUT,
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET, // Default value
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', expectedConfig);
+		});
+
+		it('Should create a room with H264_1080P_30 encoding preset', async () => {
+			const payload = {
+				roomName: '1080p Preset Room',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_1080P_30
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true,
+					layout: DEFAULT_RECORDING_LAYOUT,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', expectedConfig);
+		});
+
+		it('Should create a room with PORTRAIT_H264_720P_30 encoding preset', async () => {
+			const payload = {
+				roomName: 'Portrait 720p Room',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true,
+					layout: DEFAULT_RECORDING_LAYOUT,
+					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30,
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
+		});
+
+		it('Should create a room with advanced encoding options - both video and audio', async () => {
+			const payload = {
+				roomName: 'Full Advanced Encoding Room',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: {
+							video: {
+								width: 1280,
+								height: 720,
+								framerate: 60,
+								codec: MeetRecordingVideoCodec.H264_HIGH,
+								bitrate: 3000,
+								keyFrameInterval: 2,
+								depth: 24
+							},
+							audio: {
+								codec: MeetRecordingAudioCodec.AAC,
+								bitrate: 192,
+								frequency: 44100
+							}
+						} as MeetRecordingEncodingOptions
+					}
+				}
+			};
+
+			const room = await createRoom(payload);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true,
+					layout: MeetRecordingLayout.GRID,
+					encoding: {
+						video: {
+							width: 1280,
+							height: 720,
+							framerate: 60,
+							codec: MeetRecordingVideoCodec.H264_HIGH,
+							bitrate: 3000,
+							keyFrameInterval: 2,
+							depth: 24
+						},
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC,
+							bitrate: 192,
+							frequency: 44100
+						}
+					},
+					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', expectedConfig);
 		});
 	});
 
@@ -542,6 +698,217 @@ describe('Room API Tests', () => {
 				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('roomName cannot exceed 50 characters');
+		});
+
+		describe('Encoding Validation Failures', () => {
+			it('Should reject room with video-only encoding (audio required)', async () => {
+				const payload = {
+					roomName: 'Video Only Encoding Room',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {
+								video: {
+									width: 1920,
+									height: 1080,
+									framerate: 30,
+									codec: MeetRecordingVideoCodec.H264_MAIN,
+									bitrate: 4500,
+									keyFrameInterval: 4,
+									depth: 24
+								}
+								// No audio encoding
+							} as MeetRecordingEncodingOptions
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				expectValidationError(
+					response,
+					'config.recording.encoding',
+					'Both video and audio configuration must be provided'
+				);
+			});
+
+			it('Should reject room with audio-only encoding (video required)', async () => {
+				const payload = {
+					roomName: 'Audio Only Encoding Room',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {
+								// No video encoding
+								audio: {
+									codec: MeetRecordingAudioCodec.OPUS,
+									bitrate: 128,
+									frequency: 48000
+								}
+							} as MeetRecordingEncodingOptions
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+				expectValidationError(
+					response,
+					'config.recording.encoding',
+					'Both video and audio configuration must be provided'
+				);
+			});
+			it('Should fail when encoding preset is invalid', async () => {
+				const payload = {
+					roomName: 'Invalid Preset',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: 'INVALID_PRESET'
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				expect(JSON.stringify(response.body.details)).toContain('Invalid encoding preset');
+			});
+
+			it('Should fail when video encoding has missing required fields', async () => {
+				const payload = {
+					roomName: 'Missing Video Fields',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {
+								video: {
+									width: 1920
+									// Missing height, framerate, codec, bitrate
+								},
+								audio: {
+									codec: 'OPUS',
+									bitrate: 128,
+									frequency: 48000
+								}
+							}
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				// Partial video config - missing required fields
+				expect(JSON.stringify(response.body.details)).toContain(
+					'When video encoding is provided, required fields are missing'
+				);
+			});
+
+			it('Should fail when audio encoding has missing required fields', async () => {
+				const payload = {
+					roomName: 'Missing Audio Fields',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {
+								video: {
+									width: 1920,
+									height: 1080,
+									framerate: 30,
+									codec: MeetRecordingVideoCodec.H264_MAIN,
+									bitrate: 4500,
+									keyFrameInterval: 4,
+									depth: 24
+								},
+								audio: {
+									codec: 'OPUS'
+									// Missing bitrate and frequency
+								}
+							}
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				// Partial audio config - missing required fields
+				expect(JSON.stringify(response.body.details)).toContain(
+					'When audio encoding is provided, required fields are missing'
+				);
+			});
+
+			it('Should fail when encoding has neither video nor audio', async () => {
+				const payload = {
+					roomName: 'Empty Encoding',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {}
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				expect(JSON.stringify(response.body.details)).toContain(
+					'Both video and audio configuration must be provided when using encoding options'
+				);
+			});
+
+			it('Should fail when encoding has invalid types', async () => {
+				const payload = {
+					roomName: 'Invalid Types',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: {
+								video: {
+									width: '1920', // String instead of number
+									height: 1080,
+									framerate: 30,
+									codec: MeetRecordingVideoCodec.H264_MAIN,
+									bitrate: 4500
+								},
+								audio: {
+									codec: MeetRecordingAudioCodec.OPUS,
+									bitrate: 128,
+									frequency: 48000
+								}
+							}
+						}
+					}
+				};
+
+				const response = await request(app)
+					.post(ROOMS_PATH)
+					.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+					.send(payload)
+					.expect(422);
+
+				expect(JSON.stringify(response.body.details)).toContain('Expected number');
+			});
 		});
 	});
 });

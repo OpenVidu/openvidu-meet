@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingAccess, MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
 import { expectSuccessRoomConfigResponse } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getRoomConfig, startTestServer } from '../../../helpers/request-helpers.js';
@@ -10,6 +10,7 @@ describe('Room API Tests', () => {
 		recording: {
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30,
 			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 		},
 		chat: { enabled: true },
@@ -43,6 +44,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER,
+						encoding: MeetRecordingEncodingPreset.H264_1080P_30,
 						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
