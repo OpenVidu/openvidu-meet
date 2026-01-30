@@ -10,9 +10,9 @@ import {
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
-import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
+import { TokenService } from '../services/token.service.js';
 
 export const createUser = async (req: Request, res: Response) => {
 	const userOptions = req.body as MeetUserOptions;
@@ -76,47 +76,6 @@ export const getUser = async (req: Request, res: Response) => {
 	}
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
-	const { userId } = req.params;
-
-	const logger = container.get(LoggerService);
-	logger.verbose(`Deleting user with ID '${userId}'`);
-
-	try {
-		const userService = container.get(UserService);
-		await userService.deleteUser(userId);
-		return res.status(200).json({ message: `User '${userId}' deleted successfully` });
-	} catch (error) {
-		handleError(res, error, 'deleting user');
-	}
-};
-
-export const bulkDeleteUsers = async (req: Request, res: Response) => {
-	const { userIds } = req.query as { userIds: string[] };
-
-	const logger = container.get(LoggerService);
-	logger.verbose(`Deleting users: ${userIds}`);
-
-	try {
-		const userService = container.get(UserService);
-		const { deleted, failed } = await userService.bulkDeleteUsers(userIds);
-
-		// All users were successfully deleted
-		if (deleted.length > 0 && failed.length === 0) {
-			return res.status(200).json({ message: 'All users deleted successfully', deleted });
-		}
-
-		// Some or all users could not be deleted
-		return res.status(400).json({
-			message: `${failed.length} user(s) could not be deleted`,
-			deleted,
-			failed
-		});
-	} catch (error) {
-		handleError(res, error, 'deleting users');
-	}
-};
-
 export const getMe = (_req: Request, res: Response) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
@@ -147,26 +106,6 @@ export const resetUserPassword = async (req: Request, res: Response) => {
 		});
 	} catch (error) {
 		handleError(res, error, 'resetting user password');
-	}
-};
-
-export const updateUserRole = async (req: Request, res: Response) => {
-	const { userId } = req.params;
-	const { role } = req.body as { role: MeetUserRole };
-
-	const logger = container.get(LoggerService);
-	logger.verbose(`Admin updating role for user '${userId}' to '${role}'`);
-
-	try {
-		const userService = container.get(UserService);
-		const user = await userService.changeUserRole(userId, role);
-
-		return res.status(200).json({
-			message: `Role for user '${userId}' updated successfully to '${role}'`,
-			user: userService.convertToDTO(user)
-		});
-	} catch (error) {
-		handleError(res, error, 'updating user role');
 	}
 };
 
@@ -208,5 +147,66 @@ export const changePassword = async (req: Request, res: Response) => {
 		return res.status(200).json({ message });
 	} catch (error) {
 		handleError(res, error, 'changing password');
+	}
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+	const { role } = req.body as { role: MeetUserRole };
+
+	const logger = container.get(LoggerService);
+	logger.verbose(`Admin updating role for user '${userId}' to '${role}'`);
+
+	try {
+		const userService = container.get(UserService);
+		const user = await userService.changeUserRole(userId, role);
+
+		return res.status(200).json({
+			message: `Role for user '${userId}' updated successfully to '${role}'`,
+			user: userService.convertToDTO(user)
+		});
+	} catch (error) {
+		handleError(res, error, 'updating user role');
+	}
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+
+	const logger = container.get(LoggerService);
+	logger.verbose(`Deleting user with ID '${userId}'`);
+
+	try {
+		const userService = container.get(UserService);
+		await userService.deleteUser(userId);
+		return res.status(200).json({ message: `User '${userId}' deleted successfully` });
+	} catch (error) {
+		handleError(res, error, 'deleting user');
+	}
+};
+
+export const bulkDeleteUsers = async (req: Request, res: Response) => {
+	const { userIds } = req.query as { userIds: string[] };
+
+	const logger = container.get(LoggerService);
+	logger.verbose(`Deleting users: ${userIds}`);
+
+	try {
+		const userService = container.get(UserService);
+		const { deleted, failed } = await userService.bulkDeleteUsers(userIds);
+
+		// All users were successfully deleted
+		if (deleted.length > 0 && failed.length === 0) {
+			return res.status(200).json({ message: 'All users deleted successfully', deleted });
+		}
+
+		// Some or all users could not be deleted
+		return res.status(400).json({
+			message: `${failed.length} user(s) could not be deleted`,
+			deleted,
+			failed
+		});
+	} catch (error) {
+		handleError(res, error, 'deleting users');
 	}
 };
