@@ -12,10 +12,10 @@ import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RoomService } from '../services/room.service.js';
 import {
+	accessTokenValidator,
 	allowAnonymous,
 	apiKeyValidator,
 	roomMemberTokenValidator,
-	tokenAndRoleValidator,
 	withAuth
 } from './auth.middleware.js';
 
@@ -70,7 +70,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 				case recordingSecrets.privateAccessSecret:
 					// Private access secret requires authentication
 					authValidators.push(
-						tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+						accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 					);
 					break;
 				default:
@@ -89,7 +89,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 	const authValidators = [
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	];
 	return withAuth(...authValidators)(req, res, next);
 };

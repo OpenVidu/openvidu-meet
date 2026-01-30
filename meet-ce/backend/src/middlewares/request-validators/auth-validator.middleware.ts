@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
-import { LoginReqSchema } from '../../models/zod-schemas/auth.schema.js';
+import { TokenMetadata } from '../../models/token-metadata.model.js';
+import { LoginReqSchema, TokenMetadataSchema } from '../../models/zod-schemas/auth.schema.js';
 
 export const validateLoginReq = (req: Request, res: Response, next: NextFunction) => {
 	const { success, error, data } = LoginReqSchema.safeParse(req.body);
@@ -11,4 +12,14 @@ export const validateLoginReq = (req: Request, res: Response, next: NextFunction
 
 	req.body = data;
 	next();
+};
+
+export const validateTokenMetadata = (metadata: unknown): TokenMetadata => {
+	const { success, error, data } = TokenMetadataSchema.safeParse(metadata);
+
+	if (!success) {
+		throw new Error(`Invalid metadata: ${error.message}`);
+	}
+
+	return data;
 };

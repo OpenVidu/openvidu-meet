@@ -66,7 +66,7 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Login Error', 'Invalid username or password', 404);
+	return new OpenViduMeetError('Login Error', 'Invalid user ID or password', 404);
 };
 
 export const errorInvalidPassword = (): OpenViduMeetError => {
@@ -303,10 +303,6 @@ export const errorRoomMemberCannotBeOwnerOrAdmin = (roomId: string, userId: stri
 		`User '${userId}' cannot be added as a member of room '${roomId}' because they are the room owner or an admin`,
 		409
 	);
-};
-
-export const errorInvalidRoomMemberToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Member Error', 'Invalid room member token', 400);
 };
 
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {

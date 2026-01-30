@@ -1,7 +1,6 @@
 import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
-import { ClaimGrants } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -10,17 +9,16 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidApiKey,
 	errorInvalidApiKeySubject,
-	errorInvalidRoomMemberToken,
 	errorInvalidToken,
 	errorInvalidTokenSubject,
 	errorPasswordChangeRequired,
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import { TokenType } from '../models/token-metadata.model.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
-import { RoomMemberService } from '../services/room-member.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
 import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
@@ -32,7 +30,7 @@ import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
 export interface AuthValidator {
 	/**
 	 * Returns the priority of this validator (higher number = higher priority).
-	 * Priority order: apiKeyValidator (4) > roomMemberTokenValidator (3) > tokenAndRoleValidator (2) > allowAnonymous (1)
+	 * Priority order: apiKeyValidator (4) > roomMemberTokenValidator (3) > accessTokenValidator (2) > allowAnonymous (1)
 	 */
 	getPriority(): number;
 
@@ -50,7 +48,7 @@ export interface AuthValidator {
 
 /**
  * This middleware allows to chain multiple validators to check if the request is authorized.
- * Validators are automatically sorted by priority: apiKeyValidator > roomMemberTokenValidator > tokenAndRoleValidator > allowAnonymous.
+ * Validators are automatically sorted by priority: apiKeyValidator > roomMemberTokenValidator > accessTokenValidator > allowAnonymous.
  * Only validates the authentication methods that are present in the request.
  * If any of the validators grants access, the request is allowed to continue.
  * If a validator is present but fails validation, the error is returned immediately.
@@ -88,12 +86,12 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 };
 
 /**
- * Token and role validator for role-based access.
- * Validates JWT tokens and checks if the user has one of the required roles.
+ * Access token validator for user access.
+ * Validates access tokens and user roles, and sets the authenticated user in the session.
  *
  * @param roles One or more roles that are allowed to access the resource
  */
-export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator => {
+export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator => {
 	return {
 		getPriority(): number {
 			return 2;
@@ -111,30 +109,41 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 				throw errorUnauthorized();
 			}
 
-			let payload: ClaimGrants;
+			let userId: string | undefined;
+			let tokenType: TokenType;
 
 			try {
+				// Verify the token and extract the user ID and token metadata
 				const tokenService = container.get(TokenService);
-				payload = await tokenService.verifyToken(token);
+				const { sub, metadata: tokenMetadata } = await tokenService.verifyToken(token);
+
+				if (!tokenMetadata) {
+					throw new Error('Missing required token claims');
+				}
+
+				// Validate that this is an access or temporary token, not a refresh token
+				const parsedMetadata = tokenService.parseTokenMetadata(tokenMetadata);
+				userId = sub;
+				tokenType = parsedMetadata.tokenType;
+
+				if (tokenType === TokenType.REFRESH) {
+					throw new Error('Invalid token type for access');
+				}
 			} catch (error) {
+				const logger = container.get(LoggerService);
+				logger.error('Invalid access token:', error);
 				throw errorInvalidToken();
 			}
 
 			const userService = container.get(UserService);
-			const userId = payload.sub;
 			const user = userId ? await userService.getUser(userId) : null;
 
 			if (!user) {
 				throw errorInvalidTokenSubject();
 			}
 
-			// Check if user has one of the required roles
-			if (!roles.includes(user.role)) {
-				throw errorInsufficientPermissions();
-			}
-
-			// Check if password change is required
-			if (user.mustChangePassword) {
+			// Restrict access if password change is required or if token is temporary
+			if (user.mustChangePassword || tokenType === TokenType.TEMPORARY) {
 				// Allow only change-password and me endpoints
 				const requestPath = req.path;
 				const allowedPaths = ['/change-password', '/me'];
@@ -142,6 +151,11 @@ export const tokenAndRoleValidator = (...roles: MeetUserRole[]): AuthValidator =
 				if (!allowedPaths.includes(requestPath)) {
 					throw errorPasswordChangeRequired();
 				}
+			}
+
+			// Check if user has one of the required roles
+			if (!roles.includes(user.role)) {
+				throw errorInsufficientPermissions();
 			}
 
 			const requestSessionService = container.get(RequestSessionService);
@@ -171,30 +185,24 @@ export const roomMemberTokenValidator: AuthValidator = {
 			throw errorUnauthorized();
 		}
 
-		let tokenMetadata: string | undefined;
+		const requestSessionService = container.get(RequestSessionService);
 
 		try {
+			// Verify the token and extract the room member token metadata
 			const tokenService = container.get(TokenService);
-			({ metadata: tokenMetadata } = await tokenService.verifyToken(token));
+			const { metadata: tokenMetadata } = await tokenService.verifyToken(token);
 
 			if (!tokenMetadata) {
 				throw new Error('Missing required token claims');
 			}
-		} catch (error) {
-			throw errorInvalidToken();
-		}
 
-		const requestSessionService = container.get(RequestSessionService);
-
-		// Validate the room member token metadata and set it in the session
-		try {
-			const roomMemberService = container.get(RoomMemberService);
-			const parsedMetadata = roomMemberService.parseRoomMemberTokenMetadata(tokenMetadata);
+			// Validate the room member token metadata and set it in the session
+			const parsedMetadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
 			requestSessionService.setRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
 			const logger = container.get(LoggerService);
 			logger.error('Invalid room member token:', error);
-			throw errorInvalidRoomMemberToken();
+			throw errorInvalidToken();
 		}
 
 		// Set authenticated user if present

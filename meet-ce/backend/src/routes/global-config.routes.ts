@@ -2,7 +2,7 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as globalConfigCtrl from '../controllers/global-config.controller.js';
-import { allowAnonymous, tokenAndRoleValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { accessTokenValidator, allowAnonymous, withAuth } from '../middlewares/auth.middleware.js';
 import {
 	validateTestWebhookReq,
 	validateUpdateRoomsAppearanceConfigReq,
@@ -17,17 +17,17 @@ configRouter.use(bodyParser.json());
 // Webhook config
 configRouter.put(
 	'/webhooks',
-	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN)),
 	validateUpdateWebhookConfigReq,
 	globalConfigCtrl.updateWebhookConfig
 );
-configRouter.get('/webhooks', withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)), globalConfigCtrl.getWebhookConfig);
+configRouter.get('/webhooks', withAuth(accessTokenValidator(MeetUserRole.ADMIN)), globalConfigCtrl.getWebhookConfig);
 configRouter.post('/webhooks/test', validateTestWebhookReq, globalConfigCtrl.testWebhook);
 
 // Security config
 configRouter.put(
 	'/security',
-	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN)),
 	validateUpdateSecurityConfigReq,
 	globalConfigCtrl.updateSecurityConfig
 );
@@ -36,7 +36,7 @@ configRouter.get('/security', withAuth(allowAnonymous), globalConfigCtrl.getSecu
 // Appearance config
 configRouter.put(
 	'/rooms/appearance',
-	withAuth(tokenAndRoleValidator(MeetUserRole.ADMIN)),
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN)),
 	validateUpdateRoomsAppearanceConfigReq,
 	globalConfigCtrl.updateRoomsAppearanceConfig
 );

@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
-import { ClaimGrants } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,
 	errorInvalidTokenSubject,
+	errorPasswordChangeRequired,
 	errorRefreshTokenNotPresent,
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import { TokenType } from '../models/token-metadata.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
@@ -69,8 +70,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	logger.verbose('Refresh token request received');
 
-	// Get refresh token from cookie or header based on transport mode
-	const refreshToken = await getRefreshToken(req);
+	const refreshToken = getRefreshToken(req);
 
 	if (!refreshToken) {
 		logger.warn('No refresh token provided');
@@ -79,19 +79,32 @@ export const refreshToken = async (req: Request, res: Response) => {
 	}
 
 	const tokenService = container.get(TokenService);
-	let payload: ClaimGrants;
+	let userId: string | undefined;
 
 	try {
-		payload = await tokenService.verifyToken(refreshToken);
+		// Verify the token and extract the user ID and token metadata
+		const { sub, metadata: tokenMetadata } = await tokenService.verifyToken(refreshToken);
+
+		if (!tokenMetadata) {
+			throw new Error('Missing required token claims');
+		}
+
+		// Validate that this is actually a refresh token
+		const parsedMetadata = tokenService.parseTokenMetadata(tokenMetadata);
+		userId = sub;
+		const tokenType = parsedMetadata.tokenType;
+
+		if (tokenType !== TokenType.REFRESH) {
+			throw new Error('Invalid token type for refresh operation');
+		}
 	} catch (error) {
-		logger.error('Error verifying refresh token:', error);
+		logger.error('Invalid refresh token:', error);
 		const meetError = errorInvalidRefreshToken();
 		return rejectRequestFromMeetError(res, meetError);
 	}
 
-	const username = payload.sub;
 	const userService = container.get(UserService);
-	const user = username ? await userService.getUser(username) : null;
+	const user = userId ? await userService.getUser(userId) : null;
 
 	if (!user) {
 		logger.warn('Invalid refresh token subject');
@@ -99,12 +112,19 @@ export const refreshToken = async (req: Request, res: Response) => {
 		return rejectRequestFromMeetError(res, error);
 	}
 
+	// Restrict refresh if password change is required
+	if (user.mustChangePassword) {
+		logger.warn(`Cannot refresh token: password change required for user '${userId}'`);
+		const error = errorPasswordChangeRequired();
+		return rejectRequestFromMeetError(res, error);
+	}
+
 	try {
 		const accessToken = await tokenService.generateAccessToken(user);
 
-		logger.info(`Access token refreshed for user '${username}'`);
+		logger.info(`Access token refreshed for user '${userId}'`);
 		return res.status(200).json({
-			message: `Access token for user '${username}' successfully refreshed`,
+			message: `Access token for user '${userId}' successfully refreshed`,
 			accessToken
 		});
 	} catch (error) {

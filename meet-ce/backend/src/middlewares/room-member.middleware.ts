@@ -12,7 +12,7 @@ import {
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
-import { allowAnonymous, AuthValidator, tokenAndRoleValidator, withAuth } from './auth.middleware.js';
+import { accessTokenValidator, allowAnonymous, AuthValidator, withAuth } from './auth.middleware.js';
 
 /**
  * Middleware to authorize access to specific room member information.
@@ -99,7 +99,7 @@ export const setupRoomMemberTokenAuthentication = async (req: Request, res: Resp
 	if (secret) {
 		authValidators.push(allowAnonymous);
 	} else {
-		authValidators.push(tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER));
+		authValidators.push(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER));
 	}
 
 	return withAuth(...authValidators)(req, res, next);

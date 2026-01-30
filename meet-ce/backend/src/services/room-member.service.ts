@@ -19,7 +19,6 @@ import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
@@ -755,19 +754,6 @@ export class RoomMemberService {
 		return livekitPermissions;
 	}
 
-	/**
-	 * Parses and validates room member token metadata.
-	 */
-	parseRoomMemberTokenMetadata(metadata: string): MeetRoomMemberTokenMetadata {
-		try {
-			const parsedMetadata = JSON.parse(metadata);
-			return validateRoomMemberTokenMetadata(parsedMetadata);
-		} catch (error) {
-			this.logger.error('Failed to parse room member token metadata:', error);
-			throw new Error('Invalid room member token metadata format');
-		}
-	}
-
 	async kickParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<void> {
 		this.logger.verbose(`Kicking participant '${participantIdentity}' from room '${roomId}'`);
 		return this.livekitService.deleteParticipant(roomId, participantIdentity);
@@ -782,7 +768,9 @@ export class RoomMemberService {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
-			const metadata: MeetRoomMemberTokenMetadata = this.parseRoomMemberTokenMetadata(participant.metadata);
+			const metadata: MeetRoomMemberTokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(
+				participant.metadata
+			);
 
 			// Update role and permissions in metadata
 			metadata.baseRole = newRole;
@@ -811,7 +799,7 @@ export class RoomMemberService {
 	}
 
 	protected async getParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
-		this.logger.verbose(`Fetching participant '${participantIdentity}'`);
+		this.logger.verbose(`Fetching participant '${participantIdentity}' from room '${roomId}'`);
 		return this.livekitService.getParticipant(roomId, participantIdentity);
 	}
 

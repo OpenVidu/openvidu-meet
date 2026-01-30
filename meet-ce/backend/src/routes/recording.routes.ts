@@ -3,9 +3,9 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as recordingCtrl from '../controllers/recording.controller.js';
 import {
+	accessTokenValidator,
 	apiKeyValidator,
 	roomMemberTokenValidator,
-	tokenAndRoleValidator,
 	withAuth
 } from '../middlewares/auth.middleware.js';
 import {
@@ -34,7 +34,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
 	recordingCtrl.getRecordings
@@ -44,7 +44,7 @@ recordingRouter.delete(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	recordingCtrl.bulkDeleteRecordings
@@ -54,7 +54,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	recordingCtrl.downloadRecordingsZip
@@ -71,7 +71,7 @@ recordingRouter.delete(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	withValidRecordingId,
 	authorizeRecordingAccess('canDeleteRecordings'),
@@ -89,7 +89,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		tokenAndRoleValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingUrlReq,
 	authorizeRecordingAccess('canRetrieveRecordings'),
