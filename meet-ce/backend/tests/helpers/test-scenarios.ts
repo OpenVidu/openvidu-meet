@@ -17,7 +17,7 @@ import { RoomRepository } from '../../src/repositories/room.repository';
 import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import {
-	changePasswordAfterFirstLogin,
+	changePassword,
 	createRoom,
 	createRoomMember,
 	createUser,
@@ -264,17 +264,13 @@ export const setupUser = async (userOptions: MeetUserOptions): Promise<UserData>
 
 	// Change password and get final access token
 	const newPassword = userOptions.password + '_2';
-	const { accessToken, refreshToken } = await changePasswordAfterFirstLogin(
-		userOptions.password,
-		newPassword,
-		accessTokenTmp
-	);
+	const { accessToken, refreshToken } = await changePassword(userOptions.password, newPassword, accessTokenTmp);
 
 	return {
 		user,
 		password: newPassword,
-		accessToken,
-		refreshToken
+		accessToken: accessToken!,
+		refreshToken: refreshToken!
 	};
 };
 

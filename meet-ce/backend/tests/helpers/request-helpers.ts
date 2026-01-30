@@ -180,6 +180,12 @@ export const restoreDefaultGlobalConfig = async () => {
 
 // AUTH HELPERS
 
+export const loginReq = async (body: { userId: string; password: string }) => {
+	checkAppIsRunning();
+
+	return await request(app).post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`).send(body);
+};
+
 /**
  * Logs in a user and returns the access and refresh (if available) tokens in the format "Bearer <token>"
  */
@@ -187,16 +193,8 @@ export const loginUser = async (
 	userId: string,
 	password: string
 ): Promise<{ accessToken: string; refreshToken?: string }> => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
-		.send({
-			userId,
-			password
-		})
-		.expect(200);
-
+	const response = await loginReq({ userId, password });
+	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('accessToken');
 	const accessToken = `Bearer ${response.body.accessToken}`;
 	const refreshToken = response.body.refreshToken ? `Bearer ${response.body.refreshToken}` : undefined;
@@ -209,6 +207,14 @@ export const loginUser = async (
 export const loginRootAdmin = async (): Promise<{ accessToken: string; refreshToken: string }> => {
 	const { accessToken, refreshToken } = await loginUser(MEET_ENV.INITIAL_ADMIN_USER, MEET_ENV.INITIAL_ADMIN_PASSWORD);
 	return { accessToken, refreshToken: refreshToken! };
+};
+
+export const refreshTokenReq = async (refreshToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/refresh`)
+		.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, refreshToken);
 };
 
 // USER HELPERS
@@ -252,32 +258,38 @@ export const getMe = async (accessToken: string) => {
 		.send();
 };
 
-export const changePassword = async (currentPassword: string, newPassword: string, accessToken: string) => {
+export const changePasswordReq = async (
+	body: { currentPassword: string; newPassword: string },
+	accessToken: string
+) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
-		.send({ currentPassword, newPassword });
+		.send(body);
 };
 
 /**
- * Changes the password for the authenticated user after first login
- * and returns the access and refresh tokens in the format "Bearer <token>"
+ * Changes the password for the authenticated user and
+ * returns the access and refresh tokens in the format "Bearer <token>" if provided.
+ * If the user does not require password change, no tokens are returned
  */
-export const changePasswordAfterFirstLogin = async (
+export const changePassword = async (
 	currentPassword: string,
 	newPassword: string,
-	accessTokenTmp: string
-): Promise<{ accessToken: string; refreshToken: string }> => {
-	const response = await changePassword(currentPassword, newPassword, accessTokenTmp);
+	accessToken: string
+): Promise<{ accessToken?: string; refreshToken?: string }> => {
+	const response = await changePasswordReq({ currentPassword, newPassword }, accessToken);
 	expect(response.status).toBe(200);
 
-	expect(response.body).toHaveProperty('accessToken');
-	expect(response.body).toHaveProperty('refreshToken');
-	const accessToken = `Bearer ${response.body.accessToken}`;
-	const refreshToken = `Bearer ${response.body.refreshToken}`;
-	return { accessToken, refreshToken };
+	const newAccessToken = response.body.accessToken;
+	const newRefreshToken = response.body.refreshToken;
+
+	return {
+		accessToken: newAccessToken ? `Bearer ${newAccessToken}` : undefined,
+		refreshToken: newRefreshToken ? `Bearer ${newRefreshToken}` : undefined
+	};
 };
 
 export const resetUserPassword = async (userId: string, newPassword: string) => {

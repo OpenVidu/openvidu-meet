@@ -1,25 +1,19 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
-import { Express } from 'express';
-import request from 'supertest';
-import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
 	deleteAllRooms,
 	deleteAllUsers,
 	deleteUser,
 	loginRootAdmin,
+	refreshTokenReq,
 	resetUserPassword,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
 
-const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
-
 describe('Authentication API Tests', () => {
-	let app: Express;
-
 	beforeAll(async () => {
-		app = await startTestServer();
+		await startTestServer();
 	});
 
 	afterAll(async () => {
@@ -37,9 +31,7 @@ describe('Authentication API Tests', () => {
 		});
 
 		it('should succeed when providing valid refresh token', async () => {
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, refreshToken);
+			const response = await refreshTokenReq(refreshToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('successfully refreshed');
@@ -48,25 +40,21 @@ describe('Authentication API Tests', () => {
 		});
 
 		it('should fail when refresh token is missing', async () => {
-			const response = await request(app).post(`${AUTH_PATH}/refresh`);
+			const response = await refreshTokenReq('');
 			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('No refresh token provided');
 		});
 
 		it('should fail when refresh token is invalid', async () => {
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, 'Bearer invalidtoken');
+			const response = await refreshTokenReq('Bearer invalidtoken');
 			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
 		});
 
 		it('should fail when using access token instead of refresh token', async () => {
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, accessToken);
+			const response = await refreshTokenReq(accessToken);
 			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
@@ -74,9 +62,7 @@ describe('Authentication API Tests', () => {
 
 		it('should fail when using room member token instead of refresh token', async () => {
 			const { moderatorToken } = await setupSingleRoom();
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, moderatorToken);
+			const response = await refreshTokenReq(moderatorToken);
 			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
@@ -95,9 +81,7 @@ describe('Authentication API Tests', () => {
 			await deleteUser(userData.user.userId);
 
 			// Attempt to refresh token
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, userData.refreshToken);
+			const response = await refreshTokenReq(userData.refreshToken);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid token subject');
@@ -116,9 +100,7 @@ describe('Authentication API Tests', () => {
 			await resetUserPassword(userData.user.userId, 'NewPassword1!');
 
 			// Attempt to refresh token
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, userData.refreshToken);
+			const response = await refreshTokenReq(userData.refreshToken);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Password change required');
