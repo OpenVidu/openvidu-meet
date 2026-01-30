@@ -260,16 +260,21 @@ export const setupUser = async (userOptions: MeetUserOptions): Promise<UserData>
 	const user = createResponse.body as MeetUser;
 
 	// Login to get temporal access token for changing password
-	const accessTokenTmp = await loginUser(userOptions.userId, userOptions.password);
+	const { accessToken: accessTokenTmp } = await loginUser(userOptions.userId, userOptions.password);
 
 	// Change password and get final access token
 	const newPassword = userOptions.password + '_2';
-	const accessToken = await changePasswordAfterFirstLogin(userOptions.password, newPassword, accessTokenTmp);
+	const { accessToken, refreshToken } = await changePasswordAfterFirstLogin(
+		userOptions.password,
+		newPassword,
+		accessTokenTmp
+	);
 
 	return {
 		user,
 		password: newPassword,
-		accessToken
+		accessToken,
+		refreshToken
 	};
 };
 

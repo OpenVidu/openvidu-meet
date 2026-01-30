@@ -23,6 +23,7 @@ export interface UserData {
 	user: MeetUser;
 	password: string;
 	accessToken: string;
+	refreshToken: string;
 }
 
 /**

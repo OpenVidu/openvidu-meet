@@ -55,7 +55,7 @@ export const startTestServer = async (): Promise<Express> => {
 export const generateApiKey = async (): Promise<string> => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -68,7 +68,7 @@ export const generateApiKey = async (): Promise<string> => {
 export const getApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -79,7 +79,7 @@ export const getApiKeys = async () => {
 export const deleteApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -114,7 +114,7 @@ export const getRoomsAppearanceConfig = async () => {
 export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppearanceConfig }) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -125,7 +125,7 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 export const getWebbhookConfig = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -136,7 +136,7 @@ export const getWebbhookConfig = async () => {
 export const updateWebbhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -164,7 +164,7 @@ export const getSecurityConfig = async () => {
 export const updateSecurityConfig = async (config: SecurityConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -181,9 +181,12 @@ export const restoreDefaultGlobalConfig = async () => {
 // AUTH HELPERS
 
 /**
- * Logs in a user and returns the access token in the format "Bearer <token>"
+ * Logs in a user and returns the access and refresh (if available) tokens in the format "Bearer <token>"
  */
-export const loginUser = async (userId: string, password: string): Promise<string> => {
+export const loginUser = async (
+	userId: string,
+	password: string
+): Promise<{ accessToken: string; refreshToken?: string }> => {
 	checkAppIsRunning();
 
 	const response = await request(app)
@@ -195,14 +198,17 @@ export const loginUser = async (userId: string, password: string): Promise<strin
 		.expect(200);
 
 	expect(response.body).toHaveProperty('accessToken');
-	return `Bearer ${response.body.accessToken}`;
+	const accessToken = `Bearer ${response.body.accessToken}`;
+	const refreshToken = response.body.refreshToken ? `Bearer ${response.body.refreshToken}` : undefined;
+	return { accessToken, refreshToken };
 };
 
 /**
- * Logs in the root admin user and returns the access token in the format "Bearer <token>"
+ * Logs in the root admin user and returns the access an refresh tokens in the format "Bearer <token>"
  */
-export const loginRootAdmin = async (): Promise<string> => {
-	return loginUser(MEET_ENV.INITIAL_ADMIN_USER, MEET_ENV.INITIAL_ADMIN_PASSWORD);
+export const loginRootAdmin = async (): Promise<{ accessToken: string; refreshToken: string }> => {
+	const { accessToken, refreshToken } = await loginUser(MEET_ENV.INITIAL_ADMIN_USER, MEET_ENV.INITIAL_ADMIN_PASSWORD);
+	return { accessToken, refreshToken: refreshToken! };
 };
 
 // USER HELPERS
@@ -210,7 +216,7 @@ export const loginRootAdmin = async (): Promise<string> => {
 export const createUser = async (options: MeetUserOptions) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -220,7 +226,7 @@ export const createUser = async (options: MeetUserOptions) => {
 export const getUsers = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -230,7 +236,7 @@ export const getUsers = async (query: Record<string, unknown> = {}) => {
 export const getUser = async (userId: string) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -257,24 +263,27 @@ export const changePassword = async (currentPassword: string, newPassword: strin
 
 /**
  * Changes the password for the authenticated user after first login
- * and returns the access token in the format "Bearer <token>"
+ * and returns the access and refresh tokens in the format "Bearer <token>"
  */
 export const changePasswordAfterFirstLogin = async (
 	currentPassword: string,
 	newPassword: string,
-	accessToken: string
-): Promise<string> => {
-	const response = await changePassword(currentPassword, newPassword, accessToken);
+	accessTokenTmp: string
+): Promise<{ accessToken: string; refreshToken: string }> => {
+	const response = await changePassword(currentPassword, newPassword, accessTokenTmp);
 	expect(response.status).toBe(200);
 
 	expect(response.body).toHaveProperty('accessToken');
-	return `Bearer ${response.body.accessToken}`;
+	expect(response.body).toHaveProperty('refreshToken');
+	const accessToken = `Bearer ${response.body.accessToken}`;
+	const refreshToken = `Bearer ${response.body.refreshToken}`;
+	return { accessToken, refreshToken };
 };
 
 export const resetUserPassword = async (userId: string, newPassword: string) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -284,7 +293,7 @@ export const resetUserPassword = async (userId: string, newPassword: string) => 
 export const updateUserRole = async (userId: string, role: string) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -294,7 +303,7 @@ export const updateUserRole = async (userId: string, role: string) => {
 export const deleteUser = async (userId: string) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -304,7 +313,7 @@ export const deleteUser = async (userId: string) => {
 export const bulkDeleteUsers = async (userIds: string[]) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -905,7 +914,7 @@ export const runReleaseActiveRecordingLock = async (roomId: string) => {
 export const getAnalytics = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginRootAdmin();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`)
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)

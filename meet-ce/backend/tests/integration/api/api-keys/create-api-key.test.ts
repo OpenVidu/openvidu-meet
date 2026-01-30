@@ -5,7 +5,7 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
 	generateApiKey,
 	getApiKeys,
-	loginAdminUser,
+	loginRootAdmin,
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -14,11 +14,12 @@ const API_KEYS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`;
 
 describe('API Keys API Tests', () => {
 	let app: Express;
-	let adminAccessToken: string;
+	let rootAdminAccessToken: string;
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginAdminUser();
+		const { accessToken } = await loginRootAdmin();
+		rootAdminAccessToken = accessToken;
 	});
 
 	afterAll(async () => {
@@ -35,7 +36,7 @@ describe('API Keys API Tests', () => {
 		it('should create a new API key', async () => {
 			const response = await request(app)
 				.post(`${API_KEYS_PATH}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken)
 				.expect(201);
 
 			expect(response.body).toHaveProperty('key');

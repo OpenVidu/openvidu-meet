@@ -30,7 +30,8 @@ describe('Meeting API Security Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		rootAdminAccessToken = await loginRootAdmin();
+		const { accessToken } = await loginRootAdmin();
+		rootAdminAccessToken = accessToken;
 
 		roomData = await setupSingleRoom();
 		roomId = roomData.room.roomId;

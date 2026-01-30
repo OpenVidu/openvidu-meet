@@ -23,7 +23,8 @@ describe('User API Security Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		rootAdminAccessToken = await loginRootAdmin();
+		const { accessToken } = await loginRootAdmin();
+		rootAdminAccessToken = accessToken;
 		testUsers = await setupTestUsers();
 	});
 
