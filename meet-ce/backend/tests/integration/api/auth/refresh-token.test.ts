@@ -1,8 +1,17 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllRooms,
+	deleteAllUsers,
+	deleteUser,
+	loginRootAdmin,
+	resetUserPassword,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
+import { setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
 
 const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
 
@@ -13,44 +22,106 @@ describe('Authentication API Tests', () => {
 		app = await startTestServer();
 	});
 
+	afterAll(async () => {
+		await deleteAllRooms();
+		await deleteAllUsers();
+	});
+
 	describe('Refresh Token Tests', () => {
-		it('should successfully refresh access token with valid refresh token', async () => {
-			// First, login to get a valid refresh token
-			const loginResponse = await request(app)
-				.post(`${AUTH_PATH}/login`)
-				.send({
-					username: 'admin',
-					password: 'admin'
-				})
-				.expect(200);
+		let accessToken: string;
+		let refreshToken: string;
 
-			expect(loginResponse.body).toHaveProperty('refreshToken');
-			const refreshToken = loginResponse.body.refreshToken;
-
-			const response = await request(app)
-				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, `Bearer ${refreshToken}`)
-				.expect(200);
-
-			expect(response.body).toHaveProperty('message');
-			expect(response.body).toHaveProperty('accessToken');
+		beforeAll(async () => {
+			// Login to get a valid refresh token
+			({ accessToken, refreshToken } = await loginRootAdmin());
 		});
 
-		it('should return 400 when no refresh token is provided', async () => {
-			const response = await request(app).post(`${AUTH_PATH}/refresh`).expect(400);
+		it('should succeed when providing valid refresh token', async () => {
+			const response = await request(app)
+				.post(`${AUTH_PATH}/refresh`)
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, refreshToken);
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('successfully refreshed');
+			expect(response.body).toHaveProperty('accessToken');
+			expect(response.body).not.toHaveProperty('refreshToken');
+		});
 
+		it('should fail when refresh token is missing', async () => {
+			const response = await request(app).post(`${AUTH_PATH}/refresh`);
+			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('No refresh token provided');
 		});
 
-		it('should return 400 when refresh token is invalid', async () => {
+		it('should fail when refresh token is invalid', async () => {
 			const response = await request(app)
 				.post(`${AUTH_PATH}/refresh`)
-				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, 'Bearer invalidtoken')
-				.expect(400);
-
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, 'Bearer invalidtoken');
+			expect(response.status).toBe(400);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid refresh token');
+		});
+
+		it('should fail when using access token instead of refresh token', async () => {
+			const response = await request(app)
+				.post(`${AUTH_PATH}/refresh`)
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, accessToken);
+			expect(response.status).toBe(400);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid refresh token');
+		});
+
+		it('should fail when using roomMemberToken token instead of refresh token', async () => {
+			const { moderatorToken } = await setupSingleRoom();
+			const response = await request(app)
+				.post(`${AUTH_PATH}/refresh`)
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, moderatorToken);
+			expect(response.status).toBe(400);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid refresh token');
+		});
+
+		it('should fail when refresh token has invalid subject', async () => {
+			// Create a user and get their refresh token
+			const userData = await setupUser({
+				userId: 'tempuser',
+				name: 'Temporary User',
+				password: 'TempPassword1!',
+				role: MeetUserRole.USER
+			});
+
+			// Delete the user to invalidate the refresh token subject
+			await deleteUser(userData.user.userId);
+
+			// Attempt to refresh token
+			const response = await request(app)
+				.post(`${AUTH_PATH}/refresh`)
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, userData.refreshToken);
+			expect(response.status).toBe(403);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token subject');
+		});
+
+		it('should fail when user must change password', async () => {
+			// Create a user and get their refresh token
+			const userData = await setupUser({
+				userId: 'testuser',
+				name: 'Test User',
+				password: 'TestPassword1!',
+				role: MeetUserRole.USER
+			});
+
+			// Reset user password to force password change
+			await resetUserPassword(userData.user.userId, 'NewPassword1!');
+
+			// Attempt to refresh token
+			const response = await request(app)
+				.post(`${AUTH_PATH}/refresh`)
+				.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, userData.refreshToken);
+			expect(response.status).toBe(403);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Password change required');
 		});
 	});
 });
