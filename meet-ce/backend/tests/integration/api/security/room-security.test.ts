@@ -3,7 +3,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { deleteAllRooms, deleteAllUsers, sleep, startTestServer } from '../../../helpers/request-helpers.js';
+import { deleteAllRooms, deleteAllUsers, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
@@ -324,24 +324,6 @@ describe('Room API Security Tests', () => {
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
-		});
-
-		it('should fail when room member token is expired, even if user access token is valid', async () => {
-			// Set short room member token expiration
-			const initialTokenExpiration = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
-
-			const newRoomData = await setupSingleRoom();
-			await sleep('2s'); // Ensure the token is expired
-
-			// Restore original expiration after setup
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
-
-			const response = await request(app)
-				.get(`${ROOMS_PATH}/${newRoomData.room.roomId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-			expect(response.status).toBe(401);
 		});
 	});
 

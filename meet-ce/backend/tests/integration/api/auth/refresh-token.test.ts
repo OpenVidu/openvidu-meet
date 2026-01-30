@@ -72,7 +72,7 @@ describe('Authentication API Tests', () => {
 			expect(response.body.message).toContain('Invalid refresh token');
 		});
 
-		it('should fail when using roomMemberToken token instead of refresh token', async () => {
+		it('should fail when using room member token instead of refresh token', async () => {
 			const { moderatorToken } = await setupSingleRoom();
 			const response = await request(app)
 				.post(`${AUTH_PATH}/refresh`)

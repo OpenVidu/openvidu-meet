@@ -18,8 +18,7 @@ describe('API Keys API Tests', () => {
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		const { accessToken } = await loginRootAdmin();
-		rootAdminAccessToken = accessToken;
+		({ accessToken: rootAdminAccessToken } = await loginRootAdmin());
 	});
 
 	afterAll(async () => {
