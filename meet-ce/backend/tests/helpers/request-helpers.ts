@@ -292,43 +292,43 @@ export const changePassword = async (
 	};
 };
 
-export const resetUserPassword = async (userId: string, newPassword: string) => {
+export const resetUserPassword = async (userId: string, newPassword: string, accessToken?: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`)
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ newPassword });
 };
 
-export const updateUserRole = async (userId: string, role: string) => {
+export const updateUserRole = async (userId: string, role: string, accessToken?: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`)
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ role });
 };
 
-export const deleteUser = async (userId: string) => {
+export const deleteUser = async (userId: string, accessToken?: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send();
 };
 
-export const bulkDeleteUsers = async (userIds: string[]) => {
+export const bulkDeleteUsers = async (userIds: string[], accessToken?: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
 		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.query({ userIds: userIds.join(',') });
 };
 

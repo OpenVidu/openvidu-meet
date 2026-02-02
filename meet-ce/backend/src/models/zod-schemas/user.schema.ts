@@ -15,7 +15,7 @@ export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
 export const UserFiltersSchema: z.ZodType<MeetUserFilters> = z.object({
 	userId: z.string().optional(),
 	name: z.string().optional(),
-	fields: z.string().optional(),
+	role: z.nativeEnum(MeetUserRole).optional(),
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
