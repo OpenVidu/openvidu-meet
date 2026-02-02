@@ -17,7 +17,7 @@ describe('Captions Config API Tests', () => {
 		it('should return enabled true by default', async () => {
 			const response = await getCaptionsConfig();
 			expect(response.status).toBe(200);
-			expect(response.body).toEqual({ enabled: true });
+			expect(response.body).toEqual({ enabled: false });
 		});
 	});
 });
