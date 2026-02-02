@@ -92,6 +92,10 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 			type: MeetRoomMemberPermissionsSchema,
 			required: true
 		},
+		permissionsUpdatedAt: {
+			type: Number,
+			required: true
+		},
 		currentParticipantIdentity: {
 			type: String,
 			required: false

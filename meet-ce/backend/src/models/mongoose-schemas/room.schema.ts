@@ -285,6 +285,10 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			required: true,
 			default: MeetRoomStatus.OPEN
 		},
+		rolesUpdatedAt: {
+			type: Number,
+			required: true
+		},
 		meetingEndAction: {
 			type: String,
 			enum: Object.values(MeetingEndAction),

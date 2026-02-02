@@ -142,11 +142,12 @@ export class RoomService {
 			}
 		};
 
+		const now = Date.now();
 		const meetRoom: MeetRoom = {
 			roomId,
 			roomName: roomName!,
 			owner: user.userId,
-			creationDate: Date.now(),
+			creationDate: now,
 			// maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
@@ -155,6 +156,7 @@ export class RoomService {
 			anonymous: anonymousConfig,
 			accessUrl: `/room/${roomId}`,
 			status: MeetRoomStatus.OPEN,
+			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
 		return await this.roomRepository.create(meetRoom);
@@ -263,6 +265,7 @@ export class RoomService {
 
 		// Merge existing roles with new roles (partial update)
 		room.roles = merge({}, room.roles, roles);
+		room.rolesUpdatedAt = Date.now();
 		await this.roomRepository.update(room);
 
 		// Update existing room members with new effective permissions
@@ -288,6 +291,7 @@ export class RoomService {
 
 		// Merge existing anonymous config with new anonymous config (partial update)
 		room.anonymous = merge({}, room.anonymous, anonymous);
+		room.rolesUpdatedAt = Date.now();
 
 		await this.roomRepository.update(room);
 		return room;

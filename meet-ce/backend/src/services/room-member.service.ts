@@ -111,15 +111,17 @@ export class RoomMemberService {
 		const room = await this.roomService.getMeetRoom(roomId);
 		const effectivePermissions = this.computeEffectivePermissions(room.roles, baseRole, customPermissions);
 
+		const now = Date.now();
 		const roomMember = {
 			memberId,
 			roomId,
 			name: memberName,
-			membershipDate: Date.now(),
+			membershipDate: now,
 			accessUrl,
 			baseRole,
 			customPermissions,
-			effectivePermissions
+			effectivePermissions,
+			permissionsUpdatedAt: now
 		};
 		return this.roomMemberRepository.create(roomMember);
 	}
@@ -222,6 +224,7 @@ export class RoomMemberService {
 			member.baseRole,
 			member.customPermissions
 		);
+		member.permissionsUpdatedAt = Date.now();
 
 		const updatedMember = await this.roomMemberRepository.update(member);
 
@@ -299,6 +302,7 @@ export class RoomMemberService {
 
 					// Update the member with new effective permissions
 					member.effectivePermissions = effectivePermissions;
+					member.permissionsUpdatedAt = Date.now();
 					await this.roomMemberRepository.update(member);
 
 					this.logger.verbose(
