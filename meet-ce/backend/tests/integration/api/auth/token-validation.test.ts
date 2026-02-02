@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -7,13 +7,19 @@ import {
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
+	deleteRoom,
+	deleteRoomMember,
 	deleteUser,
 	loginUser,
 	resetUserPassword,
 	sleep,
-	startTestServer
+	startTestServer,
+	updateRoomAnonymousConfig,
+	updateRoomConfig,
+	updateRoomMember,
+	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
+import { setupRoomMember, setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
 
 const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
@@ -348,6 +354,244 @@ describe('Token Validation Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room member permissions are updated after token issuance', async () => {
+			// Create a room with an external member
+			const roomData = await setupSingleRoom();
+			const roomMember = await setupRoomMember(roomData.room.roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the room member's permissions
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			await updateRoomMember(roomData.room.roomId, roomMember.member.memberId, {
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room member is deleted after token issuance', async () => {
+			// Create a room with an external member
+			const roomData = await setupSingleRoom();
+			const roomMember = await setupRoomMember(roomData.room.roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Delete the room member
+			await deleteRoomMember(roomData.room.roomId, roomMember.member.memberId);
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room roles permissions are updated after room member token issuance', async () => {
+			// Create a room with an external member
+			const roomData = await setupSingleRoom();
+			const roomMember = await setupRoomMember(roomData.room.roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the room roles' permissions
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			await updateRoomRoles(roomData.room.roomId, {
+				moderator: {
+					permissions: {
+						canMakeModerator: false
+					}
+				}
+			});
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room roles permissions are updated after anonymous room member token issuance', async () => {
+			// Create a room and generate an anonymous room member token
+			const roomData = await setupSingleRoom();
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the room's roles configuration
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			await updateRoomRoles(roomData.room.roomId, {
+				moderator: {
+					permissions: {
+						canMakeModerator: false
+					}
+				}
+			});
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should succeed when room anonymous config is updated after room member token issuance', async () => {
+			// Create a room with an external member
+			const roomData = await setupSingleRoom();
+			const roomMember = await setupRoomMember(roomData.room.roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the room anonymous configuration
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			await updateRoomAnonymousConfig(roomData.room.roomId, {
+				moderator: {
+					enabled: false
+				}
+			});
+
+			// The original token should still be valid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when room anonymous config is updated after anonymous room member token issuance', async () => {
+			// Create a room and generate an anonymous room member token
+			const roomData = await setupSingleRoom();
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the room's anonymous configuration
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			await updateRoomAnonymousConfig(roomData.room.roomId, {
+				moderator: {
+					enabled: false
+				}
+			});
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should succeed when room config is updated but permissions/roles remain unchanged', async () => {
+			// Create a room and generate an anonymous room member token
+			const roomData = await setupSingleRoom();
+
+			// Update room config (not roles/permissions/anonymous)
+			await sleep('100ms');
+			await updateRoomConfig(roomData.room.roomId, {
+				chat: { enabled: false }
+			});
+
+			// The token should still be valid since permissions weren't changed
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(response.status).toBe(200);
+		});
+
+		it('should fail when room is deleted after room member token issuance', async () => {
+			// Create a room with an external member
+			const roomData = await setupSingleRoom();
+			const roomMember = await setupRoomMember(roomData.room.roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.MODERATOR
+			});
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Delete the room
+			await deleteRoom(roomData.room.roomId);
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when room is deleted after anonymous room member token issuance', async () => {
+			// Create a room and generate an anonymous room member token
+			const roomData = await setupSingleRoom();
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Delete the room
+			await deleteRoom(roomData.room.roomId);
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');

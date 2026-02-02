@@ -436,7 +436,7 @@ export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRoles
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send({ rolesConfig });
+		.send({ roles: rolesConfig });
 };
 
 export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig: MeetRoomAnonymousConfig) => {
@@ -445,7 +445,7 @@ export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig:
 	return await request(app)
 		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/anonymous`)
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send({ anonymousConfig });
+		.send({ anonymous: anonymousConfig });
 };
 
 export const deleteRoom = async (roomId: string, query: Record<string, unknown> = {}) => {
