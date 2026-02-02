@@ -1,4 +1,4 @@
-import { MeetRoomDeletionErrorCode } from '@openvidu-meet/typings';
+import { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Response } from 'express';
 import { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
@@ -281,6 +281,14 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
+};
+
+export const errorAnonymousAccessDisabled = (roomId: string, role: MeetRoomMemberRole): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Anonymous access in room '${roomId}' is disabled for role '${role}'`,
+		403
+	);
 };
 
 export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message: string): OpenViduMeetError => {

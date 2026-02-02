@@ -20,6 +20,7 @@ import { uid } from 'uid/single';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
+	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
 	errorParticipantNotFound,
@@ -478,7 +479,7 @@ export class RoomMemberService {
 				const member = await this.getRoomMember(roomId, secret);
 
 				if (!member) {
-					throw errorInvalidRoomSecret(roomId, secret);
+					throw errorRoomMemberNotFound(roomId, secret);
 				}
 
 				memberId = member.memberId;
@@ -486,16 +487,15 @@ export class RoomMemberService {
 				customPermissions = member.customPermissions;
 				effectivePermissions = member.effectivePermissions;
 			} else {
-				const isValidSecret = await this.roomService.isValidRoomSecret(roomId, secret);
-
-				if (!isValidSecret) {
-					throw errorInvalidRoomSecret(roomId, secret);
-				}
-
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
 				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
-
 				const room = await this.roomService.getMeetRoom(roomId);
+
+				// Check that anonymous access is enabled for the role
+				if (!room.anonymous[baseRole].enabled) {
+					throw errorAnonymousAccessDisabled(roomId, baseRole);
+				}
+
 				effectivePermissions = room.roles[baseRole].permissions;
 			}
 		} else {
