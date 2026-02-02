@@ -23,7 +23,7 @@ export const getHome = async (_req: Request, res: Response) => {
         console.error('Error details:', {
             message: error instanceof Error ? error.message : 'Unknown error',
             stack: error instanceof Error ? error.stack : 'No stack trace',
-            apiUrl: process.env.MEET_API_URL || 'http://localhost:6080/api/v1',
+            apiUrl: process.env.MEET_API_URL || 'http://localhost:6080/meet/api/v1',
             apiKey: process.env.MEET_API_KEY || 'meet-api-key'
         });
         res.status(500).send(

@@ -10,9 +10,9 @@ export class ConfigService {
 
     constructor() {
         this.serverPort = process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT, 10) : 5080;
-        this.meetApiUrl = process.env.MEET_API_URL || 'http://localhost:6080/api/v1';
+        this.meetApiUrl = process.env.MEET_API_URL || 'http://localhost:6080/meet/api/v1';
         this.meetApiKey = process.env.MEET_API_KEY || 'meet-api-key';
-        this.meetWebhookSrc = process.env.MEET_WEBCOMPONENT_SRC || 'http://localhost:6080/v1/openvidu-meet.js';
+        this.meetWebhookSrc = process.env.MEET_WEBCOMPONENT_SRC || 'http://localhost:6080/meet/v1/openvidu-meet.js';
     }
 }
 

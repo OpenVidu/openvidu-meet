@@ -23,6 +23,7 @@ export const MEET_ENV = {
 	LOG_LEVEL: process.env.MEET_LOG_LEVEL || 'info',
 	NAME_ID: process.env.MEET_NAME_ID || 'openviduMeet',
 	BASE_URL: process.env.MEET_BASE_URL ?? '',
+	BASE_PATH: process.env.MEET_BASE_PATH || '/meet',
 	EDITION: process.env.MEET_EDITION || 'CE',
 
 	// Authentication configuration
