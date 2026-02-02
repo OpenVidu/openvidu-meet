@@ -20,6 +20,7 @@ import { Response } from 'supertest';
 import { container } from '../../src/config/dependency-injector.config';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config';
 import { TokenService } from '../../src/services/token.service';
+import { getFullPath } from './request-helpers';
 
 export const DEFAULT_RECORDING_ENCODING_PRESET = MeetRecordingEncodingPreset.H264_720P_30;
 export const DEFAULT_RECORDING_LAYOUT = MeetRecordingLayout.GRID;
@@ -260,7 +261,7 @@ export const expectValidRecordingLocationHeader = (response: Response) => {
 	expect(locationHeader).toBeDefined();
 	const locationHeaderUrl = new URL(locationHeader);
 	expect(locationHeaderUrl.pathname).toBe(
-		`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`
+		getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${response.body.recordingId}`)
 	);
 };
 
@@ -606,7 +607,7 @@ export const expectValidGetRecordingUrlResponse = (response: Response, recording
 	expect(recordingUrl).toBeDefined();
 
 	const parsedUrl = new URL(recordingUrl);
-	expect(parsedUrl.pathname).toBe(`/recording/${recordingId}`);
+	expect(parsedUrl.pathname).toBe(getFullPath(`/recording/${recordingId}`));
 	expect(parsedUrl.searchParams.get('secret')).toBeDefined();
 };
 
