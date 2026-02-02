@@ -16,6 +16,7 @@ export class TokenService {
 
 	async generateAccessToken(user: MeetUser, isTemporary = false): Promise<string> {
 		const tokenMetadata: TokenMetadata = {
+			iat: Date.now(),
 			tokenType: isTemporary ? TokenType.TEMPORARY : TokenType.ACCESS
 		};
 		const tokenOptions: AccessTokenOptions = {
@@ -41,6 +42,7 @@ export class TokenService {
 
 	async generateRefreshToken(user: MeetUser): Promise<string> {
 		const tokenMetadata: TokenMetadata = {
+			iat: Date.now(),
 			tokenType: TokenType.REFRESH
 		};
 		const tokenOptions: AccessTokenOptions = {

@@ -126,6 +126,7 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 	);
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
+	iat: z.number(),
 	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
 	roomId: z.string(),
 	memberId: z.string().optional(),

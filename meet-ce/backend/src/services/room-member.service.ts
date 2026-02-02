@@ -612,6 +612,7 @@ export class RoomMemberService {
 
 		const livekitPermissions = this.getLiveKitPermissions(roomId, effectivePermissions);
 		const tokenMetadata: MeetRoomMemberTokenMetadata = {
+			iat: Date.now(),
 			livekitUrl: MEET_ENV.LIVEKIT_URL,
 			roomId,
 			memberId,
@@ -644,6 +645,7 @@ export class RoomMemberService {
 		);
 
 		const tokenMetadata: MeetRoomMemberTokenMetadata = {
+			iat: Date.now(),
 			livekitUrl: MEET_ENV.LIVEKIT_URL,
 			roomId,
 			memberId,

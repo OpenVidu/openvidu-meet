@@ -7,5 +7,6 @@ export const LoginReqSchema = z.object({
 });
 
 export const TokenMetadataSchema: z.ZodType<TokenMetadata> = z.object({
+	iat: z.number(),
 	tokenType: z.nativeEnum(TokenType)
 });

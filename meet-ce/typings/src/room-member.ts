@@ -72,6 +72,8 @@ export interface MeetRoomMemberTokenOptions {
  * Contains information about the room and member permissions.
  */
 export interface MeetRoomMemberTokenMetadata {
+    /** Token issued at timestamp (milliseconds since epoch) */
+    iat: number;
     livekitUrl: string;
     roomId: string;
     memberId?: string;

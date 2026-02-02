@@ -2,6 +2,9 @@
  * Metadata associated with access, refresh, and temporary tokens.
  */
 export interface TokenMetadata {
+	/** Token issued at timestamp (milliseconds since epoch) */
+	iat: number;
+	/** Type of the token */
 	tokenType: TokenType;
 }
 
