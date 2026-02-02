@@ -2,9 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
-import { generateApiKey, loginUser, restoreDefaultApiKeys, startTestServer } from '../../../helpers/request-helpers.js';
+import { generateApiKey, getFullPath, loginUser, restoreDefaultApiKeys, startTestServer } from '../../../helpers/request-helpers.js';
 
-const API_KEYS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`;
+const API_KEYS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`);
 
 describe('API Keys API Security Tests', () => {
 	let app: Express;

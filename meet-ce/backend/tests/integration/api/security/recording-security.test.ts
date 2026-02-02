@@ -10,6 +10,7 @@ import {
 	disconnectFakeParticipants,
 	endMeeting,
 	generateRoomMemberToken,
+	getFullPath,
 	getRecordingUrl,
 	loginUser,
 	startTestServer,
@@ -19,8 +20,8 @@ import {
 import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
-const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
-// const INTERNAL_RECORDINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`;
+const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
+// const INTERNAL_RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`);
 
 describe('Recording API Security Tests', () => {
 	let app: Express;

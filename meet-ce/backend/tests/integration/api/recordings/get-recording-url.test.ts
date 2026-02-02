@@ -6,6 +6,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	getFullPath,
 	getRecordingUrl,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -31,7 +32,7 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Get Recording URL Tests', () => {
-		const RECORDINGS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`;
+		const RECORDINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`);
 
 		it('should get public recording URL', async () => {
 			const response = await getRecordingUrl(recordingId);

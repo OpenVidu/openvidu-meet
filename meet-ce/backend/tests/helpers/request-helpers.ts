@@ -31,6 +31,22 @@ import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
+import { getBasePath } from '../../src/utils/html-injection.utils.js';
+
+/**
+ * Constructs the full API path by prepending the base path.
+ * Handles trailing/leading slashes to avoid double slashes.
+ */
+export const getFullPath = (apiPath: string): string => {
+	const basePath = getBasePath();
+
+	// Remove trailing slash from base path if apiPath starts with /
+	if (basePath.endsWith('/') && apiPath.startsWith('/')) {
+		return basePath.slice(0, -1) + apiPath;
+	}
+
+	return basePath + apiPath;
+};
 
 const CREDENTIALS = {
 	admin: {
@@ -62,7 +78,7 @@ export const generateApiKey = async (): Promise<string> => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 	expect(response.status).toBe(201);
@@ -75,7 +91,7 @@ export const getApiKeys = async () => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 	return response;
@@ -86,7 +102,7 @@ export const deleteApiKeys = async () => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 	return response;
@@ -109,7 +125,7 @@ export const getRoomsAppearanceConfig = async () => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`))
 		.send();
 	return response;
 };
@@ -119,7 +135,7 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(config);
 	return response;
@@ -130,7 +146,7 @@ export const getWebbhookConfig = async () => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 	return response;
@@ -141,7 +157,7 @@ export const updateWebbhookConfig = async (config: WebhookConfig) => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(config);
 
@@ -152,7 +168,7 @@ export const testWebhookUrl = async (url: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`))
 		.send({ url });
 	return response;
 };
@@ -160,7 +176,7 @@ export const testWebhookUrl = async (url: string) => {
 export const getSecurityConfig = async () => {
 	checkAppIsRunning();
 
-	const response = await request(app).get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`).send();
+	const response = await request(app).get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)).send();
 	return response;
 };
 
@@ -169,7 +185,7 @@ export const updateSecurityConfig = async (config: SecurityConfig) => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(config);
 	return response;
@@ -189,7 +205,7 @@ export const changeSecurityConfig = async (authMode: AuthMode) => {
 export const getCaptionsConfig = async () => {
 	checkAppIsRunning();
 
-	const response = await request(app).get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/captions`).send();
+	const response = await request(app).get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/captions`)).send();
 	return response;
 };
 
@@ -206,7 +222,7 @@ export const loginUser = async (): Promise<string> => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`))
 		.send(CREDENTIALS.admin)
 		.expect(200);
 
@@ -218,7 +234,7 @@ export const getProfile = async (accessToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 };
@@ -227,7 +243,7 @@ export const changePassword = async (currentPassword: string, newPassword: strin
 	checkAppIsRunning();
 
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send({ currentPassword, newPassword });
 };
@@ -236,7 +252,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(options)
 		.expect(201);
@@ -247,7 +263,7 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
@@ -264,7 +280,7 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
 export const getRoom = async (roomId: string, fields?: string, roomMemberToken?: string) => {
 	checkAppIsRunning();
 
-	const req = request(app).get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`).query({ fields });
+	const req = request(app).get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)).query({ fields });
 
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
@@ -279,7 +295,7 @@ export const getRoomConfig = async (roomId: string): Promise<Response> => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 };
@@ -288,7 +304,7 @@ export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomC
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/config`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ config });
 };
@@ -307,7 +323,7 @@ export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) =
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ status });
 };
@@ -316,7 +332,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, unknown> 
 	checkAppIsRunning();
 
 	const result = await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 	await sleep('1s');
@@ -327,7 +343,7 @@ export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, w
 	checkAppIsRunning();
 
 	const result = await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
 	await sleep('1s');
@@ -399,7 +415,7 @@ export const getRoomMemberRoles = async (roomId: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles`))
 		.send();
 	return response;
 };
@@ -408,7 +424,7 @@ export const getRoomMemberRoleBySecret = async (roomId: string, secret: string) 
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles/${secret}`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles/${secret}`))
 		.send();
 	return response;
 };
@@ -421,7 +437,7 @@ export const generateRoomMemberTokenRequest = async (roomId: string, tokenOption
 
 	// Generate the room member token
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/token`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/token`))
 		.send(tokenOptions);
 	return response;
 };
@@ -563,7 +579,7 @@ export const updateParticipant = async (
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send({ role: newRole });
 	return response;
@@ -573,7 +589,7 @@ export const kickParticipant = async (roomId: string, participantIdentity: strin
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send();
 	return response;
@@ -583,7 +599,7 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send();
 	await sleep('1s');
@@ -612,7 +628,7 @@ export const startRecording = async (
 	}
 
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(body);
 };
@@ -621,7 +637,7 @@ export const stopRecording = async (recordingId: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 	await sleep('2.5s');
@@ -633,7 +649,7 @@ export const getRecording = async (recordingId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
@@ -641,7 +657,7 @@ export const getRecordingMedia = async (recordingId: string, range?: string) => 
 	checkAppIsRunning();
 
 	const req = request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 
 	if (range) {
@@ -655,7 +671,7 @@ export const getRecordingUrl = async (recordingId: string, privateAccess = false
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`))
 		.query({ privateAccess })
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
@@ -664,7 +680,7 @@ export const deleteRecording = async (recordingId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
@@ -672,7 +688,7 @@ export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberTok
 	checkAppIsRunning();
 
 	const req = request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.query({ recordingIds: recordingIds.join(',') });
 
 	if (roomMemberToken) {
@@ -692,7 +708,7 @@ export const downloadRecordings = async (
 	checkAppIsRunning();
 
 	const req = request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`))
 		.query({ recordingIds: recordingIds.join(',') });
 
 	if (roomMemberToken) {
@@ -728,7 +744,7 @@ export const stopAllRecordings = async () => {
 	console.log(`Stopping ${recordingIds.length} recordings...`, recordingIds);
 	const tasks = recordingIds.map((recordingId: string) =>
 		request(app)
-			.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`)
+			.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`))
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 			.send()
 	);
@@ -745,7 +761,7 @@ export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
@@ -754,7 +770,7 @@ export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 };
 
@@ -789,7 +805,7 @@ export const getAnalytics = async () => {
 
 	const accessToken = await loginUser();
 	const response = await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 

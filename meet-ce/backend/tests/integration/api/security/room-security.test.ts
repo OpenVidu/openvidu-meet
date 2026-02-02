@@ -8,6 +8,7 @@ import {
 	changeSecurityConfig,
 	createRoom,
 	deleteAllRooms,
+	getFullPath,
 	loginUser,
 	sleep,
 	startTestServer
@@ -15,8 +16,8 @@ import {
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
-const INTERNAL_ROOMS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
+const INTERNAL_ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`);
 
 describe('Room API Security Tests', () => {
 	let app: Express;

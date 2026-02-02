@@ -3,9 +3,9 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { startTestServer } from '../../../helpers/request-helpers.js';
+import { getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 
-const AUTH_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`;
+const AUTH_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`);
 
 describe('Authentication API Tests', () => {
 	let app: Express;

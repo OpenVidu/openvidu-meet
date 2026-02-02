@@ -20,9 +20,9 @@ import {
 	expectValidRoom,
 	expectValidationError
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, startTestServer } from '../../../helpers/request-helpers.js';
+import { createRoom, deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');

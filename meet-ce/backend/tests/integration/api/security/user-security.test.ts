@@ -3,9 +3,9 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { changePassword, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
+import { changePassword, getFullPath, loginUser, startTestServer } from '../../../helpers/request-helpers.js';
 
-const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
+const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
 
 describe('User API Security Tests', () => {
 	let app: Express;

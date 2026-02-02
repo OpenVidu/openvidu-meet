@@ -9,6 +9,7 @@ import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
+	getFullPath,
 	getRoomConfig,
 	startRecording,
 	startTestServer,
@@ -16,7 +17,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
 
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('E2EE Room Configuration Tests', () => {
 	let app: Express;

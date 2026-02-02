@@ -5,12 +5,13 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import {
 	generateApiKey,
 	getApiKeys,
+	getFullPath,
 	loginUser,
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
-const API_KEYS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`;
+const API_KEYS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`);
 
 describe('API Keys API Tests', () => {
 	let app: Express;
@@ -27,7 +28,7 @@ describe('API Keys API Tests', () => {
 
 	const getRoomsWithApiKey = async (apiKey: string) => {
 		return request(app)
-			.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+			.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, apiKey);
 	};
 
