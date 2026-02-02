@@ -100,8 +100,6 @@ const createApp = () => {
 
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
-	// LiveKit Webhook route
-	appRouter.use('/livekit/webhook', livekitWebhookRouter);
 	// Serve OpenVidu Meet webcomponent bundle file
 	appRouter.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
@@ -112,6 +110,10 @@ const createApp = () => {
 	appRouter.use((_req: Request, res: Response) =>
 		res.status(404).json({ error: 'Path Not Found', message: 'API path not implemented' })
 	);
+
+	// LiveKit Webhook route - mounted directly on app (not under base path)
+	// This allows webhooks to always be received at /livekit/webhook regardless of base path configuration
+	app.use('/livekit/webhook', livekitWebhookRouter);
 
 	// Mount all routes under the configured base path
 	app.use(basePath, appRouter);
