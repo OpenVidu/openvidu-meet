@@ -16,12 +16,14 @@ import {
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { TokenType } from '../models/token-metadata.model.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
 import { getAccessToken, getRoomMemberToken } from '../utils/token.utils.js';
+import { RoomRepository } from '../repositories/room.repository.js';
 
 /**
  * Interface for authentication validators.
@@ -190,14 +192,37 @@ export const roomMemberTokenValidator: AuthValidator = {
 		try {
 			// Verify the token and extract the room member token metadata
 			const tokenService = container.get(TokenService);
-			const { metadata: tokenMetadata } = await tokenService.verifyToken(token);
+			const { iat, metadata: tokenMetadata } = await tokenService.verifyToken(token);
 
 			if (!tokenMetadata) {
 				throw new Error('Missing required token claims');
 			}
 
-			// Validate the room member token metadata and set it in the session
+			// Validate the room member token metadata
 			const parsedMetadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
+			const { roomId, memberId } = parsedMetadata;
+
+			// If the token has a memberId, validate that permissions haven't been updated after token issuance
+			if (memberId && iat) {
+				const roomMemberRepository = container.get(RoomMemberRepository);
+				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+
+				// If member not found or permissions were updated after token issuance, invalidate token
+				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {
+					throw new Error('Token has outdated permissions');
+				}
+			} else if (!memberId && iat) {
+				// If the token has no memberId (anonymous access), validate that room roles/anonymous haven't been updated
+				const roomRepository = container.get(RoomRepository);
+				const room = await roomRepository.findByRoomId(roomId, 'rolesUpdatedAt');
+
+				// If room not found or roles/anonymous were updated after token issuance, invalidate token
+				if (!room || iat < room.rolesUpdatedAt) {
+					throw new Error('Token has outdated permissions');
+				}
+			}
+
+			// Set room member token metadata in the session
 			requestSessionService.setRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
 			const logger = container.get(LoggerService);
