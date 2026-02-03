@@ -166,8 +166,8 @@ export class LivekitWebhookService {
 	 * @param participant - Information about the newly joined participant.
 	 */
 	async handleParticipantJoined(room: Room, participant: ParticipantInfo) {
-		// Skip if the participant is an egress participant
-		if (this.livekitService.isEgressParticipant(participant)) return;
+		// Skip if the participant is not a standard participant
+		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		// Update room member's currentParticipantIdentity if this is an identified member
 		if (participant.metadata) {
@@ -206,8 +206,8 @@ export class LivekitWebhookService {
 	 * @param participant - Information about the participant who left.
 	 */
 	async handleParticipantLeft(room: Room, participant: ParticipantInfo) {
-		// Skip if the participant is an egress participant
-		if (this.livekitService.isEgressParticipant(participant)) return;
+		// Skip if the participant is not a standard participant
+		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		// Clear room member's currentParticipantIdentity if this is an identified member
 		if (participant.metadata) {

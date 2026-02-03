@@ -27,6 +27,54 @@ properties:
         enum: ['grid', 'speaker', 'single-speaker']
         example: 'grid'
         description: The layout of the recording.
+    encoding:
+        oneOf:
+            - type: string
+              enum: ['H264_720P_30', 'H264_720P_60', 'H264_1080P_30', 'H264_1080P_60', 'PORTRAIT_H264_720P_30', 'PORTRAIT_H264_720P_60', 'PORTRAIT_H264_1080P_30', 'PORTRAIT_H264_1080P_60']
+              description: Encoding preset
+            - type: object
+              properties:
+                  video:
+                      type: object
+                      properties:
+                          width:
+                              type: integer
+                              example: 1920
+                          height:
+                              type: integer
+                              example: 1080
+                          framerate:
+                              type: integer
+                              example: 30
+                          codec:
+                              type: string
+                              enum: ['DEFAULT_VC', 'H264_BASELINE', 'H264_MAIN', 'H264_HIGH', 'VP8']
+                          bitrate:
+                              type: integer
+                              example: 4500
+                          keyFrameInterval:
+                              type: number
+                              example: 2
+                          depth:
+                              type: integer
+                              example: 24
+                  audio:
+                      type: object
+                      properties:
+                          codec:
+                              type: string
+                              enum: ['DEFAULT_AC', 'OPUS', 'AAC', 'AC_MP3']
+                          bitrate:
+                              type: integer
+                              example: 128
+                          frequency:
+                              type: integer
+                              example: 48000
+              description: Advanced encoding options
+        description: |
+            The encoding configuration used for this recording.
+            Can be either a preset string or advanced encoding options.
+        example: 'H264_720P_30'
     filename:
         type: string
         example: 'room-123--XX445.mp4'

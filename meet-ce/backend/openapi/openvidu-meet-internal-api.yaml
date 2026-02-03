@@ -36,12 +36,10 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1security'
     /config/rooms/appearance:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
+    /config/captions:
+        $ref: './paths/internal/meet-global-config.yaml#/~1config~1captions'
     /rooms/{roomId}/members/token:
         $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
-    /recordings:
-        $ref: './paths/internal/recordings.yaml#/~1recordings'
-    /recordings/{recordingId}/stop:
-        $ref: './paths/internal/recordings.yaml#/~1recordings~1{recordingId}~1stop'
     /meetings/{roomId}:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
     /meetings/{roomId}/participants/{participantIdentity}:
@@ -67,8 +65,6 @@ components:
             $ref: components/schemas/internal/rooms-appearance-config.yaml
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
-        MeetRecording:
-            $ref: components/schemas/meet-recording.yaml
         MeetAnalytics:
             $ref: components/schemas/internal/meet-analytics.yaml
         Error:

@@ -1,6 +1,9 @@
 import {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingFilters,
 	MeetRecordingInfo,
+	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomConfig,
@@ -14,6 +17,7 @@ import { uid } from 'uid';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
@@ -54,12 +58,21 @@ export class RecordingService {
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
+	/**
+	 * TODO: Prevent circular imports when refactoring backend code
+	 */
 	private async getRoomService(): Promise<RoomService> {
 		const { RoomService } = await import('./room.service.js');
 		return container.get(RoomService);
 	}
 
-	async startRecording(roomId: string): Promise<MeetRecordingInfo> {
+	async startRecording(
+		roomId: string,
+		configOverride?: {
+			layout?: MeetRecordingLayout;
+			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+		}
+	): Promise<MeetRecordingInfo> {
 		let acquiredLock: RedisLock | null = null;
 		let eventListener!: (info: Record<string, unknown>) => void;
 		let recordingId = '';
@@ -114,7 +127,7 @@ export class RecordingService {
 
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
-					const options = this.generateCompositeOptionsFromRequest(room.config);
+					const options = this.generateCompositeOptionsFromRequest(room.config, configOverride);
 					const output = this.generateFileOutputFromRequest(roomId);
 					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
@@ -711,17 +724,30 @@ export class RecordingService {
 
 	/**
 	 * Generates composite options for recording based on the provided room configuration.
+	 * If configOverride is provided, its values will take precedence over room configuration.
 	 *
 	 * @param roomConfig  The room configuration
+	 * @param configOverride  Optional configuration override from the request
 	 * @returns The generated RoomCompositeOptions object.
 	 */
-	protected generateCompositeOptionsFromRequest({ recording }: MeetRoomConfig): RoomCompositeOptions {
+	protected generateCompositeOptionsFromRequest(
+		roomConfig: MeetRoomConfig,
+		configOverride?: {
+			layout?: MeetRecordingLayout;
+			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+		}
+	): RoomCompositeOptions {
+		const roomRecordingConfig = roomConfig.recording;
+		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
+		const encoding = configOverride?.encoding ?? roomRecordingConfig.encoding;
+		const encodingOptions = EncodingConverter.toLivekit(encoding);
+
 		return {
-			layout: recording.layout
+			layout,
+			encodingOptions
 			// customBaseUrl: customLayout,
 			// audioOnly: false,
 			// videoOnly: false
-			// encodingOptions
 		};
 	}
 

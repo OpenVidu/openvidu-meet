@@ -620,13 +620,15 @@ export class RoomMemberService {
 			customPermissions,
 			effectivePermissions
 		};
+		const withCaptions = room.config.captions.enabled ?? false;
 
 		// Generate token with participant name
 		return this.tokenService.generateRoomMemberToken(
 			tokenMetadata,
 			livekitPermissions,
 			participantName,
-			participantIdentity
+			participantIdentity,
+			withCaptions
 		);
 	}
 

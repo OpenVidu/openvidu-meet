@@ -1,4 +1,4 @@
-import { MeetRecordingLayout } from './recording.model';
+import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingLayout } from './recording.model';
 
 /**
  * Interface representing the config for a room.
@@ -20,6 +20,10 @@ export interface MeetRoomConfig {
      * Configuration for end-to-end encryption feature. See {@link MeetE2EEConfig} for details.
      */
     e2ee: MeetE2EEConfig;
+    /**
+     * Configuration for captions feature. See {@link MeetRoomCaptionsConfig} for details.
+     */
+    captions: MeetRoomCaptionsConfig;
     // appearance: MeetAppearanceConfig;
 }
 
@@ -35,6 +39,11 @@ export interface MeetRecordingConfig {
      * Layout used for recordings in the room. See {@link MeetRecordingLayout} for details.
      */
     layout?: MeetRecordingLayout;
+    /**
+     * Encoding configuration: use a preset string for common scenarios,
+     * or provide detailed options for fine-grained control.
+     */
+    encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 }
 
 export interface MeetChatConfig {
@@ -54,6 +63,12 @@ export interface MeetVirtualBackgroundConfig {
 export interface MeetE2EEConfig {
     /**
      * Indicates if end-to-end encryption is enabled in the room
+     */
+    enabled: boolean;
+}
+export interface MeetRoomCaptionsConfig {
+    /**
+     * Indicates if captions are enabled in the room
      */
     enabled: boolean;
 }

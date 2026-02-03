@@ -17,6 +17,11 @@ export enum Edition {
 }
 
 /**
+ * Status of captions feature based on room and global configuration
+ */
+export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
+
+/**
  * Interface that defines all available features in the application
  */
 export interface ApplicationFeatures {
@@ -30,7 +35,6 @@ export interface ApplicationFeatures {
 	 * Indicates if audio is enabled for the participant
 	 */
 	audioEnabled: boolean;
-
 
 	// UI Controls
 	/**
@@ -62,6 +66,11 @@ export interface ApplicationFeatures {
 	 * Indicates if the virtual backgrounds feature is shown in the UI
 	 */
 	showBackgrounds: boolean;
+
+	/**
+	 * Status of captions feature based on room and global configuration
+	 */
+	captionsStatus: CaptionsStatus;
 
 	/**
 	 * Indicates if the participant list is shown in the UI

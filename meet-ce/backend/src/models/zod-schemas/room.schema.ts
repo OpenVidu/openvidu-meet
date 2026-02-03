@@ -2,10 +2,15 @@ import {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
+	MeetRecordingAudioCodec,
 	MeetRecordingConfig,
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
 	MeetRoomAnonymousConfig,
 	MeetRoomAutoDeletionPolicy,
+	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -33,9 +38,120 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 			message: `${fieldName} cannot be empty after sanitization`
 		});
 
+// Encoding options validation - both video and audio are required with all their fields
+export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.object({
+	video: z.object({
+		width: z.number().positive('Video width must be a positive number'),
+		height: z.number().positive('Video height must be a positive number'),
+		framerate: z.number().positive('Video framerate must be a positive number'),
+		codec: z.nativeEnum(MeetRecordingVideoCodec),
+		bitrate: z.number().positive('Video bitrate must be a positive number'),
+		keyFrameInterval: z.number().positive('Video keyFrameInterval must be a positive number'),
+		depth: z.number().positive('Video depth must be a positive number')
+	}),
+	audio: z.object({
+		codec: z.nativeEnum(MeetRecordingAudioCodec),
+		bitrate: z.number().positive('Audio bitrate must be a positive number'),
+		frequency: z.number().positive('Audio frequency must be a positive number')
+	})
+});
+
+/**
+ * Custom encoding validator to handle both preset strings and encoding objects.
+ * Used in RecordingConfigSchema
+ */
+export const encodingValidator = z.any().superRefine((value, ctx) => {
+	// If undefined, skip validation (it's optional)
+	if (value === undefined) {
+		return;
+	}
+
+	// Check if it's a string preset
+	if (typeof value === 'string') {
+		const presetValues = Object.values(MeetRecordingEncodingPreset);
+
+		if (!presetValues.includes(value as MeetRecordingEncodingPreset)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: `Invalid encoding preset. Must be one of: ${presetValues.join(', ')}`
+			});
+		}
+
+		return;
+	}
+
+	// If it's not a string, it must be an encoding object
+	if (typeof value !== 'object' || value === null) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Encoding must be either a preset string or an encoding configuration object'
+		});
+		return;
+	}
+
+	// Both video and audio must be provided
+	if (!value.video || !value.audio) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Both video and audio configuration must be provided when using encoding options'
+		});
+		return;
+	}
+
+	if (value.video === null || typeof value.video !== 'object') {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Video encoding must be a valid object'
+		});
+		return;
+	}
+
+	if (value.audio === null || typeof value.audio !== 'object') {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Audio encoding must be a valid object'
+		});
+		return;
+	}
+
+	// Check video fields
+	const requiredVideoFields = ['width', 'height', 'framerate', 'codec', 'bitrate', 'keyFrameInterval', 'depth'];
+	const missingVideoFields = requiredVideoFields.filter((field) => !(field in value.video));
+
+	if (missingVideoFields.length > 0) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `When video encoding is provided, required fields are missing: ${missingVideoFields.join(', ')}`,
+			path: ['video']
+		});
+	}
+
+	// Check audio fields
+	const requiredAudioFields = ['codec', 'bitrate', 'frequency'];
+	const missingAudioFields = requiredAudioFields.filter((field) => !(field in value.audio));
+
+	if (missingAudioFields.length > 0) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: `When audio encoding is provided, required fields are missing: ${missingAudioFields.join(', ')}`,
+			path: ['audio']
+		});
+	}
+
+	// Validate the actual types and values using the schema
+	const result = EncodingOptionsSchema.safeParse(value);
+
+	if (!result.success) {
+		result.error.issues.forEach((issue) => {
+			ctx.addIssue(issue);
+		});
+	}
+});
+
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
-	layout: z.nativeEnum(MeetRecordingLayout).optional()
+	layout: z.nativeEnum(MeetRecordingLayout).optional(),
+	encoding: encodingValidator.optional()
 });
 
 const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
@@ -47,6 +163,10 @@ const VirtualBackgroundConfigSchema: z.ZodType<MeetVirtualBackgroundConfig> = z.
 });
 
 const E2EEConfigSchema: z.ZodType<MeetE2EEConfig> = z.object({
+	enabled: z.boolean()
+});
+
+const CaptionsConfigSchema: z.ZodType<MeetRoomCaptionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
@@ -87,7 +207,8 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
-		e2ee: E2EEConfigSchema.optional()
+		e2ee: E2EEConfigSchema.optional(),
+		captions: CaptionsConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
@@ -113,17 +234,24 @@ const CreateRoomConfigSchema = z
 	.object({
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
-			layout: MeetRecordingLayout.GRID
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		})),
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
-		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false }))
+		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
+		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true }))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
 		// Apply default layout if not provided
 		if (data.recording.layout === undefined) {
 			data.recording.layout = MeetRecordingLayout.GRID;
+		}
+
+		// Apply default encoding if not provided
+		if (data.recording.encoding === undefined) {
+			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
 		}
 
 		// Automatically disable recording when E2EE is enabled
@@ -217,11 +345,13 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	config: CreateRoomConfigSchema.optional().default({
 		recording: {
 			enabled: true,
-			layout: MeetRecordingLayout.GRID
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
-		e2ee: { enabled: false }
+		e2ee: { enabled: false },
+		captions: { enabled: true }
 	}),
 	roles: RoomRolesConfigSchema.optional(),
 	anonymous: RoomAnonymousConfigSchema.optional().default({

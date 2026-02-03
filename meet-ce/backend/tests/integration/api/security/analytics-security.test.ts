@@ -3,11 +3,11 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { deleteAllUsers, startTestServer } from '../../../helpers/request-helpers.js';
+import { deleteAllUsers, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupTestUsers } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
 
-const ANALYTICS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`;
+const ANALYTICS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`);
 
 describe('Analytics API Security Tests', () => {
 	let app: Express;

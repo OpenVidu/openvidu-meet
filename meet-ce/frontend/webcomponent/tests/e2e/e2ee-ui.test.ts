@@ -513,16 +513,17 @@ test.describe('E2EE UI Tests', () => {
 				interactWithElementInIframe(page, '#chat-panel-btn', { action: 'click' }),
 				interactWithElementInIframe(page2, '#chat-panel-btn', { action: 'click' })
 			]);
+			await page.waitForTimeout(1000); // Wait for chat panel animation
 			await Promise.all([
-				waitForElementInIframe(page, 'ov-chat-panel', { state: 'visible' }),
-				waitForElementInIframe(page2, 'ov-chat-panel', { state: 'visible' })
+				waitForElementInIframe(page, 'ov-chat-panel', { state: 'attached' }),
+				waitForElementInIframe(page2, 'ov-chat-panel', { state: 'attached' })
 			]);
 
 			// ===== MESSAGE: PARTICIPANT 1 → PARTICIPANT 2 =====
 			const testMessage1 = `Hello from ${participant1Name}!`;
 			await Promise.all([
 				interactWithElementInIframe(page, '#chat-input', { action: 'fill', value: testMessage1 }),
-				waitForElementInIframe(page2, 'ov-chat-panel', { state: 'visible' })
+				waitForElementInIframe(page2, 'ov-chat-panel', { state: 'attached' })
 			]);
 
 			await interactWithElementInIframe(page, '#send-btn', { action: 'click' });
@@ -531,7 +532,7 @@ test.describe('E2EE UI Tests', () => {
 			await page.waitForTimeout(1000);
 
 			// Open chat on page 2
-			const chatMessages2 = await waitForElementInIframe(page2, '.chat-message', { state: 'visible' });
+			const chatMessages2 = await waitForElementInIframe(page2, '.chat-message', { state: 'attached' });
 
 			// Verify message content
 			const messageText2 = await chatMessages2.evaluate((el) => el.textContent || '');

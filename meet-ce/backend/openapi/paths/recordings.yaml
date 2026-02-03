@@ -1,4 +1,42 @@
 /recordings:
+    post:
+        operationId: startRecording
+        summary: Start a recording
+        description: >
+            Start a new recording for an OpenVidu Meet room with the specified room ID.
+
+
+            By default, the recording will use the configuration defined in the room's settings.
+            However, you can optionally provide a configuration override in the request body to customize
+            the recording settings (e.g., layout) for this specific recording session.
+
+
+            If a configuration override is provided, those values will take precedence over the room's configuration.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        requestBody:
+            $ref: '../components/requestBodies/start-recording-request.yaml'
+        responses:
+            '201':
+                $ref: '../components/responses/success-start-recording.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-not-allowed-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-conflict.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+            '503':
+                $ref: '../components/responses/error-service-unavailable.yaml'
+
     get:
         operationId: getRecordings
         summary: Get all recordings
@@ -246,6 +284,36 @@
                         example:
                             error: Recording Error
                             message: 'Recording "room-123--EG_XYZ--XX445" range not satisfiable. File size: 123456789'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/recordings/{recordingId}/stop:
+    post:
+        operationId: stopRecording
+        summary: Stop a recording
+        description: |
+            Stops a recording with the specified recording ID.
+
+            > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/recording-id.yaml'
+        responses:
+            '202':
+                $ref: '../components/responses/success-stop-recording.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-recording-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-recording-not-active.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':

@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
-import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	deleteAllRecordings,
@@ -176,9 +176,7 @@ describe('Expired Rooms GC Tests', () => {
 		await joinFakeParticipant(room2.roomId, 'participant2');
 
 		// Start recording
-		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room1);
-		const moderatorToken = await generateRoomMemberToken(room1.roomId, { secret: moderatorSecret });
-		await startRecording(room1.roomId, moderatorToken);
+		await startRecording(room1.roomId);
 
 		await runExpiredRoomsGC();
 

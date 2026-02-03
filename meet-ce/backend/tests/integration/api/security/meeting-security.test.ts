@@ -8,6 +8,7 @@ import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
+	getFullPath,
 	joinFakeParticipant,
 	loginRootAdmin,
 	startTestServer,
@@ -16,7 +17,7 @@ import {
 import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
-const MEETINGS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`;
+const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`);
 
 describe('Meeting API Security Tests', () => {
 	const participantIdentity = 'TEST_PARTICIPANT';

@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, it } from '@jest/globals';
-import { MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
 import { expectSuccessRoomConfigResponse } from '../../../helpers/assertion-helpers.js';
 import { deleteAllRooms, getRoomConfig, startTestServer } from '../../../helpers/request-helpers.js';
@@ -9,11 +9,13 @@ describe('Room API Tests', () => {
 	const DEFAULT_CONFIG = {
 		recording: {
 			enabled: true,
-			layout: MeetRecordingLayout.GRID
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
-		e2ee: { enabled: false }
+		e2ee: { enabled: false },
+		captions: { enabled: true }
 	};
 
 	beforeAll(async () => {
@@ -40,11 +42,13 @@ describe('Room API Tests', () => {
 				config: {
 					recording: {
 						enabled: true,
-						layout: MeetRecordingLayout.SPEAKER
+						layout: MeetRecordingLayout.SPEAKER,
+						encoding: MeetRecordingEncodingPreset.H264_1080P_30
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: false },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			};
 

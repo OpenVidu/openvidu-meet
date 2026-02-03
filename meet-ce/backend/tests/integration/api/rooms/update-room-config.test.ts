@@ -1,5 +1,12 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingLayout, MeetRoomConfig } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
+	MeetRoomConfig
+} from '@openvidu-meet/typings';
+import { DEFAULT_RECORDING_ENCODING_PRESET, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -25,22 +32,26 @@ describe('Room API Tests', () => {
 				roomName: 'update-test',
 				config: {
 					recording: {
-						enabled: true
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			});
 
 			// Update the room config
 			const updatedConfig = {
 				recording: {
-					enabled: false
+					enabled: false,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_60
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
-				e2ee: { enabled: true }
+				e2ee: { enabled: true },
+				captions: { enabled: true }
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
@@ -65,11 +76,11 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER
-						// allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			});
 
@@ -92,11 +103,13 @@ describe('Room API Tests', () => {
 			const expectedConfig: MeetRoomConfig = {
 				recording: {
 					enabled: false,
-					layout: MeetRecordingLayout.SPEAKER
+					layout: MeetRecordingLayout.SPEAKER,
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: false }
+				e2ee: { enabled: false },
+				captions: { enabled: true }
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
@@ -142,6 +155,167 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(404);
 			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
 		});
+
+		it('should update room encoding preset from H264_720P_30 to H264_1080P_60', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'encoding-update-test',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					}
+				}
+			});
+
+			// Update encoding preset
+			const updatedConfig = {
+				recording: {
+					enabled: true,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_60
+				}
+			};
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
+
+			expect(updateResponse.status).toBe(200);
+
+			// Verify with a get request
+			const getResponse = await getRoom(createdRoom.roomId);
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
+		});
+
+		it('should update room encoding from preset to advanced options', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'preset-to-advanced',
+				config: {
+					recording: {
+						enabled: true
+					}
+				}
+			});
+
+			// Update to advanced encoding with both video and audio
+			const updatedConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						video: {
+							width: 1920,
+							height: 1080,
+							framerate: 60,
+							codec: MeetRecordingVideoCodec.H264_HIGH,
+							bitrate: 5000,
+							keyFrameInterval: 2,
+							depth: 24
+						},
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC,
+							bitrate: 192,
+							frequency: 48000
+						}
+					}
+				}
+			};
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
+
+			expect(updateResponse.status).toBe(200);
+
+			// Verify with a get request
+			const getResponse = await getRoom(createdRoom.roomId);
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.config.recording.encoding).toMatchObject(updatedConfig.recording.encoding);
+		});
+
+		it('should update room encoding from advanced options to preset', async () => {
+			const recordingEncoding = {
+				video: {
+					width: 1280,
+					height: 720,
+					framerate: 30,
+					codec: MeetRecordingVideoCodec.H264_MAIN,
+					bitrate: 3000,
+					keyFrameInterval: 4,
+					depth: 24
+				},
+				audio: {
+					codec: MeetRecordingAudioCodec.OPUS,
+					bitrate: 128,
+					frequency: 44100
+				}
+			};
+			const createdRoom = await createRoom({
+				roomName: 'advanced-to-preset',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: recordingEncoding
+					}
+				}
+			});
+
+			expect(createdRoom.config.recording.encoding).toMatchObject(recordingEncoding);
+			// Update to preset encoding
+			const updatedConfig = {
+				recording: {
+					enabled: true,
+					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60
+				}
+			};
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
+
+			expect(updateResponse.status).toBe(200);
+
+			// Verify with a get request
+			const getResponse = await getRoom(createdRoom.roomId);
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60);
+		});
+
+		it('should update only encoding while keeping other recording config', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'partial-encoding-update',
+				config: {
+					recording: {
+						enabled: true,
+						layout: MeetRecordingLayout.SPEAKER,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30,
+						allowAccessTo: MeetRecordingAccess.ADMIN
+					}
+				}
+			});
+
+			expect(createdRoom.config.recording.layout).toBe(MeetRecordingLayout.SPEAKER);
+			expect(createdRoom.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_720P_30);
+
+			// Update only encoding
+			const partialConfig: Partial<MeetRoomConfig> = {
+				recording: {
+					enabled: true,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
+				}
+			};
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, partialConfig);
+
+			expect(updateResponse.status).toBe(200);
+
+			// Verify with a get request
+			const getResponse = await getRoom(createdRoom.roomId);
+			expect(getResponse.status).toBe(200);
+
+			const expectedConfig = {
+				recording: {
+					enabled: true,
+					layout: MeetRecordingLayout.SPEAKER,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
+					allowAccessTo: MeetRecordingAccess.ADMIN
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+			expect(getResponse.body.config).toEqual(expectedConfig);
+		});
 	});
 
 	describe('Update Room Config Validation failures', () => {
@@ -163,6 +337,186 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
+		});
+
+		it('should reject update with video-only encoding (audio required)', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'video-only-update',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					}
+				}
+			});
+
+			const updatedConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						video: {
+							width: 1920,
+							height: 1080,
+							framerate: 60,
+							codec: MeetRecordingVideoCodec.H264_HIGH,
+							bitrate: 5000
+						}
+						// No audio encoding
+					}
+				}
+			} as any;
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
+
+			expectValidationError(
+				updateResponse,
+				'config.recording.encoding',
+				'Both video and audio configuration must be provided when using encoding options'
+			);
+		});
+
+		it('should reject update with audio-only encoding (video required)', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'audio-only-update',
+				config: {
+					recording: {
+						enabled: true,
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
+					}
+				}
+			});
+
+			const updatedConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC,
+							bitrate: 256,
+							frequency: 48000
+						}
+						// No video encoding
+					}
+				}
+			} as any;
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
+
+			expectValidationError(
+				updateResponse,
+				'config.recording.encoding',
+				'Both video and audio configuration must be provided when using encoding options'
+			);
+		});
+
+		it('should fail when updating with partial video encoding missing required fields', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'partial-video-update-test'
+			});
+
+			const invalidConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						video: {
+							width: 1920,
+							height: 1080
+							// Missing framerate, codec, bitrate
+						},
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC,
+							bitrate: 192,
+							frequency: 48000
+						}
+					}
+				}
+			};
+			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig as unknown as MeetRoomConfig);
+
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain(
+				'When video encoding is provided, required fields are missing'
+			);
+		});
+
+		it('should fail when updating with partial audio encoding missing required fields', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'partial-audio-update-test'
+			});
+
+			const invalidConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						video: {
+							width: 1920,
+							height: 1080,
+							framerate: 30,
+							codec: MeetRecordingVideoCodec.H264_MAIN,
+							bitrate: 4500,
+							keyFrameInterval: 4,
+							depth: 24
+						},
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC
+							// Missing bitrate and frequency
+						}
+					}
+				}
+			};
+			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig as unknown as MeetRoomConfig);
+
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain(
+				'When audio encoding is provided, required fields are missing'
+			);
+		});
+
+		it('should fail when updating with empty encoding object', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'empty-encoding-update-test'
+			});
+
+			const invalidConfig = {
+				recording: {
+					enabled: true,
+					encoding: {}
+				}
+			};
+			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig as unknown as MeetRoomConfig);
+
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain(
+				'Both video and audio configuration must be provided when using encoding options'
+			);
+		});
+
+		it('should fail when updating encoding with invalid types', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'invalid-types-update-test'
+			});
+
+			const invalidConfig = {
+				recording: {
+					enabled: true,
+					encoding: {
+						video: {
+							width: '1920', // String instead of number
+							height: 1080,
+							framerate: 30,
+							codec: MeetRecordingVideoCodec.H264_MAIN,
+							bitrate: 4500
+						},
+						audio: {
+							codec: MeetRecordingAudioCodec.AAC,
+							bitrate: 192,
+							frequency: 48000
+						}
+					}
+				}
+			};
+			const response = await updateRoomConfig(createdRoom.roomId, invalidConfig as unknown as MeetRoomConfig);
+
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('Expected number');
 		});
 	});
 });

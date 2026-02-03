@@ -1,4 +1,5 @@
 import {
+	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -53,7 +54,25 @@ const MeetRecordingConfigSchema = new Schema(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
-			required: false
+			required: true,
+			default: MeetRecordingLayout.GRID
+		},
+		encoding: {
+			type: Schema.Types.Mixed,
+			required: true,
+			default: MeetRecordingEncodingPreset.H264_720P_30,
+			validate: {
+				validator: (value: any) => {
+					if (!value) return true;
+
+					if (typeof value === 'string') return true;
+
+					if (typeof value === 'object') return value.video || value.audio;
+
+					return false;
+				},
+				message: 'Encoding must be a preset string or options object'
+			}
 		}
 	},
 	{ _id: false }
@@ -89,6 +108,19 @@ const MeetVirtualBackgroundConfigSchema = new Schema(
  * Mongoose schema for MeetRoom E2EE configuration.
  */
 const MeetE2EEConfigSchema = new Schema(
+	{
+		enabled: {
+			type: Boolean,
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Mongoose schema for MeetRoom captions configuration.
+ */
+const MeetCaptionsConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
@@ -222,6 +254,10 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		e2ee: {
 			type: MeetE2EEConfigSchema,
+			required: true
+		},
+		captions: {
+			type: MeetCaptionsConfigSchema,
 			required: true
 		}
 	},

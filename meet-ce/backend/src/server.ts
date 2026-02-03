@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, Router } from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
@@ -14,9 +14,10 @@ import { authRouter } from './routes/auth.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
 import { livekitWebhookRouter } from './routes/livekit.routes.js';
 import { internalMeetingRouter } from './routes/meeting.routes.js';
-import { internalRecordingRouter, recordingRouter } from './routes/recording.routes.js';
+import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { userRouter } from './routes/user.routes.js';
+import { getBasePath, getInjectedHtml } from './utils/html-injection.utils.js';
 import {
 	frontendDirectoryPath,
 	frontendHtmlPath,
@@ -27,6 +28,7 @@ import {
 
 const createApp = () => {
 	const app: Express = express();
+	const basePath = getBasePath();
 
 	// Enable CORS support
 	if (MEET_ENV.SERVER_CORS_ORIGIN) {
@@ -37,9 +39,6 @@ const createApp = () => {
 			})
 		);
 	}
-
-	// Serve static files
-	app.use(express.static(frontendDirectoryPath));
 
 	// Configure trust proxy based on deployment topology
 	// This is important for rate limiting and getting the real client IP
@@ -69,55 +68,76 @@ const createApp = () => {
 		app.use(setBaseUrlFromRequest);
 	}
 
+	// Create a router for all app routes (to be mounted under base path)
+	const appRouter: Router = express.Router();
+
+	// Serve static files (disable automatic index.html serving so our catch-all can inject config)
+	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
+
 	// Public API routes
-	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
 		res.sendFile(publicApiHtmlFilePath)
 	);
-	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
-	app.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 
 	// Internal API routes
 	if (process.env.NODE_ENV === 'development') {
 		// Serve internal API docs only in development mode
-		app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+		appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
 			res.sendFile(internalApiHtmlFilePath)
 		);
 	}
 
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`, apiKeyRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
-	app.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`, apiKeyRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
+	// appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);
 
-	app.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
+	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
-	// LiveKit Webhook route
-	app.use('/livekit/webhook', livekitWebhookRouter);
 	// Serve OpenVidu Meet webcomponent bundle file
-	app.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
-	// Serve OpenVidu Meet index.html file for all non-API routes
-	app.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => res.sendFile(frontendHtmlPath));
+	appRouter.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
+	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
+	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
+		res.type('html').send(getInjectedHtml(frontendHtmlPath));
+	});
 	// Catch all other routes and return 404
-	app.use((_req: Request, res: Response) =>
+	appRouter.use((_req: Request, res: Response) =>
 		res.status(404).json({ error: 'Path Not Found', message: 'API path not implemented' })
 	);
+
+	// LiveKit Webhook route - mounted directly on app (not under base path)
+	// This allows webhooks to always be received at /livekit/webhook regardless of base path configuration
+	app.use('/livekit/webhook', livekitWebhookRouter);
+
+	// Mount all routes under the configured base path
+	app.use(basePath, appRouter);
 
 	return app;
 };
 
 const startServer = (app: express.Application) => {
+	const basePath = getBasePath();
+	const basePathDisplay = basePath === '/' ? '' : basePath.slice(0, -1);
+
 	app.listen(MEET_ENV.SERVER_PORT, async () => {
 		console.log(' ');
 		console.log('---------------------------------------------------------');
 		console.log(' ');
 		console.log(`OpenVidu Meet ${MEET_ENV.EDITION} is listening on port`, chalk.cyanBright(MEET_ENV.SERVER_PORT));
+
+		if (basePath !== '/') {
+			console.log('Base Path:', chalk.cyanBright(basePath));
+		}
+
 		console.log(
 			'REST API Docs: ',
-			chalk.cyanBright(`http://localhost:${MEET_ENV.SERVER_PORT}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
+			chalk.cyanBright(`http://localhost:${MEET_ENV.SERVER_PORT}${basePathDisplay}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
 		);
 		logEnvVars();
 	});

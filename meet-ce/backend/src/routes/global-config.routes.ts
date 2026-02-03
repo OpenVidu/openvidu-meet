@@ -41,3 +41,6 @@ configRouter.put(
 	globalConfigCtrl.updateRoomsAppearanceConfig
 );
 configRouter.get('/rooms/appearance', withAuth(allowAnonymous), globalConfigCtrl.getRoomsAppearanceConfig);
+
+// Captions config
+configRouter.get('/captions', withAuth(allowAnonymous), globalConfigCtrl.getCaptionsConfig);

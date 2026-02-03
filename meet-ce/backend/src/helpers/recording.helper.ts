@@ -1,8 +1,15 @@
 import { EgressStatus } from '@livekit/protocol';
-import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
+	MeetRecordingInfo,
+	MeetRecordingLayout,
+	MeetRecordingStatus
+} from '@openvidu-meet/typings';
 import { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
+import { EncodingConverter } from './encoding-converter.helper.js';
 
 export class RecordingHelper {
 	private constructor() {
@@ -20,6 +27,7 @@ export class RecordingHelper {
 		const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 		const { roomName: roomId, errorCode, error, details } = egressInfo;
 		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
+		const encoding = RecordingHelper.extractRecordingEncoding(egressInfo);
 		const roomService = container.get(RoomService);
 		const { roomName } = await roomService.getMeetRoom(roomId);
 
@@ -29,6 +37,7 @@ export class RecordingHelper {
 			roomName,
 			// outputMode,
 			layout,
+			encoding,
 			status,
 			filename,
 			startDate: startDateMs,
@@ -154,6 +163,27 @@ export class RecordingHelper {
 			default:
 				return MeetRecordingLayout.GRID; // Default layout
 		}
+	}
+
+	/**
+	 * Extracts the encoding configuration from EgressInfo.
+	 * Converts LiveKit encoding options back to OpenVidu Meet format.
+	 *
+	 * @param egressInfo - The egress information from LiveKit
+	 * @returns The encoding configuration in OpenVidu Meet format (preset or advanced options)
+	 */
+	static extractRecordingEncoding(
+		egressInfo: EgressInfo
+	): MeetRecordingEncodingPreset | MeetRecordingEncodingOptions | undefined {
+		if (egressInfo.request.case !== 'roomComposite') return undefined;
+
+		const { options } = egressInfo.request.value;
+
+		// Extract encoding based on type (preset or advanced)
+		const encodingOptions =
+			options.case === 'preset' ? options.value : options.case === 'advanced' ? options.value : undefined;
+
+		return EncodingConverter.fromLivekit(encodingOptions);
 	}
 
 	/**

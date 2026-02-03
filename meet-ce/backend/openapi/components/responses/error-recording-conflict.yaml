@@ -2,7 +2,7 @@ description: Conflict — The recording cannot be started due to resource state 
 content:
     application/json:
         schema:
-            $ref: '../../schemas/error.yaml'
+            $ref: '../schemas/error.yaml'
         examples:
             already_recording:
                 summary: Room is already being recorded

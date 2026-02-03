@@ -343,7 +343,7 @@ pnpm test:e2e-recording-access  # Recording access control tests
 Tests require the following configuration (defined in `tests/config.ts`):
 
 ```typescript
-MEET_API_URL       # Backend API URL (default: http://localhost:6080)
+MEET_API_URL       # Backend API URL (default: http://localhost:6080/meet)
 MEET_API_KEY       # API key for backend (default: meet-api-key)
 MEET_TESTAPP_URL   # Test application URL (default: http://localhost:5080)
 RUN_MODE           # Execution mode: 'CI' or 'development'

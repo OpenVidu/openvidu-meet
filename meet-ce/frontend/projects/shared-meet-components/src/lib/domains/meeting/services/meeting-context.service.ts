@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
+import { AppConfigService } from '../../../shared/services/app-config.service';
 import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { CustomParticipantModel } from '../models';
@@ -18,6 +19,7 @@ export class MeetingContextService {
 	private readonly featureConfigService = inject(FeatureConfigurationService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
+	private readonly appConfigService = inject(AppConfigService);
 
 	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
@@ -166,7 +168,10 @@ export class MeetingContextService {
 	 */
 	private setMeetingUrl(roomId: string): void {
 		const hostname = window.location.origin.replace('http://', '').replace('https://', '');
-		const meetingUrl = roomId ? `${hostname}/room/${roomId}` : '';
+		const basePath = this.appConfigService.basePath;
+		// Remove trailing slash from base path for URL construction
+		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+		const meetingUrl = roomId ? `${hostname}${basePathForUrl}/room/${roomId}` : '';
 		this._meetingUrl.set(meetingUrl);
 	}
 
@@ -184,6 +189,14 @@ export class MeetingContextService {
 	 */
 	isE2eeEnabled(): boolean {
 		return this._e2eeKey().length > 0;
+	}
+
+	/**
+	 * Returns the captions status based on room and global configuration
+	 * @returns CaptionsStatus ('HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING')
+	 */
+	getCaptionsStatus() {
+		return this.featureConfigService.features().captionsStatus;
 	}
 
 	/**

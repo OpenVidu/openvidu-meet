@@ -17,7 +17,8 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	},
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
-	e2ee: { enabled: false }
+	e2ee: { enabled: false },
+	captions: { enabled: true }
 };
 
 /**
@@ -189,7 +190,8 @@ export class RoomWizardStateService {
 				formGroup: this.formBuilder.group({
 					chatEnabled: initialRoomOptions.config!.chat!.enabled,
 					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
-					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled
+					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
+					captionsEnabled: initialRoomOptions.config!.captions!.enabled
 				})
 			}
 		];
@@ -263,6 +265,10 @@ export class RoomWizardStateService {
 						e2ee: {
 							...currentOptions.config?.e2ee,
 							...stepData.config?.e2ee
+						},
+						captions: {
+							...currentOptions.config?.captions,
+							...stepData.config?.captions
 						},
 						recording: {
 							...currentOptions.config?.recording,

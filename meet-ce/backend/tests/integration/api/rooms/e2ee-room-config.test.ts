@@ -9,6 +9,7 @@ import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
+	getFullPath,
 	getRoomConfig,
 	startRecording,
 	startTestServer,
@@ -16,7 +17,7 @@ import {
 } from '../../../helpers/request-helpers.js';
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
 
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('E2EE Room Configuration Tests', () => {
 	let app: Express;
@@ -52,7 +53,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: true }
+					e2ee: { enabled: true },
+					captions: { enabled: true }
 				}
 			};
 
@@ -70,13 +72,13 @@ describe('E2EE Room Configuration Tests', () => {
 				e2ee: { enabled: true }
 			});
 
-			const { room, moderatorToken } = context.getRoomByIndex(0)!;
+			const { room } = context.getRoomByIndex(0)!;
 
 			// Try to start recording (should fail because recording is not enabled in room config)
-			const response = await startRecording(room.roomId, moderatorToken);
+			const response = await startRecording(room.roomId);
 
-			// The endpoint returns 404 when the recording endpoint doesn't exist for disabled recording rooms
-			expect(403).toBe(response.status);
+			// The endpoint returns 403 when the recording endpoint doesn't exist for disabled recording rooms
+			expect(response.status).toBe(403);
 			expect(response.body.message).toBe(`Recording is disabled for room '${room.roomId}'`);
 		});
 
@@ -90,7 +92,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			});
 
@@ -124,7 +127,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: 'invalid-e2ee' // Should be an object
+					e2ee: 'invalid-e2ee', // Should be an object
+					captions: { enabled: true }
 				}
 			};
 
@@ -146,7 +150,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: 'yes' } // Should be a boolean
+					e2ee: { enabled: 'yes' }, // Should be a boolean
+					captions: { enabled: true }
 				}
 			};
 
@@ -174,7 +179,8 @@ describe('E2EE Room Configuration Tests', () => {
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
-				e2ee: { enabled: true }
+				e2ee: { enabled: true },
+				captions: { enabled: true }
 			});
 
 			expect(status).toBe(200);
@@ -200,7 +206,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: true }
+					e2ee: { enabled: true },
+					captions: { enabled: true }
 				}
 			});
 
@@ -212,7 +219,8 @@ describe('E2EE Room Configuration Tests', () => {
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
-					e2ee: { enabled: false }
+					e2ee: { enabled: false },
+					captions: { enabled: true }
 				}
 			});
 

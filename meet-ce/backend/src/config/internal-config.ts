@@ -46,6 +46,8 @@ export const INTERNAL_CONFIG = {
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
 
+	CAPTIONS_AGENT_NAME: 'agent-speech-processing',
+
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure

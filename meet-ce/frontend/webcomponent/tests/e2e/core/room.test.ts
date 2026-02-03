@@ -6,8 +6,6 @@ import { MEET_TESTAPP_URL } from '../../config.js';
 import {
 	applyVirtualBackground,
 	createTestRoom,
-	deleteAllRecordings,
-	deleteAllRooms,
 	interactWithElementInIframe,
 	joinRoomAs,
 	leaveRoom,
@@ -18,8 +16,6 @@ import {
 	stopScreenSharing,
 	waitForElementInIframe
 } from '../../helpers/function-helpers.js';
-
-let subscribedToAppErrors = false;
 
 // Test suite for room functionality in OpenVidu Meet
 test.describe('Room Functionality Tests', () => {
@@ -36,32 +32,15 @@ test.describe('Room Functionality Tests', () => {
 	});
 
 	test.beforeEach(async ({ page }) => {
-		if (!subscribedToAppErrors) {
-			page.on('console', (msg) => {
-				const type = msg.type();
-				const tag = type === 'error' ? 'ERROR' : type === 'warning' ? 'WARNING' : 'LOG';
-				console.log('[' + tag + ']', msg.text());
-			});
-			subscribedToAppErrors = true;
-		}
+		// Subscribe to console logs for this page
+		page.on('console', (msg) => {
+			const type = msg.type();
+			const tag = type === 'error' ? 'ERROR' : type === 'warning' ? 'WARNING' : 'LOG';
+			console.log('[' + tag + ']', msg.text());
+		});
 
 		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
-	});
-
-	test.afterEach(async ({ context }) => {
-		// Save storage state after each test
-		await context.storageState({ path: 'test_localstorage_state.json' });
-	});
-
-	test.afterAll(async ({ browser }) => {
-		const tempContext = await browser.newContext();
-		const tempPage = await tempContext.newPage();
-		await deleteAllRooms(tempPage);
-		await deleteAllRecordings(tempPage);
-
-		await tempContext.close();
-		await tempPage.close();
 	});
 
 	// ==========================================
@@ -104,25 +83,25 @@ test.describe('Room Functionality Tests', () => {
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
 			// First participant (speaker) joins
 			await joinRoomAs('speaker', participantName, page);
-
-			// Check local video element
 			const localVideo = await waitForElementInIframe(page, '.OV_stream.local');
+
 			await expect(localVideo).toBeVisible();
 
 			// Second participant (moderator) joins
-			const context = await browser.newContext();
-			const moderatorPage = await context.newPage();
+			// const context = await browser.newContext();
+			const moderatorPage = await browser.newPage();
 			await prepareForJoiningRoom(moderatorPage, MEET_TESTAPP_URL, roomId);
-
 			await joinRoomAs('moderator', 'moderator', moderatorPage);
 
 			// Verify session established and remote video appears
 			await waitForElementInIframe(moderatorPage, '.OV_stream.remote');
 
-			// Cleanup
-			await leaveRoom(page);
+			// Cleanup - order matters to avoid crashes
 			await leaveRoom(moderatorPage, 'moderator');
-			await context.close();
+			await moderatorPage.close();
+
+			// Small delay to ensure browser resources are freed
+			await leaveRoom(page);
 		});
 	});
 

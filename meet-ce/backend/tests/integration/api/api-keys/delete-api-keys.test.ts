@@ -6,6 +6,7 @@ import {
 	deleteApiKeys,
 	generateApiKey,
 	getApiKeys,
+	getFullPath,
 	restoreDefaultApiKeys,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -23,7 +24,7 @@ describe('API Keys API Tests', () => {
 
 	const getRoomsWithApiKey = async (apiKey: string) => {
 		return request(app)
-			.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`)
+			.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 			.set(INTERNAL_CONFIG.API_KEY_HEADER, apiKey);
 	};
 

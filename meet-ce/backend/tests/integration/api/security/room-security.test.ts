@@ -3,11 +3,11 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { deleteAllRooms, deleteAllUsers, startTestServer } from '../../../helpers/request-helpers.js';
+import { deleteAllRooms, deleteAllUsers, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('Room API Security Tests', () => {
 	let app: Express;

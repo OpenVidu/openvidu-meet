@@ -37,11 +37,16 @@ export class MeetingCaptionsService {
 
 	// Reactive state
 	private readonly _captions = signal<Caption[]>([]);
-	private readonly _isEnabled = signal<boolean>(false);
+	private readonly _areCaptionsEnabledByUser = signal<boolean>(false);
 
-	// Public readonly signals
+	/**
+	 * Current list of active captions
+	 */
 	readonly captions = this._captions.asReadonly();
-	readonly areCaptionsEnabled = this._isEnabled.asReadonly();
+	/**
+	 * Whether captions are enabled by the user
+	 */
+	readonly areCaptionsEnabledByUser = this._areCaptionsEnabledByUser.asReadonly();
 
 	// Map to track expiration timeouts
 	private expirationTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
@@ -83,7 +88,7 @@ export class MeetingCaptionsService {
 			return;
 		}
 
-		if (this._isEnabled()) {
+		if (this._areCaptionsEnabledByUser()) {
 			this.logger.d('Captions already enabled');
 			return;
 		}
@@ -91,7 +96,7 @@ export class MeetingCaptionsService {
 		// Register the LiveKit transcription handler
 		this.room.registerTextStreamHandler('lk.transcription', this.handleTranscription.bind(this));
 
-		this._isEnabled.set(true);
+		this._areCaptionsEnabledByUser.set(true);
 		this.logger.d('Captions enabled');
 	}
 
@@ -100,7 +105,7 @@ export class MeetingCaptionsService {
 	 * This is called when the user deactivates captions.
 	 */
 	disable(): void {
-		if (!this._isEnabled()) {
+		if (!this._areCaptionsEnabledByUser()) {
 			this.logger.d('Captions already disabled');
 			return;
 		}
@@ -108,7 +113,7 @@ export class MeetingCaptionsService {
 		// Clear all active captions
 		this.clearAllCaptions();
 
-		this._isEnabled.set(false);
+		this._areCaptionsEnabledByUser.set(false);
 		this.room?.unregisterTextStreamHandler('lk.transcription');
 		this.logger.d('Captions disabled');
 	}
@@ -119,7 +124,7 @@ export class MeetingCaptionsService {
 	destroy(): void {
 		this.clearAllCaptions();
 		this.room = null;
-		this._isEnabled.set(false);
+		this._areCaptionsEnabledByUser.set(false);
 		this.logger.d('Meeting Captions service destroyed');
 	}
 

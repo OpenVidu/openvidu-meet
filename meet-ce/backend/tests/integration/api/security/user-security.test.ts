@@ -8,13 +8,14 @@ import {
 	changePassword,
 	createUser,
 	deleteAllUsers,
+	getFullPath,
 	loginRootAdmin,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupTestUsers } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
 
-const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
+const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
 
 describe('User API Security Tests', () => {
 	let app: Express;

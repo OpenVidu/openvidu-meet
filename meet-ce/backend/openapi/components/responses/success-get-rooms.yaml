@@ -28,12 +28,15 @@ content:
                               recording:
                                   enabled: false
                                   layout: grid
+                                  encoding: H264_720P_30
                               chat:
                                   enabled: true
                               virtualBackground:
                                   enabled: true
                               e2ee:
                                   enabled: false
+                              captions:
+                                  enabled: true
                           roles:
                               moderator:
                                   permissions:
@@ -89,6 +92,15 @@ content:
                               recording:
                                   enabled: true
                                   layout: grid
+                                  encoding:
+                                      video:
+                                          width: 1280
+                                          height: 720
+                                          framerate: 60
+                                          codec: H264_HIGH
+                                      audio:
+                                          codec: AAC
+                                          bitrate: 192
                               chat:
                                   enabled: false
                               virtualBackground:

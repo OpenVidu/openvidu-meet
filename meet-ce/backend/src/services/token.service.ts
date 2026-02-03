@@ -58,7 +58,8 @@ export class TokenService {
 		tokenMetadata: MeetRoomMemberTokenMetadata,
 		livekitPermissions?: LiveKitPermissions,
 		participantName?: string,
-		participantIdentity?: string
+		participantIdentity?: string,
+		roomWithCaptions = false
 	): Promise<string> {
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantIdentity,
@@ -66,7 +67,7 @@ export class TokenService {
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(tokenMetadata)
 		};
-		return await this.generateJwtToken(tokenOptions, livekitPermissions);
+		return await this.generateJwtToken(tokenOptions, livekitPermissions, roomWithCaptions);
 	}
 
 	parseRoomMemberTokenMetadata(metadata: string): MeetRoomMemberTokenMetadata {
@@ -79,22 +80,38 @@ export class TokenService {
 		}
 	}
 
-	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {
+	private async generateJwtToken(
+		tokenOptions: AccessTokenOptions,
+		grants?: VideoGrant,
+		roomWithCaptions = false
+	): Promise<string> {
 		const at = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, tokenOptions);
 
 		if (grants) {
 			at.addGrant(grants);
 		}
 
-		if (MEET_ENV.AGENT_SPEECH_PROCESSING_NAME) {
-			this.logger.debug(
-				'Adding speech processing agent dispatch to token',
-				MEET_ENV.AGENT_SPEECH_PROCESSING_NAME
-			);
+		const captionsEnabledGlobally = MEET_ENV.CAPTIONS_ENABLED === 'true';
+		const captionsEnabledInRoom = Boolean(roomWithCaptions);
+
+		// Warn if configuration is inconsistent
+		if (!captionsEnabledGlobally) {
+			if (captionsEnabledInRoom) {
+				this.logger.warn(
+					`Captions feature is disabled in environment but Room is created with captions enabled. ` +
+						`Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
+				);
+			}
+
+			return await at.toJwt();
+		}
+
+		if (captionsEnabledInRoom) {
+			this.logger.debug('Activating Captions Agent. Configuring Room Agent Dispatch.');
 			at.roomConfig = new RoomConfiguration({
 				agents: [
 					new RoomAgentDispatch({
-						agentName: MEET_ENV.AGENT_SPEECH_PROCESSING_NAME
+						agentName: INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
 					})
 				]
 			});

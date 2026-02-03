@@ -9,7 +9,8 @@ content:
         example:
             config:
                 recording:
-                    enabled: false
+                    enabled: true
+                    encoding: H264_720P_30
                 chat:
                     enabled: true
                 virtualBackground:

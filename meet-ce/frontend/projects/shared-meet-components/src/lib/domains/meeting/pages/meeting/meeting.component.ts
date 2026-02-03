@@ -12,6 +12,7 @@ import {
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
 import { ApplicationFeatures } from '../../../../shared/models/app.model';
+import { AppConfigService } from '../../../../shared/services/app-config.service';
 import { FeatureConfigurationService } from '../../../../shared/services/feature-configuration.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -72,6 +73,7 @@ export class MeetingComponent implements OnInit {
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected soundService = inject(SoundService);
+	protected appConfigService = inject(AppConfigService);
 	protected destroy$ = new Subject<void>();
 
 	// === LOBBY PHASE COMPUTED SIGNALS (when showLobby = true) ===
@@ -120,7 +122,10 @@ export class MeetingComponent implements OnInit {
 			if (token && this.showLobby) {
 				// The meeting view must be shown before loading the appearance config
 				this.showLobby = false;
-				await this.configService.loadRoomsAppearanceConfig();
+				await Promise.all([
+					this.configService.loadRoomsAppearanceConfig(),
+					this.configService.loadCaptionsConfig()
+				]);
 			}
 		});
 	}
@@ -205,7 +210,9 @@ export class MeetingComponent implements OnInit {
 	// }
 
 	async onViewRecordingsClicked() {
-		window.open(`/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
+		const basePath = this.appConfigService.basePath;
+		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+		window.open(`${basePathForUrl}/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
 	}
 
 	onParticipantConnected(event: any): void {

@@ -36,34 +36,28 @@ describe('Recording API Tests', () => {
 		it('should return 200 when recording exists', async () => {
 			const response = await getRecording(recordingId);
 
-			expectValidGetRecordingResponse(
-				response,
+			expectValidGetRecordingResponse(response, {
 				recordingId,
-				room.roomId,
-				room.roomName,
-				MeetRecordingStatus.COMPLETE,
-				1
-			);
+				roomId: room.roomId,
+				roomName: room.roomName,
+				recordingStatus: MeetRecordingStatus.COMPLETE,
+				recordingDuration: 1
+			});
 		});
 
 		it('should get an ACTIVE recording status', async () => {
 			const contextAux = await setupMultiRecordingsTestContext(1, 1, 0);
-			const {
-				room: roomAux,
-				recordingId: recordingIdAux = '',
-				moderatorToken: moderatorTokenAux
-			} = contextAux.getRoomByIndex(0)!;
+			const { room: roomAux, recordingId: recordingIdAux = '' } = contextAux.getRoomByIndex(0)!;
 			const response = await getRecording(recordingIdAux);
 
-			expectValidGetRecordingResponse(
-				response,
-				recordingIdAux,
-				roomAux.roomId,
-				roomAux.roomName,
-				MeetRecordingStatus.ACTIVE
-			);
+			expectValidGetRecordingResponse(response, {
+				recordingId: recordingIdAux,
+				roomId: roomAux.roomId,
+				roomName: roomAux.roomName,
+				recordingStatus: MeetRecordingStatus.ACTIVE
+			});
 
-			await stopAllRecordings(moderatorTokenAux);
+			await stopAllRecordings();
 		});
 
 		it('should return 404 when recording does not exist', async () => {

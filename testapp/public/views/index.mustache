@@ -365,6 +365,51 @@
 									</div>
 								</div>
 							</div>
+
+							<!-- Captions Config -->
+							<div class="accordion-item">
+								<h2 class="accordion-header">
+									<button
+										class="accordion-button collapsed"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#captionsCollapse"
+										aria-expanded="false"
+										aria-controls="captionsCollapse"
+										data-testid="captions-config-toggle"
+									>
+										Captions Settings
+									</button>
+								</h2>
+								<div
+									id="captionsCollapse"
+									class="accordion-collapse collapse"
+									data-bs-parent="#configAccordion"
+								>
+									<div class="accordion-body">
+										<div class="form-check">
+											<input
+												type="checkbox"
+												name="config.captions.enabled"
+												id="captions-enabled"
+												class="form-check-input"
+												data-testid="captions-enabled-checkbox"
+											/>
+											<label
+												for="captions-enabled"
+												class="form-check-label"
+											>
+												Enable Captions
+											</label>
+										</div>
+										<div class="alert alert-info mt-2" role="alert">
+											<small>
+												<strong>Note:</strong> Enables live transcription (captions) during meetings.
+											</small>
+										</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 

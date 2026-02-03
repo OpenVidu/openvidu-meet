@@ -15,7 +15,7 @@ import { TestContext } from '../../../interfaces/scenarios';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;
-	let room: MeetRoom, moderatorToken: string;
+	let room: MeetRoom;
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -23,7 +23,7 @@ describe('Recording API Tests', () => {
 	});
 
 	afterAll(async () => {
-		await stopAllRecordings(moderatorToken);
+		await stopAllRecordings();
 		await disconnectFakeParticipants();
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
@@ -33,13 +33,13 @@ describe('Recording API Tests', () => {
 		beforeAll(async () => {
 			// Create a room and join a participant
 			context = await setupMultiRoomTestContext(1, true);
-			({ room, moderatorToken } = context.getRoomByIndex(0)!);
-			const response = await startRecording(room.roomId, moderatorToken);
+			({ room } = context.getRoomByIndex(0)!);
+			const response = await startRecording(room.roomId);
 			recordingId = response.body.recordingId;
 		});
 
 		it('should stop an active recording and return 202', async () => {
-			const response = await stopRecording(recordingId, moderatorToken);
+			const response = await stopRecording(recordingId);
 			expectValidStopRecordingResponse(response, recordingId, room.roomId, room.roomName);
 		});
 
@@ -47,18 +47,18 @@ describe('Recording API Tests', () => {
 			const context = await setupMultiRoomTestContext(2, true);
 			const roomDataA = context.getRoomByIndex(0);
 			const roomDataB = context.getRoomByIndex(1);
-			const responseA = await startRecording(roomDataA!.room.roomId, roomDataA!.moderatorToken);
-			const responseB = await startRecording(roomDataB!.room.roomId, roomDataB!.moderatorToken);
+			const responseA = await startRecording(roomDataA!.room.roomId);
+			const responseB = await startRecording(roomDataB!.room.roomId);
 			const recordingIdA = responseA.body.recordingId;
 			const recordingIdB = responseB.body.recordingId;
-			const stopResponseA = await stopRecording(recordingIdA, roomDataA!.moderatorToken);
+			const stopResponseA = await stopRecording(recordingIdA);
 			expectValidStopRecordingResponse(
 				stopResponseA,
 				recordingIdA,
 				roomDataA!.room.roomId,
 				roomDataA!.room.roomName
 			);
-			const stopResponseB = await stopRecording(recordingIdB, roomDataB!.moderatorToken);
+			const stopResponseB = await stopRecording(recordingIdB);
 			expectValidStopRecordingResponse(
 				stopResponseB,
 				recordingIdB,
@@ -69,7 +69,7 @@ describe('Recording API Tests', () => {
 
 		describe('Stop Recording Validation failures', () => {
 			it('should return 404 when recordingId does not exist', async () => {
-				const response = await stopRecording(`${room.roomId}--EG_123--444`, moderatorToken);
+				const response = await stopRecording(`${room.roomId}--EG_123--444`);
 				expect(response.status).toBe(404);
 				expect(response.body.error).toBe('Recording Error');
 				expect(response.body.message).toContain('not found');
@@ -77,17 +77,17 @@ describe('Recording API Tests', () => {
 
 			it('should return 400 when recording is already stopped', async () => {
 				// First stop the recording
-				await stopRecording(recordingId, moderatorToken);
+				await stopRecording(recordingId);
 
 				// Try to stop it again
-				const response = await stopRecording(recordingId, moderatorToken);
+				const response = await stopRecording(recordingId);
 
 				console.log('Response:', response.body);
 				expectErrorResponse(response, 409, '', `Recording '${recordingId}' is already stopped`);
 			});
 
 			it('should return 404 when recordingId is not in the correct format', async () => {
-				const response = await stopRecording('invalid-recording-id', moderatorToken);
+				const response = await stopRecording('invalid-recording-id');
 				expect(response.status).toBe(422);
 				expect(response.body.error).toBe('Unprocessable Entity');
 				expect(response.body.message).toContain('Invalid request');

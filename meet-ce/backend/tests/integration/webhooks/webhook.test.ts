@@ -1,5 +1,15 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAccess,
+	MeetRecordingEncodingPreset,
+	MeetRecordingInfo,
+	MeetRecordingLayout,
+	MeetRecordingStatus,
+	MeetRoom,
+	MeetRoomConfig,
+	MeetWebhookEvent,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import { Request } from 'express';
 import http from 'http';
 import {
@@ -22,6 +32,19 @@ import {
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
+
+	const defaultRoomConfig: MeetRoomConfig = {
+		recording: {
+			enabled: true,
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30,
+			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		},
+		chat: { enabled: true },
+		virtualBackground: { enabled: true },
+		e2ee: { enabled: false },
+		captions: { enabled: true }
+	};
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -52,6 +75,11 @@ describe('Webhook Integration Tests', () => {
 		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
 	});
 
+	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
+		expect(webhook.headers['x-signature']).toBeDefined();
+		expect(webhook.headers['x-timestamp']).toBeDefined();
+	};
+
 	it('should not send webhooks when disabled', async () => {
 		await updateWebbhookConfig({
 			enabled: false
@@ -80,8 +108,12 @@ describe('Webhook Integration Tests', () => {
 		expect(meetingStartedWebhook?.body.data.roomId).toBe(roomData.roomId);
 		expect(meetingStartedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
 		expect(meetingStartedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
-		expect(meetingStartedWebhook?.headers['x-signature']).toBeDefined();
-		expect(meetingStartedWebhook?.headers['x-timestamp']).toBeDefined();
+
+		const room: MeetRoom = meetingStartedWebhook!.body.data as MeetRoom;
+		expect(room.roomId).toBe(roomData.roomId);
+		expect(room.config).toEqual(defaultRoomConfig);
+
+		expectValidSignature(meetingStartedWebhook!);
 	});
 
 	it('should send meeting_ended webhook when meeting is closed', async () => {
@@ -99,11 +131,14 @@ describe('Webhook Integration Tests', () => {
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
 		const meetingEndedWebhook = receivedWebhooks.find((w) => w.body.event === MeetWebhookEventType.MEETING_ENDED);
 		expect(meetingEndedWebhook).toBeDefined();
-		expect(meetingEndedWebhook?.body.data.roomId).toBe(roomData.roomId);
 		expect(meetingEndedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
 		expect(meetingEndedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
-		expect(meetingEndedWebhook?.headers['x-signature']).toBeDefined();
-		expect(meetingEndedWebhook?.headers['x-timestamp']).toBeDefined();
+
+		const room: MeetRoom = meetingEndedWebhook!.body.data as MeetRoom;
+		expect(room.roomId).toBe(roomData.roomId);
+		expect(room.config).toEqual(defaultRoomConfig);
+
+		expectValidSignature(meetingEndedWebhook!);
 	});
 
 	it('should send meeting_ended when room is forcefully deleted', async () => {
@@ -119,8 +154,12 @@ describe('Webhook Integration Tests', () => {
 		expect(meetingEndedWebhook?.body.data.roomId).toBe(roomData.roomId);
 		expect(meetingEndedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
 		expect(meetingEndedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
-		expect(meetingEndedWebhook?.headers['x-signature']).toBeDefined();
-		expect(meetingEndedWebhook?.headers['x-timestamp']).toBeDefined();
+
+		const room: MeetRoom = meetingEndedWebhook!.body.data as MeetRoom;
+		expect(room.roomId).toBe(roomData.roomId);
+		expect(room.config).toEqual(defaultRoomConfig);
+
+		expectValidSignature(meetingEndedWebhook!);
 	});
 
 	it('should send recordingStarted, recordingUpdated and recordingEnded webhooks when recording is started and stopped', async () => {
@@ -144,8 +183,8 @@ describe('Webhook Integration Tests', () => {
 		expect(data.recordingId).toBe(recordingId);
 		expect(recordingStartedWebhook?.body.creationDate).toBeLessThan(Date.now());
 		expect(recordingStartedWebhook?.body.creationDate).toBeGreaterThan(startDate);
-		expect(recordingStartedWebhook?.headers['x-signature']).toBeDefined();
-		expect(recordingStartedWebhook?.headers['x-timestamp']).toBeDefined();
+
+		expectValidSignature(recordingStartedWebhook!);
 		expect(recordingStartedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
 		expect(data.status).toBe(MeetRecordingStatus.STARTING);
 		expect(data.layout).toBeDefined();
@@ -154,6 +193,9 @@ describe('Webhook Integration Tests', () => {
 			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
 		}
 
+		// Validate encoding is present and coherent with default value
+		expect(data.encoding).toBeDefined();
+		expect(data.encoding).toBe(MeetRecordingEncodingPreset.H264_720P_30);
 		// Check recording_updated webhook
 		const recordingUpdatedWebhook = receivedWebhooks.find(
 			(w) => w.body.event === MeetWebhookEventType.RECORDING_UPDATED
@@ -164,8 +206,7 @@ describe('Webhook Integration Tests', () => {
 		expect(data.recordingId).toBe(recordingId);
 		expect(recordingUpdatedWebhook?.body.creationDate).toBeLessThan(Date.now());
 		expect(recordingUpdatedWebhook?.body.creationDate).toBeGreaterThan(startDate);
-		expect(recordingUpdatedWebhook?.headers['x-signature']).toBeDefined();
-		expect(recordingUpdatedWebhook?.headers['x-timestamp']).toBeDefined();
+		expectValidSignature(recordingUpdatedWebhook!);
 		expect(recordingUpdatedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_UPDATED);
 		expect(data.status).toBe(MeetRecordingStatus.ACTIVE);
 		expect(data.layout).toBeDefined();
@@ -173,6 +214,10 @@ describe('Webhook Integration Tests', () => {
 		if (data.layout) {
 			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
 		}
+
+		// Validate encoding is present and coherent with default value
+		expect(data.encoding).toBeDefined();
+		expect(data.encoding).toBe('H264_720P_30');
 
 		// Check recording_ended webhook
 		const recordingEndedWebhook = receivedWebhooks.find(
@@ -184,8 +229,7 @@ describe('Webhook Integration Tests', () => {
 		expect(data.recordingId).toBe(recordingId);
 		expect(recordingEndedWebhook?.body.creationDate).toBeLessThan(Date.now());
 		expect(recordingEndedWebhook?.body.creationDate).toBeGreaterThan(startDate);
-		expect(recordingEndedWebhook?.headers['x-signature']).toBeDefined();
-		expect(recordingEndedWebhook?.headers['x-timestamp']).toBeDefined();
+		expectValidSignature(recordingEndedWebhook!);
 		expect(recordingEndedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_ENDED);
 		expect(data.status).not.toBe(MeetRecordingStatus.ENDING);
 		expect(data.status).toBe(MeetRecordingStatus.COMPLETE);
@@ -194,5 +238,9 @@ describe('Webhook Integration Tests', () => {
 		if (data.layout) {
 			expect(Object.values(MeetRecordingLayout)).toContain(data.layout);
 		}
+
+		// Validate encoding is present and coherent with default value
+		expect(data.encoding).toBeDefined();
+		expect(data.encoding).toBe('H264_720P_30');
 	});
 });

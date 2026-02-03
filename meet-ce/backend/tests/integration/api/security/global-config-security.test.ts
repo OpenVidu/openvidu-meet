@@ -4,11 +4,16 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { deleteAllUsers, restoreDefaultGlobalConfig, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllUsers,
+	getFullPath,
+	restoreDefaultGlobalConfig,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 import { setupTestUsers } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
 
-const CONFIG_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`;
+const CONFIG_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`);
 
 describe('Global Config API Security Tests', () => {
 	let app: Express;

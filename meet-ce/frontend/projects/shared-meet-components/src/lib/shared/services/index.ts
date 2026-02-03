@@ -1,5 +1,6 @@
 export * from './analytics.service';
 export * from './api-key.service';
+export * from './app-config.service';
 export * from './app-data.service';
 export * from './feature-configuration.service';
 export * from './global-config.service';

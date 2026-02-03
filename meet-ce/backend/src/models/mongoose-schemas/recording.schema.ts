@@ -46,7 +46,11 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
-			required: false
+			required: true
+		},
+		encoding: {
+			type: Schema.Types.Mixed,
+			required: true
 		},
 		filename: {
 			type: String,

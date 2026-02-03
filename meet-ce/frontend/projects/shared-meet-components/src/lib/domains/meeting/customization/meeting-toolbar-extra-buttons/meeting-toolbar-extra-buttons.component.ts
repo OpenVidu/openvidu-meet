@@ -34,11 +34,26 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected showCopyLinkButton = computed(() => this.meetingContextService.canModerateRoom());
 
 	/**
+	 * Captions status based on room and global configuration
+	 */
+	protected captionsStatus = computed(() => this.meetingContextService.getCaptionsStatus());
+
+	/**
+	 * Whether to show the captions button (visible when not HIDDEN)
+	 */
+	protected showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
+
+	/**
+	 * Whether captions button is disabled (true when DISABLED_WITH_WARNING)
+	 */
+	protected isCaptionsButtonDisabled = computed(() => this.captionsStatus() === 'DISABLED_WITH_WARNING');
+
+	/**
 	 * Whether the device is mobile (affects button style)
 	 */
 	protected isMobile = computed(() => this.meetingContextService.isMobile());
 
-	protected areCaptionsEnabled = computed(() => this.captionService.areCaptionsEnabled());
+	protected areCaptionsEnabledByUser = computed(() => this.captionService.areCaptionsEnabledByUser());
 
 	onCopyLinkClick(): void {
 		const room = this.meetingContextService.meetRoom();
@@ -51,6 +66,11 @@ export class MeetingToolbarExtraButtonsComponent {
 	}
 
 	onCaptionsClick(): void {
-		this.captionService.areCaptionsEnabled() ? this.captionService.disable() : this.captionService.enable();
+		// Don't allow toggling if captions are disabled at system level
+		if (this.isCaptionsButtonDisabled()) {
+			this.log.w('Captions are disabled at system level (MEET_CAPTIONS_ENABLED=false)');
+			return;
+		}
+		this.captionService.areCaptionsEnabledByUser() ? this.captionService.disable() : this.captionService.enable();
 	}
 }
