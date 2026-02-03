@@ -1,5 +1,5 @@
 import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
-import { LiveKitPermissions, MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
+import { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
@@ -7,7 +7,7 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { validateTokenMetadata } from '../middlewares/request-validators/auth-validator.middleware.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
-import { TokenMetadata, TokenType } from '../models/token-metadata.model.js';
+import { MeetRoomMemberTokenOptions, TokenMetadata, TokenType } from '../models/token.model.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
@@ -54,13 +54,9 @@ export class TokenService {
 		return await this.generateJwtToken(tokenOptions);
 	}
 
-	async generateRoomMemberToken(
-		tokenMetadata: MeetRoomMemberTokenMetadata,
-		livekitPermissions?: LiveKitPermissions,
-		participantName?: string,
-		participantIdentity?: string,
-		roomWithCaptions = false
-	): Promise<string> {
+	async generateRoomMemberToken(options: MeetRoomMemberTokenOptions): Promise<string> {
+		const { tokenMetadata, livekitPermissions, participantName, participantIdentity, roomWithCaptions } = options;
+
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantIdentity,
 			name: participantName,

@@ -7,7 +7,7 @@ export * from './ov-components-signal.model.js';
 export * from './redis.model.js';
 export * from './request-context.model.js';
 export * from './task-scheduler.model.js';
-export * from './token-metadata.model.js';
+export * from './token.model.js';
 
 // Mongoose schemas
 export * from './mongoose-schemas/api-key.schema.js';

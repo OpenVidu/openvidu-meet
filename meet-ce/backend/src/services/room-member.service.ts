@@ -620,16 +620,16 @@ export class RoomMemberService {
 			customPermissions,
 			effectivePermissions
 		};
-		const withCaptions = room.config.captions.enabled ?? false;
+		const roomWithCaptions = room.config.captions.enabled;
 
 		// Generate token with participant name
-		return this.tokenService.generateRoomMemberToken(
+		return this.tokenService.generateRoomMemberToken({
 			tokenMetadata,
 			livekitPermissions,
 			participantName,
 			participantIdentity,
-			withCaptions
-		);
+			roomWithCaptions
+		});
 	}
 
 	/**
@@ -657,7 +657,9 @@ export class RoomMemberService {
 		};
 
 		// Generate token without LiveKit permissions and participant name
-		return this.tokenService.generateRoomMemberToken(tokenMetadata);
+		return this.tokenService.generateRoomMemberToken({
+			tokenMetadata
+		});
 	}
 
 	/**

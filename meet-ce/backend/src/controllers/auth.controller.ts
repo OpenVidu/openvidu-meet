@@ -9,7 +9,7 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { TokenType } from '../models/token-metadata.model.js';
+import { TokenType } from '../models/token.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';

@@ -15,7 +15,7 @@ import {
 	errorUnauthorized,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { TokenType } from '../models/token-metadata.model.js';
+import { TokenType } from '../models/token.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { ApiKeyService } from '../services/api-key.service.js';
