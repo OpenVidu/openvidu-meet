@@ -144,7 +144,7 @@ export const setupSingleRoomWithRecording = async (
  */
 export const setupCompletedRecording = async (roomData: RoomData, stopDelay?: StringValue): Promise<string> => {
 	// Start recording
-	const response = await startRecording(roomData.room.roomId, roomData.moderatorToken);
+	const response = await startRecording(roomData.room.roomId);
 	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
 	const recordingId = response.body.recordingId;
 	roomData.recordingId = recordingId;
@@ -155,7 +155,7 @@ export const setupCompletedRecording = async (roomData: RoomData, stopDelay?: St
 	}
 
 	// Stop recording
-	await stopRecording(recordingId, roomData.moderatorToken);
+	await stopRecording(recordingId);
 
 	return recordingId;
 };

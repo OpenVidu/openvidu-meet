@@ -17,6 +17,7 @@ import {
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
+	MeetUserOptions,
 	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
@@ -139,7 +140,7 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 	return response;
 };
 
-export const getWebbhookConfig = async () => {
+export const getWebhookConfig = async () => {
 	checkAppIsRunning();
 
 	const { accessToken } = await loginRootAdmin();
@@ -150,7 +151,7 @@ export const getWebbhookConfig = async () => {
 	return response;
 };
 
-export const updateWebbhookConfig = async (config: WebhookConfig) => {
+export const updateWebhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
 	const { accessToken } = await loginRootAdmin();
@@ -211,7 +212,9 @@ export const restoreDefaultGlobalConfig = async () => {
 export const loginReq = async (body: { userId: string; password: string }) => {
 	checkAppIsRunning();
 
-	return await request(app).post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`).send(body);
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`))
+		.send(body);
 };
 
 /**
@@ -241,7 +244,7 @@ export const refreshTokenReq = async (refreshToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/refresh`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/refresh`))
 		.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, refreshToken);
 };
 
@@ -252,7 +255,7 @@ export const createUser = async (options: MeetUserOptions) => {
 
 	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(options);
 };
@@ -262,7 +265,7 @@ export const getUsers = async (query: Record<string, unknown> = {}) => {
 
 	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.query(query);
 };
@@ -272,7 +275,7 @@ export const getUser = async (userId: string) => {
 
 	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 };
@@ -281,7 +284,7 @@ export const getMe = async (accessToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/me`)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/me`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 };
@@ -325,7 +328,7 @@ export const resetUserPassword = async (userId: string, newPassword: string, acc
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ newPassword });
 };
@@ -335,7 +338,7 @@ export const updateUserRole = async (userId: string, role: string, accessToken?:
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ role });
 };
@@ -345,7 +348,7 @@ export const deleteUser = async (userId: string, accessToken?: string) => {
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send();
 };
@@ -355,7 +358,7 @@ export const bulkDeleteUsers = async (userIds: string[], accessToken?: string) =
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.delete(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.query({ userIds: userIds.join(',') });
 };
@@ -387,7 +390,10 @@ export const deleteAllUsers = async () => {
 export const createRoom = async (options: MeetRoomOptions = {}, accessToken?: string): Promise<MeetRoom> => {
 	checkAppIsRunning();
 
-	const req = request(app).post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`).send(options).expect(201);
+	const req = request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
+		.send(options)
+		.expect(201);
 
 	if (accessToken) {
 		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
@@ -464,7 +470,7 @@ export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRoles
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ roles: rolesConfig });
 };
@@ -473,7 +479,7 @@ export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig:
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/anonymous`)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/anonymous`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send({ anonymous: anonymousConfig });
 };
@@ -560,7 +566,7 @@ export const createRoomMember = async (roomId: string, memberOptions: MeetRoomMe
 	checkAppIsRunning();
 
 	return await request(app)
-		.post(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(memberOptions);
 };
@@ -569,7 +575,7 @@ export const getRoomMembers = async (roomId: string, query: Record<string, unkno
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
@@ -578,7 +584,7 @@ export const getRoomMember = async (roomId: string, memberId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 };
 
@@ -586,7 +592,7 @@ export const updateRoomMember = async (roomId: string, memberId: string, updates
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(updates);
 };
@@ -595,7 +601,7 @@ export const deleteRoomMember = async (roomId: string, memberId: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 };
@@ -604,7 +610,7 @@ export const bulkDeleteRoomMembers = async (roomId: string, memberIds: string[])
 	checkAppIsRunning();
 
 	return await request(app)
-		.delete(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query({ memberIds: memberIds.join(',') });
 };
@@ -617,7 +623,7 @@ export const generateRoomMemberTokenRequest = async (
 	checkAppIsRunning();
 
 	const req = request(app)
-		.post(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token`)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token`))
 		.send(tokenOptions);
 
 	if (accessToken) {
@@ -800,7 +806,7 @@ export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
@@ -809,7 +815,7 @@ export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 };
 
@@ -821,7 +827,7 @@ export const downloadRecordings = async (
 	checkAppIsRunning();
 
 	const req = request(app)
-		.get(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/download`))
 		.query({ recordingIds: recordingIds.join(',') });
 
 	if (roomMemberToken) {

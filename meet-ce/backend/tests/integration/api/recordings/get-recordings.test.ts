@@ -93,7 +93,7 @@ describe('Recordings API Tests', () => {
 			expect(recordings[0].status).toBe(MeetRecordingStatus.COMPLETE);
 
 			// Stop the active recording to clean up
-			await stopRecording(roomData.recordingId!, roomData.moderatorToken);
+			await stopRecording(roomData.recordingId!);
 		});
 
 		it('should return recordings with fields filter applied', async () => {
@@ -180,7 +180,7 @@ describe('Recordings API Tests', () => {
 
 		afterAll(async () => {
 			// Stop the active recording
-			await stopRecording(roomDataC.recordingId!, roomDataC.moderatorToken);
+			await stopRecording(roomDataC.recordingId!);
 
 			// Disconnect participants and clean up
 			await disconnectFakeParticipants();

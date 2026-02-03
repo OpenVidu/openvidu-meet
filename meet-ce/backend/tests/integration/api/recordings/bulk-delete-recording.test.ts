@@ -70,7 +70,7 @@ describe('Recording API Tests', () => {
 				]
 			});
 
-			await stopRecording(activeRecordingId!, activeRecordingRoom!.moderatorToken);
+			await stopRecording(activeRecordingId!);
 
 			deleteResponse = await bulkDeleteRecordings([activeRecordingId]);
 
@@ -98,8 +98,8 @@ describe('Recording API Tests', () => {
 			});
 
 			await Promise.all(
-				recordingIds.map((id, index) => {
-					return stopRecording(id!, testContext.getRoomByIndex(index)!.moderatorToken);
+				recordingIds.map((id) => {
+					return stopRecording(id);
 				})
 			);
 		});

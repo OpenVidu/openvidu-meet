@@ -12,6 +12,7 @@ import {
 	disconnectFakeParticipants,
 	getFullPath,
 	getRecordingAccessSecret,
+	sleep,
 	startRecording,
 	startTestServer,
 	stopAllRecordings
@@ -137,9 +138,10 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(202);
 
 			// Recreate recording for next tests since it was stopped
+			await sleep('2s'); // Ensure recording is fully stopped before starting a new one
 			const startResponse = await startRecording(roomData.room.roomId);
 			expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
-			roomData.recordingId = startResponse.body.recordingId;
+			recordingId = startResponse.body.recordingId;
 		});
 
 		it('should fail when using access token', async () => {
@@ -161,9 +163,10 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(202);
 
 			// Recreate recording for next tests since it was stopped
+			await sleep('2s'); // Ensure recording is fully stopped before starting a new one
 			const startResponse = await startRecording(roomData.room.roomId);
 			expectValidStartRecordingResponse(startResponse, roomData.room.roomId, roomData.room.roomName);
-			roomData.recordingId = startResponse.body.recordingId;
+			recordingId = startResponse.body.recordingId;
 		});
 
 		it('should fail when using room member token without canRecord permission', async () => {

@@ -4,7 +4,6 @@ import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
 	deleteAllRooms,
-	deleteRoom,
 	disconnectFakeParticipants,
 	endMeeting,
 	getRoom,
@@ -71,11 +70,7 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should fail with 404 if the room does not exist', async () => {
-			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
-			expect(response.status).toBe(200);
-
-			response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
+			const response = await endMeeting('nonexistent-room-id', roomData.moderatorToken);
 			expect(response.status).toBe(404);
 		});
 	});

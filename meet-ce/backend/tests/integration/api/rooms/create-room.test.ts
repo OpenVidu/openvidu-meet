@@ -312,8 +312,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: DEFAULT_RECORDING_ENCODING_PRESET, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET // Default value
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -340,8 +339,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -368,8 +366,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -426,8 +423,7 @@ describe('Room API Tests', () => {
 							bitrate: 192,
 							frequency: 44100
 						}
-					},
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					}
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },

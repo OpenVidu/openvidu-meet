@@ -90,7 +90,7 @@ describe('Analytics API Tests', () => {
 			expect(analytics.completeRecordings).toBe(1);
 
 			// Now stop the incomplete recording
-			await stopRecording(roomToStop.recordingId!, roomToStop.moderatorToken);
+			await stopRecording(roomToStop.recordingId!);
 		});
 	});
 });

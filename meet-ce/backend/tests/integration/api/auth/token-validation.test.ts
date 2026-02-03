@@ -10,6 +10,7 @@ import {
 	deleteRoom,
 	deleteRoomMember,
 	deleteUser,
+	getFullPath,
 	loginUser,
 	resetUserPassword,
 	sleep,
@@ -22,8 +23,8 @@ import {
 import { setupRoomMember, setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
 
-const USERS_PATH = `${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`;
-const ROOMS_PATH = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`;
+const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
+const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('Token Validation Tests', () => {
 	let app: Express;
@@ -63,7 +64,7 @@ describe('Token Validation Tests', () => {
 
 		it('should succeed when admin accesses admin-only endpoint', async () => {
 			const response = await request(app)
-				.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+				.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
 		});
@@ -150,7 +151,7 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when USER tries to access ADMIN-only endpoint', async () => {
 			const response = await request(app)
-				.get(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`)
+				.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');

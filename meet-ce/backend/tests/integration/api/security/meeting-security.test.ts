@@ -101,6 +101,7 @@ describe('Meeting API Security Tests', () => {
 
 		const setParticipantMetadata = async () => {
 			const metadata: MeetRoomMemberTokenMetadata = {
+				iat: Date.now(),
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				roomId,
 				baseRole: MeetRoomMemberRole.SPEAKER,

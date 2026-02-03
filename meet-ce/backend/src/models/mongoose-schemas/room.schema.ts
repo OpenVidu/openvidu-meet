@@ -1,5 +1,4 @@
 import {
-	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -54,25 +53,11 @@ const MeetRecordingConfigSchema = new Schema(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
-			required: true,
-			default: MeetRecordingLayout.GRID
+			required: true
 		},
 		encoding: {
 			type: Schema.Types.Mixed,
-			required: true,
-			default: MeetRecordingEncodingPreset.H264_720P_30,
-			validate: {
-				validator: (value: any) => {
-					if (!value) return true;
-
-					if (typeof value === 'string') return true;
-
-					if (typeof value === 'object') return value.video || value.audio;
-
-					return false;
-				},
-				message: 'Encoding must be a preset string or options object'
-			}
+			required: true
 		}
 	},
 	{ _id: false }
@@ -318,8 +303,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		status: {
 			type: String,
 			enum: Object.values(MeetRoomStatus),
-			required: true,
-			default: MeetRoomStatus.OPEN
+			required: true
 		},
 		rolesUpdatedAt: {
 			type: Number,
@@ -328,8 +312,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		meetingEndAction: {
 			type: String,
 			enum: Object.values(MeetingEndAction),
-			required: true,
-			default: MeetingEndAction.NONE
+			required: true
 		}
 	},
 	{

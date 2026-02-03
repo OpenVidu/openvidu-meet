@@ -5,8 +5,8 @@ const integrationConfig = {
 
 	runInBand: true,
 	forceExit: true,
-  detectOpenHandles: true,
-	testMatch: ['**/tests/integration/**/*.(spec|test).ts'],
+	detectOpenHandles: true,
+	testMatch: ['**/tests/integration/**/*.(spec|test).ts']
 };
 
 export default integrationConfig;

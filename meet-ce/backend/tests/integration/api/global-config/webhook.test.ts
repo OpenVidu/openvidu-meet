@@ -3,11 +3,11 @@ import { Request } from 'express';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
-	getWebbhookConfig,
+	getWebhookConfig,
 	restoreDefaultGlobalConfig,
 	startTestServer,
 	testWebhookUrl,
-	updateWebbhookConfig
+	updateWebhookConfig
 } from '../../../helpers/request-helpers.js';
 import { startWebhookServer, stopWebhookServer } from '../../../helpers/test-scenarios.js';
 
@@ -26,12 +26,12 @@ describe('Webhook Config API Tests', () => {
 				enabled: true,
 				url: 'https://example.com/webhook'
 			};
-			let response = await updateWebbhookConfig(validConfig);
+			let response = await updateWebhookConfig(validConfig);
 
 			expect(response.status).toBe(200);
 			expect(response.body.message).toBe('Webhooks config updated successfully');
 
-			response = await getWebbhookConfig();
+			response = await getWebhookConfig();
 			expect(response.status).toBe(200);
 			expect(response.body.enabled).toBe(true);
 			expect(response.body.url).toBe(validConfig.url);
@@ -39,17 +39,17 @@ describe('Webhook Config API Tests', () => {
 		});
 
 		it('should allow disabling webhooks', async () => {
-			const oldWebhookConfig = await getWebbhookConfig();
+			const oldWebhookConfig = await getWebhookConfig();
 			expect(oldWebhookConfig.status).toBe(200);
 
-			let response = await updateWebbhookConfig({
+			let response = await updateWebhookConfig({
 				enabled: false
 			});
 
 			expect(response.status).toBe(200);
 			expect(response.body.message).toBe('Webhooks config updated successfully');
 
-			response = await getWebbhookConfig();
+			response = await getWebhookConfig();
 			expect(response.status).toBe(200);
 			expect(response.body.enabled).toBe(false);
 			expect(response.body.url).toBe(oldWebhookConfig.body.url);
@@ -60,12 +60,12 @@ describe('Webhook Config API Tests', () => {
 				enabled: false,
 				url: 'https://newurl.com/webhook'
 			};
-			const response = await updateWebbhookConfig(config);
+			const response = await updateWebhookConfig(config);
 
 			expect(response.status).toBe(200);
 			expect(response.body.message).toBe('Webhooks config updated successfully');
 
-			const configResponse = await getWebbhookConfig();
+			const configResponse = await getWebhookConfig();
 			expect(configResponse.status).toBe(200);
 			expect(configResponse.body.enabled).toBe(config.enabled);
 			expect(configResponse.body.url).toBe(config.url);
@@ -74,7 +74,7 @@ describe('Webhook Config API Tests', () => {
 
 	describe('Update webhook config validation', () => {
 		it('should reject invalid webhook URL', async () => {
-			const response = await updateWebbhookConfig({
+			const response = await updateWebhookConfig({
 				enabled: true,
 				url: 'invalid-url'
 			});
@@ -84,14 +84,14 @@ describe('Webhook Config API Tests', () => {
 		});
 
 		it('should reject missing URL when webhooks are enabled', async () => {
-			const response = await updateWebbhookConfig({ enabled: true });
+			const response = await updateWebhookConfig({ enabled: true });
 
 			expect(response.status).toBe(422);
 			expectValidationError(response, 'url', 'URL is required when webhooks are enabled');
 		});
 
 		it('should reject non-http(s) URLs', async () => {
-			const response = await updateWebbhookConfig({
+			const response = await updateWebhookConfig({
 				enabled: true,
 				url: 'ftp://example.com/webhook'
 			});
@@ -103,7 +103,7 @@ describe('Webhook Config API Tests', () => {
 
 	describe('Get webhook config', () => {
 		it('should return webhook config when authenticated as admin', async () => {
-			const response = await getWebbhookConfig();
+			const response = await getWebhookConfig();
 
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({

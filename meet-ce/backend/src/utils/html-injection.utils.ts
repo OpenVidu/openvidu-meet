@@ -49,12 +49,21 @@ function validateBasePathConfig(): void {
 
 			// Check if BASE_URL contains a path (other than just /)
 			if (url.pathname && url.pathname !== '/') {
-				console.warn(chalk.yellow('⚠️  WARNING: MEET_BASE_URL contains a path segment:'), chalk.cyan(url.pathname));
-				console.warn(chalk.yellow('   MEET_BASE_URL should only contain https protocol and host (e.g., https://example.com)'));
+				console.warn(
+					chalk.yellow('⚠️  WARNING: MEET_BASE_URL contains a path segment:'),
+					chalk.cyan(url.pathname)
+				);
+				console.warn(
+					chalk.yellow(
+						'   MEET_BASE_URL should only contain https protocol and host (e.g., https://example.com)'
+					)
+				);
 				console.warn(chalk.yellow('   Use MEET_BASE_PATH for the deployment path (e.g., /meet/)'));
 
 				if (basePath && basePath !== '/') {
-					console.warn(chalk.red(`   This may cause issues: BASE_URL path "${url.pathname}" + BASE_PATH "${basePath}"`));
+					console.warn(
+						chalk.red(`   This may cause issues: BASE_URL path "${url.pathname}" + BASE_PATH "${basePath}"`)
+					);
 				}
 			}
 		} catch {

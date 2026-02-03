@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -21,7 +20,7 @@ import {
 	restoreDefaultGlobalConfig,
 	sleep,
 	startTestServer,
-	updateWebbhookConfig
+	updateWebhookConfig
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -37,8 +36,7 @@ describe('Webhook Integration Tests', () => {
 		recording: {
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
-			encoding: MeetRecordingEncodingPreset.H264_720P_30,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
@@ -61,7 +59,7 @@ describe('Webhook Integration Tests', () => {
 	beforeEach(async () => {
 		receivedWebhooks = [];
 		// Enable webhooks in global config
-		await updateWebbhookConfig({
+		await updateWebhookConfig({
 			enabled: true,
 			url: `http://localhost:5080/webhook`
 		});
@@ -81,7 +79,7 @@ describe('Webhook Integration Tests', () => {
 	};
 
 	it('should not send webhooks when disabled', async () => {
-		await updateWebbhookConfig({
+		await updateWebhookConfig({
 			enabled: false
 		});
 

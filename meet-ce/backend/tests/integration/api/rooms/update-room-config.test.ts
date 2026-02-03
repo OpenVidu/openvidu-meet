@@ -278,8 +278,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER,
-						encoding: MeetRecordingEncodingPreset.H264_720P_30,
-						allowAccessTo: MeetRecordingAccess.ADMIN
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
 					}
 				}
 			});
@@ -306,8 +305,7 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: MeetRecordingLayout.SPEAKER,
-					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },

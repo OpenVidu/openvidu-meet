@@ -7,7 +7,6 @@ import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
-	deleteRoom,
 	disconnectFakeParticipants,
 	startTestServer,
 	updateParticipant,
@@ -35,6 +34,7 @@ describe('Meetings API Tests', () => {
 	describe('Update Participant Tests', () => {
 		const setParticipantMetadata = async (roomId: string, baseRole: MeetRoomMemberRole) => {
 			const metadata: MeetRoomMemberTokenMetadata = {
+				iat: Date.now(),
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				roomId,
 				baseRole,
@@ -141,12 +141,8 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should fail with 404 if room does not exist', async () => {
-			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
-			expect(response.status).toBe(200);
-
-			response = await updateParticipant(
-				roomData.room.roomId,
+			const response = await updateParticipant(
+				'nonexistent-room-id',
 				participantIdentity,
 				MeetRoomMemberRole.MODERATOR,
 				roomData.moderatorToken
