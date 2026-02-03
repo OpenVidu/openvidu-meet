@@ -22,7 +22,7 @@ export enum TrackSource {
 	/**
 	 * @generated from enum value: SCREEN_SHARE_AUDIO = 4;
 	 */
-	SCREEN_SHARE_AUDIO = 4,
+	SCREEN_SHARE_AUDIO = 4
 }
 
 interface VideoGrant {

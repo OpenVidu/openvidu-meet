@@ -2,26 +2,26 @@
  * All available commands that can be sent to the WebComponent.
  */
 export enum WebComponentCommand {
-    /**
-     * Initializes the WebComponent with the given configuration.
-     * This command is sent from the webcomponent to the iframe for intialice the domain.
-     * @private
-     */
-    INITIALIZE = 'initialize',
-    /**
-     * Ends the current meeting for all participants.
-     * @moderator
-     */
-    END_MEETING = 'endMeeting',
-    /**
-     * Disconnects the local participant from the current room.
-     */
-    LEAVE_ROOM = 'leaveRoom',
-    /**
-     * Kicks a participant from the meeting.
-     * @moderator
-     */
-    KICK_PARTICIPANT = 'kickParticipant'
+	/**
+	 * Initializes the WebComponent with the given configuration.
+	 * This command is sent from the webcomponent to the iframe for intialice the domain.
+	 * @private
+	 */
+	INITIALIZE = 'initialize',
+	/**
+	 * Ends the current meeting for all participants.
+	 * @moderator
+	 */
+	END_MEETING = 'endMeeting',
+	/**
+	 * Disconnects the local participant from the current room.
+	 */
+	LEAVE_ROOM = 'leaveRoom',
+	/**
+	 * Kicks a participant from the meeting.
+	 * @moderator
+	 */
+	KICK_PARTICIPANT = 'kickParticipant'
 }
 
 /**
@@ -30,18 +30,18 @@ export enum WebComponentCommand {
  * @category Communication
  */
 export interface WebComponentCommandPayloads {
-    /**
-     * Payload for the INITIALIZE command.
-     * @private
-     */
-    [WebComponentCommand.INITIALIZE]: {
-        domain: string;
-    };
-    [WebComponentCommand.END_MEETING]: void;
-    [WebComponentCommand.LEAVE_ROOM]: void;
-    [WebComponentCommand.KICK_PARTICIPANT]: {
-        participantIdentity: string;
-    };
+	/**
+	 * Payload for the INITIALIZE command.
+	 * @private
+	 */
+	[WebComponentCommand.INITIALIZE]: {
+		domain: string;
+	};
+	[WebComponentCommand.END_MEETING]: void;
+	[WebComponentCommand.LEAVE_ROOM]: void;
+	[WebComponentCommand.KICK_PARTICIPANT]: {
+		participantIdentity: string;
+	};
 }
 
 /**
@@ -51,5 +51,5 @@ export interface WebComponentCommandPayloads {
  * @private
  */
 export type WenComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
-    ? WebComponentCommandPayloads[T]
-    : never;
+	? WebComponentCommandPayloads[T]
+	: never;

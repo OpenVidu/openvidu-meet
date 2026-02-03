@@ -14,12 +14,10 @@ export interface MeetRoomMemberPermissions {
 	 * Can delete recordings.
 	 */
 	canDeleteRecordings: boolean;
-
 	/**
 	 * Can join the meeting.
 	 */
 	canJoinMeeting: boolean;
-
 	/**
 	 * Can share access links to invite others.
 	 */
@@ -36,7 +34,6 @@ export interface MeetRoomMemberPermissions {
 	 * Can end the meeting for all participants.
 	 */
 	canEndMeeting: boolean;
-
 	/**
 	 * Can publish video in the meeting.
 	 */
@@ -49,7 +46,6 @@ export interface MeetRoomMemberPermissions {
 	 * Can share screen in the meeting.
 	 */
 	canShareScreen: boolean;
-
 	/**
 	 * Can read chat messages in the meeting.
 	 */
@@ -58,7 +54,6 @@ export interface MeetRoomMemberPermissions {
 	 * Can send chat messages in the meeting.
 	 */
 	canWriteChat: boolean;
-
 	/**
 	 * Can change the virtual background.
 	 */

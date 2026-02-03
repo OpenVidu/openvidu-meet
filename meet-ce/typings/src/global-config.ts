@@ -5,20 +5,20 @@ import { MeetAppearanceConfig } from './room-config.js';
  * Represents global config for OpenVidu Meet.
  */
 export interface GlobalConfig {
-    projectId: string;
-    securityConfig: SecurityConfig;
-    webhooksConfig: WebhookConfig;
-    roomsConfig: {
-        appearance: MeetAppearanceConfig;
-    };
+	projectId: string;
+	securityConfig: SecurityConfig;
+	webhooksConfig: WebhookConfig;
+	roomsConfig: {
+		appearance: MeetAppearanceConfig;
+	};
 }
 
 export interface WebhookConfig {
-    enabled: boolean;
-    url?: string;
-    // events: WebhookEvent[];
+	enabled: boolean;
+	url?: string;
+	// events: WebhookEvent[];
 }
 
 export interface SecurityConfig {
-    authentication: AuthenticationConfig;
+	authentication: AuthenticationConfig;
 }
