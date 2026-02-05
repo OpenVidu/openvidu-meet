@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetRoomRoles, MeetUserRole } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
@@ -15,6 +15,7 @@ import { TestUsers } from '../../../interfaces/scenarios.js';
 
 describe('Room Members API Tests', () => {
 	let roomId: string;
+	let roomRoles: MeetRoomRoles;
 	let testUsers: TestUsers;
 
 	beforeAll(async () => {
@@ -23,6 +24,7 @@ describe('Room Members API Tests', () => {
 
 		const room = await createRoom();
 		roomId = room.roomId;
+		roomRoles = room.roles;
 	});
 
 	afterAll(async () => {
@@ -31,19 +33,16 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Create Room Member Tests', () => {
-		let userId: string;
-
-		beforeEach(async () => {
-			userId = `user_${Date.now()}`;
+		it('should successfully create room member with userId (registered user)', async () => {
+			// Create a new user to be added as room member
+			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
 				role: MeetUserRole.USER
 			});
-		});
 
-		it('should successfully create room member with userId (registered user)', async () => {
 			const response = await createRoomMember(roomId, {
 				userId,
 				baseRole: MeetRoomMemberRole.SPEAKER
@@ -85,32 +84,29 @@ describe('Room Members API Tests', () => {
 
 		it('should successfully create room member with MODERATOR role', async () => {
 			const response = await createRoomMember(roomId, {
-				userId,
+				name: 'Mod User',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
-			expect(response.body.effectivePermissions).toHaveProperty('canKickParticipants', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canEndMeeting', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canMakeModerator', true);
+			expect(response.body.effectivePermissions).toEqual(roomRoles.moderator.permissions);
 		});
 
 		it('should successfully create room member with SPEAKER role', async () => {
 			const response = await createRoomMember(roomId, {
-				userId,
+				name: 'Speaker User',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
-			expect(response.body.effectivePermissions).toHaveProperty('canPublishAudio', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canPublishVideo', true);
+			expect(response.body.effectivePermissions).toEqual(roomRoles.speaker.permissions);
 		});
 
 		it('should successfully create room member with custom permissions', async () => {
 			const response = await createRoomMember(roomId, {
-				userId,
+				name: 'Custom Perm User',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
 					canRecord: true,
@@ -129,18 +125,26 @@ describe('Room Members API Tests', () => {
 		it('should verify room member is actually created', async () => {
 			// Create room member
 			const createResponse = await createRoomMember(roomId, {
-				userId,
+				name: 'Verify User',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			expect(createResponse.status).toBe(201);
 
 			// Verify member exists
-			const getMemberResponse = await getRoomMember(roomId, userId);
+			const getMemberResponse = await getRoomMember(roomId, createResponse.body.memberId);
 			expect(getMemberResponse.status).toBe(200);
-			expect(getMemberResponse.body).toHaveProperty('memberId', userId);
 		});
 
 		it('should fail when creating duplicate room member', async () => {
+			// Create a new user to be added as room member
+			const userId = `user_${Date.now()}`;
+			await createUser({
+				userId,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
 			// Create member first time
 			const firstResponse = await createRoomMember(roomId, {
 				userId,
@@ -171,7 +175,7 @@ describe('Room Members API Tests', () => {
 
 		it('should fail when room does not exist', async () => {
 			const response = await createRoomMember('nonexistent_room_123', {
-				userId,
+				name: 'Test User',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 

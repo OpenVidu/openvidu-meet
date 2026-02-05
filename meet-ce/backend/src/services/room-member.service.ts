@@ -580,9 +580,6 @@ export class RoomMemberService {
 				`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
 			);
 
-			// Create the Livekit room if it doesn't exist
-			await this.roomService.createLivekitRoom(roomId);
-
 			try {
 				// Reserve a unique name for the participant
 				participantName = await this.participantNameService.reserveUniqueName(roomId, participantName);
@@ -591,6 +588,9 @@ export class RoomMemberService {
 				this.logger.error(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
 				throw error;
 			}
+
+			// Create the Livekit room if it doesn't exist
+			await this.roomService.createLivekitRoom(roomId);
 
 			// Create a unique participant identity based on the participant name
 			const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
