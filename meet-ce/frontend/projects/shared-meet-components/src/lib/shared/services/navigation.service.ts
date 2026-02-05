@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
+import { AppConfigService } from './app-config.service';
 import { AppDataService } from './app-data.service';
 import { SessionStorageService } from './session-storage.service';
 
@@ -13,7 +14,8 @@ export class NavigationService {
 	constructor(
 		private router: Router,
 		private sessionStorageService: SessionStorageService,
-		private appDataService: AppDataService
+		private appDataService: AppDataService,
+		private appConfigService: AppConfigService
 	) {}
 
 	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
@@ -80,6 +82,13 @@ export class NavigationService {
 	 */
 	async redirectTo(url: string): Promise<void> {
 		try {
+			// Strip basePath prefix if present, since Angular router operates relative to <base href>
+			const basePath = this.appConfigService.basePath;
+			const basePathPrefix = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+			if (basePathPrefix && url.startsWith(basePathPrefix)) {
+				url = url.slice(basePathPrefix.length) || '/';
+			}
+
 			let urlTree = this.router.parseUrl(url);
 			await this.router.navigateByUrl(urlTree, { replaceUrl: true });
 		} catch (error) {
