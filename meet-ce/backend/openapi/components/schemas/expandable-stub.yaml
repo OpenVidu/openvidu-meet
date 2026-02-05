@@ -1,0 +1,24 @@
+ExpandableStub:
+    type: object
+    description: >
+        Marker object that replaces expandable properties when they are not expanded.
+
+        Indicates that a property can be included in full by using the `expand` query parameter.
+        Follows HATEOAS principles by providing a hypermedia link to expand the property.
+    properties:
+        _expandable:
+            type: boolean
+            const: true
+            description: >
+                Indicates that this property can be expanded using the expand query parameter.
+                Always `true` for stub objects.
+            example: true
+        _href:
+            type: string
+            format: uri
+            description: >
+                Hypermedia link (HATEOAS) to fetch the resource with this property expanded.
+
+                The URL includes the current expand parameters plus the new property to maintain state.
+            example: "/api/v1/rooms/room-123?expand=config"
+    additionalProperties: false

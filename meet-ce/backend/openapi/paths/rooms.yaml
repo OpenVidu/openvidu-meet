@@ -43,6 +43,7 @@
             - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/room-status.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/expand.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
             - $ref: '../components/parameters/sort-field.yaml'
@@ -100,6 +101,10 @@
         summary: Get a room
         description: >
             Retrieves the details of an OpenVidu Meet room with the specified room ID.
+            <br/>
+            By default, certain large properties like `config` are excluded from the response
+            to reduce payload size. These properties are replaced with an expandable stub.
+            Use the `expand` parameter to include these properties when needed.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -109,6 +114,7 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/expand.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'

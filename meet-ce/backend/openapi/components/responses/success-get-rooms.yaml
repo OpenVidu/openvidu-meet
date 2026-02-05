@@ -12,8 +12,132 @@ content:
                     $ref: '../schemas/meet-pagination.yaml'
 
         examples:
-            complete_room_details:
+            default_room_details:
                 summary: Full room details response with multiple rooms
+                value:
+                    rooms:
+                        - roomId: 'room-123'
+                          roomName: 'room'
+                          owner: 'admin'
+                          creationDate: 1620000000000
+                          autoDeletionDate: 1900000000000
+                          autoDeletionPolicy:
+                              withMeeting: when_meeting_ends
+                              withRecordings: close
+                          config:
+                              _expandable: true
+                              _href: '/api/v1/rooms/room-123?expand=config'
+                          roles:
+                              moderator:
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: true
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: true
+                                      canMakeModerator: true
+                                      canKickParticipants: true
+                                      canEndMeeting: true
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                              speaker:
+                                  permissions:
+                                      canRecord: false
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: false
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: false
+                                      canMakeModerator: false
+                                      canKickParticipants: false
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                          anonymous:
+                              moderator:
+                                  enabled: true
+                                  accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                              speaker:
+                                  enabled: true
+                                  accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                          accessUrl: 'http://localhost:6080/room/room-123'
+                          status: open
+                          meetingEndAction: none
+                        - roomId: 'room-456'
+                          roomName: 'room'
+                          owner: 'alice_smith'
+                          creationDate: 1620001000000
+                          autoDeletionDate: 1900000000000
+                          autoDeletionPolicy:
+                              withMeeting: when_meeting_ends
+                              withRecordings: close
+                          config:
+                              _expandable: true
+                              _href: '/api/v1/rooms/room-456?expand=config'
+                          roles:
+                              moderator:
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: false
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: true
+                                      canMakeModerator: false
+                                      canKickParticipants: true
+                                      canEndMeeting: true
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: true
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                              speaker:
+                                  permissions:
+                                      canRecord: true
+                                      canRetrieveRecordings: true
+                                      canDeleteRecordings: false
+                                      canJoinMeeting: true
+                                      canShareAccessLinks: false
+                                      canMakeModerator: false
+                                      canKickParticipants: false
+                                      canEndMeeting: false
+                                      canPublishVideo: true
+                                      canPublishAudio: true
+                                      canShareScreen: false
+                                      canReadChat: true
+                                      canWriteChat: true
+                                      canChangeVirtualBackground: true
+                          anonymous:
+                              moderator:
+                                  enabled: false
+                                  accessUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                              speaker:
+                                  enabled: true
+                                  accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
+                          accessUrl: 'http://localhost:6080/room/room-456'
+                          status: open
+                          meetingEndAction: none
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+            fields=roomId:
+                summary: Response with only roomId for each room
+                value:
+                    rooms:
+                        - roomId: 'room-123'
+                        - roomId: 'room-456'
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+            expand=config:
+                summary: Room details with expanded config
                 value:
                     rooms:
                         - roomId: 'room-123'
@@ -153,16 +277,6 @@ content:
                     pagination:
                         isTruncated: false
                         maxItems: 10
-            fields=roomId:
-                summary: Response with only roomId for each room
-                value:
-                    rooms:
-                        - roomId: 'room-123'
-                        - roomId: 'room-456'
-                    pagination:
-                        isTruncated: false
-                        maxItems: 10
-
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details including config but no URLs
                 value:
@@ -172,29 +286,15 @@ content:
                           creationDate: 1620000000000
                           autoDeletionDate: 1900000000000
                           config:
-                              recording:
-                                  enabled: false
-                                  layout: grid
-                              chat:
-                                  enabled: true
-                              virtualBackground:
-                                  enabled: true
-                              e2ee:
-                                  enabled: false
+                              _expandable: true
+                              _href: '/api/v1/rooms/room-123?expand=config'
                         - roomId: 'room-456'
                           roomName: 'room'
                           creationDate: 1620001000000
                           autoDeletionDate: 1900000000000
                           config:
-                              recording:
-                                  enabled: true
-                                  layout: grid
-                              chat:
-                                  enabled: false
-                              virtualBackground:
-                                  enabled: false
-                              e2ee:
-                                  enabled: false
+                              _expandable: true
+                              _href: '/api/v1/rooms/room-456?expand=config'
                     pagination:
                         isTruncated: true
                         nextPageToken: 'abc123'

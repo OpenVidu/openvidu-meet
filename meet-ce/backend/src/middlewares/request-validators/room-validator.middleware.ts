@@ -3,6 +3,7 @@ import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomsReqSchema,
 	DeleteRoomReqSchema,
+	GetRoomQuerySchema,
 	nonEmptySanitizedRoomId,
 	RoomFiltersSchema,
 	RoomOptionsSchema,
@@ -57,6 +58,17 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 	}
 
 	req.params.roomId = data;
+	next();
+};
+
+export const validateGetRoomReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = GetRoomQuerySchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.query = data;
 	next();
 };
 

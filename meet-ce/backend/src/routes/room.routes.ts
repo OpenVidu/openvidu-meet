@@ -20,6 +20,7 @@ import {
 	validateBulkDeleteRoomsReq,
 	validateCreateRoomReq,
 	validateDeleteRoomReq,
+	validateGetRoomReq,
 	validateGetRoomsReq,
 	validateUpdateRoomAnonymousReq,
 	validateUpdateRoomConfigReq,
@@ -66,6 +67,7 @@ roomRouter.get(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	withValidRoomId,
+	validateGetRoomReq,
 	authorizeRoomAccess,
 	roomCtrl.getRoom
 );

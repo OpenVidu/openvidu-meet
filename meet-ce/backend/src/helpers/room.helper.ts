@@ -1,4 +1,5 @@
 import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 
 export class MeetRoomHelper {
@@ -114,5 +115,36 @@ export class MeetRoomHelper {
 		} catch (err: unknown) {
 			return false;
 		}
+	}
+
+	/**
+	 * Processes a room to replace non-expanded properties with stubs.
+	 *
+	 * @example
+	 * ```
+	 * 	{
+	 * 		config: {
+	 * 			_expandable: true,
+	 * 			_href: '/api/rooms/123?expand=config'
+	 * 		}
+	 * 	}
+	 * ```
+	 */
+	static processRoomExpandProperties(room: MeetRoom, expand?: string): MeetRoom {
+		const expandProps = expand ? expand.split(',').map((p) => p.trim()) : [];
+		const processed = { ...room };
+		const { roomId } = room;
+		const baseUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId || room.roomId}`;
+
+		// Replace config with stub if not expanded
+		if (!expandProps.includes('config')) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(processed as any).config = {
+				_expandable: true,
+				_href: `${baseUrl}?expand=config`
+			};
+		}
+
+		return processed;
 	}
 }

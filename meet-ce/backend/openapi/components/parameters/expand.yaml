@@ -1,0 +1,16 @@
+name: expand
+in: query
+description: >
+    Specifies which complex properties to include in the response.
+
+    By default, certain large or nested properties are excluded to optimize payload size
+    and reduce network bandwidth.
+    <br/>
+    Provide a comma-separated list of property names to include their full data in the response.
+required: false
+schema:
+    type: string
+examples:
+    config:
+        value: 'expand=config'
+        summary: Expand room configuration

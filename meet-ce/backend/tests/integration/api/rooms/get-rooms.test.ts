@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
 	expectSuccessRoomsResponse,
@@ -37,7 +37,7 @@ describe('Room API Tests', () => {
 			const response = await getRooms();
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
-			expectValidRoom(response.body.rooms[0], 'test-room');
+			expectValidRoom(response.body.rooms[0], 'test-room', 'test_room', 'expandable');
 		});
 
 		it('should return a list of rooms applying fields filter', async () => {
@@ -55,12 +55,14 @@ describe('Room API Tests', () => {
 		});
 
 		it('should return a list of rooms applying roomName filter', async () => {
-			await createRoom({
-				roomName: 'test-room'
-			});
-			await createRoom({
-				roomName: 'other-room'
-			});
+			await Promise.all([
+				createRoom({
+					roomName: 'test-room'
+				}),
+				createRoom({
+					roomName: 'other-room'
+				})
+			]);
 
 			const response = await getRooms({ roomName: 'test-room' });
 			const { rooms } = response.body;
@@ -81,13 +83,19 @@ describe('Room API Tests', () => {
 		});
 
 		it('should return a list of rooms with pagination', async () => {
+			const promises = [];
+
 			// Create rooms sequentially to ensure different creation dates
 			for (let i = 0; i < 6; i++) {
-				await createRoom({
-					roomName: `test-room-${i}`,
-					autoDeletionDate: validAutoDeletionDate
-				});
+				promises.push(
+					createRoom({
+						roomName: `test-room-${i}`,
+						autoDeletionDate: validAutoDeletionDate
+					})
+				);
 			}
+
+			await Promise.all(promises);
 
 			let response = await getRooms({ maxItems: 3 });
 			let { pagination, rooms } = response.body;
@@ -120,9 +128,11 @@ describe('Room API Tests', () => {
 		});
 
 		it('should sort rooms by roomName ascending and descending', async () => {
-			await createRoom({ roomName: 'zebra-room' });
-			await createRoom({ roomName: 'alpha-room' });
-			await createRoom({ roomName: 'beta-room' });
+			await Promise.all([
+				createRoom({ roomName: 'zebra-room' }),
+				createRoom({ roomName: 'alpha-room' }),
+				createRoom({ roomName: 'beta-room' })
+			]);
 
 			// Test ascending
 			let response = await getRooms({ sortField: 'roomName', sortOrder: 'asc' });
@@ -172,9 +182,11 @@ describe('Room API Tests', () => {
 			const date1 = now + ms('2h');
 			const date2 = now + ms('3h');
 
-			await createRoom({ roomName: 'room-3h', autoDeletionDate: date2 });
-			await createRoom({ roomName: 'room-2h', autoDeletionDate: date1 });
-			await createRoom({ roomName: 'room-without-date' }); // Room without autoDeletionDate
+			await Promise.all([
+				createRoom({ roomName: 'room-3h', autoDeletionDate: date2 }),
+				createRoom({ roomName: 'room-2h', autoDeletionDate: date1 }),
+				createRoom({ roomName: 'room-without-date' }) // Room without autoDeletionDate
+			]);
 
 			// Test ascending
 			let response = await getRooms({ sortField: 'autoDeletionDate', sortOrder: 'asc' });
@@ -230,6 +242,98 @@ describe('Room API Tests', () => {
 		it('should fail when status is invalid', async () => {
 			const response = await getRooms({ status: 'invalid_status' });
 			expectValidationError(response, 'status', 'Invalid enum value');
+		});
+	});
+
+	describe('List Rooms with Expand Parameter Tests', () => {
+		it('should return rooms with config as expandable stub when expand parameter is not provided', async () => {
+			await createRoom({
+				roomName: 'no-expand-list-test'
+			});
+
+			const response = await getRooms();
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+
+			const room = response.body.rooms[0];
+			expectValidRoom(room, 'no-expand-list-test', 'no_expand_list_test', 'expandable');
+		});
+
+		it('should return rooms with full config when using expand=config', async () => {
+			const customConfig = {
+				recording: {
+					enabled: false,
+					layout: MeetRecordingLayout.SPEAKER,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
+				},
+				chat: { enabled: false },
+				virtualBackground: { enabled: false },
+				e2ee: { enabled: true },
+				captions: { enabled: false }
+			};
+
+			await createRoom({
+				roomName: 'expand-list-test',
+				config: customConfig
+			});
+
+			const response = await getRooms({ expand: 'config' });
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+
+			const room = response.body.rooms[0];
+			expectValidRoom(room, 'expand-list-test', 'expand_list_test', customConfig);
+		});
+
+		it('should fail when expand has invalid values', async () => {
+			await createRoom({
+				roomName: 'invalid-expand-list'
+			});
+
+			const response = await getRooms({ expand: 'invalid,wrongparam' });
+			expectValidationError(response, 'expand', 'Invalid expand properties. Valid options: config');
+		});
+
+		it('should return multiple rooms with full config when using expand=config', async () => {
+			const config1 = {
+				recording: {
+					enabled: true,
+					layout: MeetRecordingLayout.GRID,
+					encoding: MeetRecordingEncodingPreset.H264_720P_30
+				},
+				chat: { enabled: true },
+				virtualBackground: { enabled: true },
+				e2ee: { enabled: false },
+				captions: { enabled: true }
+			};
+
+			const config2 = {
+				recording: {
+					enabled: false,
+					layout: MeetRecordingLayout.SPEAKER,
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
+				},
+				chat: { enabled: false },
+				virtualBackground: { enabled: false },
+				e2ee: { enabled: true },
+				captions: { enabled: false }
+			};
+
+			await Promise.all([
+				createRoom({ roomName: 'multi-expand-1', config: config1 }),
+				createRoom({ roomName: 'multi-expand-2', config: config2 })
+			]);
+
+			const response = await getRooms({ expand: 'config' });
+			expectSuccessRoomsResponse(response, 2, 10, false, false);
+
+			const rooms = response.body.rooms;
+			const room1 = rooms.find((r: MeetRoom) => r.roomName === 'multi-expand-1');
+			const room2 = rooms.find((r: MeetRoom) => r.roomName === 'multi-expand-2');
+
+			expect(room1).toBeDefined();
+			expect(room2).toBeDefined();
+
+			expectValidRoom(room1, 'multi-expand-1', 'multi_expand_1', config1);
+			expectValidRoom(room2, 'multi-expand-2', 'multi_expand_2', config2);
 		});
 	});
 });

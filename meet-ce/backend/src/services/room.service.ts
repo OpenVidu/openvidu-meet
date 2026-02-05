@@ -159,7 +159,10 @@ export class RoomService {
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		return await this.roomRepository.create(meetRoom);
+		const room = await this.roomRepository.create(meetRoom);
+
+		// Avoid include full config in payload
+		return MeetRoomHelper.processRoomExpandProperties(room, '');
 	}
 
 	/**
@@ -316,7 +319,7 @@ export class RoomService {
 	 * - USER: Can see rooms they own or are members of
 	 * - ROOM_MEMBER: Can see rooms they are members of
 	 *
-	 * @param filters - Filtering, pagination and sorting options
+	 * @param filters - Filtering, pagination and sorting options (including expand)
 	 * @returns A Promise that resolves to paginated room list
 	 * @throws If there was an error retrieving the rooms
 	 */
@@ -340,7 +343,12 @@ export class RoomService {
 			}
 		}
 
-		return await this.roomRepository.find(queryOptions);
+		const response = await this.roomRepository.find(queryOptions);
+
+		// Process rooms with expand logic
+		response.rooms = response.rooms.map((room) => MeetRoomHelper.processRoomExpandProperties(room, filters.expand));
+
+		return response;
 	}
 
 	/**
@@ -401,10 +409,11 @@ export class RoomService {
 	 *
 	 * @param roomId - The name of the room to retrieve.
 	 * @param fields - Optional fields to retrieve from the room.
+	 * @param expand - Optional comma-separated list of properties to expand.
 	 * @param checkPermissions - Whether to check permissions and remove sensitive properties. Defaults to false.
-	 * @returns A promise that resolves to an {@link MeetRoom} object.
+	 * @returns A promise that resolves to an {@link MeetRoom} object (with expandable properties as stubs when not expanded).
 	 */
-	async getMeetRoom(roomId: string, fields?: string, checkPermissions = false): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, fields?: string, expand?: string, checkPermissions = false): Promise<MeetRoom> {
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
@@ -421,7 +430,8 @@ export class RoomService {
 			}
 		}
 
-		return room;
+		// Process expand
+		return MeetRoomHelper.processRoomExpandProperties(room, expand);
 	}
 
 	/**

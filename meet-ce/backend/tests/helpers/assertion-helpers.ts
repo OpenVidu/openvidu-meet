@@ -101,7 +101,7 @@ export const expectSuccessRoomResponse = (
 	roomName: string,
 	roomIdPrefix?: string,
 	autoDeletionDate?: number,
-	config?: MeetRoomConfig
+	config?: MeetRoomConfig | 'expandable'
 ) => {
 	expect(response.status).toBe(200);
 	expectValidRoom(response.body, roomName, roomIdPrefix, config, autoDeletionDate);
@@ -113,11 +113,31 @@ export const expectSuccessRoomConfigResponse = (response: Response, config: Meet
 	expect(response.body).toEqual(config);
 };
 
+/**
+ * Validates if a property is an expandable stub
+ */
+export const expectExpandableStub = (property: any, roomId: string, propertyName: string) => {
+	expect(property).toBeDefined();
+	expect(property._expandable).toBe(true);
+	expect(property._href).toBeDefined();
+	expect(property._href).toContain(`/rooms/${roomId}`);
+	expect(property._href).toContain(`expand=${propertyName}`);
+};
+
+/**
+ * Validates that a property is NOT an expandable stub (i.e., it's the actual expanded value)
+ */
+export const expectExpandedProperty = (property: any) => {
+	expect(property).toBeDefined();
+	expect(property._expandable).toBeUndefined();
+	expect(property._href).toBeUndefined();
+};
+
 export const expectValidRoom = (
 	room: MeetRoom,
 	name: string,
 	roomIdPrefix?: string,
-	config?: MeetRoomConfig,
+	config?: MeetRoomConfig | 'expandable',
 	autoDeletionDate?: number,
 	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy,
 	status?: MeetRoomStatus,
@@ -151,21 +171,14 @@ export const expectValidRoom = (
 
 	expect(room.config).toBeDefined();
 
-	if (config !== undefined) {
+	// Check if config should be an expandable stub
+	if (config === 'expandable' || config === undefined) {
+		expectExpandableStub(room.config, room.roomId, 'config');
+	} else {
+		// Validate it's NOT an expandable stub (it's expanded)
+		expectExpandedProperty(room.config);
 		// Use toMatchObject to allow encoding defaults to be added without breaking tests
 		expect(room.config).toMatchObject(config as any);
-	} else {
-		expect(room.config).toEqual({
-			recording: {
-				enabled: true,
-				layout: DEFAULT_RECORDING_LAYOUT,
-				encoding: DEFAULT_RECORDING_ENCODING_PRESET
-			},
-			chat: { enabled: true },
-			virtualBackground: { enabled: true },
-			e2ee: { enabled: false },
-			captions: { enabled: true }
-		});
 	}
 
 	expect(room.owner).toBeDefined();

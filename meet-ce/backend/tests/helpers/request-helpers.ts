@@ -419,16 +419,23 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
  *
  * @param roomId - The unique identifier of the room to retrieve
  * @param fields - Optional fields to filter in the response
+ * @param expand - Optional expand parameter to include additional data (e.g., 'config')
  * @param roomMemberToken - Optional room member token for authentication
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string, roomMemberToken?: string) => {
+export const getRoom = async (roomId: string, fields?: string, expand?: string, roomMemberToken?: string) => {
 	checkAppIsRunning();
+
+	const queryParams: Record<string, string> = {};
+
+	if (fields) queryParams.fields = fields;
+
+	if (expand) queryParams.expand = expand;
 
 	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
-		.query({ fields });
+		.query(queryParams);
 
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);

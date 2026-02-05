@@ -19,7 +19,7 @@ import {
 	expectValidRoom,
 	expectValidationError
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
+import { createRoom, deleteAllRooms, getFullPath, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
@@ -85,7 +85,7 @@ describe('Room API Tests', () => {
 				room,
 				'Example Room',
 				'example_room',
-				payload.config,
+				'expandable',
 				validAutoDeletionDate,
 				payload.autoDeletionPolicy
 			);
@@ -118,7 +118,16 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', 'expandable', validAutoDeletionDate);
+
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(
+				response.body,
+				'Partial Config Room',
+				'partial_config_room',
+				expectedConfig,
+				validAutoDeletionDate
+			);
 		});
 
 		it('Should create a room when sending partial config with two fields', async () => {
@@ -148,7 +157,16 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true } // Default value
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', 'expandable', validAutoDeletionDate);
+
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(
+				response.body,
+				'Partial Config Room',
+				'partial_config_room',
+				expectedConfig,
+				validAutoDeletionDate
+			);
 		});
 	});
 
@@ -312,14 +330,17 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: DEFAULT_RECORDING_ENCODING_PRESET // Default value
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', expectedConfig);
+			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', 'expandable');
+
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, 'Room without encoding', 'room_without_encoding', expectedConfig);
 		});
 
 		it('Should create a room with H264_1080P_30 encoding preset', async () => {
@@ -346,7 +367,9 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', expectedConfig);
+			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', 'expandable');
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, '1080p Preset Room', '1080p_preset_room', expectedConfig);
 		});
 
 		it('Should create a room with PORTRAIT_H264_720P_30 encoding preset', async () => {
@@ -373,7 +396,9 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
+			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', 'expandable');
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
 		});
 
 		it('Should create a room with advanced encoding options - both video and audio', async () => {
@@ -430,7 +455,9 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', expectedConfig);
+			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', 'expandable');
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', expectedConfig);
 		});
 	});
 

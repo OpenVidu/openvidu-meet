@@ -34,7 +34,7 @@ export const getRooms = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 	const queryParams = req.query as MeetRoomFilters;
 
-	logger.verbose('Getting all rooms');
+	logger.verbose(`Getting all rooms with expand: ${queryParams.expand || 'none'}`);
 
 	try {
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(queryParams);
@@ -50,12 +50,13 @@ export const getRoom = async (req: Request, res: Response) => {
 
 	const { roomId } = req.params;
 	const fields = req.query.fields as string | undefined;
+	const expand = req.query.expand as string | undefined;
 
 	try {
-		logger.verbose(`Getting room '${roomId}'`);
+		logger.verbose(`Getting room '${roomId}' with expand: ${expand || 'none'}`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId, fields, true);
+		const room = await roomService.getMeetRoom(roomId, fields, expand, true);
 
 		return res.status(200).json(room);
 	} catch (error) {

@@ -31,10 +31,11 @@ describe('Room API Tests', () => {
 				roomName: 'test-room'
 			});
 
-			expectValidRoom(createdRoom, 'test-room');
+			expectValidRoom(createdRoom, 'test-room', 'test_room', 'expandable');
 
+			// Get room without expand - should return expandable stub
 			const response = await getRoom(createdRoom.roomId);
-			expectSuccessRoomResponse(response, 'test-room', 'test_room');
+			expectSuccessRoomResponse(response, 'test-room', 'test_room', undefined, 'expandable');
 		});
 
 		it('should retrieve a room with custom config', async () => {
@@ -55,8 +56,8 @@ describe('Room API Tests', () => {
 			// Create a room with custom config
 			const { roomId } = await createRoom(payload);
 
-			// Retrieve the room by its ID
-			const response = await getRoom(roomId);
+			// Retrieve the room by its ID with expand=config
+			const response = await getRoom(roomId, undefined, 'config');
 
 			expectSuccessRoomResponse(response, 'custom-config', 'custom_config', undefined, payload.config);
 		});
@@ -107,7 +108,7 @@ describe('Room API Tests', () => {
 
 		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
 			const roomData = await setupSingleRoom();
-			const response = await getRoom(roomData.room.roomId, undefined, roomData.speakerToken);
+			const response = await getRoom(roomData.room.roomId, undefined, undefined, roomData.speakerToken);
 			expect(response.status).toBe(200);
 			expect(response.body.moderatorUrl).toBeUndefined();
 		});
@@ -123,7 +124,7 @@ describe('Room API Tests', () => {
 				}
 			});
 
-			const response = await getRoom(createdRoom.roomId);
+			const response = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(response.status).toBe(200);
 			expect(response.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
 		});
@@ -156,7 +157,7 @@ describe('Room API Tests', () => {
 				}
 			});
 
-			const response = await getRoom(createdRoom.roomId);
+			const response = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(response.status).toBe(200);
 			expect(response.body.config.recording.encoding).toMatchObject(advancedEncoding);
 		});
@@ -174,6 +175,17 @@ describe('Room API Tests', () => {
 			const response = await getRoom('!!*!@#$%^&*()+{}|:"<>?');
 
 			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
+		});
+
+		it('should fail when expand has invalid values', async () => {
+			const createdRoom = await createRoom({
+				roomName: 'invalid-expand-test'
+			});
+
+			// Get room with invalid expand values
+			const response = await getRoom(createdRoom.roomId, undefined, 'invalid,wrongparam');
+
+			expectValidationError(response, 'expand', 'Invalid expand properties. Valid options: config');
 		});
 	});
 });

@@ -366,10 +366,39 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
+// Shared expand validation schema for Room entity
+const expandSchema = z
+	.string()
+	.optional()
+	.refine(
+		(value) => {
+			if (!value) return true;
+
+			const allowed = ['config'];
+			const requested = value.split(',').map((p) => p.trim());
+
+			return requested.every((p) => allowed.includes(p));
+		},
+		{
+			message: 'Invalid expand properties. Valid options: config'
+		}
+	)
+	.transform((value) => {
+		// Filter and clean expand values
+		if (!value) return undefined;
+
+		const allowed = ['config'];
+		const requested = value.split(',').map((p) => p.trim());
+		const valid = requested.filter((p) => allowed.includes(p));
+
+		return valid.length > 0 ? valid.join(',') : undefined;
+	});
+
 export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	roomName: z.string().optional(),
 	status: z.nativeEnum(MeetRoomStatus).optional(),
 	fields: z.string().optional(),
+	expand: expandSchema,
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -383,6 +412,11 @@ export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 	nextPageToken: z.string().optional(),
 	sortField: z.enum(['creationDate', 'roomName', 'autoDeletionDate']).optional().default('creationDate'),
 	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+});
+
+export const GetRoomQuerySchema = z.object({
+	fields: z.string().optional(),
+	expand: expandSchema
 });
 
 export const DeleteRoomReqSchema = z.object({

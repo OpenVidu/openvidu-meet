@@ -30,7 +30,7 @@ properties:
             The timestamp (in milliseconds since the Unix epoch) specifying when the room will be automatically deleted.
             This must be at least one hour in the future.
 
-            After this time, the room is closed to new participants and scheduled for deletion. 
+            After this time, the room is closed to new participants and scheduled for deletion.
             It will be removed after the last participant leaves (graceful deletion).
 
             If not set, the room remains active until manually deleted.
@@ -63,8 +63,14 @@ properties:
                     - force: The room and its recordings will be deleted.
                     - close: The room will be closed instead of deleted, maintaining its recordings.
     config:
-        $ref: meet-room-config.yaml#/MeetRoomConfig
-        description: The config for the room.
+        description: >
+            The configuration for the room (chat, recording, virtual background, e2ee, captions).
+
+            By default, this property is excluded from responses to reduce payload size.
+            It is replaced with an expandable stub. Use `?expand=config` to include the full configuration.
+        oneOf:
+            - $ref: expandable-stub.yaml#/ExpandableStub
+            - $ref: meet-room-config.yaml#/MeetRoomConfig
     # maxParticipants:
     #     type: integer
     #     example: 10

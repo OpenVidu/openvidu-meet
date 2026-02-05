@@ -4,7 +4,7 @@ content:
         schema:
             $ref: '../schemas/meet-room.yaml'
         examples:
-            complete_room_details:
+            default_room_details:
                 summary: Full room details response
                 value:
                     roomId: 'room-123'
@@ -16,18 +16,8 @@ content:
                         withMeeting: when_meeting_ends
                         withRecordings: close
                     config:
-                        recording:
-                            enabled: false
-                            layout: grid
-                            encoding: H264_720P_30
-                        chat:
-                            enabled: true
-                        virtualBackground:
-                            enabled: true
-                        e2ee:
-                            enabled: false
-                        captions:
-                            enabled: true
+                       _expandable: true
+                       _href: '/api/v1/rooms/room-123?expand=config'
                     roles:
                         moderator:
                             permissions:
@@ -80,25 +70,30 @@ content:
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
                     config:
-                        recording:
-                            enabled: false
-                            layout: grid
-                            encoding:
-                                video:
-                                    width: 1920
-                                    height: 1080
-                                    framerate: 30
-                                    codec: H264_MAIN
-                                audio:
-                                    codec: OPUS
-                                    bitrate: 128
+                        _expandable: true
+                        _href: '/api/v1/rooms/room-123?expand=config'
+
+            expand=config:
+                summary: Room details with expanded config
+                value:
+                    roomId: 'room-123'
+                    roomName: 'room'
+                    creationDate: 1620000000000
+                    autoDeletionDate: 1900000000000
+                    config:
                         chat:
                             enabled: true
+                            saveChat: true
+                        recording:
+                            enabled: true
+                            layout: grid
+                            encoding: H264_720P_30
                         virtualBackground:
                             enabled: true
                         e2ee:
                             enabled: false
-
+                        captions:
+                            enabled: true
             fields=anonymous:
                 summary: Response containing only anonymous access configuration
                 value:
