@@ -618,12 +618,27 @@ export const expectValidGetRecordingUrlResponse = (response: Response, recording
 
 export const expectValidRoomMemberTokenResponse = (
 	response: Response,
-	roomId: string,
-	baseRole: MeetRoomMemberRole,
-	joinMeeting = false,
-	participantName?: string,
-	participantIdentityPrefix?: string
+	validations: {
+		roomId: string;
+		memberId?: string;
+		baseRole: MeetRoomMemberRole;
+		customPermissions?: Partial<MeetRoomMemberPermissions>;
+		effectivePermissions: MeetRoomMemberPermissions;
+		joinMeeting?: boolean;
+		participantName?: string;
+		participantIdentityPrefix?: string;
+	}
 ) => {
+	const {
+		roomId,
+		memberId,
+		baseRole,
+		effectivePermissions,
+		customPermissions,
+		joinMeeting = false,
+		participantName,
+		participantIdentityPrefix
+	} = validations;
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
 
@@ -639,8 +654,8 @@ export const expectValidRoomMemberTokenResponse = (
 			expect(decodedToken.sub?.startsWith(participantIdentityPrefix)).toBe(true);
 		}
 
-		// const livekitPermissions = getLiveKitPermissions(roomId, getPermissions(baseRole));
-		expect(decodedToken).toHaveProperty('video');
+		const livekitPermissions = getLiveKitPermissions(roomId, effectivePermissions);
+		expect(decodedToken).toHaveProperty('video', livekitPermissions);
 	} else {
 		expect(decodedToken).not.toHaveProperty('name');
 		expect(decodedToken).not.toHaveProperty('sub');
@@ -649,65 +664,40 @@ export const expectValidRoomMemberTokenResponse = (
 
 	expect(decodedToken).toHaveProperty('metadata');
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
+	expect(metadata).toHaveProperty('iat');
 	expect(metadata).toHaveProperty('livekitUrl');
+	expect(metadata).toHaveProperty('roomId', roomId);
 	expect(metadata).toHaveProperty('baseRole', baseRole);
-	const permissions = getPermissions(baseRole);
-	expect(metadata).toHaveProperty('effectivePermissions', permissions);
-};
 
-export const getPermissions = (role: MeetRoomMemberRole): MeetRoomMemberPermissions => {
-	switch (role) {
-		case MeetRoomMemberRole.MODERATOR:
-			return {
-				canRecord: true,
-				canRetrieveRecordings: true,
-				canDeleteRecordings: true,
-				canJoinMeeting: true,
-				canShareAccessLinks: true,
-				canMakeModerator: true,
-				canKickParticipants: true,
-				canEndMeeting: true,
-				canPublishVideo: true,
-				canPublishAudio: true,
-				canShareScreen: true,
-				canReadChat: true,
-				canWriteChat: true,
-				canChangeVirtualBackground: true
-			};
-		case MeetRoomMemberRole.SPEAKER:
-			return {
-				canRecord: false,
-				canRetrieveRecordings: true,
-				canDeleteRecordings: false,
-				canJoinMeeting: true,
-				canShareAccessLinks: false,
-				canMakeModerator: false,
-				canKickParticipants: false,
-				canEndMeeting: false,
-				canPublishVideo: true,
-				canPublishAudio: true,
-				canShareScreen: true,
-				canReadChat: true,
-				canWriteChat: true,
-				canChangeVirtualBackground: true
-			};
+	if (memberId) {
+		expect(metadata).toHaveProperty('memberId', memberId);
+	} else {
+		expect(metadata).not.toHaveProperty('memberId');
 	}
+
+	if (customPermissions) {
+		expect(metadata).toHaveProperty('customPermissions', customPermissions);
+	} else {
+		expect(metadata).not.toHaveProperty('customPermissions');
+	}
+
+	expect(metadata).toHaveProperty('effectivePermissions', effectivePermissions);
 };
 
 const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions => {
 	const canPublishSources: TrackSource[] = [];
 
 	if (permissions.canPublishAudio) {
-		canPublishSources.push(TrackSource.MICROPHONE);
+		canPublishSources.push('microphone' as unknown as TrackSource);
 	}
 
 	if (permissions.canPublishVideo) {
-		canPublishSources.push(TrackSource.CAMERA);
+		canPublishSources.push('camera' as unknown as TrackSource);
 	}
 
 	if (permissions.canShareScreen) {
-		canPublishSources.push(TrackSource.SCREEN_SHARE);
-		canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
+		canPublishSources.push('screen_share' as unknown as TrackSource);
+		canPublishSources.push('screen_share_audio' as unknown as TrackSource);
 	}
 
 	const livekitPermissions: LiveKitPermissions = {

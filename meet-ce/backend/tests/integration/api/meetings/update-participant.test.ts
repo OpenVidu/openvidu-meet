@@ -4,7 +4,6 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { MEET_ENV } from '../../../../src/environment.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
@@ -32,15 +31,15 @@ describe('Meetings API Tests', () => {
 	});
 
 	describe('Update Participant Tests', () => {
-		const setParticipantMetadata = async (roomId: string, baseRole: MeetRoomMemberRole) => {
+		const setParticipantMetadata = async (roomData: RoomData, baseRole: MeetRoomMemberRole) => {
 			const metadata: MeetRoomMemberTokenMetadata = {
 				iat: Date.now(),
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				roomId,
+				roomId: roomData.room.roomId,
 				baseRole,
-				effectivePermissions: getPermissions(baseRole)
+				effectivePermissions: roomData.room.roles[baseRole].permissions
 			};
-			await updateParticipantMetadata(roomId, participantIdentity, metadata);
+			await updateParticipantMetadata(roomData.room.roomId, participantIdentity, metadata);
 		};
 
 		beforeEach(async () => {
@@ -51,7 +50,7 @@ describe('Meetings API Tests', () => {
 			const frontendEventService = container.get(FrontendEventService);
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 
-			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.SPEAKER);
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
@@ -68,7 +67,7 @@ describe('Meetings API Tests', () => {
 			const metadata = JSON.parse(participant.metadata || '{}');
 			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
 			expect(metadata).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
-			const permissions = getPermissions(MeetRoomMemberRole.MODERATOR);
+			const permissions = roomData.room.roles.moderator.permissions;
 			expect(metadata).toHaveProperty('effectivePermissions', permissions);
 
 			// Verify sendSignal method has been called twice
@@ -108,7 +107,7 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should update participant role from moderator to speaker', async () => {
-			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.MODERATOR);
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.MODERATOR);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
@@ -125,7 +124,7 @@ describe('Meetings API Tests', () => {
 			const metadata = JSON.parse(participant.metadata || '{}');
 			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
 			expect(metadata).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
-			const permissions = getPermissions(MeetRoomMemberRole.SPEAKER);
+			const permissions = roomData.room.roles.speaker.permissions;
 			expect(metadata).toHaveProperty('effectivePermissions', permissions);
 		});
 

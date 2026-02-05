@@ -4,7 +4,6 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { getPermissions } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRooms,
 	disconnectFakeParticipants,
@@ -33,7 +32,7 @@ describe('Meeting API Security Tests', () => {
 		app = await startTestServer();
 		({ accessToken: rootAdminAccessToken } = await loginRootAdmin());
 
-		roomData = await setupSingleRoom();
+		roomData = await setupSingleRoom(true);
 		roomId = roomData.room.roomId;
 		roomMember = await setupRoomMember(roomId, {
 			name: 'External Member',
@@ -105,7 +104,7 @@ describe('Meeting API Security Tests', () => {
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				roomId,
 				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: getPermissions(MeetRoomMemberRole.SPEAKER)
+				effectivePermissions: roomData.room.roles.speaker.permissions
 			};
 			await updateParticipantMetadata(roomId, participantIdentity, metadata);
 		};

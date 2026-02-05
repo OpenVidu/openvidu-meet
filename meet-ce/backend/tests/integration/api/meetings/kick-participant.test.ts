@@ -43,11 +43,9 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Check if the participant has been removed from LiveKit
-			try {
-				await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
-			} catch (error) {
-				expect((error as OpenViduMeetError).statusCode).toBe(404);
-			}
+			await expect(livekitService.getParticipant(roomData.room.roomId, participantIdentity)).rejects.toThrow(
+				OpenViduMeetError
+			);
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {
