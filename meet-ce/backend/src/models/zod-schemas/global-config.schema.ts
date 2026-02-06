@@ -37,7 +37,6 @@ const OAuthProviderConfigSchema = z.object({
 });
 
 const AuthenticationConfigSchema: z.ZodType<AuthenticationConfig> = z.object({
-	allowUserCreation: z.boolean(),
 	oauthProviders: z.array(OAuthProviderConfigSchema)
 });
 

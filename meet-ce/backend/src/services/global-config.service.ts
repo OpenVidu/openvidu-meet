@@ -93,7 +93,7 @@ export class GlobalConfigService {
 	async updateSecurityConfig(securityConfig: SecurityConfig): Promise<SecurityConfig> {
 		try {
 			const globalConfig = await this.getGlobalConfig();
-			globalConfig.securityConfig.authentication = { ...securityConfig.authentication };
+			globalConfig.securityConfig.authentication = securityConfig.authentication;
 			await this.saveGlobalConfig(globalConfig);
 			this.logger.info('Security config updated successfully');
 			return globalConfig.securityConfig;
@@ -207,7 +207,6 @@ export class GlobalConfigService {
 			},
 			securityConfig: {
 				authentication: {
-					allowUserCreation: true,
 					oauthProviders: []
 				}
 			},

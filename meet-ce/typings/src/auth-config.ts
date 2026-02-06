@@ -3,11 +3,6 @@
  */
 export interface AuthenticationConfig {
 	/**
-	 * Allow admins to create new user accounts.
-	 */
-	allowUserCreation: boolean;
-
-	/**
 	 * List of allowed OAuth providers for user registration.
 	 */
 	oauthProviders: OAuthProviderConfig[];
