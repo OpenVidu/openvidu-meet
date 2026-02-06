@@ -8,7 +8,6 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
-	MeetRoomFilters,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
 	MeetRoomRoles,
@@ -35,6 +34,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { GetMeetRoomOptions, MeetRoomFilters } from '../models/room-request.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -71,13 +71,15 @@ export class RoomService {
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
 	 * @param {MeetRoomOptions} roomOptions - The options for creating the OpenVidu room.
+	 * @param {GetMeetRoomOptions} responseOpts - Options for controlling the response format (fields, collapse)
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
 	 *
 	 */
-	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
+	async createMeetRoom(roomOptions: MeetRoomOptions, responseOpts?: GetMeetRoomOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, anonymous } = roomOptions;
+		const { collapse, fields } = responseOpts || {};
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
@@ -159,10 +161,12 @@ export class RoomService {
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		const room = await this.roomRepository.create(meetRoom);
+		let room = await this.roomRepository.create(meetRoom);
 
-		// Avoid include full config in payload
-		return MeetRoomHelper.processRoomExpandProperties(room, '');
+		room = MeetRoomHelper.applyCollapseProperties(room, collapse);
+		room = MeetRoomHelper.applyFieldsFilter(room, fields);
+
+		return room;
 	}
 
 	/**
@@ -222,7 +226,9 @@ export class RoomService {
 		}
 
 		await this.roomRepository.update(room);
-		// Send signal to frontend
+		// Send signal to frontend.
+		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
+		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
 		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
 		return room;
 	}
@@ -345,8 +351,8 @@ export class RoomService {
 
 		const response = await this.roomRepository.find(queryOptions);
 
-		// Process rooms with expand logic
-		response.rooms = response.rooms.map((room) => MeetRoomHelper.processRoomExpandProperties(room, filters.expand));
+		const collapse = MeetRoomHelper.toCollapseProperties(filters.expand);
+		response.rooms = response.rooms.map((room) => MeetRoomHelper.applyCollapseProperties(room, collapse));
 
 		return response;
 	}
@@ -405,15 +411,17 @@ export class RoomService {
 	}
 
 	/**
-	 * Retrieves an OpenVidu room by its name.
+	 * Retrieves a specific meeting room by its unique identifier.
 	 *
 	 * @param roomId - The name of the room to retrieve.
-	 * @param fields - Optional fields to retrieve from the room.
-	 * @param expand - Optional comma-separated list of properties to expand.
-	 * @param checkPermissions - Whether to check permissions and remove sensitive properties. Defaults to false.
-	 * @returns A promise that resolves to an {@link MeetRoom} object (with expandable properties as stubs when not expanded).
+	 * @param opts - Optional parameters for retrieving the room:
+	 *   - fields: Array of fields to retrieve from the room
+	 *   - collapse: {@link MeetRoomCollapsible} list of properties to collapse into {@link ExpandableStub}
+	 *   - checkPermissions: Whether to check permissions and remove sensitive properties
+	 * @returns A promise that resolves to an {@link MeetRoom} object
 	 */
-	async getMeetRoom(roomId: string, fields?: string, expand?: string, checkPermissions = false): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, opts?: GetMeetRoomOptions): Promise<MeetRoom> {
+		const { collapse, checkPermissions, fields } = opts || {};
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
@@ -430,8 +438,7 @@ export class RoomService {
 			}
 		}
 
-		// Process expand
-		return MeetRoomHelper.processRoomExpandProperties(room, expand);
+		return MeetRoomHelper.applyCollapseProperties(room, collapse);
 	}
 
 	/**
@@ -458,7 +465,7 @@ export class RoomService {
 			);
 
 			// Check if there's an active meeting in the room and/or if it has recordings associated
-			const room = await this.getMeetRoom(roomId);
+			const room = await this.getMeetRoom(roomId, { fields: ['status'] });
 			const hasActiveMeeting = room.status === MeetRoomStatus.ACTIVE_MEETING;
 			const hasRecordings = await this.recordingService.hasRoomRecordings(roomId);
 
@@ -479,7 +486,7 @@ export class RoomService {
 				hasRecordings,
 				withMeeting,
 				withRecordings,
-				updatedRoom
+				MeetRoomHelper.applyCollapseProperties(updatedRoom!, ['config'])
 			);
 		} catch (error) {
 			this.logger.error(`Error deleting room '${roomId}': ${error}`);
@@ -851,7 +858,7 @@ export class RoomService {
 	 * @throws Error if room not found
 	 */
 	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, { fields: ['owner'] });
 		return room.owner === userId;
 	}
 
@@ -864,7 +871,7 @@ export class RoomService {
 	 * @throws Error if room not found
 	 */
 	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, { fields: ['anonymous'] });
 		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 		return secret === moderatorSecret || secret === speakerSecret;
 	}
@@ -928,7 +935,7 @@ export class RoomService {
 	 */
 	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
 		// Verify room exists first (throws 404 if not found)
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, { fields: ['owner'] });
 
 		if (user.role === MeetUserRole.ADMIN) {
 			// Admins can access all rooms

@@ -1,0 +1,15 @@
+name: X-Fields
+in: header
+description: >
+    Specifies which fields to include in the response for the room resource.
+    Provide a comma-separated list of field names to filter the response payload.
+
+    This header allows you to optimize API responses by requesting only the data you need,
+    reducing bandwidth usage and improving performance.
+required: false
+schema:
+    type: string
+examples:
+    basic:
+        value: 'roomId,roomName,accessUrl'
+        summary: Only return basic room information

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomsReqSchema,
+	CreateRoomHeadersSchema,
 	DeleteRoomReqSchema,
 	GetRoomQuerySchema,
 	nonEmptySanitizedRoomId,
@@ -14,13 +15,22 @@ import {
 } from '../../models/zod-schemas/room.schema.js';
 
 export const validateCreateRoomReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomOptionsSchema.safeParse(req.body);
+	const bodyResult = RoomOptionsSchema.safeParse(req.body);
 
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
+	if (!bodyResult.success) {
+		return rejectUnprocessableRequest(res, bodyResult.error);
 	}
 
-	req.body = data;
+	// Validate X-Fields and X-Expand headers
+	const headersResult = CreateRoomHeadersSchema.safeParse(req.headers);
+
+	if (!headersResult.success) {
+		return rejectUnprocessableRequest(res, headersResult.error);
+	}
+
+	req.body = bodyResult.data;
+	// Store validated headers in a custom property for controller access
+	(req as any).validatedHeaders = headersResult.data;
 	next();
 };
 

@@ -60,7 +60,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual({
 				...updatedConfig,
@@ -97,7 +97,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 
 			const expectedConfig: MeetRoomConfig = {
@@ -179,7 +179,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
 		});
@@ -221,12 +221,12 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toMatchObject(updatedConfig.recording.encoding);
 		});
 
-		it('should update room encoding from advanced options to preset', async () => {
+		it('should update room encoding config from advanced options to preset', async () => {
 			const recordingEncoding = {
 				video: {
 					width: 1280,
@@ -243,15 +243,19 @@ describe('Room API Tests', () => {
 					frequency: 44100
 				}
 			};
-			const createdRoom = await createRoom({
-				roomName: 'advanced-to-preset',
-				config: {
-					recording: {
-						enabled: true,
-						encoding: recordingEncoding
+			const createdRoom = await createRoom(
+				{
+					roomName: 'advanced-to-preset',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: recordingEncoding
+						}
 					}
-				}
-			});
+				},
+				undefined,
+				{ xExpand: 'config' }
+			);
 
 			expect(createdRoom.config.recording.encoding).toMatchObject(recordingEncoding);
 			// Update to preset encoding
@@ -266,22 +270,26 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60);
 		});
 
 		it('should update only encoding while keeping other recording config', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'partial-encoding-update',
-				config: {
-					recording: {
-						enabled: true,
-						layout: MeetRecordingLayout.SPEAKER,
-						encoding: MeetRecordingEncodingPreset.H264_720P_30
+			const createdRoom = await createRoom(
+				{
+					roomName: 'partial-encoding-update',
+					config: {
+						recording: {
+							enabled: true,
+							layout: MeetRecordingLayout.SPEAKER,
+							encoding: MeetRecordingEncodingPreset.H264_720P_30
+						}
 					}
-				}
-			});
+				},
+				undefined,
+				{ xExpand: 'config' }
+			);
 
 			expect(createdRoom.config.recording.layout).toBe(MeetRecordingLayout.SPEAKER);
 			expect(createdRoom.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_720P_30);
@@ -298,7 +306,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 
 			const expectedConfig = {

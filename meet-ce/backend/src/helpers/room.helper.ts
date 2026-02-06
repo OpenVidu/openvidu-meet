@@ -4,7 +4,8 @@ import { MEET_ENV } from '../environment.js';
 import {
 	MEET_ROOM_EXPANDABLE_FIELDS,
 	MeetRoomCollapsibleProperties,
-	MeetRoomExpandableProperties
+	MeetRoomExpandableProperties,
+	MeetRoomField
 } from '../models/room-request.js';
 
 export class MeetRoomHelper {
@@ -185,5 +186,37 @@ export class MeetRoomHelper {
 		});
 
 		return collapsedRoom;
+	}
+
+	/**
+	 * Filters a MeetRoom object to include only the specified fields.
+	 * By default, returns the full room object.
+	 * Only filters when fields are explicitly specified.
+	 *
+	 * @param room - The room object to filter
+	 * @param fields - Optional list of fields to include (e.g., ['roomId', 'roomName'])
+	 * @returns A MeetRoom object containing only the specified fields, or the full room if no fields are specified
+	 * @example
+	 * ```
+	 * // Filter to only roomId and roomName:
+	 * const filtered = MeetRoomHelper.applyFieldsFilter(room, ['roomId', 'roomName']);
+	 * // Result: { roomId: '123', roomName: 'My Room' }
+	 * ```
+	 */
+	static applyFieldsFilter(room: MeetRoom, fields?: MeetRoomField[]): MeetRoom {
+		// If no fields specified, return the full room
+		if (!room || !fields || fields.length === 0) {
+			return room;
+		}
+
+		const filteredRoom = {} as Record<string, unknown>;
+
+		for (const key of Object.keys(room)) {
+			if (fields.includes(key as MeetRoomField)) {
+				filteredRoom[key] = room[key as keyof MeetRoom];
+			}
+		}
+
+		return filteredRoom as unknown as MeetRoom;
 	}
 }

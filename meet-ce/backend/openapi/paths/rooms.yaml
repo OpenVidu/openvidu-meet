@@ -5,11 +5,20 @@
         description: >
             Creates a new OpenVidu Meet room.
             The room will be available for participants to join using the generated URLs.
+            <br/>
+            You can control the response format using custom headers:
+
+            - `X-Expand`: Include expanded properties (e.g., `config`) instead of stubs
+
+            - `X-Fields`: Filter which fields to include in the response for efficiency
         tags:
             - OpenVidu Meet - Rooms
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/x-fields-header.yaml'
+            - $ref: '../components/parameters/x-expand-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/create-room-request.yaml'
         responses:

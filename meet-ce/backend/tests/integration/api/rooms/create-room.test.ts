@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
@@ -167,6 +168,56 @@ describe('Room API Tests', () => {
 				expectedConfig,
 				validAutoDeletionDate
 			);
+		});
+
+		it('should create a room with collapsed config by default', async () => {
+			const room = await createRoom({
+				roomName: 'Collapsed Config Room'
+			});
+
+			expect(room.config).toBeDefined();
+			expect((room.config as any)._expandable).toBe(true);
+			expect((room.config as any)._href).toBe(
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}?expand=config`
+			);
+		});
+
+		it('should expand config when x-Expand header is provided', async () => {
+			const room = await createRoom(
+				{
+					roomName: 'Collapsed Config Room'
+				},
+				undefined,
+				{ xExpand: 'config' }
+			);
+
+			expect(room.config).toBeDefined();
+			expect((room.config as any)._expandable).toBeUndefined();
+			expect((room.config as any)._href).toBeUndefined();
+			expect(room.config.recording.layout).toBe(DEFAULT_RECORDING_LAYOUT);
+		});
+
+		it('should filter fields when x-Field header is provided', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomName' });
+
+			expect(room.roomName).toBeDefined();
+			expect(room.roomId).toBeUndefined();
+			expect(room.config).toBeUndefined();
+		});
+
+		it('should filter fields and expand config when both xFields and xExpand are provided', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'config', xExpand: 'config' });
+
+			expect(room.roomName).toBeUndefined();
+			expect(room.config).toBeDefined();
+			expect((room.config as any)._expandable).toBeUndefined();
+		});
+
+		it('should not includes config if filter fields are provided without config', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomName', xExpand: 'config' });
+
+			expect(room.roomName).toBeDefined();
+			expect(room.config).toBeUndefined();
 		});
 	});
 
@@ -457,11 +508,32 @@ describe('Room API Tests', () => {
 			};
 			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', 'expandable');
 			const response = await getRoom(room.roomId, undefined, 'config');
-			expectValidRoom(response.body, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', expectedConfig);
+			expectValidRoom(
+				response.body,
+				'Full Advanced Encoding Room',
+				'full_advanced_encoding_room',
+				expectedConfig
+			);
 		});
 	});
 
 	describe('Room Creation Validation failures', () => {
+		it('should fail when x-Expand header has invalid value', async () => {
+			const payload = {
+				roomName: 'Test Room with Invalid Expand Header'
+			};
+
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.set('x-Expand', 'invalidField')
+				.send(payload)
+				.expect(422);
+
+			expect(response.body.error).toContain('Unprocessable Entity');
+			expect(JSON.stringify(response.body.details)).toContain('Invalid expand properties.');
+		});
+
 		it('should fail when autoDeletionDate is negative', async () => {
 			const payload = {
 				autoDeletionDate: -5000,

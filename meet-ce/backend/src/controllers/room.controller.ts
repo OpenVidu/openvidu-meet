@@ -2,26 +2,42 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
-	MeetRoomFilters,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../models/error.model.js';
+import { MeetRoomExpandableProperties, MeetRoomField, MeetRoomFilters } from '../models/room-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
+
+interface RequestWithValidatedHeaders extends Request {
+	validatedHeaders?: {
+		'x-fields'?: MeetRoomField[];
+		'x-expand'?: MeetRoomExpandableProperties[];
+	};
+}
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const options: MeetRoomOptions = req.body;
+	const { validatedHeaders } = req as RequestWithValidatedHeaders;
+	const fields = validatedHeaders?.['x-fields'];
+	const expand = validatedHeaders?.['x-expand'];
 
 	try {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
 
-		const room = await roomService.createMeetRoom(options);
+		// Pass response options to service for consistent handling
+		const room = await roomService.createMeetRoom(options, {
+			fields,
+			collapse: MeetRoomHelper.toCollapseProperties(expand)
+		});
+
 		res.set('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
 		return res.status(201).json(room);
 	} catch (error) {
@@ -49,14 +65,22 @@ export const getRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	const { roomId } = req.params;
-	const fields = req.query.fields as string | undefined;
-	const expand = req.query.expand as string | undefined;
+	// Zod already validated and transformed to typed arrays
+	const { fields, expand } = req.query as {
+		fields?: MeetRoomField[];
+		expand?: MeetRoomExpandableProperties[];
+	};
 
 	try {
-		logger.verbose(`Getting room '${roomId}' with expand: ${expand || 'none'}`);
+		logger.verbose(`Getting room '${roomId}' with expand: ${expand?.join(',') || 'none'}`);
 
 		const roomService = container.get(RoomService);
-		const room = await roomService.getMeetRoom(roomId, fields, expand, true);
+		const collapse = MeetRoomHelper.toCollapseProperties(expand);
+		const room = await roomService.getMeetRoom(roomId, {
+			fields,
+			collapse,
+			checkPermissions: true
+		});
 
 		return res.status(200).json(room);
 	} catch (error) {
@@ -134,7 +158,7 @@ export const getRoomConfig = async (req: Request, res: Response) => {
 	logger.verbose(`Getting room config for room '${roomId}'`);
 
 	try {
-		const { config } = await roomService.getMeetRoom(roomId);
+		const { config } = await roomService.getMeetRoom(roomId, { fields: ['config'] });
 		return res.status(200).json(config);
 	} catch (error) {
 		handleError(res, error, `getting room config for room '${roomId}'`);

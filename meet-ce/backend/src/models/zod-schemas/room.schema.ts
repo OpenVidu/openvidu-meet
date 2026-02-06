@@ -450,6 +450,11 @@ export const GetRoomQuerySchema = z.object({
 	expand: expandSchema
 });
 
+export const CreateRoomHeadersSchema = z.object({
+	'x-fields': fieldsSchema,
+	'x-expand': expandSchema
+});
+
 export const DeleteRoomReqSchema = z.object({
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)

@@ -387,7 +387,32 @@ export const deleteAllUsers = async () => {
 
 // ROOM HELPERS
 
-export const createRoom = async (options: MeetRoomOptions = {}, accessToken?: string): Promise<MeetRoom> => {
+/**
+ * Creates a room with the specified options and optional headers for response customization.
+ *
+ * @param options - Room creation options (roomName, config, etc.)
+ * @param accessToken - Optional access token for authentication (uses API key if not provided)
+ * @param headers - Optional headers object supporting:
+ *                  - xFields: Comma-separated list of fields to include (e.g., 'roomId,roomName')
+ *                  - xExpand: Comma-separated list of properties to expand (e.g., 'config')
+ * @returns A Promise that resolves to the created MeetRoom
+ * @example
+ * ```
+ * // Create room with default collapsed config
+ * const room = await createRoom({ roomName: 'Test' });
+ *
+ * // Create room with specific fields only
+ * const room = await createRoom({ roomName: 'Test' }, undefined, { xFields: 'roomId,roomName' });
+ *
+ * // Create room with expanded config
+ * const room = await createRoom({ roomName: 'Test' }, undefined, { xExpand: 'config' });
+ * ```
+ */
+export const createRoom = async (
+	options: MeetRoomOptions = {},
+	accessToken?: string,
+	headers?: { xFields?: string; xExpand?: string }
+): Promise<MeetRoom> => {
 	checkAppIsRunning();
 
 	const req = request(app)
@@ -399,6 +424,15 @@ export const createRoom = async (options: MeetRoomOptions = {}, accessToken?: st
 		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	// Add optional headers for response customization
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExpand) {
+		req.set('x-expand', headers.xExpand);
 	}
 
 	const response = await req;
