@@ -1,4 +1,4 @@
-import { MeetRoom, MeetRoomStatus, SortAndPagination } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomMemberPermissions, MeetRoomStatus, SortAndPagination } from '@openvidu-meet/typings';
 
 /**
  * List of all valid fields that can be selected from a MeetRoom.
@@ -41,6 +41,18 @@ export type MeetRoomCollapsibleProperties = MeetRoomExpandableProperties;
  * Derived from MEET_ROOM_FIELDS array which is validated by TypeScript to match MeetRoom keys.
  */
 export type MeetRoomField = (typeof MEET_ROOM_FIELDS)[number];
+
+/**
+ * Sensitive fields of a MeetRoom that require specific permissions to be viewed.
+ */
+export const SENSITIVE_ROOM_FIELDS_BY_PERMISSION: Partial<Record<keyof MeetRoomMemberPermissions, MeetRoomField[]>> = {
+	canShareAccessLinks: ['anonymous']
+};
+
+export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELDS_BY_PERMISSION) as ReadonlyArray<[
+	keyof MeetRoomMemberPermissions,
+	MeetRoomField[]
+]>;
 
 /**
  * Filters for querying rooms with pagination, sorting, field selection, and expand support.

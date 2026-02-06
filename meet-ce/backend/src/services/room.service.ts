@@ -34,7 +34,10 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { MeetRoomFilters, MeetRoomResponseOptions } from '../models/room-request.js';
+import {
+	MeetRoomFilters,
+	MeetRoomResponseOptions
+} from '../models/room-request.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -422,7 +425,7 @@ export class RoomService {
 	 */
 	async getMeetRoom(roomId: string, responseOpts?: MeetRoomResponseOptions): Promise<MeetRoom> {
 		const { collapse, applyPermissionFiltering, fields } = responseOpts || {};
-		const room = await this.roomRepository.findByRoomId(roomId, fields);
+		let room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
 			this.logger.error(`Meet room with ID ${roomId} not found.`);
@@ -430,12 +433,8 @@ export class RoomService {
 		}
 
 		if (applyPermissionFiltering) {
-			// Remove anonymous access info if the authenticated room member does not have permission to share access links
 			const permissions = await this.getAuthenticatedRoomMemberPermissions(roomId);
-
-			if (room.anonymous && !permissions.canShareAccessLinks) {
-				delete (room as Partial<MeetRoom>).anonymous;
-			}
+			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 		}
 
 		return MeetRoomHelper.applyCollapseProperties(room, collapse);

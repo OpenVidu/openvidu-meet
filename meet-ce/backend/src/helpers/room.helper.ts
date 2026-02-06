@@ -1,11 +1,12 @@
-import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomMemberPermissions, MeetRoomOptions } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import {
 	MEET_ROOM_EXPANDABLE_FIELDS,
 	MeetRoomCollapsibleProperties,
 	MeetRoomExpandableProperties,
-	MeetRoomField
+	MeetRoomField,
+	SENSITIVE_ROOM_FIELDS_ENTRIES
 } from '../models/room-request.js';
 
 export class MeetRoomHelper {
@@ -218,5 +219,36 @@ export class MeetRoomHelper {
 		}
 
 		return filteredRoom as unknown as MeetRoom;
+	}
+
+	/**
+	 *  Applies permission filtering to a MeetRoom object by removing sensitive fields based on the provided permissions.
+	 * @param room
+	 * @param permissions
+	 * @returns
+	 */
+	static applyPermissionFiltering(room: MeetRoom, permissions: MeetRoomMemberPermissions): MeetRoom {
+		if (!room || !permissions || SENSITIVE_ROOM_FIELDS_ENTRIES.length === 0) {
+			return room;
+		}
+
+		let filteredRoom: MeetRoom | undefined;
+
+		for (const [permissionKey, fields] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
+			if (!fields?.length) {
+				continue;
+			}
+
+			if (permissions[permissionKey]) {
+				continue;
+			}
+
+			filteredRoom ??= { ...room };
+			fields.forEach((field) => {
+				delete (filteredRoom as Partial<MeetRoom>)[field];
+			});
+		}
+
+		return filteredRoom ?? room;
 	}
 }
