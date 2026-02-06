@@ -79,7 +79,7 @@ export const getRoom = async (req: Request, res: Response) => {
 		const room = await roomService.getMeetRoom(roomId, {
 			fields,
 			collapse,
-			checkPermissions: true
+			applyPermissionFiltering: true
 		});
 
 		return res.status(200).json(room);

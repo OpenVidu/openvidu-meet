@@ -34,7 +34,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { GetMeetRoomOptions, MeetRoomFilters } from '../models/room-request.js';
+import { MeetRoomFilters, MeetRoomResponseOptions } from '../models/room-request.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -71,13 +71,13 @@ export class RoomService {
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
 	 * @param {MeetRoomOptions} roomOptions - The options for creating the OpenVidu room.
-	 * @param {GetMeetRoomOptions} responseOpts - Options for controlling the response format (fields, collapse)
+	 * @param {MeetRoomResponseOptions} responseOpts - Options for controlling the response format (fields, collapse)
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
 	 *
 	 */
-	async createMeetRoom(roomOptions: MeetRoomOptions, responseOpts?: GetMeetRoomOptions): Promise<MeetRoom> {
+	async createMeetRoom(roomOptions: MeetRoomOptions, responseOpts?: MeetRoomResponseOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, anonymous } = roomOptions;
 		const { collapse, fields } = responseOpts || {};
 
@@ -414,14 +414,14 @@ export class RoomService {
 	 * Retrieves a specific meeting room by its unique identifier.
 	 *
 	 * @param roomId - The name of the room to retrieve.
-	 * @param opts - Optional parameters for retrieving the room:
+	 * @param responseOpts - Optional parameters for retrieving the room:
 	 *   - fields: Array of fields to retrieve from the room
 	 *   - collapse: {@link MeetRoomCollapsible} list of properties to collapse into {@link ExpandableStub}
-	 *   - checkPermissions: Whether to check permissions and remove sensitive properties
+	 *   - applyPermissionFiltering: Whether to check permissions for the room and remove sensitive properties if the requester doesn't have access
 	 * @returns A promise that resolves to an {@link MeetRoom} object
 	 */
-	async getMeetRoom(roomId: string, opts?: GetMeetRoomOptions): Promise<MeetRoom> {
-		const { collapse, checkPermissions, fields } = opts || {};
+	async getMeetRoom(roomId: string, responseOpts?: MeetRoomResponseOptions): Promise<MeetRoom> {
+		const { collapse, applyPermissionFiltering, fields } = responseOpts || {};
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
@@ -429,7 +429,7 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		if (checkPermissions) {
+		if (applyPermissionFiltering) {
 			// Remove anonymous access info if the authenticated room member does not have permission to share access links
 			const permissions = await this.getAuthenticatedRoomMemberPermissions(roomId);
 

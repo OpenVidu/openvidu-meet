@@ -65,9 +65,9 @@ export interface MeetRoomFilters extends SortAndPagination {
 }
 
 /**
- * Options for getting a MeetRoom
+ * Options for configuring the response MeetRoom REST API object
  */
-export interface GetMeetRoomOptions {
+export interface MeetRoomResponseOptions {
 	/**
 	 * Array of fields to include in the response.
 	 * If not specified, all fields are included.
@@ -80,9 +80,9 @@ export interface GetMeetRoomOptions {
 	collapse?: MeetRoomCollapsibleProperties[];
 	/**
 	 * Whether to check permissions for the room.
-	 * If true, will check permissions and remove fields that the requester doesn't have access to.
+	 * If true, sensitive properties will be removed from the response if the requester does not have permission to view them.
 	 */
-	checkPermissions?: boolean;
+	applyPermissionFiltering?: boolean;
 }
 
 /**
