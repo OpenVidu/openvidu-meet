@@ -147,7 +147,10 @@ export class MeetingLobbyService {
 			this._state.update((state) => ({ ...state, roomId }));
 
 			const [room] = await Promise.all([
-				this.roomService.getRoom(roomId),
+				this.roomService.getRoom(roomId, {
+					fields: ['roomName', 'status', 'config'],
+					expand: ['config']
+				}),
 				this.setBackButtonText(),
 				this.checkForRecordings(),
 				this.initializeParticipantName()

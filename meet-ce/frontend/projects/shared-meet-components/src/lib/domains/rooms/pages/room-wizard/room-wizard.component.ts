@@ -90,7 +90,10 @@ export class RoomWizardComponent implements OnInit {
 		if (!this.roomId) return;
 
 		try {
-			const { roomName, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId);
+			const { roomName, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId, {
+				fields: ['roomName', 'autoDeletionDate', 'config'],
+				expand: ['config']
+			});
 			this.existingRoomData = { roomName, autoDeletionDate, config };
 			if (this.existingRoomData) {
 				this.isBasicCreation.set(false);
@@ -131,7 +134,7 @@ export class RoomWizardComponent implements OnInit {
 	async createRoomBasic(roomName?: string) {
 		try {
 			// Create room with basic config including e2ee: false (default settings)
-			const { accessUrl } = await this.roomService.createRoom({ roomName });
+			const { accessUrl } = await this.roomService.createRoom({ roomName }, { fields: ['accessUrl'] });
 
 			// Extract the path and query parameters from the moderator URL and navigate to it
 			const url = new URL(accessUrl);
@@ -162,7 +165,7 @@ export class RoomWizardComponent implements OnInit {
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
-				const { accessUrl } = await this.roomService.createRoom(roomOptions);
+				const { accessUrl } = await this.roomService.createRoom(roomOptions, { fields: ['accessUrl'] });
 
 				// Extract the path and query parameters from the moderator URL and navigate to it
 				const url = new URL(accessUrl);

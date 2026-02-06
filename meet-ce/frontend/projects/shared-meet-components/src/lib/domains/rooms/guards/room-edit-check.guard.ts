@@ -20,7 +20,9 @@ export const checkEditableRoomGuard: CanActivateFn = async (route) => {
 	}
 
 	try {
-		const room = await roomService.getRoom(roomId);
+		const room = await roomService.getRoom(roomId, {
+			fields: ['status']
+		});
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			console.warn(`Cannot edit room ${roomId} - active meeting in progress`);

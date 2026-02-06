@@ -148,7 +148,8 @@ export class RoomsComponent implements OnInit {
 				maxItems: 50,
 				nextPageToken: !refresh ? this.nextPageToken : undefined,
 				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
+				sortOrder: filters.sortOrder,
+				fields: ['roomId', 'roomName', 'status', 'creationDate', 'accessUrl', 'autoDeletionDate']
 			};
 
 			// Apply room ID filter if provided

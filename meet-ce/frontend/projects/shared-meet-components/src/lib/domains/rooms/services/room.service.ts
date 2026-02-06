@@ -14,6 +14,7 @@ import {
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { HttpService } from '../../../shared/services/http.service';
+import { MeetRoomClientResponseOptions } from '../models/room-request';
 
 @Injectable({
 	providedIn: 'root'
@@ -36,8 +37,12 @@ export class RoomService {
 	 * @param options - The options for creating the room
 	 * @returns A promise that resolves to the created MeetRoom object
 	 */
-	async createRoom(options?: MeetRoomOptions): Promise<MeetRoom> {
-		return this.httpService.postRequest(this.ROOMS_API, options);
+	async createRoom(options?: MeetRoomOptions, responseOptions?: MeetRoomClientResponseOptions): Promise<MeetRoom> {
+		const headers: Record<string, string> = {
+			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
+			'X-Expand': responseOptions?.expand ? responseOptions.expand.join(',') : ''
+		};
+		return this.httpService.postRequest(this.ROOMS_API, options, headers);
 	}
 
 	/**
@@ -80,8 +85,17 @@ export class RoomService {
 	 * @param roomId - The unique identifier of the room
 	 * @return A promise that resolves to the MeetRoom object
 	 */
-	async getRoom(roomId: string): Promise<MeetRoom> {
-		const path = `${this.ROOMS_API}/${roomId}`;
+	async getRoom(roomId: string, responseOptions?: MeetRoomClientResponseOptions): Promise<MeetRoom> {
+		const queryParams = new URLSearchParams();
+		if (responseOptions?.fields) {
+			queryParams.set('fields', responseOptions.fields.join(','));
+		}
+		if (responseOptions?.expand) {
+			queryParams.set('expand', responseOptions.expand.join(','));
+		}
+		const queryString = queryParams.toString();
+		const path = `${this.ROOMS_API}/${roomId}${queryString ? `?${queryString}` : ''}`;
+
 		return this.httpService.getRequest(path);
 	}
 

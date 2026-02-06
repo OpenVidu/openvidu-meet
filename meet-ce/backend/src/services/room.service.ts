@@ -11,7 +11,6 @@ import {
 	MeetRoomFilters,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
-	MeetRoomResponseOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
@@ -37,6 +36,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 
+import { MeetRoomServerResponseOptions } from '../models/room-response.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -73,13 +73,13 @@ export class RoomService {
 	 * Creates an OpenVidu Meet room with the specified options.
 	 *
 	 * @param {MeetRoomOptions} roomOptions - The options for creating the OpenVidu room.
-	 * @param {MeetRoomResponseOptions} responseOpts - Options for controlling the response format (fields, collapse)
+	 * @param {MeetRoomServerResponseOptions} responseOpts - Options for controlling the response format (fields, collapse)
 	 * @returns {Promise<MeetRoom>} A promise that resolves to the created OpenVidu room.
 	 *
 	 * @throws {Error} If the room creation fails.
 	 *
 	 */
-	async createMeetRoom(roomOptions: MeetRoomOptions, responseOpts?: MeetRoomResponseOptions): Promise<MeetRoom> {
+	async createMeetRoom(roomOptions: MeetRoomOptions, responseOpts?: MeetRoomServerResponseOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, anonymous } = roomOptions;
 		const { collapse, fields } = responseOpts || {};
 
@@ -422,7 +422,7 @@ export class RoomService {
 	 *   - applyPermissionFiltering: Whether to check permissions for the room and remove sensitive properties if the requester doesn't have access
 	 * @returns A promise that resolves to an {@link MeetRoom} object
 	 */
-	async getMeetRoom(roomId: string, responseOpts?: MeetRoomResponseOptions): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string, responseOpts?: MeetRoomServerResponseOptions): Promise<MeetRoom> {
 		const { collapse, applyPermissionFiltering, fields } = responseOpts || {};
 		let room = await this.roomRepository.findByRoomId(roomId, fields);
 
