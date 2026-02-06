@@ -1,7 +1,8 @@
-import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
 import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
+import { MeetRecordingField, MeetRecordingFilters } from '../models/recording-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -76,8 +77,10 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
-	async findByRecordingId(recordingId: string, fields?: string): Promise<TRecording | null> {
-		const document = await this.findOne({ recordingId }, fields);
+	async findByRecordingId(recordingId: string, fields?: MeetRecordingField[]): Promise<TRecording | null> {
+		//!FIXME: This transform should be removed  because the findOne method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
+		const fieldsString = fields ? fields.join(',') : undefined;
+		const document = await this.findOne({ recordingId }, fieldsString);
 		return document ? this.toDomain(document) : null;
 	}
 
@@ -149,7 +152,8 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 				sortField,
 				sortOrder
 			},
-			fields
+			//! FIXME: This transform should be removed because the findMany method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
+			fields?.join(',')
 		);
 
 		return {

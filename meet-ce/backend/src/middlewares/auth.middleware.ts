@@ -214,7 +214,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 			} else {
 				// If the token has no memberId (anonymous access), validate that room roles/anonymous haven't been updated
 				const roomRepository = container.get(RoomRepository);
-				const room = await roomRepository.findByRoomId(roomId, 'rolesUpdatedAt');
+				const room = await roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']);
 
 				// If room not found or roles/anonymous were updated after token issuance, invalidate token
 				if (!room || iat < room.rolesUpdatedAt) {

@@ -1,6 +1,7 @@
-import { MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import { MeetRoomField, MeetRoomFilters } from '../models/room-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBasePath } from '../utils/html-injection.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
@@ -64,8 +65,10 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param fields - Comma-separated list of fields to include in the result
 	 * @returns The room or null if not found
 	 */
-	async findByRoomId(roomId: string, fields?: string): Promise<TRoom | null> {
-		const document = await this.findOne({ roomId }, fields);
+	async findByRoomId(roomId: string, fields?: MeetRoomField[]): Promise<TRoom | null> {
+		//!FIXME: This transform should be removed once the controller is updated to pass the fields as an array of MeetRoomField instead of a comma-separated string.
+		const fieldsString = fields ? fields.join(',') : undefined;
+		const document = await this.findOne({ roomId }, fieldsString);
 		return document ? this.enrichRoomWithBaseUrls(document) : null;
 	}
 
@@ -146,7 +149,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 				sortField,
 				sortOrder
 			},
-			fields
+			//! FIXME: This transform should be removed because the findMany method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
+			fields?.join(',')
 		);
 
 		return {

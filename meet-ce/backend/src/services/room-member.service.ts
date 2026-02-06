@@ -109,7 +109,7 @@ export class RoomMemberService {
 		}
 
 		// Compute effective permissions
-		const room = await this.roomService.getMeetRoom(roomId);
+		const room = await this.roomService.getMeetRoom(roomId, { fields: ['roles'] });
 		const effectivePermissions = this.computeEffectivePermissions(room.roles, baseRole, customPermissions);
 
 		const now = Date.now();
@@ -154,7 +154,7 @@ export class RoomMemberService {
 	 */
 	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
 		// Verify room exists first
-		await this.roomService.getMeetRoom(roomId);
+		await this.roomService.getMeetRoom(roomId, { fields: ['roomId'] });
 		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
 		return !!member;
 	}
@@ -219,7 +219,7 @@ export class RoomMemberService {
 		}
 
 		// Recompute effective permissions
-		const room = await this.roomService.getMeetRoom(roomId);
+		const room = await this.roomService.getMeetRoom(roomId, { fields: ['roles'] });
 		member.effectivePermissions = this.computeEffectivePermissions(
 			room.roles,
 			member.baseRole,
@@ -420,7 +420,7 @@ export class RoomMemberService {
 			} else {
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
 				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
-				const room = await this.roomService.getMeetRoom(roomId);
+				const room = await this.roomService.getMeetRoom(roomId, { fields: ['roles', 'anonymous'] });
 
 				// Check that anonymous access is enabled for the role
 				if (!room.anonymous[baseRole].enabled) {
@@ -492,7 +492,7 @@ export class RoomMemberService {
 		userId?: string
 	): Promise<string> {
 		// Check that room is open
-		const room = await this.roomService.getMeetRoom(roomId);
+		const room = await this.roomService.getMeetRoom(roomId, { fields: ['status', 'config'] });
 
 		if (room.status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
@@ -611,7 +611,7 @@ export class RoomMemberService {
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
 	protected async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
-		const room = await this.roomService.getMeetRoom(roomId);
+		const room = await this.roomService.getMeetRoom(roomId, { fields: ['roomId', 'anonymous'] });
 		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
 
 		switch (secret) {
@@ -780,8 +780,7 @@ export class RoomMemberService {
 		newRole: MeetRoomMemberRole
 	): Promise<void> {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomId);
-
+			const meetRoom = await this.roomService.getMeetRoom(roomId, { fields: ['roles', 'anonymous'] });
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const metadata: MeetRoomMemberTokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(
 				participant.metadata

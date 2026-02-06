@@ -1,7 +1,6 @@
 import {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
-	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
@@ -35,6 +34,7 @@ import {
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { MeetRecordingField, MeetRecordingFilters } from '../models/recording-request.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -453,9 +453,10 @@ export class RecordingService {
 	/**
 	 * Retrieves the recording information for a given recording ID.
 	 * @param recordingId - The unique identifier of the recording.
+	 * @param fields - Array of {@link MeetRecordingField} to include in the response
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
-	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
+	async getRecording(recordingId: string, fields?: MeetRecordingField[]): Promise<MeetRecordingInfo> {
 		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId, fields);
 
 		if (!recordingInfo) {

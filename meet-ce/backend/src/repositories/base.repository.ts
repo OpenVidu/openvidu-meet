@@ -38,6 +38,8 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			let query = this.model.findOne(filter);
 
 			if (fields) {
+				//!FIXME: This transform should be optimized to avoid unnecessary string manipulation
+
 				const fieldSelection = fields
 					.split(',')
 					.map((field) => field.trim())
@@ -127,6 +129,8 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 		// Apply field selection if specified
 		if (fields) {
+			// !FIXME: This transform should be optimized to avoid unnecessary string manipulation.
+			// !The argument method should ideally accept an array of fields instead of a comma-separated string to avoid this overhead.
 			// Convert comma-separated string to space-separated format for MongoDB select()
 			const fieldSelection = fields
 				.split(',')
