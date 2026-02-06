@@ -1,13 +1,15 @@
-import { MeetRoom, MeetRoomMemberPermissions, MeetRoomOptions } from '@openvidu-meet/typings';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MEET_ENV } from '../environment.js';
 import {
 	MEET_ROOM_EXPANDABLE_FIELDS,
+	MeetRoom,
 	MeetRoomCollapsibleProperties,
 	MeetRoomExpandableProperties,
 	MeetRoomField,
+	MeetRoomMemberPermissions,
+	MeetRoomOptions,
 	SENSITIVE_ROOM_FIELDS_ENTRIES
-} from '../models/room-request.js';
+} from '@openvidu-meet/typings';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MEET_ENV } from '../environment.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -234,7 +236,10 @@ export class MeetRoomHelper {
 
 		let filteredRoom: MeetRoom | undefined;
 
-		for (const [permissionKey, fields] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
+		for (const [permissionKey, fields] of SENSITIVE_ROOM_FIELDS_ENTRIES as [
+			keyof MeetRoomMemberPermissions,
+			(keyof MeetRoom)[]
+		][]) {
 			if (!fields?.length) {
 				continue;
 			}

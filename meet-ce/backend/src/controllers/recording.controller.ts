@@ -1,4 +1,4 @@
-import { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
 import archiver from 'archiver';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
@@ -10,7 +10,6 @@ import {
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { MeetRecordingField } from '../models/recording-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';

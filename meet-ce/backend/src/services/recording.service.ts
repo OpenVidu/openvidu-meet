@@ -1,6 +1,8 @@
 import {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
+	MeetRecordingField,
+	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
@@ -34,7 +36,6 @@ import {
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { MeetRecordingField, MeetRecordingFilters } from '../models/recording-request.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';

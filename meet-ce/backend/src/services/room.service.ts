@@ -8,8 +8,10 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
+	MeetRoomFilters,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
+	MeetRoomResponseOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
@@ -34,10 +36,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import {
-	MeetRoomFilters,
-	MeetRoomResponseOptions
-} from '../models/room-request.js';
+
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';

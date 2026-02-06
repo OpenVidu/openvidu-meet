@@ -1,6 +1,10 @@
-import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	MEET_RECORDING_FIELDS,
+	MeetRecordingField,
+	MeetRecordingLayout,
+	MeetRecordingStatus
+} from '@openvidu-meet/typings';
 import { z } from 'zod';
-import { MEET_RECORDING_FIELDS, MeetRecordingField } from '../recording-request.js';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
 
 // Shared fields validation schema for Recording entity

@@ -299,7 +299,7 @@ export class MeetingLobbyService {
 			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
 				roomId,
-				fields: 'recordingId'
+				fields: ['recordingId']
 			});
 
 			const hasRecordings = recordings.length > 0;

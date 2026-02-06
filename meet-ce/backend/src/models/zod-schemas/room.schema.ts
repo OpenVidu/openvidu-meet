@@ -1,4 +1,6 @@
 import {
+	MEET_ROOM_EXPANDABLE_FIELDS,
+	MEET_ROOM_FIELDS,
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
@@ -14,6 +16,8 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomExpandableProperties,
+	MeetRoomField,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
@@ -25,12 +29,6 @@ import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
-import {
-	MEET_ROOM_EXPANDABLE_FIELDS,
-	MEET_ROOM_FIELDS,
-	MeetRoomExpandableProperties,
-	MeetRoomField
-} from '../room-request.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>

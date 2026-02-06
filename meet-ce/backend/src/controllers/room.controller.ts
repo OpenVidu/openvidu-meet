@@ -2,6 +2,9 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
+	MeetRoomExpandableProperties,
+	MeetRoomField,
+	MeetRoomFilters,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { Request, Response } from 'express';
@@ -9,7 +12,6 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../models/error.model.js';
-import { MeetRoomExpandableProperties, MeetRoomField, MeetRoomFilters } from '../models/room-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';

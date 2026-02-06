@@ -1,7 +1,6 @@
-import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
-import { MeetRoomField, MeetRoomFilters } from '../models/room-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBasePath } from '../utils/html-injection.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';

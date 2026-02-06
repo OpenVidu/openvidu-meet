@@ -1,4 +1,5 @@
-import { MeetRecordingInfo, MeetRecordingStatus, SortAndPagination } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus } from './recording.model';
+import { SortAndPagination } from './sort-pagination';
 
 /**
  * List of all valid fields that can be selected from a MeetRecordingInfo.
