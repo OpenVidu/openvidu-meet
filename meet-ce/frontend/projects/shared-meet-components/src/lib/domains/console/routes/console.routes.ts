@@ -3,6 +3,7 @@ import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
 import { checkUserAuthenticatedGuard } from '../../auth/guards/auth.guard';
 import { recordingsConsoleRoutes } from '../../recordings/routes/recordings.routes';
 import { roomsConsoleRoutes } from '../../rooms/routes/rooms.routes';
+import { usersConsoleRoutes } from '../../users/routes/users.routes';
 
 /**
  * All console child routes configuration (includes console pages + rooms + recordings)
@@ -23,19 +24,7 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 	},
 	...roomsConsoleRoutes,
 	...recordingsConsoleRoutes,
-	{
-		route: {
-			path: 'users',
-			loadComponent: () => import('../pages/users/users.component').then((m) => m.UsersComponent)
-		},
-		navMetadata: {
-			label: 'Users',
-			route: 'users',
-			icon: 'group',
-			iconClass: 'ov-users material-symbols-outlined',
-			order: 4
-		}
-	},
+	...usersConsoleRoutes,
 	{
 		route: {
 			path: 'embedded',
@@ -88,4 +77,3 @@ export const consoleDomainRoutes: Route[] = [
 		]
 	}
 ];
-

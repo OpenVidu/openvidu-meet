@@ -11,4 +11,5 @@ export * from './lib/domains/console';
 export * from './lib/domains/meeting';
 export * from './lib/domains/recordings';
 export * from './lib/domains/rooms';
+export * from './lib/domains/users';
 

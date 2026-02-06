@@ -12,10 +12,10 @@
 			<div class="loading-content">
 				<div class="loading-header">
 					<div class="loading-title">
-						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
-						<h1>Loading Configuration</h1>
+						<mat-icon class="ov-users-icon loading-icon">group</mat-icon>
+						<h1>Loading Users</h1>
 					</div>
-					<p class="loading-subtitle">Please wait while we load your security configurations...</p>
+					<p class="loading-subtitle">Please wait while we fetch registered users...</p>
 				</div>
 
 				<div class="loading-spinner-container">
@@ -25,22 +25,6 @@
 		</div>
 	} @else {
 		<div class="page-content">
-			<!-- Branding Section -->
-			<!-- <mat-card class="section-card branding-section">
-				<mat-card-header>
-					<div mat-card-avatar>
-						<mat-icon class="section-icon">palette</mat-icon>
-					</div>
-					<mat-card-title>Branding</mat-card-title>
-				</mat-card-header>
-
-				<mat-divider class="section-divider"></mat-divider>
-
-				<mat-card-content>
-					<ov-logo-selector></ov-logo-selector>
-				</mat-card-content>
-			</mat-card> -->
-
 			<!-- Users Section -->
 			<mat-card class="section-card users-section">
 				<mat-card-header class="users-header">
@@ -51,27 +35,6 @@
 				</mat-card-header>
 
 				<mat-card-content>
-					<!-- <div class="form-section">
-						<div class="form-field-header">
-							<h3>User Authentication</h3>
-							<ov-pro-feature-badge class="users-pro-badge"></ov-pro-feature-badge>
-						</div>
-						<p class="field-description">Choose how users will authenticate to access OpenVidu Meet.</p>
-						<mat-form-field
-							subscriptSizing="dynamic"
-							appearance="outline"
-							class="user-management-select-field"
-						>
-							<mat-select [value]="'single'">
-								<mat-option value="single">Single user</mat-option>
-								<mat-option value="multiusers" [disabled]="true">
-									Multi-user (credentials & optional OAuth)
-								</mat-option>
-								<mat-option value="oauth" [disabled]="true">Multi-user (only OAuth)</mat-option>
-							</mat-select>
-						</mat-form-field>
-					</div> -->
-
 					<!-- Change Admin Password -->
 					<form [formGroup]="adminCredentialsForm" (ngSubmit)="onSaveAdminCredentials()">
 						<div class="form-section">
@@ -84,11 +47,11 @@
 							</div>
 
 							<div class="admin-auth-form">
-								<!-- Username Field -->
-								<mat-form-field subscriptSizing="dynamic" appearance="outline" class="username-field">
-									<mat-label>Administrator Username</mat-label>
-									<input matInput type="text" formControlName="username" placeholder="admin" />
-									<mat-hint>This is your username to access the administration panel</mat-hint>
+								<!-- User ID Field -->
+								<mat-form-field subscriptSizing="dynamic" appearance="outline" class="user-id-field">
+									<mat-label>Administrator User ID</mat-label>
+									<input matInput type="text" formControlName="userId" placeholder="admin" />
+									<mat-hint>This is your user ID to access the administration panel</mat-hint>
 								</mat-form-field>
 
 								<!-- Current Password Field -->

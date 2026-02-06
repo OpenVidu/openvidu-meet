@@ -17,11 +17,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-// import { ProFeatureBadgeComponent } from '../components';
-import { AuthMode } from '@openvidu-meet/typings';
-import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
 	selector: 'ov-users',
@@ -36,7 +34,6 @@ import { AuthService } from '../../../auth/services/auth.service';
 		MatProgressSpinnerModule,
 		MatDividerModule,
 		ReactiveFormsModule
-		// ProFeatureBadgeComponent
 	],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss'
@@ -49,35 +46,17 @@ export class UsersComponent implements OnInit {
 	showConfirmPassword = signal(false);
 
 	adminCredentialsForm = new FormGroup({
-		username: new FormControl({ value: '', disabled: true }, [Validators.required]),
+		userId: new FormControl({ value: '', disabled: true }, [Validators.required]),
 		currentPassword: new FormControl('', [Validators.required]),
 		newPassword: new FormControl('', [Validators.required, Validators.minLength(5)]),
 		confirmPassword: new FormControl('', [Validators.required])
 	});
-	accessSettingsForm = new FormGroup({
-		authModeToAccessRoom: new FormControl(AuthMode.NONE, [Validators.required])
-	});
-
-	// Auth mode options for the select dropdown
-	authModeOptions = [
-		{ value: AuthMode.NONE, label: 'Nobody' },
-		{ value: AuthMode.MODERATORS_ONLY, label: 'Only moderators' },
-		{ value: AuthMode.ALL_USERS, label: 'Everyone' }
-	];
-
-	hasAccessSettingsChanges = signal(false);
-	private initialAccessSettingsFormValue: any = null;
 
 	constructor(
-		private configService: GlobalConfigService,
 		private authService: AuthService,
+		private userService: UserService,
 		private notificationService: NotificationService
 	) {
-		// Track form changes
-		this.accessSettingsForm.valueChanges.subscribe(() => {
-			this.checkForAccessSettingsChanges();
-		});
-
 		// Clear invalid password error when user starts typing
 		this.adminCredentialsForm.get('currentPassword')?.valueChanges.subscribe(() => {
 			const control = this.adminCredentialsForm.get('currentPassword');
@@ -106,8 +85,7 @@ export class UsersComponent implements OnInit {
 
 	async ngOnInit() {
 		this.isLoading.set(true);
-		await this.loadAdminUsername();
-		await this.loadAccessSettings();
+		await this.loadAdminUserId();
 		this.isLoading.set(false);
 
 		// Add custom validator for new password to prevent same password
@@ -117,29 +95,15 @@ export class UsersComponent implements OnInit {
 		this.adminCredentialsForm.get('confirmPassword')?.addValidators(this.confirmPasswordValidator.bind(this));
 	}
 
-	private async loadAdminUsername() {
-		const username = await this.authService.getUsername();
-		if (!username) {
-			console.error('Admin username not found');
-			this.notificationService.showSnackbar('Failed to load admin username');
+	private async loadAdminUserId() {
+		const userId = await this.authService.getUserId();
+		if (!userId) {
+			console.error('Admin user ID not found');
+			this.notificationService.showSnackbar('Failed to load admin user ID');
 			return;
 		}
 
-		this.adminCredentialsForm.get('username')?.setValue(username);
-	}
-
-	private async loadAccessSettings() {
-		try {
-			const authMode = await this.configService.getAuthModeToAccessRoom();
-			this.accessSettingsForm.get('authModeToAccessRoom')?.setValue(authMode);
-
-			// Store initial values after loading
-			this.initialAccessSettingsFormValue = this.accessSettingsForm.value;
-			this.hasAccessSettingsChanges.set(false);
-		} catch (error) {
-			console.error('Error loading security config:', error);
-			this.notificationService.showSnackbar('Failed to load security config');
-		}
+		this.adminCredentialsForm.get('userId')?.setValue(userId);
 	}
 
 	private newPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -164,30 +128,20 @@ export class UsersComponent implements OnInit {
 		return newPassword === confirmPassword ? null : { passwordMismatch: true };
 	}
 
-	private checkForAccessSettingsChanges() {
-		if (!this.initialAccessSettingsFormValue) {
-			return;
-		}
-
-		const currentValue = this.accessSettingsForm.value;
-		const hasChanges = JSON.stringify(currentValue) !== JSON.stringify(this.initialAccessSettingsFormValue);
-		this.hasAccessSettingsChanges.set(hasChanges);
-	}
-
 	async onSaveAdminCredentials() {
 		if (this.adminCredentialsForm.invalid) {
 			return;
 		}
 
-		const { username, currentPassword, newPassword } = this.adminCredentialsForm.value;
+		const { userId, currentPassword, newPassword } = this.adminCredentialsForm.value;
 
 		try {
-			await this.authService.changePassword(currentPassword!, newPassword!);
+			await this.userService.changePassword(currentPassword!, newPassword!);
 			this.notificationService.showSnackbar('Admin credentials updated successfully');
 
 			// Reset the form
 			this.adminCredentialsForm.reset({
-				username: username,
+				userId,
 				currentPassword: '',
 				newPassword: '',
 				confirmPassword: ''
@@ -210,29 +164,6 @@ export class UsersComponent implements OnInit {
 			} else {
 				this.notificationService.showSnackbar('Failed to save admin credentials');
 			}
-		}
-	}
-
-	async onSaveAccessSettings() {
-		if (this.accessSettingsForm.invalid) {
-			return;
-		}
-
-		const formData = this.accessSettingsForm.value;
-
-		try {
-			const securityConfig = await this.configService.getSecurityConfig();
-			securityConfig.authentication.authModeToAccessRoom = formData.authModeToAccessRoom!;
-
-			await this.configService.saveSecurityConfig(securityConfig);
-			this.notificationService.showSnackbar('Access & Permissions settings saved successfully');
-
-			// Update initial values after successful save
-			this.initialAccessSettingsFormValue = this.accessSettingsForm.value;
-			this.hasAccessSettingsChanges.set(false);
-		} catch (error) {
-			console.error('Error saving access permissions:', error);
-			this.notificationService.showSnackbar('Failed to save Access & Permissions settings');
 		}
 	}
 
