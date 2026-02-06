@@ -1,6 +1,11 @@
 import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import {
+	MEET_ROOM_EXPANDABLE_FIELDS,
+	MeetRoomCollapsibleProperties,
+	MeetRoomExpandableProperties
+} from '../models/room-request.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -118,10 +123,31 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Processes a room to replace non-expanded properties with stubs.
+	 *  Determines which properties of a MeetRoom should be collapsed into stubs based on the provided expandable properties.
+	 *  By default, if no expandable properties are specified, the 'config' property will be collapsed.
+	 * @param expandableProps
+	 * @returns An array of MeetRoomCollapsibleProperties that should be collapsed into stubs when returning a MeetRoom object.
+	 */
+	static toCollapseProperties(expand?: MeetRoomExpandableProperties[]): MeetRoomCollapsibleProperties[] {
+		// If not expand provided, collapse all collapsible properties by default
+		if (!expand || expand.length === 0) {
+			return [...MEET_ROOM_EXPANDABLE_FIELDS];
+		}
+
+		// Return the properties that are not included in the expand array, but only those that are actually expandable
+		return MEET_ROOM_EXPANDABLE_FIELDS.filter((prop) => !expand.includes(prop));
+	}
+
+	/**
+	 * Processes a room to collapse specified properties into stubs.
+	 * By default, returns the full room object.
+	 * Only collapses properties when explicitly specified in the collapse parameter.
 	 *
+	 * @param room - The room object to process
+	 * @param props - Optional list of properties to collapse (e.g., ['config'])
 	 * @example
 	 * ```
+	 * // Collapse config:
 	 * 	{
 	 * 		config: {
 	 * 			_expandable: true,
@@ -130,21 +156,34 @@ export class MeetRoomHelper {
 	 * 	}
 	 * ```
 	 */
-	static processRoomExpandProperties(room: MeetRoom, expand?: string): MeetRoom {
-		const expandProps = expand ? expand.split(',').map((p) => p.trim()) : [];
-		const processed = { ...room };
-		const { roomId } = room;
-		const baseUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId || room.roomId}`;
-
-		// Replace config with stub if not expanded
-		if (!expandProps.includes('config')) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(processed as any).config = {
-				_expandable: true,
-				_href: `${baseUrl}?expand=config`
-			};
+	static applyCollapseProperties(room: MeetRoom, props?: MeetRoomCollapsibleProperties[]): MeetRoom {
+		// If no collapse specified, return the full room
+		if (!room || !props || props.length === 0) {
+			return room;
 		}
 
-		return processed;
+		// Filter the props to only those that exist in the room object and are not undefined
+		const existingProps = props.filter(
+			(prop) => Object.prototype.hasOwnProperty.call(room, prop) && room[prop] !== undefined
+		);
+
+		// If none of the specified props exist in the room, return the full room without modification
+		if (existingProps.length === 0) {
+			return room;
+		}
+
+		const collapsedRoom = { ...room };
+		const { roomId } = room;
+		const baseUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`;
+
+		existingProps.forEach((prop) => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(collapsedRoom as any)[prop] = {
+				_expandable: true,
+				_href: `${baseUrl}?expand=${prop}`
+			};
+		});
+
+		return collapsedRoom;
 	}
 }

@@ -1,6 +1,32 @@
-import { MeetRecordingFilters, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { z } from 'zod';
+import { MEET_RECORDING_FIELDS, MeetRecordingField } from '../recording-request.js';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
+
+// Shared fields validation schema for Recording entity
+// Validates and transforms comma-separated string to typed array
+// Only allows fields that exist in MEET_RECORDING_FIELDS
+const fieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		if (!value) return undefined;
+
+		const requested = value
+			.split(',')
+			.map((field) => field.trim())
+			.filter((field) => field !== '');
+
+		// Filter: only keep valid fields that exist in MeetRecordingInfo
+		const validFields = requested.filter((field) =>
+			MEET_RECORDING_FIELDS.includes(field as MeetRecordingField)
+		) as MeetRecordingField[];
+
+		// Deduplicate
+		const unique = Array.from(new Set(validFields));
+
+		return unique.length > 0 ? unique : undefined;
+	});
 
 export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
@@ -59,11 +85,11 @@ export const StartRecordingReqSchema = z.object({
 		.optional()
 });
 
-export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
+export const RecordingFiltersSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId').optional(),
 	roomName: z.string().optional(),
 	status: z.nativeEnum(MeetRecordingStatus).optional(),
-	fields: z.string().optional(),
+	fields: fieldsSchema.optional(),
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')

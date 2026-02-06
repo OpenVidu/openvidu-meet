@@ -1,7 +1,5 @@
-import { ExpandableFilters } from './expand.js';
 import { MeetRoomMemberPermissions } from './permissions/meet-permissions.js';
 import { MeetRoomConfig } from './room-config.js';
-import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * Options for creating a room.
@@ -232,25 +230,6 @@ export enum MeetRoomDeletionPolicyWithRecordings {
 	 * Fail the deletion if there are ongoing or previous recordings.
 	 */
 	FAIL = 'fail'
-}
-
-/**
- * Filters for querying rooms with pagination, sorting, field selection, and expand support.
- */
-export interface MeetRoomFilters extends SortAndPagination, ExpandableFilters {
-	/**
-	 * Filter rooms by name (case-insensitive partial match)
-	 */
-	roomName?: string;
-	/**
-	 * Filter rooms by status
-	 */
-	status?: MeetRoomStatus;
-	/**
-	 * Comma-separated list of fields to include in the response
-	 */
-	fields?: string;
-	// expand inherited from ExpandableFilters
 }
 
 export enum MeetRoomDeletionSuccessCode {

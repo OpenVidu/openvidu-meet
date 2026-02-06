@@ -10,6 +10,7 @@ import {
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import { MeetRecordingField } from '../models/recording-request.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
@@ -99,7 +100,7 @@ export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const fields = req.query.fields as string | undefined;
+	const { fields } = req.query as { fields?: MeetRecordingField[] };
 
 	logger.info(`Getting recording '${recordingId}'`);
 

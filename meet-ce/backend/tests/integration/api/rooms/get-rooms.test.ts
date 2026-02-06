@@ -72,8 +72,10 @@ describe('Room API Tests', () => {
 		});
 
 		it('should return a list of rooms applying status filter', async () => {
-			await setupSingleRoom(true); // Active meeting
-			await setupSingleRoom(false); // Open
+			await Promise.all([
+				setupSingleRoom(true), // Active meeting
+				setupSingleRoom(false) // Open
+			]);
 
 			const response = await getRooms({ status: MeetRoomStatus.ACTIVE_MEETING });
 			const { rooms } = response.body;

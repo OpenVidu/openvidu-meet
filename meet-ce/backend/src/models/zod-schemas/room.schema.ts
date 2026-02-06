@@ -14,7 +14,6 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
@@ -26,6 +25,12 @@ import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
+import {
+	MEET_ROOM_EXPANDABLE_FIELDS,
+	MEET_ROOM_FIELDS,
+	MeetRoomExpandableProperties,
+	MeetRoomField
+} from '../room-request.js';
 import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
@@ -367,6 +372,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 });
 
 // Shared expand validation schema for Room entity
+// Validates and transforms comma-separated string to typed array
 const expandSchema = z
 	.string()
 	.optional()
@@ -374,30 +380,55 @@ const expandSchema = z
 		(value) => {
 			if (!value) return true;
 
-			const allowed = ['config'];
+			const allowed = MEET_ROOM_EXPANDABLE_FIELDS;
 			const requested = value.split(',').map((p) => p.trim());
 
-			return requested.every((p) => allowed.includes(p));
+			return requested.every((p) => allowed.includes(p as MeetRoomExpandableProperties));
 		},
 		{
-			message: 'Invalid expand properties. Valid options: config'
+			message: `Invalid expand properties. Valid options: ${MEET_ROOM_EXPANDABLE_FIELDS.join(', ')}`
 		}
 	)
 	.transform((value) => {
-		// Filter and clean expand values
+		// Transform to typed array of MeetRoomExpandableProperties
 		if (!value) return undefined;
 
-		const allowed = ['config'];
+		const allowed = MEET_ROOM_EXPANDABLE_FIELDS;
 		const requested = value.split(',').map((p) => p.trim());
-		const valid = requested.filter((p) => allowed.includes(p));
+		const valid = requested.filter((p) => allowed.includes(p as MeetRoomExpandableProperties));
 
-		return valid.length > 0 ? valid.join(',') : undefined;
+		return valid.length > 0 ? (valid as MeetRoomExpandableProperties[]) : undefined;
 	});
 
-export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
+// Shared fields validation schema for Room entity
+// Validates and transforms comma-separated string to typed array
+// Only allows fields that exist in MEET_ROOM_FIELDS
+const fieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		if (!value) return undefined;
+
+		const requested = value
+			.split(',')
+			.map((field) => field.trim())
+			.filter((field) => field !== '');
+
+		// Filter: only keep valid fields that exist in MeetRoom
+		const validFields = requested.filter((field) =>
+			MEET_ROOM_FIELDS.includes(field as MeetRoomField)
+		) as MeetRoomField[];
+
+		// Deduplicate
+		const unique = Array.from(new Set(validFields));
+
+		return unique.length > 0 ? unique : [];
+	});
+
+export const RoomFiltersSchema = z.object({
 	roomName: z.string().optional(),
 	status: z.nativeEnum(MeetRoomStatus).optional(),
-	fields: z.string().optional(),
+	fields: fieldsSchema,
 	expand: expandSchema,
 	maxItems: z.coerce
 		.number()
@@ -415,7 +446,7 @@ export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
 });
 
 export const GetRoomQuerySchema = z.object({
-	fields: z.string().optional(),
+	fields: fieldsSchema,
 	expand: expandSchema
 });
 

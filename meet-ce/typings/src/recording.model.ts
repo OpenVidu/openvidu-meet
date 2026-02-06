@@ -1,4 +1,3 @@
-import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * Recording status enumeration.
@@ -150,26 +149,4 @@ export interface MeetRecordingInfo {
 	errorCode?: number;
 	error?: string;
 	details?: string;
-}
-
-/**
- * Filters for querying recordings with pagination, sorting and field selection.
- */
-export interface MeetRecordingFilters extends SortAndPagination {
-	/**
-	 * Filter recordings by room ID (exact match)
-	 */
-	roomId?: string;
-	/**
-	 * Filter recordings by room name (case-insensitive partial match)
-	 */
-	roomName?: string;
-	/**
-	 * Filter recordings by status
-	 */
-	status?: MeetRecordingStatus;
-	/**
-	 * Comma-separated list of fields to include in the response
-	 */
-	fields?: string;
 }
