@@ -1,40 +1,33 @@
 import { inject, Injectable } from '@angular/core';
 import {
 	MeetRoom,
+	MeetRoomAnonymousConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomMemberRoleAndPermissions,
 	MeetRoomOptions,
+	MeetRoomRolesConfig,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { HttpService } from '../../../shared/services/http.service';
 
-/**
- * RoomService - Persistence Layer for Room Data
- *
- * This service acts as a PERSISTENCE LAYER for room-related data and CRUD operations.
- *
- * Responsibilities:
- * - Persist room data (roomId, roomSecret) in SessionStorage for page refresh/reload
- * - Automatically sync persisted data to MeetingContextService (Single Source of Truth)
- * - Provide HTTP API methods for room CRUD operations
- * - Load and update room configuration
- */
 @Injectable({
 	providedIn: 'root'
 })
 export class RoomService {
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
 	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
+
 	protected httpService: HttpService = inject(HttpService);
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
+
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
+
 	constructor() {}
 
 	/**
@@ -48,9 +41,9 @@ export class RoomService {
 	}
 
 	/**
-	 * Lists rooms with optional filters for pagination and fields.
+	 * Lists rooms with optional filters.
 	 *
-	 * @param filters - Optional filters for pagination and fields
+	 * @param filters - Optional filters
 	 * @return A promise that resolves to an object containing rooms and pagination info
 	 */
 	async listRooms(filters?: MeetRoomFilters): Promise<{
@@ -65,29 +58,17 @@ export class RoomService {
 
 		if (filters) {
 			const queryParams = new URLSearchParams();
-			if (filters.roomName) {
-				queryParams.set('roomName', filters.roomName);
-			}
-			if (filters.status) {
-				queryParams.set('status', filters.status);
-			}
-			if (filters.fields) {
-				queryParams.set('fields', filters.fields);
-			}
-			if (filters.maxItems) {
-				queryParams.set('maxItems', filters.maxItems.toString());
-			}
-			if (filters.nextPageToken) {
-				queryParams.set('nextPageToken', filters.nextPageToken);
-			}
-			if (filters.sortField) {
-				queryParams.set('sortField', filters.sortField);
-			}
-			if (filters.sortOrder) {
-				queryParams.set('sortOrder', filters.sortOrder);
-			}
 
-			path += `?${queryParams.toString()}`;
+			Object.entries(filters).forEach(([key, value]) => {
+				if (value) {
+					queryParams.set(key, value.toString());
+				}
+			});
+
+			const queryString = queryParams.toString();
+			if (queryString) {
+				path += `?${queryString}`;
+			}
 		}
 
 		return this.httpService.getRequest(path);
@@ -105,6 +86,48 @@ export class RoomService {
 	}
 
 	/**
+	 * Retrieves the config for a specific room.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @return A promise that resolves to the MeetRoomConfig object
+	 */
+	async getRoomConfig(roomId: string): Promise<MeetRoomConfig> {
+		const path = `${this.ROOMS_API}/${roomId}/config`;
+		return this.httpService.getRequest<MeetRoomConfig>(path);
+	}
+
+	/**
+	 * Loads the room config and updates the feature configuration service.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 */
+	async loadRoomConfig(roomId: string): Promise<void> {
+		this.log.d('Fetching room config for roomId:', roomId);
+
+		try {
+			const config = await this.getRoomConfig(roomId);
+			this.featureConfService.setRoomConfig(config);
+			this.log.d('Room config loaded:', config);
+		} catch (error) {
+			this.log.e('Error loading room config', error);
+			throw new Error('Failed to load room config');
+		}
+	}
+
+	/**
+	 * Saves new room config.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param config - The room config to be saved.
+	 * @returns A promise that resolves when the config have been saved.
+	 */
+	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<void> {
+		this.log.d('Saving room config', config);
+		const path = `${this.ROOMS_API}/${roomId}/config`;
+		await this.httpService.putRequest(path, { config });
+	}
+
+	/**
 	 * Updates the status of a room.
 	 *
 	 * @param roomId - The unique identifier of the room
@@ -114,6 +137,30 @@ export class RoomService {
 	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ message: string; room: MeetRoom }> {
 		const path = `${this.ROOMS_API}/${roomId}/status`;
 		return this.httpService.putRequest(path, { status });
+	}
+
+	/**
+	 * Updates the roles permissions of a room.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param rolesConfig - The new roles configuration to be set
+	 * @returns A promise that resolves when the roles configuration has been updated
+	 */
+	async updateRoomRoles(roomId: string, rolesConfig: MeetRoomRolesConfig): Promise<void> {
+		const path = `${this.ROOMS_API}/${roomId}/roles`;
+		return this.httpService.putRequest(path, { roles: rolesConfig });
+	}
+
+	/**
+	 * Updates the anonymous access configuration of a room.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param anonymousConfig - The new anonymous access configuration to be set
+	 * @returns A promise that resolves when the anonymous access configuration has been updated
+	 */
+	async updateRoomAnonymous(roomId: string, anonymousConfig: MeetRoomAnonymousConfig): Promise<void> {
+		const path = `${this.ROOMS_API}/${roomId}/anonymous`;
+		return this.httpService.putRequest(path, { anonymous: anonymousConfig });
 	}
 
 	/**
@@ -164,65 +211,5 @@ export class RoomService {
 
 		const path = `${this.ROOMS_API}?${queryParams.toString()}`;
 		return this.httpService.deleteRequest(path);
-	}
-
-	/**
-	 * Retrieves the config for a specific room.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 * @return A promise that resolves to the MeetRoomConfig object
-	 */
-	async getRoomConfig(roomId: string): Promise<MeetRoomConfig> {
-		this.log.d('Fetching room config for roomId:', roomId);
-
-		try {
-			const path = `${this.ROOMS_API}/${roomId}/config`;
-			const config = await this.httpService.getRequest<MeetRoomConfig>(path);
-			return config;
-		} catch (error) {
-			this.log.e('Error fetching room config', error);
-			throw new Error(`Failed to fetch room config for roomId: ${roomId}`);
-		}
-	}
-
-	/**
-	 * Loads the room config and updates the feature configuration service.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 */
-	async loadRoomConfig(roomId: string): Promise<void> {
-		try {
-			const config = await this.getRoomConfig(roomId);
-			this.featureConfService.setRoomConfig(config);
-			this.log.d('Room config loaded:', config);
-		} catch (error) {
-			this.log.e('Error loading room config', error);
-			throw new Error('Failed to load room config');
-		}
-	}
-
-	/**
-	 * Saves new room config.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 * @param config - The room config to be saved.
-	 * @returns A promise that resolves when the config have been saved.
-	 */
-	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<void> {
-		this.log.d('Saving room config', config);
-		const path = `${this.ROOMS_API}/${roomId}/config`;
-		await this.httpService.putRequest(path, { config });
-	}
-
-	/**
-	 * Retrieves the role and permissions for a specified room and secret.
-	 *
-	 * @param roomId - The unique identifier of the room
-	 * @param secret - The secret parameter for the room
-	 * @returns A promise that resolves to an object containing the role and permissions
-	 */
-	async getRoomMemberRoleAndPermissions(roomId: string, secret: string): Promise<MeetRoomMemberRoleAndPermissions> {
-		const path = `${this.INTERNAL_ROOMS_API}/${roomId}/roles/${secret}`;
-		return this.httpService.getRequest(path);
 	}
 }

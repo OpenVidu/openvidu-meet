@@ -12,24 +12,24 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-    selector: 'ov-login',
-    imports: [
-        MatFormFieldModule,
-        ReactiveFormsModule,
-        MatInputModule,
-        MatButtonModule,
-        FormsModule,
-        MatCardModule,
-        MatIconModule,
-        MatTooltipModule,
-        RouterModule
-    ],
-    templateUrl: './login.component.html',
-    styleUrl: './login.component.scss'
+	selector: 'ov-login',
+	imports: [
+		MatFormFieldModule,
+		ReactiveFormsModule,
+		MatInputModule,
+		MatButtonModule,
+		FormsModule,
+		MatCardModule,
+		MatIconModule,
+		MatTooltipModule,
+		RouterModule
+	],
+	templateUrl: './login.component.html',
+	styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({
-		username: new FormControl('', [Validators.required]),
+		userId: new FormControl('', [Validators.required]),
 		password: new FormControl('', [Validators.required])
 	});
 
@@ -54,16 +54,16 @@ export class LoginComponent implements OnInit {
 
 	async login() {
 		this.loginErrorMessage = undefined;
-		const { username, password } = this.loginForm.value;
+		const { userId, password } = this.loginForm.value;
 
 		try {
-			await this.authService.login(username!, password!);
+			await this.authService.login(userId!, password!);
 			await this.navigationService.redirectTo(this.redirectTo);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
 				this.loginErrorMessage = 'Too many login attempts. Please try again later';
 			} else {
-				this.loginErrorMessage = 'Invalid username or password';
+				this.loginErrorMessage = 'Invalid user ID or password';
 			}
 		}
 	}

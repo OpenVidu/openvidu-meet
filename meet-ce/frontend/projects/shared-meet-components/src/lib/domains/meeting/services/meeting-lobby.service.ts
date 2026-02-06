@@ -330,7 +330,7 @@ export class MeetingLobbyService {
 	protected async initializeParticipantName(): Promise<void> {
 		// Apply participant name from RoomMemberService if set, otherwise use authenticated username
 		const currentParticipantName = this.roomMemberService.getParticipantName();
-		const username = await this.authService.getUsername();
+		const username = await this.authService.getUserName();
 		const participantName = currentParticipantName || username;
 
 		if (participantName) {
@@ -351,7 +351,7 @@ export class MeetingLobbyService {
 				roomId!,
 				{
 					secret: roomSecret!,
-					grantJoinMeetingPermission: true,
+					joinMeeting: true,
 					participantName: this.participantName()
 				},
 				this.e2eeKeyValue()

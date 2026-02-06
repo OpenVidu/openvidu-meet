@@ -58,5 +58,5 @@ const extractParticipantRole = (metadata: any): MeetRoomMemberRole => {
 	if (!parsedMetadata || typeof parsedMetadata !== 'object') {
 		return MeetRoomMemberRole.SPEAKER;
 	}
-	return parsedMetadata.role || MeetRoomMemberRole.SPEAKER;
+	return parsedMetadata.baseRole || MeetRoomMemberRole.SPEAKER;
 };

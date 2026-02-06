@@ -1,7 +1,11 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
-import { HttpErrorContext, HttpErrorHandler, HttpErrorNotifierService } from '../../../shared/services/http-error-notifier.service';
+import {
+	HttpErrorContext,
+	HttpErrorHandler,
+	HttpErrorNotifierService
+} from '../../../shared/services/http-error-notifier.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberService } from '../services/room-member.service';
@@ -75,12 +79,12 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 
 		const participantName = this.roomMemberService.getParticipantName();
 		const participantIdentity = this.roomMemberService.getParticipantIdentity();
-		const grantJoinMeetingPermission = !!participantIdentity; // Grant join permission if identity is set
+		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
 
 		return from(
 			this.roomMemberService.generateToken(roomId, {
 				secret,
-				grantJoinMeetingPermission,
+				joinMeeting,
 				participantName,
 				participantIdentity
 			})

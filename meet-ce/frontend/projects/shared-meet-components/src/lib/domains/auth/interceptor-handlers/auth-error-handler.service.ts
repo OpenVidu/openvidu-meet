@@ -2,7 +2,11 @@ import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, from, switchMap } from 'rxjs';
-import { HttpErrorContext, HttpErrorHandler, HttpErrorNotifierService } from '../../../shared/services/http-error-notifier.service';
+import {
+	HttpErrorContext,
+	HttpErrorHandler,
+	HttpErrorNotifierService
+} from '../../../shared/services/http-error-notifier.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { AuthService } from '../services/auth.service';
 

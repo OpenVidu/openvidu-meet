@@ -15,6 +15,7 @@ import { getValidDecodedToken } from '../../../shared/utils/token.utils';
 	providedIn: 'root'
 })
 export class RoomMemberService {
+	protected readonly ROOM_MEMBERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
 	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
 
 	protected participantName?: string;
@@ -32,6 +33,10 @@ export class RoomMemberService {
 		protected e2eeService: E2eeService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - ParticipantTokenService');
+	}
+
+	protected getRoomMemberApiPath(roomId: string): string {
+		return `${this.ROOM_MEMBERS_API}/${roomId}/members`;
 	}
 
 	setParticipantName(participantName: string): void {
@@ -65,7 +70,7 @@ export class RoomMemberService {
 			tokenOptions.participantName = encryptedName;
 		}
 
-		const path = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms/${roomId}/token`;
+		const path = `${this.getRoomMemberApiPath(roomId)}/token`;
 		const { token } = await this.httpService.postRequest<{ token: string }>(path, tokenOptions);
 
 		this.tokenStorageService.setRoomMemberToken(token);
@@ -90,11 +95,8 @@ export class RoomMemberService {
 				this.participantIdentity = decodedToken.sub;
 			}
 
-			this.role = metadata.role;
-			this.permissions = {
-				livekit: decodedToken.video,
-				meet: metadata.permissions
-			};
+			this.role = metadata.baseRole;
+			this.permissions = metadata.effectivePermissions;
 
 			// Update feature configuration
 			this.featureConfService.setRoomMemberRole(this.role);
@@ -105,17 +107,8 @@ export class RoomMemberService {
 		}
 	}
 
-	setRoomMemberRole(role: MeetRoomMemberRole): void {
-		this.role = role;
-		this.featureConfService.setRoomMemberRole(this.role);
-	}
-
-	getRoomMemberRole(): MeetRoomMemberRole {
-		return this.role;
-	}
-
 	isModerator(): boolean {
-		return this.getRoomMemberRole() === MeetRoomMemberRole.MODERATOR;
+		return this.role === MeetRoomMemberRole.MODERATOR;
 	}
 
 	getRoomMemberPermissions(): MeetRoomMemberPermissions | undefined {
@@ -123,10 +116,10 @@ export class RoomMemberService {
 	}
 
 	canRetrieveRecordings(): boolean {
-		return this.permissions?.meet.canRetrieveRecordings ?? false;
+		return this.permissions?.canRetrieveRecordings ?? false;
 	}
 
 	canDeleteRecordings(): boolean {
-		return this.permissions?.meet.canDeleteRecordings ?? false;
+		return this.permissions?.canDeleteRecordings ?? false;
 	}
 }

@@ -76,33 +76,18 @@ export class RecordingService {
 		let path = this.RECORDINGS_API;
 
 		if (filters) {
-			const params = new URLSearchParams();
-			if (filters.roomId) {
-				params.append('roomId', filters.roomId);
-			}
-			if (filters.roomName) {
-				params.append('roomName', filters.roomName);
-			}
-			if (filters.status) {
-				params.append('status', filters.status);
-			}
-			if (filters.fields) {
-				params.append('fields', filters.fields);
-			}
-			if (filters.maxItems) {
-				params.append('maxItems', filters.maxItems.toString());
-			}
-			if (filters.nextPageToken) {
-				params.append('nextPageToken', filters.nextPageToken);
-			}
-			if (filters.sortField) {
-				params.append('sortField', filters.sortField);
-			}
-			if (filters.sortOrder) {
-				params.append('sortOrder', filters.sortOrder);
-			}
+			const queryParams = new URLSearchParams();
 
-			path += `?${params.toString()}`;
+			Object.entries(filters).forEach(([key, value]) => {
+				if (value) {
+					queryParams.set(key, value.toString());
+				}
+			});
+
+			const queryString = queryParams.toString();
+			if (queryString) {
+				path += `?${queryString}`;
+			}
 		}
 
 		return this.httpService.getRequest(path);

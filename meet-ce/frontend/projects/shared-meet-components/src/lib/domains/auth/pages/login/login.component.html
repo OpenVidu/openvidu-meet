@@ -13,8 +13,13 @@
 				<mat-card-content>
 					<form [formGroup]="loginForm" (ngSubmit)="login()" id="login-form">
 						<mat-form-field class="form-input" appearance="outline">
-							<mat-label>Username</mat-label>
-							<input matInput formControlName="username" placeholder="Enter your username" id="username-input" />
+							<mat-label>User ID</mat-label>
+							<input
+								matInput
+								formControlName="userId"
+								placeholder="Enter your user ID"
+								id="userId-input"
+							/>
 							<mat-icon matPrefix>person</mat-icon>
 						</mat-form-field>
 

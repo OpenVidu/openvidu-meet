@@ -51,7 +51,7 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 	try {
 		await roomMemberService.generateToken(roomId, {
 			secret,
-			grantJoinMeetingPermission: false
+			joinMeeting: false
 		});
 
 		// Perform recording validation if requested
@@ -81,4 +81,3 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 		}
 	}
 };
-

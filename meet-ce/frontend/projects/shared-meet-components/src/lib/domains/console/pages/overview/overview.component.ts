@@ -53,8 +53,4 @@ export class OverviewComponent implements OnInit {
 			console.error(`Error navigating to ${section}:`, error);
 		}
 	}
-
-	async refreshData() {
-		await this.loadStats();
-	}
 }

@@ -271,7 +271,7 @@ export class MeetingEventHandlerService {
 				// Refresh participant token with new role
 				await this.roomMemberService.generateToken(roomId, {
 					secret,
-					grantJoinMeetingPermission: true,
+					joinMeeting: true,
 					participantName,
 					participantIdentity
 				});

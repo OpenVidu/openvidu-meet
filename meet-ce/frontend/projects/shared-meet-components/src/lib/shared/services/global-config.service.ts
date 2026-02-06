@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from './feature-configuration.service';
 import { HttpService } from './http.service';
@@ -9,37 +9,23 @@ import { HttpService } from './http.service';
 })
 export class GlobalConfigService {
 	protected readonly GLOBAL_CONFIG_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/config`;
-	protected securityConfig?: SecurityConfig;
+
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected httpService: HttpService = inject(HttpService);
 	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
+
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
+
 	constructor() {}
 
-	async getSecurityConfig(forceRefresh = false): Promise<SecurityConfig> {
-		if (this.securityConfig && !forceRefresh) {
-			return this.securityConfig;
-		}
-
-		try {
-			const path = `${this.GLOBAL_CONFIG_API}/security`;
-			this.securityConfig = await this.httpService.getRequest<SecurityConfig>(path);
-			return this.securityConfig;
-		} catch (error) {
-			this.log.e('Error fetching security config:', error);
-			throw error;
-		}
-	}
-
-	async getAuthModeToAccessRoom(): Promise<AuthMode> {
-		await this.getSecurityConfig();
-		return this.securityConfig!.authentication.authModeToAccessRoom;
+	async getSecurityConfig(): Promise<SecurityConfig> {
+		const path = `${this.GLOBAL_CONFIG_API}/security`;
+		return await this.httpService.getRequest<SecurityConfig>(path);
 	}
 
 	async saveSecurityConfig(config: SecurityConfig) {
 		const path = `${this.GLOBAL_CONFIG_API}/security`;
 		await this.httpService.putRequest(path, config);
-		this.securityConfig = config;
 	}
 
 	async getWebhookConfig(): Promise<WebhookConfig> {

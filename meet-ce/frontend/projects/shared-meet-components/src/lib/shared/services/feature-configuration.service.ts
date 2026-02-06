@@ -181,10 +181,10 @@ export class FeatureConfigurationService {
 	 * DISABLED_WITH_WARNING: room config enabled BUT global config disabled
 	 */
 	protected computeCaptionsStatus(
-		roomCaptionsConfig: MeetRoomCaptionsConfig | undefined,
+		roomCaptionsConfig: MeetRoomCaptionsConfig,
 		globalEnabled: boolean
 	): CaptionsStatus {
-		if (!roomCaptionsConfig?.enabled) {
+		if (!roomCaptionsConfig.enabled) {
 			return 'HIDDEN';
 		}
 		return globalEnabled ? 'ENABLED' : 'DISABLED_WITH_WARNING';

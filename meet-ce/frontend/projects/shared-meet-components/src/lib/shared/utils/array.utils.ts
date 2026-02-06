@@ -5,6 +5,7 @@ export const setsAreEqual = <T>(setA: Set<T>, setB: Set<T>): boolean => {
 	}
 	return true;
 };
+
 export const arraysAreEqual = <T>(arrayA: T[], arrayB: T[]): boolean => {
 	if (arrayA.length !== arrayB.length) return false;
 	for (let i = 0; i < arrayA.length; i++) {
