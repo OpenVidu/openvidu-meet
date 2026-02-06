@@ -9,7 +9,7 @@ import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { MeetingContextService } from '../../../meeting/services';
-import { RoomMemberService } from '../../../rooms/services/room-member.service';
+import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
@@ -46,7 +46,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	protected readonly loggerService = inject(LoggerService);
 	protected readonly recordingService = inject(RecordingService);
-	protected readonly roomMemberService = inject(RoomMemberService);
+	protected readonly roomMemberService = inject(RoomMemberContextService);
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly meetingContextService = inject(MeetingContextService);
@@ -58,7 +58,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
-		this.canDeleteRecordings = this.roomMemberService.canDeleteRecordings();
+		this.canDeleteRecordings = this.roomMemberService.hasPermission('canDeleteRecordings');
 
 		// Load recordings
 		const delayLoader = setTimeout(() => {

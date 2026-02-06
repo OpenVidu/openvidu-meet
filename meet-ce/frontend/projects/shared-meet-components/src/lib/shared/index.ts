@@ -6,4 +6,3 @@ export * from './models';
 export * from './routes/base-routes';
 export * from './services';
 export * from './utils';
-

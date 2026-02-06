@@ -8,7 +8,7 @@ import {
 } from '../../../shared/services/http-error-notifier.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
-import { RoomMemberService } from '../services/room-member.service';
+import { RoomMemberContextService } from '../services/room-member-context.service';
 
 /**
  * Handler for room member token-related HTTP errors.
@@ -19,7 +19,7 @@ import { RoomMemberService } from '../services/room-member.service';
 	providedIn: 'root'
 })
 export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandler {
-	private readonly roomMemberService = inject(RoomMemberService);
+	private readonly roomMemberService = inject(RoomMemberContextService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly tokenStorageService = inject(TokenStorageService);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);

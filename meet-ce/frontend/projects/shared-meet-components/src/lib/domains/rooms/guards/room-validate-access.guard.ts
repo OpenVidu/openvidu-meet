@@ -1,9 +1,10 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { NavigationService } from '../../../shared/services';
-import { MeetingContextService } from '../../meeting/services';
-import { RoomMemberService } from '../services';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
+import { MeetingContextService } from '../../meeting/services/meeting-context.service';
+
 
 /**
  * Guard to validate access to a room by generating a room member token.
@@ -33,7 +34,7 @@ export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
  * @returns True if access is granted, or UrlTree for redirection
  */
 const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPermissions = false) => {
-	const roomMemberService = inject(RoomMemberService);
+	const roomMemberService = inject(RoomMemberContextService);
 	const navigationService = inject(NavigationService);
 	const meetingContextService = inject(MeetingContextService);
 
@@ -56,7 +57,7 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 
 		// Perform recording validation if requested
 		if (validateRecordingPermissions) {
-			if (!roomMemberService.canRetrieveRecordings()) {
+			if (!roomMemberService.hasPermission('canRetrieveRecordings')) {
 				// If the user does not have permission to retrieve recordings, redirect to the error page
 				return navigationService.redirectToErrorPage(NavigationErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
 			}

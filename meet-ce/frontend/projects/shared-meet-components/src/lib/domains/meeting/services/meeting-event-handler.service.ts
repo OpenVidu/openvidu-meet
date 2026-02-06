@@ -25,7 +25,7 @@ import { SessionStorageService } from '../../../shared/services/session-storage.
 import { SoundService } from '../../../shared/services/sound.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { RecordingService } from '../../recordings/services/recording.service';
-import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 
@@ -40,7 +40,7 @@ export class MeetingEventHandlerService {
 	protected meetingContext = inject(MeetingContextService);
 	protected featureConfService = inject(FeatureConfigurationService);
 	protected recordingService = inject(RecordingService);
-	protected roomMemberService = inject(RoomMemberService);
+	protected roomMemberService = inject(RoomMemberContextService);
 	protected sessionStorageService = inject(SessionStorageService);
 	protected tokenStorageService = inject(TokenStorageService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);

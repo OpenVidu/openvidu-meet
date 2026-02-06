@@ -1,6 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
 
-export const getValidDecodedToken = (token: string) => {
+export const decodeToken = (token: string) => {
 	checkIsJWTValid(token);
 	const decodedToken: any = jwtDecode(token);
 	decodedToken.metadata = JSON.parse(decodedToken.metadata);

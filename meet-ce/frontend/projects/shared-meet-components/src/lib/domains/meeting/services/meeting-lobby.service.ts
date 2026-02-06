@@ -8,7 +8,7 @@ import { AppDataService } from '../../../shared/services/app-data.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
-import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
 import { LobbyState } from '../models/lobby.model';
 import { MeetingContextService } from './meeting-context.service';
@@ -46,7 +46,7 @@ export class MeetingLobbyService {
 	protected meetingService: MeetingService = inject(MeetingService);
 	protected recordingService: RecordingService = inject(RecordingService);
 	protected authService: AuthService = inject(AuthService);
-	protected roomMemberService: RoomMemberService = inject(RoomMemberService);
+	protected roomMemberService: RoomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected appDataService: AppDataService = inject(AppDataService);
 	protected wcManagerService: MeetingWebComponentManagerService = inject(MeetingWebComponentManagerService);
@@ -287,7 +287,7 @@ export class MeetingLobbyService {
 	 */
 	protected async checkForRecordings(): Promise<void> {
 		try {
-			const canRetrieveRecordings = this.roomMemberService.canRetrieveRecordings();
+			const canRetrieveRecordings = this.roomMemberService.hasPermission('canRetrieveRecordings');
 
 			if (!canRetrieveRecordings) {
 				this._state.update((state) => ({ ...state, showRecordingCard: false }));

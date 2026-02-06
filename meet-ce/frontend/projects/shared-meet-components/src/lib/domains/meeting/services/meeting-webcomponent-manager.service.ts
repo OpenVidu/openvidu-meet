@@ -7,7 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 import { AppDataService } from '../../../shared/services/app-data.service';
-import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
 
@@ -26,7 +26,7 @@ export class MeetingWebComponentManagerService {
 
 	protected log;
 	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly roomMemberService = inject(RoomMemberService);
+	protected readonly roomMemberService = inject(RoomMemberContextService);
 	protected readonly openviduService = inject(OpenViduService);
 	protected readonly meetingService = inject(MeetingService);
 	protected readonly loggerService = inject(LoggerService);
@@ -121,9 +121,11 @@ export class MeetingWebComponentManagerService {
 		console.debug('Message received from parent:', event.data);
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
-				// Only moderators can end the meeting
-				if (!this.roomMemberService.isModerator()) {
-					this.log.w('End meeting command received but participant is not a moderator');
+				// Only participants with canEndMeeting permission can end the meeting
+				if (!this.roomMemberService.hasPermission('canEndMeeting')) {
+					this.log.w(
+						'End meeting command received but participant does not have permissions to end the meeting'
+					);
 					return;
 				}
 
@@ -141,9 +143,11 @@ export class MeetingWebComponentManagerService {
 				await this.openviduService.disconnectRoom();
 				break;
 			case WebComponentCommand.KICK_PARTICIPANT:
-				// Only moderators can kick participants
-				if (!this.roomMemberService.isModerator()) {
-					this.log.w('Kick participant command received but participant is not a moderator');
+				// Only participants with canKickParticipants permission can kick participants
+				if (!this.roomMemberService.hasPermission('canKickParticipants')) {
+					this.log.w(
+						'Kick participant command received but participant does not have permissions to kick participants'
+					);
 					return;
 				}
 

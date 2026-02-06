@@ -17,7 +17,7 @@ import { FeatureConfigurationService } from '../../../../shared/services/feature
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { SoundService } from '../../../../shared/services/sound.service';
-import { RoomMemberService } from '../../../rooms/services/room-member.service';
+import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
@@ -63,7 +63,7 @@ export class MeetingComponent implements OnInit {
 	protected isMeetingLeft = signal(false);
 
 	protected features: Signal<ApplicationFeatures>;
-	protected participantService = inject(RoomMemberService);
+	protected participantService = inject(RoomMemberContextService);
 	protected featureConfService = inject(FeatureConfigurationService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected configService = inject(GlobalConfigService);
