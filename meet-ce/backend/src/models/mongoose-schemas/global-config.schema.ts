@@ -43,10 +43,6 @@ const OAuthProviderConfigSchema = new Schema(
  */
 const AuthenticationConfigSchema = new Schema(
 	{
-		allowUserCreation: {
-			type: Boolean,
-			required: true
-		},
 		oauthProviders: {
 			type: [OAuthProviderConfigSchema],
 			required: true
