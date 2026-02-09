@@ -200,17 +200,17 @@ describe('Room API Tests', () => {
 		it('should filter fields when x-Field header is provided', async () => {
 			const room = await createRoom(undefined, undefined, { xFields: 'roomName' });
 
+			expect(Object.keys(room).length).toBe(1);
 			expect(room.roomName).toBeDefined();
-			expect(room.roomId).toBeUndefined();
-			expect(room.config).toBeUndefined();
 		});
 
 		it('should filter fields and expand config when both xFields and xExpand are provided', async () => {
 			const room = await createRoom(undefined, undefined, { xFields: 'config', xExpand: 'config' });
 
-			expect(room.roomName).toBeUndefined();
+			expect(Object.keys(room).length).toBe(1);
 			expect(room.config).toBeDefined();
 			expect((room.config as any)._expandable).toBeUndefined();
+			expect((room.config as any)._href).toBeUndefined();
 		});
 
 		it('should not includes config if filter fields are provided without config', async () => {
