@@ -84,8 +84,9 @@
 			</div>
 		</div>
 
-		<!-- Room Information Section -->
+		<!-- Room Information and Tabs Section -->
 		<div class="page-content">
+			<!-- Room Basic Information Card -->
 			<mat-card class="info-card">
 				<mat-card-content>
 					<div class="info-grid">
@@ -119,6 +120,115 @@
 						</div>
 					</div>
 				</mat-card-content>
+			</mat-card>
+
+			<!-- Tabs for Room Members and Recordings -->
+			<mat-card class="tabs-card">
+				<mat-tab-group
+					[selectedIndex]="selectedTabIndex()"
+					(selectedIndexChange)="selectedTabIndex.set($event)"
+					animationDuration="0ms"
+				>
+					<!-- Room Members Tab -->
+					<mat-tab>
+						<ng-template mat-tab-label>
+							<mat-icon class="tab-icon">people</mat-icon>
+							<span>Room Members</span>
+							<span class="tab-count">{{ roomMembers().length }}</span>
+						</ng-template>
+
+						<div class="tab-content">
+							@if (loadingMembers()) {
+								<div class="loading-state">
+									<mat-spinner diameter="40"></mat-spinner>
+									<p>Loading members...</p>
+								</div>
+							} @else if (roomMembers().length === 0) {
+								<div class="empty-state">
+									<mat-icon>person_off</mat-icon>
+									<h3>No members yet</h3>
+									<p>This room doesn't have any members assigned.</p>
+								</div>
+							} @else {
+								<!-- Members List - Simple table for now -->
+								<div class="members-list">
+									<div class="members-header">
+										<h3>Members ({{ roomMembers().length }})</h3>
+									</div>
+									@for (member of roomMembers(); track member.memberId) {
+										<div class="member-item">
+											<div class="member-info">
+												<div class="member-avatar">
+													<span>{{ member.name.substring(0, 2).toUpperCase() }}</span>
+												</div>
+												<div class="member-details">
+													<p class="member-name">{{ member.name }}</p>
+													<p class="member-id">{{ member.memberId }}</p>
+												</div>
+											</div>
+											<div class="member-meta">
+												<div class="member-type">
+													<mat-icon class="meta-icon">
+														{{
+															member.memberId.startsWith('ext-')
+																? 'person_outline'
+																: 'verified_user'
+														}}
+													</mat-icon>
+													<span>{{
+														member.memberId.startsWith('ext-') ? 'External' : 'Registered'
+													}}</span>
+												</div>
+												<div class="member-role">
+													<span
+														class="role-badge"
+														[class.moderator]="member.baseRole === 'moderator'"
+													>
+														{{ member.baseRole }}
+													</span>
+												</div>
+											</div>
+											<div class="member-actions">
+												<button mat-icon-button matTooltip="Copy access URL">
+													<mat-icon>link</mat-icon>
+												</button>
+												<button mat-icon-button matTooltip="Edit permissions">
+													<mat-icon>edit</mat-icon>
+												</button>
+												<button mat-icon-button matTooltip="Remove member" color="warn">
+													<mat-icon>person_remove</mat-icon>
+												</button>
+											</div>
+										</div>
+									}
+								</div>
+							}
+						</div>
+					</mat-tab>
+
+					<!-- Recordings Tab -->
+					<mat-tab>
+						<ng-template mat-tab-label>
+							<mat-icon class="tab-icon ov-recording-icon">video_library</mat-icon>
+							<span>Recordings</span>
+							<span class="tab-count">{{ recordings().length }}</span>
+						</ng-template>
+
+						<div class="tab-content recordings-tab">
+							<ov-recording-lists
+								[recordings]="recordings()"
+								[loading]="loadingRecordings()"
+								[showLoadMore]="hasMoreRecordings"
+								[showSearchBox]="false"
+								[showFilters]="false"
+								(recordingAction)="onRecordingAction($event)"
+								(loadMore)="loadMoreRecordings($event)"
+								(refresh)="refreshRecordings($event)"
+							>
+							</ov-recording-lists>
+						</div>
+					</mat-tab>
+				</mat-tab-group>
 			</mat-card>
 		</div>
 	</div>

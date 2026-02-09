@@ -1,5 +1,8 @@
 @use '../../../../../../../../src/assets/styles/design-tokens' as *;
 
+.ov-page-container {
+	overflow: hidden;
+}
 .page-header {
 	@include ov-page-header;
 
@@ -40,18 +43,6 @@
 		font-weight: var(--ov-meet-font-weight-semibold);
 		text-transform: uppercase;
 		width: fit-content;
-
-		&.active {
-			background-color: rgba(76, 175, 80, 0.1);
-			color: var(--ov-meet-color-success);
-			border: 1px solid rgba(76, 175, 80, 0.3);
-		}
-
-		&.closed {
-			background-color: rgba(158, 158, 158, 0.1);
-			color: var(--ov-meet-text-secondary);
-			border: 1px solid rgba(158, 158, 158, 0.3);
-		}
 
 		.status-dot {
 			width: 8px;
@@ -109,11 +100,7 @@
 	margin-top: var(--ov-meet-spacing-lg);
 
 	.info-card {
-		@include ov-card;
-
-		mat-card-content {
-			padding: 0;
-		}
+		background-color: var(--ov-meet-surface-container);
 
 		.info-grid {
 			display: grid;
@@ -132,6 +119,7 @@
 				display: flex;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-xs);
+				margin: auto;
 
 				.info-label {
 					font-size: var(--ov-meet-font-size-xs);
@@ -140,6 +128,8 @@
 					text-transform: uppercase;
 					letter-spacing: 0.05em;
 					margin: 0;
+					text-align: center;
+					margin-bottom: var(--ov-meet-spacing-xs);
 				}
 
 				.info-value {
@@ -175,6 +165,231 @@
 						justify-content: center;
 						font-size: var(--ov-meet-font-size-xs);
 						font-weight: var(--ov-meet-font-weight-bold);
+					}
+				}
+			}
+		}
+	}
+
+	// Tabs card
+	.tabs-card {
+		@include ov-card;
+		overflow: hidden;
+		box-shadow: none;
+		&:hover {
+			box-shadow: none;
+		}
+
+		::ng-deep {
+			.mat-mdc-tab-group {
+				.mat-mdc-tab-labels {
+					border-bottom: 1px solid var(--ov-meet-border-color);
+				}
+
+				.mat-mdc-tab {
+					min-width: 160px;
+
+					.tab-icon {
+						@include ov-icon(sm);
+						margin-right: var(--ov-meet-spacing-xs);
+					}
+
+					.tab-count {
+						margin-left: var(--ov-meet-spacing-xs);
+						background-color: var(--ov-meet-background-elevated);
+						color: var(--ov-meet-text-secondary);
+						padding: 2px 8px;
+						border-radius: var(--ov-meet-radius-sm);
+						font-size: var(--ov-meet-font-size-xs);
+						font-weight: var(--ov-meet-font-weight-semibold);
+					}
+
+					&.mat-mdc-tab-active .tab-count {
+						background-color: var(--ov-meet-color-primary);
+						color: white;
+					}
+				}
+			}
+		}
+
+		.tab-content {
+			padding: var(--ov-meet-spacing-lg);
+			min-height: 400px;
+
+			&.recordings-tab {
+				padding: 0;
+			}
+
+			.loading-state {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-md);
+				padding: var(--ov-meet-spacing-xxl);
+
+				p {
+					color: var(--ov-meet-text-secondary);
+					margin: 0;
+				}
+			}
+
+			.empty-state {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-md);
+				padding: var(--ov-meet-spacing-xxl);
+
+				mat-icon {
+					@include ov-icon(xxl);
+					color: var(--ov-meet-text-hint);
+				}
+
+				h3 {
+					margin: 0;
+					color: var(--ov-meet-text-primary);
+					font-size: var(--ov-meet-font-size-lg);
+				}
+
+				p {
+					margin: 0;
+					color: var(--ov-meet-text-secondary);
+					font-size: var(--ov-meet-font-size-sm);
+				}
+			}
+		}
+	}
+
+	// Members list
+	.members-list {
+		.members-header {
+			margin-bottom: var(--ov-meet-spacing-md);
+			padding-bottom: var(--ov-meet-spacing-sm);
+			border-bottom: 1px solid var(--ov-meet-border-color);
+
+			h3 {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				font-weight: var(--ov-meet-font-weight-semibold);
+				color: var(--ov-meet-text-primary);
+			}
+		}
+
+		.member-item {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-md);
+			padding: var(--ov-meet-spacing-md);
+			border: 1px solid var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-radius-md);
+			margin-bottom: var(--ov-meet-spacing-sm);
+			transition: all 0.2s ease;
+
+			&:hover {
+				background-color: var(--ov-meet-background-hover);
+				border-color: var(--ov-meet-color-primary);
+			}
+
+			.member-info {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+				flex: 1;
+
+				.member-avatar {
+					width: 40px;
+					height: 40px;
+					border-radius: var(--ov-meet-radius-circle);
+					background: linear-gradient(135deg, var(--ov-meet-color-primary), var(--ov-meet-color-accent));
+					color: white;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: var(--ov-meet-font-size-sm);
+					font-weight: var(--ov-meet-font-weight-bold);
+					flex-shrink: 0;
+				}
+
+				.member-details {
+					display: flex;
+					flex-direction: column;
+					gap: 2px;
+					min-width: 0;
+
+					.member-name {
+						margin: 0;
+						font-size: var(--ov-meet-font-size-sm);
+						font-weight: var(--ov-meet-font-weight-semibold);
+						color: var(--ov-meet-text-primary);
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+
+					.member-id {
+						margin: 0;
+						font-size: var(--ov-meet-font-size-xs);
+						color: var(--ov-meet-text-secondary);
+						font-family: 'Courier New', monospace;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+				}
+			}
+
+			.member-meta {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-md);
+				flex-wrap: wrap;
+
+				.member-type {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-xs);
+					padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+					background-color: var(--ov-meet-background-elevated);
+					border-radius: var(--ov-meet-radius-sm);
+					font-size: var(--ov-meet-font-size-xs);
+					color: var(--ov-meet-text-secondary);
+
+					.meta-icon {
+						@include ov-icon(xs);
+					}
+				}
+
+				.member-role {
+					.role-badge {
+						display: inline-block;
+						padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+						background-color: var(--ov-meet-background-elevated);
+						border-radius: var(--ov-meet-radius-sm);
+						font-size: var(--ov-meet-font-size-xs);
+						font-weight: var(--ov-meet-font-weight-semibold);
+						color: var(--ov-meet-text-secondary);
+						text-transform: capitalize;
+
+						&.moderator {
+							background-color: rgba(33, 150, 243, 0.1);
+							color: var(--ov-meet-color-primary);
+							border: 1px solid rgba(33, 150, 243, 0.3);
+						}
+					}
+				}
+			}
+
+			.member-actions {
+				display: flex;
+				gap: var(--ov-meet-spacing-xs);
+
+				button {
+					@include ov-theme-transition;
+
+					mat-icon {
+						@include ov-icon(sm);
 					}
 				}
 			}
