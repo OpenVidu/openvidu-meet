@@ -663,7 +663,9 @@ export const expectValidRoomMemberTokenResponse = (
 		expect(decodedToken).toHaveProperty('name', participantName);
 		expect(decodedToken).toHaveProperty('sub');
 
-		if (participantIdentityPrefix) {
+		if (memberId) {
+			expect(decodedToken.sub).toBe(memberId);
+		} else if (participantIdentityPrefix) {
 			expect(decodedToken.sub?.startsWith(participantIdentityPrefix)).toBe(true);
 		}
 

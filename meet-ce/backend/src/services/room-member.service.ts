@@ -29,7 +29,8 @@ import {
 	errorRoomMemberCannotBeOwnerOrAdmin,
 	errorRoomMemberNotFound,
 	errorUnauthorized,
-	errorUserNotFound
+	errorUserNotFound,
+	OpenViduMeetError
 } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -228,27 +229,11 @@ export class RoomMemberService {
 
 		const updatedMember = await this.roomMemberRepository.update(member);
 
-		// If member is currently in a meeting, check if they still have permission to join
-		if (updatedMember.currentParticipantIdentity) {
-			const effectivePermissions = updatedMember.effectivePermissions;
-
-			if (!effectivePermissions.canJoinMeeting) {
-				// Member lost permission to join meeting, kick them out
-				try {
-					await this.kickParticipantFromMeeting(roomId, updatedMember.currentParticipantIdentity);
-					this.logger.info(
-						`Kicked participant '${updatedMember.currentParticipantIdentity}' from meeting after losing canJoinMeeting permission (member '${memberId}' in room '${roomId}')`
-					);
-				} catch (error) {
-					this.logger.warn(
-						`Failed to kick participant '${updatedMember.currentParticipantIdentity}' from meeting after permission update:`,
-						error
-					);
-					// Don't throw error, update was already saved
-				}
-			} else {
-				// TODO: Notify participant of role/permission changes if currently in a meeting
-			}
+		// If member lost permission to join meeting, kick them out
+		if (!updatedMember.effectivePermissions.canJoinMeeting) {
+			await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
+		} else {
+			// TODO: Notify participant of role/permission changes if currently in a meeting
 		}
 
 		return updatedMember;
@@ -267,9 +252,10 @@ export class RoomMemberService {
 		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
 
 		const BATCH_SIZE = 20; // Process members in smaller batches
+		let batchNumber = 0;
 		let nextPageToken: string | undefined;
 		let totalUpdated = 0;
-		let batchNumber = 0;
+		const totalMembers: MeetRoomMember[] = [];
 
 		do {
 			batchNumber++;
@@ -283,6 +269,7 @@ export class RoomMemberService {
 				maxItems: BATCH_SIZE,
 				nextPageToken
 			});
+			totalMembers.push(...members);
 
 			if (members.length === 0) {
 				break;
@@ -331,33 +318,14 @@ export class RoomMemberService {
 			return;
 		}
 
-		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
-	}
+		// Kick members who lost canJoinMeeting permission
+		const membersToKick = totalMembers.filter((m) => !m.effectivePermissions.canJoinMeeting).map((m) => m.memberId);
 
-	/**
-	 * Updates the currentParticipantIdentity for a room member.
-	 *
-	 * @param roomId - The ID of the room
-	 * @param memberId - The ID of the member
-	 * @param participantIdentity - The participant identity to set (or undefined to clear it)
-	 */
-	async updateCurrentParticipantIdentity(
-		roomId: string,
-		memberId: string,
-		participantIdentity: string | undefined
-	): Promise<void> {
-		const member = await this.getRoomMember(roomId, memberId);
-
-		if (!member) {
-			this.logger.warn(
-				`Cannot update currentParticipantIdentity: member '${memberId}' not found in room '${roomId}'`
-			);
-			return;
+		if (membersToKick.length > 0) {
+			await this.kickMembersFromMeetingInBatches(roomId, membersToKick);
 		}
 
-		member.currentParticipantIdentity = participantIdentity;
-		await this.roomMemberRepository.update(member);
-		this.logger.info(`Updated currentParticipantIdentity for member '${memberId}' in room '${roomId}'`);
+		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
 	}
 
 	/**
@@ -374,17 +342,7 @@ export class RoomMemberService {
 		}
 
 		// If member is currently in a meeting, kick them out first
-		if (member.currentParticipantIdentity) {
-			try {
-				await this.kickParticipantFromMeeting(roomId, member.currentParticipantIdentity);
-				this.logger.info(
-					`Kicked participant '${member.currentParticipantIdentity}' from meeting before deleting member '${memberId}'`
-				);
-			} catch (error) {
-				this.logger.warn(`Failed to kick participant from meeting during member deletion:`, error);
-				// Continue with deletion even if kick fails
-			}
-		}
+		await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
 
 		return this.roomMemberRepository.deleteByRoomAndMemberId(roomId, memberId);
 	}
@@ -415,40 +373,8 @@ export class RoomMemberService {
 			.map((id) => ({ memberId: id, error: 'Room member not found' }));
 
 		if (foundMemberIds.length > 0) {
-			// Kick participants that are currently in a meeting
-			const membersInMeeting = membersToDelete.filter((m) => m.currentParticipantIdentity);
-
-			if (membersInMeeting.length > 0) {
-				const KICK_BATCH_SIZE = 10;
-
-				// Process kicks in batches to avoid overwhelming the system
-				for (let i = 0; i < membersInMeeting.length; i += KICK_BATCH_SIZE) {
-					const batch = membersInMeeting.slice(i, i + KICK_BATCH_SIZE);
-
-					await Promise.allSettled(
-						batch.map(async (member) => {
-							try {
-								await this.kickParticipantFromMeeting(roomId, member.currentParticipantIdentity!);
-								this.logger.info(
-									`Kicked participant '${member.currentParticipantIdentity}' from meeting before deleting member '${member.memberId}'`
-								);
-							} catch (error) {
-								this.logger.warn(
-									`Failed to kick participant '${member.currentParticipantIdentity}' from meeting during bulk deletion:`,
-									error
-								);
-								// Continue with deletion even if kick fails
-							}
-						})
-					);
-
-					this.logger.verbose(`Processed batch of ${batch.length} participant kicks for room '${roomId}'`);
-				}
-
-				this.logger.info(
-					`Kicked ${membersInMeeting.length} participant(s) from meeting before bulk deletion in room '${roomId}'`
-				);
-			}
+			// Kick participants that are currently in a meeting before deletion
+			await this.kickMembersFromMeetingInBatches(roomId, foundMemberIds);
 
 			await this.roomMemberRepository.deleteByRoomIdAndMemberIds(roomId, foundMemberIds);
 		}
@@ -473,6 +399,7 @@ export class RoomMemberService {
 		let customPermissions: Partial<MeetRoomMemberPermissions> | undefined = undefined;
 		let effectivePermissions: MeetRoomMemberPermissions;
 		let memberId: string | undefined;
+		let userId: string | undefined;
 
 		if (secret) {
 			// Case 1: Secret provided (Anonymous access or External Member)
@@ -510,6 +437,8 @@ export class RoomMemberService {
 				throw errorUnauthorized();
 			}
 
+			userId = user.userId;
+
 			// Check if user is admin or owner
 			const isOwner = await this.roomService.isRoomOwner(roomId, user.userId);
 
@@ -540,7 +469,8 @@ export class RoomMemberService {
 				participantName,
 				participantIdentity,
 				customPermissions,
-				memberId
+				memberId,
+				userId
 			);
 		}
 
@@ -558,7 +488,8 @@ export class RoomMemberService {
 		participantName: string,
 		participantIdentity?: string,
 		customPermissions?: Partial<MeetRoomMemberPermissions>,
-		memberId?: string
+		memberId?: string,
+		userId?: string
 	): Promise<string> {
 		// Check that room is open
 		const room = await this.roomService.getMeetRoom(roomId);
@@ -592,9 +523,16 @@ export class RoomMemberService {
 			// Create the Livekit room if it doesn't exist
 			await this.roomService.createLivekitRoom(roomId);
 
-			// Create a unique participant identity based on the participant name
-			const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
-			participantIdentity = `${identityPrefix}-${uid(15)}`;
+			if (memberId || userId) {
+				// Use memberId as participant identity for identified members
+				// (registered users or external members with a record in the database)
+				// Use userId as participant identity for registered users without a member record
+				participantIdentity = memberId || userId;
+			} else {
+				// For anonymous users, create a unique participant identity based on the provided participant name
+				const identityPrefix = this.createParticipantIdentityPrefixFromName(participantName) || 'participant';
+				participantIdentity = `${identityPrefix}-${uid(15)}`;
+			}
 		} else {
 			// REFRESH MODE
 			this.logger.verbose(
@@ -762,6 +700,73 @@ export class RoomMemberService {
 			canUpdateOwnMetadata: true
 		};
 		return livekitPermissions;
+	}
+
+	/**
+	 * Kicks multiple members from a meeting in batches.
+	 * This method processes the kicks in parallel batches to avoid overwhelming the system.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberIds - Array of member IDs to kick from the meeting
+	 * @param batchSize - Number of kicks to process in parallel (default: 10)
+	 */
+	protected async kickMembersFromMeetingInBatches(
+		roomId: string,
+		memberIds: string[],
+		batchSize = 10
+	): Promise<void> {
+		if (memberIds.length === 0) {
+			return;
+		}
+
+		let kickedCount = 0;
+		let failedCount = 0;
+
+		// Process kicks in batches to avoid overwhelming the system
+		for (let i = 0; i < memberIds.length; i += batchSize) {
+			const batch = memberIds.slice(i, i + batchSize);
+
+			const results = await Promise.all(
+				batch.map(async (memberId) => {
+					try {
+						await this.kickParticipantFromMeeting(roomId, memberId);
+						this.logger.verbose(`Kicked participant '${memberId}' from meeting in room '${roomId}'`);
+						return true;
+					} catch (error) {
+						const isParticipantNotFound = error instanceof OpenViduMeetError && error.statusCode === 404;
+
+						if (!isParticipantNotFound) {
+							// Real error, log warning
+							this.logger.warn(
+								`Failed to kick participant '${memberId}' from meeting in room '${roomId}':`,
+								error
+							);
+							return false;
+						}
+
+						// Participant not in meeting, nothing to do
+						return true;
+					}
+				})
+			);
+
+			// Count only successful kicks and real failures (not "participant not found")
+			results.forEach((result) => {
+				if (result) {
+					kickedCount++;
+				} else {
+					failedCount++;
+				}
+			});
+		}
+
+		if (kickedCount > 0) {
+			this.logger.info(`Kicked ${kickedCount} participant(s) from meeting in room '${roomId}'`);
+		}
+
+		if (failedCount > 0) {
+			this.logger.warn(`Failed to kick ${failedCount} participant(s) from meeting in room '${roomId}'`);
+		}
 	}
 
 	async kickParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<void> {

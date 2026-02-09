@@ -3,9 +3,7 @@ import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
-import { RoomMemberRepository } from '../../../../src/repositories/room-member.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { TokenService } from '../../../../src/services/token.service.js';
 import {
 	createRoom,
 	createRoomMember,
@@ -14,7 +12,6 @@ import {
 	deleteAllUsers,
 	deleteRoomMember,
 	disconnectFakeParticipants,
-	generateRoomMemberTokenRequest,
 	getRoomMember,
 	getUser,
 	joinFakeParticipant,
@@ -110,20 +107,8 @@ describe('Room Members API Tests', () => {
 			const member = createResponse.body as MeetRoomMember;
 			const memberId = member.memberId;
 
-			// Generate room member token for joining meeting
-			const tokenResponse = await generateRoomMemberTokenRequest(roomId, {
-				secret: memberId,
-				joinMeeting: true,
-				participantName: 'Test Member'
-			});
-			const roomMemberToken = tokenResponse.body.token;
-
-			// Get participant identity from token
-			const tokenService = container.get(TokenService);
-			const decodedToken = await tokenService.verifyToken(roomMemberToken);
-			const participantIdentity = decodedToken.sub!;
-
-			// Join fake participant to the room and update metadata to simulate real join
+			// Join fake participant to the room to simulate real join
+			const participantIdentity = memberId; // Participant identity is the same as memberId for members
 			await joinFakeParticipant(roomId, participantIdentity);
 			await updateParticipantMetadata(roomId, participantIdentity, {
 				iat: Date.now(),
@@ -133,11 +118,6 @@ describe('Room Members API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				effectivePermissions: member.effectivePermissions
 			});
-
-			// Update room member currentParticipantIdentity manually to simulate real join
-			const roomMemberRepository = container.get(RoomMemberRepository);
-			member.currentParticipantIdentity = participantIdentity;
-			await roomMemberRepository.update(member);
 
 			// Verify participant exists before deletion
 			const livekitService = container.get(LiveKitService);

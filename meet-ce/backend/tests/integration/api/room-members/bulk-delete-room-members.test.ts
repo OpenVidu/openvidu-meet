@@ -1,11 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MEET_ENV } from '../../../../src/environment.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
-import { RoomMemberRepository } from '../../../../src/repositories/room-member.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	bulkDeleteRoomMembers,
@@ -15,12 +12,10 @@ import {
 	deleteAllRooms,
 	deleteAllUsers,
 	disconnectFakeParticipants,
-	generateRoomMemberTokenRequest,
 	getRoomMember,
 	getUser,
 	joinFakeParticipant,
-	startTestServer,
-	updateParticipantMetadata
+	startTestServer
 } from '../../../helpers/request-helpers.js';
 
 describe('Bulk Delete Room Members API Tests', () => {
@@ -190,52 +185,13 @@ describe('Bulk Delete Room Members API Tests', () => {
 			const member1 = member1Response.body as MeetRoomMember;
 			const member2 = member2Response.body as MeetRoomMember;
 
-			// Generate tokens and join meeting for both
-			const token1Response = await generateRoomMemberTokenRequest(roomId, {
-				secret: member1.memberId,
-				joinMeeting: true,
-				participantName: 'Meeting Member 1'
-			});
-			const token2Response = await generateRoomMemberTokenRequest(roomId, {
-				secret: member2.memberId,
-				joinMeeting: true,
-				participantName: 'Meeting Member 2'
-			});
+			// Participant identity is the same as memberId for members
+			const participantIdentity1 = member1.memberId;
+			const participantIdentity2 = member2.memberId;
 
-			// Get participant identities from tokens
-			const tokenService = container.get(TokenService);
-			const decodedToken1 = await tokenService.verifyToken(token1Response.body.token);
-			const decodedToken2 = await tokenService.verifyToken(token2Response.body.token);
-			const participantIdentity1 = decodedToken1.sub!;
-			const participantIdentity2 = decodedToken2.sub!;
-
-			// Join fake participants and update metadata
+			// Join fake participants to the room to simulate real join
 			await joinFakeParticipant(roomId, participantIdentity1);
-			await updateParticipantMetadata(roomId, participantIdentity1, {
-				iat: Date.now(),
-				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				roomId,
-				memberId: member1.memberId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: member1.effectivePermissions
-			});
-
 			await joinFakeParticipant(roomId, participantIdentity2);
-			await updateParticipantMetadata(roomId, participantIdentity2, {
-				iat: Date.now(),
-				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				roomId,
-				memberId: member2.memberId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: member2.effectivePermissions
-			});
-
-			// Update room members currentParticipantIdentity
-			const roomMemberRepository = container.get(RoomMemberRepository);
-			member1.currentParticipantIdentity = participantIdentity1;
-			member2.currentParticipantIdentity = participantIdentity2;
-			await roomMemberRepository.update(member1);
-			await roomMemberRepository.update(member2);
 
 			// Verify both participants exist
 			const livekitService = container.get(LiveKitService);

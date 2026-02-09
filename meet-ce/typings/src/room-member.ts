@@ -25,7 +25,6 @@ export interface MeetRoomMember {
 	customPermissions?: Partial<MeetRoomMemberPermissions>; // Custom permissions for the member (if any)
 	effectivePermissions: MeetRoomMemberPermissions; // Effective permissions for the member (base role + custom permissions)
 	permissionsUpdatedAt: number; // Timestamp when the effective permissions were last updated
-	currentParticipantIdentity?: string; // The participant identity if the member is currently in a meeting, undefined otherwise
 }
 
 /**
