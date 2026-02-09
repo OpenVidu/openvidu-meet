@@ -158,6 +158,7 @@
 								[checked]="allSelected()"
 								[indeterminate]="someSelected()"
 								(change)="toggleAllSelection()"
+								(click)="$event.stopPropagation()"
 								[disabled]="loading()"
 								id="select-all-checkbox"
 							>
@@ -167,6 +168,7 @@
 							@if (canSelectRoom(room)) {
 								<mat-checkbox
 									[checked]="isRoomSelected(room)"
+									(click)="$event.stopPropagation()"
 									(change)="toggleRoomSelection(room)"
 									[disabled]="loading()"
 									id="select-room-{{ room.roomId }}"
@@ -308,7 +310,7 @@
 								<button
 									mat-icon-button
 									matTooltip="Open Room"
-									(click)="openRoom(room)"
+									(click)="$event.stopPropagation(); openRoom(room)"
 									[disabled]="loading()"
 									class="primary-action"
 									id="open-room-btn-{{ room.roomId }}"
@@ -322,7 +324,7 @@
 								<button
 									mat-icon-button
 									matTooltip="Room Settings"
-									(click)="editRoom(room)"
+									(click)="$event.stopPropagation(); editRoom(room)"
 									[disabled]="loading()"
 									id="edit-room-btn-{{ room.roomId }}"
 								>
@@ -344,7 +346,7 @@
 							<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
 								<button
 									mat-menu-item
-									(click)="viewRecordings(room)"
+									(click)="$event.stopPropagation(); viewRecordings(room)"
 									id="view-recordings-btn-{{ room.roomId }}"
 								>
 									<mat-icon class="ov-recording-icon">video_library</mat-icon>
@@ -354,7 +356,7 @@
 								@if (canOpenRoom(room)) {
 									<button
 										mat-menu-item
-										(click)="copyModeratorLink(room)"
+										(click)="$event.stopPropagation(); copyModeratorLink(room)"
 										id="copy-moderator-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
@@ -362,7 +364,7 @@
 									</button>
 									<button
 										mat-menu-item
-										(click)="copySpeakerLink(room)"
+										(click)="$event.stopPropagation(); copySpeakerLink(room)"
 										id="copy-speaker-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
@@ -374,7 +376,7 @@
 
 								<button
 									mat-menu-item
-									(click)="toggleRoomStatus(room)"
+									(click)="$event.stopPropagation(); toggleRoomStatus(room)"
 									[ngClass]="getRoomToggleIconClass(room)"
 									id="toggle-room-status-btn-{{ room.roomId }}"
 								>
@@ -383,7 +385,7 @@
 								</button>
 								<button
 									mat-menu-item
-									(click)="deleteRoom(room)"
+									(click)="$event.stopPropagation(); deleteRoom(room)"
 									class="delete-action"
 									id="delete-room-btn-{{ room.roomId }}"
 								>
@@ -401,6 +403,7 @@
 					*matRowDef="let row; columns: displayedColumns"
 					[class.selected-row]="isRoomSelected(row)"
 					id="table-row-{{ row.roomId }}"
+					(click)="onRoomClick(row)"
 				></tr>
 			</table>
 		</div>

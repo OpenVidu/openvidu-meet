@@ -239,6 +239,15 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
+	async onRoomClick(roomId: string) {
+		try {
+			await this.navigationService.navigateTo(`rooms/${roomId}/detail`);
+		} catch (error) {
+			this.notificationService.showSnackbar('Error navigating to room detail');
+			this.log.e('Error navigating to room detail:', error);
+		}
+	}
+
 	private async reopenRoom(room: MeetRoom) {
 		try {
 			const { room: updatedRoom } = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);

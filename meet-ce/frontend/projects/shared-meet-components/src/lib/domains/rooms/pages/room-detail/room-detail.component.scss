@@ -1,0 +1,199 @@
+@use '../../../../../../../../src/assets/styles/design-tokens' as *;
+
+.page-header {
+	@include ov-page-header;
+
+	.header-top {
+		margin-bottom: var(--ov-meet-spacing-sm);
+	}
+
+	.header-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-md);
+
+		@media (min-width: 768px) {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+		}
+	}
+
+	.title-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+
+		@media (min-width: 768px) {
+			flex-direction: row;
+			align-items: center;
+		}
+	}
+
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		border-radius: var(--ov-meet-radius-md);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		text-transform: uppercase;
+		width: fit-content;
+
+		&.active {
+			background-color: rgba(76, 175, 80, 0.1);
+			color: var(--ov-meet-color-success);
+			border: 1px solid rgba(76, 175, 80, 0.3);
+		}
+
+		&.closed {
+			background-color: rgba(158, 158, 158, 0.1);
+			color: var(--ov-meet-text-secondary);
+			border: 1px solid rgba(158, 158, 158, 0.3);
+		}
+
+		.status-dot {
+			width: 8px;
+			height: 8px;
+			border-radius: var(--ov-meet-radius-circle);
+			background-color: var(--ov-meet-text-secondary);
+
+			&.active {
+				background-color: var(--ov-meet-color-success);
+				animation: pulse 2s ease-in-out infinite;
+			}
+		}
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--ov-meet-spacing-sm);
+		align-items: center;
+
+		.action-btn {
+			@include ov-button-base;
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+
+			mat-icon {
+				@include ov-icon(sm);
+			}
+
+			span {
+				display: none;
+
+				@media (min-width: 768px) {
+					display: inline;
+				}
+			}
+		}
+
+		.icon-action-btn {
+			@include ov-theme-transition;
+			border: 1px solid var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-radius-sm);
+
+			mat-icon {
+				@include ov-icon(sm);
+			}
+
+			&.delete-btn {
+				color: var(--ov-meet-color-error);
+
+				&:hover {
+					background-color: rgba(244, 67, 54, 0.1);
+				}
+			}
+		}
+	}
+}
+
+.page-content {
+	margin-top: var(--ov-meet-spacing-lg);
+
+	.info-card {
+		@include ov-card;
+
+		mat-card-content {
+			padding: 0;
+		}
+
+		.info-grid {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: var(--ov-meet-spacing-lg);
+
+			@media (min-width: 768px) {
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			@media (min-width: 1024px) {
+				grid-template-columns: repeat(4, 1fr);
+			}
+
+			.info-item {
+				display: flex;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-xs);
+
+				.info-label {
+					font-size: var(--ov-meet-font-size-xs);
+					font-weight: var(--ov-meet-font-weight-semibold);
+					color: var(--ov-meet-text-secondary);
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin: 0;
+				}
+
+				.info-value {
+					font-size: var(--ov-meet-font-size-sm);
+					color: var(--ov-meet-text-primary);
+					margin: 0;
+					font-weight: var(--ov-meet-font-weight-medium);
+
+					&.monospace {
+						font-family: 'Courier New', monospace;
+						font-size: var(--ov-meet-font-size-xs);
+						color: var(--ov-meet-text-secondary);
+					}
+
+					&.disabled {
+						color: var(--ov-meet-text-hint);
+					}
+				}
+
+				.owner-info {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-sm);
+
+					.owner-avatar {
+						width: 32px;
+						height: 32px;
+						border-radius: var(--ov-meet-radius-circle);
+						background-color: var(--ov-meet-color-primary);
+						color: white;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: var(--ov-meet-font-size-xs);
+						font-weight: var(--ov-meet-font-weight-bold);
+					}
+				}
+			}
+		}
+	}
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}

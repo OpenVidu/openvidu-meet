@@ -114,6 +114,7 @@ export class RoomsListsComponent implements OnInit {
 	@Output() filterChange = new EventEmitter<RoomTableFilter>();
 	@Output() loadMore = new EventEmitter<RoomTableFilter>();
 	@Output() refresh = new EventEmitter<RoomTableFilter>();
+	@Output() roomClicked = new EventEmitter<string>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
@@ -150,7 +151,6 @@ export class RoomsListsComponent implements OnInit {
 			// Use untracked to avoid creating a reactive dependency on selectedRooms
 			const currentSelection = untracked(() => this.selectedRooms());
 			const filteredSelection = new Set([...currentSelection].filter((id) => validRoomIds.has(id)));
-
 
 			// Only update if the selection has actually changed
 			if (!setsAreEqual(filteredSelection, currentSelection)) {
@@ -259,6 +259,10 @@ export class RoomsListsComponent implements OnInit {
 
 	openRoom(room: MeetRoom) {
 		this.roomAction.emit({ rooms: [room], action: 'open' });
+	}
+
+	onRoomClick(room: MeetRoom) {
+		this.roomClicked.emit(room.roomId);
 	}
 
 	editRoom(room: MeetRoom) {

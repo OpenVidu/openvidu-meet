@@ -1,0 +1,30 @@
+@use '../../../../../../../src/assets/styles/design-tokens' as *;
+
+.ov-breadcrumb {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	color: var(--ov-meet-text-secondary);
+	font-size: var(--ov-meet-font-size-sm);
+
+	.breadcrumb-link {
+		color: var(--ov-meet-color-primary);
+		cursor: pointer;
+		text-decoration: none;
+		transition: color var(--ov-meet-transition-fast);
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	.breadcrumb-separator {
+		@include ov-icon(xs);
+		color: var(--ov-meet-text-hint);
+	}
+
+	.breadcrumb-current {
+		color: var(--ov-meet-text-primary);
+		font-weight: var(--ov-meet-font-weight-medium);
+	}
+}

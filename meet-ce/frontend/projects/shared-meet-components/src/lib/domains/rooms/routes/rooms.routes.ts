@@ -36,5 +36,11 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 				import('../pages/room-wizard/room-wizard.component').then((m) => m.RoomWizardComponent),
 			canActivate: [checkEditableRoomGuard]
 		}
+	},
+	{
+		route: {
+			path: 'rooms/:roomId/detail',
+			loadComponent: () => import('../pages/room-detail/room-detail.component').then((m) => m.RoomDetailComponent)
+		}
 	}
 ];

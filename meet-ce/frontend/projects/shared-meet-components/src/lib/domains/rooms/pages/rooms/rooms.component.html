@@ -42,6 +42,7 @@
 				[showLoadMore]="hasMoreRooms"
 				[initialFilters]="initialFilters()"
 				(roomAction)="onRoomAction($event)"
+				(roomClicked)="onRoomClick($event)"
 				(loadMore)="loadMoreRooms($event)"
 				(refresh)="refreshRooms($event)"
 				(filterChange)="refreshRooms($event)"
