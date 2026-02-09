@@ -1,5 +1,5 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from './recording.model';
-import { SortAndPagination } from './sort-pagination';
+import { MeetRecordingInfo, MeetRecordingStatus } from './recording.model.js';
+import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRecordingInfo.

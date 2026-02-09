@@ -1,4 +1,4 @@
-import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingLayout } from './recording.model';
+import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingLayout } from './recording.model.js';
 
 /**
  * Interface representing the config for a room.

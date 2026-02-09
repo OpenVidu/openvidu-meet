@@ -1,6 +1,6 @@
-import { MeetRoomMemberPermissions } from './permissions/meet-permissions';
-import { MeetRoom, MeetRoomStatus } from './room';
-import { SortAndPagination } from './sort-pagination';
+import { MeetRoomMemberPermissions } from './permissions/meet-permissions.js';
+import { MeetRoom, MeetRoomStatus } from './room.js';
+import { SortAndPagination } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRoom.
