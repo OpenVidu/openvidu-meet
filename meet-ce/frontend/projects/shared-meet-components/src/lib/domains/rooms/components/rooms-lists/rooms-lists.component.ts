@@ -15,8 +15,9 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { RoomUiUtils } from '../../utils/ui';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
@@ -141,6 +142,9 @@ export class RoomsListsComponent implements OnInit {
 		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'Active Meeting' },
 		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
 	];
+
+	// Make RoomUiUtils available in template
+	protected readonly RoomUiUtils = RoomUiUtils;
 
 	constructor() {
 		effect(() => {
@@ -350,148 +354,5 @@ export class RoomsListsComponent implements OnInit {
 	clearFilters() {
 		this.nameFilterControl.setValue('');
 		this.statusFilterControl.setValue('');
-	}
-
-	// ===== PERMISSION AND CAPABILITY METHODS =====
-
-	canOpenRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.CLOSED;
-	}
-
-	canEditRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.ACTIVE_MEETING;
-	}
-
-	// ===== UI HELPER METHODS =====
-
-	// ===== STATUS =====
-
-	getRoomStatus(room: MeetRoom): string {
-		return room.status.toUpperCase().replace(/_/g, ' ');
-	}
-
-	getStatusIcon(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'meeting_room';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'videocam';
-			case MeetRoomStatus.CLOSED:
-				return 'lock';
-		}
-	}
-
-	getStatusTooltip(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'Room is open and ready to accept participants';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'A meeting is currently ongoing in this room';
-			case MeetRoomStatus.CLOSED:
-				return 'Room is closed and not accepting participants';
-		}
-	}
-
-	getStatusColor(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'var(--ov-meet-color-success)';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'var(--ov-meet-color-primary)';
-			case MeetRoomStatus.CLOSED:
-				return 'var(--ov-meet-color-warning)';
-		}
-	}
-
-	// ===== MEETING END ACTION INFO =====
-
-	hasMeetingEndAction(room: MeetRoom): boolean {
-		return room.status === MeetRoomStatus.ACTIVE_MEETING && room.meetingEndAction !== MeetingEndAction.NONE;
-	}
-
-	getMeetingEndActionTooltip(room: MeetRoom): string {
-		switch (room.meetingEndAction) {
-			case MeetingEndAction.CLOSE:
-				return 'The room will be closed when the meeting ends';
-			case MeetingEndAction.DELETE:
-				return 'The room and its recordings will be deleted when the meeting ends';
-			default:
-				return '';
-		}
-	}
-
-	getMeetingEndActionClass(room: MeetRoom): string {
-		switch (room.meetingEndAction) {
-			case MeetingEndAction.CLOSE:
-				return 'meeting-end-close';
-			case MeetingEndAction.DELETE:
-				return 'meeting-end-delete';
-			default:
-				return '';
-		}
-	}
-
-	// ===== AUTO-DELETION =====
-
-	hasAutoDeletion(room: MeetRoom): boolean {
-		return !!room.autoDeletionDate;
-	}
-
-	isAutoDeletionExpired(room: MeetRoom): boolean {
-		if (!room.autoDeletionDate) return false;
-
-		// Check if auto-deletion date is more than 1 hour in the past
-		const oneHourAgo = Date.now() - 60 * 60 * 1000;
-		return room.autoDeletionDate < oneHourAgo;
-	}
-
-	getAutoDeletionStatus(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'DISABLED';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'EXPIRED' : 'SCHEDULED';
-	}
-
-	getAutoDeletionIcon(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'close';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'warning' : 'auto_delete';
-	}
-
-	getAutoDeletionTooltip(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'No auto-deletion. Room remains until manually deleted';
-		}
-
-		if (this.isAutoDeletionExpired(room)) {
-			return 'Auto-deletion date has passed but room was not deleted due to auto-deletion policy';
-		}
-
-		return 'Auto-deletion scheduled';
-	}
-
-	getAutoDeletionClass(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'auto-deletion-disabled';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'auto-deletion-expired' : 'auto-deletion-scheduled';
-	}
-
-	// ===== ROOM TOGGLE =====
-
-	getRoomToggleIcon(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'lock' : 'meeting_room';
-	}
-
-	getRoomToggleLabel(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close Room' : 'Open Room';
-	}
-
-	getRoomToggleIconClass(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'close-room-icon' : 'open-room-icon';
 	}
 }

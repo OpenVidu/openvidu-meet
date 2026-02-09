@@ -15,6 +15,7 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomService } from '../../services/room.service';
+import { RoomUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-room-detail',
@@ -32,11 +33,13 @@ import { RoomService } from '../../services/room.service';
 	styleUrl: './room-detail.component.scss'
 })
 export class RoomDetailComponent implements OnInit {
-	room = signal<MeetRoom | null>(null);
+	room = signal<MeetRoom | undefined>(undefined);
 	isLoading = signal(true);
 	breadcrumbItems = signal<BreadcrumbItem[]>([]);
 	protected log: ILogger;
 	MeetRoomStatus = MeetRoomStatus;
+
+	protected readonly RoomUiUtils = RoomUiUtils;
 
 	constructor(
 		private route: ActivatedRoute,
@@ -66,7 +69,6 @@ export class RoomDetailComponent implements OnInit {
 		try {
 			this.isLoading.set(true);
 			const room = await this.roomService.getRoom(roomId);
-			debugger;
 			this.room.set(room);
 
 			// Update breadcrumb items
@@ -136,40 +138,5 @@ export class RoomDetailComponent implements OnInit {
 				this.notificationService.showSnackbar('Failed to delete room');
 			}
 		}
-	}
-
-	getFormattedDate(timestamp: number): string {
-		return new Date(timestamp).toLocaleString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-	}
-
-	getAutoDeletionStatus(): string {
-		const room = this.room();
-		if (!room) return 'N/A';
-
-		if (room.autoDeletionDate) {
-			return this.getFormattedDate(room.autoDeletionDate);
-		}
-
-		return 'Disabled';
-	}
-
-	isActiveRoom(): boolean {
-		return this.room()?.status === MeetRoomStatus.ACTIVE_MEETING;
-	}
-
-	isClosedRoom(): boolean {
-		return this.room()?.status === MeetRoomStatus.CLOSED;
-	}
-
-	getOwnerInitials(): string {
-		const room = this.room();
-		if (!room || !room.owner) return '';
-		return room.owner.substring(0, 2).toUpperCase();
 	}
 }

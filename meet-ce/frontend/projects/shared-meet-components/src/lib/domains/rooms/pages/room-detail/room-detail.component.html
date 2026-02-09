@@ -34,9 +34,9 @@
 					</div>
 
 					<!-- Status Badge -->
-					<div class="status-badge" [class.active]="isActiveRoom()" [class.closed]="isClosedRoom()">
-						<span class="status-dot" [class.active]="isActiveRoom()"></span>
-						<span class="status-text">{{ room()?.status }}</span>
+					<div class="status-badge" [style.color]="RoomUiUtils.getStatusColor(room())">
+						<span class="status-dot" [style.background-color]="RoomUiUtils.getStatusColor(room())"></span>
+						<span class="status-text">{{ RoomUiUtils.getStatusLabel(room()!) }}</span>
 					</div>
 				</div>
 
@@ -100,7 +100,7 @@
 							<p class="info-label">Owner</p>
 							<div class="owner-info">
 								<div class="owner-avatar">
-									<span>{{ getOwnerInitials() }}</span>
+									<span>{{ RoomUiUtils.getOwnerInitials(room()!) }}</span>
 								</div>
 								<p class="info-value">{{ room()?.owner }}</p>
 							</div>
@@ -109,15 +109,13 @@
 						<!-- Creation Date -->
 						<div class="info-item">
 							<p class="info-label">Creation Date</p>
-							<p class="info-value">{{ getFormattedDate(room()!.creationDate) }}</p>
+							<p class="info-value">{{ RoomUiUtils.formatDate(room()!.creationDate) }}</p>
 						</div>
 
-						<!-- Auto-deletion -->
+						<!-- Auto-Deletion Status -->
 						<div class="info-item">
-							<p class="info-label">Auto-deletion</p>
-							<p class="info-value" [class.disabled]="!room()?.autoDeletionDate">
-								{{ getAutoDeletionStatus() }}
-							</p>
+							<p class="info-label">Auto-Deletion</p>
+							<p class="info-value">{{ RoomUiUtils.getAutoDeletionDisplay(room()!) }}</p>
 						</div>
 					</div>
 				</mat-card-content>
