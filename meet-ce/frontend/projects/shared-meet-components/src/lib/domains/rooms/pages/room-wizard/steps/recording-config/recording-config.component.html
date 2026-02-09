@@ -24,23 +24,6 @@
 					></ov-selectable-card>
 				}
 			</div>
-
-			<!-- Recording Access Selection (only when recording is enabled) -->
-			@if (shouldShowAccessSection) {
-				<div
-					class="access-selection-section"
-					[class.slide-in-from-top]="isRecordingEnabled && !isAnimatingOut"
-					[class.slide-out-to-top]="isAnimatingOut"
-				>
-					<div class="access-header">
-						<mat-icon class="access-icon">security</mat-icon>
-						<div class="access-title-group">
-							<h4 class="access-title">Recording Access Control</h4>
-							<p class="access-description">Choose who can access and view the recordings</p>
-						</div>
-					</div>
-				</div>
-			}
 		</form>
 	</main>
 </div>

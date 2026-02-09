@@ -150,8 +150,4 @@ export class RecordingConfigComponent implements OnDestroy {
 	get isRecordingEnabled(): boolean {
 		return this.selectedValue === 'enabled';
 	}
-
-	get shouldShowAccessSection(): boolean {
-		return this.isRecordingEnabled || this.isAnimatingOut;
-	}
 }
