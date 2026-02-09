@@ -14,8 +14,10 @@ mat-toolbar {
 	@extend .ov-nav-toolbar;
 }
 
-.toolbar-spacer {
-	@extend .toolbar-spacer;
+.icon-division {
+	height: 30%;
+	border: 1px solid var(--ov-meet-text-hint);
+	margin: 2px;
 }
 
 .expanded {
