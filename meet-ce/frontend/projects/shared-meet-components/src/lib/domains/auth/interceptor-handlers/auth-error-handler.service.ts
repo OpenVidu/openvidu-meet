@@ -21,7 +21,6 @@ import { AuthService } from '../services/auth.service';
 export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	private readonly authService = inject(AuthService);
 	private readonly tokenStorageService = inject(TokenStorageService);
-	private readonly router = inject(Router);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
 
 	/**
@@ -48,7 +47,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 		}
 
 		// Special case: room member token generation failed, need to refresh access token first
-		if (error.url?.includes('/token')) {
+		if (error.url?.includes('/members/token')) {
 			return true;
 		}
 
@@ -63,7 +62,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 		const { error } = context;
 
 		// Special case: room member token generation failed
-		if (error.url?.includes('/token')) {
+		if (error.url?.includes('/members/token')) {
 			console.log('Generating room member token failed. Refreshing access token first...');
 		}
 
@@ -97,7 +96,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 					console.error('Error refreshing access token');
 
 					// If the original request was not to the profile endpoint, logout and redirect to the login page
-					if (!originalRequest.url.includes('/profile')) {
+					if (!originalRequest.url.includes('/users/me')) {
 						console.log('Logging out...');
 						await this.authService.logout(pageUrl);
 					}

@@ -41,12 +41,12 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		}
 
 		// Don't handle token generation errors here (let auth handler do it first)
-		if (error.url?.includes('/token')) {
+		if (error.url?.includes('/members/token')) {
 			return false;
 		}
 
 		// Only handle errors that occur in room pages (excluding profile endpoint)
-		return pageUrl.startsWith('/room/') && !request.url.includes('/profile');
+		return pageUrl.startsWith('/room/') && !request.url.includes('/users/me');
 	}
 
 	/**
@@ -70,11 +70,6 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		}
 
 		const secret = this.meetingContextService.roomSecret();
-		if (!secret) {
-			console.error('Cannot refresh room member token: room secret is undefined');
-			return throwError(() => originalError);
-		}
-
 		const participantName = this.roomMemberContextService.getParticipantName();
 		const participantIdentity = this.roomMemberContextService.getParticipantIdentity();
 		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
@@ -102,7 +97,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 				return next(updatedRequest);
 			}),
 			catchError((error: HttpErrorResponse) => {
-				if (error.url?.includes('/token')) {
+				if (error.url?.includes('/members/token')) {
 					console.error('Error refreshing room member token');
 					return throwError(() => originalError);
 				}

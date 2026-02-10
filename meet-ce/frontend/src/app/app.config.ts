@@ -12,11 +12,12 @@ import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
 import {
+	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
-	ROOM_MEMBER_CONTEXT_ADAPTER_PROVIDER,
+	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
@@ -35,11 +36,12 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideAppInitializer(() => inject(ThemeService).init()),
+		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
+		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		{ provide: LayoutService, useClass: MeetingLayoutService },
-		ROOM_MEMBER_CONTEXT_ADAPTER_PROVIDER,
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
