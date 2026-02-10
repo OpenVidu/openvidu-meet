@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
-import { AppDataService } from './app-data.service';
+import { AppContextService } from './app-context.service';
 import { SessionStorageService } from './session-storage.service';
 
 @Injectable({
@@ -13,7 +13,7 @@ export class NavigationService {
 	constructor(
 		private router: Router,
 		private sessionStorageService: SessionStorageService,
-		private appDataService: AppDataService
+		private appCtxService: AppContextService
 	) {}
 
 	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
@@ -46,7 +46,7 @@ export class NavigationService {
 			return;
 		}
 
-		const isEmbeddedMode = this.appDataService.isEmbeddedMode();
+		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
 		if (isEmbeddedMode) {
 			// Change the top window location if in embedded mode
 			window.top!.location.href = url;

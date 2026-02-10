@@ -6,7 +6,7 @@ import {
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import { E2eeService, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
 import { RoomMemberService } from './room-member.service';
@@ -27,7 +27,7 @@ export class RoomMemberContextService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected roomMemberService: RoomMemberService,
-		protected featureConfService: FeatureConfigurationService,
+		protected roomFeatureService: RoomFeatureService,
 		protected tokenStorageService: TokenStorageService,
 		protected e2eeService: E2eeService
 	) {
@@ -122,8 +122,8 @@ export class RoomMemberContextService {
 			this.permissions = metadata.effectivePermissions;
 
 			// Update feature configuration
-			this.featureConfService.setRoomMemberRole(this.role);
-			this.featureConfService.setRoomMemberPermissions(this.permissions);
+			this.roomFeatureService.setRoomMemberRole(this.role);
+			this.roomFeatureService.setRoomMemberPermissions(this.permissions);
 		} catch (error) {
 			this.log.e('Error decoding room member token:', error);
 			throw new Error('Invalid room member token');

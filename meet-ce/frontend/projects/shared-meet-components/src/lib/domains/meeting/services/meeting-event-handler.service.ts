@@ -18,9 +18,9 @@ import {
 	Room,
 	RoomEvent
 } from 'openvidu-components-angular';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
@@ -38,7 +38,7 @@ import { MeetingWebComponentManagerService } from './meeting-webcomponent-manage
 @Injectable()
 export class MeetingEventHandlerService {
 	protected meetingContext = inject(MeetingContextService);
-	protected featureConfService = inject(FeatureConfigurationService);
+	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberService = inject(RoomMemberContextService);
 	protected sessionStorageService = inject(SessionStorageService);

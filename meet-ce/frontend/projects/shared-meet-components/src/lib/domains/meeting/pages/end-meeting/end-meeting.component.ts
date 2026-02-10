@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
-import { AppDataService } from '../../../../shared/services/app-data.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
@@ -26,7 +26,7 @@ export class EndMeetingComponent implements OnInit {
 		private route: ActivatedRoute,
 		protected authService: AuthService,
 		protected navService: NavigationService,
-		protected appDataService: AppDataService,
+		protected appCtxService: AppContextService,
 		protected wcManagerService: MeetingWebComponentManagerService
 	) {}
 
@@ -92,7 +92,7 @@ export class EndMeetingComponent implements OnInit {
 	 * Sets the back button text based on the application mode and user role
 	 */
 	private async setBackButtonText() {
-		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navService.getLeaveRedirectURL();
 		const isAdmin = await this.authService.isAdmin();
 
@@ -113,7 +113,7 @@ export class EndMeetingComponent implements OnInit {
 	 * If in standalone mode without a redirect URL, it navigates to the admin console
 	 */
 	async goBack() {
-		if (this.appDataService.isEmbeddedMode()) {
+		if (this.appCtxService.isEmbeddedMode()) {
 			this.wcManagerService.close();
 		}
 
@@ -124,7 +124,7 @@ export class EndMeetingComponent implements OnInit {
 			return;
 		}
 
-		if (this.appDataService.isStandaloneMode()) {
+		if (this.appCtxService.isStandaloneMode()) {
 			// Navigate to the admin console
 			await this.navService.navigateTo('/overview', undefined, true);
 		}

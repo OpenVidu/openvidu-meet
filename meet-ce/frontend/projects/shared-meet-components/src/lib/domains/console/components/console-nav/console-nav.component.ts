@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
-import { AppDataService } from '../../../../shared/services/app-data.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { ThemeService } from '../../../../shared/services/theme.service';
 
 @Component({
@@ -39,10 +39,10 @@ export class ConsoleNavComponent {
 	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
 
 	constructor(
-		private appDataService: AppDataService,
+		private appCtxService: AppContextService,
 		private themeService: ThemeService
 	) {
-		this.version = `v${this.appDataService.version()} (${this.appDataService.edition()})`;
+		this.version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
 		this.isDarkMode = this.themeService.isDark;
 	}
 

@@ -6,7 +6,7 @@ import {
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
 import { LoggerService, OpenViduService } from 'openvidu-components-angular';
-import { AppDataService } from '../../../shared/services/app-data.service';
+import { AppContextService } from '../../../shared/services/app-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
@@ -30,13 +30,13 @@ export class MeetingWebComponentManagerService {
 	protected readonly openviduService = inject(OpenViduService);
 	protected readonly meetingService = inject(MeetingService);
 	protected readonly loggerService = inject(LoggerService);
-	protected readonly appDataService = inject(AppDataService);
+	protected readonly appCtxService = inject(AppContextService);
 
 	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
 		effect(() => {
-			if (this.appDataService.isEmbeddedMode()) {
+			if (this.appCtxService.isEmbeddedMode()) {
 				this.initialize();
 			}
 		});

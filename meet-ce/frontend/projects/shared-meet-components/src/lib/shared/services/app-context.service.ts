@@ -1,10 +1,14 @@
 import { Injectable, WritableSignal, computed, signal } from '@angular/core';
 import { ApplicationMode, Edition } from '../models';
 
+/**
+ * Centralized service to manage application-wide context such as mode (embedded vs standalone), edition, and version.
+ * This service provides a single source of truth for application-level metadata that can be consumed across the app.
+ */
 @Injectable({
 	providedIn: 'root'
 })
-export class AppDataService {
+export class AppContextService {
 	private readonly _mode: WritableSignal<ApplicationMode> = signal(ApplicationMode.STANDALONE);
 	private readonly _edition: WritableSignal<Edition> = signal(Edition.CE);
 	private readonly _version: WritableSignal<string> = signal('');

@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { AppDataService } from '../../../shared/services/app-data.service';
+import { AppContextService } from '../../../shared/services/app-context.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
@@ -48,7 +48,7 @@ export class MeetingLobbyService {
 	protected authService: AuthService = inject(AuthService);
 	protected roomMemberService: RoomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService: NavigationService = inject(NavigationService);
-	protected appDataService: AppDataService = inject(AppDataService);
+	protected appCtxService: AppContextService = inject(AppContextService);
 	protected wcManagerService: MeetingWebComponentManagerService = inject(MeetingWebComponentManagerService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
@@ -204,7 +204,7 @@ export class MeetingLobbyService {
 	 */
 	async goBack() {
 		try {
-			if (this.appDataService.isEmbeddedMode()) {
+			if (this.appCtxService.isEmbeddedMode()) {
 				this.wcManagerService.close();
 			}
 
@@ -215,7 +215,7 @@ export class MeetingLobbyService {
 				return;
 			}
 
-			if (this.appDataService.isStandaloneMode()) {
+			if (this.appCtxService.isStandaloneMode()) {
 				// Navigate to rooms page
 				await this.navigationService.navigateTo('/rooms');
 			}
@@ -267,7 +267,7 @@ export class MeetingLobbyService {
 	 * Sets the back button text based on the application mode and user role
 	 */
 	protected async setBackButtonText(): Promise<void> {
-		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navigationService.getLeaveRedirectURL();
 		const isAdmin = await this.authService.isAdmin();
 

@@ -1,8 +1,8 @@
+import { inject } from "@angular/core";
 import { ActivatedRouteSnapshot } from "@angular/router";
 import { WebComponentProperty } from "@openvidu-meet/typings";
+import { AppContextService } from "../services/app-context.service";
 import { NavigationService } from "../services/navigation.service";
-import { AppDataService } from "../services/app-data.service";
-import { inject } from "@angular/core";
 
 export const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
 	roomId: params['room-id'] as string,
@@ -18,8 +18,8 @@ export const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) =
  */
 export const handleLeaveRedirectUrl = (leaveRedirectUrl: string | undefined) => {
 	const navigationService = inject(NavigationService);
-	const appDataService = inject(AppDataService);
-	const isEmbeddedMode = appDataService.isEmbeddedMode();
+	const appCtxService = inject(AppContextService);
+	const isEmbeddedMode = appCtxService.isEmbeddedMode();
 
 	// Explicit valid URL provided - use as is
 	if (leaveRedirectUrl && isValidUrl(leaveRedirectUrl)) {

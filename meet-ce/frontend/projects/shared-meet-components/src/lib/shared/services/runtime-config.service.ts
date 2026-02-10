@@ -9,13 +9,14 @@ declare global {
 }
 
 /**
- * Service that provides access to runtime application configuration.
- * Reads configuration injected by the server at runtime.
+ * Service responsible for managing runtime configuration such as base paths for assets.
+ * It reads from a global configuration object injected at runtime (e.g., by the server or hosting environment) and provides utility methods to resolve asset paths.
+ * This allows the application to be flexible in different deployment contexts (e.g., served from root, subpath, or embedded in an iframe).
  */
 @Injectable({
 	providedIn: 'root'
 })
-export class AppConfigService {
+export class RuntimeConfigService {
 	private _basePath: string;
 
 	constructor() {

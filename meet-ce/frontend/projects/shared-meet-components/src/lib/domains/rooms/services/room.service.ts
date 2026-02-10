@@ -12,8 +12,8 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
 import { HttpService } from '../../../shared/services/http.service';
+import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { MeetRoomClientResponseOptions } from '../models/room-request';
 
 @Injectable({
@@ -25,7 +25,7 @@ export class RoomService {
 
 	protected httpService: HttpService = inject(HttpService);
 	protected loggerService: LoggerService = inject(LoggerService);
-	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
+	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
 
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
 
@@ -121,7 +121,7 @@ export class RoomService {
 
 		try {
 			const config = await this.getRoomConfig(roomId);
-			this.featureConfService.setRoomConfig(config);
+			this.roomFeatureService.setRoomConfig(config);
 			this.log.d('Room config loaded:', config);
 		} catch (error) {
 			this.log.e('Error loading room config', error);

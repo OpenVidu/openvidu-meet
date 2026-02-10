@@ -11,11 +11,11 @@ import {
 	Track
 } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
-import { ApplicationFeatures } from '../../../../shared/models/app.model';
-import { AppConfigService } from '../../../../shared/services/app-config.service';
-import { FeatureConfigurationService } from '../../../../shared/services/feature-configuration.service';
+import { RoomFeatures } from '../../../../shared/models/app.model';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RoomFeatureService } from '../../../../shared/services/room-feature.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
@@ -62,9 +62,9 @@ export class MeetingComponent implements OnInit {
 	 */
 	protected isMeetingLeft = signal(false);
 
-	protected features: Signal<ApplicationFeatures>;
+	protected features: Signal<RoomFeatures>;
 	protected participantService = inject(RoomMemberContextService);
-	protected featureConfService = inject(FeatureConfigurationService);
+	protected roomFeatureService = inject(RoomFeatureService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected configService = inject(GlobalConfigService);
 	protected notificationService = inject(NotificationService);
@@ -73,7 +73,7 @@ export class MeetingComponent implements OnInit {
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected soundService = inject(SoundService);
-	protected appConfigService = inject(AppConfigService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected destroy$ = new Subject<void>();
 
 	// === LOBBY PHASE COMPUTED SIGNALS (when showLobby = true) ===
@@ -96,7 +96,7 @@ export class MeetingComponent implements OnInit {
 	protected hasRecordings = computed(() => this.meetingContextService.hasRecordings());
 
 	constructor() {
-		this.features = this.featureConfService.features;
+		this.features = this.roomFeatureService.features;
 
 		// Change theme variables when custom theme is enabled
 		effect(() => {
@@ -210,7 +210,7 @@ export class MeetingComponent implements OnInit {
 	// }
 
 	async onViewRecordingsClicked() {
-		const basePath = this.appConfigService.basePath;
+		const basePath = this.runtimeConfigService.basePath;
 		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
 		window.open(`${basePathForUrl}/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
 	}

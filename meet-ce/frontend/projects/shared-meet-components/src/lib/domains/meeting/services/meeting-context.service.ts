@@ -1,8 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
-import { AppConfigService } from '../../../shared/services/app-config.service';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { CustomParticipantModel } from '../models';
 
@@ -16,10 +15,9 @@ import { CustomParticipantModel } from '../models';
 })
 export class MeetingContextService {
 	private readonly ovParticipantService = inject(ParticipantService);
-	private readonly featureConfigService = inject(FeatureConfigurationService);
+	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
-	private readonly appConfigService = inject(AppConfigService);
 
 	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
@@ -101,12 +99,12 @@ export class MeetingContextService {
 	/**
 	 * Computed signal for whether the current user can moderate the room
 	 */
-	readonly canModerateRoom = computed(() => this.featureConfigService.features().canModerateRoom);
+	readonly canModerateRoom = computed(() => this.roomFeatureService.features().canModerateRoom);
 
 	/**
 	 * Computed signal for whether layout switching is allowed
 	 */
-	readonly allowLayoutSwitching = computed(() => this.featureConfigService.features().allowLayoutSwitching);
+	readonly allowLayoutSwitching = computed(() => this.roomFeatureService.features().allowLayoutSwitching);
 
 	/**
 	 * Computed signal for whether the device is mobile
@@ -195,7 +193,7 @@ export class MeetingContextService {
 	 * @returns CaptionsStatus ('HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING')
 	 */
 	getCaptionsStatus() {
-		return this.featureConfigService.features().captionsStatus;
+		return this.roomFeatureService.features().captionsStatus;
 	}
 
 	/**

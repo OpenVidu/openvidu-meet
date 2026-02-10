@@ -24,7 +24,7 @@ export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 /**
  * Interface that defines all available features in the application
  */
-export interface ApplicationFeatures {
+export interface RoomFeatures {
 	// Media Features
 	/**
 	 * Indicates if video is enabled for the participant

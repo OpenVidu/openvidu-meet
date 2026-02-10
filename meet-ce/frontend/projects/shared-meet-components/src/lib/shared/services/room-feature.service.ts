@@ -7,12 +7,12 @@ import {
 	MeetRoomMemberRole
 } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import { ApplicationFeatures, CaptionsStatus } from '../models/app.model';
+import { CaptionsStatus, RoomFeatures } from '../models/app.model';
 
 /**
- * Base configuration for default features
+ * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
  */
-const DEFAULT_FEATURES: ApplicationFeatures = {
+const DEFAULT_FEATURES: RoomFeatures = {
 	videoEnabled: true,
 	audioEnabled: true,
 	showCamera: true,
@@ -38,16 +38,16 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 };
 
 /**
- * Centralized service to manage feature configuration
- * based on room config and participant permissions
+ * Service responsible for calculating and providing the current set of enabled features in the meeting based on room configuration, participant role, permissions, and appearance settings.
+ * This service acts as a single source of truth for feature availability across the app.
  */
 @Injectable({
 	providedIn: 'root'
 })
-export class FeatureConfigurationService {
+export class RoomFeatureService {
 	protected log;
 
-	// Signals to handle reactive
+	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
 	protected roomMemberRole = signal<MeetRoomMemberRole | undefined>(undefined);
 	protected roomMemberPermissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
@@ -55,7 +55,7 @@ export class FeatureConfigurationService {
 	protected captionsGlobalConfig = signal<boolean>(false);
 
 	// Computed signal to derive features based on current configurations
-	public readonly features = computed<ApplicationFeatures>(() =>
+	public readonly features = computed<RoomFeatures>(() =>
 		this.calculateFeatures(
 			this.roomConfig(),
 			this.roomMemberRole(),
@@ -66,7 +66,7 @@ export class FeatureConfigurationService {
 	);
 
 	constructor(protected loggerService: LoggerService) {
-		this.log = this.loggerService.get('OpenVidu Meet - FeatureConfigurationService');
+		this.log = this.loggerService.get('OpenVidu Meet - RoomFeatureService');
 	}
 
 	/**
@@ -118,9 +118,9 @@ export class FeatureConfigurationService {
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
 		captionsGlobalEnabled: boolean = false
-	): ApplicationFeatures {
+	): RoomFeatures {
 		// Start with default configuration
-		const features: ApplicationFeatures = { ...DEFAULT_FEATURES };
+		const features: RoomFeatures = { ...DEFAULT_FEATURES };
 
 		// Apply room configurations
 		if (roomConfig) {

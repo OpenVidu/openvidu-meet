@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
-import { FeatureConfigurationService } from './feature-configuration.service';
 import { HttpService } from './http.service';
+import { RoomFeatureService } from './room-feature.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,7 +12,7 @@ export class GlobalConfigService {
 
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected httpService: HttpService = inject(HttpService);
-	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
+	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
 
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
 
@@ -51,7 +51,7 @@ export class GlobalConfigService {
 	async loadRoomsAppearanceConfig(): Promise<void> {
 		try {
 			const config = await this.getRoomsAppearanceConfig();
-			this.featureConfService.setAppearanceConfig(config.appearance);
+			this.roomFeatureService.setAppearanceConfig(config.appearance);
 		} catch (error) {
 			this.log.e('Error loading rooms appearance config:', error);
 			throw error;
@@ -71,7 +71,7 @@ export class GlobalConfigService {
 	async loadCaptionsConfig(): Promise<void> {
 		try {
 			const config = await this.getCaptionsConfig();
-			this.featureConfService.setCaptionsGlobalConfig(config.enabled);
+			this.roomFeatureService.setCaptionsGlobalConfig(config.enabled);
 		} catch (error) {
 			this.log.e('Error loading captions config:', error);
 			throw error;

@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppDataService } from '@openvidu-meet/shared-components';
+import { AppContextService } from '@openvidu-meet/shared-components';
 import packageInfo from '../../package.json';
 
 @Component({
@@ -10,9 +10,9 @@ import packageInfo from '../../package.json';
 	imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit {
-	private readonly appDataService = inject(AppDataService);
+	private readonly appCtxService = inject(AppContextService);
 
 	ngOnInit() {
-		this.appDataService.setVersion(packageInfo.version);
+		this.appCtxService.setVersion(packageInfo.version);
 	}
 }
