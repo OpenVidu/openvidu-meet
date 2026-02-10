@@ -1,9 +1,8 @@
-import { WebComponentProperty } from '@openvidu-meet/typings';
-import { extractRecordingQueryParamsGuard } from '../../../shared/guards/extract-query-params.guard';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
-import { validateRoomRecordingsAccessGuard } from '../../rooms/guards/room-validate-access.guard';
+import { validateRoomRecordingsAccessGuard } from '../../meeting/guards/validate-room-access.guard';
+import { extractRoomRecordingsParamsGuard } from '../guards/extract-params.guard';
 import { validateRecordingAccessGuard } from '../guards/recording-validate-access.guard';
 
 /**
@@ -19,9 +18,9 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 				),
 			canActivate: [
 				runGuardsSerially(
-					extractRecordingQueryParamsGuard,
+					extractRoomRecordingsParamsGuard,
 					validateRoomRecordingsAccessGuard,
-					removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY])
+					removeQueryParamsGuard(['secret'])
 				)
 			]
 		}

@@ -1,10 +1,9 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { MeetingContextService } from '../../meeting/services/meeting-context.service';
-
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { MeetingContextService } from '../services/meeting-context.service';
 
 /**
  * Guard to validate access to a room by generating a room member token.
@@ -38,15 +37,11 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 	const navigationService = inject(NavigationService);
 	const meetingContextService = inject(MeetingContextService);
 
+	const secret = meetingContextService.roomSecret();
 	const roomId = meetingContextService.roomId();
 	if (!roomId) {
 		console.error('Cannot validate room access: room ID is undefined');
 		return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM);
-	}
-	const secret = meetingContextService.roomSecret();
-	if (!secret) {
-		console.error('Cannot validate room access: room secret is undefined');
-		return navigationService.redirectToErrorPage(NavigationErrorReason.MISSING_ROOM_SECRET);
 	}
 
 	try {
@@ -59,13 +54,14 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 		if (validateRecordingPermissions) {
 			if (!roomMemberService.hasPermission('canRetrieveRecordings')) {
 				// If the user does not have permission to retrieve recordings, redirect to the error page
-				return navigationService.redirectToErrorPage(NavigationErrorReason.UNAUTHORIZED_RECORDING_ACCESS);
+				return navigationService.redirectToErrorPage(NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS);
 			}
 		}
 
 		return true;
 	} catch (error: any) {
 		console.error('Error generating room member token:', error);
+		const message = error?.error?.message || error.message || 'Unknown error';
 		switch (error.status) {
 			case 400:
 				// Invalid secret
@@ -74,8 +70,17 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 				// Unauthorized access
 				// Redirect to the login page with query param to redirect back to the page
 				return navigationService.redirectToLoginPage(pageUrl);
+			case 403:
+				// Insufficient permissions or anonymous access disabled
+				if (message.includes('Anonymous access')) {
+					return navigationService.redirectToErrorPage(NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED);
+				}
+				return navigationService.redirectToErrorPage(NavigationErrorReason.FORBIDDEN_ROOM_ACCESS);
 			case 404:
-				// Room not found
+				// Room or member not found
+				if (message.includes('Room member')) {
+					return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_MEMBER);
+				}
 				return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM);
 			default:
 				return navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR);

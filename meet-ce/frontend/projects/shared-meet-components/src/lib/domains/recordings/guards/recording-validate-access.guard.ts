@@ -17,11 +17,6 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 	const recordingId = route.params['recording-id'];
 	const secret = route.queryParams['secret'];
 
-	if (!secret) {
-		// If no secret is provided, redirect to the error page
-		return navigationService.redirectToErrorPage(NavigationErrorReason.MISSING_RECORDING_SECRET);
-	}
-
 	try {
 		// Attempt to access the recording to check if the secret is valid
 		await recordingService.getRecording(recordingId, secret);
