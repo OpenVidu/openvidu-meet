@@ -16,6 +16,7 @@ import {
 	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
+	ROOM_MEMBER_CONTEXT_ADAPTER_PROVIDER,
 	RoomMemberInterceptorErrorHandlerService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
@@ -38,6 +39,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		{ provide: LayoutService, useClass: MeetingLayoutService },
+		ROOM_MEMBER_CONTEXT_ADAPTER_PROVIDER,
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),

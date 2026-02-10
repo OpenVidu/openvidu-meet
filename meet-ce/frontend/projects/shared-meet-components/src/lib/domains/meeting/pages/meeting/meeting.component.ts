@@ -63,7 +63,7 @@ export class MeetingComponent implements OnInit {
 	protected isMeetingLeft = signal(false);
 
 	protected features: Signal<RoomFeatures>;
-	protected participantService = inject(RoomMemberContextService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected configService = inject(GlobalConfigService);

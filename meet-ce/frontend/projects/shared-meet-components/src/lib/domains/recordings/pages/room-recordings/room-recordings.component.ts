@@ -46,7 +46,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	protected readonly loggerService = inject(LoggerService);
 	protected readonly recordingService = inject(RecordingService);
-	protected readonly roomMemberService = inject(RoomMemberContextService);
+	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly meetingContextService = inject(MeetingContextService);
@@ -58,7 +58,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
-		this.canDeleteRecordings = this.roomMemberService.hasPermission('canDeleteRecordings');
+		this.canDeleteRecordings = this.roomMemberContextService.hasPermission('canDeleteRecordings');
 
 		// Load recordings
 		const delayLoader = setTimeout(() => {

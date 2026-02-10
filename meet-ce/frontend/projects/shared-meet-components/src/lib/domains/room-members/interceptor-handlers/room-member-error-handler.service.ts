@@ -6,7 +6,6 @@ import {
 	HttpErrorHandler,
 	HttpErrorNotifierService
 } from '../../../shared/services/http-error-notifier.service';
-import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../services/room-member-context.service';
 
@@ -19,9 +18,8 @@ import { RoomMemberContextService } from '../services/room-member-context.servic
 	providedIn: 'root'
 })
 export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandler {
-	private readonly roomMemberService = inject(RoomMemberContextService);
+	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingContextService = inject(MeetingContextService);
-	private readonly tokenStorageService = inject(TokenStorageService);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
 
 	/**
@@ -77,12 +75,12 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			return throwError(() => originalError);
 		}
 
-		const participantName = this.roomMemberService.getParticipantName();
-		const participantIdentity = this.roomMemberService.getParticipantIdentity();
+		const participantName = this.roomMemberContextService.getParticipantName();
+		const participantIdentity = this.roomMemberContextService.getParticipantIdentity();
 		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
 
 		return from(
-			this.roomMemberService.generateToken(roomId, {
+			this.roomMemberContextService.generateToken(roomId, {
 				secret,
 				joinMeeting,
 				participantName,
@@ -92,7 +90,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			switchMap(() => {
 				console.log('Room member token refreshed');
 				// Update the request with the new token
-				const newToken = this.tokenStorageService.getRoomMemberToken();
+				const newToken = this.roomMemberContextService.getRoomMemberToken();
 				const updatedRequest = newToken
 					? originalRequest.clone({
 							setHeaders: {

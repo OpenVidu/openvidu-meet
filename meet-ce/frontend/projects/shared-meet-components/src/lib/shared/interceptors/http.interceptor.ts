@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { ROOM_MEMBER_CONTEXT_ADAPTER, RoomMemberContextAdapter } from '../adapters';
 import { HttpErrorNotifierService, TokenStorageService } from '../services';
 
 /**
@@ -11,7 +12,8 @@ import { HttpErrorNotifierService, TokenStorageService } from '../services';
  */
 const addAuthHeadersIfNeeded = (
 	req: HttpRequest<unknown>,
-	tokenStorageService: TokenStorageService
+	tokenStorageService: TokenStorageService,
+	roomMemberContextService: RoomMemberContextAdapter
 ): HttpRequest<unknown> => {
 	const headers: { [key: string]: string } = {};
 
@@ -22,7 +24,7 @@ const addAuthHeadersIfNeeded = (
 	}
 
 	// Add room member token header if available
-	const roomMemberToken = tokenStorageService.getRoomMemberToken();
+	const roomMemberToken = roomMemberContextService.getRoomMemberToken();
 	if (roomMemberToken) {
 		headers['x-room-member-token'] = `Bearer ${roomMemberToken}`;
 	}
@@ -42,12 +44,13 @@ const addAuthHeadersIfNeeded = (
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router = inject(Router);
 	const tokenStorageService = inject(TokenStorageService);
+	const roomMemberContextService = inject(ROOM_MEMBER_CONTEXT_ADAPTER);
 	const httpErrorNotifier = inject(HttpErrorNotifierService);
 
 	const pageUrl = router.currentNavigation()?.finalUrl?.toString() || router.url;
 
 	// Add all authorization headers if tokens exist
-	req = addAuthHeadersIfNeeded(req, tokenStorageService);
+	req = addAuthHeadersIfNeeded(req, tokenStorageService, roomMemberContextService);
 
 	return next(req).pipe(
 		catchError((error: HttpErrorResponse) => {

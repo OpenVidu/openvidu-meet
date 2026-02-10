@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
 	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
@@ -17,9 +16,9 @@ import { RoomMemberService } from './room-member.service';
 export class RoomMemberContextService {
 	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
 
+	protected roomMemberToken?: string;
 	protected participantName?: string;
 	protected participantIdentity?: string;
-	protected role: MeetRoomMemberRole = MeetRoomMemberRole.SPEAKER;
 	protected permissions?: MeetRoomMemberPermissions;
 
 	protected log;
@@ -32,6 +31,15 @@ export class RoomMemberContextService {
 		protected e2eeService: E2eeService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
+	}
+
+	/**
+	 * Retrieves the current room member token.
+	 *
+	 * @returns The room member token, or undefined if not set
+	 */
+	getRoomMemberToken(): string | undefined {
+		return this.roomMemberToken;
 	}
 
 	/**
@@ -63,13 +71,6 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Clears the participant's identity.
-	 */
-	clearParticipantIdentity(): void {
-		this.participantIdentity = undefined;
-	}
-
-	/**
 	 * Checks if the current room member has a specific permission.
 	 *
 	 * @param permission - The permission to check
@@ -96,13 +97,13 @@ export class RoomMemberContextService {
 		}
 
 		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions);
-		this.tokenStorageService.setRoomMemberToken(token);
+		this.roomMemberToken = token;
 		await this.updateContextFromToken(token);
 		return token;
 	}
 
 	/**
-	 * Updates the room member context (role and permissions) based on the provided token.
+	 * Updates the room member context based on the provided token.
 	 *
 	 * @param token - The room member token
 	 * @throws Error if the token is invalid or expired.
@@ -118,15 +119,24 @@ export class RoomMemberContextService {
 				this.participantIdentity = decodedToken.sub;
 			}
 
-			this.role = metadata.baseRole;
 			this.permissions = metadata.effectivePermissions;
 
 			// Update feature configuration
-			this.roomFeatureService.setRoomMemberRole(this.role);
+			this.roomFeatureService.setRoomMemberRole(metadata.baseRole);
 			this.roomFeatureService.setRoomMemberPermissions(this.permissions);
 		} catch (error) {
 			this.log.e('Error decoding room member token:', error);
 			throw new Error('Invalid room member token');
 		}
+	}
+
+	/**
+	 * Clears the room member context, including token, participant info, role, and permissions.
+	 */
+	clearContext(): void {
+		this.roomMemberToken = undefined;
+		this.participantName = undefined;
+		this.participantIdentity = undefined;
+		this.permissions = undefined;
 	}
 }

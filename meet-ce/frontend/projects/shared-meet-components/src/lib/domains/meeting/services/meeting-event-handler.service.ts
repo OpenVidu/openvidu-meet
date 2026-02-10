@@ -40,7 +40,7 @@ export class MeetingEventHandlerService {
 	protected meetingContext = inject(MeetingContextService);
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
-	protected roomMemberService = inject(RoomMemberContextService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected sessionStorageService = inject(SessionStorageService);
 	protected tokenStorageService = inject(TokenStorageService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);
@@ -158,8 +158,7 @@ export class MeetingEventHandlerService {
 		this.wcManagerService.sendMessageToParent(message);
 
 		// Clear participant identity and token
-		this.roomMemberService.clearParticipantIdentity();
-		this.tokenStorageService.clearRoomMemberToken();
+		this.roomMemberContextService.clearContext();
 
 		// Clean up room secret and e2ee key (if any), except on browser unload)
 		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
@@ -257,7 +256,7 @@ export class MeetingEventHandlerService {
 		const { participantIdentity, newRole, secret } = event;
 		const roomId = this.meetingContext.roomId();
 		const local = this.meetingContext.localParticipant();
-		const participantName = this.roomMemberService.getParticipantName();
+		const participantName = this.roomMemberContextService.getParticipantName();
 
 		// Check if the role update is for the local participant
 		if (local && participantIdentity === local.identity) {
@@ -269,7 +268,7 @@ export class MeetingEventHandlerService {
 
 			try {
 				// Refresh participant token with new role
-				await this.roomMemberService.generateToken(roomId, {
+				await this.roomMemberContextService.generateToken(roomId, {
 					secret,
 					joinMeeting: true,
 					participantName,

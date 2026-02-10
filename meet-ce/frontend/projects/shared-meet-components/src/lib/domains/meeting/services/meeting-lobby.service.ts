@@ -46,7 +46,7 @@ export class MeetingLobbyService {
 	protected meetingService: MeetingService = inject(MeetingService);
 	protected recordingService: RecordingService = inject(RecordingService);
 	protected authService: AuthService = inject(AuthService);
-	protected roomMemberService: RoomMemberContextService = inject(RoomMemberContextService);
+	protected roomMemberContextService: RoomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected appCtxService: AppContextService = inject(AppContextService);
 	protected wcManagerService: MeetingWebComponentManagerService = inject(MeetingWebComponentManagerService);
@@ -290,7 +290,7 @@ export class MeetingLobbyService {
 	 */
 	protected async checkForRecordings(): Promise<void> {
 		try {
-			const canRetrieveRecordings = this.roomMemberService.hasPermission('canRetrieveRecordings');
+			const canRetrieveRecordings = this.roomMemberContextService.hasPermission('canRetrieveRecordings');
 
 			if (!canRetrieveRecordings) {
 				this._state.update((state) => ({ ...state, showRecordingCard: false }));
@@ -332,7 +332,7 @@ export class MeetingLobbyService {
 	 */
 	protected async initializeParticipantName(): Promise<void> {
 		// Apply participant name from RoomMemberService if set, otherwise use authenticated username
-		const currentParticipantName = this.roomMemberService.getParticipantName();
+		const currentParticipantName = this.roomMemberContextService.getParticipantName();
 		const username = await this.authService.getUserName();
 		const participantName = currentParticipantName || username;
 
@@ -350,7 +350,7 @@ export class MeetingLobbyService {
 		try {
 			const roomId = this._state().roomId;
 			const roomSecret = this.meetingContextService.roomSecret();
-			const roomMemberToken = await this.roomMemberService.generateToken(
+			const roomMemberToken = await this.roomMemberContextService.generateToken(
 				roomId!,
 				{
 					secret: roomSecret,
@@ -359,7 +359,7 @@ export class MeetingLobbyService {
 				},
 				this.e2eeKeyValue()
 			);
-			const updatedName = this.roomMemberService.getParticipantName()!;
+			const updatedName = this.roomMemberContextService.getParticipantName()!;
 			this.setParticipantName(updatedName);
 			this._state.update((state) => ({ ...state, roomMemberToken }));
 		} catch (error: any) {

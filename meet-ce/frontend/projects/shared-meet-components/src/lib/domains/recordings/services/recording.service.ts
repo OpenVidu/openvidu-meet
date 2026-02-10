@@ -4,6 +4,7 @@ import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings'
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 
 @Injectable({
@@ -19,6 +20,7 @@ export class RecordingService {
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
 		protected tokenStorageService: TokenStorageService,
+		protected roomMemberContextService: RoomMemberContextService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -130,7 +132,7 @@ export class RecordingService {
 				params.append('accessToken', accessToken);
 			}
 
-			const roomMemberToken = this.tokenStorageService.getRoomMemberToken();
+			const roomMemberToken = this.roomMemberContextService.getRoomMemberToken();
 			if (roomMemberToken) {
 				params.append('roomMemberToken', roomMemberToken);
 			}
@@ -226,7 +228,7 @@ export class RecordingService {
 			params.append('accessToken', accessToken);
 		}
 
-		const roomMemberToken = this.tokenStorageService.getRoomMemberToken();
+		const roomMemberToken = this.roomMemberContextService.getRoomMemberToken();
 		if (roomMemberToken) {
 			params.append('roomMemberToken', roomMemberToken);
 		}

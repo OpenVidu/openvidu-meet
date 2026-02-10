@@ -26,7 +26,7 @@ export class MeetingWebComponentManagerService {
 
 	protected log;
 	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly roomMemberService = inject(RoomMemberContextService);
+	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly openviduService = inject(OpenViduService);
 	protected readonly meetingService = inject(MeetingService);
 	protected readonly loggerService = inject(LoggerService);
@@ -122,7 +122,7 @@ export class MeetingWebComponentManagerService {
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
 				// Only participants with canEndMeeting permission can end the meeting
-				if (!this.roomMemberService.hasPermission('canEndMeeting')) {
+				if (!this.roomMemberContextService.hasPermission('canEndMeeting')) {
 					this.log.w(
 						'End meeting command received but participant does not have permissions to end the meeting'
 					);
@@ -144,7 +144,7 @@ export class MeetingWebComponentManagerService {
 				break;
 			case WebComponentCommand.KICK_PARTICIPANT:
 				// Only participants with canKickParticipants permission can kick participants
-				if (!this.roomMemberService.hasPermission('canKickParticipants')) {
+				if (!this.roomMemberContextService.hasPermission('canKickParticipants')) {
 					this.log.w(
 						'Kick participant command received but participant does not have permissions to kick participants'
 					);

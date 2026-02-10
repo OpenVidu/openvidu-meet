@@ -33,7 +33,7 @@ export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
  * @returns True if access is granted, or UrlTree for redirection
  */
 const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPermissions = false) => {
-	const roomMemberService = inject(RoomMemberContextService);
+	const roomMemberContextService = inject(RoomMemberContextService);
 	const navigationService = inject(NavigationService);
 	const meetingContextService = inject(MeetingContextService);
 
@@ -45,14 +45,14 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 	}
 
 	try {
-		await roomMemberService.generateToken(roomId, {
+		await roomMemberContextService.generateToken(roomId, {
 			secret,
 			joinMeeting: false
 		});
 
 		// Perform recording validation if requested
 		if (validateRecordingPermissions) {
-			if (!roomMemberService.hasPermission('canRetrieveRecordings')) {
+			if (!roomMemberContextService.hasPermission('canRetrieveRecordings')) {
 				// If the user does not have permission to retrieve recordings, redirect to the error page
 				return navigationService.redirectToErrorPage(NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS);
 			}
