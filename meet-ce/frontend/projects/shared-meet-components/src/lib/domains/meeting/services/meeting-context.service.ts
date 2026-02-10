@@ -133,7 +133,7 @@ export class MeetingContextService {
 	setMeetRoom(room: MeetRoom): void {
 		this._meetRoom.set(room);
 		this.setRoomId(room.roomId);
-		this.setMeetingUrl(room.roomId);
+		this.setMeetingUrl(room.accessUrl);
 	}
 
 	/**
@@ -163,15 +163,13 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Updates the meeting URL based on room ID
-	 * @param roomId The room ID
+	 * Updates the meeting URL based on room access URL
+	 * @param accessUrl The room access URL
 	 */
-	private setMeetingUrl(roomId: string): void {
-		const hostname = window.location.origin.replace('http://', '').replace('https://', '');
-		const basePath = this.appConfigService.basePath;
-		// Remove trailing slash from base path for URL construction
-		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-		const meetingUrl = roomId ? `${hostname}${basePathForUrl}/room/${roomId}` : '';
+	private setMeetingUrl(accessUrl: string): void {
+		// Construct the meeting URL using the access URL without the protocol
+		const url = new URL(accessUrl);
+		const meetingUrl = `${url.host}${url.pathname}`;
 		this._meetingUrl.set(meetingUrl);
 	}
 
@@ -180,6 +178,7 @@ export class MeetingContextService {
 	 * @param key The E2EE key
 	 */
 	setE2eeKey(key: string): void {
+		this.sessionStorageService.setE2EEKey(key);
 		this._e2eeKey.set(key);
 	}
 

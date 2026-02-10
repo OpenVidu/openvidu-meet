@@ -136,9 +136,9 @@ export class RoomWizardComponent implements OnInit {
 			// Create room with basic config including e2ee: false (default settings)
 			const { accessUrl } = await this.roomService.createRoom({ roomName }, { fields: ['accessUrl'] });
 
-			// Extract the path and query parameters from the moderator URL and navigate to it
+			// Extract the path from the access URL and navigate to it
 			const url = new URL(accessUrl);
-			const pathWithParams = url.pathname + url.search + url.hash;
+			const pathWithParams = url.pathname;
 			await this.navigationService.redirectTo(pathWithParams);
 		} catch (error) {
 			const errorMessage = `Failed to create room ${roomName}`;
@@ -167,9 +167,9 @@ export class RoomWizardComponent implements OnInit {
 				// Create new room
 				const { accessUrl } = await this.roomService.createRoom(roomOptions, { fields: ['accessUrl'] });
 
-				// Extract the path and query parameters from the moderator URL and navigate to it
+				// Extract the path from the access URL and navigate to it
 				const url = new URL(accessUrl);
-				const pathWithParams = url.pathname + url.search + url.hash;
+				const pathWithParams = url.pathname;
 				await this.navigationService.redirectTo(pathWithParams);
 			}
 		} catch (error) {

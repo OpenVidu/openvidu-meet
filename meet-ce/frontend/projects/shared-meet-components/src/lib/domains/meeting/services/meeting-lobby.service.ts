@@ -148,7 +148,7 @@ export class MeetingLobbyService {
 
 			const [room] = await Promise.all([
 				this.roomService.getRoom(roomId, {
-					fields: ['roomName', 'status', 'config'],
+					fields: ['roomName', 'status', 'config', 'accessUrl'],
 					expand: ['config']
 				}),
 				this.setBackButtonText(),
@@ -353,7 +353,7 @@ export class MeetingLobbyService {
 			const roomMemberToken = await this.roomMemberService.generateToken(
 				roomId!,
 				{
-					secret: roomSecret!,
+					secret: roomSecret,
 					joinMeeting: true,
 					participantName: this.participantName()
 				},
@@ -363,15 +363,34 @@ export class MeetingLobbyService {
 			this.setParticipantName(updatedName);
 			this._state.update((state) => ({ ...state, roomMemberToken }));
 		} catch (error: any) {
-			this.log.e('Error generating room member token:', error);
+			this.log.e('Error generating room member token for joining meeting:', error);
+			const message = error?.error?.message || error.message || 'Unknown error';
 			switch (error.status) {
 				case 400:
 					// Invalid secret
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM_SECRET, true);
 					break;
+				case 403:
+					// Insufficient permissions or anonymous access disabled
+					if (message.includes('Anonymous access')) {
+						await this.navigationService.redirectToErrorPage(
+							NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED,
+							true
+						);
+					} else {
+						await this.navigationService.redirectToErrorPage(
+							NavigationErrorReason.FORBIDDEN_ROOM_ACCESS,
+							true
+						);
+					}
+					break;
 				case 404:
-					// Room not found
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM, true);
+					// Room or member not found
+					if (message.includes('Room member')) {
+						await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_MEMBER, true);
+					} else {
+						await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM, true);
+					}
 					break;
 				case 409:
 					// Room is closed
