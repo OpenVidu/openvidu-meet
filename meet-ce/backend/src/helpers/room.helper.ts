@@ -10,6 +10,7 @@ import {
 } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import { getBasePath } from '../utils/html-injection.utils.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -178,7 +179,10 @@ export class MeetRoomHelper {
 
 		const collapsedRoom = { ...room };
 		const { roomId } = room;
-		const baseUrl = `${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`;
+
+		// Append the base path (without trailing slash)
+		const basePath = getBasePath().slice(0, -1);
+		const baseUrl = `${basePath}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`;
 
 		existingProps.forEach((prop) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
