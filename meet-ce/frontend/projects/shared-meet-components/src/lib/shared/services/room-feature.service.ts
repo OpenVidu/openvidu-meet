@@ -13,28 +13,33 @@ import { CaptionsStatus, RoomFeatures } from '../models/app.model';
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
  */
 const DEFAULT_FEATURES: RoomFeatures = {
-	videoEnabled: true,
-	audioEnabled: true,
-	showCamera: true,
-	showMicrophone: true,
-	showScreenShare: true,
-
-	showRecordingPanel: true,
-	showChat: true,
-	showBackgrounds: true,
-	captionsStatus: 'ENABLED',
-	showParticipantList: true,
-	showSettings: true,
-	showFullscreen: true,
-	showThemeSelector: true,
-	allowLayoutSwitching: true,
-
-	canModerateRoom: false,
-	canRecordRoom: false,
-	canRetrieveRecordings: false,
-
-	hasCustomTheme: false,
-	themeConfig: undefined
+	media: {
+		videoEnabled: true,
+		audioEnabled: true
+	},
+	ui: {
+		showCamera: true,
+		showMicrophone: true,
+		showScreenShare: true,
+		showRecordingPanel: true,
+		showChat: true,
+		showBackgrounds: true,
+		showParticipantList: true,
+		showSettings: true,
+		showFullscreen: true,
+		showThemeSelector: true,
+		showLayoutSelector: true,
+		captionsStatus: 'ENABLED'
+	},
+	permissions: {
+		canModerateRoom: false,
+		canRecordRoom: false,
+		canRetrieveRecordings: false
+	},
+	appearance: {
+		hasCustomTheme: false,
+		themeConfig: undefined
+	}
 };
 
 /**
@@ -119,42 +124,47 @@ export class RoomFeatureService {
 		appearanceConfig?: MeetAppearanceConfig,
 		captionsGlobalEnabled: boolean = false
 	): RoomFeatures {
-		// Start with default configuration
-		const features: RoomFeatures = { ...DEFAULT_FEATURES };
+		// Start with default configuration (deep copy per group)
+		const features: RoomFeatures = {
+			media: { ...DEFAULT_FEATURES.media },
+			ui: { ...DEFAULT_FEATURES.ui },
+			permissions: { ...DEFAULT_FEATURES.permissions },
+			appearance: { ...DEFAULT_FEATURES.appearance }
+		};
 
 		// Apply room configurations
 		if (roomConfig) {
-			features.showRecordingPanel = roomConfig.recording.enabled;
-			features.showChat = roomConfig.chat.enabled;
-			features.showBackgrounds = roomConfig.virtualBackground.enabled;
-			features.captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
+			features.ui.showRecordingPanel = roomConfig.recording.enabled;
+			features.ui.showChat = roomConfig.chat.enabled;
+			features.ui.showBackgrounds = roomConfig.virtualBackground.enabled;
+			features.ui.captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
 		}
 
 		// Apply room member permissions (these can restrict enabled features)
 		if (permissions) {
 			// Only restrict if the feature is already enabled
-			if (features.showRecordingPanel) {
-				features.canRecordRoom = permissions.canRecord;
-				features.canRetrieveRecordings = permissions.canRetrieveRecordings;
+			if (features.ui.showRecordingPanel) {
+				features.permissions.canRecordRoom = permissions.canRecord;
+				features.permissions.canRetrieveRecordings = permissions.canRetrieveRecordings;
 			}
-			if (features.showChat) {
-				features.showChat = permissions.canReadChat;
+			if (features.ui.showChat) {
+				features.ui.showChat = permissions.canReadChat;
 				// TODO: Handle canWriteChat permissions
 			}
-			if (features.showBackgrounds) {
-				features.showBackgrounds = permissions.canChangeVirtualBackground;
+			if (features.ui.showBackgrounds) {
+				features.ui.showBackgrounds = permissions.canChangeVirtualBackground;
 			}
 			// Media features
-			features.videoEnabled = permissions.canPublishVideo;
-			features.audioEnabled = permissions.canPublishAudio;
-			features.showScreenShare = permissions.canShareScreen;
-			features.showCamera = features.videoEnabled;
-			features.showMicrophone = features.audioEnabled;
+			features.media.videoEnabled = permissions.canPublishVideo;
+			features.media.audioEnabled = permissions.canPublishAudio;
+			features.ui.showScreenShare = permissions.canShareScreen;
+			features.ui.showCamera = features.media.videoEnabled;
+			features.ui.showMicrophone = features.media.audioEnabled;
 		}
 
 		// Apply role-based configurations
 		if (role) {
-			features.canModerateRoom = role === MeetRoomMemberRole.MODERATOR;
+			features.permissions.canModerateRoom = role === MeetRoomMemberRole.MODERATOR;
 		}
 
 		// Apply appearance configuration
@@ -162,11 +172,11 @@ export class RoomFeatureService {
 			const theme = appearanceConfig.themes[0];
 			const hasEnabledTheme = theme.enabled;
 
-			features.hasCustomTheme = hasEnabledTheme;
-			features.showThemeSelector = !hasEnabledTheme;
+			features.appearance.hasCustomTheme = hasEnabledTheme;
+			features.ui.showThemeSelector = !hasEnabledTheme;
 
 			if (hasEnabledTheme) {
-				features.themeConfig = theme;
+				features.appearance.themeConfig = theme;
 			}
 		}
 

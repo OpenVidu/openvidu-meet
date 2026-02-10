@@ -74,8 +74,9 @@ export class MeetingComponent implements OnInit {
 	constructor() {
 		// Change theme variables when custom theme is enabled
 		effect(() => {
-			if (this.features().hasCustomTheme) {
-				const theme = this.features().themeConfig;
+			const features = this.features();
+			if (features.appearance.hasCustomTheme) {
+				const theme = features.appearance.themeConfig;
 				this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
 				this.ovThemeService.updateThemeVariables({
 					'--ov-primary-action-color': theme?.primaryColor,

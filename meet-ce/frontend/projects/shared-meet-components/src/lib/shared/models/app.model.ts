@@ -22,21 +22,14 @@ export enum Edition {
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
- * Interface that defines all available features in the application
+ * Sub-interfaces to group related feature flags
  */
-export interface RoomFeatures {
-	// Media Features
-	/**
-	 * Indicates if video is enabled for the participant
-	 */
+export interface MediaFeatures {
 	videoEnabled: boolean;
-
-	/**
-	 * Indicates if audio is enabled for the participant
-	 */
 	audioEnabled: boolean;
+}
 
-	// UI Controls
+export interface UIControls {
 	/**
 	 * Indicates if camera control is shown in the UI
 	 */
@@ -66,12 +59,6 @@ export interface RoomFeatures {
 	 * Indicates if the virtual backgrounds feature is shown in the UI
 	 */
 	showBackgrounds: boolean;
-
-	/**
-	 * Status of captions feature based on room and global configuration
-	 */
-	captionsStatus: CaptionsStatus;
-
 	/**
 	 * Indicates if the participant list is shown in the UI
 	 */
@@ -91,18 +78,49 @@ export interface RoomFeatures {
 	 * Indicates if the theme selector is shown in the UI
 	 */
 	showThemeSelector: boolean;
-
 	/**
-	 * Flag for allowing smart layout. It's changed manually.
+	 * Indicates if the flag for allowing smart layout is enabled. It's changed manually.
 	 */
-	allowLayoutSwitching: boolean;
+	showLayoutSelector: boolean;
+	/**
+	 * Status of captions feature based on room and global configuration
+	 */
+	captionsStatus: CaptionsStatus;
+}
 
-	// Permissions
+export interface PermissionsFeatures {
+	/**
+	 * Indicates if the user has permission to moderate the room
+	 */
 	canModerateRoom: boolean;
+	/**
+	 * Indicates if the user has permission to record the room
+	 */
 	canRecordRoom: boolean;
+	/**
+	 * Indicates if the user has permission to retrieve recordings of the room
+	 */
 	canRetrieveRecordings: boolean;
+}
 
-	// Appearance
+export interface AppearanceFeatures {
 	hasCustomTheme: boolean;
 	themeConfig?: MeetRoomTheme;
+}
+
+/**
+ * Interface that defines all available features in the application
+ */
+export interface RoomFeatures {
+	// Media capabilities
+	media: MediaFeatures;
+
+	// UI Controls
+	ui: UIControls;
+
+	// Permissions
+	permissions: PermissionsFeatures;
+
+	// Appearance
+	appearance: AppearanceFeatures;
 }
