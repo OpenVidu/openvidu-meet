@@ -11,7 +11,8 @@ import { HttpService } from '../../../shared/services/http.service';
 	providedIn: 'root'
 })
 export class RoomMemberService {
-	protected readonly ROOM_MEMBERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
+	protected readonly ROOM_MEMBERS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
+	protected readonly INTERNAL_ROOM_MEMBERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
 
 	constructor(protected httpService: HttpService) {}
 
@@ -21,8 +22,9 @@ export class RoomMemberService {
 	 * @param roomId - The unique identifier of the room
 	 * @returns The API path for room member operations
 	 */
-	protected getRoomMemberApiPath(roomId: string): string {
-		return `${this.ROOM_MEMBERS_API}/${roomId}/members`;
+	protected getRoomMemberApiPath(roomId: string, internal = false): string {
+		const baseApi = internal ? this.INTERNAL_ROOM_MEMBERS_API : this.ROOM_MEMBERS_API;
+		return `${baseApi}/${roomId}/members`;
 	}
 
 	/**
@@ -61,8 +63,9 @@ export class RoomMemberService {
 			const queryParams = new URLSearchParams();
 
 			Object.entries(filters).forEach(([key, value]) => {
-				if (value !== undefined && value !== null) {
-					queryParams.set(key, value.toString());
+				if (value) {
+					const stringValue = Array.isArray(value) ? value.join(',') : value.toString();
+					queryParams.set(key, stringValue);
 				}
 			});
 
@@ -149,7 +152,7 @@ export class RoomMemberService {
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions
 	): Promise<{ token: string }> {
-		const path = `${this.getRoomMemberApiPath(roomId)}/token`;
+		const path = `${this.getRoomMemberApiPath(roomId, true)}/token`;
 		return this.httpService.postRequest(path, tokenOptions);
 	}
 }

@@ -80,7 +80,8 @@ export class RecordingService {
 
 			Object.entries(filters).forEach(([key, value]) => {
 				if (value) {
-					queryParams.set(key, value.toString());
+					const stringValue = Array.isArray(value) ? value.join(',') : value.toString();
+					queryParams.set(key, stringValue);
 				}
 			});
 
