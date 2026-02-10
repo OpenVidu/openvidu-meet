@@ -451,7 +451,7 @@ export class RoomMemberService {
 				const member = await this.getRoomMember(roomId, user.userId);
 
 				if (!member) {
-					throw errorUnauthorized();
+					throw errorInsufficientPermissions();
 				}
 
 				memberId = user.userId;
