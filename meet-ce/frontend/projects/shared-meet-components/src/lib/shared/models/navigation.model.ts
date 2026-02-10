@@ -1,11 +1,12 @@
 export enum NavigationErrorReason {
 	CLOSED_ROOM = 'closed-room',
-	MISSING_ROOM_SECRET = 'missing-room-secret',
-	MISSING_RECORDING_SECRET = 'missing-recording-secret',
+	ANONYMOUS_ACCESS_DISABLED = 'anonymous-access-disabled',
 	INVALID_ROOM_SECRET = 'invalid-room-secret',
 	INVALID_RECORDING_SECRET = 'invalid-recording-secret',
 	INVALID_ROOM = 'invalid-room',
 	INVALID_RECORDING = 'invalid-recording',
-	UNAUTHORIZED_RECORDING_ACCESS = 'unauthorized-recording-access',
+	INVALID_MEMBER = 'invalid-member',
+	FORBIDDEN_ROOM_ACCESS = 'forbidden-room-access',
+	FORBIDDEN_RECORDING_ACCESS = 'forbidden-recording-access',
 	INTERNAL_ERROR = 'internal-error'
 }

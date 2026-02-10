@@ -54,21 +54,16 @@ export class ErrorComponent implements OnInit {
 		const reasonMap: { [key in NavigationErrorReason]: { title: string; message: string } } = {
 			[NavigationErrorReason.CLOSED_ROOM]: {
 				title: 'Closed room',
-				message: 'The room you are trying to access is closed'
+				message: 'Meetings in this room are not available while it is closed'
 			},
-			[NavigationErrorReason.MISSING_ROOM_SECRET]: {
-				title: 'Invalid link',
-				message:
-					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
-			},
-			[NavigationErrorReason.MISSING_RECORDING_SECRET]: {
-				title: 'Invalid link',
-				message: 'The link you used to access this recording is not valid'
+			[NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED]: {
+				title: 'Anonymous access disabled',
+				message: 'The anonymous access for your role has been disabled in this room'
 			},
 			[NavigationErrorReason.INVALID_ROOM_SECRET]: {
 				title: 'Invalid link',
 				message:
-					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
+					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room'
 			},
 			[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
 				title: 'Invalid link',
@@ -82,8 +77,16 @@ export class ErrorComponent implements OnInit {
 				title: 'Invalid recording',
 				message: 'The recording you are trying to access does not exist or has been deleted'
 			},
-			[NavigationErrorReason.UNAUTHORIZED_RECORDING_ACCESS]: {
-				title: 'Unauthorized recording access',
+			[NavigationErrorReason.INVALID_MEMBER]: {
+				title: 'Invalid member',
+				message: 'You are no longer a member of this room or the member information is incorrect'
+			},
+			[NavigationErrorReason.FORBIDDEN_ROOM_ACCESS]: {
+				title: 'Forbidden room access',
+				message: 'You are not authorized to access this room'
+			},
+			[NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS]: {
+				title: 'Forbidden recording access',
 				message: 'You are not authorized to access the recordings in this room'
 			},
 			[NavigationErrorReason.INTERNAL_ERROR]: {
