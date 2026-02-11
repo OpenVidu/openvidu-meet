@@ -2,7 +2,7 @@ import { MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typing
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
-import { getBasePath } from '../utils/html-injection.utils.js';
+import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
 

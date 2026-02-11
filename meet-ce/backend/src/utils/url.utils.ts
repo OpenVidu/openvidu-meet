@@ -1,7 +1,7 @@
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
 import { BaseUrlService } from '../services/base-url.service.js';
-import { getBasePath } from './html-injection.utils.js';
+import { getBasePath } from './html-dynamic-base-path.utils.js';
 
 /**
  * Returns the base URL for the application, including the configured base path.
