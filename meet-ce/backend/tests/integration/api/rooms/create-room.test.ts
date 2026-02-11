@@ -17,6 +17,7 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	DEFAULT_RECORDING_ENCODING_PRESET,
 	DEFAULT_RECORDING_LAYOUT,
+	expectExtraFieldsInResponse,
 	expectValidRoom,
 	expectValidationError
 } from '../../../helpers/assertion-helpers.js';
@@ -41,6 +42,7 @@ describe('Room API Tests', () => {
 		it('Should create a room with default name when roomName is omitted', async () => {
 			const room = await createRoom();
 			expectValidRoom(room, 'Room');
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
@@ -48,6 +50,7 @@ describe('Room API Tests', () => {
 				roomName: 'Test Room'
 			});
 			expectValidRoom(room, 'Test Room');
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room with a valid autoDeletionDate', async () => {
@@ -57,6 +60,7 @@ describe('Room API Tests', () => {
 			});
 
 			expectValidRoom(room, 'Room', 'room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room when sending full valid payload', async () => {
@@ -86,10 +90,11 @@ describe('Room API Tests', () => {
 				room,
 				'Example Room',
 				'example_room',
-				'expandable',
+				undefined,
 				validAutoDeletionDate,
 				payload.autoDeletionPolicy
 			);
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room when sending partial config', async () => {
@@ -119,8 +124,8 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', 'expandable', validAutoDeletionDate);
-
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(
 				response.body,
@@ -158,8 +163,8 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true } // Default value
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', 'expandable', validAutoDeletionDate);
-
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(
 				response.body,
@@ -170,54 +175,63 @@ describe('Room API Tests', () => {
 			);
 		});
 
-		it('should create a room with collapsed config by default', async () => {
+		it('should not include config property by default (extraFields not specified)', async () => {
 			const room = await createRoom({
-				roomName: 'Collapsed Config Room'
+				roomName: 'Default Room'
 			});
 
-			expect(room.config).toBeDefined();
-			expect((room.config as any)._expandable).toBe(true);
-			expect((room.config as any)._href).toBe(
-				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}?expand=config`
-			);
+			// Config should not be in the response by default
+			expect(room.config).toBeUndefined();
+			// But _extraFields metadata should be present
+			expect((room as any)._extraFields).toBeDefined();
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
 		});
 
-		it('should expand config when x-Expand header is provided', async () => {
+		it('should include extra fields when X-ExtraFields header is provided', async () => {
 			const room = await createRoom(
 				{
-					roomName: 'Collapsed Config Room'
+					roomName: 'Extra Fields Room'
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
+			// Config should be present when requested via extraFields
 			expect(room.config).toBeDefined();
-			expect((room.config as any)._expandable).toBeUndefined();
-			expect((room.config as any)._href).toBeUndefined();
 			expect(room.config.recording.layout).toBe(DEFAULT_RECORDING_LAYOUT);
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
 		});
 
-		it('should filter fields when x-Field header is provided', async () => {
+		it('should filter fields when x-Fields header is provided', async () => {
 			const room = await createRoom(undefined, undefined, { xFields: 'roomName' });
 
-			expect(Object.keys(room).length).toBe(1);
+			expect(Object.keys(room).length).toBe(2); // roomName + _extraFields
 			expect(room.roomName).toBeDefined();
-		});
-
-		it('should filter fields and expand config when both xFields and xExpand are provided', async () => {
-			const room = await createRoom(undefined, undefined, { xFields: 'config', xExpand: 'config' });
-
-			expect(Object.keys(room).length).toBe(1);
-			expect(room.config).toBeDefined();
-			expect((room.config as any)._expandable).toBeUndefined();
-			expect((room.config as any)._href).toBeUndefined();
-		});
-
-		it('should not includes config if filter fields are provided without config', async () => {
-			const room = await createRoom(undefined, undefined, { xFields: 'roomName', xExpand: 'config' });
-
-			expect(room.roomName).toBeDefined();
+			expect((room as any)._extraFields).toBeDefined();
+			// Config should not be present even though we're filtering fields
 			expect(room.config).toBeUndefined();
+		});
+
+		it('should include extra fields even when fields filter is applied', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomId,config', xExtraFields: 'config' });
+
+			// Should only have roomId, config, and _extraFields
+			expect(Object.keys(room).length).toBe(3);
+			expect(room.roomId).toBeDefined();
+			expect(room.config).toBeDefined();
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
+		});
+
+		it('should not include config if filter fields are provided without config but should include it with extraFields', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomName', xExtraFields: 'config' });
+
+			expect(Object.keys(room).length).toBe(3); // roomName, config, _extraFields
+			expect(room.roomName).toBeDefined();
+			expect(room.config).toBeDefined();
+			expect((room as any)._extraFields).toBeDefined();
 		});
 	});
 
@@ -388,7 +402,8 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', 'expandable');
+			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', undefined);
+			expectExtraFieldsInResponse(room);
 
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(response.body, 'Room without encoding', 'room_without_encoding', expectedConfig);
@@ -418,7 +433,7 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', 'expandable');
+			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', undefined);
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(response.body, '1080p Preset Room', '1080p_preset_room', expectedConfig);
 		});
@@ -447,7 +462,7 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', 'expandable');
+			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', undefined);
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(response.body, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
 		});
@@ -506,7 +521,7 @@ describe('Room API Tests', () => {
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', 'expandable');
+			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', undefined);
 			const response = await getRoom(room.roomId, undefined, 'config');
 			expectValidRoom(
 				response.body,
@@ -518,20 +533,20 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Room Creation Validation failures', () => {
-		it('should fail when x-Expand header has invalid value', async () => {
+		it('should fail when x-ExtraFields header has invalid value', async () => {
 			const payload = {
-				roomName: 'Test Room with Invalid Expand Header'
+				roomName: 'Test Room with Invalid ExtraFields Header'
 			};
 
 			const response = await request(app)
 				.post(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.set('x-Expand', 'invalidField')
+				.set('x-ExtraFields', 'invalidField')
 				.send(payload)
 				.expect(422);
 
 			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('Invalid expand properties.');
+			expect(JSON.stringify(response.body.details)).toContain('Invalid extraFields');
 		});
 
 		it('should fail when autoDeletionDate is negative', async () => {

@@ -2,7 +2,17 @@ description: Success response for retrieving a room
 content:
     application/json:
         schema:
-            $ref: '../schemas/meet-room.yaml'
+            allOf:
+                - $ref: '../schemas/meet-room.yaml'
+                - type: object
+                  properties:
+                      _extraFields:
+                          type: array
+                          description: >
+                              List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                          items:
+                              type: string
+                              example: config
         examples:
             default_room_details:
                 summary: Full room details response
@@ -15,9 +25,6 @@ content:
                     autoDeletionPolicy:
                         withMeeting: when_meeting_ends
                         withRecordings: close
-                    config:
-                       _expandable: true
-                       _href: '/api/v1/rooms/room-123?expand=config'
                     roles:
                         moderator:
                             permissions:
@@ -61,6 +68,8 @@ content:
                     accessUrl: 'http://localhost:6080/room/room-123'
                     status: open
                     meetingEndAction: none
+                    _extraFields:
+                        - config
 
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config
@@ -69,11 +78,10 @@ content:
                     roomName: 'room'
                     creationDate: 1620000000000
                     autoDeletionDate: 1900000000000
-                    config:
-                        _expandable: true
-                        _href: '/api/v1/rooms/room-123?expand=config'
+                    _extraFields:
+                        - config
 
-            expand=config:
+            extraFields=config:
                 summary: Room details with expanded config
                 value:
                     roomId: 'room-123'
@@ -83,7 +91,6 @@ content:
                     config:
                         chat:
                             enabled: true
-                            saveChat: true
                         recording:
                             enabled: true
                             layout: grid
@@ -94,6 +101,8 @@ content:
                             enabled: false
                         captions:
                             enabled: true
+                    _extraFields:
+                        - config
             fields=anonymous:
                 summary: Response containing only anonymous access configuration
                 value:
@@ -104,3 +113,5 @@ content:
                         speaker:
                             enabled: true
                             accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                    _extraFields:
+                        - config

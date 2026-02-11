@@ -2,7 +2,17 @@ description: Room created successfully
 content:
     application/json:
         schema:
-            $ref: '../schemas/meet-room.yaml'
+            allOf:
+                - $ref: '../schemas/meet-room.yaml'
+                - type: object
+                  properties:
+                      _extraFields:
+                          type: array
+                          description: >
+                            List of extra fields that can be included in the response based on the `X-ExtraFields` header.
+                          items:
+                              type: string
+                              example: config
 headers:
     Location:
         description: URL of the newly created room

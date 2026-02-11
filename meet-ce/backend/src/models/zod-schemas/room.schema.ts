@@ -1,5 +1,5 @@
 import {
-	MEET_ROOM_EXPANDABLE_FIELDS,
+	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
 	MeetAppearanceConfig,
 	MeetChatConfig,
@@ -16,7 +16,7 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomExpandableProperties,
+	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
@@ -369,38 +369,40 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
-// Shared expand validation schema for Room entity
+// Shared extraFields validation schema for Room entity
 // Validates and transforms comma-separated string to typed array
-const expandSchema = z
+const extraFieldsSchema = z
 	.string()
 	.optional()
 	.refine(
 		(value) => {
 			if (!value) return true;
 
-			const allowed = MEET_ROOM_EXPANDABLE_FIELDS;
+			const allowed = MEET_ROOM_EXTRA_FIELDS;
 			const requested = value.split(',').map((p) => p.trim());
 
-			return requested.every((p) => allowed.includes(p as MeetRoomExpandableProperties));
+			return requested.every((p) => allowed.includes(p as MeetRoomExtraField));
 		},
 		{
-			message: `Invalid expand properties. Valid options: ${MEET_ROOM_EXPANDABLE_FIELDS.join(', ')}`
+			message: `Invalid extraFields. Valid options: ${MEET_ROOM_EXTRA_FIELDS.join(', ')}`
 		}
 	)
 	.transform((value) => {
-		// Transform to typed array of MeetRoomExpandableProperties
+		// Transform to typed array of MeetRoomExtraField
 		if (!value) return undefined;
 
-		const allowed = MEET_ROOM_EXPANDABLE_FIELDS;
+		const allowed = MEET_ROOM_EXTRA_FIELDS;
 		const requested = value.split(',').map((p) => p.trim());
-		const valid = requested.filter((p) => allowed.includes(p as MeetRoomExpandableProperties));
+		const valid = requested.filter((p) => allowed.includes(p as MeetRoomExtraField));
 
-		return valid.length > 0 ? (valid as MeetRoomExpandableProperties[]) : undefined;
+		return valid.length > 0 ? (valid as MeetRoomExtraField[]) : undefined;
 	});
 
 // Shared fields validation schema for Room entity
 // Validates and transforms comma-separated string to typed array
-// Only allows fields that exist in MEET_ROOM_FIELDS
+// IMPORTANT: Only allows BASE fields (non-extra fields) in the 'fields' parameter.
+// Any extra fields included in 'fields' will be automatically filtered out.
+// Extra fields MUST be requested via the 'extraFields' parameter.
 const fieldsSchema = z
 	.string()
 	.optional()
@@ -412,22 +414,27 @@ const fieldsSchema = z
 			.map((field) => field.trim())
 			.filter((field) => field !== '');
 
-		// Filter: only keep valid fields that exist in MeetRoom
-		const validFields = requested.filter((field) =>
-			MEET_ROOM_FIELDS.includes(field as MeetRoomField)
-		) as MeetRoomField[];
+		// Filter: only keep valid BASE fields (exclude extra fields)
+		// This ensures 'fields' parameter can ONLY contain base fields
+		const validBaseFields = requested.filter((field) => {
+			// Must be a valid field AND NOT an extra field
+			return (
+				MEET_ROOM_FIELDS.includes(field as MeetRoomField) &&
+				!MEET_ROOM_EXTRA_FIELDS.includes(field as MeetRoomExtraField)
+			);
+		}) as MeetRoomField[];
 
 		// Deduplicate
-		const unique = Array.from(new Set(validFields));
+		const unique = Array.from(new Set(validBaseFields));
 
-		return unique.length > 0 ? unique : [];
+		return unique.length > 0 ? unique : undefined;
 	});
 
 export const RoomFiltersSchema = z.object({
 	roomName: z.string().optional(),
 	status: z.nativeEnum(MeetRoomStatus).optional(),
 	fields: fieldsSchema,
-	expand: expandSchema,
+	extraFields: extraFieldsSchema,
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -445,12 +452,12 @@ export const RoomFiltersSchema = z.object({
 
 export const GetRoomQuerySchema = z.object({
 	fields: fieldsSchema,
-	expand: expandSchema
+	extraFields: extraFieldsSchema
 });
 
 export const CreateRoomHeadersSchema = z.object({
 	'x-fields': fieldsSchema,
-	'x-expand': expandSchema
+	'x-extrafields': extraFieldsSchema
 });
 
 export const DeleteRoomReqSchema = z.object({

@@ -1,4 +1,4 @@
-import { MeetRoomExpandableProperties, MeetRoomField } from '@openvidu-meet/typings';
+import { MeetRoomExtraField, MeetRoomField } from '@openvidu-meet/typings';
 
 /**
  * Options for configuring the response MeetRoom REST API object
@@ -10,8 +10,8 @@ export interface MeetRoomClientResponseOptions {
 	 */
 	fields?: MeetRoomField[];
 	/**
-	 * Array of expandable properties to expand in the response.
-	 * If not specified, expandable properties will not be expanded.
+	 * Array of extra properties to include in the response.
+	 * These are not included by default.
 	 */
-	expand?: MeetRoomExpandableProperties[];
+	extraFields?: MeetRoomExtraField[];
 }

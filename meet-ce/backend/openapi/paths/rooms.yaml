@@ -2,15 +2,18 @@
     post:
         operationId: createRoom
         summary: Create a room
-        description: >
+        description: |
             Creates a new OpenVidu Meet room.
             The room will be available for participants to join using the generated URLs.
-            <br/>
+
+            **Response Customization:**
+
             You can control the response format using custom headers:
-
-            - `X-Expand`: Include expanded properties (e.g., `config`) instead of stubs
-
+            - `X-ExtraFields`: Include extra fields (e.g., `config`) that are excluded by default
             - `X-Fields`: Filter which fields to include in the response for efficiency
+
+            > **Note:** POST operations use headers instead of query parameters to avoid sensitive data appearing in URL logs.
+            > GET operations use query parameters for easier caching and bookmarking.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -18,7 +21,7 @@
             - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/x-fields-header.yaml'
-            - $ref: '../components/parameters/x-expand-header.yaml'
+            - $ref: '../components/parameters/x-extrafields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/create-room-request.yaml'
         responses:
@@ -41,6 +44,10 @@
 
             By default, the rooms are sorted by creation date in descending order (newest first).
 
+            **Field Filtering:**
+            - Use `fields` to specify which base properties to include (whitelist approach)
+            - Use `extraFields` to include additional properties that are excluded by default (e.g., `config`)
+
             > **Note:** If this endpoint is called using the `accessTokenHeader` authentication method,
             > only rooms the authenticated user has access to will be returned.
         tags:
@@ -52,7 +59,7 @@
             - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/room-status.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/expand.yaml'
+            - $ref: '../components/parameters/extraFields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
             - $ref: '../components/parameters/sort-field.yaml'
@@ -108,12 +115,16 @@
     get:
         operationId: getRoom
         summary: Get a room
-        description: >
+        description: |
             Retrieves the details of an OpenVidu Meet room with the specified room ID.
-            <br/>
+
             By default, certain large properties like `config` are excluded from the response
-            to reduce payload size. These properties are replaced with an expandable stub.
-            Use the `expand` parameter to include these properties when needed.
+            to reduce payload size and optimize performance.
+            Use the `extraFields` query parameter to include these properties when needed.
+
+            **Field Filtering:**
+            - Use `fields` to specify which base properties to include (whitelist approach)
+            - Use `extraFields` to include additional properties that are excluded by default
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -123,7 +134,7 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/expand.yaml'
+            - $ref: '../components/parameters/extraFields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'

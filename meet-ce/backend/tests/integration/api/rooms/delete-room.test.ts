@@ -321,7 +321,7 @@ describe('Room API Tests', () => {
 					attempts++;
 
 					if (attempts < maxAttempts) {
-						await new Promise(resolve => setTimeout(resolve, retryDelay));
+						await new Promise((resolve) => setTimeout(resolve, retryDelay));
 					}
 				}
 

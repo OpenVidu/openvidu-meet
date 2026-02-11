@@ -1,0 +1,24 @@
+name: X-ExtraFields
+in: header
+description: >
+    Specifies which extra fields to include fully in the response.
+
+    By default, certain large or nested properties (like `config`) are excluded
+    to optimize payload size and reduce network bandwidth.
+
+    Use this header to include the full data of these properties in the creation response,
+    avoiding the need for a subsequent GET request.
+
+    Provide a comma-separated list of property names to include.
+
+    Note: Extra fields specified here will be included even if not specified in the `X-Fields` header.
+required: false
+schema:
+    type: string
+examples:
+    config:
+        value: 'config'
+        summary: Include full room configuration in response
+    combined:
+        value: 'config'
+        summary: 'Use with X-Fields header for union behavior (X-Fields ∪ X-ExtraFields)'

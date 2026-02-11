@@ -394,7 +394,7 @@ export const deleteAllUsers = async () => {
  * @param accessToken - Optional access token for authentication (uses API key if not provided)
  * @param headers - Optional headers object supporting:
  *                  - xFields: Comma-separated list of fields to include (e.g., 'roomId,roomName')
- *                  - xExpand: Comma-separated list of properties to expand (e.g., 'config')
+ *                  - xExtraFields: Comma-separated list of extra fields to include (e.g., 'config')
  * @returns A Promise that resolves to the created MeetRoom
  * @example
  * ```
@@ -404,14 +404,14 @@ export const deleteAllUsers = async () => {
  * // Create room with specific fields only
  * const room = await createRoom({ roomName: 'Test' }, undefined, { xFields: 'roomId,roomName' });
  *
- * // Create room with expanded config
- * const room = await createRoom({ roomName: 'Test' }, undefined, { xExpand: 'config' });
+ * // Create room with extra fields included
+ * const room = await createRoom({ roomName: 'Test' }, undefined, { xExtraFields: 'config' });
  * ```
  */
 export const createRoom = async (
 	options: MeetRoomOptions = {},
 	accessToken?: string,
-	headers?: { xFields?: string; xExpand?: string }
+	headers?: { xFields?: string; xExtraFields?: string }
 ): Promise<MeetRoom> => {
 	checkAppIsRunning();
 
@@ -431,8 +431,8 @@ export const createRoom = async (
 		req.set('x-fields', headers.xFields);
 	}
 
-	if (headers?.xExpand) {
-		req.set('x-expand', headers.xExpand);
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
 	}
 
 	const response = await req;
@@ -453,19 +453,19 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
  *
  * @param roomId - The unique identifier of the room to retrieve
  * @param fields - Optional fields to filter in the response
- * @param expand - Optional expand parameter to include additional data (e.g., 'config')
+ * @param extraFields - Optional extraFields parameter to include additional data (e.g., 'config')
  * @param roomMemberToken - Optional room member token for authentication
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string, expand?: string, roomMemberToken?: string) => {
+export const getRoom = async (roomId: string, fields?: string, extraFields?: string, roomMemberToken?: string) => {
 	checkAppIsRunning();
 
 	const queryParams: Record<string, string> = {};
 
 	if (fields) queryParams.fields = fields;
 
-	if (expand) queryParams.expand = expand;
+	if (extraFields) queryParams.extraFields = extraFields;
 
 	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))

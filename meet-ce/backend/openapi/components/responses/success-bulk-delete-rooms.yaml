@@ -28,14 +28,15 @@ content:
                                 type: string
                                 description: A message providing additional context about the success
                             room:
-                                $ref: '../schemas/meet-room.yaml'
+                                allOf:
+                                    - $ref: '../schemas/meet-room.yaml'
+                                    - type: object
+                                      properties:
+                                          _extraFields:
+                                              type: array
+                                              description: >
+                                                  List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                                              items:
+                                                  type: string
+                                                  example: config
                     description: List of rooms that were successfully processed for deletion
-        example:
-            message: 'All rooms successfully processed for deletion'
-            successful:
-                - roomId: room-123
-                  successCode: room_deleted
-                  message: Room 'room-123' deleted successfully
-                - roomId: room-456
-                  successCode: room_with_active_meeting_deleted
-                  message: Room 'room-456' with active meeting deleted successfully

@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
+	expectExtraFieldsInResponse,
 	expectSuccessRoomsResponse,
 	expectValidationError,
 	expectValidRoom,
@@ -36,8 +37,8 @@ describe('Room API Tests', () => {
 
 			const response = await getRooms();
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
-
-			expectValidRoom(response.body.rooms[0], 'test-room', 'test_room', 'expandable');
+			expectValidRoom(response.body.rooms[0], 'test-room', 'test_room');
+			expectExtraFieldsInResponse(response.body.rooms[0]);
 		});
 
 		it('should return a list of rooms applying fields filter', async () => {
@@ -52,6 +53,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			expectValidRoomWithFields(rooms[0], ['roomId', 'creationDate']);
+			expectExtraFieldsInResponse(rooms[0]);
 		});
 
 		it('should return a list of rooms applying roomName filter', async () => {
@@ -247,20 +249,20 @@ describe('Room API Tests', () => {
 		});
 	});
 
-	describe('List Rooms with Expand Parameter Tests', () => {
-		it('should return rooms with config as expandable stub when expand parameter is not provided', async () => {
+	describe('List Rooms with ExtraFields Parameter Tests', () => {
+		it('should return rooms without config when extraFields parameter is not provided', async () => {
 			await createRoom({
-				roomName: 'no-expand-list-test'
+				roomName: 'no-extrafields-list-test'
 			});
 
 			const response = await getRooms();
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			const room = response.body.rooms[0];
-			expectValidRoom(room, 'no-expand-list-test', 'no_expand_list_test', 'expandable');
+			expectValidRoom(room, 'no-extrafields-list-test', 'no_extrafields_list_test');
 		});
 
-		it('should return rooms with full config when using expand=config', async () => {
+		it('should return rooms with full config when using extraFields=config', async () => {
 			const customConfig = {
 				recording: {
 					enabled: false,
@@ -274,27 +276,27 @@ describe('Room API Tests', () => {
 			};
 
 			await createRoom({
-				roomName: 'expand-list-test',
+				roomName: 'extrafields-list-test',
 				config: customConfig
 			});
 
-			const response = await getRooms({ expand: 'config' });
+			const response = await getRooms({ extraFields: 'config' });
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			const room = response.body.rooms[0];
-			expectValidRoom(room, 'expand-list-test', 'expand_list_test', customConfig);
+			expectValidRoom(room, 'extrafields-list-test', 'extrafields_list_test', customConfig);
 		});
 
-		it('should fail when expand has invalid values', async () => {
+		it('should fail when extraFields has invalid values', async () => {
 			await createRoom({
-				roomName: 'invalid-expand-list'
+				roomName: 'invalid-extrafields-list'
 			});
 
-			const response = await getRooms({ expand: 'invalid,wrongparam' });
-			expectValidationError(response, 'expand', 'Invalid expand properties. Valid options: config');
+			const response = await getRooms({ extraFields: 'invalid,wrongparam' });
+			expectValidationError(response, 'extraFields', 'Invalid extraFields');
 		});
 
-		it('should return multiple rooms with full config when using expand=config', async () => {
+		it('should return multiple rooms with full config when using extraFields=config', async () => {
 			const config1 = {
 				recording: {
 					enabled: true,
@@ -320,22 +322,22 @@ describe('Room API Tests', () => {
 			};
 
 			await Promise.all([
-				createRoom({ roomName: 'multi-expand-1', config: config1 }),
-				createRoom({ roomName: 'multi-expand-2', config: config2 })
+				createRoom({ roomName: 'multi-extrafields-1', config: config1 }),
+				createRoom({ roomName: 'multi-extrafields-2', config: config2 })
 			]);
 
-			const response = await getRooms({ expand: 'config' });
+			const response = await getRooms({ extraFields: 'config' });
 			expectSuccessRoomsResponse(response, 2, 10, false, false);
 
 			const rooms = response.body.rooms;
-			const room1 = rooms.find((r: MeetRoom) => r.roomName === 'multi-expand-1');
-			const room2 = rooms.find((r: MeetRoom) => r.roomName === 'multi-expand-2');
+			const room1 = rooms.find((r: MeetRoom) => r.roomName === 'multi-extrafields-1');
+			const room2 = rooms.find((r: MeetRoom) => r.roomName === 'multi-extrafields-2');
 
 			expect(room1).toBeDefined();
 			expect(room2).toBeDefined();
 
-			expectValidRoom(room1, 'multi-expand-1', 'multi_expand_1', config1);
-			expectValidRoom(room2, 'multi-expand-2', 'multi_expand_2', config2);
+			expectValidRoom(room1, 'multi-extrafields-1', 'multi_extrafields_1', config1);
+			expectValidRoom(room2, 'multi-extrafields-2', 'multi_extrafields_2', config2);
 		});
 	});
 });

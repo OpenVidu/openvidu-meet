@@ -92,7 +92,7 @@ export class RoomWizardComponent implements OnInit {
 		try {
 			const { roomName, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId, {
 				fields: ['roomName', 'autoDeletionDate', 'config'],
-				expand: ['config']
+				extraFields: ['config']
 			});
 			this.existingRoomData = { roomName, autoDeletionDate, config };
 			if (this.existingRoomData) {

@@ -7,6 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
+	expectExtraFieldsInResponse,
 	expectSuccessRoomResponse,
 	expectValidationError,
 	expectValidRoom,
@@ -26,16 +27,15 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Get Room Tests', () => {
-		it('should successfully retrieve a room by its ID', async () => {
+		it('should successfully retrieve a room by its ID without config by default', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'test-room'
 			});
 
-			expectValidRoom(createdRoom, 'test-room', 'test_room', 'expandable');
-
-			// Get room without expand - should return expandable stub
+			// Get room without extraFields - config should not be present
 			const response = await getRoom(createdRoom.roomId);
-			expectSuccessRoomResponse(response, 'test-room', 'test_room', undefined, 'expandable');
+			expectValidRoom(response.body, 'test-room');
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should retrieve a room with custom config', async () => {
@@ -88,6 +88,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(dirtyRoomId);
 
 			expectSuccessRoomResponse(response, 'test-room', 'test_room');
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should retrieve a room with autoDeletionDate', async () => {
@@ -177,15 +178,15 @@ describe('Room API Tests', () => {
 			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
 		});
 
-		it('should fail when expand has invalid values', async () => {
+		it('should fail when extraFields has invalid values', async () => {
 			const createdRoom = await createRoom({
-				roomName: 'invalid-expand-test'
+				roomName: 'invalid-extrafields-test'
 			});
 
-			// Get room with invalid expand values
+			// Get room with invalid extraFields values
 			const response = await getRoom(createdRoom.roomId, undefined, 'invalid,wrongparam');
 
-			expectValidationError(response, 'expand', 'Invalid expand properties. Valid options: config');
+			expectValidationError(response, 'extraFields', 'Invalid extraFields. Valid options: config');
 		});
 	});
 });

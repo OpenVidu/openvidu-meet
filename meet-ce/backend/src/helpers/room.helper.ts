@@ -1,16 +1,16 @@
 import {
-	MEET_ROOM_EXPANDABLE_FIELDS,
+	MEET_ROOM_EXTRA_FIELDS,
+	MEET_ROOM_FIELDS,
 	MeetRoom,
-	MeetRoomCollapsibleProperties,
-	MeetRoomExpandableProperties,
+	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
 	SENSITIVE_ROOM_FIELDS_ENTRIES
 } from '@openvidu-meet/typings';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
+import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
 export class MeetRoomHelper {
 	private constructor() {
@@ -128,103 +128,51 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 *  Determines which properties of a MeetRoom should be collapsed into stubs based on the provided expandable properties.
-	 *  By default, if no expandable properties are specified, the 'config' property will be collapsed.
-	 * @param expandableProps
-	 * @returns An array of MeetRoomCollapsibleProperties that should be collapsed into stubs when returning a MeetRoom object.
+	 * Calculates optimal fields to request from database for Room queries.
+	 * Minimizes data transfer by excluding unnecessary extra fields.
+	 *
+	 * @param fields - Explicitly requested fields
+	 * @param extraFields - Extra fields to include
+	 * @returns Array of fields to request from database
 	 */
-	static toCollapseProperties(expand?: MeetRoomExpandableProperties[]): MeetRoomCollapsibleProperties[] {
-		// If not expand provided, collapse all collapsible properties by default
-		if (!expand || expand.length === 0) {
-			return [...MEET_ROOM_EXPANDABLE_FIELDS];
-		}
-
-		// Return the properties that are not included in the expand array, but only those that are actually expandable
-		return MEET_ROOM_EXPANDABLE_FIELDS.filter((prop) => !expand.includes(prop));
+	static computeFieldsForRoomQuery(
+		fields?: MeetRoomField[],
+		extraFields?: MeetRoomExtraField[]
+	): MeetRoomField[] | undefined {
+		return buildFieldsForDbQuery(fields, extraFields, MEET_ROOM_FIELDS, MEET_ROOM_EXTRA_FIELDS);
 	}
 
 	/**
-	 * Processes a room to collapse specified properties into stubs.
-	 * By default, returns the full room object.
-	 * Only collapses properties when explicitly specified in the collapse parameter.
+	 * Applies HTTP-level field filtering to a MeetRoom object.
+	 * This is the final transformation before sending the response to the client.
+	 *
+	 * The logic follows the union principle: final allowed fields = fields ∪ extraFields
 	 *
 	 * @param room - The room object to process
-	 * @param props - Optional list of properties to collapse (e.g., ['config'])
+	 * @param fields - Optional array of field names to include (e.g., ['roomId', 'roomName'])
+	 * @param extraFields - Optional array of extra field names to include (e.g., ['config'])
+	 * @returns A MeetRoom object with fields filtered according to the union of both parameters
 	 * @example
 	 * ```
-	 * // Collapse config:
-	 * 	{
-	 * 		config: {
-	 * 			_expandable: true,
-	 * 			_href: '/api/rooms/123?expand=config'
-	 * 		}
-	 * 	}
-	 * ```
-	 */
-	static applyCollapseProperties(room: MeetRoom, props?: MeetRoomCollapsibleProperties[]): MeetRoom {
-		// If no collapse specified, return the full room
-		if (!room || !props || props.length === 0) {
-			return room;
-		}
-
-		// Filter the props to only those that exist in the room object and are not undefined
-		const existingProps = props.filter(
-			(prop) => Object.prototype.hasOwnProperty.call(room, prop) && room[prop] !== undefined
-		);
-
-		// If none of the specified props exist in the room, return the full room without modification
-		if (existingProps.length === 0) {
-			return room;
-		}
-
-		const collapsedRoom = { ...room };
-		const { roomId } = room;
-
-		// Append the base path (without trailing slash)
-		const basePath = getBasePath().slice(0, -1);
-		const baseUrl = `${basePath}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`;
-
-		existingProps.forEach((prop) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(collapsedRoom as any)[prop] = {
-				_expandable: true,
-				_href: `${baseUrl}?expand=${prop}`
-			};
-		});
-
-		return collapsedRoom;
-	}
-
-	/**
-	 * Filters a MeetRoom object to include only the specified fields.
-	 * By default, returns the full room object.
-	 * Only filters when fields are explicitly specified.
+	 * // No filters - removes extra fields only:
+	 * const room = applyFieldFilters(fullRoom);
+	 * // Result: room without 'config' property
 	 *
-	 * @param room - The room object to filter
-	 * @param fields - Optional list of fields to include (e.g., ['roomId', 'roomName'])
-	 * @returns A MeetRoom object containing only the specified fields, or the full room if no fields are specified
-	 * @example
-	 * ```
-	 * // Filter to only roomId and roomName:
-	 * const filtered = MeetRoomHelper.applyFieldsFilter(room, ['roomId', 'roomName']);
+	 * // Only fields specified - includes only those fields:
+	 * const room = applyFieldFilters(fullRoom, ['roomId', 'roomName']);
 	 * // Result: { roomId: '123', roomName: 'My Room' }
+	 *
+	 * // Only extraFields specified - includes base fields + extra fields:
+	 * const room = applyFieldFilters(fullRoom, undefined, ['config']);
+	 * // Result: room with all base fields and 'config' property
+	 *
+	 * // Both specified - includes union of both:
+	 * const room = applyFieldFilters(fullRoom, ['roomId'], ['config']);
+	 * // Result: { roomId: '123', config: {...} }
 	 * ```
 	 */
-	static applyFieldsFilter(room: MeetRoom, fields?: MeetRoomField[]): MeetRoom {
-		// If no fields specified, return the full room
-		if (!room || !fields || fields.length === 0) {
-			return room;
-		}
-
-		const filteredRoom = {} as Record<string, unknown>;
-
-		for (const key of Object.keys(room)) {
-			if (fields.includes(key as MeetRoomField)) {
-				filteredRoom[key] = room[key as keyof MeetRoom];
-			}
-		}
-
-		return filteredRoom as unknown as MeetRoom;
+	static applyFieldFilters(room: MeetRoom, fields?: MeetRoomField[], extraFields?: MeetRoomExtraField[]): MeetRoom {
+		return applyHttpFieldFiltering(room, fields, extraFields, MEET_ROOM_EXTRA_FIELDS);
 	}
 
 	/**
@@ -259,5 +207,16 @@ export class MeetRoomHelper {
 		}
 
 		return filteredRoom ?? room;
+	}
+
+	/**
+	 * Adds metadata to the room response indicating which extra fields are available.
+	 * This allows API consumers to discover available extra fields without consulting documentation.
+	 *
+	 * @param obj - The object to enhance with metadata
+	 * @returns The object with _extraFields metadata added
+	 */
+	static addResponseMetadata<T>(obj: T): T & { _extraFields: MeetRoomExtraField[] } {
+		return addHttpResponseMetadata(obj, MEET_ROOM_EXTRA_FIELDS);
 	}
 }

@@ -8,6 +8,13 @@ content:
                     type: array
                     items:
                         $ref: '../schemas/meet-room.yaml'
+                _extraFields:
+                    type: array
+                    description: >
+                        List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                    items:
+                        type: string
+                        example: config
                 pagination:
                     $ref: '../schemas/meet-pagination.yaml'
 
@@ -24,9 +31,6 @@ content:
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
-                          config:
-                              _expandable: true
-                              _href: '/api/v1/rooms/room-123?expand=config'
                           roles:
                               moderator:
                                   permissions:
@@ -78,9 +82,6 @@ content:
                           autoDeletionPolicy:
                               withMeeting: when_meeting_ends
                               withRecordings: close
-                          config:
-                              _expandable: true
-                              _href: '/api/v1/rooms/room-456?expand=config'
                           roles:
                               moderator:
                                   permissions:
@@ -124,6 +125,8 @@ content:
                           accessUrl: 'http://localhost:6080/room/room-456'
                           status: open
                           meetingEndAction: none
+                    _extraFields:
+                        - config
                     pagination:
                         isTruncated: false
                         maxItems: 10
@@ -133,10 +136,12 @@ content:
                     rooms:
                         - roomId: 'room-123'
                         - roomId: 'room-456'
+                    _extraFields:
+                        - config
                     pagination:
                         isTruncated: false
                         maxItems: 10
-            expand=config:
+            extraFields=config:
                 summary: Room details with expanded config
                 value:
                     rooms:
@@ -222,9 +227,13 @@ content:
                                           height: 720
                                           framerate: 60
                                           codec: H264_HIGH
+                                          bitrate: 2500
+                                          keyFrameInterval: 2
+                                          depth: 2
                                       audio:
                                           codec: AAC
                                           bitrate: 192
+                                          frequency: 48000
                               chat:
                                   enabled: false
                               virtualBackground:
@@ -274,27 +283,43 @@ content:
                           accessUrl: 'http://localhost:6080/room/room-456'
                           status: open
                           meetingEndAction: none
+                    _extraFields:
+                        - config
                     pagination:
                         isTruncated: false
                         maxItems: 10
-            fields=roomId,roomName,creationDate,autoDeletionDate,config:
-                summary: Room details including config but no URLs
+            fields=roomId;extraFields=config:
+                summary: Room details including config
                 value:
                     rooms:
                         - roomId: 'room-123'
-                          roomName: 'room'
-                          creationDate: 1620000000000
-                          autoDeletionDate: 1900000000000
                           config:
-                              _expandable: true
-                              _href: '/api/v1/rooms/room-123?expand=config'
+                              recording:
+                                  enabled: false
+                                  layout: grid
+                                  encoding: H264_720P_30
+                              chat:
+                                  enabled: true
+                              virtualBackground:
+                                  enabled: true
+                              e2ee:
+                                  enabled: false
+                              captions:
+                                  enabled: true
                         - roomId: 'room-456'
-                          roomName: 'room'
-                          creationDate: 1620001000000
-                          autoDeletionDate: 1900000000000
                           config:
-                              _expandable: true
-                              _href: '/api/v1/rooms/room-456?expand=config'
+                              recording:
+                                  enabled: true
+                                  layout: grid
+                                  encoding: H264_720P_30
+                              chat:
+                                  enabled: false
+                              virtualBackground:
+                                  enabled: false
+                              e2ee:
+                                  enabled: false
+                    _extraFields:
+                        - config
                     pagination:
                         isTruncated: true
                         nextPageToken: 'abc123'

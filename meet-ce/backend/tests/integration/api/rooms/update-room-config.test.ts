@@ -254,7 +254,7 @@ describe('Room API Tests', () => {
 					}
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
 			expect(createdRoom.config.recording.encoding).toMatchObject(recordingEncoding);
@@ -288,7 +288,7 @@ describe('Room API Tests', () => {
 					}
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
 			expect(createdRoom.config.recording.layout).toBe(MeetRecordingLayout.SPEAKER);

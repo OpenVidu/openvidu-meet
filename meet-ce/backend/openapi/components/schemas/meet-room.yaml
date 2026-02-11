@@ -63,14 +63,15 @@ properties:
                     - force: The room and its recordings will be deleted.
                     - close: The room will be closed instead of deleted, maintaining its recordings.
     config:
-        description: >
+        description: |
             The configuration for the room (chat, recording, virtual background, e2ee, captions).
 
-            By default, this property is excluded from responses to reduce payload size.
-            It is replaced with an expandable stub. Use `?expand=config` to include the full configuration.
-        oneOf:
-            - $ref: expandable-stub.yaml#/ExpandableStub
-            - $ref: meet-room-config.yaml#/MeetRoomConfig
+            By default, **this property is excluded from responses** to reduce payload size and optimize performance.
+
+            To include this property in the response:
+            - For GET requests: use the `extraFields=config` query parameter
+            - For POST requests: use the `X-ExtraFields: config` header
+        $ref: meet-room-config.yaml#/MeetRoomConfig
     # maxParticipants:
     #     type: integer
     #     example: 10

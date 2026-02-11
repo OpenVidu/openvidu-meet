@@ -37,7 +37,7 @@ describe('E2EE Room Configuration Tests', () => {
 					roomName: 'Test E2EE Default'
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
 			// Validate room structure (skip config validation in expectValidRoom since we're checking it below)
@@ -65,7 +65,7 @@ describe('E2EE Room Configuration Tests', () => {
 				}
 			};
 
-			const room = await createRoom(payload, undefined, { xFields: 'roomName,config', xExpand: 'config' });
+			const room = await createRoom(payload, undefined, { xFields: 'roomName,config', xExtraFields: 'config' });
 
 			expect(room.roomName).toBe('Test E2EE Enabled');
 			expect(room.config.e2ee.enabled).toBe(true);
@@ -105,7 +105,7 @@ describe('E2EE Room Configuration Tests', () => {
 					}
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
 			expect(room.config.recording.enabled).toBe(true);
@@ -183,7 +183,7 @@ describe('E2EE Room Configuration Tests', () => {
 					roomName: 'Test E2EE Update Enabled'
 				},
 				undefined,
-				{ xExpand: 'config' }
+				{ xExtraFields: 'config' }
 			);
 
 			expect(room.config.e2ee.enabled).toBe(false);
@@ -250,7 +250,7 @@ describe('E2EE Room Configuration Tests', () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.query({ expand: 'config' })
+				.query({ extraFields: 'config' })
 				.expect(200);
 
 			// Filter out any rooms from other test suites

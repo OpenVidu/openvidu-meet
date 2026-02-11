@@ -24,19 +24,16 @@ export const MEET_ROOM_FIELDS = [
 ] as const satisfies readonly (keyof MeetRoom)[];
 
 /**
- * Properties of a {@link MeetRoom} that can be expanded into full objects instead of stubs.
+ * Properties of a {@link MeetRoom} that can be included as extra fields in the API response.
+ * These fields are not included by default and must be explicitly requested via extraFields parameter.
  */
-export const MEET_ROOM_EXPANDABLE_FIELDS = ['config'] as const satisfies readonly ExpandableKey<MeetRoom>[];
+export const MEET_ROOM_EXTRA_FIELDS = ['config'] as const satisfies readonly ExtraFieldKey<MeetRoom>[];
 
 /**
- * Properties of a room that can be expanded in the API response.
+ * Properties of a room that can be requested as extra fields in the API response.
  */
-export type MeetRoomExpandableProperties = (typeof MEET_ROOM_EXPANDABLE_FIELDS)[number];
+export type MeetRoomExtraField = (typeof MEET_ROOM_EXTRA_FIELDS)[number];
 
-/**
- * Properties of a room that can be collapsed in the API response.
- */
-export type MeetRoomCollapsibleProperties = MeetRoomExpandableProperties;
 
 /**
  * Properties of a {@link MeetRoom} that can be included in the API response when fields filtering is applied.
@@ -56,7 +53,7 @@ export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELD
 >;
 
 /**
- * Filters for querying rooms with pagination, sorting, field selection, and expand support.
+ * Filters for querying rooms with pagination, sorting, field selection, and extra fields support.
  */
 export interface MeetRoomFilters extends SortAndPagination {
 	/**
@@ -72,24 +69,14 @@ export interface MeetRoomFilters extends SortAndPagination {
 	 */
 	fields?: MeetRoomField[];
 	/**
-	 * Expand specified properties in the response
+	 * Extra fields to include in the response (fields not included by default)
 	 */
-	expand?: MeetRoomExpandableProperties[];
+	extraFields?: MeetRoomExtraField[];
 }
 
 /**
- * Stub that indicates a property can be expanded.
+ * Utility type to extract keys of T that are objects, used to define which fields can be extraFields.
  */
-export interface ExpandableStub {
-	_expandable: true;
-	_href: string;
-}
-
-/**
- * It produces a union type of property names that can be considered
- * "expandable", meaning they reference nested objects rather than
- * primitive values.
- */
-type ExpandableKey<T> = {
+type ExtraFieldKey<T> = {
 	[K in keyof T]: T[K] extends object ? K : never;
 }[keyof T];

@@ -15,7 +15,17 @@ content:
                     type: string
                     description: A message providing additional context about the success
                 room:
-                    $ref: '../schemas/meet-room.yaml'
+            allOf:
+                - $ref: '../schemas/meet-room.yaml'
+                - type: object
+                  properties:
+                      _extraFields:
+                          type: array
+                          description: >
+                              List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                          items:
+                              type: string
+                              example: config
         examples:
             room_with_active_meeting_scheduled_to_be_deleted:
                 value:
@@ -79,6 +89,8 @@ content:
                         accessUrl: 'http://localhost:6080/room/room-123'
                         status: active_meeting
                         meetingEndAction: delete
+                        _extraFields:
+                            - config
             room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
                 value:
                     successCode: room_with_active_meeting_and_recordings_scheduled_to_be_deleted
@@ -141,6 +153,8 @@ content:
                         accessUrl: 'http://localhost:6080/room/room-123'
                         status: active_meeting
                         meetingEndAction: delete
+                        _extraFields:
+                            - config
             room_with_active_meeting_scheduled_to_be_closed:
                 value:
                     successCode: room_with_active_meeting_scheduled_to_be_closed
@@ -203,3 +217,5 @@ content:
                         accessUrl: 'http://localhost:6080/room/room-123'
                         status: active_meeting
                         meetingEndAction: close
+                        _extraFields:
+                            - config

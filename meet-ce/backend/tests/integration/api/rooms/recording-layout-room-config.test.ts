@@ -26,7 +26,7 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const room = await createRoom(payload, undefined, { xExpand: 'config' });
+			const room = await createRoom(payload, undefined, { xExtraFields: 'config' });
 
 			const expectedConfig = {
 				recording: {
@@ -53,7 +53,7 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const room = await createRoom(payload, undefined, { xExpand: 'config' });
+			const room = await createRoom(payload, undefined, { xExtraFields: 'config' });
 
 			const expectedConfig = {
 				recording: {
@@ -80,7 +80,7 @@ describe('Room API Tests', () => {
 				}
 			};
 
-			const room = await createRoom(payload, undefined, { xExpand: 'config' });
+			const room = await createRoom(payload, undefined, { xExtraFields: 'config' });
 
 			const expectedConfig = {
 				recording: {

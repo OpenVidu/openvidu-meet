@@ -40,7 +40,7 @@ export class RoomService {
 	async createRoom(options?: MeetRoomOptions, responseOptions?: MeetRoomClientResponseOptions): Promise<MeetRoom> {
 		const headers: Record<string, string> = {
 			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
-			'X-Expand': responseOptions?.expand ? responseOptions.expand.join(',') : ''
+			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
 		};
 		return this.httpService.postRequest(this.ROOMS_API, options, headers);
 	}
@@ -91,8 +91,8 @@ export class RoomService {
 		if (responseOptions?.fields) {
 			queryParams.set('fields', responseOptions.fields.join(','));
 		}
-		if (responseOptions?.expand) {
-			queryParams.set('expand', responseOptions.expand.join(','));
+		if (responseOptions?.extraFields) {
+			queryParams.set('extraFields', responseOptions.extraFields.join(','));
 		}
 		const queryString = queryParams.toString();
 		const path = `${this.ROOMS_API}/${roomId}${queryString ? `?${queryString}` : ''}`;

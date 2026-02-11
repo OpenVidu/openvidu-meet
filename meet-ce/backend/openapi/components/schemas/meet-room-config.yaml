@@ -175,7 +175,7 @@ MeetRecordingVideoEncodingOptions:
             example: 4500
             description: |
               Video bitrate in kbps
-        keyframeInterval:
+        keyFrameInterval:
             type: number
             minimum: 0
             example: 4
@@ -240,6 +240,7 @@ MeetRecordingEncodingOptions:
             codec: H264_MAIN
             bitrate: 3000
             keyFrameInterval: 4
+            depth: 24
         audio:
             codec: OPUS
             bitrate: 128

@@ -1,0 +1,2 @@
+type: string
+description: Extra field that can be included in the response if specified in the `X-ExtraFields` header or `extraFields` query parameter.

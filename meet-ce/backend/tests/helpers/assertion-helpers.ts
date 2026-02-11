@@ -101,7 +101,7 @@ export const expectSuccessRoomResponse = (
 	roomName: string,
 	roomIdPrefix?: string,
 	autoDeletionDate?: number,
-	config?: MeetRoomConfig | 'expandable'
+	config?: MeetRoomConfig
 ) => {
 	expect(response.status).toBe(200);
 	expectValidRoom(response.body, roomName, roomIdPrefix, config, autoDeletionDate);
@@ -113,31 +113,16 @@ export const expectSuccessRoomConfigResponse = (response: Response, config: Meet
 	expect(response.body).toEqual(config);
 };
 
-/**
- * Validates if a property is an expandable stub
- */
-export const expectExpandableStub = (property: any, roomId: string, propertyName: string) => {
-	expect(property).toBeDefined();
-	expect(property._expandable).toBe(true);
-	expect(property._href).toBeDefined();
-	expect(property._href).toContain(`/rooms/${roomId}`);
-	expect(property._href).toContain(`expand=${propertyName}`);
-};
-
-/**
- * Validates that a property is NOT an expandable stub (i.e., it's the actual expanded value)
- */
-export const expectExpandedProperty = (property: any) => {
-	expect(property).toBeDefined();
-	expect(property._expandable).toBeUndefined();
-	expect(property._href).toBeUndefined();
+export const expectExtraFieldsInResponse = (room: MeetRoom) => {
+	expect((room as any)._extraFields).toBeDefined();
+	expect((room as any)._extraFields).toContain('config');
 };
 
 export const expectValidRoom = (
 	room: MeetRoom,
 	name: string,
 	roomIdPrefix?: string,
-	config?: MeetRoomConfig | 'expandable',
+	config?: MeetRoomConfig,
 	autoDeletionDate?: number,
 	autoDeletionPolicy?: MeetRoomAutoDeletionPolicy,
 	status?: MeetRoomStatus,
@@ -169,15 +154,15 @@ export const expectValidRoom = (
 		expect(room.autoDeletionPolicy).toEqual(autoDeletionPolicy);
 	}
 
-	expect(room.config).toBeDefined();
-
-	// Check if config should be an expandable stub
-	if (config === 'expandable' || config === undefined) {
-		expectExpandableStub(room.config, room.roomId, 'config');
+	// Validate config based on parameter:
+	// - If config is provided: verify it exists and matches the expected value
+	// - If config is undefined: verify the property does not exist
+	if (config === undefined) {
+		expect(room.config).toBeUndefined();
 	} else {
-		// Validate it's NOT an expandable stub (it's expanded)
-		expectExpandedProperty(room.config);
+		expect(room.config).toBeDefined();
 		// Use toMatchObject to allow encoding defaults to be added without breaking tests
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		expect(room.config).toMatchObject(config as any);
 	}
 
