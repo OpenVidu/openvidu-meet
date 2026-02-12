@@ -113,14 +113,15 @@ export class MeetingLobbyService {
 
 	/**
 	 * Computed signal for participant name - optimized to avoid repeated form access
+	 * Uses getRawValue() to get the value even when the control is disabled (e.g., when set from URL param or member/authenticated user)
 	 */
 	readonly participantName = computed(() => {
 		const form = this._participantForm();
-		const { valid, value } = form;
-		if (!valid || !value.name?.trim()) {
+		const rawValue = form.getRawValue();
+		if (!form.valid || !rawValue.name?.trim()) {
 			return '';
 		}
-		return value.name.trim();
+		return rawValue.name.trim();
 	});
 
 	/**
