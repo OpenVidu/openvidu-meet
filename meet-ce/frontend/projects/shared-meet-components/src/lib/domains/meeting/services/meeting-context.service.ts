@@ -19,108 +19,65 @@ export class MeetingContextService {
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
 
-	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
-	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _roomId = signal<string | undefined>(undefined);
+	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
 	private readonly _meetingUrl = signal<string>('');
+	private readonly _roomSecret = signal<string | undefined>(undefined);
 	private readonly _e2eeKey = signal<string>('');
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
-	private readonly _roomSecret = signal<string | undefined>(undefined);
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
+	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _participantsVersion = signal<number>(0);
 	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
 	private readonly _remoteParticipants = signal<CustomParticipantModel[]>([]);
 
-	/**
-	 * Readonly signal for the current room
-	 */
+	/** Readonly signal for the current room ID */
+	readonly roomId = this._roomId.asReadonly();
+	/** Readonly signal for the current room */
 	readonly meetRoom = this._meetRoom.asReadonly();
 
-	/**
-	 * Readonly signal for the current room ID
-	 */
-	readonly roomId = this._roomId.asReadonly();
-
-	/**
-	 * Readonly signal for the current lk room
-	 */
-	readonly lkRoom = this._lkRoom.asReadonly();
-
-	/**
-	 * Readonly signal for the meeting URL
-	 */
+	/** Readonly signal for the current meeting URL */
 	readonly meetingUrl = this._meetingUrl.asReadonly();
-
-	/**
-	 * Readonly signal for the E2EE key
-	 */
+	/** Readonly signal for the room secret (if any) */
+	readonly roomSecret = this._roomSecret.asReadonly();
+	/** Readonly signal for the stored E2EE key (if any) */
 	readonly e2eeKey = this._e2eeKey.asReadonly();
-
-	/**
-	 * Readonly signal for whether the E2EE key came from a URL parameter
-	 */
+	/** Readonly signal for whether the E2EE key came from a URL parameter */
 	readonly isE2eeKeyFromUrl = this._isE2eeKeyFromUrl.asReadonly();
 
-	/**
-	 * Readonly signal for the room secret
-	 */
-	readonly roomSecret = this._roomSecret.asReadonly();
-
-	/**
-	 * Readonly signal for whether the room has recordings
-	 */
+	/** Readonly signal for whether the room has recordings */
 	readonly hasRecordings = this._hasRecordings.asReadonly();
-
-	/**
-	 * Readonly signal for who ended the meeting ('self', 'other', or null)
-	 */
+	/** Readonly signal for who ended the meeting ('self', 'other', or null) */
 	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
 
+	/** Readonly signal for the current LiveKit room */
+	readonly lkRoom = this._lkRoom.asReadonly();
 	/**
 	 * Readonly signal for participants version (increments on role changes)
 	 * Used to trigger reactivity when participant properties change without array reference changes
 	 */
 	readonly participantsVersion = this._participantsVersion.asReadonly();
-
-	/**
-	 * Readonly signal for the local participant
-	 */
+	/** Readonly signal for the local participant */
 	readonly localParticipant = this._localParticipant.asReadonly();
-
-	/**
-	 * Readonly signal for the remote participants
-	 */
+	/** Readonly signal for the remote participants */
 	readonly remoteParticipants = this._remoteParticipants.asReadonly();
-
-	/**
-	 * Computed signal that combines local and remote participants
-	 */
+	/** Computed signal that combines local and remote participants */
 	readonly allParticipants = computed(() => {
 		const local = this._localParticipant();
 		const remotes = this._remoteParticipants();
 		return local ? [local, ...remotes] : remotes;
 	});
 
-	/**
-	 * Computed signal for whether the current user can moderate the room
-	 */
+	/** Computed signal for whether the current user can moderate the room */
 	readonly canModerateRoom = computed(() => this.roomFeatureService.features().canModerateRoom);
-
-	/**
-	 * Computed signal for whether layout switching is allowed
-	 */
+	/** Computed signal for whether layout switching is allowed */
 	readonly allowLayoutSwitching = computed(() => this.roomFeatureService.features().allowLayoutSwitching);
-
-	/**
-	 * Computed signal for captions status based on room and global configuration
-	 */
+	/** Computed signal for captions status based on room and global configuration */
 	readonly getCaptionsStatus = computed(() => this.roomFeatureService.features().captionsStatus);
 
-	/**
-	 * Computed signal for whether the device is mobile
-	 */
-	readonly isMobile = computed(() => this.viewportService.isMobile());
+	/** Readonly signal for whether the device is mobile */
+	readonly isMobile = this.viewportService.isMobile;
 
 	constructor() {
 		// Setup automatic synchronization with ParticipantService signals
@@ -146,32 +103,6 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets the LiveKit Room instance in context
-	 * @param room
-	 */
-	setLkRoom(room: Room) {
-		this._lkRoom.set(room);
-	}
-
-	/**
-	 * Synchronizes participants from OpenVidu Components ParticipantService using signals.
-	 * Effects are automatically cleaned up when the service is destroyed.
-	 */
-	private setupParticipantSynchronization(): void {
-		// Sync local participant signal
-		effect(() => {
-			const localParticipant = this.ovParticipantService.localParticipantSignal();
-			this._localParticipant.set(localParticipant as CustomParticipantModel);
-		});
-
-		// Sync remote participants signal
-		effect(() => {
-			const remoteParticipants = this.ovParticipantService.remoteParticipantsSignal();
-			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
-		});
-	}
-
-	/**
 	 * Updates the meeting URL based on room access URL
 	 * @param accessUrl The room access URL
 	 */
@@ -180,6 +111,19 @@ export class MeetingContextService {
 		const url = new URL(accessUrl);
 		const meetingUrl = `${url.host}${url.pathname}`;
 		this._meetingUrl.set(meetingUrl);
+	}
+
+	/**
+	 * Sets the room secret in context
+	 * @param secret The room secret
+	 * @param updateStorage Whether to persist in SessionStorage (default: false)
+	 */
+	setRoomSecret(secret: string, updateStorage = false): void {
+		if (updateStorage) {
+			this.sessionStorageService.setRoomSecret(secret);
+		}
+
+		this._roomSecret.set(secret);
 	}
 
 	/**
@@ -205,19 +149,6 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets the room secret in context
-	 * @param secret The room secret
-	 * @param updateStorage Whether to persist in SessionStorage (default: false)
-	 */
-	setRoomSecret(secret: string, updateStorage = false): void {
-		if (updateStorage) {
-			this.sessionStorageService.setRoomSecret(secret);
-		}
-
-		this._roomSecret.set(secret);
-	}
-
-	/**
 	 * Updates whether the room has recordings
 	 * @param hasRecordings True if recordings exist
 	 */
@@ -234,11 +165,37 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Sets the LiveKit Room instance in context
+	 * @param room
+	 */
+	setLkRoom(room: Room) {
+		this._lkRoom.set(room);
+	}
+
+	/**
 	 * Increments the participants version counter
 	 * Used to trigger reactivity when participant properties (like role) change
 	 */
 	incrementParticipantsVersion(): void {
 		this._participantsVersion.update((v) => v + 1);
+	}
+
+	/**
+	 * Synchronizes participants from OpenVidu Components ParticipantService using signals.
+	 * Effects are automatically cleaned up when the service is destroyed.
+	 */
+	private setupParticipantSynchronization(): void {
+		// Sync local participant signal
+		effect(() => {
+			const localParticipant = this.ovParticipantService.localParticipantSignal();
+			this._localParticipant.set(localParticipant as CustomParticipantModel);
+		});
+
+		// Sync remote participants signal
+		effect(() => {
+			const remoteParticipants = this.ovParticipantService.remoteParticipantsSignal();
+			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
+		});
 	}
 
 	/**

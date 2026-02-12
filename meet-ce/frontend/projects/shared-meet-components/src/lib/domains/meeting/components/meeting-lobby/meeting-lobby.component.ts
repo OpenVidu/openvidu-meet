@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
-import { MeetingService } from '../../services/meeting.service';
 
 /**
  * Reusable component for the meeting lobby page.
@@ -32,30 +31,19 @@ import { MeetingService } from '../../services/meeting.service';
 })
 export class MeetingLobbyComponent {
 	protected lobbyService = inject(MeetingLobbyService);
-	protected meetingService = inject(MeetingService);
 
-	protected roomName = computed(() => this.lobbyService.state().room?.roomName);
-	protected meetingUrl = computed(() => this.lobbyService.meetingUrl());
-	protected roomClosed = computed(() => this.lobbyService.state().roomClosed);
-	protected showRecordingCard = computed(() => this.lobbyService.state().showRecordingCard);
-	protected showShareLink = computed(() => {
-		const state = this.lobbyService.state();
-		const canModerate = this.lobbyService.canModerateRoom();
-		return !!state.room && !state.roomClosed && canModerate;
-	});
-	protected showBackButton = computed(() => this.lobbyService.state().showBackButton);
-	protected backButtonText = computed(() => this.lobbyService.state().backButtonText);
-	protected isE2EEEnabled = computed(() => this.lobbyService.state().hasRoomE2EEEnabled);
-	protected participantForm = computed(() => this.lobbyService.state().participantForm);
-	/**
-	 * Computed signal to determine if the E2EE key input should be shown.
-	 * When E2EE key is provided via URL query param, the control is disabled and should not be displayed.
-	 */
-	protected showE2EEKeyInput = computed(() => {
-		const form = this.lobbyService.state().participantForm;
-		const e2eeKeyControl = form.get('e2eeKey');
-		return this.isE2EEEnabled() && e2eeKeyControl?.enabled;
-	});
+	protected roomName = this.lobbyService.roomName;
+	protected roomClosed = this.lobbyService.roomClosed;
+	protected isE2EEEnabled = this.lobbyService.hasRoomE2EEEnabled;
+
+	protected participantForm = this.lobbyService.participantForm;
+	protected showE2EEKeyInput = this.lobbyService.showE2EEKeyInput;
+
+	protected showRecordingCard = this.lobbyService.showRecordingCard;
+	protected showShareLink = this.lobbyService.showShareLink;
+	protected meetingUrl = this.lobbyService.meetingUrl;
+	protected showBackButton = this.lobbyService.showBackButton;
+	protected backButtonText = this.lobbyService.backButtonText;
 
 	async onFormSubmit(): Promise<void> {
 		await this.lobbyService.submitAccess();
