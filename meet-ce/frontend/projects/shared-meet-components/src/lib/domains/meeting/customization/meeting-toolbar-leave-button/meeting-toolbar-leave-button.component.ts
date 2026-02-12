@@ -53,6 +53,7 @@ export class MeetingToolbarLeaveButtonComponent {
 			return;
 		}
 
+		this.meetingContextService.setMeetingEndedBy('self');
 		await this.meetingService.endMeeting(roomId);
 	}
 }

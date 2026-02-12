@@ -6,4 +6,3 @@ export * from './meeting-settings-extensions/meeting-settings-extensions.compone
 export * from './meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';
 export * from './meeting-toolbar-leave-button/meeting-toolbar-leave-button.component';
 export * from './meeting-toolbar-more-options-menu/meeting-toolbar-more-options-menu.component';
-
