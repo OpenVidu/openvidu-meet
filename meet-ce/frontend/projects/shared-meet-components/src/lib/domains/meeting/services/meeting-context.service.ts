@@ -24,6 +24,7 @@ export class MeetingContextService {
 	private readonly _roomId = signal<string | undefined>(undefined);
 	private readonly _meetingUrl = signal<string>('');
 	private readonly _e2eeKey = signal<string>('');
+	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _roomSecret = signal<string | undefined>(undefined);
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
@@ -55,6 +56,11 @@ export class MeetingContextService {
 	 * Readonly signal for the E2EE key
 	 */
 	readonly e2eeKey = this._e2eeKey.asReadonly();
+
+	/**
+	 * Readonly signal for whether the E2EE key came from a URL parameter
+	 */
+	readonly isE2eeKeyFromUrl = this._isE2eeKeyFromUrl.asReadonly();
 
 	/**
 	 * Readonly signal for the room secret
@@ -105,6 +111,11 @@ export class MeetingContextService {
 	 * Computed signal for whether layout switching is allowed
 	 */
 	readonly allowLayoutSwitching = computed(() => this.roomFeatureService.features().allowLayoutSwitching);
+
+	/**
+	 * Computed signal for captions status based on room and global configuration
+	 */
+	readonly getCaptionsStatus = computed(() => this.roomFeatureService.features().captionsStatus);
 
 	/**
 	 * Computed signal for whether the device is mobile
@@ -174,26 +185,23 @@ export class MeetingContextService {
 	/**
 	 * Stores the E2EE key in context
 	 * @param key The E2EE key
+	 * @param fromUrl Whether the key came from a URL parameter (default: false)
 	 */
-	setE2eeKey(key: string): void {
-		this.sessionStorageService.setE2EEKey(key);
+	setE2eeKey(key: string, fromUrl = false): void {
+		this.sessionStorageService.setE2EEData(key, fromUrl);
 		this._e2eeKey.set(key);
+		this._isE2eeKeyFromUrl.set(fromUrl);
 	}
 
 	/**
-	 * Returns whether E2EE is enabled (has a key set)
-	 * @returns true if E2EE is enabled, false otherwise
+	 * Loads the E2EE key data from session storage
 	 */
-	isE2eeEnabled(): boolean {
-		return this._e2eeKey().length > 0;
-	}
-
-	/**
-	 * Returns the captions status based on room and global configuration
-	 * @returns CaptionsStatus ('HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING')
-	 */
-	getCaptionsStatus() {
-		return this.roomFeatureService.features().captionsStatus;
+	loadE2eeKeyFromStorage(): void {
+		const e2eeData = this.sessionStorageService.getE2EEData();
+		if (e2eeData) {
+			this._e2eeKey.set(e2eeData.key);
+			this._isE2eeKeyFromUrl.set(e2eeData.fromUrl);
+		}
 	}
 
 	/**
@@ -242,6 +250,7 @@ export class MeetingContextService {
 		this._roomId.set(undefined);
 		this._meetingUrl.set('');
 		this._e2eeKey.set('');
+		this._isE2eeKeyFromUrl.set(false);
 		this._roomSecret.set(undefined);
 		this._hasRecordings.set(false);
 		this._meetingEndedBy.set(null);

@@ -175,8 +175,10 @@ export class MeetingLobbyService {
 				const contextE2eeKey = this.meetingContextService.e2eeKey();
 				if (contextE2eeKey) {
 					this.setE2eeKey(contextE2eeKey);
-					// fill the e2eeKey form control if already set in context (e.g., from URL param)
-					form.get('e2eeKey')?.disable();
+					// Disable input only if the E2EE key was originally provided via URL parameter
+					if (this.meetingContextService.isE2eeKeyFromUrl()) {
+						form.get('e2eeKey')?.disable();
+					}
 				}
 				form.get('e2eeKey')?.updateValueAndValidity();
 			}

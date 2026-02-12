@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
-import { extractParams, handleLeaveRedirectUrl } from '../../../shared/utils/url-params.utils';
+import { extractParams } from '../../../shared/utils/url-params.utils';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { MeetingContextService } from '../services/meeting-context.service';
 
@@ -21,7 +21,6 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 		e2eeKey: queryE2eeKey
 	} = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret();
-	const e2eeKey = queryE2eeKey || sessionStorageService.getE2EEKey();
 
 	// Handle leave redirect URL logic
 	navigationService.handleLeaveRedirectUrl(leaveRedirectUrl);
@@ -31,9 +30,16 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 	if (secret) {
 		meetingContextService.setRoomSecret(secret, true);
 	}
-	if (e2eeKey) {
-		meetingContextService.setE2eeKey(e2eeKey);
+
+	// Handle E2EE key: prioritize query param, fallback to storage
+	if (queryE2eeKey) {
+		// E2EE key came from URL parameter
+		meetingContextService.setE2eeKey(queryE2eeKey, true);
+	} else {
+		// Try to load E2EE key from storage
+		meetingContextService.loadE2eeKeyFromStorage();
 	}
+
 	if (participantName) {
 		roomMemberContextService.setParticipantName(participantName);
 	}

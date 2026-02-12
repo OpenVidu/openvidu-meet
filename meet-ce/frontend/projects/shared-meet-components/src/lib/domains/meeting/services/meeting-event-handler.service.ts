@@ -160,12 +160,6 @@ export class MeetingEventHandlerService {
 		// Clear participant identity and token
 		this.roomMemberContextService.clearContext();
 
-		// Clean up room secret and e2ee key (if any), except on browser unload)
-		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
-			this.sessionStorageService.removeRoomSecret();
-			this.sessionStorageService.removeE2EEKey();
-		}
-
 		// Navigate to disconnected page
 		await this.navigationService.navigateTo('disconnected', { reason: leftReason }, true);
 	};
