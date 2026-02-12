@@ -16,11 +16,21 @@ export class NavigationService {
 		private appCtxService: AppContextService
 	) {}
 
-	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
+	/**
+	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
+	 *
+	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
+	 */
+	protected setLeaveRedirectUrl(leaveRedirectUrl: string): void {
 		this.leaveRedirectUrl = leaveRedirectUrl;
 		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
 	}
 
+	/**
+	 * Retrieves the leave redirect URL, checking both the service property and session storage.
+	 *
+	 * @returns The leave redirect URL if set, otherwise undefined
+	 */
 	getLeaveRedirectURL(): string | undefined {
 		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
 		if (!this.leaveRedirectUrl && storedRedirectUrl) {
@@ -28,6 +38,80 @@ export class NavigationService {
 		}
 
 		return this.leaveRedirectUrl;
+	}
+
+	/**
+	 * Handles the leave redirect URL logic with automatic referrer detection
+	 *
+	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
+	 */
+	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
+		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
+
+		// Explicit valid URL provided - use as is
+		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
+			this.setLeaveRedirectUrl(leaveRedirectUrl);
+			return;
+		}
+
+		// Absolute path provided in embedded mode - construct full URL based on parent origin
+		if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
+			const parentUrl = document.referrer;
+			const parentOrigin = new URL(parentUrl).origin;
+			this.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);
+			return;
+		}
+
+		// Auto-detect from referrer (only if no explicit URL provided and not embedded)
+		if (!leaveRedirectUrl && !isEmbeddedMode) {
+			const autoRedirectUrl = this.getAutoRedirectUrl();
+			if (autoRedirectUrl) {
+				this.setLeaveRedirectUrl(autoRedirectUrl);
+			}
+		}
+	}
+
+	/**
+	 * Automatically detects if user came from another domain and returns appropriate redirect URL
+	 */
+	protected getAutoRedirectUrl(): string | null {
+		try {
+			const referrer = document.referrer;
+
+			// No referrer means user typed URL directly or came from bookmark
+			if (!referrer) {
+				return null;
+			}
+
+			const referrerUrl = new URL(referrer);
+			const currentUrl = new URL(window.location.href);
+
+			// Check if referrer is from a different domain
+			if (referrerUrl.origin !== currentUrl.origin) {
+				console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
+				return referrer;
+			}
+
+			return null;
+		} catch (error) {
+			console.warn('Error detecting auto redirect URL:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Validates if a given string is a well-formed URL
+	 *
+	 * @param url - The URL string to validate
+	 * @returns True if the URL is valid, false otherwise
+	 */
+	protected isValidUrl(url: string): boolean {
+		try {
+			new URL(url);
+			return true;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	/**

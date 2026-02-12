@@ -24,7 +24,7 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 	const e2eeKey = queryE2eeKey || sessionStorageService.getE2EEKey();
 
 	// Handle leave redirect URL logic
-	handleLeaveRedirectUrl(leaveRedirectUrl);
+	navigationService.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 	// Save parameters in the meeting context and room member context services
 	meetingContextService.setRoomId(roomId);
