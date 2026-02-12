@@ -28,7 +28,6 @@ export class MeetingContextService {
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
-	private readonly _participantsVersion = signal<number>(0);
 	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
 	private readonly _remoteParticipants = signal<CustomParticipantModel[]>([]);
 
@@ -53,11 +52,6 @@ export class MeetingContextService {
 
 	/** Readonly signal for the current LiveKit room */
 	readonly lkRoom = this._lkRoom.asReadonly();
-	/**
-	 * Readonly signal for participants version (increments on role changes)
-	 * Used to trigger reactivity when participant properties change without array reference changes
-	 */
-	readonly participantsVersion = this._participantsVersion.asReadonly();
 	/** Readonly signal for the local participant */
 	readonly localParticipant = this._localParticipant.asReadonly();
 	/** Readonly signal for the remote participants */
@@ -173,14 +167,6 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Increments the participants version counter
-	 * Used to trigger reactivity when participant properties (like role) change
-	 */
-	incrementParticipantsVersion(): void {
-		this._participantsVersion.update((v) => v + 1);
-	}
-
-	/**
 	 * Synchronizes participants from OpenVidu Components ParticipantService using signals.
 	 * Effects are automatically cleaned up when the service is destroyed.
 	 */
@@ -211,7 +197,6 @@ export class MeetingContextService {
 		this._roomSecret.set(undefined);
 		this._hasRecordings.set(false);
 		this._meetingEndedBy.set(null);
-		this._participantsVersion.set(0);
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
 	}

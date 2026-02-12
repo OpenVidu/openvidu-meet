@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,43 +30,24 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 	styleUrl: './meeting-settings-extensions.component.scss'
 })
 export class MeetingSettingsExtensionsComponent {
-	private readonly layoutService = inject(MeetingLayoutService);
 	protected readonly meetingContextService = inject(MeetingContextService);
+	private readonly layoutService = inject(MeetingLayoutService);
 
-	/**
-	 * Expose LayoutMode enum to template
-	 */
-	readonly LayoutMode = MeetLayoutMode;
+	/** Whether the layout switching feature is allowed */
+	isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
+	/** Expose LayoutMode enum to template */
+	LayoutMode = MeetLayoutMode;
+	/** Current layout mode */
+	layoutMode = this.layoutService.layoutMode;
+	/** Whether Smart Mosaic layout is enabled */
+	isSmartMode = this.layoutService.isSmartMosaicEnabled;
 
-	/**
-	 * Whether the layout switching feature is allowed
-	 */
-	protected readonly isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
-
-	/**
-	 * Current layout mode
-	 */
-	protected readonly layoutMode = computed(() => this.layoutService.layoutMode());
-
-	/**
-	 * Current participant count
-	 */
-	protected readonly participantCount = computed(() => this.layoutService.maxRemoteSpeakers());
-
-	/**
-	 * Minimum number of participants that can be shown when Smart Mosaic layout is enabled
-	 */
-	protected readonly minParticipants = this.layoutService.MIN_REMOTE_SPEAKERS;
-
-	/**
-	 * Maximum number of participants that can be shown
-	 */
-	protected readonly maxParticipants = this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
-
-	/**
-	 * Computed property to check if Smart Mosaic mode is active
-	 */
-	readonly isSmartMode = this.layoutService.isSmartMosaicEnabled;
+	/** Minimum number of participants that can be shown when Smart Mosaic layout is enabled */
+	minParticipants = this.layoutService.MIN_REMOTE_SPEAKERS;
+	/** Maximum number of participants that can be shown */
+	maxParticipants = this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
+	/** Current participant count */
+	participantCount = this.layoutService.maxRemoteSpeakers;
 
 	/**
 	 * Handler for layout mode change

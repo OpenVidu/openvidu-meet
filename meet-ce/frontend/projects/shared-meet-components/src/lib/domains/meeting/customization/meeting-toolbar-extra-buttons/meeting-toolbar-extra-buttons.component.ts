@@ -22,38 +22,26 @@ import { MeetingService } from '../../services/meeting.service';
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
-	protected loggerService = inject(LoggerService);
 	protected captionService = inject(MeetingCaptionsService);
+	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
-	protected readonly copyLinkTooltip = 'Copy the meeting link';
-	protected readonly copyLinkText = 'Copy meeting link';
 
-	/**
-	 * Whether to show the copy link button
-	 */
-	protected showCopyLinkButton = computed(() => this.meetingContextService.canModerateRoom());
+	/** Whether to show the copy link button (only for moderators) */
+	showCopyLinkButton = this.meetingContextService.canModerateRoom;
+	copyLinkTooltip = 'Copy the meeting link';
+	copyLinkText = 'Copy meeting link';
 
-	/**
-	 * Captions status based on room and global configuration
-	 */
-	protected captionsStatus = computed(() => this.meetingContextService.getCaptionsStatus());
+	/** Captions status based on room and global configuration */
+	captionsStatus = this.meetingContextService.getCaptionsStatus;
+	/** Whether to show the captions button (visible when not HIDDEN) */
+	showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
+	/** Whether captions button is disabled (true when DISABLED_WITH_WARNING) */
+	isCaptionsButtonDisabled = computed(() => this.captionsStatus() === 'DISABLED_WITH_WARNING');
+	/** Whether captions are currently enabled by the user */
+	areCaptionsEnabledByUser = this.captionService.areCaptionsEnabledByUser;
 
-	/**
-	 * Whether to show the captions button (visible when not HIDDEN)
-	 */
-	protected showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
-
-	/**
-	 * Whether captions button is disabled (true when DISABLED_WITH_WARNING)
-	 */
-	protected isCaptionsButtonDisabled = computed(() => this.captionsStatus() === 'DISABLED_WITH_WARNING');
-
-	/**
-	 * Whether the device is mobile (affects button style)
-	 */
-	protected isMobile = computed(() => this.meetingContextService.isMobile());
-
-	protected areCaptionsEnabledByUser = computed(() => this.captionService.areCaptionsEnabledByUser());
+	/** Whether the device is mobile (affects button style) */
+	isMobile = this.meetingContextService.isMobile;
 
 	onCopyLinkClick(): void {
 		const room = this.meetingContextService.meetRoom();
@@ -71,6 +59,6 @@ export class MeetingToolbarExtraButtonsComponent {
 			this.log.w('Captions are disabled at system level (MEET_CAPTIONS_ENABLED=false)');
 			return;
 		}
-		this.captionService.areCaptionsEnabledByUser() ? this.captionService.disable() : this.captionService.enable();
+		this.areCaptionsEnabledByUser() ? this.captionService.disable() : this.captionService.enable();
 	}
 }

@@ -20,20 +20,19 @@ import { MeetingService } from './meeting.service';
 	providedIn: 'root'
 })
 export class MeetingWebComponentManagerService {
+	protected meetingService = inject(MeetingService);
+	protected meetingContextService = inject(MeetingContextService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected appCtxService = inject(AppContextService);
+	protected openviduService = inject(OpenViduService);
+	protected loggerService = inject(LoggerService);
+	protected log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
+
 	protected isInitialized = false;
 	protected parentDomain: string = '';
 	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
 
-	protected log;
-	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly roomMemberContextService = inject(RoomMemberContextService);
-	protected readonly openviduService = inject(OpenViduService);
-	protected readonly meetingService = inject(MeetingService);
-	protected readonly loggerService = inject(LoggerService);
-	protected readonly appCtxService = inject(AppContextService);
-
 	constructor() {
-		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
 		effect(() => {
 			if (this.appCtxService.isEmbeddedMode()) {
@@ -95,6 +94,7 @@ export class MeetingWebComponentManagerService {
 		const message: WebComponentInboundCommandMessage = event.data;
 		const { command, payload } = message;
 
+		// If parent domain is not set, only accept INITIALIZE command to set the parent domain
 		if (!this.parentDomain) {
 			if (command === WebComponentCommand.INITIALIZE) {
 				if (!payload || !('domain' in payload)) {
@@ -107,6 +107,7 @@ export class MeetingWebComponentManagerService {
 			return;
 		}
 
+		// For security, only accept messages from the parent domain
 		if (event.origin !== this.parentDomain) {
 			console.warn(`Untrusted origin: ${event.origin}`);
 			return;

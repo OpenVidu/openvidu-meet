@@ -22,14 +22,14 @@ export class MeetingParticipantItemComponent {
 	// Template reference for the component's template
 	@ViewChild('template', { static: true }) template!: TemplateRef<any>;
 
-	protected meetingService: MeetingService = inject(MeetingService);
+	protected meetingService = inject(MeetingService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
 
 	/**
 	 * Get or compute display properties for a participant
 	 */
-	protected getDisplayProperties(
+	getDisplayProperties(
 		participant: CustomParticipantModel,
 		localParticipant: CustomParticipantModel
 	): ParticipantDisplayProperties {
@@ -56,7 +56,6 @@ export class MeetingParticipantItemComponent {
 		if (!localParticipant.isModerator()) return;
 
 		const roomId = localParticipant.roomName;
-
 		if (!roomId) {
 			this.log.e('Cannot change participant role: local participant room name is undefined');
 			return;
@@ -81,7 +80,6 @@ export class MeetingParticipantItemComponent {
 		if (!localParticipant.isModerator()) return;
 
 		const roomId = localParticipant.roomName;
-
 		if (!roomId) {
 			this.log.e('Cannot change participant role: local participant room name is undefined');
 			return;
@@ -106,9 +104,8 @@ export class MeetingParticipantItemComponent {
 		if (!localParticipant.isModerator()) return;
 
 		const roomId = localParticipant.roomName;
-
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot kick participant: local participant room name is undefined');
 			return;
 		}
 

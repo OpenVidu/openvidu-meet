@@ -59,23 +59,11 @@ export class MeetingEventHandlerService {
 	 * @param room The LiveKit Room instance
 	 */
 	setupRoomListeners(room: Room): void {
-		this.setupDataReceivedListener(room);
-	}
-
-	/**
-	 * Sets up the DataReceived event listener for handling room signals
-	 * @param room The LiveKit Room instance
-	 */
-	private setupDataReceivedListener(room: Room): void {
 		room.on(
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				// Only process topics that this handler is responsible for
-				const relevantTopics = [
-					'recordingStopped',
-					MeetSignalType.MEET_ROOM_CONFIG_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
-				];
+				const relevantTopics = ['recordingStopped', MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED];
 
 				if (!topic || !relevantTopics.includes(topic)) {
 					return;
@@ -90,14 +78,10 @@ export class MeetingEventHandlerService {
 							this.meetingContext.setHasRecordings(true);
 							break;
 
-						case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
-							// Room cannot be updated if a meeting is ongoing
-							// await this.handleRoomConfigUpdated(event);
-							break;
-
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-							await this.handleParticipantRoleUpdated(event);
-							this.showParticipantRoleUpdatedNotification(event);
+							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
+							await this.handleParticipantRoleUpdated(roleUpdateEvent);
+							this.showParticipantRoleUpdatedNotification(roleUpdateEvent.newRole);
 							break;
 					}
 				} catch (error) {
@@ -110,8 +94,6 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles participant connected event.
 	 * Sends JOINED event to parent window (for web component integration).
-	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
 	 *
 	 * @param event Participant model from OpenVidu
 	 */
@@ -130,19 +112,17 @@ export class MeetingEventHandlerService {
 	 * Handles participant left event.
 	 * - Maps technical reason to user-friendly reason
 	 * - Sends LEFT event to parent window
-	 * - Cleans up session storage (secrets, tokens)
+	 * - Clears participant identity and token from RoomMemberContextService
 	 * - Navigates to disconnected page
-	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
 	 *
 	 * @param event Participant left event from OpenVidu
 	 */
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
 
-		// If meeting was ended by this user, update reason
-		const meetingEndedBy = this.meetingContext.meetingEndedBy();
-		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBy === 'self') {
+		// If meeting was ended by local user, update reason
+		const meetingEndedBySelf = this.meetingContext.meetingEndedBy() === 'self';
+		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBySelf) {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
@@ -167,8 +147,6 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles recording start request event.
 	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
-	 *
 	 * @param event Recording start requested event from OpenVidu
 	 */
 	onRecordingStartRequested = async (event: RecordingStartRequestedEvent): Promise<void> => {
@@ -189,8 +167,6 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles recording stop request event.
 	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
-	 *
 	 * @param event Recording stop requested event from OpenVidu
 	 */
 	onRecordingStopRequested = async (event: RecordingStopRequestedEvent): Promise<void> => {
@@ -204,42 +180,6 @@ export class MeetingEventHandlerService {
 	// ============================================
 	// PRIVATE METHODS - Event Handlers
 	// ============================================
-
-	/**
-	 * Handles room config updated event.
-	 * Updates feature config and refreshes room member token if needed.
-	 * Obtains roomId and roomSecret from MeetingContextService.
-	 */
-	// private async handleRoomConfigUpdated(event: MeetRoomConfigUpdatedPayload): Promise<void> {
-	// 	const { config } = event;
-
-	// 	// Update feature configuration
-	// 	this.featureConfService.setRoomConfig(config);
-
-	// 	// Refresh room member token if recording is enabled
-	// 	if (config.recording.enabled) {
-	// 		try {
-	// 			const roomId = this.meetingContext.roomId();
-	// 			const roomSecret = this.meetingContext.roomSecret();
-	// 			const participantName = this.roomMemberService.getParticipantName();
-	// 			const participantIdentity = this.roomMemberService.getParticipantIdentity();
-
-	// 			if (!roomId || !roomSecret) {
-	// 				console.error('Room ID or secret not available for token refresh');
-	// 				return;
-	// 			}
-
-	// 			await this.roomMemberService.generateToken(roomId, {
-	// 				secret: roomSecret,
-	// 				grantJoinMeetingPermission: true,
-	// 				participantName,
-	// 				participantIdentity
-	// 			});
-	// 		} catch (error) {
-	// 			console.error('Error refreshing room member token:', error);
-	// 		}
-	// 	}
-	// }
 
 	/**
 	 * Handles participant role updated event.
@@ -256,9 +196,8 @@ export class MeetingEventHandlerService {
 		if (local && participantIdentity === local.identity) {
 			if (!secret || !roomId) return;
 
-			// Update room secret in context
+			// Update room secret in context (without updating session storage)
 			this.meetingContext.setRoomSecret(secret);
-			this.sessionStorageService.setRoomSecret(secret);
 
 			try {
 				// Refresh participant token with new role
@@ -272,9 +211,6 @@ export class MeetingEventHandlerService {
 				// Update local participant role
 				local.meetRole = newRole;
 				console.log(`You have been assigned the role of ${newRole}`);
-
-				// Increment version to trigger reactivity
-				this.meetingContext.incrementParticipantsVersion();
 			} catch (error) {
 				console.error('Error refreshing room member token:', error);
 			}
@@ -284,15 +220,11 @@ export class MeetingEventHandlerService {
 			const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
 			if (participant) {
 				participant.meetRole = newRole;
-
-				// Increment version to trigger reactivity
-				this.meetingContext.incrementParticipantsVersion();
 			}
 		}
 	}
 
-	private showParticipantRoleUpdatedNotification(event: MeetParticipantRoleUpdatedPayload): void {
-		const { newRole } = event as MeetParticipantRoleUpdatedPayload;
+	private showParticipantRoleUpdatedNotification(newRole: MeetRoomMemberRole): void {
 		this.notificationService.showSnackbar(`You have been assigned the role of ${newRole.toUpperCase()}`);
 		newRole === MeetRoomMemberRole.MODERATOR
 			? this.soundService.playParticipantRoleUpgradedSound()

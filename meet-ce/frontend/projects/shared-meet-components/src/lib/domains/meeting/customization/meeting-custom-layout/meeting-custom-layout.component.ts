@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
-	ILogger,
 	LoggerService,
 	OpenViduComponentsUiModule,
 	PanelService,
@@ -30,46 +29,42 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 	styleUrl: './meeting-custom-layout.component.scss'
 })
 export class MeetingCustomLayoutComponent {
-	private readonly logger: ILogger = inject(LoggerService).get('MeetingCustomLayoutComponent');
-	protected readonly layoutService = inject(MeetingLayoutService);
-	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly meetingService = inject(MeetingService);
-	protected readonly panelService = inject(PanelService);
-	protected readonly captionsService = inject(MeetingCaptionsService);
-	protected readonly linkOverlayConfig = {
+	protected meetingContextService = inject(MeetingContextService);
+	protected meetingService = inject(MeetingService);
+	protected layoutService = inject(MeetingLayoutService);
+	protected captionsService = inject(MeetingCaptionsService);
+	protected panelService = inject(PanelService);
+	protected logger = inject(LoggerService).get('MeetingCustomLayoutComponent');
+
+	lkRoom = this.meetingContextService.lkRoom;
+
+	meetingUrl = this.meetingContextService.meetingUrl;
+	shouldShowLinkOverlay = computed(() => {
+		const hasNoRemotes = this.remoteParticipants().length === 0;
+		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
+	});
+	linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
 		titleSize: 'xl' as const,
 		titleWeight: 'bold' as const
 	};
 
-	protected readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());
-	protected readonly remoteParticipants = computed(() => this.meetingContextService.remoteParticipants());
-	protected readonly shouldShowLinkOverlay = computed(() => {
-		const hasNoRemotes = this.meetingContextService.remoteParticipants().length === 0;
-		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
-	});
+	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
+	isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
+	isSmartMosaicActive = computed(() => this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled());
+	captions = this.captionsService.captions;
 
-	protected readonly areCaptionsEnabledByUser = computed(() => this.captionsService.areCaptionsEnabledByUser());
-
-	protected readonly captions = computed(() => this.captionsService.captions());
-
-	protected readonly isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
-
-	private displayedParticipantIds: string[] = [];
-	private audioElements = new Map<string, HTMLMediaElement>();
-	private proxyCache = new WeakMap<ParticipantModel, { proxy: ParticipantModel; showCamera: boolean }>();
-
+	remoteParticipants = this.meetingContextService.remoteParticipants;
 	private _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
-	readonly visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
+	visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
 
-	protected readonly hiddenParticipantsCount = computed(() => {
+	hiddenParticipantsCount = computed(() => {
 		const total = this.remoteParticipants().length;
 		const visible = this.visibleRemoteParticipants().length;
 		return Math.max(0, total - visible);
 	});
-
-	protected readonly hiddenParticipantNames = computed(() => {
+	hiddenParticipantNames = computed(() => {
 		const visibleIds = new Set(this.visibleRemoteParticipants().map((p) => p.identity));
 		return this.remoteParticipants()
 			.filter((p) => !visibleIds.has(p.identity))
@@ -80,7 +75,7 @@ export class MeetingCustomLayoutComponent {
 	 * Indicates whether to show the hidden participants indicator in the top bar
 	 * when in smart mosaic mode.
 	 */
-	protected readonly showTopBarHiddenParticipantsIndicator = computed(() => {
+	showTopBarHiddenParticipantsIndicator = computed(() => {
 		const localParticipant = this.meetingContextService.localParticipant()!;
 		const hasPinnedParticipant =
 			localParticipant.isPinned || this.remoteParticipants().some((p) => (p as CustomParticipantModel).isPinned);
@@ -89,6 +84,10 @@ export class MeetingCustomLayoutComponent {
 			!hasPinnedParticipant && visibleParticipantsCount < this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
 		return showTopBar;
 	});
+
+	private displayedParticipantIds: string[] = [];
+	private audioElements = new Map<string, HTMLMediaElement>();
+	private proxyCache = new WeakMap<ParticipantModel, { proxy: ParticipantModel; showCamera: boolean }>();
 
 	constructor() {
 		this.setupSpeakerTrackingEffect();
@@ -106,17 +105,13 @@ export class MeetingCustomLayoutComponent {
 		this.meetingService.copyMeetingSpeakerLink(room);
 	}
 
-	protected isSmartMosaicActive(): boolean {
-		return this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled();
-	}
-
 	protected toggleParticipantsPanel(): void {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
 
 	private setupVisibleParticipantsUpdate(): void {
 		effect(() => {
-			const allRemotes = this.meetingContextService.remoteParticipants();
+			const allRemotes = this.remoteParticipants();
 
 			if (!this.isSmartMosaicActive()) {
 				this._visibleRemoteParticipants.set(allRemotes);
@@ -164,7 +159,6 @@ export class MeetingCustomLayoutComponent {
 	 * @param targetIds Set of participant IDs that should be displayed.
 	 * @param availableIds Set of participant IDs that are currently available for display.
 	 */
-
 	private syncDisplayedParticipantsWithTarget(targetIds: Set<string>, availableIds: Set<string>): void {
 		this.displayedParticipantIds = this.displayedParticipantIds.filter((id) => availableIds.has(id));
 
@@ -193,7 +187,7 @@ export class MeetingCustomLayoutComponent {
 
 	private setupSpeakerTrackingEffect(): void {
 		effect(() => {
-			const room = this.meetingContextService.lkRoom();
+			const room = this.lkRoom();
 			if (this.isLayoutSwitchingAllowed() && room) {
 				this.layoutService.initializeSpeakerTracking(room);
 			}

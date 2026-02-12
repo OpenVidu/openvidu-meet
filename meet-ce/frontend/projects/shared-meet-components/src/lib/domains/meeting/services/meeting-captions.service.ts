@@ -18,9 +18,9 @@ import { CustomParticipantModel } from '../models/custom-participant.model';
 	providedIn: 'root'
 })
 export class MeetingCaptionsService {
+	private readonly participantService = inject(ParticipantService);
 	private readonly loggerService = inject(LoggerService);
 	private readonly logger: ILogger;
-	private readonly participantService = inject(ParticipantService);
 
 	// Configuration with defaults
 	private readonly defaultConfig: Required<CaptionsConfig> = {

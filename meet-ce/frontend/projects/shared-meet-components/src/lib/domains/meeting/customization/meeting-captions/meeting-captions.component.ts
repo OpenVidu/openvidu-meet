@@ -13,7 +13,7 @@ export class MeetingCaptionsComponent {
 	captions = input<Caption[]>([]);
 
 	// Track animation state for each caption
-	protected readonly captionAnimationState = signal<Map<string, 'entering' | 'active' | 'leaving'>>(new Map());
+	captionAnimationState = signal<Map<string, 'entering' | 'active' | 'leaving'>>(new Map());
 
 	// ViewChildren to access caption text containers for auto-scroll
 	@ViewChildren('captionTextContainer')
@@ -75,17 +75,6 @@ export class MeetingCaptionsComponent {
 		}
 
 		return classes.join(' ');
-	}
-
-	/**
-	 * Tracks captions by their ID for optimal Angular rendering.
-	 *
-	 * @param index Item index
-	 * @param caption Caption item
-	 * @returns Unique identifier
-	 */
-	protected trackByCaption(index: number, caption: Caption): string {
-		return caption.id;
 	}
 
 	/**

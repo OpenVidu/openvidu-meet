@@ -1,4 +1,4 @@
-@if (meetingContextService.lkRoom()) {
+@if (lkRoom()) {
 	<div class="main-container" [ngClass]="{ withFooter: areCaptionsEnabledByUser() }">
 		<ov-layout
 			[ovRemoteParticipants]="visibleRemoteParticipants()"

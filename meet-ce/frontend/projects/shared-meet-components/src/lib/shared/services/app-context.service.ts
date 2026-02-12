@@ -13,16 +13,12 @@ export class AppContextService {
 	private readonly _edition: WritableSignal<Edition> = signal(Edition.CE);
 	private readonly _version: WritableSignal<string> = signal('');
 
-	readonly mode = computed(() => this._mode());
-	readonly edition = computed(() => this._edition());
-	readonly version = computed(() => this._version());
+	readonly mode = this._mode.asReadonly();
+	readonly edition = this._edition.asReadonly();
+	readonly version = this._version.asReadonly();
+
 	readonly isEmbeddedMode = computed(() => this._mode() === ApplicationMode.EMBEDDED);
 	readonly isStandaloneMode = computed(() => this._mode() === ApplicationMode.STANDALONE);
-	readonly appData = computed(() => ({
-		mode: this._mode(),
-		edition: this._edition(),
-		version: this._version()
-	}));
 
 	constructor() {
 		this.detectMode();

@@ -1,6 +1,6 @@
 <div class="captions-container">
 	<div class="captions-wrapper" [class.single-caption]="captions().length === 1">
-		@for (caption of captions(); track trackByCaption($index, caption)) {
+		@for (caption of captions(); track caption.id) {
 			<div
 				[ngClass]="getCaptionClasses(caption)"
 				[attr.data-caption-id]="caption.id"

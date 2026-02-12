@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,26 +21,16 @@ import { MeetingService } from '../../services/meeting.service';
 export class MeetingToolbarLeaveButtonComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingService = inject(MeetingService);
+	protected openviduService = inject(OpenViduService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarLeaveButtons');
-	protected openviduService = inject(OpenViduService);
-	protected readonly leaveMenuTooltip = 'Leave options';
-	protected readonly leaveOptionText = 'Leave meeting';
-	protected readonly endMeetingOptionText = 'End meeting for all';
 
-	/**
-	 * Whether to show the leave menu with options
-	 */
-	protected showLeaveMenu = computed(() => {
-		return this.meetingContextService.canModerateRoom();
-	});
+	showLeaveMenu = this.meetingContextService.canModerateRoom;
+	isMobile = this.meetingContextService.isMobile;
 
-	/**
-	 * Whether the device is mobile (affects button style)
-	 */
-	protected isMobile = computed(() => {
-		return this.meetingContextService.isMobile();
-	});
+	leaveMenuTooltip = 'Leave options';
+	leaveOptionText = 'Leave meeting';
+	endMeetingOptionText = 'End meeting for all';
 
 	async onLeaveMeetingClick(): Promise<void> {
 		await this.openviduService.disconnectRoom();
