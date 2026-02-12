@@ -170,9 +170,9 @@
             - $ref: '../components/parameters/recordings-deletion-policy.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-room-process-deletion.yaml'
+                $ref: '../components/responses/success-delete-room-processed.yaml'
             '202':
-                $ref: '../components/responses/success-room-schedule-deletion.yaml'
+                $ref: '../components/responses/success-delete-room-scheduled.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
