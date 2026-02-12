@@ -95,6 +95,16 @@ export class MeetingLobbyService {
 	readonly participantForm = this._participantForm.asReadonly();
 
 	/**
+	 * Computed signal to determine if the participant name input should be disabled
+	 * Name is disabled when: from URL, member exists, or user is authenticated
+	 */
+	readonly isParticipantNameDisabled = computed(() => {
+		const form = this._participantForm();
+		const nameControl = form.get('name');
+		return nameControl?.disabled ?? false;
+	});
+
+	/**
 	 * Setter for participant name
 	 */
 	setParticipantName(name: string): void {
@@ -244,7 +254,7 @@ export class MeetingLobbyService {
 		}
 
 		await this.generateRoomMemberToken();
-		await Promise.all([this.addParticipantNameToUrl(), this.roomService.loadRoomConfig(this._roomId()!)]);
+		await this.roomService.loadRoomConfig(this._roomId()!);
 	}
 
 	/**
@@ -308,20 +318,35 @@ export class MeetingLobbyService {
 	/**
 	 * Initializes the participant name in the form control.
 	 *
-	 * Retrieves the participant name from the RoomMemberService first, and if not available,
-	 * falls back to the authenticated username. Sets the retrieved name value in the
-	 * participant form's 'name' control if a valid name is found.
+	 * Priority order:
+	 * 1. If room member exists - use their name and disable input
+	 * 2. If user is authenticated - use their name and disable input
+	 * 3. If participant name is from URL - use that and disable input
+	 * 4. If participant name exists in context - use it and enable input
+	 * 5. Otherwise leave input empty and enabled
 	 *
 	 * @returns A promise that resolves when the participant name has been initialized
 	 */
 	protected async initializeParticipantName(): Promise<void> {
-		// Apply participant name from RoomMemberService if set, otherwise use authenticated username
-		const currentParticipantName = this.roomMemberContextService.getParticipantName();
-		const username = await this.authService.getUserName();
-		const participantName = currentParticipantName || username;
+		const form = this._participantForm();
+		const nameControl = form.get('name');
+		if (!nameControl) return;
 
-		if (participantName) {
-			this.setParticipantName(participantName);
+		const memberName = this.roomMemberContextService.memberName();
+		const userName = await this.authService.getUserName();
+		const isNameFromUrl = this.roomMemberContextService.isParticipantNameFromUrl();
+		const contextName = this.roomMemberContextService.participantName();
+
+		// Get name by priority: member > authenticated user > URL param > stored context
+		const name = memberName || userName || contextName;
+		if (name) {
+			this.setParticipantName(name);
+		}
+
+		// Disable input if name comes from: member, authenticated user or URL param
+		const shouldDisable = !!(memberName || userName || (isNameFromUrl && contextName));
+		if (shouldDisable) {
+			nameControl.disable();
 		}
 	}
 
@@ -334,17 +359,23 @@ export class MeetingLobbyService {
 		try {
 			const roomId = this._roomId();
 			const roomSecret = this.meetingContextService.roomSecret();
+			const participantName = this.participantName();
+
 			const roomMemberToken = await this.roomMemberContextService.generateToken(
 				roomId!,
 				{
 					secret: roomSecret,
 					joinMeeting: true,
-					participantName: this.participantName()
+					participantName
 				},
 				this.e2eeKeyValue()
 			);
-			const updatedName = this.roomMemberContextService.getParticipantName()!;
-			this.setParticipantName(updatedName);
+
+			// Save participant name to storage only if it was chosen freely by the user
+			if (!this.isParticipantNameDisabled()) {
+				this.roomMemberContextService.saveParticipantNameToStorage(participantName);
+			}
+
 			this._roomMemberToken.set(roomMemberToken);
 		} catch (error: any) {
 			this.log.e('Error generating room member token for joining meeting:', error);
@@ -386,15 +417,6 @@ export class MeetingLobbyService {
 
 			throw new Error('Error generating room member token');
 		}
-	}
-
-	/**
-	 * Add participant name as a query parameter to the URL
-	 */
-	protected async addParticipantNameToUrl() {
-		await this.navigationService.updateQueryParamsFromUrl(this.route.snapshot.queryParams, {
-			'participant-name': this.participantName()
-		});
 	}
 
 	protected clearLobbyState() {
