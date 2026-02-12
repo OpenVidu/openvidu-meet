@@ -1,6 +1,5 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { Observable, catchError, from, switchMap } from 'rxjs';
 import {
 	HttpErrorContext,
@@ -9,6 +8,7 @@ import {
 } from '../../../shared/services/http-error-notifier.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { AuthService } from '../services/auth.service';
+import { AuthHeaderProviderService } from './auth-header-provider.service';
 
 /**
  * Handler for authentication-related HTTP errors.
@@ -22,6 +22,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	private readonly authService = inject(AuthService);
 	private readonly tokenStorageService = inject(TokenStorageService);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
+	private readonly authHeaderProvider = inject(AuthHeaderProviderService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -80,14 +81,8 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 			switchMap(() => {
 				console.log('Access token refreshed');
 				// Update the request with the new token
-				const newToken = this.tokenStorageService.getAccessToken();
-				const updatedRequest = newToken
-					? originalRequest.clone({
-							setHeaders: {
-								authorization: `Bearer ${newToken}`
-							}
-						})
-					: originalRequest;
+				const headers = this.authHeaderProvider.provideHeaders();
+				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;
 
 				return next(updatedRequest);
 			}),

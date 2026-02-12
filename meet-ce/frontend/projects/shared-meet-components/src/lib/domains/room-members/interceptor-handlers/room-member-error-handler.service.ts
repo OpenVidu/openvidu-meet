@@ -8,6 +8,7 @@ import {
 } from '../../../shared/services/http-error-notifier.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../services/room-member-context.service';
+import { RoomMemberHeaderProviderService } from './room-member-header-provider.service';
 
 /**
  * Handler for room member token-related HTTP errors.
@@ -21,6 +22,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
+	private readonly roomMemberHeaderProvider = inject(RoomMemberHeaderProviderService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -84,15 +86,10 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		).pipe(
 			switchMap(() => {
 				console.log('Room member token refreshed');
+				
 				// Update the request with the new token
-				const newToken = this.roomMemberContextService.getRoomMemberToken();
-				const updatedRequest = newToken
-					? originalRequest.clone({
-							setHeaders: {
-								'x-room-member-token': `Bearer ${newToken}`
-							}
-						})
-					: originalRequest;
+				const headers = this.roomMemberHeaderProvider.provideHeaders();
+				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;
 
 				return next(updatedRequest);
 			}),
