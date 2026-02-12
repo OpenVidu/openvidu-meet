@@ -40,8 +40,13 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 		meetingContextService.loadE2eeKeyFromStorage();
 	}
 
+	// Handle participant name: prioritize query param, fallback to storage
 	if (participantName) {
-		roomMemberContextService.setParticipantName(participantName);
+		// Participant name came from URL parameter
+		roomMemberContextService.setParticipantName(participantName, true);
+	} else {
+		// Try to load participant name from storage
+		roomMemberContextService.loadParticipantNameFromStorage();
 	}
 
 	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room

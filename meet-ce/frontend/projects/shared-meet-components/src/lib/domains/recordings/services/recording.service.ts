@@ -131,7 +131,7 @@ export class RecordingService {
 				params.append('accessToken', accessToken);
 			}
 
-			const roomMemberToken = this.roomMemberContextService.getRoomMemberToken();
+			const roomMemberToken = this.roomMemberContextService.roomMemberToken();
 			if (roomMemberToken) {
 				params.append('roomMemberToken', roomMemberToken);
 			}
@@ -227,7 +227,7 @@ export class RecordingService {
 			params.append('accessToken', accessToken);
 		}
 
-		const roomMemberToken = this.roomMemberContextService.getRoomMemberToken();
+		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
 		if (roomMemberToken) {
 			params.append('roomMemberToken', roomMemberToken);
 		}

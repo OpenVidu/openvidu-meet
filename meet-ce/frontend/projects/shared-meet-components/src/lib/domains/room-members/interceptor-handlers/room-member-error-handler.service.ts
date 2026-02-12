@@ -72,8 +72,8 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		}
 
 		const secret = this.meetingContextService.roomSecret();
-		const participantName = this.roomMemberContextService.getParticipantName();
-		const participantIdentity = this.roomMemberContextService.getParticipantIdentity();
+		const participantName = this.roomMemberContextService.participantName();
+		const participantIdentity = this.roomMemberContextService.participantIdentity();
 		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
 
 		return from(
@@ -86,7 +86,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		).pipe(
 			switchMap(() => {
 				console.log('Room member token refreshed');
-				
+
 				// Update the request with the new token
 				const headers = this.roomMemberHeaderProvider.provideHeaders();
 				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;

@@ -190,7 +190,7 @@ export class MeetingEventHandlerService {
 		const { participantIdentity, newRole, secret } = event;
 		const roomId = this.meetingContext.roomId();
 		const local = this.meetingContext.localParticipant();
-		const participantName = this.roomMemberContextService.getParticipantName();
+		const participantName = this.roomMemberContextService.participantName();
 
 		// Check if the role update is for the local participant
 		if (local && participantIdentity === local.identity) {

@@ -31,14 +31,14 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 		// Only provide if:
 		// 1. Room member token exists
 		// 2. Current page is a room page (starts with /room/)
-		return !!this.roomMemberContextService.getRoomMemberToken() && context.pageUrl.startsWith('/room/');
+		return !!this.roomMemberContextService.roomMemberToken() && context.pageUrl.startsWith('/room/');
 	}
 
 	/**
 	 * Provides the room member token header
 	 */
 	provideHeaders(): Record<string, string> | null {
-		const roomMemberToken = this.roomMemberContextService.getRoomMemberToken();
+		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
 		if (!roomMemberToken) {
 			return null;
 		}
