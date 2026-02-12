@@ -212,7 +212,15 @@ export class MeetingComponent implements OnInit {
 	async onViewRecordingsClicked() {
 		const basePath = this.runtimeConfigService.basePath;
 		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-		window.open(`${basePathForUrl}/room/${this.roomId()}/recordings?secret=${this.roomSecret()}`, '_blank');
+		let recordingsUrl = `${basePathForUrl}/room/${this.roomId()}/recordings`;
+
+		// Append room secret as query param if it exists
+		const secret = this.roomSecret();
+		if (secret) {
+			recordingsUrl += `?secret=${secret}`;
+		}
+
+		window.open(recordingsUrl, '_blank');
 	}
 
 	onParticipantConnected(event: any): void {

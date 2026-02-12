@@ -46,7 +46,7 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 
 	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room
 	if (showOnlyRecordings === 'true') {
-		return navigationService.createRedirectionTo(`room/${roomId}/recordings`, { secret });
+		return navigationService.createRedirectionTo(`room/${roomId}/recordings`);
 	}
 
 	return true;

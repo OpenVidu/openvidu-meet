@@ -132,11 +132,11 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	goBack(): void {
-		// Try to go back in browser history, otherwise navigate to recordings
+		// Try to go back in browser history, otherwise navigate to room recordings
 		if (window.history.length > 1) {
 			window.history.back();
 		} else {
-			this.router.navigate(['/recordings']);
+			this.router.navigate([`room/${this.recording?.roomId}/recordings`]);
 		}
 	}
 }
