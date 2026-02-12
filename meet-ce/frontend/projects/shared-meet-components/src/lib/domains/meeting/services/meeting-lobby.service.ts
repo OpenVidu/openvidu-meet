@@ -266,19 +266,21 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Sets the back button text based on the application mode and user role
+	 * Sets the back button text based on the application mode and user authentication
 	 */
 	protected async setBackButtonText(): Promise<void> {
 		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navigationService.getLeaveRedirectURL();
-		const isAdmin = await this.authService.isAdmin();
+		const isAuthenticated = await this.authService.isUserAuthenticated();
 
-		if (isStandaloneMode && !redirection && !isAdmin) {
+		// If in standalone mode without redirection and user is not authenticated,
+		// hide back button (user has no where to go back to)
+		if (isStandaloneMode && !redirection && !isAuthenticated) {
 			this._state.update((state) => ({ ...state, showBackButton: false }));
 			return;
 		}
 
-		const backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Rooms' : 'Back';
+		const backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'Back to Rooms' : 'Back';
 		this._state.update((state) => ({ ...state, showBackButton: true, backButtonText }));
 	}
 

@@ -63,7 +63,7 @@ export class ErrorComponent implements OnInit {
 			[NavigationErrorReason.INVALID_ROOM_SECRET]: {
 				title: 'Invalid link',
 				message:
-					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room'
+					'The link you used to access this room is not valid. Please ask a moderator to share the correct link using the share buttons available in the room'
 			},
 			[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
 				title: 'Invalid link',
@@ -102,28 +102,29 @@ export class ErrorComponent implements OnInit {
 	}
 
 	/**
-	 * Sets the back button text based on the application mode and user role
+	 * Sets the back button text based on the application mode and user authentication
 	 */
 	async setBackButtonText() {
 		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navService.getLeaveRedirectURL();
-		const isAdmin = await this.authService.isAdmin();
+		const isAuthenticated = await this.authService.isUserAuthenticated();
 
-		if (isStandaloneMode && !redirection && !isAdmin) {
-			// If in standalone mode, no redirection URL and not an admin, hide the back button
+		// If in standalone mode without redirection and user is not authenticated,
+		// hide back button (user has no where to go back to)
+		if (isStandaloneMode && !redirection && !isAuthenticated) {
 			this.showBackButton = false;
 			return;
 		}
 
 		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Accept';
+		this.backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'Back to Console' : 'Accept';
 	}
 
 	/**
 	 * Handles the back button click event and navigates accordingly
 	 * If in embedded mode, it closes the WebComponentManagerService
 	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the admin console
+	 * If in standalone mode without a redirect URL, it navigates to the console
 	 */
 	async goBack() {
 		if (this.appCtxService.isEmbeddedMode()) {
@@ -138,7 +139,7 @@ export class ErrorComponent implements OnInit {
 		}
 
 		if (this.appCtxService.isStandaloneMode()) {
-			// Navigate to the admin console
+			// Navigate to the console
 			await this.navService.navigateTo('/overview', undefined, true);
 		}
 	}
