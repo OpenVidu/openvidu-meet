@@ -8,7 +8,7 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
-import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import { expectExtraFieldsInResponse, expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	bulkDeleteRooms,
 	createRoom,
@@ -220,6 +220,7 @@ describe('Room API Tests', () => {
 				MeetRoomStatus.ACTIVE_MEETING,
 				MeetingEndAction.DELETE
 			);
+			expectExtraFieldsInResponse(successfulRoom2.room);
 			const successfulRoom3 = response.body.successful.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room3.roomId
@@ -234,6 +235,8 @@ describe('Room API Tests', () => {
 				MeetRoomStatus.ACTIVE_MEETING,
 				MeetingEndAction.CLOSE
 			);
+			expectExtraFieldsInResponse(successfulRoom3.room);
+
 			const successfulRoom4 = response.body.successful.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room4.roomId
@@ -248,6 +251,7 @@ describe('Room API Tests', () => {
 				MeetRoomStatus.CLOSED,
 				MeetingEndAction.NONE
 			);
+			expectExtraFieldsInResponse(successfulRoom4.room);
 		});
 	});
 

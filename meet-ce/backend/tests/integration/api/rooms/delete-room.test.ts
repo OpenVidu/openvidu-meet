@@ -7,7 +7,11 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
-import { expectSuccessListRecordingResponse, expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import {
+	expectExtraFieldsInResponse,
+	expectSuccessListRecordingResponse,
+	expectValidRoom
+} from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
@@ -41,6 +45,7 @@ describe('Room API Tests', () => {
 				const response = await deleteRoom(roomId);
 				expect(response.status).toBe(200);
 				expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
+				expect(response.body).not.toHaveProperty('room');
 
 				// Check room is deleted
 				const getResponse = await getRoom(roomId);
@@ -70,6 +75,7 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_DELETED
 				);
+				expect(response.body).not.toHaveProperty('room');
 
 				// Check room is deleted
 				const getResponse = await getRoom(roomId);
@@ -95,6 +101,7 @@ describe('Room API Tests', () => {
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.DELETE
 				);
+				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check the room is deleted
 				await endMeeting(roomId, moderatorToken);
@@ -130,6 +137,7 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_AND_RECORDINGS_DELETED
 				);
+				expect(response.body).not.toHaveProperty('room');
 
 				// Check the room and recordings are deleted
 				const roomResponse = await getRoom(roomId);
@@ -144,7 +152,7 @@ describe('Room API Tests', () => {
 				});
 				expect(response.status).toBe(200);
 				expect(response.body).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_CLOSED);
-
+				expect(response.body).toHaveProperty('room');
 				// Check that the room is closed and recordings are not deleted
 				expectValidRoom(
 					response.body.room,
@@ -156,6 +164,7 @@ describe('Room API Tests', () => {
 					MeetRoomStatus.CLOSED,
 					MeetingEndAction.NONE
 				);
+				expectExtraFieldsInResponse(response.body.room);
 
 				const recordingsResponse = await getAllRecordings({ roomId, maxItems: 1 });
 				expectSuccessListRecordingResponse(recordingsResponse, 1, false, false, 1);
@@ -193,6 +202,7 @@ describe('Room API Tests', () => {
 					'successCode',
 					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_AND_RECORDINGS_DELETED
 				);
+				expect(response.body).not.toHaveProperty('room');
 
 				// Check the room and recordings are deleted
 				const roomResponse = await getRoom(roomId);
@@ -221,6 +231,7 @@ describe('Room API Tests', () => {
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.CLOSE
 				);
+				expectExtraFieldsInResponse(response.body.room);
 
 				// Check that the room is closed and recordings are not deleted
 				const roomResponse = await getRoom(roomId);
@@ -272,6 +283,7 @@ describe('Room API Tests', () => {
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.DELETE
 				);
+				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check the room and recordings are deleted
 				await endMeeting(roomId, moderatorToken);
@@ -301,6 +313,7 @@ describe('Room API Tests', () => {
 					MeetRoomStatus.ACTIVE_MEETING,
 					MeetingEndAction.CLOSE
 				);
+				expectExtraFieldsInResponse(response.body.room);
 
 				// End meeting and check that the room is closed and recordings are not deleted
 				await endMeeting(roomId, moderatorToken);

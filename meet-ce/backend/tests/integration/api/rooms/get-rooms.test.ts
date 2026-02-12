@@ -38,7 +38,7 @@ describe('Room API Tests', () => {
 			const response = await getRooms();
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 			expectValidRoom(response.body.rooms[0], 'test-room', 'test_room');
-			expectExtraFieldsInResponse(response.body.rooms[0]);
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should return a list of rooms applying fields filter', async () => {
@@ -53,7 +53,7 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 
 			expectValidRoomWithFields(rooms[0], ['roomId', 'creationDate']);
-			expectExtraFieldsInResponse(rooms[0]);
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should return a list of rooms applying roomName filter', async () => {
@@ -71,6 +71,7 @@ describe('Room API Tests', () => {
 
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 			expectValidRoom(rooms[0], 'test-room');
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should return a list of rooms applying status filter', async () => {
