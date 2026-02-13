@@ -82,11 +82,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async goBackToRoom() {
 		try {
-			const roomSecret = this.meetingContextService.roomSecret();
-			if (!roomSecret) throw new Error('Cannot navigate back to room: room secret is undefined');
-			await this.navigationService.navigateTo(`/room/${this.roomId}`, {
-				secret: roomSecret
-			});
+			await this.navigationService.navigateTo(`/room/${this.roomId}`);
 		} catch (error) {
 			this.log.e('Error navigating back to room:', error);
 		}
