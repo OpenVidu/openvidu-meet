@@ -188,15 +188,15 @@ export class MeetingContextService {
 	 * Clears the meeting context
 	 */
 	clearContext(): void {
-		this._meetRoom.set(undefined);
-		this._lkRoom.set(undefined);
 		this._roomId.set(undefined);
+		this._meetRoom.set(undefined);
 		this._meetingUrl.set('');
+		this._roomSecret.set(undefined);
 		this._e2eeKey.set('');
 		this._isE2eeKeyFromUrl.set(false);
-		this._roomSecret.set(undefined);
 		this._hasRecordings.set(false);
 		this._meetingEndedBy.set(null);
+		this._lkRoom.set(undefined);
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
 	}

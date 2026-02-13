@@ -123,9 +123,6 @@ export class MeetingComponent implements OnInit {
 		this.destroy$.next();
 		this.destroy$.complete();
 
-		// Clear meeting context when component is destroyed
-		this.meetingContextService.clearContext();
-
 		// Cleanup captions service
 		this.captionsService.destroy();
 	}
