@@ -257,32 +257,37 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @returns The path portion of the URL without the basePath prefix
 	 */
 	private extractPathFromUrl(url: string): string {
-		const basePath = getBasePath();
-		// Remove trailing slash from basePath for comparison (e.g., '/meet/' -> '/meet')
-		const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-
-		// Helper to strip basePath from a path
-		const stripBasePath = (path: string): string => {
-			if (basePathWithoutTrailingSlash !== '' && path.startsWith(basePathWithoutTrailingSlash)) {
-				return path.slice(basePathWithoutTrailingSlash.length) || '/';
-			}
-
-			return path;
-		};
-
 		// If already a path, strip basePath and return
 		if (url.startsWith('/')) {
-			return stripBasePath(url);
+			return this.stripBasePath(url);
 		}
 
 		try {
 			const urlObj = new URL(url);
-			const pathname = stripBasePath(urlObj.pathname);
+			const pathname = this.stripBasePath(urlObj.pathname);
 			return pathname + urlObj.search + urlObj.hash;
 		} catch {
 			// If URL parsing fails, assume it's already a path
 			return url;
 		}
+	}
+
+	/**
+	 * Strips the basePath from a given path if it starts with it.
+	 *
+	 * @param path - The path to process
+	 * @returns The path without the basePath prefix
+	 */
+	private stripBasePath(path: string): string {
+		const basePath = getBasePath();
+		// Remove trailing slash from basePath for comparison (e.g., '/meet/' -> '/meet')
+		const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+
+		if (basePathWithoutTrailingSlash && path.startsWith(basePathWithoutTrailingSlash)) {
+			return path.slice(basePathWithoutTrailingSlash.length) || '/';
+		}
+
+		return path;
 	}
 
 	/**

@@ -10,7 +10,7 @@ import {
 } from '@openvidu-meet/typings';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
-import { getBasePath } from '../utils/html-injection.utils.js';
+import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 
 export class MeetRoomHelper {
 	private constructor() {
