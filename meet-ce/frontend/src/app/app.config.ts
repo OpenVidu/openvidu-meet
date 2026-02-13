@@ -36,10 +36,12 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideAppInitializer(() => inject(ThemeService).init()),
+		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
+		// Important to register the room member error handler before the auth error handler,
+		// since the room member error handler has more specific logic to determine if it can handle the error
+		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
-		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
-		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		{ provide: LayoutService, useClass: MeetingLayoutService },
 		provideZoneChangeDetection({ eventCoalescing: true }),
