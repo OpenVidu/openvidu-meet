@@ -33,7 +33,7 @@ import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
-import { getBasePath } from '../../src/utils/html-injection.utils.js';
+import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
 
 /**
  * Constructs the full API path by prepending the base path.

@@ -3,6 +3,7 @@ import fs from 'fs';
 import { MEET_ENV } from '../environment.js';
 
 let cachedHtml: string | null = null;
+const cachedOpenApiHtml = new Map<string, string>();
 let configValidated = false;
 
 /**
@@ -82,14 +83,14 @@ export function getBasePath(): string {
 }
 
 /**
- * Injects runtime configuration into the index.html
+ * Applies runtime base path configuration to the index.html
  * - Replaces the <base href="/"> tag with the configured base path
- * - Injects a script with window.__OPENVIDU_MEET_CONFIG__ for frontend access
+ * - Adds a script with window.__OPENVIDU_MEET_CONFIG__ for frontend access
  *
  * @param htmlPath Path to the index.html file
  * @returns The modified HTML content
  */
-export function getInjectedHtml(htmlPath: string): string {
+export function getHtmlWithBasePath(htmlPath: string): string {
 	// In production, cache the result for performance
 	if (process.env.NODE_ENV === 'production' && cachedHtml) {
 		return cachedHtml;
@@ -113,8 +114,43 @@ export function getInjectedHtml(htmlPath: string): string {
 }
 
 /**
+ * Applies the runtime base path to the OpenAPI documentation HTML.
+ * Replaces the servers URL in the embedded OpenAPI spec so that "Try It" requests
+ * use the correct path when deployed under a base path (e.g. /meet/api/v1).
+ *
+ * @param htmlPath Path to the OpenAPI HTML file
+ * @param apiBasePath The API base path (e.g. /api/v1 or /internal-api/v1)
+ * @returns The modified HTML content
+ */
+export function getOpenApiHtmlWithBasePath(htmlPath: string, apiBasePath: string): string {
+	if (process.env.NODE_ENV === 'production' && cachedOpenApiHtml.has(htmlPath)) {
+		return cachedOpenApiHtml.get(htmlPath)!;
+	}
+
+	const basePath = getBasePath();
+	// Build full server URL: strip trailing slash from basePath to avoid double slashes
+	const fullServerUrl = basePath.replace(/\/$/, '') + apiBasePath;
+
+	let html = fs.readFileSync(htmlPath, 'utf-8');
+
+	// Replace the servers URL in the embedded OpenAPI JSON
+	// Matches "servers":[{"url":"<any-url>" and replaces the URL with the full path
+	html = html.replace(
+		/("servers":\[\{"url":")[^"]*(")/,
+		`$1${fullServerUrl}$2`
+	);
+
+	if (process.env.NODE_ENV === 'production') {
+		cachedOpenApiHtml.set(htmlPath, html);
+	}
+
+	return html;
+}
+
+/**
  * Clears the cached HTML (useful for testing or config changes)
  */
 export function clearHtmlCache(): void {
 	cachedHtml = null;
+	cachedOpenApiHtml.clear();
 }

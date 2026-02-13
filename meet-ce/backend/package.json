@@ -27,7 +27,7 @@
 		"package.json"
 	],
 	"scripts": {
-		"build": "tsc -p tsconfig.prod.json",
+		"build": "tsc -p tsconfig.prod.json && pnpm run doc:api",
 		"build:watch": "tsc -p tsconfig.prod.json --watch",
 		"doc:api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-api.yaml --ui=stoplight --theme=light --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o ../public/openapi/public.html",
 		"doc:internal-api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-internal-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet Internal REST API' --description 'OpenVidu Meet Internal REST API' -o ../public/openapi/internal.html",

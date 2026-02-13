@@ -17,7 +17,7 @@ import { internalMeetingRouter } from './routes/meeting.routes.js';
 import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { userRouter } from './routes/user.routes.js';
-import { getBasePath, getInjectedHtml } from './utils/html-injection.utils.js';
+import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
 	frontendDirectoryPath,
 	frontendHtmlPath,
@@ -76,7 +76,7 @@ const createApp = () => {
 
 	// Public API routes
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
-		res.sendFile(publicApiHtmlFilePath)
+		res.type('html').send(getOpenApiHtmlWithBasePath(publicApiHtmlFilePath, INTERNAL_CONFIG.API_BASE_PATH_V1))
 	);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
@@ -85,7 +85,7 @@ const createApp = () => {
 	if (process.env.NODE_ENV === 'development') {
 		// Serve internal API docs only in development mode
 		appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
-			res.sendFile(internalApiHtmlFilePath)
+			res.type('html').send(getOpenApiHtmlWithBasePath(internalApiHtmlFilePath, INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1))
 		);
 	}
 
@@ -104,7 +104,7 @@ const createApp = () => {
 	appRouter.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
-		res.type('html').send(getInjectedHtml(frontendHtmlPath));
+		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));
 	});
 	// Catch all other routes and return 404
 	appRouter.use((_req: Request, res: Response) =>

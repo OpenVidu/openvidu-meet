@@ -97,19 +97,21 @@ export class RecordingService {
 				status: MeetRecordingStatus.STARTING
 			});
 
+			// Promise that rejects after timeout
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				timeoutId = setTimeout(() => {
 					if (isOperationCompleted) return;
 
 					isOperationCompleted = true;
 
-					//Clean up the event listener and timeout
+					// Clean up the event listener and timeout
 					this.systemEventService.off(DistributedEventType.RECORDING_ACTIVE, eventListener);
 					this.handleRecordingTimeout(recordingId, roomId).catch(() => {});
 					reject(errorRecordingStartTimeout(roomId));
 				}, ms(INTERNAL_CONFIG.RECORDING_STARTED_TIMEOUT));
 			});
 
+			// Promise that resolves when RECORDING_ACTIVE event is received
 			const activeEgressEventPromise = new Promise<MeetRecordingInfo>((resolve) => {
 				eventListener = (info: Record<string, unknown>) => {
 					// Process the event only if it belongs to the current room.
@@ -126,6 +128,7 @@ export class RecordingService {
 				this.systemEventService.on(DistributedEventType.RECORDING_ACTIVE, eventListener);
 			});
 
+			// Promise that starts the recording process
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
 					const options = this.generateCompositeOptionsFromRequest(room.config, configOverride);
@@ -156,6 +159,16 @@ export class RecordingService {
 				} catch (error) {
 					if (isOperationCompleted) {
 						this.logger.warn(`startRoomComposite failed after timeout: ${error}`);
+
+						// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
+						await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+							recordingId,
+							roomId,
+							roomName: roomId,
+							status: MeetRecordingStatus.FAILED,
+							error: (error as Error).message
+						});
+
 						throw errorRecordingStartTimeout(roomId);
 					}
 
