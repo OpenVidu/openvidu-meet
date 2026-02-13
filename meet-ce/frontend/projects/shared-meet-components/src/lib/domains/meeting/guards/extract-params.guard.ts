@@ -25,7 +25,7 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 	// Handle leave redirect URL logic
 	navigationService.handleLeaveRedirectUrl(leaveRedirectUrl);
 
-	// Save parameters in the meeting context and room member context services
+	// Save room ID and secret in the meeting context service
 	meetingContextService.setRoomId(roomId);
 	if (secret) {
 		meetingContextService.setRoomSecret(secret, true);
@@ -51,7 +51,7 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 
 	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room
 	if (showOnlyRecordings === 'true') {
-		return navigationService.createRedirectionTo(`room/${roomId}/recordings`);
+		return navigationService.createRedirectionTo(`/room/${roomId}/recordings`);
 	}
 
 	return true;

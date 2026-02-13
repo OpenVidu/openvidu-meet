@@ -190,7 +190,7 @@ export class NavigationService {
 	 * @returns The UrlTree for the error page
 	 */
 	async redirectToErrorPage(reason: NavigationErrorReason, navigate = false): Promise<UrlTree> {
-		const urlTree = this.createRedirectionTo('error', { reason });
+		const urlTree = this.createRedirectionTo('/error', { reason });
 
 		if (navigate) {
 			try {
@@ -212,7 +212,7 @@ export class NavigationService {
 	 */
 	async redirectToLoginPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
 		const queryParams = redirectTo ? { redirectTo } : undefined;
-		const urlTree = this.createRedirectionTo('login', queryParams);
+		const urlTree = this.createRedirectionTo('/login', queryParams);
 
 		if (navigate) {
 			try {

@@ -140,7 +140,7 @@ export class ErrorComponent implements OnInit {
 
 		if (this.appCtxService.isStandaloneMode()) {
 			// Navigate to the console
-			await this.navService.navigateTo('/overview', undefined, true);
+			await this.navService.navigateTo('/', undefined, true);
 		}
 	}
 }

@@ -48,7 +48,7 @@ export class OverviewComponent implements OnInit {
 
 	async navigateTo(section: 'rooms' | 'rooms/new' | 'recordings' | 'config' | 'embedded') {
 		try {
-			await this.navigationService.navigateTo(section);
+			await this.navigationService.navigateTo(`/${section}`);
 		} catch (error) {
 			console.error(`Error navigating to ${section}:`, error);
 		}

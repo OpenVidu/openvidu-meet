@@ -101,7 +101,7 @@ export class RoomWizardComponent implements OnInit {
 		} catch (error) {
 			console.error('Error loading room data:', error);
 			// Navigate back to rooms list if room not found
-			await this.navigationService.navigateTo('rooms', undefined, true);
+			await this.navigationService.navigateTo('/rooms', undefined, true);
 		}
 	}
 
@@ -128,7 +128,7 @@ export class RoomWizardComponent implements OnInit {
 
 	async onCancel() {
 		this.wizardService.resetWizard();
-		await this.navigationService.navigateTo('rooms', undefined, true);
+		await this.navigationService.navigateTo('/rooms', undefined, true);
 	}
 
 	async createRoomBasic(roomName?: string) {
@@ -138,8 +138,8 @@ export class RoomWizardComponent implements OnInit {
 
 			// Extract the path from the access URL and navigate to it
 			const url = new URL(accessUrl);
-			const pathWithParams = url.pathname;
-			await this.navigationService.redirectTo(pathWithParams);
+			const path = url.pathname;
+			await this.navigationService.redirectTo(path);
 		} catch (error) {
 			const errorMessage = `Failed to create room ${roomName}`;
 			this.notificationService.showSnackbar(errorMessage);
@@ -161,7 +161,7 @@ export class RoomWizardComponent implements OnInit {
 		try {
 			if (this.editMode && this.roomId && roomOptions.config) {
 				await this.roomService.updateRoomConfig(this.roomId, roomOptions.config);
-				await this.navigationService.navigateTo('rooms', undefined, true);
+				await this.navigationService.navigateTo('/rooms', undefined, true);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
@@ -169,14 +169,14 @@ export class RoomWizardComponent implements OnInit {
 
 				// Extract the path from the access URL and navigate to it
 				const url = new URL(accessUrl);
-				const pathWithParams = url.pathname;
-				await this.navigationService.redirectTo(pathWithParams);
+				const path = url.pathname;
+				await this.navigationService.redirectTo(path);
 			}
 		} catch (error) {
 			const errorMessage = `Failed to ${this.editMode ? 'update' : 'create'} room`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
-			await this.navigationService.navigateTo('rooms', undefined, true);
+			await this.navigationService.navigateTo('/rooms', undefined, true);
 		} finally {
 			this.wizardService.resetWizard();
 			// Deactivate loading state

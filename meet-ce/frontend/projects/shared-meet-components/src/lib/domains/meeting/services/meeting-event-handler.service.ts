@@ -141,7 +141,7 @@ export class MeetingEventHandlerService {
 		this.roomMemberContextService.clearContext();
 
 		// Navigate to disconnected page
-		await this.navigationService.navigateTo('disconnected', { reason: leftReason }, true);
+		await this.navigationService.navigateTo('/disconnected', { reason: leftReason }, true);
 	};
 
 	/**

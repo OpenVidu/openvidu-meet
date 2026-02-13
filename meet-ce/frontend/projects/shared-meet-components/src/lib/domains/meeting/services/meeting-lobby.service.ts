@@ -230,7 +230,7 @@ export class MeetingLobbyService {
 	async goToRecordings(): Promise<void> {
 		try {
 			const roomId = this.roomId();
-			await this.navigationService.navigateTo(`room/${roomId}/recordings`);
+			await this.navigationService.navigateTo(`/room/${roomId}/recordings`);
 		} catch (error) {
 			this.log.e('Error navigating to recordings:', error);
 		}

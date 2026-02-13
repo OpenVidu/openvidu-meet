@@ -32,7 +32,7 @@ export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 	const isAuthenticated = await authService.isUserAuthenticated();
 	if (isAuthenticated) {
 		// Redirect to home page
-		return navigationService.createRedirectionTo('');
+		return navigationService.createRedirectionTo('/');
 	}
 
 	// Allow access to the requested page

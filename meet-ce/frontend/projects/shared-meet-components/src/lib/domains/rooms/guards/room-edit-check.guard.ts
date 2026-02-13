@@ -1,7 +1,8 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn } from '@angular/router';
 import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { RoomService } from '../services';
+import { NavigationService } from '../../../shared/services/navigation.service';
 
 /**
  * Guard that prevents editing a room when there's an active meeting.
@@ -9,13 +10,13 @@ import { RoomService } from '../services';
  */
 export const checkEditableRoomGuard: CanActivateFn = async (route) => {
 	const roomService = inject(RoomService);
-	const router = inject(Router);
+	const navigationService = inject(NavigationService);
 
 	const roomId = route.paramMap.get('roomId');
 
 	if (!roomId) {
 		console.warn('No roomId provided in route params');
-		router.navigate(['/rooms']);
+		navigationService.navigateTo('/rooms');
 		return false;
 	}
 
@@ -26,14 +27,14 @@ export const checkEditableRoomGuard: CanActivateFn = async (route) => {
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			console.warn(`Cannot edit room ${roomId} - active meeting in progress`);
-			router.navigate(['/rooms']);
+			navigationService.navigateTo('/rooms');
 			return false;
 		}
 
 		return true;
 	} catch (error) {
 		console.error(`Error checking room status for ${roomId}:`, error);
-		router.navigate(['/rooms']);
+		navigationService.navigateTo('/rooms');
 		return false;
 	}
 };

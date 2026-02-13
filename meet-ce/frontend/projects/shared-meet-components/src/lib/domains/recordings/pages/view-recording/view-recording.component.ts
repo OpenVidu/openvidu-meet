@@ -6,9 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
+import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { formatDurationToTime } from '../../../../shared/utils/format.utils';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
@@ -40,8 +41,8 @@ export class ViewRecordingComponent implements OnInit {
 	constructor(
 		protected recordingService: RecordingService,
 		protected notificationService: NotificationService,
+		protected navigationService: NavigationService,
 		protected route: ActivatedRoute,
-		protected router: Router,
 		public viewportService: ViewportService
 	) {}
 
@@ -136,7 +137,7 @@ export class ViewRecordingComponent implements OnInit {
 		if (window.history.length > 1) {
 			window.history.back();
 		} else {
-			this.router.navigate([`room/${this.recording?.roomId}/recordings`]);
+			this.navigationService.navigateTo(`/room/${this.recording?.roomId}/recordings`);
 		}
 	}
 }

@@ -175,8 +175,8 @@ export class AuthService {
 			} catch (error) {
 				this.user = null;
 			}
-
-			this.hasCheckAuth = true;
 		}
+
+		this.hasCheckAuth = true;
 	}
 }

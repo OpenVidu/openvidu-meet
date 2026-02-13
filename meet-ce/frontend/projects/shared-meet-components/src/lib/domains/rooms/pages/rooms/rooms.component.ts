@@ -198,7 +198,7 @@ export class RoomsComponent implements OnInit {
 
 	private async createRoom() {
 		try {
-			await this.navigationService.navigateTo('rooms/new');
+			await this.navigationService.navigateTo('/rooms/new');
 		} catch (error) {
 			this.notificationService.showSnackbar('Error creating room');
 			this.log.e('Error creating room:', error);
@@ -212,7 +212,7 @@ export class RoomsComponent implements OnInit {
 
 	private async editRoomConfig(room: MeetRoom) {
 		try {
-			await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
+			await this.navigationService.navigateTo(`/rooms/${room.roomId}/edit`);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to room config');
 			this.log.e('Error navigating to room config:', error);
@@ -232,7 +232,7 @@ export class RoomsComponent implements OnInit {
 	private async viewRecordings(room: MeetRoom) {
 		// Navigate to recordings page for this room
 		try {
-			await this.navigationService.navigateTo('recordings', { 'room-id': room.roomId });
+			await this.navigationService.navigateTo('/recordings', { 'room-id': room.roomId });
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);
@@ -241,7 +241,7 @@ export class RoomsComponent implements OnInit {
 
 	async onRoomClick(roomId: string) {
 		try {
-			await this.navigationService.navigateTo(`rooms/${roomId}/detail`);
+			await this.navigationService.navigateTo(`/rooms/${roomId}/detail`);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to room detail');
 			this.log.e('Error navigating to room detail:', error);

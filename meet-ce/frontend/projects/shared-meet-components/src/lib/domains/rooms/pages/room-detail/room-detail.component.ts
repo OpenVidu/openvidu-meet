@@ -81,7 +81,7 @@ export class RoomDetailComponent implements OnInit {
 		const roomId = this.route.snapshot.paramMap.get('roomId');
 		if (!roomId) {
 			this.notificationService.showSnackbar('Room ID is required');
-			await this.navigationService.navigateTo('rooms');
+			await this.navigationService.navigateTo('/rooms');
 			return;
 		}
 
@@ -98,7 +98,7 @@ export class RoomDetailComponent implements OnInit {
 			this.breadcrumbItems.set([
 				{
 					label: 'Rooms',
-					action: () => this.navigationService.navigateTo('rooms')
+					action: () => this.navigationService.navigateTo('/rooms')
 				},
 				{
 					label: room.roomName
@@ -106,14 +106,11 @@ export class RoomDetailComponent implements OnInit {
 			]);
 
 			// Load initial data for tabs
-			await Promise.all([
-				this.loadRoomMembers(roomId),
-				this.loadRecordings(roomId)
-			]);
+			await Promise.all([this.loadRoomMembers(roomId), this.loadRecordings(roomId)]);
 		} catch (error) {
 			this.log.e('Error loading room details:', error);
 			this.notificationService.showSnackbar('Failed to load room details');
-			await this.navigationService.navigateTo('rooms');
+			await this.navigationService.navigateTo('/rooms');
 		} finally {
 			this.isLoading.set(false);
 		}
@@ -219,7 +216,7 @@ export class RoomDetailComponent implements OnInit {
 		const room = this.room();
 		if (!room) return;
 
-		await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
+		await this.navigationService.navigateTo(`/rooms/${room.roomId}/edit`);
 	}
 
 	async deleteRoom() {
@@ -242,7 +239,7 @@ export class RoomDetailComponent implements OnInit {
 			try {
 				await this.roomService.deleteRoom(room.roomId, result.deletionPolicy);
 				this.notificationService.showSnackbar('Room deleted successfully');
-				await this.navigationService.navigateTo('rooms');
+				await this.navigationService.navigateTo('/rooms');
 			} catch (error) {
 				this.log.e('Error deleting room:', error);
 				this.notificationService.showSnackbar('Failed to delete room');
