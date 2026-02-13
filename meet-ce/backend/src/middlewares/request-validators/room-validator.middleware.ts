@@ -2,12 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomsReqSchema,
-	CreateRoomHeadersSchema,
 	DeleteRoomReqSchema,
-	GetRoomQuerySchema,
+	mergeHeaderFieldsIntoQuery,
 	nonEmptySanitizedRoomId,
 	RoomFiltersSchema,
 	RoomOptionsSchema,
+	RoomQueryFieldsSchema,
 	UpdateRoomAnonymousReqSchema,
 	UpdateRoomConfigReqSchema,
 	UpdateRoomRolesReqSchema,
@@ -15,26 +15,30 @@ import {
 } from '../../models/zod-schemas/room.schema.js';
 
 export const validateCreateRoomReq = (req: Request, res: Response, next: NextFunction) => {
+	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+
 	const bodyResult = RoomOptionsSchema.safeParse(req.body);
 
 	if (!bodyResult.success) {
 		return rejectUnprocessableRequest(res, bodyResult.error);
 	}
 
-	// Validate X-Fields and X-Expand headers
-	const headersResult = CreateRoomHeadersSchema.safeParse(req.headers);
+	req.body = bodyResult.data;
 
-	if (!headersResult.success) {
-		return rejectUnprocessableRequest(res, headersResult.error);
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(req.query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.body = bodyResult.data;
-	// Store validated headers in a custom property for controller access
-	(req as any).validatedHeaders = headersResult.data;
+	req.query = data;
 	next();
 };
 
 export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+
 	const { success, error, data } = RoomFiltersSchema.safeParse(req.query);
 
 	if (!success) {
@@ -49,6 +53,9 @@ export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunct
 };
 
 export const validateBulkDeleteRoomsReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+
 	const { success, error, data } = BulkDeleteRoomsReqSchema.safeParse(req.query);
 
 	if (!success) {
@@ -72,7 +79,10 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 };
 
 export const validateGetRoomReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = GetRoomQuerySchema.safeParse(req.query);
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(req.query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -90,6 +100,9 @@ export const validateDeleteRoomReq = (req: Request, res: Response, next: NextFun
 	}
 
 	req.params.roomId = roomIdResult.data;
+
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	mergeHeaderFieldsIntoQuery(req.headers, req.query);
 
 	const queryParamsResult = DeleteRoomReqSchema.safeParse(req.query);
 

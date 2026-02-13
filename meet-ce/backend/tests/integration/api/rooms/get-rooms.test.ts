@@ -288,13 +288,15 @@ describe('Room API Tests', () => {
 			expectValidRoom(room, 'extrafields-list-test', 'extrafields_list_test', customConfig);
 		});
 
-		it('should fail when extraFields has invalid values', async () => {
+		it('should not fail when extraFields has invalid values', async () => {
 			await createRoom({
 				roomName: 'invalid-extrafields-list'
 			});
 
 			const response = await getRooms({ extraFields: 'invalid,wrongparam' });
-			expectValidationError(response, 'extraFields', 'Invalid extraFields');
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+
+			expectValidRoom(response.body.rooms[0], 'invalid-extrafields-list', 'invalid_extrafields_list');
 		});
 
 		it('should return multiple rooms with full config when using extraFields=config', async () => {

@@ -82,7 +82,7 @@ describe('Room API Tests', () => {
 				expect(getResponse.status).toBe(404);
 			});
 
-			it('should return 202 with successCode=room_with_active_meeting_scheduled_to_be_deleted when withMeeting=when_meeting_ends', async () => {
+			it('should return 202 with successCode=room_with_active_meeting_deleted when withMeeting=force', async () => {
 				const response = await deleteRoom(roomId, {
 					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
 				});
@@ -107,6 +107,153 @@ describe('Room API Tests', () => {
 				await endMeeting(roomId, moderatorToken);
 				const getResponse = await getRoom(roomId);
 				expect(getResponse.status).toBe(404);
+			});
+
+			it('should return partial room response when fields parameter are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					fields: 'roomId,roomName'
+				});
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify only requested fields are present
+				expect(Object.keys(response.body.room)).toHaveLength(3); // roomId, roomName, and _extraFields
+				expect(response.body.room.roomId).toBe(roomId);
+				expect(response.body.room.roomName).toBeDefined();
+				expectExtraFieldsInResponse(response.body.room);
+			});
+
+			it('should return partial room response with extra fields when fields and extraFields parameters are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(roomId, {
+					withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+					fields: 'roomId,status',
+					extraFields: 'config'
+				});
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify only requested base fields are present
+				expect(Object.keys(response.body.room)).toHaveLength(4); // roomId, status, config and _extraFields
+				expectExtraFieldsInResponse(response.body.room);
+
+				expect(response.body.room.roomId).toBe(roomId);
+				expect(response.body.room.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
+				// Verify extra field is present
+				expect(response.body.room.config).toBeDefined();
+			});
+
+			it('should return partial room response when X-Fields headers are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(
+					roomId,
+					{
+						withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
+					},
+					{
+						xFields: 'roomId'
+					}
+				);
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify only requested field is present
+				expect(Object.keys(response.body.room)).toHaveLength(2); // roomId and _extraFields
+				expect(response.body.room.roomId).toBe(roomId);
+				expectExtraFieldsInResponse(response.body.room);
+			});
+
+			it('should return partial room response when X-ExtraFields headers are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(
+					roomId,
+					{
+						withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
+					},
+					{
+						xExtraFields: 'config,roles'
+					}
+				);
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify extra fields are present
+				expectExtraFieldsInResponse(response.body.room);
+				expect(response.body.room.config).toBeDefined();
+				expect(response.body.room.roles).toBeDefined();
+				// All base fields should be present (no fields param)
+				expect(response.body.room.roomId).toBe(roomId);
+				expect(response.body.room.roomName).toBeDefined();
+				expect(response.body.room.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
+			});
+
+			it('should return partial room response when fields parameters and X-Fields headers are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(
+					roomId,
+					{
+						withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+						fields: 'roomId'
+					},
+					{
+						xFields: 'roomName,status'
+					}
+				);
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify merged fields from both query param and header are present
+				expect(Object.keys(response.body.room)).toHaveLength(4); // roomId, roomName, status and _extraFields
+				expectExtraFieldsInResponse(response.body.room);
+
+				expect(response.body.room.roomId).toBe(roomId);
+				expect(response.body.room.roomName).toBeDefined();
+			});
+
+			it('should return partial room response when X-Fields and X-ExtraFields headers are included with successCode=room_with_active_meeting_scheduled_to_be_closed when withMeeting=when_meeting_ends and withRecordings=close', async () => {
+				const response = await deleteRoom(
+					roomId,
+					{
+						withMeeting: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS
+					},
+					{
+						xFields: 'roomId,status',
+						xExtraFields: 'config'
+					}
+				);
+
+				expect(response.status).toBe(202);
+				expect(response.body).toHaveProperty(
+					'successCode',
+					MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_SCHEDULED_TO_BE_DELETED
+				);
+
+				// Verify only requested base fields are present
+				expect(Object.keys(response.body.room)).toHaveLength(4); // roomId, status, config and _extraFields
+				expect(response.body.room.roomId).toBe(roomId);
+				expect(response.body.room.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
+				// Other base fields should not be present
+				expect(response.body.room.roomName).toBeUndefined();
+
+				// Verify requested extra field is present
+				expect(response.body.room.config).toBeDefined();
 			});
 
 			it('should return 409 with error=room_has_active_meeting when withMeeting=fail', async () => {

@@ -533,22 +533,6 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Room Creation Validation failures', () => {
-		it('should fail when x-ExtraFields header has invalid value', async () => {
-			const payload = {
-				roomName: 'Test Room with Invalid ExtraFields Header'
-			};
-
-			const response = await request(app)
-				.post(ROOMS_PATH)
-				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.set('x-ExtraFields', 'invalidField')
-				.send(payload)
-				.expect(422);
-
-			expect(response.body.error).toContain('Unprocessable Entity');
-			expect(JSON.stringify(response.body.details)).toContain('Invalid extraFields');
-		});
-
 		it('should fail when autoDeletionDate is negative', async () => {
 			const payload = {
 				autoDeletionDate: -5000,

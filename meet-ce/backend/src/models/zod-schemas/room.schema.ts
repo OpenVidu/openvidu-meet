@@ -374,19 +374,6 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 const extraFieldsSchema = z
 	.string()
 	.optional()
-	.refine(
-		(value) => {
-			if (!value) return true;
-
-			const allowed = MEET_ROOM_EXTRA_FIELDS;
-			const requested = value.split(',').map((p) => p.trim());
-
-			return requested.every((p) => allowed.includes(p as MeetRoomExtraField));
-		},
-		{
-			message: `Invalid extraFields. Valid options: ${MEET_ROOM_EXTRA_FIELDS.join(', ')}`
-		}
-	)
 	.transform((value) => {
 		// Transform to typed array of MeetRoomExtraField
 		if (!value) return undefined;
@@ -450,17 +437,70 @@ export const RoomFiltersSchema = z.object({
 	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
 });
 
-export const GetRoomQuerySchema = z.object({
+export const RoomQueryFieldsSchema = z.object({
 	fields: fieldsSchema,
 	extraFields: extraFieldsSchema
 });
 
-export const CreateRoomHeadersSchema = z.object({
+/**
+ * Schema for validating X-Fields and X-ExtraFields headers.
+ * Used across all room operations to support field filtering via headers.
+ */
+export const RoomHeaderFieldsSchema = z.object({
 	'x-fields': fieldsSchema,
 	'x-extrafields': extraFieldsSchema
 });
 
+/**
+ * Merges validated header field values into query params.
+ * Headers are merged with query params using union (deduplication).
+ * If a header and query param overlap, the merged result contains unique values from both.
+ *
+ * This allows controllers to only read from req.query regardless of whether
+ * the client used headers, query params, or both.
+ *
+ * @param headers - The request headers object
+ * @param query - The current query params object (will be mutated)
+ */
+export function mergeHeaderFieldsIntoQuery(headers: Record<string, unknown>, query: Record<string, unknown>): void {
+	const headerResult = RoomHeaderFieldsSchema.safeParse(headers);
+
+	if (!headerResult.success) {
+		// If headers are invalid, skip merging (they'll be ignored)
+		return;
+	}
+
+	const headerFields = headerResult.data['x-fields'];
+	const headerExtraFields = headerResult.data['x-extrafields'];
+
+	if (headerFields) {
+		const existingFields =
+			typeof query.fields === 'string'
+				? query.fields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingFields, ...headerFields]));
+		query.fields = merged.join(',');
+	}
+
+	if (headerExtraFields) {
+		const existingExtraFields =
+			typeof query.extraFields === 'string'
+				? query.extraFields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingExtraFields, ...headerExtraFields]));
+		query.extraFields = merged.join(',');
+	}
+}
+
 export const DeleteRoomReqSchema = z.object({
+	fields: fieldsSchema,
+	extraFields: extraFieldsSchema,
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
@@ -500,6 +540,8 @@ export const BulkDeleteRoomsReqSchema = z.object({
 			message: 'At least one valid roomId is required after sanitization'
 		})
 	),
+	fields: fieldsSchema,
+	extraFields: extraFieldsSchema,
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });

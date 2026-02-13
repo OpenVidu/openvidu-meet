@@ -37,6 +37,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 
+import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -425,27 +426,37 @@ export class RoomService {
 	 * Deletes a room based on the specified policies for handling active meetings and recordings.
 	 *
 	 * @param roomId - The unique identifier of the room to delete
-	 * @param withMeeting - Policy for handling rooms with active meetings
-	 * @param withRecordings - Policy for handling rooms with recordings
+	 * @param options - Deletion options including policies for handling active meetings and recordings
 	 * @returns Promise with deletion result including status code, success code, message and room (if updated instead of deleted)
 	 * @throws Error with specific error codes for conflict scenarios
 	 */
 	async deleteMeetRoom(
 		roomId: string,
-		withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
-		withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL
+		options: MeetRoomDeletionOptions = {}
 	): Promise<{
 		successCode: MeetRoomDeletionSuccessCode;
 		message: string;
 		room?: MeetRoom;
 	}> {
+		const {
+			withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+			withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL,
+			fields
+		} = options;
+
 		try {
 			this.logger.info(
 				`Deleting room '${roomId}' with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 			);
 
-			// Check if there's an active meeting in the room and/or if it has recordings associated
-			const room = await this.getMeetRoom(roomId, ['status']);
+			// Create a Set for adding required fields for deletion logic
+			const requiredFields = new Set<MeetRoomField>(['roomId', 'status']);
+			// requiredFields.add('autoDeletionPolicy');
+			// requiredFields.add('meetingEndAction');
+
+			// Merge and deduplicate fields for DB query
+			const fieldsForQuery = Array.from(new Set([...(fields || []), ...requiredFields]));
+			const room = await this.getMeetRoom(roomId, Array.from(fieldsForQuery));
 			const hasActiveMeeting = room.status === MeetRoomStatus.ACTIVE_MEETING;
 			const hasRecordings = await this.recordingService.hasRoomRecordings(roomId);
 
@@ -453,20 +464,25 @@ export class RoomService {
 				`Room '${roomId}' status: hasActiveMeeting=${hasActiveMeeting}, hasRecordings=${hasRecordings}`
 			);
 
-			const updatedRoom = await this.executeDeletionStrategy(
-				roomId,
+			// Pass room object to avoid second DB fetch
+			let updatedRoom = await this.executeDeletionStrategy(
+				room,
 				hasActiveMeeting,
 				hasRecordings,
 				withMeeting,
 				withRecordings
 			);
+
+			// Remove required fields added for deletion logic from the response (they are not needed in the response)
+			updatedRoom = updatedRoom ? MeetRoomHelper.applyFieldFilters(updatedRoom, fields) : undefined;
+
 			return this.getDeletionResponse(
 				roomId,
 				hasActiveMeeting,
 				hasRecordings,
 				withMeeting,
 				withRecordings,
-				MeetRoomHelper.applyFieldFilters(updatedRoom!, undefined, [])
+				updatedRoom
 			);
 		} catch (error) {
 			this.logger.error(`Error deleting room '${roomId}': ${error}`);
@@ -481,14 +497,18 @@ export class RoomService {
 	 * - If there is an active meeting, sets the meeting end action (DELETE or CLOSE) and optionally ends the meeting.
 	 * - If there are recordings and policy is CLOSE, closes the room.
 	 * - If force delete is requested, deletes the room and all recordings and members.
+	 *
+	 * @param room - The room object (already fetched from DB) to avoid duplicate queries
 	 */
 	protected async executeDeletionStrategy(
-		roomId: string,
+		room: MeetRoom,
 		hasActiveMeeting: boolean,
 		hasRecordings: boolean,
 		withMeeting: MeetRoomDeletionPolicyWithMeeting,
 		withRecordings: MeetRoomDeletionPolicyWithRecordings
 	): Promise<MeetRoom | undefined> {
+		const roomId = room.roomId;
+
 		// Validate policies first (fail-fast)
 		this.validateDeletionPolicies(roomId, hasActiveMeeting, hasRecordings, withMeeting, withRecordings);
 
@@ -500,8 +520,6 @@ export class RoomService {
 			]);
 			return undefined;
 		}
-
-		const room = await this.getMeetRoom(roomId);
 
 		// Determine actions based on policies
 		const shouldForceEndMeeting = hasActiveMeeting && withMeeting === MeetRoomDeletionPolicyWithMeeting.FORCE;
@@ -697,17 +715,15 @@ export class RoomService {
 	/**
 	 * Deletes multiple rooms in bulk using the deleteMeetRoom method, processing them in batches.
 	 *
-	 * @param rooms - Array of room identifiers to be deleted.
+	 * @param roomsOrRoomIds - Array of room identifiers to be deleted.
 	 * If an array of MeetRoom objects is provided, the roomId will be extracted from each object.
-	 * @param withMeeting - Policy for handling rooms with active meetings
-	 * @param withRecordings - Policy for handling rooms with recordings
+	 * @param options - Deletion options including policies for handling active meetings and recordings
 	 * @param batchSize - Number of rooms to process in each batch (default: 10)
 	 * @returns Promise with arrays of successful and failed deletions
 	 */
 	async bulkDeleteMeetRooms(
-		rooms: string[] | MeetRoom[],
-		withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
-		withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL,
+		roomsOrRoomIds: string[] | MeetRoom[],
+		options: MeetRoomDeletionOptions = {},
 		batchSize = 10
 	): Promise<{
 		successful: {
@@ -722,8 +738,14 @@ export class RoomService {
 			message: string;
 		}[];
 	}> {
+		const {
+			withMeeting = MeetRoomDeletionPolicyWithMeeting.FAIL,
+			withRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL,
+			fields
+		} = options;
+
 		this.logger.info(
-			`Starting bulk deletion of ${rooms.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
+			`Starting bulk deletion of ${roomsOrRoomIds.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 		);
 
 		const successful: {
@@ -739,10 +761,10 @@ export class RoomService {
 		}[] = [];
 
 		// Process rooms in batches
-		for (let i = 0; i < rooms.length; i += batchSize) {
-			const batch = rooms.slice(i, i + batchSize);
+		for (let i = 0; i < roomsOrRoomIds.length; i += batchSize) {
+			const batch = roomsOrRoomIds.slice(i, i + batchSize);
 			const batchNumber = Math.floor(i / batchSize) + 1;
-			const totalBatches = Math.ceil(rooms.length / batchSize);
+			const totalBatches = Math.ceil(roomsOrRoomIds.length / batchSize);
 
 			this.logger.debug(`Processing batch ${batchNumber}/${totalBatches} with ${batch.length} rooms`);
 
@@ -754,6 +776,10 @@ export class RoomService {
 					try {
 						const user = this.requestSessionService.getAuthenticatedUser();
 
+						// !FIXME: This permission check is necessary for HTTP requests,
+						// !but it is not ideal to have it here in the service layer,
+						// !as this method can also be called from non-HTTP contexts (e.g., scheduled jobs for auto-deletion, background jobs for recording management, etc).
+						// !This should be refactored and moved to a controller or a separate layer responsible for access control for HTTP requests.
 						// Check permissions if user is authenticated and not an admin
 						if (user && user.role !== MeetUserRole.ADMIN) {
 							const isOwner = await this.isRoomOwner(roomId, user.userId);
@@ -766,14 +792,14 @@ export class RoomService {
 						let result;
 
 						if (typeof room === 'string') {
-							result = await this.deleteMeetRoom(roomId, withMeeting, withRecordings);
+							result = await this.deleteMeetRoom(roomId, { withMeeting, withRecordings, fields });
 						} else {
 							// Extract deletion policies from the room object
-							result = await this.deleteMeetRoom(
-								roomId,
-								room.autoDeletionPolicy?.withMeeting,
-								room.autoDeletionPolicy?.withRecordings
-							);
+							result = await this.deleteMeetRoom(roomId, {
+								withMeeting: room.autoDeletionPolicy?.withMeeting,
+								withRecordings: room.autoDeletionPolicy?.withRecordings,
+								fields
+							});
 						}
 
 						this.logger.info(result.message);
@@ -824,7 +850,7 @@ export class RoomService {
 		}
 
 		this.logger.info(
-			`Bulk deletion completed: ${successful.length}/${rooms.length} successful, ${failed.length}/${rooms.length} failed`
+			`Bulk deletion completed: ${successful.length}/${roomsOrRoomIds.length} successful, ${failed.length}/${roomsOrRoomIds.length} failed`
 		);
 		return { successful, failed };
 	}

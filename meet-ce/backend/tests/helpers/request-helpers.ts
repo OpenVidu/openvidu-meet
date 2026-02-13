@@ -10,6 +10,8 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomExtraField,
+	MeetRoomField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
@@ -439,13 +441,26 @@ export const createRoom = async (
 	return response.body;
 };
 
-export const getRooms = async (query: Record<string, unknown> = {}) => {
+export const getRooms = async (
+	query: Record<string, unknown> = {},
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	return await req;
 };
 
 /**
@@ -458,7 +473,13 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string, extraFields?: string, roomMemberToken?: string) => {
+export const getRoom = async (
+	roomId: string,
+	fields?: string,
+	extraFields?: string,
+	roomMemberToken?: string,
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
 	const queryParams: Record<string, string> = {};
@@ -475,6 +496,14 @@ export const getRoom = async (roomId: string, fields?: string, extraFields?: str
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
 	}
 
 	return await req;
@@ -525,24 +554,69 @@ export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig:
 		.send({ anonymous: anonymousConfig });
 };
 
-export const deleteRoom = async (roomId: string, query: Record<string, unknown> = {}) => {
+export const deleteRoom = async (
+	roomId: string,
+	query: Record<string, unknown> = {},
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	const result = await request(app)
+	const req = request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	const result = await req;
 	await sleep('1s');
 	return result;
 };
 
-export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, withRecordings?: string) => {
+export const bulkDeleteRooms = async (
+	roomIds: string[],
+	withMeeting?: string,
+	withRecordings?: string,
+	fields?: MeetRoomField[],
+	extraFields?: MeetRoomExtraField[],
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	const result = await request(app)
+	const query: Record<string, string | boolean | undefined> = {
+		roomIds: roomIds.join(','),
+		withMeeting,
+		withRecordings
+	};
+
+	if (fields) {
+		query.fields = fields.join(',');
+	}
+
+	if (extraFields) {
+		query.extraFields = extraFields.join(',');
+	}
+
+	const req = request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
+		.query(query);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	const result = await req;
 	await sleep('1s');
 	return result;
 };

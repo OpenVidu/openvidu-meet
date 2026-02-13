@@ -177,16 +177,5 @@ describe('Room API Tests', () => {
 
 			expectValidationError(response, 'roomId', 'cannot be empty after sanitization');
 		});
-
-		it('should fail when extraFields has invalid values', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'invalid-extrafields-test'
-			});
-
-			// Get room with invalid extraFields values
-			const response = await getRoom(createdRoom.roomId, undefined, 'invalid,wrongparam');
-
-			expectValidationError(response, 'extraFields', 'Invalid extraFields. Valid options: config');
-		});
 	});
 });

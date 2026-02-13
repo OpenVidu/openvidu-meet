@@ -12,24 +12,20 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../models/error.model.js';
+import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
-
-interface RequestWithValidatedHeaders extends Request {
-	validatedHeaders?: {
-		'x-fields'?: MeetRoomField[];
-		'x-extrafields'?: MeetRoomExtraField[];
-	};
-}
 
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const options: MeetRoomOptions = req.body;
-	const { validatedHeaders } = req as RequestWithValidatedHeaders;
-	const fields = validatedHeaders?.['x-fields'];
-	const extraFields = validatedHeaders?.['x-extrafields'];
+	// Fields are merged from headers into req.query by the middleware
+	const { fields, extraFields } = req.query as {
+		fields?: MeetRoomField[];
+		extraFields?: MeetRoomExtraField[];
+	};
 
 	try {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
@@ -105,16 +101,22 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 
 	const { roomId } = req.params;
-	const { withMeeting, withRecordings } = req.query as {
+	const { fields, extraFields, withMeeting, withRecordings } = req.query as {
+		fields?: MeetRoomField[];
+		extraFields?: MeetRoomExtraField[];
 		withMeeting: MeetRoomDeletionPolicyWithMeeting;
 		withRecordings: MeetRoomDeletionPolicyWithRecordings;
 	};
 
 	try {
 		logger.verbose(`Deleting room '${roomId}'`);
-		const response = await roomService.deleteMeetRoom(roomId, withMeeting, withRecordings);
+		const deleteOpts: MeetRoomDeletionOptions = {
+			withMeeting,
+			withRecordings,
+			fields: MeetRoomHelper.computeFieldsForRoomQuery(fields, extraFields)
+		};
+		const response = await roomService.deleteMeetRoom(roomId, deleteOpts);
 
-		// Add metadata to room if present in response
 		if (response.room) {
 			response.room = MeetRoomHelper.addResponseMetadata(response.room);
 		}
@@ -139,17 +141,24 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
-	const { roomIds, withMeeting, withRecordings } = req.query as {
+	const { roomIds, fields, extraFields, withMeeting, withRecordings } = req.query as {
 		roomIds: string[];
+		fields?: MeetRoomField[];
+		extraFields?: MeetRoomExtraField[];
 		withMeeting: MeetRoomDeletionPolicyWithMeeting;
 		withRecordings: MeetRoomDeletionPolicyWithRecordings;
 	};
 
 	try {
-		logger.verbose(`Deleting rooms: ${roomIds}`);
-		const { successful, failed } = await roomService.bulkDeleteMeetRooms(roomIds, withMeeting, withRecordings);
+		logger.verbose(`Deleting rooms: ${roomIds} with options: ${JSON.stringify(req.query)}`);
 
-		// Add metadata to each room object in successful/failed arrays
+		const deleteOpts: MeetRoomDeletionOptions = {
+			withMeeting,
+			withRecordings,
+			fields: MeetRoomHelper.computeFieldsForRoomQuery(fields, extraFields)
+		};
+		const { successful, failed } = await roomService.bulkDeleteMeetRooms(roomIds, deleteOpts);
+
 		successful.forEach((item) => {
 			if (item.room) {
 				item.room = MeetRoomHelper.addResponseMetadata(item.room);

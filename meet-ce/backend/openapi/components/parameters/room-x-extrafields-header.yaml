@@ -1,0 +1,31 @@
+name: X-ExtraFields
+in: header
+description: >
+    Specifies which extra fields of the `room` object to include fully in the response.
+
+    <br/><br/>
+
+    By default, certain large or nested properties of the `room` object (like `config`) are excluded
+    to optimize payload size and reduce network bandwidth.
+
+    <br/><br/>
+
+    Use this header to include the full data of these properties in the response,
+    avoiding the need for a subsequent GET request.
+
+    <br/><br/>
+
+    Provide a comma-separated list of `room` property names to include.
+
+    <br/><br/>
+
+    > **Note:** Extra fields specified here will be included even if not specified in the `X-Fields` header.
+
+    <br/><br/>
+
+    This header is supported on all room operations. For GET and DELETE operations,
+    it can be combined with the `extraFields` query parameter. When both are provided,
+    values are merged (union of unique fields).
+required: false
+schema:
+    type: string
