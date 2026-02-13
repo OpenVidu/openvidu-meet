@@ -148,8 +148,7 @@ export class RoomsComponent implements OnInit {
 				maxItems: 50,
 				nextPageToken: !refresh ? this.nextPageToken : undefined,
 				sortField: filters.sortField,
-				sortOrder: filters.sortOrder,
-				fields: ['roomId', 'roomName', 'status', 'creationDate', 'accessUrl', 'autoDeletionDate']
+				sortOrder: filters.sortOrder
 			};
 
 			// Apply room ID filter if provided
@@ -219,13 +218,13 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private copyModeratorLink({ accessUrl }: MeetRoom) {
-		this.clipboard.copy(accessUrl);
+	private copyModeratorLink({ anonymous }: MeetRoom) {
+		this.clipboard.copy(anonymous.moderator.accessUrl);
 		this.notificationService.showSnackbar('Moderator link copied to clipboard');
 	}
 
-	private copySpeakerLink({ accessUrl }: MeetRoom) {
-		this.clipboard.copy(accessUrl);
+	private copySpeakerLink({ anonymous }: MeetRoom) {
+		this.clipboard.copy(anonymous.speaker.accessUrl);
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}
 
