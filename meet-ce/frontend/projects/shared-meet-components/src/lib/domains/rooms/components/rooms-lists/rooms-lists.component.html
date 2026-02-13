@@ -337,6 +337,7 @@
 								mat-icon-button
 								[matMenuTriggerFor]="actionsMenu"
 								matTooltip="More Actions"
+								(click)="$event.stopPropagation()"
 								[disabled]="loading()"
 								id="more-actions-btn-{{ room.roomId }}"
 							>
