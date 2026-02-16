@@ -9,7 +9,6 @@ import {
 	SENSITIVE_ROOM_FIELDS_ENTRIES
 } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../environment.js';
-import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
 export class MeetRoomHelper {
