@@ -1,18 +1,9 @@
 name: X-Fields
 in: header
 description: >
-    Specifies which fields of the `room` object to include in the response.
-    <br/><br/>
-    Provide a comma-separated list of `room` property names to filter the response payload.
+    Comma-separated list of **Room** fields to include in the response.
+    Use this header to request only the data you need, reducing payload size and improving performance.
 
-    <br/><br/>
-    This header allows you to optimize API responses by requesting only the data you need
-    from the `room` object, reducing bandwidth usage and improving performance.
-
-    <br/><br/>
-    This header is supported on all room operations. For GET and DELETE operations,
-    it can be combined with the `fields` query parameter. When both are provided,
-    values are merged (union of unique fields).
 required: false
 schema:
     type: string

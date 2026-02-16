@@ -13,6 +13,62 @@ content:
                           items:
                               type: string
                               example: config
+        examples:
+            default_room_created:
+                summary: Room created successfully without config
+                value:
+                    roomId: 'room-123'
+                    roomName: 'room'
+                    owner: 'admin'
+                    creationDate: 1620000000000
+                    autoDeletionDate: 1900000000000
+                    autoDeletionPolicy:
+                        withMeeting: when_meeting_ends
+                        withRecordings: close
+                    roles:
+                        moderator:
+                            permissions:
+                                canRecord: true
+                                canRetrieveRecordings: true
+                                canDeleteRecordings: true
+                                canJoinMeeting: true
+                                canShareAccessLinks: true
+                                canMakeModerator: true
+                                canKickParticipants: true
+                                canEndMeeting: true
+                                canPublishVideo: true
+                                canPublishAudio: true
+                                canShareScreen: true
+                                canReadChat: true
+                                canWriteChat: true
+                                canChangeVirtualBackground: true
+                        speaker:
+                            permissions:
+                                canRecord: false
+                                canRetrieveRecordings: true
+                                canDeleteRecordings: false
+                                canJoinMeeting: true
+                                canShareAccessLinks: false
+                                canMakeModerator: false
+                                canKickParticipants: false
+                                canEndMeeting: false
+                                canPublishVideo: true
+                                canPublishAudio: true
+                                canShareScreen: true
+                                canReadChat: true
+                                canWriteChat: true
+                                canChangeVirtualBackground: true
+                    anonymous:
+                        moderator:
+                            enabled: true
+                            accessUrl: 'https://example.com/room/room-123?secret=123456'
+                        speaker:
+                            enabled: true
+                            accessUrl: 'https://example.com/room/room-123?secret=654321'
+                    accessUrl: 'https://example.com/room/room-123'
+                    status: open
+                    meetingEndAction: none
+                    _extraFields: ["config"]
 headers:
     Location:
         description: URL of the newly created room

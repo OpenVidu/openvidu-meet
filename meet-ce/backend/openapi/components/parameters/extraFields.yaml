@@ -1,14 +1,10 @@
 name: extraFields
 in: query
 description: >
-    Specifies which extra fields to include in the response.
-
-    By default, certain large or nested properties are excluded to optimize payload size
-    and reduce network bandwidth.
-    <br/>
-    Provide a comma-separated list of property names to include their full data in the response.
-
-    Note: Extra fields specified here will be included even if not specified in the `fields` parameter.
+    Comma-separated list of additional fields to include in the response that are excluded by default to reduce payload size.
+    <br/><br/>
+    These fields are included even if not listed in `fields` query parameter or `X-Fields` header.
 required: false
 schema:
     type: string
+example: 'extrafields=config'

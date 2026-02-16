@@ -62,15 +62,15 @@ properties:
                     Policy for automatic deletion when the room has recordings. Options are:
                     - force: The room and its recordings will be deleted.
                     - close: The room will be closed instead of deleted, maintaining its recordings.
-    config:
+    config (excluded by default):
         description: |
-            The configuration for the room (chat, recording, virtual background, e2ee, captions).
+            Room configuration (chat, recording, virtual background, e2ee, captions).
+            <br/><br/>
 
-            By default, **this property is excluded from responses** to reduce payload size and optimize performance.
-
-            To include this property in the response:
-            - For GET requests: use the `extraFields=config` query parameter
-            - For POST requests: use the `X-ExtraFields: config` header
+            **Excluded from responses by default to reduce payload size.**
+            To include it in the response:
+            - **POST requests:** use the `X-ExtraFields: config` header
+            - **Other requests:** use either the `extraFields=config` query parameter or the `X-ExtraFields: config` header        $ref: meet-room-config.yaml#/MeetRoomConfig
         $ref: meet-room-config.yaml#/MeetRoomConfig
     # maxParticipants:
     #     type: integer
@@ -149,9 +149,9 @@ properties:
         example: open
         description: |
             The current status of the room. Options are:
-            - open: The room is open and available to host a meeting.
-            - active_meeting: There is an active meeting in progress in the room.
-            - closed: The room is closed to hosting new meetings.
+            - `open`: The room is open and available to host a meeting.
+            - `active_meeting`: There is an active meeting in progress in the room.
+            - `closed`: The room is closed to hosting new meetings.
     meetingEndAction:
         type: string
         enum:
@@ -161,6 +161,6 @@ properties:
         example: none
         description: |
             The action to take when the meeting ends. Options are:
-            - none: No action will be taken.
-            - close: The room will be closed.
-            - delete: The room (and its recordings if any) will be deleted.
+            - `none`: No action will be taken.
+            - `close`: The room will be closed.
+            - `delete`: The room (and its recordings if any) will be deleted.

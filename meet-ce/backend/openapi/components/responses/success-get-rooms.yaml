@@ -67,11 +67,11 @@ content:
                           anonymous:
                               moderator:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  accessUrl: 'https://example.com/room/room-123?secret=123456'
                               speaker:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                          accessUrl: 'http://localhost:6080/room/room-123'
+                                  accessUrl: 'https://example.com/room/room-123?secret=654321'
+                          accessUrl: 'https://example.com/room/room-123'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
@@ -118,11 +118,11 @@ content:
                           anonymous:
                               moderator:
                                   enabled: false
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                                  accessUrl: 'https://example.com/room/room-456?secret=789012'
                               speaker:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
-                          accessUrl: 'http://localhost:6080/room/room-456'
+                                  accessUrl: 'https://example.com/room/room-456?secret=210987'
+                          accessUrl: 'https://example.com/room/room-456'
                           status: open
                           meetingEndAction: none
                     _extraFields:
@@ -202,11 +202,11 @@ content:
                           anonymous:
                               moderator:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  accessUrl: 'https://example.com/room/room-123?secret=123456'
                               speaker:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
-                          accessUrl: 'http://localhost:6080/room/room-123'
+                                  accessUrl: 'https://example.com/room/room-123?secret=654321'
+                          accessUrl: 'https://example.com/room/room-123'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
@@ -276,11 +276,11 @@ content:
                           anonymous:
                               moderator:
                                   enabled: false
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=789012'
+                                  accessUrl: 'https://example.com/room/room-456?secret=789012'
                               speaker:
                                   enabled: true
-                                  accessUrl: 'http://localhost:6080/room/room-456?secret=210987'
-                          accessUrl: 'http://localhost:6080/room/room-456'
+                                  accessUrl: 'https://example.com/room/room-456?secret=210987'
+                          accessUrl: 'https://example.com/room/room-456'
                           status: open
                           meetingEndAction: none
                     _extraFields:

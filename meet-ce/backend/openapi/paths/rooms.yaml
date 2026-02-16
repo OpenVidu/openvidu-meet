@@ -3,17 +3,7 @@
         operationId: createRoom
         summary: Create a room
         description: |
-            Creates a new OpenVidu Meet room.
-            The room will be available for participants to join using the generated URLs.
-
-            **Response Customization:**
-
-            You can control the response format using custom headers:
-            - `X-ExtraFields`: Include extra fields (e.g., `config`) that are excluded by default
-            - `X-Fields`: Filter which fields to include in the response for efficiency
-
-            > **Note:** POST operations use headers instead of query parameters to avoid sensitive data appearing in URL logs.
-            > GET operations use query parameters for easier caching and bookmarking.
+            Creates a new OpenVidu Meet room using the provided data and returns the room details along with the generated participant URLs.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -39,17 +29,10 @@
         operationId: getRooms
         summary: Get all rooms
         description: |
-            Retrieves a paginated list of rooms available in the system.
-            You can apply filters to narrow down the results based on specific criteria.
+            Retrieves a paginated list of rooms in the system, optionally filtered by criteria.
+            By default, rooms are sorted by creation date, newest first.
 
-            By default, the rooms are sorted by creation date in descending order (newest first).
-
-            **Field Filtering:**
-            - Use `fields` to specify which base properties to include (whitelist approach)
-            - Use `extraFields` to include additional properties that are excluded by default (e.g., `config`)
-
-            > **Note:** If this endpoint is called using the `accessTokenHeader` authentication method,
-            > only rooms the authenticated user has access to will be returned.
+            > Only rooms accessible to the authenticated user are returned when using the `accessTokenHeader` authentication method.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -81,16 +64,14 @@
         operationId: bulkDeleteRooms
         summary: Bulk delete rooms
         description: |
-            Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
+            Deletes multiple OpenVidu Meet rooms using the specified room IDs.
+            <br/><br/>
+            Deletion behavior depends on the `withMeeting` and `withRecordings` policies:
+              - Rooms may be deleted or closed immediately
+              - Deletion may be scheduled to occur after ongoing meetings end
+              - The operation may fail if deletion is not permitted
 
-            If any of the rooms have active meetings or recordings,
-            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
-
-            Depending on these policies, the rooms may be deleted/closed immediately, scheduled to be deleted/closed once the meetings end,
-            or the operation may fail if deletion is not permitted.
-
-            > **Note:** If this endpoint is called using the `accessTokenHeader` authentication method,
-            > only rooms the authenticated user can manage will be deleted.
+            > Only rooms the authenticated user can manage are affected when using the `accessTokenHeader` authentication method.
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -122,15 +103,8 @@
         operationId: getRoom
         summary: Get a room
         description: |
-            Retrieves the details of an OpenVidu Meet room with the specified room ID.
+            Retrieves the details of an OpenVidu Meet room by its room ID.
 
-            By default, certain large properties like `config` are excluded from the response
-            to reduce payload size and optimize performance.
-            Use the `extraFields` query parameter to include these properties when needed.
-
-            **Field Filtering:**
-            - Use `fields` to specify which base properties to include (whitelist approach)
-            - Use `extraFields` to include additional properties that are excluded by default
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -162,11 +136,10 @@
         description: |
             Deletes the specified OpenVidu Meet room by its room ID.
 
-            If the room has an active meeting or existing recordings,
-            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
-
-            Depending on these policies, the room may be deleted/closed immediately, scheduled to be deleted/closed once the meeting ends,
-            or the operation may fail if deletion is not permitted.
+            Deletion behavior depends on the `withMeeting` and `withRecordings` policies:
+              - The room may be deleted or closed immediately
+              - Deletion may be scheduled to occur after the meeting ends
+              - The operation may fail if deletion is not allowed
         tags:
             - OpenVidu Meet - Rooms
         security:
