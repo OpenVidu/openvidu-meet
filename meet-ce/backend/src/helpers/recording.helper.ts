@@ -2,6 +2,7 @@ import { EgressStatus } from '@livekit/protocol';
 import {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
+	MeetRecordingField,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus
@@ -10,10 +11,25 @@ import { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
+import { applyHttpFieldFiltering } from './field-filter.helper.js';
 
 export class RecordingHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
+	}
+
+	/**
+	 * Applies HTTP-level field filtering to a MeetRecordingInfo object.
+	 * Since recordings have no extra fields, this simply filters to the requested fields.
+	 * When no fields are specified, the full recording object is returned unmodified.
+	 */
+	static applyFieldFilters(recording: MeetRecordingInfo, fields?: MeetRecordingField[]): MeetRecordingInfo {
+		if (!fields || fields.length === 0) {
+			return recording;
+		}
+
+		// Recordings have no extra fields concept, so we pass empty arrays for extra fields params
+		return applyHttpFieldFiltering(recording, fields, undefined, []);
 	}
 
 	static async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {

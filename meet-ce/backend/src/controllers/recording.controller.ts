@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
 	errorRecordingsZipEmpty,
 	handleError,
@@ -18,15 +19,17 @@ export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { roomId, config } = req.body;
+	const { fields } = req.query as { fields?: MeetRecordingField[] };
 	logger.info(`Starting recording in room '${roomId}'`);
 
 	try {
-		const recordingInfo = await recordingService.startRecording(roomId, config);
+		let recordingInfo = await recordingService.startRecording(roomId, config);
 		res.setHeader(
 			'Location',
 			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
 		);
 
+		recordingInfo = RecordingHelper.applyFieldFilters(recordingInfo, fields);
 		return res.status(201).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `starting recording in room '${roomId}'`);
@@ -36,13 +39,16 @@ export const startRecording = async (req: Request, res: Response) => {
 export const stopRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingId = req.params.recordingId;
+	const { fields } = req.query as { fields?: MeetRecordingField[] };
 
 	try {
 		logger.info(`Stopping recording '${recordingId}'`);
 		const recordingService = container.get(RecordingService);
 
-		const recordingInfo = await recordingService.stopRecording(recordingId);
+		let recordingInfo = await recordingService.stopRecording(recordingId);
 		res.setHeader('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`);
+
+		recordingInfo = RecordingHelper.applyFieldFilters(recordingInfo, fields);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `stopping recording '${recordingId}'`);

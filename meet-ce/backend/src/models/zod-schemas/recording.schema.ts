@@ -93,7 +93,7 @@ export const RecordingFiltersSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId').optional(),
 	roomName: z.string().optional(),
 	status: z.nativeEnum(MeetRecordingStatus).optional(),
-	fields: fieldsSchema.optional(),
+	fields: fieldsSchema,
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')
@@ -128,12 +128,60 @@ export const BulkDeleteRecordingsReqSchema = z.object({
 	)
 });
 
+export const RecordingQueryFieldsSchema = z.object({
+	fields: fieldsSchema
+});
+
+export const RecordingHeaderFieldsSchema = z.object({
+	'x-fields': fieldsSchema
+});
+
+/**
+ * Merges X-Fields header values into query.fields for recordings.
+ * When both header and query param provide fields, values are merged (union of unique fields).
+ * This allows API consumers to use either mechanism or both simultaneously.
+ */
+export function mergeRecordingHeaderFieldsIntoQuery(
+	headers: Record<string, unknown>,
+	query: Record<string, unknown>
+): void {
+	const headerResult = RecordingHeaderFieldsSchema.safeParse(headers);
+
+	if (!headerResult.success) {
+		return;
+	}
+
+	const headerFields = headerResult.data['x-fields'];
+
+	if (headerFields) {
+		const existingFields =
+			typeof query.fields === 'string'
+				? query.fields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingFields, ...headerFields]));
+		query.fields = merged.join(',');
+	}
+}
+
 export const GetRecordingReqSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
 	query: z.object({
+		fields: fieldsSchema,
 		secret: z.string().optional()
+	})
+});
+
+export const StopRecordingReqSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		fields: fieldsSchema
 	})
 });
 

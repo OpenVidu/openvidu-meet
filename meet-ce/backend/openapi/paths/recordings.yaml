@@ -17,6 +17,8 @@
         security:
             - apiKeyHeader: []
             - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/recording-x-fields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/start-recording-request.yaml'
         responses:
@@ -56,6 +58,7 @@
             - accessTokenHeader: []
             - roomMemberTokenHeader: []
         parameters:
+            - $ref: '../components/parameters/recording-x-fields-header.yaml'
             - $ref: '../components/parameters/room-id-query.yaml'
             - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/recording-status.yaml'
@@ -168,6 +171,8 @@
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
             - $ref: '../components/parameters/recording-secret.yaml'
+            - $ref: '../components/parameters/recording-x-fields-header.yaml'
+            - $ref: '../components/parameters/recording-fields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-recording.yaml'
@@ -303,6 +308,7 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
+            - $ref: '../components/parameters/recording-x-fields-header.yaml'
         responses:
             '202':
                 $ref: '../components/responses/success-stop-recording.yaml'

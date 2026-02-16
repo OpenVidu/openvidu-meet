@@ -1,27 +1,44 @@
 import { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
+	BulkDeleteRecordingsReqSchema,
 	GetRecordingMediaReqSchema,
 	GetRecordingReqSchema,
-	RecordingFiltersSchema,
 	GetRecordingUrlReqSchema,
-	BulkDeleteRecordingsReqSchema,
+	mergeRecordingHeaderFieldsIntoQuery,
 	nonEmptySanitizedRecordingId,
-	StartRecordingReqSchema
+	RecordingFiltersSchema,
+	RecordingQueryFieldsSchema,
+	StartRecordingReqSchema,
+	StopRecordingReqSchema
 } from '../../models/zod-schemas/recording.schema.js';
 
 export const validateStartRecordingReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = StartRecordingReqSchema.safeParse(req.body);
+	// Merge X-Fields header into query params before validation
+	mergeRecordingHeaderFieldsIntoQuery(req.headers, req.query);
 
-	if (!success) {
-		return rejectUnprocessableRequest(res, error);
+	const bodyResult = StartRecordingReqSchema.safeParse(req.body);
+
+	if (!bodyResult.success) {
+		return rejectUnprocessableRequest(res, bodyResult.error);
 	}
 
-	req.body = data;
+	req.body = bodyResult.data;
+
+	const queryResult = RecordingQueryFieldsSchema.safeParse(req.query);
+
+	if (!queryResult.success) {
+		return rejectUnprocessableRequest(res, queryResult.error);
+	}
+
+	req.query = queryResult.data;
 	next();
 };
 
 export const validateGetRecordingsReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields header into query params before validation
+	mergeRecordingHeaderFieldsIntoQuery(req.headers, req.query);
+
 	const { success, error, data } = RecordingFiltersSchema.safeParse(req.query);
 
 	if (!success) {
@@ -59,6 +76,9 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 };
 
 export const validateGetRecordingReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields header into query params before validation
+	mergeRecordingHeaderFieldsIntoQuery(req.headers, req.query);
+
 	const { success, error, data } = GetRecordingReqSchema.safeParse({
 		params: req.params,
 		query: req.query
@@ -69,6 +89,25 @@ export const validateGetRecordingReq = (req: Request, res: Response, next: NextF
 	}
 
 	req.params.recordingId = data.params.recordingId;
+	req.query = data.query;
+	next();
+};
+
+export const validateStopRecordingReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields header into query params before validation
+	mergeRecordingHeaderFieldsIntoQuery(req.headers, req.query);
+
+	const { success, error, data } = StopRecordingReqSchema.safeParse({
+		params: req.params,
+		query: req.query
+	});
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	req.params.recordingId = data.params.recordingId;
+	req.query = data.query;
 	next();
 };
 

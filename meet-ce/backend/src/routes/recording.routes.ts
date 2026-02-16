@@ -21,6 +21,7 @@ import {
 	validateGetRecordingsReq,
 	validateGetRecordingUrlReq,
 	validateStartRecordingReq,
+	validateStopRecordingReq,
 	withValidRecordingId
 } from '../middlewares/request-validators/recording-validator.middleware.js';
 
@@ -88,7 +89,7 @@ recordingRouter.delete(
 recordingRouter.post(
 	'/:recordingId/stop',
 	withAuth(apiKeyValidator, roomMemberTokenValidator),
-	withValidRecordingId,
+	validateStopRecordingReq,
 	authorizeRecordingControl,
 	recordingCtrl.stopRecording
 );
