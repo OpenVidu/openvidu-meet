@@ -49,11 +49,23 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param room - The complete updated room data
 	 * @returns The updated room with enriched URLs
 	 * @throws Error if room not found
+	 *
+	 * TODO: This method should be renamed to replace or updateFull to better reflect that it replaces the entire document
 	 */
 	async update(room: TRoom): Promise<TRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
 		const document = await this.updateOne({ roomId: room.roomId }, normalizedRoom);
 		return this.enrichRoomWithBaseUrls(document);
+	}
+
+	/**
+	 * TODO: This method should be updated when updatePartial is implemented in the base repository.
+	 * Updates specific fields of a room without replacing the entire document.
+	 * @param roomId
+	 * @param fieldsToUpdate
+	 */
+	async updatePartial(roomId: string, fieldsToUpdate: Partial<TRoom>): Promise<void> {
+		await this.updateOne({ roomId }, fieldsToUpdate);
 	}
 
 	/**

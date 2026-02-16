@@ -528,7 +528,7 @@ export class RoomService {
 		if (hasActiveMeeting) {
 			// Set meeting end action (DELETE or CLOSE) depending on recording policy
 			room.meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
-			await this.roomRepository.update(room);
+			await this.roomRepository.updatePartial(room.roomId, { meetingEndAction: room.meetingEndAction });
 
 			if (shouldForceEndMeeting) {
 				// Force end meeting by deleting the LiveKit room
@@ -541,7 +541,7 @@ export class RoomService {
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
 			room.status = MeetRoomStatus.CLOSED;
-			await this.roomRepository.update(room);
+			await this.roomRepository.updatePartial(room.roomId, { status: room.status });
 			return room;
 		}
 
