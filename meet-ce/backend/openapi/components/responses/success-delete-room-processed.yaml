@@ -61,49 +61,6 @@ content:
                         roomName: room
                         owner: 'admin'
                         creationDate: 1620000000000
-                        config:
-                            recording:
-                                enabled: false
-                                layout: grid
-                            chat:
-                                enabled: true
-                            virtualBackground:
-                                enabled: true
-                            e2ee:
-                                enabled: false
-                        roles:
-                            moderator:
-                                permissions:
-                                    canRecord: true
-                                    canRetrieveRecordings: true
-                                    canDeleteRecordings: true
-                                    canJoinMeeting: true
-                                    canShareAccessLinks: true
-                                    canMakeModerator: true
-                                    canKickParticipants: true
-                                    canEndMeeting: true
-                                    canPublishVideo: true
-                                    canPublishAudio: true
-                                    canShareScreen: true
-                                    canReadChat: true
-                                    canWriteChat: true
-                                    canChangeVirtualBackground: true
-                            speaker:
-                                permissions:
-                                    canRecord: false
-                                    canRetrieveRecordings: true
-                                    canDeleteRecordings: false
-                                    canJoinMeeting: true
-                                    canShareAccessLinks: false
-                                    canMakeModerator: false
-                                    canKickParticipants: false
-                                    canEndMeeting: false
-                                    canPublishVideo: true
-                                    canPublishAudio: true
-                                    canShareScreen: true
-                                    canReadChat: true
-                                    canWriteChat: true
-                                    canChangeVirtualBackground: true
                         anonymous:
                             moderator:
                                 enabled: true
@@ -129,49 +86,6 @@ content:
                         roomName: room
                         owner: 'admin'
                         creationDate: 1620000000000
-                        config:
-                            recording:
-                                enabled: false
-                                layout: grid
-                            chat:
-                                enabled: true
-                            virtualBackground:
-                                enabled: true
-                            e2ee:
-                                enabled: false
-                        roles:
-                            moderator:
-                                permissions:
-                                    canRecord: true
-                                    canRetrieveRecordings: true
-                                    canDeleteRecordings: true
-                                    canJoinMeeting: true
-                                    canShareAccessLinks: true
-                                    canMakeModerator: true
-                                    canKickParticipants: true
-                                    canEndMeeting: true
-                                    canPublishVideo: true
-                                    canPublishAudio: true
-                                    canShareScreen: true
-                                    canReadChat: true
-                                    canWriteChat: true
-                                    canChangeVirtualBackground: true
-                            speaker:
-                                permissions:
-                                    canRecord: false
-                                    canRetrieveRecordings: true
-                                    canDeleteRecordings: false
-                                    canJoinMeeting: true
-                                    canShareAccessLinks: false
-                                    canMakeModerator: false
-                                    canKickParticipants: false
-                                    canEndMeeting: false
-                                    canPublishVideo: true
-                                    canPublishAudio: true
-                                    canShareScreen: true
-                                    canReadChat: true
-                                    canWriteChat: true
-                                    canChangeVirtualBackground: true
                         anonymous:
                             moderator:
                                 enabled: true

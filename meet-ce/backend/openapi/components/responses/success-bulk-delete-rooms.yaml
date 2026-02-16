@@ -64,95 +64,120 @@ content:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_closed
-                          message: 'Room closed successfully'
+                          message: Room 'room-123' has been closed instead of deleted because it has recordings
                           room:
-                              roomId: 'room-123'
-                              roomName: 'room'
-                              owner: 'alice_smith'
+                              roomId: room-123
+                              roomName: room
+                              owner: 'admin'
                               creationDate: 1620000000000
-                              autoDeletionDate: null
-                              autoDeletionPolicy:
-                                  withMeeting: when_meeting_ends
-                                  withRecordings: close
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
                               accessUrl: 'http://localhost:6080/room/room-123'
                               status: closed
                               meetingEndAction: none
+                              _extraFields:
+                                  - config
             room_with_active_meeting_scheduled_to_be_deleted:
                 summary: Room with active meeting scheduled to be deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_scheduled_to_be_deleted
-                          message: 'Room has an active meeting. Scheduled to be deleted when the meeting ends'
+                          message: Room 'room-123' with active meeting scheduled to be deleted when the meeting ends
                           room:
-                              roomId: 'room-456'
-                              roomName: 'meeting-room'
-                              owner: 'bob_jones'
+                              roomId: room-123
+                              roomName: room
+                              owner: 'admin'
                               creationDate: 1620000000000
-                              autoDeletionDate: null
-                              autoDeletionPolicy:
-                                  withMeeting: when_meeting_ends
-                                  withRecordings: close
-                              accessUrl: 'http://localhost:6080/room/room-456'
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                              accessUrl: 'http://localhost:6080/room/room-123'
                               status: active_meeting
                               meetingEndAction: delete
+                              _extraFields:
+                                  - config
             room_with_active_meeting_closed:
                 summary: Room with active meeting closed
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_closed
-                          message: 'Room has an active meeting and recordings. Room closed instead of deleted'
+                          message: Room 'room-123' with active meeting has been closed instead of deleted because it has recordings
                           room:
-                              roomId: 'room-789'
-                              roomName: 'webinar-room'
-                              owner: 'charlie_brown'
+                              roomId: room-123
+                              roomName: room
+                              owner: 'admin'
                               creationDate: 1620000000000
-                              autoDeletionDate: null
-                              autoDeletionPolicy:
-                                  withMeeting: when_meeting_ends
-                                  withRecordings: close
-                              accessUrl: 'http://localhost:6080/room/room-789'
-                              status: closed
-                              meetingEndAction: none
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                              accessUrl: 'http://localhost:6080/room/room-123'
+                              status: active_meeting
+                              meetingEndAction: close
+                              _extraFields:
+                                  - config
             room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
                 summary: Room with active meeting and recordings scheduled to be deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_and_recordings_scheduled_to_be_deleted
-                          message: 'Room has an active meeting and recordings. Scheduled to be deleted when the meeting ends'
+                          message: Room 'room-123' with active meeting and its recordings scheduled to be deleted when the meeting ends
                           room:
-                              roomId: 'room-101'
-                              roomName: 'conference-room'
-                              owner: 'diana_prince'
+                              roomId: room-123
+                              roomName: room
+                              owner: 'admin'
                               creationDate: 1620000000000
-                              autoDeletionDate: null
-                              autoDeletionPolicy:
-                                  withMeeting: when_meeting_ends
-                                  withRecordings: force
-                              accessUrl: 'http://localhost:6080/room/room-101'
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                              accessUrl: 'http://localhost:6080/room/room-123'
                               status: active_meeting
                               meetingEndAction: delete
+                              _extraFields:
+                                  - config
             room_with_active_meeting_scheduled_to_be_closed:
                 summary: Room with active meeting scheduled to be closed
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_scheduled_to_be_closed
-                          message: 'Room has an active meeting. Scheduled to be closed when the meeting ends'
+                          message: Room 'room-123' with active meeting scheduled to be closed when the meeting ends because it has recordings
                           room:
-                              roomId: 'room-202'
-                              roomName: 'training-room'
-                              owner: 'eve_martin'
+                              roomId: room-123
+                              roomName: room
+                              owner: 'admin'
                               creationDate: 1620000000000
-                              autoDeletionDate: null
-                              autoDeletionPolicy:
-                                  withMeeting: when_meeting_ends
-                                  withRecordings: close
-                              accessUrl: 'http://localhost:6080/room/room-202'
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      accessUrl: 'http://localhost:6080/room/room-123?secret=654321'
+                              accessUrl: 'http://localhost:6080/room/room-123'
                               status: active_meeting
                               meetingEndAction: close
+                              _extraFields:
+                                  - config
 
             room_deleted:
                 summary: Room deleted successfully
@@ -160,25 +185,25 @@ content:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_deleted
-                          message: 'Room deleted successfully'
+                          message: Room 'room-123' deleted successfully
             room_with_active_meeting_deleted:
                 summary: Room with active meeting deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_deleted
-                          message: 'Room with active meeting deleted successfully'
+                          message: Room 'room-123' with active meeting deleted successfully
             room_and_recordings_deleted:
                 summary: Room and recordings deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_and_recordings_deleted
-                          message: 'Room and recordings deleted successfully'
+                          message: Room 'room-123' and its recordings deleted successfully
             room_with_active_meeting_and_recordings_deleted:
                 summary: Room with active meeting and recordings deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
                     successful:
                         - successCode: room_with_active_meeting_and_recordings_deleted
-                          message: 'Room with active meeting and recordings deleted successfully'
+                          message: Room 'room-123' with active meeting and its recordings deleted successfully
