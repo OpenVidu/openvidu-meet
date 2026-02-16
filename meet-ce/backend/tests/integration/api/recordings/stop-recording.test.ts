@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
-import { expectErrorResponse, expectValidStopRecordingResponse } from '../../../helpers/assertion-helpers';
+import {
+	expectErrorResponse,
+	expectValidRecordingLocationHeader,
+	expectValidRecordingWithFields,
+	expectValidStopRecordingResponse
+} from '../../../helpers/assertion-helpers';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -93,11 +98,32 @@ describe('Recording API Tests', () => {
 				expect(response.body.message).toContain('Invalid request');
 				expect(response.body.details).toStrictEqual([
 					{
-						field: 'recordingId',
+						field: 'params.recordingId',
 						message: 'recordingId does not follow the expected format'
 					}
 				]);
 			});
+		});
+	});
+
+	describe('POST /recordings/:recordingId/stop - X-Fields header and fields query param', () => {
+		let recordingId: string;
+		beforeAll(async () => {
+			// Create a room and join a participant
+			context = await setupMultiRoomTestContext(1, true);
+			({ room } = context.getRoomByIndex(0)!);
+			const response = await startRecording(room.roomId);
+			recordingId = response.body.recordingId;
+		});
+
+		it('should filter response fields using X-Fields header on stop recording', async () => {
+			const response = await stopRecording(recordingId, {
+				headers: { xFields: 'recordingId,status' }
+			});
+
+			expect(response.status).toBe(202);
+			expectValidRecordingLocationHeader(response);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'status']);
 		});
 	});
 });

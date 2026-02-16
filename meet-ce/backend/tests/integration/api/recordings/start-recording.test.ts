@@ -13,6 +13,8 @@ import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import {
 	expectValidationError,
+	expectValidRecordingLocationHeader,
+	expectValidRecordingWithFields,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
@@ -129,6 +131,36 @@ describe('Recording API Tests', () => {
 				roomDataB.room.roomId,
 				roomDataB.room.roomName
 			);
+		});
+	});
+
+	describe('Start recordings - Fields filtering', () => {
+		let room: MeetRoom;
+
+		beforeAll(async () => {
+			// Create a room and join a participant
+			context = await setupMultiRoomTestContext(1, true);
+			({ room } = context.getRoomByIndex(0)!);
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			context = null;
+		});
+
+		it('should filter response fields using X-Fields header on start recording', async () => {
+			// Start a new recording with X-Fields header
+			const response = await startRecording(room.roomId, undefined, {
+				headers: { xFields: 'recordingId,roomId,status' }
+			});
+
+			expect(response.status).toBe(201);
+			expectValidRecordingLocationHeader(response);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'roomId', 'status']);
+
+			// Clean up
+			await stopRecording(response.body.recordingId);
 		});
 	});
 

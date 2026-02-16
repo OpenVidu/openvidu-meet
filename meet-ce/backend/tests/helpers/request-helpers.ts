@@ -883,6 +883,9 @@ export const startRecording = async (
 	config?: {
 		layout?: string;
 		encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+	},
+	options?: {
+		headers?: { xFields?: string };
 	}
 ) => {
 	checkAppIsRunning();
@@ -899,31 +902,57 @@ export const startRecording = async (
 		body.config = config;
 	}
 
-	return await request(app)
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(body);
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	return await req;
 };
 
-export const stopRecording = async (recordingId: string) => {
+export const stopRecording = async (
+	recordingId: string,
+	options?: {
+		headers?: { xFields?: string };
+	}
+) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	const response = await req;
 	await sleep('2.5s');
 
 	return response;
 };
 
-export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
+export const getAllRecordings = async (
+	query: Record<string, unknown> = {},
+	headers?: { xFields?: string }
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	return await req;
 };
 
 export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
@@ -962,12 +991,29 @@ export const downloadRecordings = async (
 	return await req;
 };
 
-export const getRecording = async (recordingId: string) => {
+export const getRecording = async (
+	recordingId: string,
+	options?: {
+		fields?: string;
+		headers?: { xFields?: string };
+	}
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const queryParams: Record<string, string> = {};
+
+	if (options?.fields) queryParams.fields = options.fields;
+
+	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(queryParams);
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	return await req;
 };
 
 export const getRecordingMedia = async (recordingId: string, range?: string) => {

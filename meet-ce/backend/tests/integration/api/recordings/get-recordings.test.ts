@@ -108,7 +108,7 @@ describe('Recordings API Tests', () => {
 					(recording: MeetRecordingInfo) => recording.roomId === room.roomId
 				);
 				expect(recording).toBeDefined();
-				expectValidRecordingWithFields(recording, ['roomId', 'recordingId']);
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
 				expect(recording).toHaveProperty('roomId', room.roomId);
 				expect(recording.recordingId).toContain(room.roomId);
 			});
@@ -284,6 +284,72 @@ describe('Recordings API Tests', () => {
 			// The active recording has no size, so it should appear last
 			expect(recordings[2].recordingId).toBe(roomDataC.recordingId);
 			expect(recordings[2].size).toBeUndefined();
+		});
+	});
+
+	describe('List recordings - Fields filtering', () => {
+		beforeAll(async () => {
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			context = await setupMultiRecordingsTestContext(2, 2, 2);
+		});
+
+		it('should filter fields using X-Fields header', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+			});
+		});
+
+		it('should combine X-Fields header with fields query param (union)', async () => {
+			// Query param requests 'recordingId', header requests 'roomName' → result should have both
+			const response = await getAllRecordings({ fields: 'recordingId' }, { xFields: 'roomName' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomName']);
+			});
+		});
+
+		it('should deduplicate fields when same field is in both query param and header', async () => {
+			const response = await getAllRecordings(
+				{ fields: 'recordingId,roomId' },
+				{ xFields: 'recordingId,status' }
+			);
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId', 'status']);
+			});
+		});
+
+		it('should work with only headers and no query params', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,status,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId', 'status']);
+			});
+		});
+
+		it('should ignore invalid header values gracefully and fallback to query params', async () => {
+			const response = await getAllRecordings({ fields: 'recordingId,roomId' }, { xFields: '' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+			});
+		});
+
+		it('should ignore invalid field names in X-Fields header', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,invalidField,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+				expect(recording).not.toHaveProperty('invalidField');
+			});
 		});
 	});
 

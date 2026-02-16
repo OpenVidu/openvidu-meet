@@ -248,12 +248,13 @@ export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: s
 };
 
 const expectObjectFields = (obj: unknown, present: string[] = [], absent: string[] = []) => {
+	expect(Object.keys(obj as any)).toEqual(present);
 	present.forEach((key) => {
 		expect(obj).toHaveProperty(key);
 		expect((obj as any)[key]).not.toBeUndefined();
 	});
 	absent.forEach((key) => {
-		// Si la propiedad existe, debe ser undefined
+		// if the property exists, it must be undefined. If it doesn't exist, it's also valid (not present)
 		expect(Object.prototype.hasOwnProperty.call(obj, key) ? (obj as any)[key] : undefined).toBeUndefined();
 	});
 };

@@ -1,7 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRecordingStatus, MeetRoom } from '@openvidu-meet/typings';
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
-import { expectValidationError, expectValidGetRecordingResponse } from '../../../helpers/assertion-helpers.js';
+import {
+	expectValidationError,
+	expectValidGetRecordingResponse,
+	expectValidRecordingWithFields
+} from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -64,6 +68,62 @@ describe('Recording API Tests', () => {
 			const response = await getRecording('nonexistent--EG_222--4s444');
 			expect(response.status).toBe(404);
 			expect(response.body.message).toBe(errorRecordingNotFound('nonexistent--EG_222--4s444').message);
+		});
+	});
+
+	describe('GET Recording - Fields filtering', () => {
+		let recordingId: string;
+
+		beforeAll(async () => {
+			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			context = await setupMultiRecordingsTestContext(1, 1, 1);
+			({ recordingId = '' } = context.getRoomByIndex(0)!);
+		});
+
+		it('should filter fields using fields query param', async () => {
+			const response = await getRecording(recordingId, { fields: 'recordingId,roomId,status' });
+
+			expect(response.status).toBe(200);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'roomId', 'status']);
+		});
+
+		it('should filter fields using X-Fields header', async () => {
+			const response = await getRecording(recordingId, { headers: { xFields: 'recordingId,roomName' } });
+
+			expect(response.status).toBe(200);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'roomName']);
+		});
+
+		it('should combine X-Fields header with fields query param (union)', async () => {
+			// Query param: fields=recordingId, Header: X-Fields=status
+			const response = await getRecording(recordingId, {
+				fields: 'recordingId',
+				headers: { xFields: 'status' }
+			});
+
+			expect(response.status).toBe(200);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'status']);
+		});
+
+		it('should work with only X-Fields header and no query params', async () => {
+			const response = await getRecording(recordingId, {
+				headers: { xFields: 'recordingId,roomId,roomName,status' }
+			});
+
+			expect(response.status).toBe(200);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'roomId', 'roomName', 'status']);
+		});
+
+		it('should return all fields when no filtering is specified', async () => {
+			const response = await getRecording(recordingId);
+
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('recordingId');
+			expect(response.body).toHaveProperty('roomId');
+			expect(response.body).toHaveProperty('roomName');
+			expect(response.body).toHaveProperty('status');
+			expect(response.body).toHaveProperty('layout');
+			expect(response.body).toHaveProperty('encoding');
 		});
 	});
 
