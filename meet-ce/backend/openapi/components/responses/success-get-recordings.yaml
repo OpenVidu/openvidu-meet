@@ -20,6 +20,7 @@ content:
                           roomName: 'room'
                           status: 'active'
                           layout: 'grid'
+                          encoding: 'H264_720P_30'
                           filename: 'room-123--XX445.mp4'
                           startDate: 1620000000000
                           endDate: 1620000003600
@@ -31,6 +32,7 @@ content:
                           roomName: 'room'
                           status: 'complete'
                           layout: 'grid'
+                          encoding: 'H264_720P_30'
                           filename: 'room-456--XX678.mp4'
                           startDate: 1625000000000
                           endDate: 1625000007200
