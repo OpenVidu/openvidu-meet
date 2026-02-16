@@ -6,7 +6,7 @@ import { RoomMemberContextService } from '../../room-members/services/room-membe
 
 /**
  * Guard that clears room-related session data when entering console routes.
- * This ensures roomSecret, e2eeData, room member and meeting context are only removed when navigating to console,
+ * This ensures session storage data, and room member and meeting context are only removed when navigating to console,
  * not when leaving a meeting to go to other non-console pages (like disconnected, room recordings, etc.)
  */
 export const clearRoomSessionGuard: CanActivateFn = () => {
@@ -21,6 +21,7 @@ export const clearRoomSessionGuard: CanActivateFn = () => {
 	// Clear room-related data from session storage
 	sessionStorageService.removeRoomSecret();
 	sessionStorageService.removeE2EEData();
+	sessionStorageService.removeRedirectUrl();
 
 	return true;
 };

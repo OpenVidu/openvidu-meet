@@ -31,6 +31,11 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 		meetingContextService.setRoomSecret(secret, true);
 	}
 
+	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room
+	if (showOnlyRecordings === 'true') {
+		return navigationService.createRedirectionTo(`/room/${roomId}/recordings`);
+	}
+
 	// Handle E2EE key: prioritize query param, fallback to storage
 	if (queryE2eeKey) {
 		// E2EE key came from URL parameter
@@ -47,11 +52,6 @@ export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnaps
 	} else {
 		// Try to load participant name from storage
 		roomMemberContextService.loadParticipantNameFromStorage();
-	}
-
-	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room
-	if (showOnlyRecordings === 'true') {
-		return navigationService.createRedirectionTo(`/room/${roomId}/recordings`);
 	}
 
 	return true;

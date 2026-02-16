@@ -31,7 +31,7 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Removes the room secret.
+	 * Removes the stored room secret.
 	 */
 	public removeRoomSecret(): void {
 		this.remove(this.ROOM_SECRET_KEY);
@@ -56,6 +56,13 @@ export class SessionStorageService {
 	}
 
 	/**
+	 * Removes the stored redirect URL.
+	 */
+	public removeRedirectUrl(): void {
+		this.remove(this.REDIRECT_URL_KEY);
+	}
+
+	/**
 	 * Stores the E2EE key data (key and origin flag).
 	 *
 	 * @param e2eeKey The E2EE key to store.
@@ -75,7 +82,7 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Removes the E2EE key data.
+	 * Removes the stored E2EE key data.
 	 */
 	public removeE2EEData(): void {
 		this.remove(this.E2EE_DATA_KEY);
