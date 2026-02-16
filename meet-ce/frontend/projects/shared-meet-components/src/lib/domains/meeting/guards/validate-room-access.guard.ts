@@ -12,7 +12,7 @@ export const validateRoomAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	return validateRoomAccessInternal(state.url);
+	return validateRoomAccessInternal();
 };
 
 /**
@@ -22,17 +22,16 @@ export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	return validateRoomAccessInternal(state.url, true);
+	return validateRoomAccessInternal(true);
 };
 
 /**
  * Internal helper function to validate room access by generating a room member token.
  *
- * @param pageUrl - The URL of the page being accessed
  * @param validateRecordingPermissions - Whether to validate recording access permissions
  * @returns True if access is granted, or UrlTree for redirection
  */
-const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPermissions = false) => {
+const validateRoomAccessInternal = async (validateRecordingPermissions = false) => {
 	const roomMemberContextService = inject(RoomMemberContextService);
 	const navigationService = inject(NavigationService);
 	const meetingContextService = inject(MeetingContextService);
@@ -66,10 +65,6 @@ const validateRoomAccessInternal = async (pageUrl: string, validateRecordingPerm
 			case 400:
 				// Invalid secret
 				return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM_SECRET);
-			case 401:
-				// Unauthorized access
-				// Redirect to the login page with query param to redirect back to the page
-				return navigationService.redirectToLoginPage(pageUrl);
 			case 403:
 				// Insufficient permissions or anonymous access disabled
 				if (message.includes('Anonymous access')) {
