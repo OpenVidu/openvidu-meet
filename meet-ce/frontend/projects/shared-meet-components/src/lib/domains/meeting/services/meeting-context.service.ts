@@ -63,16 +63,10 @@ export class MeetingContextService {
 		return local ? [local, ...remotes] : remotes;
 	});
 
-	/**
-	 * Computed signal for whether the current user can moderate the room
-	 */
+	/** Computed signal for whether the current user can moderate the room */
 	readonly canModerateRoom = computed(() => this.roomFeatureService.features().permissions.canModerateRoom);
-
-	/**
-	 * Computed signal for whether layout switching is allowed
-	 */
+	/** Computed signal for whether layout switching is allowed */
 	readonly allowLayoutSwitching = computed(() => this.roomFeatureService.features().ui.showLayoutSelector);
-
 	/** Computed signal for captions status based on room and global configuration */
 	readonly getCaptionsStatus = computed(() => this.roomFeatureService.features().ui.captionsStatus);
 
