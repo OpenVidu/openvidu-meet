@@ -21,7 +21,6 @@ describe('Security Config API Tests', () => {
 		it('should update security config with valid complete data', async () => {
 			const validConfig: SecurityConfig = {
 				authentication: {
-					allowUserCreation: true,
 					oauthProviders: []
 				}
 			};
@@ -37,39 +36,18 @@ describe('Security Config API Tests', () => {
 	});
 
 	describe('Update security config validation', () => {
-		it('should reject when allowUserCreation is not a boolean', async () => {
-			const response = await updateSecurityConfig({
-				authentication: {
-					allowUserCreation: 'invalid'
-				}
-			} as unknown as SecurityConfig);
-			expectValidationError(response, 'authentication.allowUserCreation', 'Expected boolean, received string');
-		});
-
 		it('should reject when oauthProviders is not an array', async () => {
 			const response = await updateSecurityConfig({
 				authentication: {
-					allowUserCreation: true,
 					oauthProviders: 'invalid'
 				}
 			} as unknown as SecurityConfig);
 			expectValidationError(response, 'authentication.oauthProviders', 'Expected array, received string');
 		});
 
-		it('should reject when allowUserCreation is not provided', async () => {
-			const response = await updateSecurityConfig({
-				authentication: {
-					oauthProviders: []
-				}
-			} as unknown as SecurityConfig);
-			expectValidationError(response, 'authentication.allowUserCreation', 'Required');
-		});
-
 		it('should reject when oauthProviders is not provided', async () => {
 			const response = await updateSecurityConfig({
-				authentication: {
-					allowUserCreation: true
-				}
+				authentication: {}
 			} as SecurityConfig);
 			expectValidationError(response, 'authentication.oauthProviders', 'Required');
 		});
@@ -86,7 +64,6 @@ describe('Security Config API Tests', () => {
 		it('should return security config when authenticated as admin', async () => {
 			const defaultConfig: SecurityConfig = {
 				authentication: {
-					allowUserCreation: true,
 					oauthProviders: []
 				}
 			};
