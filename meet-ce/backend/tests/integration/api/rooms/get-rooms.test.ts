@@ -102,7 +102,7 @@ describe('Room API Tests', () => {
 
 			await Promise.all(promises);
 
-			let response = await getRooms({ maxItems: 3 });
+			let response = await getRooms({ maxItems: 3, sortField: 'roomName', sortOrder: 'desc' });
 			let { pagination, rooms } = response.body;
 
 			expectSuccessRoomsResponse(response, 3, 3, true, true);
@@ -112,7 +112,7 @@ describe('Room API Tests', () => {
 			});
 
 			const nextPageToken = pagination.nextPageToken;
-			response = await getRooms({ maxItems: 3, nextPageToken });
+			response = await getRooms({ maxItems: 3, sortField: 'roomName', sortOrder: 'desc', nextPageToken });
 			({ pagination, rooms } = response.body);
 			expectSuccessRoomsResponse(response, 3, 3, false, false);
 			rooms.forEach((room: MeetRoom, i: number) => {
