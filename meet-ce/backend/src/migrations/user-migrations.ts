@@ -1,24 +1,19 @@
-import { ISchemaMigration } from '../models/migration.model.js';
+import { SchemaMigrationMap } from '../models/migration.model.js';
 import { MeetUserDocument } from '../models/mongoose-schemas/user.schema.js';
 
 /**
- * All migrations for the MeetUser collection in chronological order.
- * Add new migrations to this array as the schema evolves.
+ * Schema migrations for MeetUser.
+ * Key format: schema_{collection}_v{from}_to_v{to}
  *
- * Example migration (when needed in the future):
+ * Example:
  *
- * class UserMigrationV1ToV2 extends BaseSchemaMigration<MeetUserDocument> {
- *   fromVersion = 1;
- *   toVersion = 2;
- *   description = 'Add email field for user notifications';
+ * const userMigrationV1ToV2Name = generateSchemaMigrationName(meetUserCollectionName, 1, 2);
  *
- *   protected async transform(document: MeetUserDocument): Promise<Partial<MeetUserDocument>> {
- *     return {
- *       email: undefined // Email will be optional initially
- *     };
- *   }
- * }
+ * const userMigrationV1ToV2Transform: SchemaTransform<MeetUserDocument> = (user) => {
+ * 	user.newField = 'defaultValue';
+ * 	return user;
+ * };
  */
-export const userMigrations: ISchemaMigration<MeetUserDocument>[] = [
-	// Migrations will be added here as the schema evolves
-];
+export const userMigrations: SchemaMigrationMap<MeetUserDocument> = new Map([
+	// [userMigrationV1ToV2Name, userMigrationV1ToV2Transform]
+]);

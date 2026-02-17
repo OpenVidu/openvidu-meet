@@ -1,26 +1,20 @@
-import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+
+const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
+
+const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.config.captions = { enabled: true };
+	room.config.recording.layout = MeetRecordingLayout.GRID;
+	room.config.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
+	return room;
+};
 
 /**
- * All migrations for the MeetRoom collection in chronological order.
- * Add new migrations to this array as the schema evolves.
- *
- * Example migration (when needed in the future):
- *
- * class RoomMigrationV1ToV2 extends BaseSchemaMigration<MeetRoomDocument> {
- *   fromVersion = 1;
- *   toVersion = 2;
- *   description = 'Add new required field "maxParticipants" with default value';
- *
- *   protected async transform(document: MeetRoomDocument): Promise<Partial<MeetRoomDocument>> {
- *     return {
- *       maxParticipants: 100 // Add default value for existing rooms
- *     };
- *   }
- * }
+ * Schema migrations for MeetRoom.
+ * Key format: schema_{collection}_v{from}_to_v{to}
  */
-export const roomMigrations: ISchemaMigration<MeetRoomDocument>[] = [
-	// Migrations will be added here as the schema evolves
-	// Example: new RoomMigrationV1ToV2(),
-	// Example: new RoomMigrationV2ToV3(),
-];
+export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
+	[roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform]
+]);

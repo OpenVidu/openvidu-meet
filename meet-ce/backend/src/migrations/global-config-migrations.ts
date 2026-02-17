@@ -1,27 +1,19 @@
-import { ISchemaMigration } from '../models/migration.model.js';
+import { SchemaMigrationMap } from '../models/migration.model.js';
 import { MeetGlobalConfigDocument } from '../models/mongoose-schemas/global-config.schema.js';
 
 /**
- * All migrations for the MeetGlobalConfig collection in chronological order.
- * Add new migrations to this array as the schema evolves.
+ * Schema migrations for MeetGlobalConfig.
+ * Key format: schema_{collection}_v{from}_to_v{to}
  *
- * Example migration (when needed in the future):
+ * Example:
  *
- * class GlobalConfigMigrationV1ToV2 extends BaseSchemaMigration<MeetGlobalConfigDocument> {
- *   fromVersion = 1;
- *   toVersion = 2;
- *   description = 'Add new branding configuration section';
+ * const globalConfigMigrationV1ToV2Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 1, 2);
  *
- *   protected async transform(document: MeetGlobalConfigDocument): Promise<Partial<MeetGlobalConfigDocument>> {
- *     return {
- *       brandingConfig: {
- *         logoUrl: '',
- *         companyName: 'OpenVidu Meet'
- *       }
- *     };
- *   }
- * }
+ * const globalConfigMigrationV1ToV2Transform: SchemaTransform<MeetGlobalConfigDocument> = (globalConfig) => {
+ * 	globalConfig.newField = 'defaultValue';
+ * 	return globalConfig;
+ * };
  */
-export const globalConfigMigrations: ISchemaMigration<MeetGlobalConfigDocument>[] = [
-	// Migrations will be added here as the schema evolves
-];
+export const globalConfigMigrations: SchemaMigrationMap<MeetGlobalConfigDocument> = new Map([
+	// [globalConfigMigrationV1ToV2Name, globalConfigMigrationV1ToV2Transform]
+]);

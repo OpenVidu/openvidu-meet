@@ -51,12 +51,14 @@ export const INTERNAL_CONFIG = {
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure
-	GLOBAL_CONFIG_SCHEMA_VERSION: 2 as SchemaVersion,
-	USER_SCHEMA_VERSION: 2 as SchemaVersion,
-	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion,
+	// IMPORTANT: whenever you increment a schema version, update the MIGRATION_REV timestamp too.
+	// This helps surface merge conflicts when multiple branches create schema migrations concurrently.
+	GLOBAL_CONFIG_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771328577054
+	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771328577054
+	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
 	ROOM_SCHEMA_VERSION: 2 as SchemaVersion,
-	ROOM_MEMBER_SCHEMA_VERSION: 1 as SchemaVersion,
-	RECORDING_SCHEMA_VERSION: 1 as SchemaVersion
+	ROOM_MEMBER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771328577054
+	RECORDING_SCHEMA_VERSION: 2 as SchemaVersion // MIGRATION_REV: 1771328577054
 };
 
 // This function is used to set private configuration values for testing purposes.

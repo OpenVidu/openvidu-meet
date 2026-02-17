@@ -1,13 +1,22 @@
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { CollectionMigrationRegistry } from '../models/migration.model.js';
-import { meetApiKeyCollectionName, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
+import { CollectionMigrationRegistry, SchemaMigratableDocument } from '../models/migration.model.js';
+import {
+	meetApiKeyCollectionName,
+	MeetApiKeyDocument,
+	MeetApiKeyModel
+} from '../models/mongoose-schemas/api-key.schema.js';
 import {
 	meetGlobalConfigCollectionName,
+	MeetGlobalConfigDocument,
 	MeetGlobalConfigModel
 } from '../models/mongoose-schemas/global-config.schema.js';
-import { meetRecordingCollectionName, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
-import { meetRoomCollectionName, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
-import { meetUserCollectionName, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
+import {
+	meetRecordingCollectionName,
+	MeetRecordingDocument,
+	MeetRecordingModel
+} from '../models/mongoose-schemas/recording.schema.js';
+import { meetRoomCollectionName, MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import { meetUserCollectionName, MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { apiKeyMigrations } from './api-key-migrations.js';
 import { globalConfigMigrations } from './global-config-migrations.js';
 import { recordingMigrations } from './recording-migrations.js';
@@ -16,12 +25,18 @@ import { userMigrations } from './user-migrations.js';
 
 /**
  * Central registry of all collection migrations.
- * Defines the current version and migration path for each collection.
+ * Defines the current version and migration map for each collection.
  *
  * Order matters: collections should be listed in dependency order.
  * For example, if recordings depend on rooms, rooms should come first.
  */
-export const migrationRegistry: CollectionMigrationRegistry[] = [
+const migrationRegistry: [
+	CollectionMigrationRegistry<MeetGlobalConfigDocument>,
+	CollectionMigrationRegistry<MeetUserDocument>,
+	CollectionMigrationRegistry<MeetApiKeyDocument>,
+	CollectionMigrationRegistry<MeetRoomDocument>,
+	CollectionMigrationRegistry<MeetRecordingDocument>
+] = [
 	// GlobalConfig - no dependencies, can run first
 	{
 		collectionName: meetGlobalConfigCollectionName,
@@ -59,3 +74,10 @@ export const migrationRegistry: CollectionMigrationRegistry[] = [
 		migrations: recordingMigrations
 	}
 ];
+
+/**
+ * Homogeneous runtime view of the migration registry.
+ * Used by migration execution code that iterates over all collections.
+ */
+export const runtimeMigrationRegistry =
+	migrationRegistry as unknown as CollectionMigrationRegistry<SchemaMigratableDocument>[];

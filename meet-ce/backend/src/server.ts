@@ -85,7 +85,9 @@ const createApp = () => {
 	if (process.env.NODE_ENV === 'development') {
 		// Serve internal API docs only in development mode
 		appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
-			res.type('html').send(getOpenApiHtmlWithBasePath(internalApiHtmlFilePath, INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1))
+			res
+				.type('html')
+				.send(getOpenApiHtmlWithBasePath(internalApiHtmlFilePath, INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1))
 		);
 	}
 
@@ -137,7 +139,9 @@ const startServer = (app: express.Application) => {
 
 		console.log(
 			'REST API Docs: ',
-			chalk.cyanBright(`http://localhost:${MEET_ENV.SERVER_PORT}${basePathDisplay}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`)
+			chalk.cyanBright(
+				`http://localhost:${MEET_ENV.SERVER_PORT}${basePathDisplay}${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`
+			)
 		);
 		logEnvVars();
 	});
@@ -164,8 +168,8 @@ const isMainModule = (): boolean => {
 if (isMainModule()) {
 	registerDependencies();
 	const app = createApp();
-	startServer(app);
 	await initializeEagerServices();
+	startServer(app);
 }
 
 export { createApp, registerDependencies };

@@ -21,7 +21,6 @@ The schema migration system enables safe evolution of MongoDB document structure
 - ✅ **HA-safe** (distributed locking prevents concurrent migrations)
 - ✅ **Batch processing** (efficient handling of large collections)
 - ✅ **Progress tracking** (migrations stored in `MeetMigration` collection)
-- ✅ **Version validation** (optional runtime checks in repositories)
 
 ---
 
@@ -47,7 +46,6 @@ Each document includes a `schemaVersion` field:
 ```
 src/
 ├── migrations/
-│   ├── base-migration.ts            # Base class for migrations
 │   ├── migration-registry.ts        # Central registry of all collections
 │   ├── room-migrations.ts           # Room-specific migrations
 │   ├── recording-migrations.ts      # Recording-specific migrations
@@ -59,100 +57,13 @@ src/
     └── migration.model.ts           # Migration types and interfaces
 ```
 
-**Note**: All migration types and interfaces (`ISchemaMigration`, `MigrationContext`, `MigrationResult`, `SchemaVersion`, `CollectionMigrationRegistry`) are defined in `src/models/migration.model.ts` for better code organization.
-
 ---
 
 ## Adding New Migrations
 
-### Step 1: Update Schema Version in Configuration
+### Step 1: Update TypeScript Interface
 
-In `src/config/internal-config.ts`, increment the version constant:
-
-```typescript
-// internal-config.ts
-export const INTERNAL_CONFIG = {
-	// ... other config
-	ROOM_SCHEMA_VERSION: 2 // Was 1
-	// ...
-};
-```
-
-### Step 2: Create Migration Class
-
-```typescript
-import { BaseSchemaMigration } from './base-migration.js';
-import { MeetRoomDocument } from '../repositories/schemas/room.schema.js';
-import { MigrationContext } from '../models/migration.model.js';
-import { Model } from 'mongoose';
-
-class RoomMigrationV1ToV2 extends BaseSchemaMigration<MeetRoomDocument> {
-	fromVersion = 1;
-	toVersion = 2;
-	description = 'Add maxParticipants field with default value of 100';
-
-	protected async transform(document: MeetRoomDocument): Promise<Partial<MeetRoomDocument>> {
-		// Return fields to update (schemaVersion is handled automatically)
-		return {
-			maxParticipants: 100
-		};
-	}
-
-	// Optional: Add validation before migration runs
-	async validate(model: Model<MeetRoomDocument>, context: MigrationContext): Promise<boolean> {
-		// Check prerequisites, data integrity, etc.
-		return true;
-	}
-}
-```
-
-### Step 3: Register Migration
-
-Add the migration instance to the migrations array in `room-migrations.ts`:
-
-```typescript
-import { ISchemaMigration } from '../models/migration.model.js';
-import { MeetRoomDocument } from '../repositories/schemas/room.schema.js';
-
-export const roomMigrations: ISchemaMigration<MeetRoomDocument>[] = [
-	new RoomMigrationV1ToV2()
-	// Future migrations will be added here
-];
-```
-
-### Step 4: Update Schema Definition
-
-Update the Mongoose schema default version in `internal-config.ts`:
-
-```typescript
-// config/internal-config.ts
-export const INTERNAL_CONFIG = {
-	// ... other config
-	ROOM_SCHEMA_VERSION: 2 // Updated from 1
-	// ...
-};
-```
-
-If adding new required fields, update the Mongoose schema:
-
-```typescript
-// repositories/schemas/room.schema.ts
-import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-
-const MeetRoomSchema = new Schema<MeetRoomDocument>({
-	schemaVersion: {
-		type: Number,
-		required: true,
-		default: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION // Uses config value (2)
-	},
-	// ... existing fields ...
-	maxParticipants: { type: Number, required: true, default: 100 } // New field
-});
-```
-
-### Step 5: Update TypeScript Interface
-
-Update the domain interface to include new fields:
+Update the domain interface to include new fields or changes:
 
 ```typescript
 // typings/src/room.ts
@@ -161,6 +72,66 @@ export interface MeetRoom extends MeetRoomOptions {
 	// ... existing fields ...
 	maxParticipants: number; // New field
 }
+```
+
+### Step 2: Update Schema Version in Configuration
+
+In `src/config/internal-config.ts`, increment the version constant and update the `MIGRATION_REV` timestamp comment on the same line:
+
+```typescript
+// internal-config.ts
+export const INTERNAL_CONFIG = {
+	// ... other config
+	ROOM_SCHEMA_VERSION: 2 as SchemaVersion // MIGRATION_REV: 1771328577054
+	// ...
+};
+```
+
+`MIGRATION_REV` is a unique marker (current timestamp in milliseconds) used to make concurrent schema-version bumps more visible during Git merges.
+
+If a merge conflict appears in that line, it means multiple migrations were created in parallel; resolve it by:
+
+1. Keeping all migration code changes.
+2. Re-evaluating the final schema version number.
+3. Updating `MIGRATION_REV` again with a new timestamp.
+
+### Step 3: Update Moongose Schema
+
+Update the Mongoose schema to reflect the changes (new fields, etc.):
+
+```typescript
+// models/mongoose-schemas/room.schema.ts
+const MeetRoomSchema = new Schema<MeetRoomDocument>({
+	// ... existing fields ...
+	maxParticipants: { type: Number, required: true, default: 100 } // New field
+});
+```
+
+### Step 4: Create Migration Definition
+
+```typescript
+import { SchemaTransform, generateSchemaMigrationName } from '../models/migration.model.js';
+import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+
+const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
+
+const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.maxParticipants = 100;
+	return room;
+};
+```
+
+`transform` must return the updated document instance.
+It can mutate the received document by adding, removing, or modifying fields as needed to conform to the new schema version.
+
+### Step 5: Register Migration
+
+Add the migration to the map initialization in `room-migrations.ts`:
+
+```typescript
+export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
+	[roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform]
+]);
 ```
 
 ### Step 6: Test Migration
@@ -187,7 +158,6 @@ Each migration is tracked in the `MeetMigration` collection:
 		"fromVersion": 1,
 		"toVersion": 2,
 		"migratedCount": 1523,
-		"skippedCount": 0,
 		"failedCount": 0,
 		"durationMs": 123000
 	}

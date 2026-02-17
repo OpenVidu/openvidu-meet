@@ -95,33 +95,12 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 			{
 				$set: {
 					status: MigrationStatus.FAILED,
-					completedAt: new Date(),
+					completedAt: Date.now(),
 					error
 				}
 			}
 		);
 		return this.toDomain(document);
-	}
-
-	/**
-	 * Get all migrations with their current status.
-	 *
-	 * @returns Array of all migration documents
-	 */
-	async getAllMigrations(): Promise<MeetMigration[]> {
-		const documents = await this.findAll();
-		return documents;
-	}
-
-	/**
-	 * Get a specific migration by name.
-	 *
-	 * @param name - The name of the migration
-	 * @returns The migration document or null if not found
-	 */
-	async getMigration(name: MigrationName): Promise<MeetMigration | null> {
-		const document = await this.findOne({ name });
-		return document ? this.toDomain(document) : null;
 	}
 
 	/**
