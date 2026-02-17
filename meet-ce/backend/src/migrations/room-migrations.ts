@@ -3,13 +3,13 @@ import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from
 import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
-const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = () => ({
-	$set: {
-		'config.captions': { enabled: true },
-		'config.recording.layout': MeetRecordingLayout.GRID,
-		'config.recording.encoding': MeetRecordingEncodingPreset.H264_720P_30
-	}
-});
+
+const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.config.captions = { enabled: true };
+	room.config.recording.layout = MeetRecordingLayout.GRID;
+	room.config.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
+	return room;
+};
 
 /**
  * Schema migrations for MeetRoom.

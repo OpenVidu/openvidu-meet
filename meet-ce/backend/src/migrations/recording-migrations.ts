@@ -3,12 +3,12 @@ import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from
 import { meetRecordingCollectionName, MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
 
 const recordingMigrationV1ToV2Name = generateSchemaMigrationName(meetRecordingCollectionName, 1, 2);
-const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = () => ({
-	$set: {
-		layout: MeetRecordingLayout.GRID,
-		encoding: MeetRecordingEncodingPreset.H264_720P_30
-	}
-});
+
+const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = (recording) => {
+	recording.layout = MeetRecordingLayout.GRID;
+	recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
+	return recording;
+};
 
 /**
  * Schema migrations for MeetRecording.

@@ -8,11 +8,11 @@ import { MeetApiKeyDocument } from '../models/mongoose-schemas/api-key.schema.js
  * Example:
  *
  * const apiKeyMigrationV1ToV2Name = generateSchemaMigrationName(meetApiKeyCollectionName, 1, 2);
- * const apiKeyMigrationV1ToV2Transform: SchemaTransform<MeetApiKeyDocument> = () => ({
- * 	$set: {
- * 		expirationDate: undefined
- * 	}
- * });
+ *
+ * const apiKeyMigrationV1ToV2Transform: SchemaTransform<MeetApiKeyDocument> = (apiKey) => {
+ * 	apiKey.expirationDate = undefined;
+ * 	return apiKey;
+ * };
  */
 export const apiKeyMigrations: SchemaMigrationMap<MeetApiKeyDocument> = new Map([
 	// [apiKeyMigrationV1ToV2Name, apiKeyMigrationV1ToV2Transform]

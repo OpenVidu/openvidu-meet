@@ -114,19 +114,15 @@ import { SchemaTransform, generateSchemaMigrationName } from '../models/migratio
 import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
-const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = () => ({
-	$set: {
-		maxParticipants: 100
-	}
-});
+
+const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	room.maxParticipants = 100;
+	return room;
+};
 ```
 
-`transform` must return MongoDB update operators, so it can express any kind of change:
-
-- `$set` to add/modify values
-- `$unset` to remove properties
-- `$rename` to rename fields
-- Any other supported update operator
+`transform` must return the updated document instance.
+It can mutate the received document by adding, removing, or modifying fields as needed to conform to the new schema version.
 
 ### Step 5: Register Migration
 
