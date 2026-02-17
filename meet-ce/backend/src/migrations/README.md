@@ -76,16 +76,24 @@ export interface MeetRoom extends MeetRoomOptions {
 
 ### Step 2: Update Schema Version in Configuration
 
-In `src/config/internal-config.ts`, increment the version constant:
+In `src/config/internal-config.ts`, increment the version constant and update the `MIGRATION_REV` timestamp comment on the same line:
 
 ```typescript
 // internal-config.ts
 export const INTERNAL_CONFIG = {
 	// ... other config
-	ROOM_SCHEMA_VERSION: 2 // Was 1
+	ROOM_SCHEMA_VERSION: 2 as SchemaVersion // MIGRATION_REV: 1771328577054
 	// ...
 };
 ```
+
+`MIGRATION_REV` is a unique marker (current timestamp in milliseconds) used to make concurrent schema-version bumps more visible during Git merges.
+
+If a merge conflict appears in that line, it means multiple migrations were created in parallel; resolve it by:
+
+1. Keeping all migration code changes.
+2. Re-evaluating the final schema version number.
+3. Updating `MIGRATION_REV` again with a new timestamp.
 
 ### Step 3: Update Moongose Schema
 
