@@ -1,20 +1,19 @@
-import { SchemaMigrationMap } from '../models/migration.model.js';
-import { MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { meetRecordingCollectionName, MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
+
+const recordingMigrationV1ToV2Name = generateSchemaMigrationName(meetRecordingCollectionName, 1, 2);
+const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = () => ({
+	$set: {
+		layout: MeetRecordingLayout.GRID,
+		encoding: MeetRecordingEncodingPreset.H264_720P_30
+	}
+});
 
 /**
  * Schema migrations for MeetRecording.
  * Key format: schema_{collection}_v{from}_to_v{to}
- *
- * Example:
- *
- * const recordingMigrationV1ToV2Name = generateSchemaMigrationName('MeetRecording', 1, 2);
- *
- * const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = () => ({
- * 	$set: {
- * 		quality: 'standard'
- * 	}
- * });
  */
 export const recordingMigrations: SchemaMigrationMap<MeetRecordingDocument> = new Map([
-	// [recordingMigrationV1ToV2Name, recordingMigrationV1ToV2Transform]
+	[recordingMigrationV1ToV2Name, recordingMigrationV1ToV2Transform]
 ]);
