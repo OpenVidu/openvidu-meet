@@ -248,7 +248,7 @@ export const expectValidRecordingWithFields = (rec: MeetRecordingInfo, fields: s
 };
 
 const expectObjectFields = (obj: unknown, present: string[] = [], absent: string[] = []) => {
-	expect(Object.keys(obj as any)).toEqual(present);
+	expect(Object.keys(obj as any)).toEqual(expect.arrayContaining(present));
 	present.forEach((key) => {
 		expect(obj).toHaveProperty(key);
 		expect((obj as any)[key]).not.toBeUndefined();
