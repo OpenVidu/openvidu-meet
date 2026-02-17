@@ -24,7 +24,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
-	selector: 'ov-users',
+	selector: 'ov-users-permissions',
 	imports: [
 		MatCardModule,
 		MatButtonModule,
@@ -38,10 +38,10 @@ import { AuthService } from '../../../auth/services/auth.service';
 		ReactiveFormsModule
 		// ProFeatureBadgeComponent
 	],
-	templateUrl: './users.component.html',
-	styleUrl: './users.component.scss'
+	templateUrl: './users-permissions.component.html',
+	styleUrl: './users-permissions.component.scss'
 })
-export class UsersComponent implements OnInit {
+export class UsersPermissionsComponent implements OnInit {
 	isLoading = signal(true);
 
 	showCurrentPassword = signal(false);
