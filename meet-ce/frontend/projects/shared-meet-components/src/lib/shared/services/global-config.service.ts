@@ -1,8 +1,7 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { HttpService } from './http.service';
-import { RoomFeatureService } from './room-feature.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,9 +11,14 @@ export class GlobalConfigService {
 
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected httpService: HttpService = inject(HttpService);
-	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
 
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
+
+	private readonly _roomAppearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
+	private readonly _captionsGlobalEnabled = signal<boolean>(false);
+
+	readonly roomAppearanceConfig = this._roomAppearanceConfig.asReadonly();
+	readonly captionsGlobalEnabled = this._captionsGlobalEnabled.asReadonly();
 
 	constructor() {}
 
@@ -50,10 +54,20 @@ export class GlobalConfigService {
 
 	async loadRoomsAppearanceConfig(): Promise<void> {
 		try {
-			const config = await this.getRoomsAppearanceConfig();
-			this.roomFeatureService.setAppearanceConfig(config.appearance);
+			const { appearance } = await this.getRoomsAppearanceConfig();
+			this._roomAppearanceConfig.set(appearance);
 		} catch (error) {
 			this.log.e('Error loading rooms appearance config:', error);
+			throw error;
+		}
+	}
+
+	async loadCaptionsConfig(): Promise<void> {
+		try {
+			const { enabled } = await this.getCaptionsConfig();
+			this._captionsGlobalEnabled.set(enabled);
+		} catch (error) {
+			this.log.e('Error loading captions config:', error);
 			throw error;
 		}
 	}
@@ -66,15 +80,5 @@ export class GlobalConfigService {
 	private async getCaptionsConfig(): Promise<{ enabled: boolean }> {
 		const path = `${this.GLOBAL_CONFIG_API}/captions`;
 		return await this.httpService.getRequest<{ enabled: boolean }>(path);
-	}
-
-	async loadCaptionsConfig(): Promise<void> {
-		try {
-			const config = await this.getCaptionsConfig();
-			this.roomFeatureService.setCaptionsGlobalConfig(config.enabled);
-		} catch (error) {
-			this.log.e('Error loading captions config:', error);
-			throw error;
-		}
 	}
 }

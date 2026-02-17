@@ -2,11 +2,11 @@ import { computed, Injectable, signal } from '@angular/core';
 import {
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import { E2eeService, LoggerService } from 'openvidu-components-angular';
-import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
 import { RoomMemberService } from './room-member.service';
@@ -24,6 +24,7 @@ export class RoomMemberContextService {
 	private readonly _participantName = signal<string | undefined>(undefined);
 	private readonly _isParticipantNameFromUrl = signal<boolean>(false);
 	private readonly _participantIdentity = signal<string | undefined>(undefined);
+	private readonly _role = signal<MeetRoomMemberRole | undefined>(undefined);
 	private readonly _permissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	private readonly _member = signal<MeetRoomMember | undefined>(undefined);
 
@@ -35,6 +36,8 @@ export class RoomMemberContextService {
 	readonly isParticipantNameFromUrl = this._isParticipantNameFromUrl.asReadonly();
 	/** Readonly signal for the participant identity */
 	readonly participantIdentity = this._participantIdentity.asReadonly();
+	/** Readonly signal for the room member role */
+	readonly role = this._role.asReadonly();
 	/** Readonly signal for the room member permissions */
 	readonly permissions = this._permissions.asReadonly();
 	/** Readonly signal for the room member info (when memberId is set) */
@@ -47,7 +50,6 @@ export class RoomMemberContextService {
 	constructor(
 		protected loggerService: LoggerService,
 		protected roomMemberService: RoomMemberService,
-		protected roomFeatureService: RoomFeatureService,
 		protected tokenStorageService: TokenStorageService,
 		protected e2eeService: E2eeService
 	) {
@@ -134,6 +136,7 @@ export class RoomMemberContextService {
 				this._participantIdentity.set(decodedToken.sub);
 			}
 
+			this._role.set(metadata.baseRole);
 			this._permissions.set(metadata.effectivePermissions);
 
 			// If token contains memberId, fetch and store member info
@@ -146,9 +149,6 @@ export class RoomMemberContextService {
 				}
 			}
 
-			// Update feature configuration
-			this.roomFeatureService.setRoomMemberRole(metadata.baseRole);
-			this.roomFeatureService.setRoomMemberPermissions(metadata.effectivePermissions);
 		} catch (error) {
 			this.log.e('Error decoding room member token:', error);
 			throw new Error('Invalid room member token');
@@ -163,6 +163,7 @@ export class RoomMemberContextService {
 		this._participantName.set(undefined);
 		this._isParticipantNameFromUrl.set(false);
 		this._participantIdentity.set(undefined);
+		this._role.set(undefined);
 		this._permissions.set(undefined);
 		this._member.set(undefined);
 	}

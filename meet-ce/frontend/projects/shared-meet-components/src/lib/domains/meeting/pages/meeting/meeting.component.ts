@@ -5,7 +5,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
-import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RoomFeatureService } from '../../../../shared/services/room-feature.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
@@ -37,7 +36,6 @@ export class MeetingComponent implements OnInit {
 	protected lobbyService = inject(MeetingLobbyService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
-	protected configService = inject(GlobalConfigService);
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected notificationService = inject(NotificationService);
@@ -95,12 +93,7 @@ export class MeetingComponent implements OnInit {
 		effect(async () => {
 			const token = this.roomMemberToken();
 			if (token && this.showLobby) {
-				// The meeting view must be shown before loading the appearance config
 				this.showLobby = false;
-				await Promise.all([
-					this.configService.loadRoomsAppearanceConfig(),
-					this.configService.loadCaptionsConfig()
-				]);
 			}
 		});
 	}

@@ -1,13 +1,9 @@
-import { computed, Injectable, signal } from '@angular/core';
-import {
-	MeetAppearanceConfig,
-	MeetRoomCaptionsConfig,
-	MeetRoomConfig,
-	MeetRoomMemberPermissions,
-	MeetRoomMemberRole
-} from '@openvidu-meet/typings';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { MeetAppearanceConfig, MeetRoomCaptionsConfig, MeetRoomConfig, MeetRoomMemberPermissions, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
+import { RoomMemberContextService } from '../../domains/room-members/services/room-member-context.service';
 import { CaptionsStatus, RoomFeatures } from '../models/app.model';
+import { GlobalConfigService } from './global-config.service';
 
 /**
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
@@ -51,27 +47,26 @@ const DEFAULT_FEATURES: RoomFeatures = {
 })
 export class RoomFeatureService {
 	protected log;
+	protected globalConfigService = inject(GlobalConfigService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
-	protected roomMemberRole = signal<MeetRoomMemberRole | undefined>(undefined);
-	protected roomMemberPermissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
-	protected appearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
-	protected captionsGlobalConfig = signal<boolean>(false);
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<RoomFeatures>(() =>
 		this.calculateFeatures(
 			this.roomConfig(),
-			this.roomMemberRole(),
-			this.roomMemberPermissions(),
-			this.appearanceConfig(),
-			this.captionsGlobalConfig()
+			this.roomMemberContextService.role(),
+			this.roomMemberContextService.permissions(),
+			this.globalConfigService.roomAppearanceConfig(),
+			this.globalConfigService.captionsGlobalEnabled()
 		)
 	);
 
 	constructor(protected loggerService: LoggerService) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomFeatureService');
+		void this.loadGlobalFeatureConfigs();
 	}
 
 	/**
@@ -82,36 +77,18 @@ export class RoomFeatureService {
 		this.roomConfig.set(config);
 	}
 
-	/**
-	 * Updates room member role
-	 */
-	setRoomMemberRole(role: MeetRoomMemberRole): void {
-		this.log.d('Updating room member role', role);
-		this.roomMemberRole.set(role);
-	}
+	protected async loadGlobalFeatureConfigs(): Promise<void> {
+		const [appearanceResult, captionsResult] = await Promise.allSettled([
+			this.globalConfigService.loadRoomsAppearanceConfig(),
+			this.globalConfigService.loadCaptionsConfig()
+		]);
 
-	/**
-	 * Updates room member permissions
-	 */
-	setRoomMemberPermissions(permissions: MeetRoomMemberPermissions): void {
-		this.log.d('Updating room member permissions', permissions);
-		this.roomMemberPermissions.set(permissions);
-	}
-
-	/**
-	 * Updates appearance config
-	 */
-	setAppearanceConfig(config: MeetAppearanceConfig): void {
-		this.log.d('Updating appearance config', config);
-		this.appearanceConfig.set(config);
-	}
-
-	/**
-	 * Updates captions global config
-	 */
-	setCaptionsGlobalConfig(enabled: boolean): void {
-		this.log.d('Updating captions global config', enabled);
-		this.captionsGlobalConfig.set(enabled);
+		if (appearanceResult.status === 'rejected') {
+			this.log.e('Could not load room appearance config for features:', appearanceResult.reason);
+		}
+		if (captionsResult.status === 'rejected') {
+			this.log.e('Could not load captions config for features:', captionsResult.reason);
+		}
 	}
 
 	/**
@@ -205,9 +182,5 @@ export class RoomFeatureService {
 	 */
 	reset(): void {
 		this.roomConfig.set(undefined);
-		this.roomMemberRole.set(undefined);
-		this.roomMemberPermissions.set(undefined);
-		this.appearanceConfig.set(undefined);
-		this.captionsGlobalConfig.set(false);
 	}
 }
