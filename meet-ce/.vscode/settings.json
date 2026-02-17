@@ -1,5 +1,5 @@
 {
-	"jest.jestCommandLine": "node --experimental-vm-modules ../../node_modules/.bin/jest --config jest.integration.config.mjs",
+	"jest.jestCommandLine": "../../node_modules/.bin/jest --config jest.integration.config.mjs",
 	"jest.rootPath": "backend",
 	"jest.nodeEnv": {
 		"NODE_OPTIONS": "--experimental-vm-modules"
