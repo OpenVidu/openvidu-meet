@@ -12,12 +12,7 @@ import {
 	SchemaMigrationStep,
 	SchemaVersion
 } from '../models/migration.model.js';
-import { ApiKeyRepository } from '../repositories/api-key.repository.js';
-import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
-import { RecordingRepository } from '../repositories/recording.repository.js';
-import { RoomRepository } from '../repositories/room.repository.js';
-import { UserRepository } from '../repositories/user.repository.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
 
@@ -26,11 +21,6 @@ export class MigrationService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(GlobalConfigRepository) protected configRepository: GlobalConfigRepository,
-		@inject(UserRepository) protected userRepository: UserRepository,
-		@inject(ApiKeyRepository) protected apiKeyRepository: ApiKeyRepository,
-		@inject(RoomRepository) protected roomRepository: RoomRepository,
-		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(MigrationRepository) protected migrationRepository: MigrationRepository
 	) {}
 
