@@ -1,26 +1,20 @@
-import { ISchemaMigration } from '../models/migration.model.js';
+import { SchemaMigrationMap } from '../models/migration.model.js';
 import { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 
 /**
- * All migrations for the MeetRoom collection in chronological order.
- * Add new migrations to this array as the schema evolves.
+ * Schema migrations for MeetRoom.
+ * Key format: schema_{collection}_v{from}_to_v{to}
  *
- * Example migration (when needed in the future):
+ * Example:
  *
- * class RoomMigrationV1ToV2 extends BaseSchemaMigration<MeetRoomDocument> {
- *   fromVersion = 1;
- *   toVersion = 2;
- *   description = 'Add new required field "maxParticipants" with default value';
+ * const roomMigrationV1ToV2Name = generateSchemaMigrationName('MeetRoom', 1, 2);
  *
- *   protected async transform(document: MeetRoomDocument): Promise<Partial<MeetRoomDocument>> {
- *     return {
- *       maxParticipants: 100 // Add default value for existing rooms
- *     };
- *   }
- * }
+ * const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = () => ({
+ * 	$set: {
+ * 		maxParticipants: 100
+ * 	}
+ * });
  */
-export const roomMigrations: ISchemaMigration<MeetRoomDocument>[] = [
-	// Migrations will be added here as the schema evolves
-	// Example: new RoomMigrationV1ToV2(),
-	// Example: new RoomMigrationV2ToV3(),
-];
+export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
+	// [roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform]
+]);

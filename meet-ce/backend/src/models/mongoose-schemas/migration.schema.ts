@@ -1,5 +1,5 @@
 import { Document, model, Schema } from 'mongoose';
-import { MeetMigration, MigrationName, MigrationStatus } from '../migration.model.js';
+import { isSchemaMigrationName, MeetMigration, MigrationStatus } from '../migration.model.js';
 
 /**
  * Mongoose Document interface for MeetMigration.
@@ -16,7 +16,10 @@ const MigrationSchema = new Schema<MeetMigrationDocument>(
 		name: {
 			type: String,
 			required: true,
-			enum: Object.values(MigrationName)
+			validate: {
+				validator: (value: string) => isSchemaMigrationName(value),
+				message: 'Invalid migration name format'
+			}
 		},
 		status: {
 			type: String,

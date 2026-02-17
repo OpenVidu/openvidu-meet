@@ -1,6 +1,5 @@
 import {
 	MeetRecordingAccess,
-	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -54,34 +53,16 @@ const MeetRecordingConfigSchema = new Schema(
 		layout: {
 			type: String,
 			enum: Object.values(MeetRecordingLayout),
-			required: true,
-			default: MeetRecordingLayout.GRID
+			required: true
 		},
 		encoding: {
 			type: Schema.Types.Mixed,
-			required: false,
-			encoding: {
-				type: Schema.Types.Mixed,
-				required: true,
-				default: MeetRecordingEncodingPreset.H264_720P_30,
-				validate: {
-					validator: (value: any) => {
-						if (!value) return true;
-
-						if (typeof value === 'string') return true;
-
-						if (typeof value === 'object') return value.video || value.audio;
-
-						return false;
-					},
-					message: 'Encoding must be a preset string or options object'
-				}
-			}
+			required: true
 		},
 		allowAccessTo: {
 			type: String,
 			enum: Object.values(MeetRecordingAccess),
-			required: false
+			required: true
 		}
 	},
 	{ _id: false }
@@ -120,8 +101,7 @@ const MeetE2EEConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: false
+			required: true
 		}
 	},
 	{ _id: false }
@@ -134,8 +114,7 @@ const MeetCaptionsConfigSchema = new Schema(
 	{
 		enabled: {
 			type: Boolean,
-			required: true,
-			default: true
+			required: true
 		}
 	},
 	{ _id: false }
@@ -215,13 +194,11 @@ const MeetRoomConfigSchema = new Schema(
 		},
 		e2ee: {
 			type: MeetE2EEConfigSchema,
-			required: true,
-			default: { enabled: false }
+			required: true
 		},
 		captions: {
 			type: MeetCaptionsConfigSchema,
-			required: true,
-			default: { enabled: false }
+			required: true
 		}
 	},
 	{ _id: false }
@@ -273,14 +250,12 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		status: {
 			type: String,
 			enum: Object.values(MeetRoomStatus),
-			required: true,
-			default: MeetRoomStatus.OPEN
+			required: true
 		},
 		meetingEndAction: {
 			type: String,
 			enum: Object.values(MeetingEndAction),
-			required: true,
-			default: MeetingEndAction.NONE
+			required: true
 		}
 	},
 	{

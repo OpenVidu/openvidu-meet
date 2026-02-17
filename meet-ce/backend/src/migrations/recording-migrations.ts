@@ -1,24 +1,20 @@
-import { ISchemaMigration } from '../models/migration.model.js';
+import { SchemaMigrationMap } from '../models/migration.model.js';
 import { MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
 
 /**
- * All migrations for the MeetRecording collection in chronological order.
- * Add new migrations to this array as the schema evolves.
+ * Schema migrations for MeetRecording.
+ * Key format: schema_{collection}_v{from}_to_v{to}
  *
- * Example migration (when needed in the future):
+ * Example:
  *
- * class RecordingMigrationV1ToV2 extends BaseSchemaMigration<MeetRecordingDocument> {
- *   fromVersion = 1;
- *   toVersion = 2;
- *   description = 'Add new optional field "quality" for recording quality tracking';
+ * const recordingMigrationV1ToV2Name = generateSchemaMigrationName('MeetRecording', 1, 2);
  *
- *   protected async transform(document: MeetRecordingDocument): Promise<Partial<MeetRecordingDocument>> {
- *     return {
- *       quality: 'standard' // Default quality for existing recordings
- *     };
- *   }
- * }
+ * const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> = () => ({
+ * 	$set: {
+ * 		quality: 'standard'
+ * 	}
+ * });
  */
-export const recordingMigrations: ISchemaMigration<MeetRecordingDocument>[] = [
-	// Migrations will be added here as the schema evolves
-];
+export const recordingMigrations: SchemaMigrationMap<MeetRecordingDocument> = new Map([
+	// [recordingMigrationV1ToV2Name, recordingMigrationV1ToV2Transform]
+]);
