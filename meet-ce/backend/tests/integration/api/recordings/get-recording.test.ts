@@ -73,14 +73,6 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('GET Recording - Fields filtering', () => {
-		let recordingId: string;
-
-		beforeAll(async () => {
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
-			context = await setupMultiRecordingsTestContext(1, 1, 1);
-			({ recordingId = '' } = context.getRoomByIndex(0)!);
-		});
-
 		it('should filter fields using fields query param', async () => {
 			const response = await getRecording(recordingId, { fields: 'recordingId,roomId,status' });
 
