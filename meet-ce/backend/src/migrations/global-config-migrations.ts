@@ -7,8 +7,7 @@ import { MeetGlobalConfigDocument } from '../models/mongoose-schemas/global-conf
  *
  * Example:
  *
- * const globalConfigMigrationV1ToV2Name = generateSchemaMigrationName('MeetGlobalConfig', 1, 2);
- *
+ * const globalConfigMigrationV1ToV2Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 1, 2);
  * const globalConfigMigrationV1ToV2Transform: SchemaTransform<MeetGlobalConfigDocument> = () => ({
  * 	$set: {
  * 		newField: 'default-value'

@@ -7,8 +7,7 @@ import { MeetUserDocument } from '../models/mongoose-schemas/user.schema.js';
  *
  * Example:
  *
- * const userMigrationV1ToV2Name = generateSchemaMigrationName('MeetUser', 1, 2);
- *
+ * const userMigrationV1ToV2Name = generateSchemaMigrationName(meetUserCollectionName, 1, 2);
  * const userMigrationV1ToV2Transform: SchemaTransform<MeetUserDocument> = () => ({
  * 	$set: {
  * 		email: undefined

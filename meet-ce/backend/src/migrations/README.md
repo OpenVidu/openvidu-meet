@@ -103,10 +103,9 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>({
 
 ```typescript
 import { SchemaTransform, generateSchemaMigrationName } from '../models/migration.model.js';
-import { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
 
-const roomMigrationV1ToV2Name = generateSchemaMigrationName('MeetRoom', 1, 2);
-
+const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = () => ({
 	$set: {
 		maxParticipants: 100
