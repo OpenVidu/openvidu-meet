@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { MeetRecordingAccess } from '../../../../typings/src/room-config';
 import { MEET_TESTAPP_URL } from '../config';
 import {
 	closeMoreOptionsMenu,
@@ -61,7 +60,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
@@ -95,7 +94,7 @@ test.describe('E2EE UI Tests', () => {
 			// Disable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: true, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false }
 			});
@@ -142,7 +141,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
@@ -238,7 +237,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
@@ -354,7 +353,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
@@ -575,7 +574,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
@@ -828,7 +827,7 @@ test.describe('E2EE UI Tests', () => {
 			// Enable E2EE (which should auto-disable recording)
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
-				recording: { enabled: false, allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER },
+				recording: { enabled: false },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});

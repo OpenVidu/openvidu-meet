@@ -1,7 +1,6 @@
 import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 import * as fs from 'fs';
 import { PNG } from 'pngjs';
-import { MeetRecordingAccess, MeetRoomConfig } from '../../../../typings/src/room-config';
 import { MEET_API_KEY, MEET_API_URL, MEET_TESTAPP_URL } from '../config';
 
 /**
@@ -158,8 +157,7 @@ export async function interactWithElementInIframe(
 // Helper function to get default room config
 const getDefaultRoomConfig = (): MeetRoomConfig => ({
 	recording: {
-		enabled: true,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		enabled: true
 	},
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
@@ -773,7 +771,10 @@ export async function getRoomFromWebhookStorage(page: Page, roomId: string, even
 			const events = map[roomId] || [];
 
 			console.log(`Looking for event '${eventName}' in room '${roomId}'`);
-			console.log('Available events:', events.map((e: any) => e.event));
+			console.log(
+				'Available events:',
+				events.map((e: any) => e.event)
+			);
 
 			// Find the specific event and return the complete event object
 			const event = events.find((e: any) => e.event === eventName);
