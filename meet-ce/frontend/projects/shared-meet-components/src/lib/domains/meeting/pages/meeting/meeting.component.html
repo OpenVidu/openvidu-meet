@@ -34,7 +34,9 @@
 		[toolbarParticipantsPanelButton]="features().showParticipantList"
 		[toolbarSettingsButton]="features().showSettings"
 		[toolbarFullscreenButton]="features().showFullscreen"
-		[toolbarActivitiesPanelButton]="features().showStartStopRecording"
+		[toolbarActivitiesPanelButton]="
+			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
+		"
 		[activitiesPanelRecordingActivity]="
 			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
 		"
