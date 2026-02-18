@@ -16,25 +16,26 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	showMicrophone: true,
 	showScreenShare: true,
 	showStartStopRecording: true,
-	showChat: true,
-	showBackgrounds: true,
-	showParticipantList: true,
-	showSettings: true,
+	showViewRecordings: true,
 	showFullscreen: true,
-	showThemeSelector: true,
-	showLayoutSelector: true,
+	showBackgrounds: true,
 	showCaptionsControls: true,
 	showCaptionsControlsDisabled: false,
-	showShareAccessLinks: true,
-	showMakeModerator: false,
+	showChat: true,
+	showParticipantList: true,
+	showSettings: true,
+	showThemeSelector: true,
+	showLayoutSelector: true,
+	showShareAccessLinks: false,
 	showEndMeeting: false,
+	showMakeModerator: false,
 	showKickParticipants: false,
-	showViewRecordings: true,
 	showJoinMeeting: true
 };
 
 /**
- * Service responsible for calculating and providing the current set of enabled features in the meeting based on room configuration, participant role, permissions, and appearance settings.
+ * Service responsible for calculating and providing the current set of enabled features in the meeting
+ * based on room configuration, user permissions, and global settings.
  * This service acts as a single source of truth for feature availability across the app.
  */
 @Injectable({

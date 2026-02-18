@@ -6,7 +6,7 @@ import {
 } from '@openvidu-meet/typings';
 import { CaptionsStatus, RoomFeatures } from '../models/features.model';
 
-// New helper class for feature calculation logic
+// Helper class for feature calculation logic
 export class FeatureCalculator {
 	static applyRoomConfig(features: RoomFeatures, roomConfig: MeetRoomConfig, captionsGlobalEnabled: boolean): void {
 		features.showStartStopRecording = roomConfig.recording.enabled;

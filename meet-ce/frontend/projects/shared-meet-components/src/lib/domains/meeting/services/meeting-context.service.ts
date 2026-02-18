@@ -65,14 +65,10 @@ export class MeetingContextService {
 		return local ? [local, ...remotes] : remotes;
 	});
 
-	/**
-	 * Computed signal for meeting features
-	 */
-	readonly meetingUI = computed(() => this.roomFeatureService.features());
-	/**
-	 * Computed signal for room appearance configuration from global settings
-	 */
-	readonly meetingAppearance = computed(() => this.globalConfigService.roomAppearanceConfig());
+	/** Readonly signal for meeting features */
+	readonly meetingUI = this.roomFeatureService.features;
+	/** Readonly signal for room appearance configuration from global settings */
+	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 
 	/** Readonly signal for whether the device is mobile */
 	readonly isMobile = this.viewportService.isMobile;

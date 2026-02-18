@@ -20,12 +20,10 @@ export interface RoomFeatures {
 	 * Indicates if camera control is shown in the UI
 	 */
 	showCamera: boolean;
-
 	/**
 	 * Indicates if microphone control is shown in the UI
 	 */
 	showMicrophone: boolean;
-
 	/**
 	 * Indicates if screen share control is shown in the UI
 	 */
@@ -35,41 +33,19 @@ export interface RoomFeatures {
 	 * Indicates if the recording controls is shown in the UI
 	 */
 	showStartStopRecording: boolean;
-
 	/**
-	 * Indicates if the chat panel is shown in the UI
+	 * Indicates if the view recordings controls is shown in the UI
 	 */
-	showChat: boolean;
-
-	/**
-	 * Indicates if the virtual backgrounds feature is shown in the UI
-	 */
-	showBackgrounds: boolean;
-	/**
-	 * Indicates if the participant list is shown in the UI
-	 */
-	showParticipantList: boolean;
-
-	/**
-	 * Indicates if the settings panel is shown in the UI
-	 */
-	showSettings: boolean;
+	showViewRecordings: boolean;
 
 	/**
 	 * Indicates if the fullscreen control is shown in the UI
 	 */
 	showFullscreen: boolean;
-
 	/**
-	 * Indicates if the theme selector is shown in the UI
+	 * Indicates if the virtual backgrounds feature is shown in the UI
 	 */
-	showThemeSelector: boolean;
-	/**
-	 * Indicates if the flag for allowing smart layout is enabled.
-	 *
-	 * It's changed manually (not based on permissions or room config).
-	 */
-	showLayoutSelector: boolean;
+	showBackgrounds: boolean;
 	/**
 	 * Indicates if the captions controls (like toggle captions button) is shown in the UI
 	 */
@@ -80,25 +56,46 @@ export interface RoomFeatures {
 	showCaptionsControlsDisabled: boolean;
 
 	/**
+	 * Indicates if the chat panel is shown in the UI
+	 */
+	showChat: boolean;
+	/**
+	 * Indicates if the participant list is shown in the UI
+	 */
+	showParticipantList: boolean;
+
+	/**
+	 * Indicates if the settings panel is shown in the UI
+	 */
+	showSettings: boolean;
+	/**
+	 * Indicates if the theme selector is shown in the UI
+	 */
+	showThemeSelector: boolean;
+	/**
+	 * Indicates if the flag for allowing smart layout is enabled.
+	 *
+	 * It's changed manually (not based on permissions or room config).
+	 */
+	showLayoutSelector: boolean;
+
+	/**
 	 * Indicates if the share access links controls is shown in the UI
 	 */
 	showShareAccessLinks: boolean;
-	/**
-	 * Indicates if the make moderator controls is shown in the UI
-	 */
-	showMakeModerator: boolean;
 	/**
 	 * Indicates if the end meeting controls is shown in the UI
 	 */
 	showEndMeeting: boolean;
 	/**
+	 * Indicates if the make moderator controls is shown in the UI
+	 */
+	showMakeModerator: boolean;
+	/**
 	 * Indicates if the kick participants controls is shown in the UI
 	 */
 	showKickParticipants: boolean;
-	/**
-	 * Indicates if the view recordings controls is shown in the UI
-	 */
-	showViewRecordings: boolean;
+
 	/**
 	 * Indicates if the join meeting controls is shown in the UI
 	 */

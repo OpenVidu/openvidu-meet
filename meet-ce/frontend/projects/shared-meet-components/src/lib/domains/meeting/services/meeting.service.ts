@@ -10,11 +10,11 @@ import { NotificationService } from '../../../shared/services/notification.servi
 })
 export class MeetingService {
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
-	protected loggerService: LoggerService = inject(LoggerService);
-	protected notificationService = inject(NotificationService);
-	protected httpService: HttpService = inject(HttpService);
-	protected clipboard = inject(Clipboard);
 
+	protected httpService = inject(HttpService);
+	protected notificationService = inject(NotificationService);
+	protected clipboard = inject(Clipboard);
+	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingService');
 
 	/**
