@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,7 +34,7 @@ export class MeetingSettingsExtensionsComponent {
 	private readonly layoutService = inject(MeetingLayoutService);
 
 	/** Whether the layout switching feature is allowed */
-	isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
+	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 	/** Expose LayoutMode enum to template */
 	LayoutMode = MeetLayoutMode;
 	/** Current layout mode */

@@ -14,7 +14,9 @@ export class GlobalConfigService {
 
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - GlobalConfigService');
 
-	private readonly _roomAppearanceConfig = signal<MeetAppearanceConfig | undefined>(undefined);
+	private readonly _roomAppearanceConfig = signal<MeetAppearanceConfig>({
+		themes: []
+	});
 	private readonly _captionsGlobalEnabled = signal<boolean>(false);
 
 	readonly roomAppearanceConfig = this._roomAppearanceConfig.asReadonly();

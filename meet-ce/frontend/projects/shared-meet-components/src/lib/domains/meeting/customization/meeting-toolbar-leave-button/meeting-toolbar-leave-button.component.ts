@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,7 +25,7 @@ export class MeetingToolbarLeaveButtonComponent {
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarLeaveButtons');
 
-	showLeaveMenu = this.meetingContextService.canModerateRoom;
+	showLeaveMenu = computed(() => this.meetingContextService.meetingUI().showEndMeeting);
 	isMobile = this.meetingContextService.isMobile;
 
 	leaveMenuTooltip = 'Leave options';

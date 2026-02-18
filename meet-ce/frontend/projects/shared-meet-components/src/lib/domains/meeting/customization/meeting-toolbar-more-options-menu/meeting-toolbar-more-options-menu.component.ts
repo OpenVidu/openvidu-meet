@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -23,7 +23,7 @@ export class MeetingToolbarMoreOptionsMenuComponent {
 	private panelService = inject(PanelService);
 
 	isMobileView = this.viewportService.isMobile;
-	isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
+	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 
 	/**
 	 * Opens the settings panel to allow users to change grid layout

@@ -27,16 +27,14 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 
 	/** Whether to show the copy link button (only for moderators) */
-	showCopyLinkButton = this.meetingContextService.canModerateRoom;
+	showCopyLinkButton = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
 	copyLinkTooltip = 'Copy the meeting link';
 	copyLinkText = 'Copy meeting link';
 
-	/** Captions status based on room and global configuration */
-	captionsStatus = this.meetingContextService.getCaptionsStatus;
 	/** Whether to show the captions button (visible when not HIDDEN) */
-	showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
+	showCaptionsButton = computed(() => this.meetingContextService.meetingUI().showCaptionsControls);
 	/** Whether captions button is disabled (true when DISABLED_WITH_WARNING) */
-	isCaptionsButtonDisabled = computed(() => this.captionsStatus() === 'DISABLED_WITH_WARNING');
+	isCaptionsButtonDisabled = computed(() => this.meetingContextService.meetingUI().showCaptionsControlsDisabled);
 	/** Whether captions are currently enabled by the user */
 	areCaptionsEnabledByUser = this.captionService.areCaptionsEnabledByUser;
 

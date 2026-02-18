@@ -41,7 +41,7 @@ export class MeetingCustomLayoutComponent {
 	meetingUrl = this.meetingContextService.meetingUrl;
 	shouldShowLinkOverlay = computed(() => {
 		const hasNoRemotes = this.remoteParticipants().length === 0;
-		return this.meetingContextService.canModerateRoom() && hasNoRemotes;
+		return this.meetingContextService.meetingUI().showShareAccessLinks && hasNoRemotes;
 	});
 	linkOverlayConfig = {
 		title: 'Start collaborating',
@@ -51,8 +51,8 @@ export class MeetingCustomLayoutComponent {
 	};
 
 	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
-	isLayoutSwitchingAllowed = this.meetingContextService.allowLayoutSwitching;
-	isSmartMosaicActive = computed(() => this.isLayoutSwitchingAllowed() && this.layoutService.isSmartMosaicEnabled());
+	private showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
+	isSmartMosaicActive = computed(() => this.showLayoutSelector() && this.layoutService.isSmartMosaicEnabled());
 	captions = this.captionsService.captions;
 
 	remoteParticipants = this.meetingContextService.remoteParticipants;
@@ -188,7 +188,7 @@ export class MeetingCustomLayoutComponent {
 	private setupSpeakerTrackingEffect(): void {
 		effect(() => {
 			const room = this.lkRoom();
-			if (this.isLayoutSwitchingAllowed() && room) {
+			if (this.showLayoutSelector() && room) {
 				this.layoutService.initializeSpeakerTracking(room);
 			}
 		});

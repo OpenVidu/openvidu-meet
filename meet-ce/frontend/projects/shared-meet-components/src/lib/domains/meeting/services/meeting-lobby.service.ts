@@ -83,7 +83,7 @@ export class MeetingLobbyService {
 	 * The share link is shown only if the room is not closed and the user has permissions to moderate the room
 	 */
 	readonly showShareLink = computed(() => {
-		return !this.roomClosed() && this.meetingContextService.canModerateRoom();
+		return !this.roomClosed() && this.meetingContextService.meetingUI().showShareAccessLinks;
 	});
 	/** Computed signal for meeting URL derived from MeetingContextService */
 	readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());

@@ -1,41 +1,36 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { MeetAppearanceConfig, MeetRoomCaptionsConfig, MeetRoomConfig, MeetRoomMemberPermissions, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { RoomMemberContextService } from '../../domains/room-members/services/room-member-context.service';
-import { CaptionsStatus, RoomFeatures } from '../models/app.model';
+import { RoomFeatures } from '../models/app.model';
+import { FeatureCalculator } from '../utils/features.utils';
 import { GlobalConfigService } from './global-config.service';
 
 /**
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
  */
 const DEFAULT_FEATURES: RoomFeatures = {
-	media: {
-		videoEnabled: true,
-		audioEnabled: true
-	},
-	ui: {
-		showCamera: true,
-		showMicrophone: true,
-		showScreenShare: true,
-		showRecordingPanel: true,
-		showChat: true,
-		showBackgrounds: true,
-		showParticipantList: true,
-		showSettings: true,
-		showFullscreen: true,
-		showThemeSelector: true,
-		showLayoutSelector: true,
-		captionsStatus: 'ENABLED'
-	},
-	permissions: {
-		canModerateRoom: false,
-		canRecordRoom: false,
-		canRetrieveRecordings: false
-	},
-	appearance: {
-		hasCustomTheme: false,
-		themeConfig: undefined
-	}
+	videoEnabled: true,
+	audioEnabled: true,
+	showCamera: true,
+	showMicrophone: true,
+	showScreenShare: true,
+	showStartStopRecording: true,
+	showChat: true,
+	showBackgrounds: true,
+	showParticipantList: true,
+	showSettings: true,
+	showFullscreen: true,
+	showThemeSelector: true,
+	showLayoutSelector: true,
+	showCaptionsControls: true,
+	showCaptionsControlsDisabled: false,
+	showShareAccessLinks: true,
+	showMakeModerator: false,
+	showEndMeeting: false,
+	showKickParticipants: false,
+	showViewRecordings: true,
+	showJoinMeeting: true
 };
 
 /**
@@ -52,13 +47,13 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
+	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
 	public readonly features = computed<RoomFeatures>(() =>
 		this.calculateFeatures(
 			this.roomConfig(),
-			this.roomMemberContextService.role(),
-			this.roomMemberContextService.permissions(),
+			this.permissions(),
 			this.globalConfigService.roomAppearanceConfig(),
 			this.globalConfigService.captionsGlobalEnabled()
 		)
@@ -96,85 +91,26 @@ export class RoomFeatureService {
 	 */
 	protected calculateFeatures(
 		roomConfig?: MeetRoomConfig,
-		role?: MeetRoomMemberRole,
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
 		captionsGlobalEnabled: boolean = false
 	): RoomFeatures {
-		// Start with default configuration (deep copy per group)
-		const features: RoomFeatures = {
-			media: { ...DEFAULT_FEATURES.media },
-			ui: { ...DEFAULT_FEATURES.ui },
-			permissions: { ...DEFAULT_FEATURES.permissions },
-			appearance: { ...DEFAULT_FEATURES.appearance }
-		};
+		const features = structuredClone(DEFAULT_FEATURES);
 
-		// Apply room configurations
 		if (roomConfig) {
-			features.ui.showRecordingPanel = roomConfig.recording.enabled;
-			features.ui.showChat = roomConfig.chat.enabled;
-			features.ui.showBackgrounds = roomConfig.virtualBackground.enabled;
-			features.ui.captionsStatus = this.computeCaptionsStatus(roomConfig.captions, captionsGlobalEnabled);
+			FeatureCalculator.applyRoomConfig(features, roomConfig, captionsGlobalEnabled);
 		}
 
-		// Apply room member permissions (these can restrict enabled features)
 		if (permissions) {
-			// Only restrict if the feature is already enabled
-			if (features.ui.showRecordingPanel) {
-				features.permissions.canRecordRoom = permissions.canRecord;
-				features.permissions.canRetrieveRecordings = permissions.canRetrieveRecordings;
-			}
-			if (features.ui.showChat) {
-				features.ui.showChat = permissions.canReadChat;
-				// TODO: Handle canWriteChat permissions
-			}
-			if (features.ui.showBackgrounds) {
-				features.ui.showBackgrounds = permissions.canChangeVirtualBackground;
-			}
-			// Media features
-			features.media.videoEnabled = permissions.canPublishVideo;
-			features.media.audioEnabled = permissions.canPublishAudio;
-			features.ui.showScreenShare = permissions.canShareScreen;
-			features.ui.showCamera = features.media.videoEnabled;
-			features.ui.showMicrophone = features.media.audioEnabled;
+			FeatureCalculator.applyPermissions(features, permissions);
 		}
 
-		// Apply role-based configurations
-		if (role) {
-			features.permissions.canModerateRoom = role === MeetRoomMemberRole.MODERATOR;
-		}
-
-		// Apply appearance configuration
-		if (appearanceConfig && appearanceConfig.themes.length > 0) {
-			const theme = appearanceConfig.themes[0];
-			const hasEnabledTheme = theme.enabled;
-
-			features.appearance.hasCustomTheme = hasEnabledTheme;
-			features.ui.showThemeSelector = !hasEnabledTheme;
-
-			if (hasEnabledTheme) {
-				features.appearance.themeConfig = theme;
-			}
+		if (appearanceConfig) {
+			FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);
 		}
 
 		this.log.d('Calculated features', features);
 		return features;
-	}
-
-	/**
-	 * Computes the captions status based on room and global configuration
-	 * HIDDEN: room config disabled
-	 * ENABLED: room config enabled AND global config enabled
-	 * DISABLED_WITH_WARNING: room config enabled BUT global config disabled
-	 */
-	protected computeCaptionsStatus(
-		roomCaptionsConfig: MeetRoomCaptionsConfig,
-		globalEnabled: boolean
-	): CaptionsStatus {
-		if (!roomCaptionsConfig.enabled) {
-			return 'HIDDEN';
-		}
-		return globalEnabled ? 'ENABLED' : 'DISABLED_WITH_WARNING';
 	}
 
 	/**

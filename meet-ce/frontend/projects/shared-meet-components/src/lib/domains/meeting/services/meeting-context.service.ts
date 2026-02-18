@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { CustomParticipantModel } from '../models';
@@ -16,6 +17,7 @@ import { CustomParticipantModel } from '../models';
 export class MeetingContextService {
 	private readonly ovParticipantService = inject(ParticipantService);
 	private readonly roomFeatureService = inject(RoomFeatureService);
+	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
 
@@ -63,12 +65,14 @@ export class MeetingContextService {
 		return local ? [local, ...remotes] : remotes;
 	});
 
-	/** Computed signal for whether the current user can moderate the room */
-	readonly canModerateRoom = computed(() => this.roomFeatureService.features().permissions.canModerateRoom);
-	/** Computed signal for whether layout switching is allowed */
-	readonly allowLayoutSwitching = computed(() => this.roomFeatureService.features().ui.showLayoutSelector);
-	/** Computed signal for captions status based on room and global configuration */
-	readonly getCaptionsStatus = computed(() => this.roomFeatureService.features().ui.captionsStatus);
+	/**
+	 * Computed signal for meeting features
+	 */
+	readonly meetingUI = computed(() => this.roomFeatureService.features());
+	/**
+	 * Computed signal for room appearance configuration from global settings
+	 */
+	readonly meetingAppearance = computed(() => this.globalConfigService.roomAppearanceConfig());
 
 	/** Readonly signal for whether the device is mobile */
 	readonly isMobile = this.viewportService.isMobile;

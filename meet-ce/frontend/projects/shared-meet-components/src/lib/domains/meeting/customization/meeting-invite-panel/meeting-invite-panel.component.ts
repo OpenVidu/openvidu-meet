@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { LoggerService } from 'openvidu-components-angular';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -21,7 +21,7 @@ export class MeetingInvitePanelComponent {
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingInvitePanel');
 
-	showShareLink = this.meetingContextService.canModerateRoom;
+	showShareLink = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
 	meetingUrl = this.meetingContextService.meetingUrl;
 
 	onCopyClicked(): void {

@@ -1,5 +1,3 @@
-import { MeetRoomTheme } from '@openvidu-meet/typings';
-
 export interface AppData {
 	mode: ApplicationMode;
 	edition: Edition;
@@ -22,14 +20,18 @@ export enum Edition {
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
- * Sub-interfaces to group related feature flags
+ * Interface that defines all available features in the application
  */
-export interface MediaFeatures {
+export interface RoomFeatures {
+	/**
+	 * Indicates if video track is enabled in the room (mutued or unmuted)
+	 */
 	videoEnabled: boolean;
+	/**
+	 * Indicates if audio track is enabled in the room (muted or unmuted)
+	 */
 	audioEnabled: boolean;
-}
 
-export interface UIControls {
 	/**
 	 * Indicates if camera control is shown in the UI
 	 */
@@ -46,9 +48,9 @@ export interface UIControls {
 	showScreenShare: boolean;
 
 	/**
-	 * Indicates if the recording panel is shown in the UI
+	 * Indicates if the recording controls is shown in the UI
 	 */
-	showRecordingPanel: boolean;
+	showStartStopRecording: boolean;
 
 	/**
 	 * Indicates if the chat panel is shown in the UI
@@ -79,48 +81,47 @@ export interface UIControls {
 	 */
 	showThemeSelector: boolean;
 	/**
-	 * Indicates if the flag for allowing smart layout is enabled. It's changed manually.
+	 * Indicates if the flag for allowing smart layout is enabled.
+	 *
+	 * It's changed manually (not based on permissions or room config).
 	 */
 	showLayoutSelector: boolean;
 	/**
 	 * Status of captions feature based on room and global configuration
 	 */
-	captionsStatus: CaptionsStatus;
-}
+	// captionsStatus: CaptionsStatus;
 
-export interface PermissionsFeatures {
 	/**
-	 * Indicates if the user has permission to moderate the room
+	 * Indicates if the captions controls (like toggle captions button) is shown in the UI
 	 */
-	canModerateRoom: boolean;
+	showCaptionsControls: boolean;
 	/**
-	 * Indicates if the user has permission to record the room
+	 * Indicates if the captions controls are shown but disabled in the UI, with a warning that captions are globally disabled
 	 */
-	canRecordRoom: boolean;
+	showCaptionsControlsDisabled: boolean;
+
 	/**
-	 * Indicates if the user has permission to retrieve recordings of the room
+	 * Indicates if the share access links controls is shown in the UI
 	 */
-	canRetrieveRecordings: boolean;
-}
-
-export interface AppearanceFeatures {
-	hasCustomTheme: boolean;
-	themeConfig?: MeetRoomTheme;
-}
-
-/**
- * Interface that defines all available features in the application
- */
-export interface RoomFeatures {
-	// Media capabilities
-	media: MediaFeatures;
-
-	// UI Controls
-	ui: UIControls;
-
-	// Permissions
-	permissions: PermissionsFeatures;
-
-	// Appearance
-	appearance: AppearanceFeatures;
+	showShareAccessLinks: boolean;
+	/**
+	 * Indicates if the make moderator controls is shown in the UI
+	 */
+	showMakeModerator: boolean;
+	/**
+	 * Indicates if the end meeting controls is shown in the UI
+	 */
+	showEndMeeting: boolean;
+	/**
+	 * Indicates if the kick participants controls is shown in the UI
+	 */
+	showKickParticipants: boolean;
+	/**
+	 * Indicates if the view recordings controls is shown in the UI
+	 */
+	showViewRecordings: boolean;
+	/**
+	 * Indicates if the join meeting controls is shown in the UI
+	 */
+	showJoinMeeting: boolean;
 }

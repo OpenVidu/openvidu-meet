@@ -6,7 +6,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { RoomFeatureService } from '../../../../shared/services/room-feature.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
@@ -36,7 +35,6 @@ export class MeetingComponent implements OnInit {
 	protected lobbyService = inject(MeetingLobbyService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
-	protected roomFeatureService = inject(RoomFeatureService);
 	protected ovThemeService = inject(OpenViduThemeService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
@@ -63,8 +61,7 @@ export class MeetingComponent implements OnInit {
 	roomMemberToken = this.lobbyService.roomMemberToken;
 	e2eeKey = this.lobbyService.e2eeKeyValue;
 	localParticipant = this.meetingContextService.localParticipant;
-
-	features = this.roomFeatureService.features;
+	features = this.meetingContextService.meetingUI;
 	hasRecordings = this.meetingContextService.hasRecordings;
 
 	protected destroy$ = new Subject<void>();
@@ -72,9 +69,10 @@ export class MeetingComponent implements OnInit {
 	constructor() {
 		// Change theme variables when custom theme is enabled
 		effect(() => {
-			const features = this.features();
-			if (features.appearance.hasCustomTheme) {
-				const theme = features.appearance.themeConfig;
+			const { themes } = this.meetingContextService.meetingAppearance();
+			const hasTheme = themes.length > 0 && themes[0].enabled;
+			if (hasTheme) {
+				const theme = themes[0];
 				this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
 				this.ovThemeService.updateThemeVariables({
 					'--ov-primary-action-color': theme?.primaryColor,
