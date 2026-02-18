@@ -416,26 +416,34 @@
 										matTooltip="Play Recording"
 										class="action-button play-button"
 										(click)="playRecording(recording)"
-									[disabled]="loading()"
-									id="play-recording-btn-{{ recording.recordingId }}"
-								>
-									<mat-icon>play_arrow</mat-icon>
-								</button>
-							}
+										[disabled]="loading()"
+										id="play-recording-btn-{{ recording.recordingId }}"
+									>
+										<mat-icon>play_arrow</mat-icon>
+									</button>
+								}
 
-							<!-- Download Button -->
-							@if (canDownloadRecording(recording)) {
-								<button
-									mat-icon-button
-									matTooltip="Download Recording"
-									class="action-button download-button"
-									(click)="downloadRecording(recording)"
-									[disabled]="loading()"
+								<!-- Download Button -->
+								@if (canDownloadRecording(recording)) {
+									<button
 										mat-icon-button
-										matTooltip="Delete Recording"
-										class="action-button delete-button"
+										matTooltip="Download Recording"
+										class="action-button download-button"
+										(click)="downloadRecording(recording)"
+										[disabled]="loading()"
+										id="download-recording-btn-{{ recording.recordingId }}"
+									>
+										<mat-icon>download</mat-icon>
+									</button>
+								}
+
+								@if (isRecordingFailed(recording)) {
+									<button
+										mat-icon-button
 										(click)="deleteRecording(recording)"
-								[disabled]="loading()"
+										[disabled]="loading()"
+										class="action-button delete-button"
+										matTooltip="Delete Recording"
 										id="delete-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>delete</mat-icon>
@@ -447,7 +455,7 @@
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
 										matTooltip="More Actions"
-									[disabled]="loading()"
+										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>more_vert</mat-icon>
