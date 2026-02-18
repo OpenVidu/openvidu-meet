@@ -6,7 +6,10 @@ import {
 } from '@openvidu-meet/typings';
 import { CaptionsStatus, RoomFeatures } from '../models/features.model';
 
-// Helper class for feature calculation logic
+/**
+ * Utility class responsible for calculating the enabled features in the meeting based on room configuration, participant permissions, and global appearance settings.
+ * This class provides static methods to apply different layers of configuration to derive the final set of features that should be available in the UI.
+ */
 export class FeatureCalculator {
 	static applyRoomConfig(features: RoomFeatures, roomConfig: MeetRoomConfig, captionsGlobalEnabled: boolean): void {
 		features.showStartStopRecording = roomConfig.recording.enabled;
