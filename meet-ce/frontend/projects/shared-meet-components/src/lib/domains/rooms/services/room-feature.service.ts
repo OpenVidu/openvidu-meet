@@ -1,10 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
-import { RoomMemberContextService } from '../../domains/room-members/services/room-member-context.service';
-import { RoomFeatures } from '../models/app.model';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
-import { GlobalConfigService } from './global-config.service';
 
 /**
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations

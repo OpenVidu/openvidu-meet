@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { inject, Injectable } from '@angular/core';
-import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -12,7 +12,6 @@ export class MeetingService {
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected notificationService = inject(NotificationService);
-
 	protected httpService: HttpService = inject(HttpService);
 	protected clipboard = inject(Clipboard);
 

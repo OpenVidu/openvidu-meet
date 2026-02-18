@@ -4,7 +4,7 @@ import {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
-import { CaptionsStatus, RoomFeatures } from '../models/app.model';
+import { CaptionsStatus, RoomFeatures } from '../models/features.model';
 
 // New helper class for feature calculation logic
 export class FeatureCalculator {

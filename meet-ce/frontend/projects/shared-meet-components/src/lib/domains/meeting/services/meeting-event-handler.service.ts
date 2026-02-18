@@ -20,12 +20,12 @@ import {
 } from 'openvidu-components-angular';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
-import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 

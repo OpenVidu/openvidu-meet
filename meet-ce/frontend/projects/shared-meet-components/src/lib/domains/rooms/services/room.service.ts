@@ -13,8 +13,8 @@ import {
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
-import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { MeetRoomClientResponseOptions } from '../models/room-request';
+import { RoomFeatureService } from './room-feature.service';
 
 @Injectable({
 	providedIn: 'root'

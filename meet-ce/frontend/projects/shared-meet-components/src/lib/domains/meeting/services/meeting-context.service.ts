@@ -1,9 +1,9 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
-import { RoomFeatureService } from '../../../shared/services/room-feature.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
 
 /**
