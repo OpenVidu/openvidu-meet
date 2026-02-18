@@ -1,0 +1,258 @@
+<!-- Loading State -->
+@if (isLoading()) {
+	<div class="ov-page-loading">
+		<div class="loading-content">
+			<div class="loading-header">
+				<div class="loading-title">
+					<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
+					<h1>Loading Recording Details</h1>
+				</div>
+				<p class="loading-subtitle">Please wait while we fetch the recording information...</p>
+			</div>
+			<div class="loading-spinner-container">
+				<mat-spinner diameter="48"></mat-spinner>
+			</div>
+		</div>
+	</div>
+}
+
+<!-- Error State -->
+@if (!isLoading() && hasError()) {
+	<div class="ov-page-container">
+		<div class="error-container fade-in">
+			<div class="error-content">
+				<mat-icon class="error-icon">error_outline</mat-icon>
+				<h2 class="error-title">Recording Not Found</h2>
+				<p class="error-message">The recording you're looking for doesn't exist or is no longer available.</p>
+				<div class="error-actions">
+					<button mat-flat-button color="primary" (click)="navigationService.navigateTo('/recordings')">
+						<mat-icon>arrow_back</mat-icon>
+						<span>Back to Recordings</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+<!-- Recording Detail Content -->
+@if (!isLoading() && !hasError() && recording()) {
+	<div class="ov-page-container ov-mb-xxl">
+		<!-- ── Header ───────────────────────────────────────────────── -->
+		<div class="page-header">
+			<div class="header-top">
+				<ov-breadcrumb [items]="breadcrumbItems()"></ov-breadcrumb>
+			</div>
+
+			<div class="header-content">
+				<div class="title-section">
+					<div class="title">
+						<mat-icon class="ov-recording-icon">video_library</mat-icon>
+						<h1>{{ RecordingUiUtils.getDisplayName(recording()!) }}</h1>
+					</div>
+					<div
+						class="status-badge"
+						[style.color]="RecordingUiUtils.getStatusColor(recording()?.status)"
+						[matTooltip]="RecordingUiUtils.getStatusTooltip(recording()?.status)"
+					>
+						<mat-icon class="status-icon">
+							{{ RecordingUiUtils.getStatusIcon(recording()?.status) }}
+						</mat-icon>
+						<span class="status-text">{{ RecordingUiUtils.getStatusLabel(recording()?.status) }}</span>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="actions">
+					@if (isComplete) {
+						<button
+							mat-flat-button
+							color="primary"
+							class="action-btn"
+							(click)="downloadRecording()"
+							matTooltip="Download recording"
+						>
+							<mat-icon>download</mat-icon>
+							<span>Download</span>
+						</button>
+
+						<button
+							mat-stroked-button
+							class="action-btn"
+							(click)="shareRecording()"
+							matTooltip="Share recording link"
+						>
+							<mat-icon>share</mat-icon>
+							<span>Share</span>
+						</button>
+					}
+
+					<button
+						mat-icon-button
+						class="icon-action-btn delete-btn"
+						(click)="deleteRecording()"
+						matTooltip="Delete recording"
+					>
+						<mat-icon>delete</mat-icon>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ── Key Stats Row ─────────────────────────────────────────── -->
+		<mat-card class="stats-card">
+			<mat-card-content>
+				<div class="stats-grid">
+					<!-- Room -->
+					<div class="stat-item">
+						<mat-icon class="stat-icon">meeting_room</mat-icon>
+						<div class="stat-body">
+							<p class="stat-label">Room</p>
+							<a
+								class="stat-value room-link"
+								[routerLink]="['/rooms', recording()?.roomId, 'detail']"
+								matTooltip="Go to room detail"
+							>
+								{{ recording()?.roomName }}
+								<mat-icon class="nav-icon">open_in_new</mat-icon>
+							</a>
+						</div>
+					</div>
+
+					<!-- Start Date -->
+					<div class="stat-item">
+						<mat-icon class="stat-icon">schedule</mat-icon>
+						<div class="stat-body">
+							<p class="stat-label">Started</p>
+							<p class="stat-value">
+								{{
+									recording()?.startDate ? (recording()!.startDate! | date: 'MMM d, y – h:mm a') : '—'
+								}}
+							</p>
+						</div>
+					</div>
+
+					<!-- Duration -->
+					<div class="stat-item">
+						<mat-icon class="stat-icon">timer</mat-icon>
+						<div class="stat-body">
+							<p class="stat-label">Duration</p>
+							<p class="stat-value">{{ RecordingUiUtils.formatDuration(recording()?.duration) }}</p>
+						</div>
+					</div>
+
+					<!-- File Size -->
+					<div class="stat-item">
+						<mat-icon class="stat-icon">storage</mat-icon>
+						<div class="stat-body">
+							<p class="stat-label">File Size</p>
+							<p class="stat-value">{{ RecordingUiUtils.formatFileSize(recording()?.size) }}</p>
+						</div>
+					</div>
+				</div>
+			</mat-card-content>
+		</mat-card>
+
+		<!-- ── Two-column body ───────────────────────────────────────── -->
+		<div class="body-columns">
+			<!-- LEFT — secondary info ─────────────────────────────── -->
+			<mat-card class="info-card">
+				<mat-card-header>
+					<mat-card-title>
+						<mat-icon class="card-title-icon">info</mat-icon>
+						Recording Info
+					</mat-card-title>
+				</mat-card-header>
+				<mat-card-content>
+					<div class="info-list">
+						<!-- Recording ID -->
+						<div class="info-row">
+							<span class="info-label">Recording ID</span>
+							<span class="info-value-wrap">
+								<span class="info-value monospace">{{ recording()?.recordingId }}</span>
+								<button
+									mat-icon-button
+									class="copy-btn"
+									(click)="copyRecordingId()"
+									matTooltip="Copy Recording ID"
+								>
+									<mat-icon>content_copy</mat-icon>
+								</button>
+							</span>
+						</div>
+
+						<!-- End Date -->
+						<div class="info-row">
+							<span class="info-label">Ended</span>
+							<span class="info-value">
+								{{ recording()?.endDate ? (recording()!.endDate! | date: 'MMM d, y – h:mm a') : '—' }}
+							</span>
+						</div>
+
+						<!-- Layout -->
+						@if (recording()?.layout) {
+							<div class="info-row">
+								<span class="info-label">Layout</span>
+								<span class="info-value">{{ recording()?.layout }}</span>
+							</div>
+						}
+
+						<!-- Filename -->
+						@if (recording()?.filename) {
+							<div class="info-row">
+								<span class="info-label">Filename</span>
+								<span class="info-value monospace">{{ recording()?.filename }}</span>
+							</div>
+						}
+					</div>
+
+					<!-- Error / details block -->
+					@if (recording()?.error || recording()?.details) {
+						<mat-divider class="divider"></mat-divider>
+						<div class="error-block">
+							@if (recording()?.error) {
+								<div class="error-row">
+									<mat-icon class="error-icon-sm">error_outline</mat-icon>
+									<div>
+										<p class="info-label">Error</p>
+										<p class="info-value error-text">{{ recording()?.error }}</p>
+									</div>
+								</div>
+							}
+							@if (recording()?.details) {
+								<div class="error-row">
+									<mat-icon class="error-icon-sm">info_outline</mat-icon>
+									<div>
+										<p class="info-label">Details</p>
+										<p class="info-value">{{ recording()?.details }}</p>
+									</div>
+								</div>
+							}
+						</div>
+					}
+				</mat-card-content>
+			</mat-card>
+
+			<!-- RIGHT — video player ────────────────────────────────── -->
+			<mat-card class="player-card">
+				<mat-card-header>
+					<mat-card-title>
+						<mat-icon class="card-title-icon">play_circle</mat-icon>
+						Preview
+					</mat-card-title>
+				</mat-card-header>
+				<mat-card-content class="player-content">
+					<ov-recording-video-player
+						[recordingUrl]="recordingUrl()"
+						[recordingStatus]="recording()!.status"
+						[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
+						[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
+						(videoError)="onVideoError()"
+						(download)="downloadRecording()"
+						(share)="shareRecording()"
+					/>
+				</mat-card-content>
+			</mat-card>
+		</div>
+	</div>
+}

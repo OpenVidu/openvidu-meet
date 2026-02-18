@@ -51,5 +51,14 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 			iconClass: 'ov-recording-icon',
 			order: 3
 		}
+	},
+	{
+		route: {
+			path: 'recordings/:recordingId',
+			loadComponent: () =>
+				import('../pages/recording-detail/recording-detail.component').then(
+					(m) => m.RecordingDetailComponent
+				)
+		}
 	}
 ];

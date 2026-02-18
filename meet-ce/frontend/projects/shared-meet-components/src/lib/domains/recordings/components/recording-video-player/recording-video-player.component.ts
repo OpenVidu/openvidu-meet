@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
+import { RecordingUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-recording-video-player',
@@ -116,31 +117,11 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	}
 
 	getStatusIcon(): string {
-		switch (this.recordingStatus) {
-			case MeetRecordingStatus.STARTING:
-			case MeetRecordingStatus.ACTIVE:
-			case MeetRecordingStatus.ENDING:
-				return 'hourglass_empty';
-			case MeetRecordingStatus.COMPLETE:
-				return 'check_circle';
-			default:
-				return 'error_outline';
-		}
+		return RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus);
 	}
 
 	getStatusMessage(): string {
-		switch (this.recordingStatus) {
-			case MeetRecordingStatus.STARTING:
-				return 'Recording is starting...';
-			case MeetRecordingStatus.ACTIVE:
-				return 'Recording is in progress...';
-			case MeetRecordingStatus.ENDING:
-				return 'Recording is finalizing...';
-			case MeetRecordingStatus.COMPLETE:
-				return 'Recording is ready to watch';
-			default:
-				return 'Recording has failed';
-		}
+		return RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus);
 	}
 
 	isRecordingInProgress(): boolean {

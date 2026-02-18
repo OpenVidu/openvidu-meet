@@ -40,6 +40,7 @@
 				[showLoadMore]="hasMoreRecordings"
 				[initialFilters]="initialFilters()"
 				(recordingAction)="onRecordingAction($event)"
+				(recordingClicked)="onRecordingClick($event)"
 				(loadMore)="loadMoreRecordings($event)"
 				(refresh)="refreshRecordings($event)"
 				(filterChange)="refreshRecordings($event)"

@@ -1,9 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
+import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
@@ -34,14 +35,14 @@ export class RecordingsComponent implements OnInit {
 	hasMoreRecordings = false;
 	private nextPageToken?: string;
 
+	protected loggerService: LoggerService = inject(LoggerService);
+	private recordingService: RecordingService = inject(RecordingService);
+	private notificationService: NotificationService = inject(NotificationService);
+	protected route: ActivatedRoute = inject(ActivatedRoute);
+	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger;
 
-	constructor(
-		protected loggerService: LoggerService,
-		private recordingService: RecordingService,
-		private notificationService: NotificationService,
-		protected route: ActivatedRoute
-	) {
+	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
 
 		// Get room ID from route query params and set initial filters before component initialization
@@ -88,6 +89,15 @@ export class RecordingsComponent implements OnInit {
 			case 'bulkDownload':
 				this.bulkDownloadRecordings(action.recordings);
 				break;
+		}
+	}
+
+	async onRecordingClick(recordingId: string) {
+		try {
+			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
+		} catch (error) {
+			this.notificationService.showSnackbar('Error navigating to recording detail');
+			this.log.e('Error navigating to recording detail:', error);
 		}
 	}
 

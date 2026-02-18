@@ -176,11 +176,19 @@
 							</div>
 
 							<div class="status-info">
-								<div class="status-badge" [style.color]="getStatusColor(recording.status)">
-									<mat-icon class="status-icon" [style.color]="getStatusColor(recording.status)">
-										{{ getStatusIcon(recording.status) }}
+								<div
+									class="status-badge"
+									[style.color]="RecordingUiUtils.getStatusColor(recording.status)"
+								>
+									<mat-icon
+										class="status-icon"
+										[style.color]="RecordingUiUtils.getStatusColor(recording.status)"
+									>
+										{{ RecordingUiUtils.getStatusIcon(recording.status) }}
 									</mat-icon>
-									<span class="status-label">{{ getStatusLabel(recording.status) }}</span>
+									<span class="status-label">{{
+										RecordingUiUtils.getStatusLabel(recording.status)
+									}}</span>
 								</div>
 							</div>
 						</div>
@@ -212,7 +220,9 @@
 										<mat-icon class="detail-icon">timer</mat-icon>
 										<div class="detail-content">
 											<div class="detail-label">Duration</div>
-											<div class="detail-value">{{ formatDuration(recording.duration) }}</div>
+											<div class="detail-value">
+												{{ RecordingUiUtils.formatDuration(recording.duration) }}
+											</div>
 										</div>
 									</div>
 
@@ -220,7 +230,9 @@
 										<mat-icon class="detail-icon">storage</mat-icon>
 										<div class="detail-content">
 											<div class="detail-label">Size</div>
-											<div class="detail-value">{{ formatFileSize(recording.size) }}</div>
+											<div class="detail-value">
+												{{ RecordingUiUtils.formatFileSize(recording.size) }}
+											</div>
 										</div>
 									</div>
 								</div>
@@ -364,11 +376,16 @@
 					<ng-container matColumnDef="status">
 						<th mat-header-cell *matHeaderCellDef>Status</th>
 						<td mat-cell *matCellDef="let recording">
-							<div class="status-badge" [style.color]="getStatusColor(recording.status)">
-								<mat-icon class="status-icon" [style.color]="getStatusColor(recording.status)">
-									{{ getStatusIcon(recording.status) }}
+							<div class="status-badge" [style.color]="RecordingUiUtils.getStatusColor(recording.status)">
+								<mat-icon
+									class="status-icon"
+									[style.color]="RecordingUiUtils.getStatusColor(recording.status)"
+								>
+									{{ RecordingUiUtils.getStatusIcon(recording.status) }}
 								</mat-icon>
-								<span class="status-label">{{ getStatusLabel(recording.status) }}</span>
+								<span class="status-label">{{
+									RecordingUiUtils.getStatusLabel(recording.status)
+								}}</span>
 							</div>
 						</td>
 					</ng-container>
@@ -392,7 +409,7 @@
 					<ng-container matColumnDef="duration">
 						<th mat-header-cell *matHeaderCellDef mat-sort-header="duration">Duration</th>
 						<td mat-cell *matCellDef="let recording">
-							<span>{{ formatDuration(recording.duration) }}</span>
+							<span>{{ RecordingUiUtils.formatDuration(recording.duration) }}</span>
 						</td>
 					</ng-container>
 
@@ -400,7 +417,7 @@
 					<ng-container matColumnDef="size">
 						<th mat-header-cell *matHeaderCellDef mat-sort-header="size">Size</th>
 						<td mat-cell *matCellDef="let recording">
-							<span>{{ formatFileSize(recording.size) }}</span>
+							<span>{{ RecordingUiUtils.formatFileSize(recording.size) }}</span>
 						</td>
 					</ng-container>
 
@@ -415,7 +432,7 @@
 										mat-icon-button
 										matTooltip="Play Recording"
 										class="action-button play-button"
-										(click)="playRecording(recording)"
+										(click)="$event.stopPropagation(); playRecording(recording)"
 										[disabled]="loading()"
 										id="play-recording-btn-{{ recording.recordingId }}"
 									>
@@ -429,18 +446,16 @@
 										mat-icon-button
 										matTooltip="Download Recording"
 										class="action-button download-button"
-										(click)="downloadRecording(recording)"
+										(click)="$event.stopPropagation(); downloadRecording(recording)"
 										[disabled]="loading()"
-										id="download-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>download</mat-icon>
 									</button>
 								}
-
 								@if (isRecordingFailed(recording)) {
 									<button
 										mat-icon-button
-										(click)="deleteRecording(recording)"
+										(click)="$event.stopPropagation(); deleteRecording(recording)"
 										[disabled]="loading()"
 										class="action-button delete-button"
 										matTooltip="Delete Recording"
@@ -454,6 +469,7 @@
 										mat-icon-button
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
+										(click)="$event.stopPropagation();"
 										matTooltip="More Actions"
 										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
@@ -464,7 +480,7 @@
 									<mat-menu #actionsMenu="matMenu">
 										<button
 											mat-menu-item
-											(click)="shareRecordingLink(recording)"
+											(click)="$event.stopPropagation(); shareRecordingLink(recording)"
 											id="share-recording-link-{{ recording.recordingId }}"
 										>
 											<mat-icon>share</mat-icon>
@@ -475,7 +491,7 @@
 											<mat-divider></mat-divider>
 											<button
 												mat-menu-item
-												(click)="deleteRecording(recording)"
+												(click)="$event.stopPropagation(); deleteRecording(recording)"
 												class="delete-action"
 												id="delete-recording-btn-{{ recording.recordingId }}"
 											>
@@ -494,6 +510,8 @@
 						mat-row
 						*matRowDef="let row; columns: displayedColumns"
 						[class.selected-row]="isRecordingSelected(row)"
+						id="table-row-{{ row.recordingId }}"
+						(click)="onRecordingClick(row)"
 					></tr>
 				</table>
 			</div>

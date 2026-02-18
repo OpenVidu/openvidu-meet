@@ -11,9 +11,9 @@ import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { formatDurationToTime } from '../../../../shared/utils/format.utils';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
+import { RecordingUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-view-recording',
@@ -97,39 +97,16 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	getStatusIcon(): string {
-		if (!this.recording) return 'error_outline';
-
-		switch (this.recording.status) {
-			case MeetRecordingStatus.STARTING:
-			case MeetRecordingStatus.ACTIVE:
-			case MeetRecordingStatus.ENDING:
-				return 'hourglass_empty';
-			case MeetRecordingStatus.COMPLETE:
-				return 'check_circle';
-			default:
-				return 'error_outline';
-		}
+		return RecordingUiUtils.getPlayerStatusIcon(this.recording?.status);
 	}
 
 	getStatusMessage(): string {
 		if (!this.recording) return 'Recording not found';
-
-		switch (this.recording.status) {
-			case MeetRecordingStatus.STARTING:
-				return 'Recording is starting...';
-			case MeetRecordingStatus.ACTIVE:
-				return 'Recording is in progress...';
-			case MeetRecordingStatus.ENDING:
-				return 'Recording is finalizing...';
-			case MeetRecordingStatus.COMPLETE:
-				return 'Recording is ready to watch';
-			default:
-				return 'Recording has failed';
-		}
+		return RecordingUiUtils.getPlayerStatusMessage(this.recording.status);
 	}
 
 	formatDuration(duration: number): string {
-		return formatDurationToTime(duration);
+		return RecordingUiUtils.formatDuration(duration);
 	}
 
 	goBack(): void {

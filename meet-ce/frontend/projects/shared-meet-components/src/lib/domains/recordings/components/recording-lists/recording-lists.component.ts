@@ -18,8 +18,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
-import { formatBytes, formatDurationToHMS } from '../../../../shared/utils/format.utils';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import { RecordingUiUtils } from '../../utils/ui';
 
 /**
  * Reusable component for displaying a list of recordings with filtering, selection, and bulk operations.
@@ -87,6 +87,7 @@ export class RecordingListsComponent implements OnInit {
 
 	// Output events
 	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
+	@Output() recordingClicked = new EventEmitter<string>();
 	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
 	@Output() loadMore = new EventEmitter<RecordingTableFilter>();
 	@Output() refresh = new EventEmitter<RecordingTableFilter>();
@@ -142,6 +143,9 @@ export class RecordingListsComponent implements OnInit {
 	} as const;
 
 	protected isMobileView = computed(() => this.viewportService.isMobileView());
+
+	// Make RecordingUiUtils available in template
+	protected readonly RecordingUiUtils = RecordingUiUtils;
 
 	constructor(private viewportService: ViewportService) {
 		effect(() => {
@@ -261,6 +265,10 @@ export class RecordingListsComponent implements OnInit {
 
 	// ===== ACTION METHODS =====
 
+	onRecordingClick(recording: MeetRecordingInfo) {
+		this.recordingClicked.emit(recording.recordingId);
+	}
+
 	playRecording(recording: MeetRecordingInfo) {
 		this.recordingAction.emit({ recordings: [recording], action: 'play' });
 	}
@@ -349,15 +357,6 @@ export class RecordingListsComponent implements OnInit {
 		return group.includes(status);
 	}
 
-	/**
-	 * Get a human-readable status label
-	 */
-	getStatusLabel(status: MeetRecordingStatus): string {
-		const statusOption = this.statusOptions.find((option) => option.value === status);
-		const label = statusOption?.label || status;
-		return label.toUpperCase().replace(/_/g, ' ');
-	}
-
 	// ===== PERMISSION AND CAPABILITY METHODS =====
 
 	canPlayRecording(recording: MeetRecordingInfo): boolean {
@@ -374,52 +373,5 @@ export class RecordingListsComponent implements OnInit {
 
 	isRecordingFailed(recording: MeetRecordingInfo): boolean {
 		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.ERROR);
-	}
-
-	// ===== UI HELPER METHODS =====
-
-	getStatusIcon(status: MeetRecordingStatus): string {
-		switch (status) {
-			case MeetRecordingStatus.COMPLETE:
-				return 'check_circle';
-			case MeetRecordingStatus.ACTIVE:
-				return 'radio_button_checked';
-			case MeetRecordingStatus.STARTING:
-				return 'hourglass_top';
-			case MeetRecordingStatus.ENDING:
-				return 'hourglass_bottom';
-			case MeetRecordingStatus.FAILED:
-				return 'error';
-			case MeetRecordingStatus.ABORTED:
-				return 'cancel';
-			case MeetRecordingStatus.LIMIT_REACHED:
-				return 'warning';
-			default:
-				return 'help';
-		}
-	}
-
-	getStatusColor(status: MeetRecordingStatus): string {
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.COMPLETED)) {
-			return 'var(--ov-meet-color-success)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ACTIVE)) {
-			return 'var(--ov-meet-color-primary)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.IN_PROGRESS)) {
-			return 'var(--ov-meet-color-warning)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ERROR)) {
-			return 'var(--ov-meet-color-error)';
-		}
-		return 'var(--ov-meet-text-secondary)';
-	}
-
-	formatDuration(duration?: number): string {
-		return formatDurationToHMS(duration);
-	}
-
-	formatFileSize(bytes?: number): string {
-		return formatBytes(bytes);
 	}
 }
