@@ -39,7 +39,7 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 	},
 	{
 		route: {
-			path: 'rooms/:roomId/detail',
+			path: 'rooms/:roomId',
 			loadComponent: () => import('../pages/room-detail/room-detail.component').then((m) => m.RoomDetailComponent)
 		}
 	}

@@ -240,7 +240,7 @@ export class RoomsComponent implements OnInit {
 
 	async onRoomClick(roomId: string) {
 		try {
-			await this.navigationService.navigateTo(`/rooms/${roomId}/detail`);
+			await this.navigationService.navigateTo(`/rooms/${roomId}`);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to room detail');
 			this.log.e('Error navigating to room detail:', error);
