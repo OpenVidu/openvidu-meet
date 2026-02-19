@@ -1,5 +1,5 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '../database/recording.entity.js';
-import { SortAndPagination } from './sort-pagination.js';
+import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRecordingInfo.
@@ -30,9 +30,24 @@ export const MEET_RECORDING_FIELDS = [
 export type MeetRecordingField = (typeof MEET_RECORDING_FIELDS)[number];
 
 /**
+ * Recording fields that are allowed for sorting in recording list queries.
+ */
+export const MEET_RECORDING_SORT_FIELDS = [
+	'startDate',
+	'roomName',
+	'duration',
+	'size'
+] as const satisfies readonly SortableFieldKey<MeetRecordingInfo>[];
+
+/**
+ * Sortable recording fields supported by recording list queries.
+ */
+export type MeetRecordingSortField = (typeof MEET_RECORDING_SORT_FIELDS)[number];
+
+/**
  * Filters for querying recordings with pagination, sorting and field selection.
  */
-export interface MeetRecordingFilters extends SortAndPagination {
+export interface MeetRecordingFilters extends SortAndPagination<MeetRecordingSortField> {
 	/**
 	 * Filter recordings by room ID (exact match)
 	 */

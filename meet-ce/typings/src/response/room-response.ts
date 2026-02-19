@@ -1,6 +1,7 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoom, MeetRoomStatus } from '../database/room.entity.js';
-import { SortAndPagination } from './sort-pagination.js';
+import { ExtraFieldKey } from './extra-field.js';
+import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRoom.
@@ -24,6 +25,12 @@ export const MEET_ROOM_FIELDS = [
 ] as const satisfies readonly (keyof MeetRoom)[];
 
 /**
+ * Properties of a {@link MeetRoom} that can be included in the API response when fields filtering is applied.
+ * Derived from MEET_ROOM_FIELDS array which is validated by TypeScript to match MeetRoom keys.
+ */
+export type MeetRoomField = (typeof MEET_ROOM_FIELDS)[number];
+
+/**
  * Properties of a {@link MeetRoom} that can be included as extra fields in the API response.
  * These fields are not included by default and must be explicitly requested via extraFields parameter.
  */
@@ -35,10 +42,18 @@ export const MEET_ROOM_EXTRA_FIELDS = ['config'] as const satisfies readonly Ext
 export type MeetRoomExtraField = (typeof MEET_ROOM_EXTRA_FIELDS)[number];
 
 /**
- * Properties of a {@link MeetRoom} that can be included in the API response when fields filtering is applied.
- * Derived from MEET_ROOM_FIELDS array which is validated by TypeScript to match MeetRoom keys.
+ * Room fields that are allowed for sorting in room list queries.
  */
-export type MeetRoomField = (typeof MEET_ROOM_FIELDS)[number];
+export const MEET_ROOM_SORT_FIELDS = [
+	'creationDate',
+	'roomName',
+	'autoDeletionDate'
+] as const satisfies readonly SortableFieldKey<MeetRoom>[];
+
+/**
+ * Sortable room fields supported by room list queries.
+ */
+export type MeetRoomSortField = (typeof MEET_ROOM_SORT_FIELDS)[number];
 
 /**
  * Sensitive fields of a MeetRoom that require specific permissions to be viewed.
@@ -54,7 +69,7 @@ export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELD
 /**
  * Filters for querying rooms with pagination, sorting, field selection, and extra fields support.
  */
-export interface MeetRoomFilters extends SortAndPagination {
+export interface MeetRoomFilters extends SortAndPagination<MeetRoomSortField> {
 	/**
 	 * Filter rooms by name (case-insensitive partial match)
 	 */
@@ -98,10 +113,3 @@ export enum MeetRoomDeletionErrorCode {
 	ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION = 'room_with_active_meeting_has_recordings_cannot_schedule_deletion',
 	ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING = 'room_with_recordings_has_active_meeting'
 }
-
-/**
- * Utility type to extract keys of T that are objects, used to define which fields can be extraFields.
- */
-type ExtraFieldKey<T> = {
-	[K in keyof T]: T[K] extends object ? K : never;
-}[keyof T];
