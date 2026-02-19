@@ -4,7 +4,7 @@
 export enum WebComponentCommand {
 	/**
 	 * Initializes the WebComponent with the given configuration.
-	 * This command is sent from the webcomponent to the iframe for intialice the domain.
+	 * This command is sent from the webcomponent to the iframe to intialice the domain.
 	 * @private
 	 */
 	INITIALIZE = 'initialize',
@@ -31,14 +31,23 @@ export enum WebComponentCommand {
  */
 export interface WebComponentCommandPayloads {
 	/**
-	 * Payload for the INITIALIZE command.
+	 * Payload for the {@link WebComponentCommand.INITIALIZE} command.
 	 * @private
 	 */
 	[WebComponentCommand.INITIALIZE]: {
 		domain: string;
 	};
+	/**
+	 * Payload for the {@link WebComponentCommand.END_MEETING} command.
+	 */
 	[WebComponentCommand.END_MEETING]: void;
+	/**
+	 * Payload for the {@link WebComponentCommand.LEAVE_ROOM} command.
+	 */
 	[WebComponentCommand.LEAVE_ROOM]: void;
+	/**
+	 * Payload for the {@link WebComponentCommand.KICK_PARTICIPANT} command.
+	 */
 	[WebComponentCommand.KICK_PARTICIPANT]: {
 		participantIdentity: string;
 	};
@@ -50,6 +59,6 @@ export interface WebComponentCommandPayloads {
  * @category Type Helpers
  * @private
  */
-export type WenComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
+export type WebComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
 	? WebComponentCommandPayloads[T]
 	: never;

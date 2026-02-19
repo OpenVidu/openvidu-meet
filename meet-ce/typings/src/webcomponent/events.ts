@@ -26,13 +26,20 @@ export enum WebComponentEvent {
  * Reason for emitting the LEFT event in OpenVidu Meet.
  */
 export enum LeftEventReason {
-	VOLUNTARY_LEAVE = 'voluntary_leave', // The participant left the meeting voluntarily
-	NETWORK_DISCONNECT = 'network_disconnect', // The participant was disconnected due to network issues
-	SERVER_SHUTDOWN = 'server_shutdown', // The server was shut down
-	PARTICIPANT_KICKED = 'participant_kicked', // The participant was removed from the meeting by a moderator
-	MEETING_ENDED = 'meeting_ended', // The meeting was ended by a moderator or the room was deleted
-	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self', // The local participant ended the meeting
-	UNKNOWN = 'unknown' // An unknown reason for leaving the meeting
+	/** The participant left the meeting voluntarily */
+	VOLUNTARY_LEAVE = 'voluntary_leave',
+	/** The participant was disconnected due to network issues */
+	NETWORK_DISCONNECT = 'network_disconnect',
+	/** The server was shut down unexpectedly */
+	SERVER_SHUTDOWN = 'server_shutdown',
+	/** The participant was kicked from the meeting by a moderator */
+	PARTICIPANT_KICKED = 'participant_kicked',
+	/** A moderator ended the meeting for all participants */
+	MEETING_ENDED = 'meeting_ended',
+	/** The local participant ended the meeting for all participants */
+	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self',
+	/** Unknown reason for leaving the meeting */
+	UNKNOWN = 'unknown'
 }
 
 /**
@@ -46,10 +53,16 @@ export interface WebComponentEventPayloads {
 	 * @private
 	 */
 	[WebComponentEvent.READY]: {};
+	/**
+	 * Payload for the {@link WebComponentEvent.JOINED} event.
+	 */
 	[WebComponentEvent.JOINED]: {
 		roomId: string;
 		participantIdentity: string;
 	};
+	/**
+	 * Payload for the {@link WebComponentEvent.LEFT} event.
+	 */
 	[WebComponentEvent.LEFT]: {
 		roomId: string;
 		participantIdentity: string;

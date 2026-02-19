@@ -1,5 +1,5 @@
 /**
- * Defines permissions for a room member.
+ * List of permissions for a room member.
  */
 export interface MeetRoomMemberPermissions {
 	/**

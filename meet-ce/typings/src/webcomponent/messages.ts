@@ -1,5 +1,5 @@
-import { WebComponentCommand, WenComponentCommandPayloadFor } from './command.model.js';
-import { WebComponentEvent, WebComponentEventPayloadFor } from './event.model.js';
+import { WebComponentCommand, WebComponentCommandPayloadFor } from './commands.js';
+import { WebComponentEvent, WebComponentEventPayloadFor } from './events.js';
 
 /**
  * Represents all possible messages exchanged between the host application and WebComponent.
@@ -18,7 +18,7 @@ export interface WebComponentInboundCommandMessage<T extends WebComponentCommand
 	/** The command to execute in the WebComponent */
 	command: T;
 	/** Optional payload with additional data for the command */
-	payload?: WenComponentCommandPayloadFor<T>;
+	payload?: WebComponentCommandPayloadFor<T>;
 }
 
 /**
@@ -43,7 +43,7 @@ export interface WebComponentOutboundEventMessage<T extends WebComponentEvent = 
  */
 export function createWebComponentCommandMessage<T extends WebComponentCommand>(
 	command: T,
-	payload?: WenComponentCommandPayloadFor<T>
+	payload?: WebComponentCommandPayloadFor<T>
 ): WebComponentInboundCommandMessage<T> {
 	return { command, payload };
 }

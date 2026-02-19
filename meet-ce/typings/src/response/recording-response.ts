@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from './recording.model.js';
+import { MeetRecordingInfo, MeetRecordingStatus } from '../database/recording.entity.js';
 import { SortAndPagination } from './sort-pagination.js';
 
 /**
