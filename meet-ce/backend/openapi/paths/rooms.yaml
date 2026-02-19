@@ -11,7 +11,7 @@
             - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-x-fields-header.yaml'
-            - $ref: '../components/parameters/room-x-extrafields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/create-room-request.yaml'
         responses:
@@ -39,12 +39,12 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
-            - $ref: '../components/parameters/room-x-extrafields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-x-fields-header.yaml'
             - $ref: '../components/parameters/room-name.yaml'
             - $ref: '../components/parameters/room-status.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/extraFields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
             - $ref: '../components/parameters/room-sort-field.yaml'
@@ -78,11 +78,11 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
-            - $ref: '../components/parameters/room-x-extrafields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-x-fields-header.yaml'
             - $ref: '../components/parameters/room-ids.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/extraFields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
             - $ref: '../components/parameters/meeting-deletion-policy.yaml'
             - $ref: '../components/parameters/recordings-deletion-policy.yaml'
         responses:
@@ -114,9 +114,9 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-x-fields-header.yaml'
-            - $ref: '../components/parameters/room-x-extrafields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/extraFields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'
@@ -147,12 +147,12 @@
             - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-x-fields-header.yaml'
-            - $ref: '../components/parameters/room-x-extrafields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/meeting-deletion-policy.yaml'
             - $ref: '../components/parameters/recordings-deletion-policy.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
-            - $ref: '../components/parameters/extraFields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-delete-room-processed.yaml'
