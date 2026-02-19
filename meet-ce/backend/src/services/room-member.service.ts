@@ -361,11 +361,10 @@ export class RoomMemberService {
 		deleted: string[];
 		failed: { memberId: string; error: string }[];
 	}> {
-		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(
-			roomId,
-			memberIds,
-			'memberId,currentParticipantIdentity'
-		);
+		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(roomId, memberIds, [
+			'memberId',
+			'currentParticipantIdentity'
+		]);
 		const foundMemberIds = membersToDelete.map((m) => m.memberId);
 
 		const failed = memberIds

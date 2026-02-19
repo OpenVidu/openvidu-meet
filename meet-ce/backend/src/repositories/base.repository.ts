@@ -1,4 +1,4 @@
-import { SortAndPagination } from '@openvidu-meet/typings';
+import { SortAndPagination, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
 import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
@@ -30,22 +30,17 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	/**
 	 * Finds a single document matching the given filter.
 	 * @param filter - MongoDB query filter
-	 * @param fields - Optional comma-separated list of fields to select from database
+	 * @param fields - Optional array of field names to select from database
 	 * @returns The document or null if not found
 	 */
-	protected async findOne(filter: FilterQuery<TDocument>, fields?: string): Promise<TDocument | null> {
+	protected async findOne(filter: FilterQuery<TDocument>, fields?: string[]): Promise<TDocument | null> {
 		try {
 			let query = this.model.findOne(filter);
 
-			if (fields) {
-				//!FIXME: This transform should be optimized to avoid unnecessary string manipulation
-
-				const fieldSelection = fields
-					.split(',')
-					.map((field) => field.trim())
-					.filter((field) => field !== '')
-					.join(' ');
-				query = query.select(fieldSelection);
+			// Apply field selection if specified
+			if (fields && fields.length > 0) {
+				// Convert array of fields to space-separated string for Mongoose select()
+				query = query.select(fields.join(' '));
 			}
 
 			return await query.exec();
@@ -62,20 +57,17 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * WARNING: Use with caution on large collections. Consider using findMany() with pagination instead.
 	 *
 	 * @param filter - Base MongoDB query filter
-	 * @param fields - Optional comma-separated list of fields to select from database
+	 * @param fields - Optional array of field names to select from database
 	 * @returns Array of domain objects matching the filter
 	 */
-	protected async findAll(filter: FilterQuery<TDocument> = {}, fields?: string): Promise<TDomain[]> {
+	protected async findAll(filter: FilterQuery<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
 		try {
 			let query = this.model.find(filter);
 
-			if (fields) {
-				const fieldSelection = fields
-					.split(',')
-					.map((field) => field.trim())
-					.filter((field) => field !== '')
-					.join(' ');
-				query = query.select(fieldSelection);
+			// Apply field selection if specified
+			if (fields && fields.length > 0) {
+				// Convert array of fields to space-separated string for Mongoose select()
+				query = query.select(fields.join(' '));
 			}
 
 			// Transform documents to domain objects
@@ -96,15 +88,15 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param options.nextPageToken - Token for pagination (encoded cursor)
 	 * @param options.sortField - Field to sort by (default: 'createdAt')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
-	 * @param fields - Optional comma-separated list of fields to select from database
+	 * @param fields - Optional array of field names to select from database
 	 * @returns Paginated result with items, truncation flag, and optional next token
 	 */
 	protected async findMany(
 		filter: FilterQuery<TDocument> = {},
 		options: SortAndPagination = {},
-		fields?: string
+		fields?: string[]
 	): Promise<PaginatedResult<TDomain>> {
-		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = 'desc' } = options;
+		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = SortOrder.DESC } = options;
 
 		// Parse and apply pagination cursor if provided
 		if (nextPageToken) {
@@ -113,7 +105,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		}
 
 		// Convert sort order to MongoDB format
-		const mongoSortOrder: 1 | -1 = sortOrder === 'asc' ? 1 : -1;
+		const mongoSortOrder: 1 | -1 = sortOrder === SortOrder.ASC ? 1 : -1;
 
 		// Build compound sort: primary field + _id
 		const sort: Record<string, 1 | -1> = {
@@ -128,17 +120,9 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		let query = this.model.find(filter).sort(sort).limit(limit);
 
 		// Apply field selection if specified
-		if (fields) {
-			// !FIXME: This transform should be optimized to avoid unnecessary string manipulation.
-			// !The argument method should ideally accept an array of fields instead of a comma-separated string to avoid this overhead.
-			// Convert comma-separated string to space-separated format for MongoDB select()
-			const fieldSelection = fields
-				.split(',')
-				.map((field) => field.trim())
-				.filter((field) => field !== '')
-				.join(' ');
-
-			query = query.select(fieldSelection);
+		if (fields && fields.length > 0) {
+			// Convert array of fields to space-separated string for Mongoose select()
+			query = query.select(fields.join(' '));
 		}
 
 		const documents = await query.exec();
@@ -350,10 +334,10 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		filter: FilterQuery<TDocument>,
 		cursor: PaginationCursor,
 		sortField: string,
-		sortOrder: 'asc' | 'desc'
+		sortOrder: SortOrder
 	): void {
-		const comparison = sortOrder === 'asc' ? '$gt' : '$lt';
-		const equalComparison = sortOrder === 'asc' ? '$gt' : '$lt';
+		const comparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
+		const equalComparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
 
 		// Build compound filter for pagination
 		// This ensures correct ordering even when sortField values are not unique
@@ -368,7 +352,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			} as FilterQuery<TDocument>);
 
 			// In ascending order, also include documents where the field exists (they come after missing fields)
-			if (sortOrder === 'asc') {
+			if (sortOrder === SortOrder.ASC) {
 				orConditions.push({
 					[sortField]: { $exists: true }
 				} as FilterQuery<TDocument>);
@@ -386,7 +370,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			);
 
 			// In descending order, also include documents where the field doesn't exist (they come after all values)
-			if (sortOrder === 'desc') {
+			if (sortOrder === SortOrder.DESC) {
 				orConditions.push({
 					[sortField]: { $exists: false }
 				} as FilterQuery<TDocument>);

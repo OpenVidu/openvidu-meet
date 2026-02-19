@@ -1,4 +1,4 @@
-import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -67,10 +67,10 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberIds - Array of member identifiers
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string): Promise<TRoomMember[]> {
+	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string[]): Promise<TRoomMember[]> {
 		return await this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
 	}
 
@@ -81,7 +81,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @returns Array of room IDs where the user is a member
 	 */
 	async getRoomIdsByMemberId(memberId: string): Promise<string[]> {
-		const members = await this.findAll({ memberId }, 'roomId');
+		const members = await this.findAll({ memberId }, ['roomId']);
 		return members.map((m) => m.roomId);
 	}
 
@@ -101,7 +101,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 				memberId,
 				[`effectivePermissions.${permission}`]: true
 			},
-			'roomId'
+			['roomId']
 		);
 		return members.map((member) => member.roomId);
 	}
@@ -112,7 +112,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @param roomId - The ID of the room
 	 * @param options - Query options
 	 * @param options.name - Optional member name to filter by (case-insensitive partial match)
-	 * @param options.fields - Comma-separated list of fields to include in the result
+	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
 	 * @param options.sortField - Field to sort by (default: 'membershipDate')
@@ -133,7 +133,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 			maxItems = 100,
 			nextPageToken,
 			sortField = 'membershipDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter

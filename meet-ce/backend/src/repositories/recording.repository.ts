@@ -2,7 +2,8 @@ import {
 	MeetRecordingField,
 	MeetRecordingFilters,
 	MeetRecordingInfo,
-	MeetRecordingStatus
+	MeetRecordingStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { uid as secureUid } from 'uid/secure';
@@ -78,13 +79,11 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * Finds a recording by its recordingId.
 	 *
 	 * @param recordingId - The ID of the recording to find
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
 	async findByRecordingId(recordingId: string, fields?: MeetRecordingField[]): Promise<TRecording | null> {
-		//!FIXME: This transform should be removed  because the findOne method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
-		const fieldsString = fields ? fields.join(',') : undefined;
-		const document = await this.findOne({ recordingId }, fieldsString);
+		const document = await this.findOne({ recordingId }, fields);
 		return document ? this.toDomain(document) : null;
 	}
 
@@ -100,7 +99,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param options.roomId - Optional room ID for exact match filtering
 	 * @param options.roomName - Optional room name for regex match filtering (case-insensitive)
 	 * @param options.status - Optional recording status to filter by
-	 * @param options.fields - Comma-separated list of fields to include in the result
+	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
 	 * @param options.sortField - Field to sort by (default: 'startDate')
@@ -121,7 +120,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 			maxItems = 10,
 			nextPageToken,
 			sortField = 'startDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter
@@ -156,8 +155,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 				sortField,
 				sortOrder
 			},
-			//! FIXME: This transform should be removed because the findMany method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
-			fields?.join(',')
+			fields
 		);
 
 		return {

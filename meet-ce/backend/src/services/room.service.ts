@@ -396,7 +396,7 @@ export class RoomService {
 
 		// If USER role, also get owned room IDs
 		if (user.role === MeetUserRole.USER) {
-			const ownedRooms = await this.roomRepository.findByOwner(user.userId, 'roomId');
+			const ownedRooms = await this.roomRepository.findByOwner(user.userId, ['roomId']);
 			ownedRoomIds = ownedRooms.map((r) => r.roomId);
 		}
 

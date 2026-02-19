@@ -1,4 +1,4 @@
-import { MeetUser, MeetUserFilters } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -95,7 +95,7 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 			maxItems = 100,
 			nextPageToken,
 			sortField = 'registrationDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter

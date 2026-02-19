@@ -1,4 +1,4 @@
-import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -73,13 +73,11 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Returns the room with enriched URLs (including base URL).
 	 *
 	 * @param roomId - The unique room identifier
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns The room or null if not found
 	 */
 	async findByRoomId(roomId: string, fields?: MeetRoomField[]): Promise<TRoom | null> {
-		//!FIXME: This transform should be removed once the controller is updated to pass the fields as an array of MeetRoomField instead of a comma-separated string.
-		const fieldsString = fields ? fields.join(',') : undefined;
-		const document = await this.findOne({ roomId }, fieldsString);
+		const document = await this.findOne({ roomId }, fields);
 		return document ? this.enrichRoomWithBaseUrls(document) : null;
 	}
 
@@ -88,10 +86,10 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Returns rooms with enriched URLs (including base URL).
 	 *
 	 * @param owner - The userId of the room owner
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns Array of rooms owned by the user
 	 */
-	async findByOwner(owner: string, fields?: string): Promise<TRoom[]> {
+	async findByOwner(owner: string, fields?: MeetRoomField[]): Promise<TRoom[]> {
 		return await this.findAll({ owner }, fields);
 	}
 
@@ -107,7 +105,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param options.status - Optional room status to filter by
 	 * @param options.owner - Optional owner userId to filter by
 	 * @param options.roomIds - Optional array of room IDs to filter by, representing rooms the user is a member of
-	 * @param options.fields - Comma-separated list of fields to include in the result
+	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
 	 * @param options.sortField - Field to sort by (default: 'creationDate')
@@ -128,7 +126,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 			maxItems = 100,
 			nextPageToken,
 			sortField = 'creationDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter
@@ -160,8 +158,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 				sortField,
 				sortOrder
 			},
-			//! FIXME: This transform should be removed because the findMany method should accept an array of fields instead of a comma-separated string, to avoid unnecessary string manipulation
-			fields?.join(',')
+			fields
 		);
 
 		return {
