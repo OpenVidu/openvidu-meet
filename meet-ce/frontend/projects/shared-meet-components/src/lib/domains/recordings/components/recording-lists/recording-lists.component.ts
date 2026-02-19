@@ -15,7 +15,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
@@ -82,7 +82,7 @@ export class RecordingListsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'startDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
 	// Output events
@@ -98,7 +98,7 @@ export class RecordingListsComponent implements OnInit {
 
 	// Sort state
 	currentSortField: 'roomName' | 'startDate' | 'duration' | 'size' = 'startDate';
-	currentSortOrder: 'asc' | 'desc' = 'desc';
+	currentSortOrder: SortOrder = SortOrder.DESC;
 
 	showEmptyFilterMessage = false; // Show message when no recordings match filters
 
@@ -323,7 +323,7 @@ export class RecordingListsComponent implements OnInit {
 
 	onSortChange(sortState: Sort) {
 		this.currentSortField = sortState.active as 'roomName' | 'startDate' | 'duration' | 'size';
-		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.currentSortOrder = sortState.direction === 'asc' ? SortOrder.ASC : SortOrder.DESC;
 		this.emitFilterChange();
 	}
 

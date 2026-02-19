@@ -15,7 +15,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -38,7 +38,7 @@ export interface RoomTableFilter {
 	nameFilter: string;
 	statusFilter: MeetRoomStatus | '';
 	sortField: 'roomName' | 'creationDate' | 'autoDeletionDate';
-	sortOrder: 'asc' | 'desc';
+	sortOrder: SortOrder;
 }
 
 /**
@@ -101,7 +101,7 @@ export class RoomsListsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
 	// Host binding for styling when rooms are selected
@@ -123,7 +123,7 @@ export class RoomsListsComponent implements OnInit {
 
 	// Sort state
 	currentSortField: 'roomName' | 'creationDate' | 'autoDeletionDate' = 'creationDate';
-	currentSortOrder: 'asc' | 'desc' = 'desc';
+	currentSortOrder: SortOrder = SortOrder.DESC;
 
 	showEmptyFilterMessage = false; // Show message when no rooms match filters
 
@@ -328,7 +328,7 @@ export class RoomsListsComponent implements OnInit {
 
 	onSortChange(sortState: Sort) {
 		this.currentSortField = sortState.active as 'roomName' | 'creationDate' | 'autoDeletionDate';
-		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.currentSortOrder = sortState.direction === 'asc' ? SortOrder.ASC : SortOrder.DESC;
 		this.emitFilterChange();
 	}
 

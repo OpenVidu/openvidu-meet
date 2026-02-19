@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -35,7 +35,7 @@ export class RoomRecordingsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'startDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
 	// Pagination

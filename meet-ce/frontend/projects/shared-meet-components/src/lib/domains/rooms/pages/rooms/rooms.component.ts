@@ -22,7 +22,8 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomStatus
+	MeetRoomStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -71,7 +72,7 @@ export class RoomsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
 	// Pagination

@@ -1,4 +1,4 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
 
 export interface RecordingTableAction {
 	recordings: MeetRecordingInfo[];
@@ -9,5 +9,5 @@ export interface RecordingTableFilter {
 	nameFilter: string;
 	statusFilter: MeetRecordingStatus | '';
 	sortField: 'roomName' | 'startDate' | 'duration' | 'size';
-	sortOrder: 'asc' | 'desc';
+	sortOrder: SortOrder;
 }

@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MeetRecordingInfo, MeetRoom, MeetRoomMember, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRoom, MeetRoomMember, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -122,7 +122,7 @@ export class RoomDetailComponent implements OnInit {
 			const response = await this.roomMemberService.listRoomMembers(roomId, {
 				maxItems: 100,
 				sortField: 'membershipDate',
-				sortOrder: 'desc'
+				sortOrder: SortOrder.DESC
 			});
 			this.roomMembers.set(response.members);
 		} catch (error) {
@@ -141,7 +141,7 @@ export class RoomDetailComponent implements OnInit {
 				maxItems: 50,
 				nextPageToken: !refresh ? this.nextRecordingsPageToken : undefined,
 				sortField: 'startDate',
-				sortOrder: 'desc'
+				sortOrder: SortOrder.DESC
 			});
 
 			if (!refresh) {

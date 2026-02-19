@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -28,7 +28,7 @@ export class RecordingsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'startDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
 	// Pagination
@@ -52,7 +52,7 @@ export class RecordingsComponent implements OnInit {
 				nameFilter: roomId,
 				statusFilter: '',
 				sortField: 'startDate',
-				sortOrder: 'desc'
+				sortOrder: SortOrder.DESC
 			});
 		}
 	}
