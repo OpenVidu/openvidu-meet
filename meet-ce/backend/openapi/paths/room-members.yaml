@@ -52,7 +52,7 @@
             - $ref: '../components/parameters/room-member-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
-            - $ref: '../components/parameters/sort-field.yaml'
+            - $ref: '../components/parameters/room-member-sort-field.yaml'
             - $ref: '../components/parameters/sort-order.yaml'
         responses:
             '200':
