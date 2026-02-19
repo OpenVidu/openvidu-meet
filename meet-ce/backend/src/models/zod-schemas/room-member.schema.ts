@@ -1,10 +1,12 @@
 import {
+	MEET_ROOM_MEMBER_SORT_FIELDS,
 	MeetRoomMemberFilters,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions
+	MeetRoomMemberTokenOptions,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
@@ -79,8 +81,8 @@ export const RoomMemberFiltersSchema: z.ZodType<MeetRoomMemberFilters> = z.objec
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	sortField: z.enum(['name', 'membershipDate']).optional().default('membershipDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+	sortField: z.enum(MEET_ROOM_MEMBER_SORT_FIELDS).optional().default('membershipDate'),
+	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
 });
 
 export const BulkDeleteRoomMembersReqSchema = z.object({

@@ -1,4 +1,10 @@
-import { MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
+import {
+	MEET_USER_SORT_FIELDS,
+	MeetUserFilters,
+	MeetUserOptions,
+	MeetUserRole,
+	SortOrder
+} from '@openvidu-meet/typings';
 import { z } from 'zod';
 
 export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
@@ -27,8 +33,8 @@ export const UserFiltersSchema: z.ZodType<MeetUserFilters> = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	sortField: z.enum(['name', 'registrationDate']).optional().default('registrationDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+	sortField: z.enum(MEET_USER_SORT_FIELDS).optional().default('registrationDate'),
+	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
 });
 
 export const BulkDeleteUsersReqSchema = z.object({

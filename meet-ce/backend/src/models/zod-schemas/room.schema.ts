@@ -1,6 +1,7 @@
 import {
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
+	MEET_ROOM_SORT_FIELDS,
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
@@ -23,7 +24,8 @@ import {
 	MeetRoomStatus,
 	MeetRoomTheme,
 	MeetRoomThemeMode,
-	MeetVirtualBackgroundConfig
+	MeetVirtualBackgroundConfig,
+	SortOrder
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { z } from 'zod';
@@ -233,7 +235,7 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
  * IMPORTANT: Using functions in .default() to avoid shared mutable state.
  * Each call creates a new object instance instead of reusing the same reference.
  */
-const CreateRoomConfigSchema = z
+const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
@@ -433,8 +435,8 @@ export const RoomFiltersSchema = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	sortField: z.enum(['creationDate', 'roomName', 'autoDeletionDate']).optional().default('creationDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+	sortField: z.enum(MEET_ROOM_SORT_FIELDS).optional().default('creationDate'),
+	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
 });
 
 export const RoomQueryFieldsSchema = z.object({

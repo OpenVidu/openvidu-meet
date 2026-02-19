@@ -1,8 +1,10 @@
 import {
 	MEET_RECORDING_FIELDS,
+	MEET_RECORDING_SORT_FIELDS,
 	MeetRecordingField,
 	MeetRecordingLayout,
-	MeetRecordingStatus
+	MeetRecordingStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
@@ -105,8 +107,8 @@ export const RecordingFiltersSchema = z.object({
 		})
 		.default(10),
 	nextPageToken: z.string().optional(),
-	sortField: z.enum(['startDate', 'roomName', 'duration', 'size']).optional().default('startDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+	sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
+	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
 });
 
 export const BulkDeleteRecordingsReqSchema = z.object({
