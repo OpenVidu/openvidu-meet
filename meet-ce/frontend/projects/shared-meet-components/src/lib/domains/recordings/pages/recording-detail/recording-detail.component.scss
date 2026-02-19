@@ -417,31 +417,4 @@
 			}
 		}
 	}
-
-	// ---- Player Card ----
-	.player-card {
-		@include ov-card;
-
-		mat-card-header {
-			padding-bottom: var(--ov-meet-spacing-sm);
-
-			mat-card-title {
-				display: flex;
-				align-items: center;
-				gap: var(--ov-meet-spacing-xs);
-				font-size: var(--ov-meet-font-size-md);
-				font-weight: var(--ov-meet-font-weight-semibold);
-				color: var(--ov-meet-text-primary);
-
-				.card-title-icon {
-					@include ov-icon(md);
-					color: var(--ov-meet-color-primary);
-				}
-			}
-		}
-
-		.player-content {
-			padding: 0;
-		}
-	}
 }

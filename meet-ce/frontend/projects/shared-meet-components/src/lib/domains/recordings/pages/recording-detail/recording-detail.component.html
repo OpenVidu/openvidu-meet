@@ -234,25 +234,15 @@
 			</mat-card>
 
 			<!-- RIGHT — video player ────────────────────────────────── -->
-			<mat-card class="player-card">
-				<mat-card-header>
-					<mat-card-title>
-						<mat-icon class="card-title-icon">play_circle</mat-icon>
-						Preview
-					</mat-card-title>
-				</mat-card-header>
-				<mat-card-content class="player-content">
-					<ov-recording-video-player
-						[recordingUrl]="recordingUrl()"
-						[recordingStatus]="recording()!.status"
-						[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
-						[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
-						(videoError)="onVideoError()"
-						(download)="downloadRecording()"
-						(share)="shareRecording()"
-					/>
-				</mat-card-content>
-			</mat-card>
+			<ov-recording-video-player
+				[recordingUrl]="recordingUrl()"
+				[recordingStatus]="recording()!.status"
+				[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
+				[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
+				(videoError)="onVideoError()"
+				(download)="downloadRecording()"
+				(share)="shareRecording()"
+			/>
 		</div>
 	</div>
 }
