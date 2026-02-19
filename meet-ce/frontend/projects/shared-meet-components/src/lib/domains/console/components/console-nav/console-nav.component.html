@@ -24,7 +24,7 @@
 	</button>
 
 	<span class="icon-division"></span>
-	<button mat-icon-button aria-label="Profile" id="profile-btn" [matTooltip]="'My profile'" aria-label="Profile">
+	<button mat-icon-button aria-label="Profile" id="profile-btn" [matTooltip]="'My profile'" routerLink="profile" aria-label="Profile">
 		<mat-icon>account_circle</mat-icon>
 	</button>
 	<button mat-icon-button (click)="onLogoutClicked.emit()" matTooltip="Logout" aria-label="Logout" id="logout-btn">

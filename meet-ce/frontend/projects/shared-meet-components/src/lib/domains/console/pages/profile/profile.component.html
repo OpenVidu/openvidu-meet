@@ -1,0 +1,327 @@
+<div class="ov-page-container ov-mb-xxl">
+	<!-- Page Header -->
+	<div class="page-header">
+		<div class="title">
+			<mat-icon>account_circle</mat-icon>
+			<h1>{{ isOwnProfile() ? 'Profile' : 'User Profile' }}</h1>
+		</div>
+		<p class="subtitle">
+			{{
+				isOwnProfile()
+					? 'Manage your account information and security settings.'
+					: 'Viewing account information for this user.'
+			}}
+		</p>
+	</div>
+
+	<!-- ─── Loading State ─────────────────────────────────────────────────────── -->
+	@if (isLoading()) {
+		<div class="ov-page-loading">
+			<div class="loading-content">
+				<div class="loading-header">
+					<div class="loading-title">
+						<mat-icon class="loading-icon">account_circle</mat-icon>
+						<h1>Loading Profile</h1>
+					</div>
+					<p class="loading-subtitle">Please wait while we fetch profile information...</p>
+				</div>
+				<div class="loading-spinner-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
+			</div>
+		</div>
+	} @else if (targetUser()) {
+		<!-- ─── Two-column layout ──────────────────────────────────────────────── -->
+		<div class="profile-layout">
+			<!-- LEFT — Profile Header -->
+			<aside class="profile-sidebar">
+				<mat-card class="section-card profile-header-card">
+					<mat-card-content>
+						<!-- Avatar -->
+						<div class="profile-avatar">
+							<span class="avatar-initials">{{ getInitials() }}</span>
+						</div>
+
+						<!-- Identity -->
+						<div class="profile-identity">
+							<h2 class="profile-name">{{ targetUser()!.name }}</h2>
+							<span class="role-chip" [ngClass]="'role-' + targetUser()!.role">
+								{{ getRoleLabel(targetUser()!.role) }}
+							</span>
+						</div>
+
+						<!-- Meta -->
+						<p class="profile-since">
+							<mat-icon class="meta-icon">calendar_today</mat-icon>
+							Member since {{ formatDate(targetUser()!.registrationDate) }}
+						</p>
+					</mat-card-content>
+				</mat-card>
+			</aside>
+
+			<!-- RIGHT — Details -->
+			<div class="profile-main">
+				<!-- ─── Account Information ──────────────────────────────────── -->
+				<mat-card class="section-card">
+					<mat-card-header>
+						<div mat-card-avatar class="section-avatar">
+							<mat-icon class="section-icon">person</mat-icon>
+						</div>
+						<mat-card-title>Account Information</mat-card-title>
+						<mat-card-subtitle>Read-only details for this account</mat-card-subtitle>
+					</mat-card-header>
+
+					<mat-card-content>
+						<div class="info-grid">
+							<div class="info-item">
+								<span class="info-label">User ID</span>
+								<span class="info-value monospace">{{ targetUser()!.userId }}</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">Name</span>
+								<span class="info-value">{{ targetUser()!.name }}</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">Role</span>
+								<span class="info-value">
+									<span class="role-chip" [ngClass]="'role-' + targetUser()!.role">
+										{{ getRoleLabel(targetUser()!.role) }}
+									</span>
+								</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">Member since</span>
+								<span class="info-value">{{ formatDate(targetUser()!.registrationDate) }}</span>
+							</div>
+						</div>
+					</mat-card-content>
+				</mat-card>
+
+				<!-- ─── Security: Change Password (own profile only) ──────────── -->
+				@if (isOwnProfile()) {
+					<mat-card class="section-card">
+						<mat-card-header>
+							<div mat-card-avatar class="section-avatar">
+								<mat-icon class="section-icon">lock</mat-icon>
+							</div>
+							<mat-card-title>Security</mat-card-title>
+							<mat-card-subtitle>Update your password to keep your account secure</mat-card-subtitle>
+						</mat-card-header>
+
+						<mat-card-content>
+							<form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+								<div class="password-form">
+									<!-- Current Password -->
+									<mat-form-field
+										subscriptSizing="dynamic"
+										appearance="outline"
+										class="password-field"
+									>
+										<mat-label>Current Password</mat-label>
+										<input
+											matInput
+											[type]="showCurrentPassword() ? 'text' : 'password'"
+											formControlName="currentPassword"
+											placeholder="Enter your current password"
+										/>
+										<button
+											mat-icon-button
+											matSuffix
+											type="button"
+											(click)="showCurrentPassword.set(!showCurrentPassword())"
+											[matTooltip]="showCurrentPassword() ? 'Hide password' : 'Show password'"
+										>
+											<mat-icon>{{
+												showCurrentPassword() ? 'visibility_off' : 'visibility'
+											}}</mat-icon>
+										</button>
+										@if (getCurrentPasswordError()) {
+											<mat-error>{{ getCurrentPasswordError() }}</mat-error>
+										}
+									</mat-form-field>
+
+									<!-- New Password -->
+									<mat-form-field
+										subscriptSizing="dynamic"
+										appearance="outline"
+										class="password-field"
+									>
+										<mat-label>New Password</mat-label>
+										<input
+											matInput
+											[type]="showNewPassword() ? 'text' : 'password'"
+											formControlName="newPassword"
+											placeholder="Create a strong, secure password"
+										/>
+										<button
+											mat-icon-button
+											matSuffix
+											type="button"
+											(click)="showNewPassword.set(!showNewPassword())"
+											[matTooltip]="showNewPassword() ? 'Hide password' : 'Show password'"
+										>
+											<mat-icon>{{
+												showNewPassword() ? 'visibility_off' : 'visibility'
+											}}</mat-icon>
+										</button>
+										<mat-hint>Minimum 5 characters</mat-hint>
+										@if (getNewPasswordError()) {
+											<mat-error>{{ getNewPasswordError() }}</mat-error>
+										}
+									</mat-form-field>
+
+									<!-- Confirm Password -->
+									<mat-form-field
+										subscriptSizing="dynamic"
+										appearance="outline"
+										class="password-field"
+									>
+										<mat-label>Confirm New Password</mat-label>
+										<input
+											matInput
+											[type]="showConfirmPassword() ? 'text' : 'password'"
+											formControlName="confirmPassword"
+											placeholder="Repeat your new password"
+										/>
+										<button
+											mat-icon-button
+											matSuffix
+											type="button"
+											(click)="showConfirmPassword.set(!showConfirmPassword())"
+											[matTooltip]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+										>
+											<mat-icon>{{
+												showConfirmPassword() ? 'visibility_off' : 'visibility'
+											}}</mat-icon>
+										</button>
+										@if (getConfirmPasswordError()) {
+											<mat-error>{{ getConfirmPasswordError() }}</mat-error>
+										}
+									</mat-form-field>
+								</div>
+
+								<div class="form-actions">
+									<button
+										mat-button
+										class="primary-button"
+										type="submit"
+										[disabled]="changePasswordForm.invalid || isSavingPassword()"
+									>
+										@if (isSavingPassword()) {
+											<mat-spinner diameter="18"></mat-spinner>
+										} @else {
+											Update Password
+										}
+									</button>
+								</div>
+							</form>
+						</mat-card-content>
+					</mat-card>
+				}
+
+				<!-- ─── Admin Actions (admin viewing another non-root user) ─── -->
+				@if (isAdminViewing() && !isRootAdmin()) {
+					<mat-card class="section-card admin-actions-card">
+						<mat-card-header>
+							<div mat-card-avatar class="section-avatar danger-avatar">
+								<mat-icon class="section-icon">shield</mat-icon>
+							</div>
+							<mat-card-title>Admin Actions</mat-card-title>
+							<mat-card-subtitle>
+								Administrative operations for <strong>{{ targetUser()!.userId }}</strong>
+							</mat-card-subtitle>
+						</mat-card-header>
+
+						<mat-card-content>
+							<!-- Change Role -->
+							<div class="admin-action-row">
+								<div class="action-info">
+									<mat-icon class="action-icon">manage_accounts</mat-icon>
+									<div>
+										<h4 class="action-title">Change Role</h4>
+										<p class="action-description">
+											Assign a new role to this user. Permissions change immediately.
+										</p>
+									</div>
+								</div>
+								<div class="action-controls">
+									<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-select">
+										<mat-label>Role</mat-label>
+										<mat-select [value]="editableRole()" (valueChange)="editableRole.set($event)">
+											@for (role of availableRoles; track role) {
+												<mat-option [value]="role">{{ getRoleLabel(role) }}</mat-option>
+											}
+										</mat-select>
+									</mat-form-field>
+									<button
+										mat-button
+										class="primary-button"
+										[disabled]="editableRole() === targetUser()!.role || isSavingRole()"
+										(click)="onUpdateRole()"
+									>
+										@if (isSavingRole()) {
+											<mat-spinner diameter="18"></mat-spinner>
+										} @else {
+											Save Role
+										}
+									</button>
+								</div>
+							</div>
+
+							<mat-divider class="action-divider"></mat-divider>
+
+							<!-- Reset Password -->
+							<div class="admin-action-row">
+								<div class="action-info">
+									<mat-icon class="action-icon">key</mat-icon>
+									<div>
+										<h4 class="action-title">Reset Password</h4>
+										<p class="action-description">
+											Generate a temporary password. The user must change it on next login.
+										</p>
+									</div>
+								</div>
+								<div class="action-controls">
+									<button mat-button class="warning-button" (click)="onResetPassword()">
+										Reset Password
+									</button>
+								</div>
+							</div>
+
+							<mat-divider class="action-divider"></mat-divider>
+
+							<!-- Delete User -->
+							<div class="admin-action-row">
+								<div class="action-info">
+									<mat-icon class="action-icon danger-icon">delete_forever</mat-icon>
+									<div>
+										<h4 class="action-title danger-text">Delete User</h4>
+										<p class="action-description">
+											Permanently remove this account. This action cannot be undone.
+										</p>
+									</div>
+								</div>
+								<div class="action-controls">
+									<button
+										mat-button
+										class="danger-button"
+										[disabled]="isDeletingUser()"
+										(click)="onDeleteUser()"
+									>
+										@if (isDeletingUser()) {
+											<mat-spinner diameter="18"></mat-spinner>
+										} @else {
+											Delete User
+										}
+									</button>
+								</div>
+							</div>
+						</mat-card-content>
+					</mat-card>
+				}
+			</div>
+			<!-- /.profile-main -->
+		</div>
+		<!-- /.profile-layout -->
+	}
+</div>

@@ -51,6 +51,13 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 			iconClass: 'ov-settings-icon',
 			order: 6
 		}
+	},
+	// Profile page is not shown in the main navigation, but we want it to be a child route of the console shell
+	{
+		route: {
+			path: 'profile',
+			loadComponent: () => import('../pages/profile/profile.component').then((m) => m.ProfileComponent)
+		}
 	}
 ];
 

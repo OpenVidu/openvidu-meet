@@ -1,0 +1,280 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// ─── Page Layout: two-column on desktop, stacked on mobile ───────────────────
+
+.profile-layout {
+	display: grid;
+	grid-template-columns: 280px 1fr;
+	grid-template-areas: 'sidebar main';
+	align-items: start;
+	gap: var(--ov-meet-spacing-lg);
+
+	@include design-tokens.ov-tablet-down {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			'sidebar'
+			'main';
+	}
+}
+
+.profile-sidebar {
+	grid-area: sidebar;
+}
+
+.profile-main {
+	grid-area: main;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+// ─── Profile Header Card ──────────────────────────────────────────────────────
+
+.profile-header-card {
+	.mat-mdc-card-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: var(--ov-meet-spacing-md);
+		padding-bottom: var(--ov-meet-spacing-md);
+		padding: 0 !important;
+	}
+}
+
+.profile-avatar {
+	width: 88px;
+	height: 88px;
+	border-radius: 50%;
+	background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.avatar-initials {
+	font-size: 2rem;
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-meet-color-primary);
+	line-height: 1;
+	text-transform: uppercase;
+	user-select: none;
+}
+
+.profile-identity {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+}
+
+.profile-name {
+	margin: 0;
+	font-size: var(--ov-meet-font-size-lg);
+	font-weight: var(--ov-meet-font-weight-semibold);
+	color: var(--ov-meet-text-primary);
+	word-break: break-word;
+}
+
+.profile-since {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	margin: 0;
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+
+	.meta-icon {
+		font-size: 14px;
+		width: 14px;
+		height: 14px;
+	}
+}
+
+// ─── Role chip ────────────────────────────────────────────────────────────────
+
+.role-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+	border-radius: var(--ov-meet-border-radius-pill, 9999px);
+	font-size: var(--ov-meet-font-size-sm);
+	font-weight: var(--ov-meet-font-weight-medium);
+	line-height: 1;
+
+	&.role-admin {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+		color: var(--ov-meet-color-primary);
+	}
+
+	&.role-user {
+		background-color: color-mix(in srgb, var(--ov-meet-color-success) 15%, transparent);
+		color: var(--ov-meet-color-success);
+	}
+
+	&.role-room_member {
+		background-color: color-mix(in srgb, var(--ov-meet-color-warning) 15%, transparent);
+		color: var(--ov-meet-color-warning);
+	}
+}
+
+// ─── Account Info Grid ────────────────────────────────────────────────────────
+
+.info-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--ov-meet-spacing-lg);
+
+	@include design-tokens.ov-tablet-down {
+		grid-template-columns: 1fr;
+		gap: var(--ov-meet-spacing-md);
+	}
+}
+
+.info-item {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-xs);
+
+	.info-label {
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.info-value {
+		font-size: var(--ov-meet-font-size-md);
+		color: var(--ov-meet-text-primary);
+		font-weight: var(--ov-meet-font-weight-regular);
+
+		&.monospace {
+			font-family: monospace;
+		}
+	}
+}
+
+// ─── Security / Password Form ─────────────────────────────────────────────────
+
+.password-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+}
+
+.password-field {
+	width: 100%;
+}
+
+.form-actions {
+	padding-top: var(--ov-meet-spacing-md);
+}
+
+// ─── Admin Actions Card ───────────────────────────────────────────────────────
+
+.admin-actions-card {
+	border: 1px solid color-mix(in srgb, var(--ov-meet-color-error) 30%, transparent);
+}
+
+.danger-avatar .section-icon {
+	color: var(--ov-meet-color-error) !important;
+}
+
+.admin-action-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ov-meet-spacing-lg);
+	padding: var(--ov-meet-spacing-md) 0;
+
+	@include design-tokens.ov-tablet-down {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.action-info {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-md);
+		flex: 1;
+
+		.action-icon {
+			@include design-tokens.ov-icon(md);
+			color: var(--ov-meet-text-secondary);
+			margin-top: 2px;
+			flex-shrink: 0;
+
+			&.danger-icon {
+				color: var(--ov-meet-color-error);
+			}
+		}
+
+		.action-title {
+			margin: 0 0 var(--ov-meet-spacing-xs) 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+
+			&.danger-text {
+				color: var(--ov-meet-color-error);
+			}
+		}
+
+		.action-description {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+			line-height: var(--ov-meet-line-height-normal);
+		}
+	}
+
+	.action-controls {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		flex-shrink: 0;
+
+		.role-select {
+			width: 160px;
+		}
+	}
+}
+
+.action-divider {
+	margin: 0 !important;
+}
+
+// ─── Button variants ──────────────────────────────────────────────────────────
+
+.warning-button {
+	@include design-tokens.ov-button-base;
+	background-color: var(--ov-meet-color-warning) !important;
+	color: #fff !important;
+
+	&.mat-mdc-button-disabled {
+		background-color: color-mix(in srgb, var(--ov-meet-color-warning) 50%, transparent) !important;
+	}
+}
+
+.danger-button {
+	@include design-tokens.ov-button-base;
+	background-color: var(--ov-meet-color-error) !important;
+	color: #fff !important;
+
+	&.mat-mdc-button-disabled {
+		background-color: color-mix(in srgb, var(--ov-meet-color-error) 50%, transparent) !important;
+	}
+}
+
+// ─── Spinner inside buttons ───────────────────────────────────────────────────
+
+mat-spinner {
+	::ng-deep {
+		.mdc-circular-progress__determinate-circle,
+		.mdc-circular-progress__indeterminate-circle-graphic {
+			stroke: currentColor;
+		}
+	}
+}
