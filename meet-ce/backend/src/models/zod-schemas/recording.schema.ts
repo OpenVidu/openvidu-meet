@@ -9,9 +9,11 @@ import {
 import { z } from 'zod';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
 
-// Shared fields validation schema for Recording entity
-// Validates and transforms comma-separated string to typed array
-// Only allows fields that exist in MEET_RECORDING_FIELDS
+/**
+ * Shared fields validation schema for Recording entity
+ * Validates and transforms comma-separated string to typed array
+ * Only allows fields that exist in MEET_RECORDING_FIELDS
+ */
 const fieldsSchema = z
 	.string()
 	.optional()

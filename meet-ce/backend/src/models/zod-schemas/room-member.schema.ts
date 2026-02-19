@@ -1,6 +1,7 @@
 import {
+	MEET_ROOM_MEMBER_FIELDS,
 	MEET_ROOM_MEMBER_SORT_FIELDS,
-	MeetRoomMemberFilters,
+	MeetRoomMemberField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
@@ -9,6 +10,32 @@ import {
 	SortOrder
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
+
+/**
+ * Shared fields validation schema for RoomMember entity
+ * Validates and transforms comma-separated string to typed array
+ * Only allows fields that exist in MEET_ROOM_MEMBER_FIELDS
+ */
+const fieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		if (!value) return undefined;
+
+		const requested = value
+			.split(',')
+			.map((field) => field.trim())
+			.filter((field) => field !== '');
+
+		// Filter: only keep valid fields that exist in MeetRoomMember
+		const validFields = requested.filter((field) =>
+			MEET_ROOM_MEMBER_FIELDS.includes(field as MeetRoomMemberField)
+		) as MeetRoomMemberField[];
+
+		const unique = Array.from(new Set(validFields));
+
+		return unique.length > 0 ? unique : undefined;
+	});
 
 const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.nativeEnum(MeetRoomMemberRole);
 
@@ -67,9 +94,9 @@ export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 		}
 	);
 
-export const RoomMemberFiltersSchema: z.ZodType<MeetRoomMemberFilters> = z.object({
+export const RoomMemberFiltersSchema = z.object({
 	name: z.string().optional(),
-	fields: z.string().optional(),
+	fields: fieldsSchema,
 	maxItems: z.coerce
 		.number()
 		.positive('maxItems must be a positive number')

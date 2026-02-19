@@ -3,6 +3,27 @@ import { MeetRoomMember, MeetRoomMemberRole } from '../database/room-member.enti
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
+ * List of all valid fields that can be selected from a MeetRoomMember.
+ * This array is the source of truth and TypeScript validates it matches the MeetRoomMember interface.
+ */
+export const MEET_ROOM_MEMBER_FIELDS = [
+	'memberId',
+	'roomId',
+	'name',
+	'membershipDate',
+	'accessUrl',
+	'baseRole',
+	'customPermissions',
+	'effectivePermissions',
+	'permissionsUpdatedAt'
+] as const satisfies readonly (keyof MeetRoomMember)[];
+
+/**
+ * Properties of a {@link MeetRoomMember} that can be included in the API response when fields filtering is applied.
+ */
+export type MeetRoomMemberField = (typeof MEET_ROOM_MEMBER_FIELDS)[number];
+
+/**
  * Room member fields that are allowed for sorting in room member list queries.
  */
 export const MEET_ROOM_MEMBER_SORT_FIELDS = [
@@ -21,8 +42,8 @@ export type MeetRoomMemberSortField = (typeof MEET_ROOM_MEMBER_SORT_FIELDS)[numb
 export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberSortField> {
 	/** Filter by member name (partial match) */
 	name?: string;
-	/** Comma-separated list of fields to include in the response (e.g., "userId,name,baseRole") */
-	fields?: string;
+	/** Array of fields to include in the response */
+	fields?: MeetRoomMemberField[];
 }
 
 /**
