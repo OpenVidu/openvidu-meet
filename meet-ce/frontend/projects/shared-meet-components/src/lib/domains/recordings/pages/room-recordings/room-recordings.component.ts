@@ -10,6 +10,7 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { MeetingContextService } from '../../../meeting/services';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
+import { RoomService } from '../../../rooms/services/room.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
@@ -47,6 +48,7 @@ export class RoomRecordingsComponent implements OnInit {
 	protected readonly loggerService = inject(LoggerService);
 	protected readonly recordingService = inject(RecordingService);
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
+	protected readonly roomService = inject(RoomService);
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly meetingContextService = inject(MeetingContextService);
@@ -67,17 +69,18 @@ export class RoomRecordingsComponent implements OnInit {
 
 		await this.loadRecordings(this.initialFilters());
 
-		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
-
-		// Set room name based on recordings or roomId
+		// Set room name based on recordings
 		if (this.recordings().length > 0) {
 			this.roomName = this.recordings()[0].roomName;
 		} else {
-			const parts = this.roomId.split('-');
-			this.roomName = parts.slice(0, -1).join('-');
+			// If no recordings, fetch room name from room service
+			const { roomName } = await this.roomService.getRoom(this.roomId, { fields: ['roomName'] });
+			this.roomName = roomName;
 		}
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader = false;
+		this.isInitializing = false;
 	}
 
 	async goBackToRoom() {
