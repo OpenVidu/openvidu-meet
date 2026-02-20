@@ -15,11 +15,17 @@ import {
 	MeetRecordingDocument,
 	MeetRecordingModel
 } from '../models/mongoose-schemas/recording.schema.js';
+import {
+	meetRoomMemberCollectionName,
+	MeetRoomMemberDocument,
+	MeetRoomMemberModel
+} from '../models/mongoose-schemas/room-member.schema.js';
 import { meetRoomCollectionName, MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { meetUserCollectionName, MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { apiKeyMigrations } from './api-key-migrations.js';
 import { globalConfigMigrations } from './global-config-migrations.js';
 import { recordingMigrations } from './recording-migrations.js';
+import { roomMemberMigrations } from './room-member-migrations.js';
 import { roomMigrations } from './room-migrations.js';
 import { userMigrations } from './user-migrations.js';
 
@@ -35,6 +41,7 @@ const migrationRegistry: [
 	CollectionMigrationRegistry<MeetUserDocument>,
 	CollectionMigrationRegistry<MeetApiKeyDocument>,
 	CollectionMigrationRegistry<MeetRoomDocument>,
+	CollectionMigrationRegistry<MeetRoomMemberDocument>,
 	CollectionMigrationRegistry<MeetRecordingDocument>
 ] = [
 	// GlobalConfig - no dependencies, can run first
@@ -65,8 +72,14 @@ const migrationRegistry: [
 		currentVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION,
 		migrations: roomMigrations
 	},
+	// RoomMember - depends on Room (references roomId)
+	{
+		collectionName: meetRoomMemberCollectionName,
+		model: MeetRoomMemberModel,
+		currentVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION,
+		migrations: roomMemberMigrations
+	},
 	// Recording - depends on Room (references roomId)
-	// Should be migrated after rooms
 	{
 		collectionName: meetRecordingCollectionName,
 		model: MeetRecordingModel,
