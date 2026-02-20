@@ -15,7 +15,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoom, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
+import { MEET_ROOM_SORT_FIELDS, MeetRoom, MeetRoomSortField, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -37,7 +37,7 @@ export interface RoomTableAction {
 export interface RoomTableFilter {
 	nameFilter: string;
 	statusFilter: MeetRoomStatus | '';
-	sortField: 'roomName' | 'creationDate' | 'autoDeletionDate';
+	sortField: MeetRoomSortField;
 	sortOrder: SortOrder;
 }
 
@@ -122,7 +122,7 @@ export class RoomsListsComponent implements OnInit {
 	statusFilterControl = new FormControl('');
 
 	// Sort state
-	currentSortField: 'roomName' | 'creationDate' | 'autoDeletionDate' = 'creationDate';
+	currentSortField: MeetRoomSortField = 'creationDate';
 	currentSortOrder: SortOrder = SortOrder.DESC;
 
 	showEmptyFilterMessage = false; // Show message when no rooms match filters
@@ -133,7 +133,7 @@ export class RoomsListsComponent implements OnInit {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomName', 'status', 'creationDate', 'autoDeletion', 'actions'];
+	displayedColumns: string[] = ['select', 'roomName', 'status', 'creationDate', 'autoDeletionDate', 'actions'];
 
 	// Status options
 	statusOptions = [
@@ -202,7 +202,7 @@ export class RoomsListsComponent implements OnInit {
 			this.displayedColumns.push('select');
 		}
 
-		this.displayedColumns.push('roomName', 'status', 'creationDate', 'autoDeletion', 'actions');
+		this.displayedColumns.push('roomName', 'status', 'creationDate', 'autoDeletionDate', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====
@@ -327,8 +327,8 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as 'roomName' | 'creationDate' | 'autoDeletionDate';
-		this.currentSortOrder = sortState.direction === 'asc' ? SortOrder.ASC : SortOrder.DESC;
+		this.currentSortField = sortState.active as MeetRoomSortField;
+		this.currentSortOrder = sortState.direction as SortOrder;
 		this.emitFilterChange();
 	}
 

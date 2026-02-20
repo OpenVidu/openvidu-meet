@@ -338,6 +338,7 @@
 									[checked]="allSelected()"
 									[indeterminate]="someSelected()"
 									(change)="toggleAllSelection()"
+									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									[attr.aria-label]="allSelected() ? 'Deselect all' : 'Select all'"
 								>
@@ -348,6 +349,7 @@
 									<mat-checkbox
 										[checked]="isRecordingSelected(recording)"
 										(change)="toggleRecordingSelection(recording)"
+										(click)="$event.stopPropagation()"
 										[disabled]="loading()"
 										[attr.aria-label]="'Select recording ' + recording.recordingId"
 									>
