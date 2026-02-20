@@ -110,8 +110,8 @@
 							<p class="stat-label">Room</p>
 							<a
 								class="stat-value room-link"
-								[routerLink]="['/rooms', recording()?.roomId, 'detail']"
-								matTooltip="Go to room detail"
+								[routerLink]="['/rooms', recording()?.roomId]"
+								matTooltip="Go to room details"
 							>
 								{{ recording()?.roomName }}
 								<mat-icon class="nav-icon">open_in_new</mat-icon>
