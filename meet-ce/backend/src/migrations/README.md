@@ -63,10 +63,10 @@ src/
 
 ### Step 1: Update TypeScript Interface
 
-Update the domain interface to include new fields or changes:
+Update one of the TypeScript interfaces located in `typings/src/database` to reflect the new schema changes. For example, if adding a new field to the `MeetRoom` entity:
 
 ```typescript
-// typings/src/room.ts
+// typings/src/database/room.entity.ts
 export interface MeetRoom extends MeetRoomOptions {
 	roomId: string;
 	// ... existing fields ...
@@ -109,6 +109,8 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>({
 
 ### Step 4: Create Migration Definition
 
+Create a migration function that transforms documents from the old schema version to the new one. This function will be registered in the migration map.
+
 ```typescript
 import { SchemaTransform, generateSchemaMigrationName } from '../models/migration.model.js';
 import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
@@ -126,7 +128,7 @@ It can mutate the received document by adding, removing, or modifying fields as 
 
 ### Step 5: Register Migration
 
-Add the migration to the map initialization in `room-migrations.ts`:
+Add the migration to the collection's migration map:
 
 ```typescript
 export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
@@ -157,8 +159,12 @@ Each migration is tracked in the `MeetMigration` collection:
 		"collectionName": "MeetRoom",
 		"fromVersion": 1,
 		"toVersion": 2,
+		"chainLength": 1,
+		"chainStepNames": ["schema_room_v1_to_v2"],
 		"migratedCount": 1523,
 		"failedCount": 0,
+		"pendingBefore": 1523,
+		"pendingAfter": 0,
 		"durationMs": 123000
 	}
 }
