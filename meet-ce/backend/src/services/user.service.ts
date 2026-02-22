@@ -311,8 +311,9 @@ export class UserService {
 
 	// Convert user to UserDTO to remove sensitive information
 	convertToDTO(user: MeetUser): MeetUserDTO {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { passwordHash, mustChangePassword, ...userDTO } = user;
+		void passwordHash;
+		void mustChangePassword;
 		return userDTO;
 	}
 }
