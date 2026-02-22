@@ -7,7 +7,7 @@ const userMigrationV1ToV2Name = generateSchemaMigrationName(meetUserCollectionNa
 const userMigrationV1ToV2Transform: SchemaTransform<MeetUserDocument> = (user: MeetUserDocument) => {
 	const legacyUser = user as unknown as {
 		username?: string;
-		roles: unknown;
+		roles?: unknown;
 	};
 
 	// NOTE: This migration assumes that there is only one user in the system,

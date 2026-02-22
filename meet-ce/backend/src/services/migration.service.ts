@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { Model } from 'mongoose';
+import { FilterQuery, Model, Require_id, Types } from 'mongoose';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
@@ -270,7 +270,7 @@ export class MigrationService {
 		let migratedCount = 0;
 		let failedCount = 0;
 
-		const sourceVersionFilter = { schemaVersion: sourceSchemaVersion };
+		const sourceVersionFilter: FilterQuery<TDocument> = { schemaVersion: sourceSchemaVersion };
 		const totalSourceVersionDocuments = await model.countDocuments(sourceVersionFilter).exec();
 
 		if (totalSourceVersionDocuments === 0) {
@@ -282,18 +282,23 @@ export class MigrationService {
 		}
 
 		let processedDocumentsCount = 0;
-		let lastProcessedDocumentId: TDocument['_id'] | null = null;
+		let lastProcessedDocumentId: Types.ObjectId | null = null;
 		let hasMoreBatches = true;
 
 		while (hasMoreBatches) {
-			const batchFilter =
+			const batchFilter: FilterQuery<TDocument> =
 				lastProcessedDocumentId === null
 					? sourceVersionFilter
 					: {
 							...sourceVersionFilter,
 							_id: { $gt: lastProcessedDocumentId }
 						};
-			const documents = await model.find(batchFilter).sort({ _id: 1 }).limit(batchSize).exec();
+			const documents = (await model
+				.find(batchFilter)
+				.sort({ _id: 1 })
+				.limit(batchSize)
+				.lean()
+				.exec()) as Require_id<TDocument>[];
 
 			if (documents.length === 0) {
 				break;
@@ -302,8 +307,8 @@ export class MigrationService {
 			const batchResults = await Promise.allSettled(
 				documents.map(async (doc) => {
 					const migratedDocument = this.applyTransformChain(doc, migrationChain, targetVersion);
-					await migratedDocument.save();
-					return String(doc._id);
+					await model.replaceOne({ _id: doc._id }, migratedDocument).exec();
+					return doc._id;
 				})
 			);
 
