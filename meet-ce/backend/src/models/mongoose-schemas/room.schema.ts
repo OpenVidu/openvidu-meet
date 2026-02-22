@@ -7,42 +7,38 @@ import {
 	MeetRoomThemeMode,
 	MeetingEndAction
 } from '@openvidu-meet/typings';
-import { Document, Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
+import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for MeetRoom.
- * Extends the MeetRoom interface with MongoDB Document functionality.
+ * Mongoose Document interface for rooms.
+ * Extends the MeetRoom interface with schemaVersion for migration tracking.
  */
-export interface MeetRoomDocument extends MeetRoom, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetRoomDocument extends MeetRoom, SchemaMigratableDocument {}
 
 /**
- * Mongoose schema for MeetRoom auto-deletion policy.
+ * Sub-schema for auto-deletion policy.
  */
 const MeetRoomAutoDeletionPolicySchema = new Schema(
 	{
 		withMeeting: {
 			type: String,
 			enum: Object.values(MeetRoomDeletionPolicyWithMeeting),
-			required: true,
-			default: MeetRoomDeletionPolicyWithMeeting.FAIL
+			required: true
 		},
 		withRecordings: {
 			type: String,
 			enum: Object.values(MeetRoomDeletionPolicyWithRecordings),
-			required: true,
-			default: MeetRoomDeletionPolicyWithRecordings.FAIL
+			required: true
 		}
 	},
 	{ _id: false }
 );
 
 /**
- * Mongoose schema for MeetRoom recording configuration.
+ * Sub-schema recording configuration.
  */
 const MeetRecordingConfigSchema = new Schema(
 	{
@@ -64,7 +60,7 @@ const MeetRecordingConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom chat configuration.
+ * Sub-schema for chat configuration.
  */
 const MeetChatConfigSchema = new Schema(
 	{
@@ -77,7 +73,7 @@ const MeetChatConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom virtual background configuration.
+ * Sub-schema for virtual background configuration.
  */
 const MeetVirtualBackgroundConfigSchema = new Schema(
 	{
@@ -90,7 +86,7 @@ const MeetVirtualBackgroundConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom E2EE configuration.
+ * Sub-schema for E2EE configuration.
  */
 const MeetE2EEConfigSchema = new Schema(
 	{
@@ -103,7 +99,7 @@ const MeetE2EEConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom captions configuration.
+ * Sub-schema for captions configuration.
  */
 const MeetCaptionsConfigSchema = new Schema(
 	{
@@ -221,7 +217,7 @@ const MeetRoomAnonymousSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom configuration.
+ * Sub-schema for room configuration.
  */
 const MeetRoomConfigSchema = new Schema(
 	{
@@ -316,14 +312,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -338,6 +327,6 @@ MeetRoomSchema.index({ autoDeletionDate: 1, _id: 1 });
 export const meetRoomCollectionName = 'MeetRoom';
 
 /**
- * Mongoose model for MeetRoom.
+ * Mongoose model for MeetRoom entity.
  */
 export const MeetRoomModel = model<MeetRoomDocument>(meetRoomCollectionName, MeetRoomSchema);

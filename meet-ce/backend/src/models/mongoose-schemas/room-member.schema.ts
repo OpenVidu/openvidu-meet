@@ -1,16 +1,13 @@
 import { MeetRoomMember, MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { Document, Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for MeetRoomMember.
- * Extends the MeetRoomMember interface with MongoDB Document functionality.
- * Note: effectivePermissions is computed, not stored.
+ * Mongoose Document interface for room members.
+ * Extends the MeetRoomMember interface with schemaVersion for migration tracking.
  */
-export interface MeetRoomMemberDocument extends MeetRoomMember, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetRoomMemberDocument extends MeetRoomMember, SchemaMigratableDocument {}
 
 const permissionFields = {
 	canRecord: { type: Boolean },
@@ -51,6 +48,7 @@ const MeetRoomMemberPartialPermissionsSchema = createPermissionsSchema(false);
 
 /**
  * Mongoose schema for MeetRoomMember entity.
+ * Defines the structure and validation rules for room member documents in MongoDB.
  */
 const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 	{
@@ -98,14 +96,7 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -119,6 +110,6 @@ MeetRoomMemberSchema.index({ memberId: 1 });
 export const meetRoomMemberCollectionName = 'MeetRoomMember';
 
 /**
- * Mongoose model for MeetRoomMember.
+ * Mongoose model for MeetRoomMember entity.
  */
 export const MeetRoomMemberModel = model<MeetRoomMemberDocument>(meetRoomMemberCollectionName, MeetRoomMemberSchema);

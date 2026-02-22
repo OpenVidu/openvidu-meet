@@ -1,16 +1,14 @@
 import { GlobalConfig, OAuthProvider } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetAppearanceConfigSchema } from './room.schema.js';
+import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for GlobalConfig.
- * Extends the GlobalConfig interface with MongoDB Document functionality.
+ * Mongoose Document interface for global config.
+ * Extends the GlobalConfig interface with schemaVersion for migration tracking.
  */
-export interface MeetGlobalConfigDocument extends GlobalConfig, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetGlobalConfigDocument extends GlobalConfig, SchemaMigratableDocument {}
 
 /**
  * Sub-schema for OAuth provider configuration.
@@ -96,7 +94,7 @@ const RoomsConfigSchema = new Schema(
 
 /**
  * Mongoose schema for GlobalConfig entity.
- * Defines the structure for the global configuration document in MongoDB.
+ * Defines the structure and validation rules for the global configuration document in MongoDB.
  */
 const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 	{
@@ -123,14 +121,7 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 

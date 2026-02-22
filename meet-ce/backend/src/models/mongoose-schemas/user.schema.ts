@@ -1,18 +1,16 @@
 import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for User.
- * Extends the User interface with MongoDB Document functionality.
+ * Mongoose Document interface for users.
+ * Extends the MeetUser interface with schemaVersion for migration tracking.
  */
-export interface MeetUserDocument extends MeetUser, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetUserDocument extends MeetUser, SchemaMigratableDocument {}
 
 /**
- * Mongoose schema for User entity.
+ * Mongoose schema for MeetUser entity.
  * Defines the structure and validation rules for user documents in MongoDB.
  */
 const MeetUserSchema = new Schema<MeetUserDocument>(
@@ -49,14 +47,7 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -70,6 +61,6 @@ MeetUserSchema.index({ name: 1, role: 1, _id: 1 });
 export const meetUserCollectionName = 'MeetUser';
 
 /**
- * Mongoose model for User entity.
+ * Mongoose model for MeetUser entity.
  */
 export const MeetUserModel = model<MeetUserDocument>(meetUserCollectionName, MeetUserSchema);

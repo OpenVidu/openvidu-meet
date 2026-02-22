@@ -1,23 +1,23 @@
 import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Extended interface for Recording documents in MongoDB.
- * Includes the base MeetRecordingInfo plus internal access secrets.
+ * Mongoose Document interface for Recordings.
+ * Extends the MeetRecordingInfo interface with schemaVersion for migration tracking
+ * and internal access secrets.
  */
-export interface MeetRecordingDocument extends MeetRecordingInfo, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-	accessSecrets?: {
+export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratableDocument {
+	accessSecrets: {
 		public: string;
 		private: string;
 	};
 }
 
 /**
- * Mongoose schema for Recording entity.
- * Defines the structure for recording documents in MongoDB.
+ * Mongoose schema for MeetRecordingInfo entity.
+ * Defines the structure and validation rules for recording documents in MongoDB.
  */
 const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 	{
@@ -96,17 +96,7 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				// Remove MongoDB internal fields
-				delete ret._id;
-				delete ret.schemaVersion;
-				// Remove access secrets before returning (they should only be accessed via specific methods)
-				delete ret.accessSecrets;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -122,6 +112,6 @@ MeetRecordingSchema.index({ size: -1, _id: -1 });
 export const meetRecordingCollectionName = 'MeetRecording';
 
 /**
- * Mongoose model for Recording entity.
+ * Mongoose model for MeetRecordingInfo entity.
  */
 export const MeetRecordingModel = model<MeetRecordingDocument>(meetRecordingCollectionName, MeetRecordingSchema);

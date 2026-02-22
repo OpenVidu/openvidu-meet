@@ -1,15 +1,14 @@
-import { Document, model, Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import { isSchemaMigrationName, MeetMigration, MigrationStatus } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for MeetMigration.
- * Extends the MeetMigration interface with MongoDB Document functionality.
+ * Mongoose Document interface for migrations.
  */
-export interface MeetMigrationDocument extends MeetMigration, Document {}
+export type MeetMigrationDocument = MeetMigration;
 
 /**
- * Mongoose schema for the migrations collection.
- * Tracks which migrations have been executed and their status.
+ * Mongoose schema for MeetMigration.
+ * Defines the structure and validation rules for migration documents in MongoDB.
  */
 const MigrationSchema = new Schema<MeetMigrationDocument>(
 	{
@@ -24,13 +23,11 @@ const MigrationSchema = new Schema<MeetMigrationDocument>(
 		status: {
 			type: String,
 			required: true,
-			enum: Object.values(MigrationStatus),
-			default: MigrationStatus.RUNNING
+			enum: Object.values(MigrationStatus)
 		},
 		startedAt: {
 			type: Number,
-			required: true,
-			default: Date.now
+			required: true
 		},
 		completedAt: {
 			type: Number,
@@ -46,13 +43,7 @@ const MigrationSchema = new Schema<MeetMigrationDocument>(
 		}
 	},
 	{
-		versionKey: false,
-		toObject: {
-			transform: (_doc, ret) => {
-				delete ret._id;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 

@@ -1,4 +1,4 @@
-import { Document, Model } from 'mongoose';
+import { Model } from 'mongoose';
 
 /**
  * Interface representing a migration document in MongoDB.
@@ -8,27 +8,22 @@ export interface MeetMigration {
 	 * Unique identifier for the migration (e.g., 'legacy_storage_to_mongodb').
 	 */
 	name: MigrationName;
-
 	/**
 	 * Current status of the migration.
 	 */
 	status: MigrationStatus;
-
 	/**
 	 * Timestamp when the migration started.
 	 */
 	startedAt: number;
-
 	/**
 	 * Timestamp when the migration completed (success or failure).
 	 */
 	completedAt?: number;
-
 	/**
 	 * Error message if the migration failed.
 	 */
 	error?: string;
-
 	/**
 	 * Optional metadata about the migration execution.
 	 * Can include statistics like number of items migrated, duration, etc.
@@ -44,12 +39,10 @@ export enum MigrationStatus {
 	 * Migration is currently running.
 	 */
 	RUNNING = 'running',
-
 	/**
 	 * Migration completed successfully.
 	 */
 	COMPLETED = 'completed',
-
 	/**
 	 * Migration failed with an error.
 	 */
@@ -111,17 +104,18 @@ export function parseSchemaMigrationName(
 }
 
 /**
- * Base document shape required for schema migrations.
- */
-export interface SchemaMigratableDocument extends Document {
-	schemaVersion?: number;
-}
-
-/**
  * Represents a schema version number.
  * Versions start at 1 and increment sequentially.
  */
 export type SchemaVersion = number;
+
+/**
+ * Base document shape required for schema migrations.
+ */
+export interface SchemaMigratableDocument {
+	/** Schema version for migration tracking (internal use only) */
+	schemaVersion: SchemaVersion;
+}
 
 /**
  * Function that transforms a document and returns the updated document.
