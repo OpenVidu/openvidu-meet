@@ -1,6 +1,6 @@
 import { SortAndPagination, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
-import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
+import { FilterQuery, Model, Require_id, UpdateQuery } from 'mongoose';
 import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
@@ -9,41 +9,55 @@ import { LoggerService } from '../services/logger.service.js';
  * This class is meant to be extended by specific entity repositories.
  *
  * @template TDomain - The domain interface type
- * @template TDocument - The Mongoose document type extending Document
+ * @template TDocument - The persisted model shape used in MongoDB (extends TDomain)
  */
 @injectable()
-export abstract class BaseRepository<TDomain, TDocument extends Document> {
+export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomain> {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@unmanaged() protected model: Model<TDocument>
 	) {}
 
 	/**
-	 * Transforms a document into a domain object.
-	 * Must be implemented by each concrete repository to handle entity-specific transformations.
+	 * Transforms a persisted object into a domain object.
+	 * Must be implemented by each concrete repository to apply entity-specific transformations.
 	 *
-	 * @param document - The MongoDB document to transform
+	 * @param dbObject - The persisted object to transform
 	 * @returns The domain object
 	 */
-	protected abstract toDomain(document: TDocument): TDomain;
+	protected abstract toDomain(dbObject: Require_id<TDocument> & { __v: number }): TDomain;
+
+	/**
+	 * Creates a new document.
+	 *
+	 * @param data - The data to create
+	 * @returns The created domain object
+	 */
+	protected async createDocument(data: TDomain): Promise<TDomain> {
+		try {
+			const document = await this.model.create(data);
+			this.logger.debug(`Document created with ID: ${document._id}`);
+			return this.toDomain(document.toObject());
+		} catch (error) {
+			this.logger.error('Error creating document:', error);
+			throw error;
+		}
+	}
 
 	/**
 	 * Finds a single document matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter
 	 * @param fields - Optional array of field names to select from database
-	 * @returns The document or null if not found
+	 * @returns The domain object or null if not found
 	 */
-	protected async findOne(filter: FilterQuery<TDocument>, fields?: string[]): Promise<TDocument | null> {
+	protected async findOne(filter: FilterQuery<TDocument>, fields?: string[]): Promise<TDomain | null> {
 		try {
-			let query = this.model.findOne(filter);
-
-			// Apply field selection if specified
-			if (fields && fields.length > 0) {
-				// Convert array of fields to space-separated string for Mongoose select()
-				query = query.select(fields.join(' '));
-			}
-
-			return await query.exec();
+			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
+			const document = (await this.model.findOne(filter, projection).lean().exec()) as
+				| (Require_id<TDocument> & { __v: number })
+				| null;
+			return document ? this.toDomain(document) : null;
 		} catch (error) {
 			this.logger.error('Error finding document with filter:', filter, error);
 			throw error;
@@ -52,8 +66,6 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Finds all documents matching the given filter without pagination.
-	 * Useful for queries where you need all matching documents.
-	 *
 	 * WARNING: Use with caution on large collections. Consider using findMany() with pagination instead.
 	 *
 	 * @param filter - Base MongoDB query filter
@@ -62,16 +74,10 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 */
 	protected async findAll(filter: FilterQuery<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
 		try {
-			let query = this.model.find(filter);
-
-			// Apply field selection if specified
-			if (fields && fields.length > 0) {
-				// Convert array of fields to space-separated string for Mongoose select()
-				query = query.select(fields.join(' '));
-			}
-
-			// Transform documents to domain objects
-			const documents = await query.exec();
+			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
+			const documents = (await this.model.find(filter, projection).lean().exec()) as Array<
+				Require_id<TDocument> & { __v: number }
+			>;
 			return documents.map((doc) => this.toDomain(doc));
 		} catch (error) {
 			this.logger.error('Error finding all documents with filter:', filter, error);
@@ -86,7 +92,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param options - Pagination options
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor)
-	 * @param options.sortField - Field to sort by (default: 'createdAt')
+	 * @param options.sortField - Field to sort by (default: '_id')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @param fields - Optional array of field names to select from database
 	 * @returns Paginated result with items, truncation flag, and optional next token
@@ -116,16 +122,10 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		// Fetch one more than requested to check if there are more results
 		const limit = maxItems + 1;
 
-		// Build query
-		let query = this.model.find(filter).sort(sort).limit(limit);
-
-		// Apply field selection if specified
-		if (fields && fields.length > 0) {
-			// Convert array of fields to space-separated string for Mongoose select()
-			query = query.select(fields.join(' '));
-		}
-
-		const documents = await query.exec();
+		const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
+		const documents = (await this.model.find(filter, projection).sort(sort).limit(limit).lean().exec()) as Array<
+			Require_id<TDocument> & { __v: number }
+		>;
 
 		// Check if there are more results
 		const hasMore = documents.length > maxItems;
@@ -148,44 +148,30 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	}
 
 	/**
-	 * Creates a new document.
-	 * @param data - The data to create
-	 * @returns The created document
-	 */
-	protected async createDocument(data: TDomain): Promise<TDocument> {
-		try {
-			const document = await this.model.create(data);
-			this.logger.debug(`Document created with id: ${document._id}`);
-			return document;
-		} catch (error) {
-			this.logger.error('Error creating document:', error);
-			throw error;
-		}
-	}
-
-	/**
 	 * Updates a document by a custom filter.
+	 *
 	 * @param filter - MongoDB query filter
 	 * @param updateData - The data to update
-	 * @returns The updated document
+	 * @returns The updated domain object
 	 * @throws Error if document not found or update fails
 	 */
-	protected async updateOne(filter: FilterQuery<TDocument>, updateData: UpdateQuery<TDocument>): Promise<TDocument> {
+	protected async updateOne(filter: FilterQuery<TDocument>, updateData: UpdateQuery<TDocument>): Promise<TDomain> {
 		try {
-			const document = await this.model
+			const document = (await this.model
 				.findOneAndUpdate(filter, updateData, {
 					new: true,
-					runValidators: true
+					runValidators: true,
+					lean: true
 				})
-				.exec();
+				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
 
 			if (!document) {
 				this.logger.error('No document found to update with filter:', filter);
 				throw new Error('Document not found for update');
 			}
 
-			this.logger.debug('Document updated');
-			return document;
+			this.logger.debug(`Document with ID '${document._id}' updated`);
+			return this.toDomain(document);
 		} catch (error) {
 			this.logger.error('Error updating document:', error);
 			throw error;
@@ -194,6 +180,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Deletes a document by a custom filter.
+	 *
 	 * @param filter - MongoDB query filter
 	 * @throws Error if no document was found or deleted
 	 */
@@ -206,7 +193,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 				throw new Error('Document not found for deletion');
 			}
 
-			this.logger.debug('Document deleted');
+			this.logger.debug(`Document with ID '${result._id}' deleted`);
 		} catch (error) {
 			this.logger.error('Error deleting document:', error);
 			throw error;
@@ -215,6 +202,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Deletes multiple documents matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter
 	 * @param failIfEmpty - Whether to throw error if no documents are found (default: true)
 	 * @throws Error if no documents were found or deleted (only when failIfEmpty is true)
@@ -225,11 +213,10 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			const deletedCount = result.deletedCount || 0;
 
 			if (deletedCount === 0) {
+				this.logger.error('No documents found to delete with filter:', filter);
+
 				if (failIfEmpty) {
-					this.logger.error('No documents found to delete with filter:', filter);
 					throw new Error('No documents found for deletion');
-				} else {
-					this.logger.debug('No documents found to delete with filter:', filter);
 				}
 			} else {
 				this.logger.debug(`Deleted ${deletedCount} documents`);
@@ -246,6 +233,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Counts the total number of documents matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter (optional, defaults to counting all documents)
 	 * @returns The number of documents matching the filter
 	 */
@@ -271,8 +259,8 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param sortField - The field used for sorting
 	 * @returns Base64-encoded cursor token
 	 */
-	protected encodeCursor(document: TDocument, sortField: string): string {
-		const fieldValue = document.get(sortField);
+	protected encodeCursor(document: Require_id<TDocument> & { __v: number }, sortField: string): string {
+		const fieldValue = document[sortField as keyof Require_id<TDocument>];
 
 		const cursor: PaginationCursor = {
 			// Convert undefined to null for JSON serialization
