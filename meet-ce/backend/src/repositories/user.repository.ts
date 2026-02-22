@@ -1,5 +1,6 @@
 import { MeetUser, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { FilterQuery, Require_id } from 'mongoose';
 import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -7,23 +8,17 @@ import { BaseRepository } from './base.repository.js';
 /**
  * Repository for managing MeetUser entities in MongoDB.
  * Provides CRUD operations and specialized queries for user data.
- *
- * @template TUser - The domain type extending MeetUser (default: MeetUser)
  */
 @injectable()
-export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepository<TUser, MeetUserDocument> {
+export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetUserModel);
 	}
 
-	/**
-	 * Transforms a MongoDB document into a domain user object.
-	 *
-	 * @param document - The MongoDB document
-	 * @returns User domain object
-	 */
-	protected toDomain(document: MeetUserDocument): TUser {
-		return document.toObject() as TUser;
+	protected toDomain(dbObject: Require_id<MeetUserDocument> & { __v: number }): MeetUser {
+		const { _id, __v, schemaVersion, ...user } = dbObject;
+		(void _id, __v, schemaVersion);
+		return user as MeetUser;
 	}
 
 	/**
@@ -32,9 +27,8 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @param user - The user data to create
 	 * @returns The created user
 	 */
-	async create(user: TUser): Promise<TUser> {
-		const document = await this.createDocument(user);
-		return this.toDomain(document);
+	async create(user: MeetUser): Promise<MeetUser> {
+		return this.createDocument(user);
 	}
 
 	/**
@@ -44,9 +38,8 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @returns The updated user
 	 * @throws Error if user not found
 	 */
-	async update(user: TUser): Promise<TUser> {
-		const document = await this.updateOne({ userId: user.userId }, user);
-		return this.toDomain(document);
+	async update(user: MeetUser): Promise<MeetUser> {
+		return this.updateOne({ userId: user.userId }, user);
 	}
 
 	/**
@@ -55,9 +48,8 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @param userId - The unique user identifier
 	 * @returns The user or null if not found
 	 */
-	async findByUserId(userId: string): Promise<TUser | null> {
-		const document = await this.findOne({ userId });
-		return document ? this.toDomain(document) : null;
+	async findByUserId(userId: string): Promise<MeetUser | null> {
+		return this.findOne({ userId });
 	}
 
 	/**
@@ -66,7 +58,7 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @param userIds - Array of user identifiers
 	 * @returns Array of found users
 	 */
-	async findByUserIds(userIds: string[]): Promise<TUser[]> {
+	async findByUserIds(userIds: string[]): Promise<MeetUser[]> {
 		return await this.findAll({ userId: { $in: userIds } });
 	}
 
@@ -84,7 +76,7 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 	 * @returns Object containing users array, pagination info, and optional next page token
 	 */
 	async find(options: MeetUserFilters = {}): Promise<{
-		users: TUser[];
+		users: MeetUser[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
@@ -99,7 +91,7 @@ export class UserRepository<TUser extends MeetUser = MeetUser> extends BaseRepos
 		} = options;
 
 		// Build base filter
-		const filter: Record<string, unknown> = {};
+		const filter: FilterQuery<MeetUserDocument> = {};
 
 		if (userId && name) {
 			// Both defined: OR filter with regex userId match and regex name match

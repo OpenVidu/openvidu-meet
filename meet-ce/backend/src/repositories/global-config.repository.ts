@@ -1,5 +1,6 @@
 import { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { Require_id } from 'mongoose';
 import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from '../models/mongoose-schemas/global-config.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -9,26 +10,17 @@ import { BaseRepository } from './base.repository.js';
  *
  * IMPORTANT: This collection should only contain ONE document representing the
  * system-wide global configuration. Methods are designed to work with this singleton pattern.
- *
- * @template TGlobalConfig - The domain type extending GlobalConfig (default: GlobalConfig)
  */
 @injectable()
-export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalConfig> extends BaseRepository<
-	TGlobalConfig,
-	MeetGlobalConfigDocument
-> {
+export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlobalConfigDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetGlobalConfigModel);
 	}
 
-	/**
-	 * Transforms a MongoDB document into a domain GlobalConfig object.
-	 *
-	 * @param document - The MongoDB document
-	 * @returns GlobalConfig domain object
-	 */
-	protected toDomain(document: MeetGlobalConfigDocument): TGlobalConfig {
-		return document.toObject() as TGlobalConfig;
+	protected toDomain(dbObject: Require_id<MeetGlobalConfigDocument> & { __v: number }): GlobalConfig {
+		const { _id, __v, schemaVersion, ...globalConfig } = dbObject;
+		(void _id, __v, schemaVersion);
+		return globalConfig as GlobalConfig;
 	}
 
 	/**
@@ -40,9 +32,8 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 * @param config - The global configuration data to create
 	 * @returns The created global configuration
 	 */
-	async create(config: TGlobalConfig): Promise<TGlobalConfig> {
-		const document = await this.createDocument(config);
-		return this.toDomain(document);
+	async create(config: GlobalConfig): Promise<GlobalConfig> {
+		return this.createDocument(config);
 	}
 
 	/**
@@ -54,10 +45,9 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 * @returns The updated global configuration
 	 * @throws Error if no config exists
 	 */
-	async update(config: TGlobalConfig): Promise<TGlobalConfig> {
+	async update(config: GlobalConfig): Promise<GlobalConfig> {
 		// Update the first document in the collection (there should only be one)
-		const document = await this.updateOne({}, config);
-		return this.toDomain(document);
+		return this.updateOne({}, config);
 	}
 
 	/**
@@ -65,10 +55,9 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 *
 	 * @returns The global configuration or null if not found
 	 */
-	async get(): Promise<TGlobalConfig | null> {
+	async get(): Promise<GlobalConfig | null> {
 		// Get the first (and only) document from the collection
-		const document = await this.findOne({});
-		return document ? this.toDomain(document) : null;
+		return this.findOne({});
 	}
 
 	/**

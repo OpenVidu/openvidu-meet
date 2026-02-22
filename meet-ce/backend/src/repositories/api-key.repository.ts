@@ -1,39 +1,36 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { Require_id } from 'mongoose';
 import { MeetApiKeyDocument, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
  * Repository for managing MeetApiKey entities in MongoDB.
- *
- * @template TApiKey - The domain type extending MeetApiKey (default: MeetApiKey)
  */
 @injectable()
-export class ApiKeyRepository<TApiKey extends MeetApiKey = MeetApiKey> extends BaseRepository<
-	TApiKey,
-	MeetApiKeyDocument
-> {
+export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetApiKeyModel);
 	}
 
-	protected toDomain(document: MeetApiKeyDocument): TApiKey {
-		return document.toObject() as TApiKey;
+	protected toDomain(dbObject: Require_id<MeetApiKeyDocument> & { __v: number }): MeetApiKey {
+		const { _id, __v, schemaVersion, ...apiKey } = dbObject;
+		(void _id, __v, schemaVersion);
+		return apiKey as MeetApiKey;
 	}
 
 	/**
 	 * Creates a new API key.
 	 */
-	async create(apiKey: TApiKey): Promise<TApiKey> {
-		const doc = await this.createDocument(apiKey);
-		return this.toDomain(doc);
+	async create(apiKey: MeetApiKey): Promise<MeetApiKey> {
+		return this.createDocument(apiKey);
 	}
 
 	/**
 	 * Returns all API keys.
 	 */
-	async findAll(): Promise<TApiKey[]> {
+	async findAll(): Promise<MeetApiKey[]> {
 		return await super.findAll();
 	}
 

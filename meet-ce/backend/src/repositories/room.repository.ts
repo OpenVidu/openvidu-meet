@@ -1,5 +1,6 @@
 import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { FilterQuery, Require_id } from 'mongoose';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
@@ -9,24 +10,24 @@ import { BaseRepository } from './base.repository.js';
 /**
  * Repository for managing MeetRoom entities in MongoDB.
  * Provides CRUD operations and specialized queries for room data.
- *
- * @template TRoom - The domain type extending MeetRoom (default: MeetRoom)
  */
 @injectable()
-export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepository<TRoom, MeetRoomDocument> {
+export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetRoomModel);
 	}
 
 	/**
-	 * Transforms a MongoDB document into a domain room object.
-	 * Enriches URLs with the base URL.
+	 * Transforms a persisted MeetRoom document into a domain MeetRoom object.
+	 * Enriches access URLs with the base URL.
 	 *
-	 * @param document - The MongoDB document
+	 * @param dbObject - The MongoDB document representing a room
 	 * @returns Room with complete URLs
 	 */
-	protected toDomain(document: MeetRoomDocument): TRoom {
-		return this.enrichRoomWithBaseUrls(document);
+	protected toDomain(dbObject: Require_id<MeetRoomDocument> & { __v: number }): MeetRoom {
+		const { _id, __v, schemaVersion, ...room } = dbObject;
+		(void _id, __v, schemaVersion);
+		return this.enrichRoomWithBaseUrls(room as MeetRoom);
 	}
 
 	/**
@@ -36,10 +37,9 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param room - The room data to create
 	 * @returns The created room with enriched URLs
 	 */
-	async create(room: TRoom): Promise<TRoom> {
+	async create(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
-		const document = await this.createDocument(normalizedRoom);
-		return this.enrichRoomWithBaseUrls(document);
+		return this.createDocument(normalizedRoom);
 	}
 
 	/**
@@ -52,10 +52,9 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 *
 	 * TODO: This method should be renamed to replace or updateFull to better reflect that it replaces the entire document
 	 */
-	async update(room: TRoom): Promise<TRoom> {
+	async update(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
-		const document = await this.updateOne({ roomId: room.roomId }, normalizedRoom);
-		return this.enrichRoomWithBaseUrls(document);
+		return this.updateOne({ roomId: room.roomId }, normalizedRoom);
 	}
 
 	/**
@@ -64,7 +63,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param roomId
 	 * @param fieldsToUpdate
 	 */
-	async updatePartial(roomId: string, fieldsToUpdate: Partial<TRoom>): Promise<void> {
+	async updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<void> {
 		await this.updateOne({ roomId }, fieldsToUpdate);
 	}
 
@@ -76,9 +75,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param fields - Array of field names to include in the result
 	 * @returns The room or null if not found
 	 */
-	async findByRoomId(roomId: string, fields?: MeetRoomField[]): Promise<TRoom | null> {
-		const document = await this.findOne({ roomId }, fields);
-		return document ? this.enrichRoomWithBaseUrls(document) : null;
+	async findByRoomId(roomId: string, fields?: MeetRoomField[]): Promise<MeetRoom | null> {
+		return this.findOne({ roomId }, fields);
 	}
 
 	/**
@@ -89,8 +87,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of rooms owned by the user
 	 */
-	async findByOwner(owner: string, fields?: MeetRoomField[]): Promise<TRoom[]> {
-		return await this.findAll({ owner }, fields);
+	async findByOwner(owner: string, fields?: MeetRoomField[]): Promise<MeetRoom[]> {
+		return this.findAll({ owner }, fields);
 	}
 
 	/**
@@ -113,7 +111,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
 	async find(options: MeetRoomFilters & { owner?: string; roomIds?: string[] } = {}): Promise<{
-		rooms: TRoom[];
+		rooms: MeetRoom[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
@@ -130,7 +128,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 		} = options;
 
 		// Build base filter
-		const filter: Record<string, unknown> = {};
+		const filter: FilterQuery<MeetRoomDocument> = {};
 
 		// Handle owner and roomIds with $or when both are present
 		if (owner && roomIds) {
@@ -174,11 +172,11 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 *
 	 * @returns Array of expired rooms with enriched URLs
 	 */
-	async findExpiredRooms(): Promise<TRoom[]> {
+	async findExpiredRooms(): Promise<MeetRoom[]> {
 		const now = Date.now();
 
 		// Find all rooms where autoDeletionDate exists and is less than now
-		return await this.findAll({
+		return this.findAll({
 			autoDeletionDate: { $exists: true, $lt: now }
 		});
 	}
@@ -189,8 +187,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 *
 	 * @returns Array of active rooms with enriched URLs
 	 */
-	async findActiveRooms(): Promise<TRoom[]> {
-		return await this.findAll({
+	async findActiveRooms(): Promise<MeetRoom[]> {
+		return this.findAll({
 			status: MeetRoomStatus.ACTIVE_MEETING
 		});
 	}
@@ -219,14 +217,14 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Counts the total number of rooms.
 	 */
 	async countTotal(): Promise<number> {
-		return await this.count();
+		return this.count();
 	}
 
 	/**
 	 * Counts the number of rooms with active meetings.
 	 */
 	async countActiveRooms(): Promise<number> {
-		return await this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
+		return this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
 	}
 
 	// ==========================================
@@ -240,7 +238,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param room - The room data to normalize
 	 * @returns Normalized room data
 	 */
-	private normalizeRoomForStorage(room: TRoom): TRoom {
+	private normalizeRoomForStorage(room: MeetRoom): MeetRoom {
 		return {
 			...room,
 			accessUrl: this.extractPathFromUrl(room.accessUrl),
@@ -307,9 +305,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param document - The MongoDB document
 	 * @returns Room data with complete URLs
 	 */
-	private enrichRoomWithBaseUrls(document: MeetRoomDocument): TRoom {
+	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
 		const baseUrl = getBaseUrl();
-		const room = document.toObject() as TRoom;
 
 		return {
 			...room,

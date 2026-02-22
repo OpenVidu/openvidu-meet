@@ -1,30 +1,24 @@
 import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { FilterQuery, Require_id } from 'mongoose';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
  * Repository for managing MeetRoomMember entities in MongoDB.
- * Handles the storage and retrieval of room members.
+ * Provides CRUD operations and specialized queries for room member data.
  */
 @injectable()
-export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomMember> extends BaseRepository<
-	TRoomMember,
-	MeetRoomMemberDocument
-> {
+export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoomMemberDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetRoomMemberModel);
 	}
 
-	/**
-	 * Transforms a MongoDB document into a domain room member object.
-	 *
-	 * @param document - The MongoDB document
-	 * @returns Room member with computed permissions
-	 */
-	protected toDomain(document: MeetRoomMemberDocument): TRoomMember {
-		return document.toObject() as TRoomMember;
+	protected toDomain(dbObject: Require_id<MeetRoomMemberDocument> & { __v: number }): MeetRoomMember {
+		const { _id, __v, schemaVersion, ...member } = dbObject;
+		(void _id, __v, schemaVersion);
+		return member as MeetRoomMember;
 	}
 
 	/**
@@ -33,9 +27,8 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @param member - The room member data to add
 	 * @returns The created room member
 	 */
-	async create(member: TRoomMember): Promise<TRoomMember> {
-		const document = await this.createDocument(member as TRoomMember);
-		return this.toDomain(document);
+	async create(member: MeetRoomMember): Promise<MeetRoomMember> {
+		return this.createDocument(member);
 	}
 
 	/**
@@ -45,9 +38,8 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @returns The updated room member
 	 * @throws Error if room member not found
 	 */
-	async update(member: TRoomMember): Promise<TRoomMember> {
-		const document = await this.updateOne({ roomId: member.roomId, memberId: member.memberId }, member);
-		return this.toDomain(document);
+	async update(member: MeetRoomMember): Promise<MeetRoomMember> {
+		return this.updateOne({ roomId: member.roomId, memberId: member.memberId }, member);
 	}
 
 	/**
@@ -57,9 +49,8 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @param memberId - The ID of the member
 	 * @returns The room member or null if not found
 	 */
-	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<TRoomMember | null> {
-		const document = await this.findOne({ roomId, memberId });
-		return document ? this.toDomain(document) : null;
+	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null> {
+		return this.findOne({ roomId, memberId });
 	}
 
 	/**
@@ -70,8 +61,8 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string[]): Promise<TRoomMember[]> {
-		return await this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
+	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string[]): Promise<MeetRoomMember[]> {
+		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
 	}
 
 	/**
@@ -123,7 +114,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 		roomId: string,
 		options: MeetRoomMemberFilters = {}
 	): Promise<{
-		members: TRoomMember[];
+		members: MeetRoomMember[];
 		isTruncated: boolean;
 		nextPageToken?: string;
 	}> {
@@ -137,7 +128,7 @@ export class RoomMemberRepository<TRoomMember extends MeetRoomMember = MeetRoomM
 		} = options;
 
 		// Build base filter
-		const filter: Record<string, unknown> = { roomId };
+		const filter: FilterQuery<MeetRoomMemberDocument> = { roomId };
 
 		if (name) {
 			filter.name = new RegExp(name, 'i');

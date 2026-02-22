@@ -1,4 +1,5 @@
 import { inject, injectable } from 'inversify';
+import { Require_id } from 'mongoose';
 import { MeetMigration, MigrationName, MigrationStatus } from '../models/migration.model.js';
 import { MeetMigrationDocument, MeetMigrationModel } from '../models/mongoose-schemas/migration.schema.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -10,14 +11,10 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 		super(logger, MeetMigrationModel);
 	}
 
-	/**
-	 * Transforms a MongoDB document into a domain MeetMigration object.
-	 *
-	 * @param document - The MongoDB document
-	 * @returns MeetMigration domain object
-	 */
-	protected toDomain(document: MeetMigrationDocument): MeetMigration {
-		return document.toObject() as MeetMigration;
+	protected toDomain(dbObject: Require_id<MeetMigrationDocument> & { __v: number }): MeetMigration {
+		const { _id, __v, ...migration } = dbObject;
+		(void _id, __v);
+		return migration as MeetMigration;
 	}
 
 	/**
@@ -34,7 +31,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 
 		if (existingMigration) {
 			// Update existing document to RUNNING status
-			const document = await this.updateOne(
+			return this.updateOne(
 				{ name },
 				{
 					$set: {
@@ -47,16 +44,14 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 					}
 				}
 			);
-			return this.toDomain(document);
 		}
 
 		// Create new migration document
-		const document = await this.createDocument({
+		return this.createDocument({
 			name,
 			status: MigrationStatus.RUNNING,
 			startedAt: Date.now()
 		});
-		return this.toDomain(document);
 	}
 
 	/**
@@ -68,7 +63,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @returns The updated migration document
 	 */
 	async markAsCompleted(name: MigrationName, metadata?: Record<string, unknown>): Promise<MeetMigration> {
-		const document = await this.updateOne(
+		return this.updateOne(
 			{ name },
 			{
 				$set: {
@@ -78,7 +73,6 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 				}
 			}
 		);
-		return this.toDomain(document);
 	}
 
 	/**
@@ -90,7 +84,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @returns The updated migration document
 	 */
 	async markAsFailed(name: MigrationName, error: string): Promise<MeetMigration> {
-		const document = await this.updateOne(
+		return this.updateOne(
 			{ name },
 			{
 				$set: {
@@ -100,7 +94,6 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 				}
 			}
 		);
-		return this.toDomain(document);
 	}
 
 	/**
