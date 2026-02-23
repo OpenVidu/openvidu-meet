@@ -1,0 +1,302 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// Use utility classes for users toolbar
+.users-toolbar {
+	@extend .ov-data-toolbar;
+
+	.toolbar-left {
+		::ng-deep .search-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
+
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+
+		::ng-deep .clear-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+// Use utility classes
+.search-field {
+	@extend .ov-search-field;
+}
+
+.selection-info {
+	@extend .ov-selection-info;
+}
+
+.batch-actions {
+	@extend .ov-batch-actions;
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+}
+
+.loading-container {
+	@extend .ov-loading-container;
+}
+
+.table-container {
+	@extend .ov-table-container;
+	margin-top: 0;
+}
+
+.users-toolbar + .table-container {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-top: none;
+	box-shadow: var(--ov-meet-shadow-sm);
+}
+
+:host:not(:has(.users-toolbar)) .table-container {
+	margin-top: var(--ov-meet-spacing-md);
+}
+
+.users-table {
+	@extend .ov-data-table;
+
+	.mat-mdc-header-cell {
+		&.user-header {
+			@extend .primary-header;
+		}
+
+		&.role-header {
+			min-width: 140px;
+		}
+
+		&.registration-date-header {
+			min-width: 150px;
+		}
+
+		&.actions-header {
+			@extend .actions-header;
+		}
+	}
+
+	.mat-mdc-cell {
+		&.user-cell {
+			@extend .primary-cell;
+		}
+
+		&.role-cell {
+			min-width: 140px;
+		}
+
+		&.registration-date-cell {
+			min-width: 150px;
+		}
+
+		&.actions-cell {
+			@extend .actions-cell;
+		}
+	}
+}
+
+// ─── User Cell ────────────────────────────────────────────────────────────────
+
+.user-info-container {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-md);
+}
+
+.user-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+
+	&.avatar-role-admin {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+	}
+
+	&.avatar-role-user {
+		background-color: color-mix(in srgb, var(--ov-meet-color-success) 15%, transparent);
+	}
+
+	&.avatar-role-room_member {
+		background-color: color-mix(in srgb, var(--ov-meet-color-warning) 15%, transparent);
+	}
+}
+
+.avatar-initials {
+	font-size: var(--ov-meet-font-size-sm);
+	font-weight: var(--ov-meet-font-weight-semibold);
+	color: var(--ov-meet-color-primary);
+	text-transform: uppercase;
+	user-select: none;
+	line-height: 1;
+
+	.avatar-role-user & {
+		color: var(--ov-meet-color-success);
+	}
+
+	.avatar-role-room_member & {
+		color: var(--ov-meet-color-warning);
+	}
+}
+
+.user-info {
+	@extend .ov-info-display;
+
+	.user-name {
+		@extend .primary-text;
+	}
+
+	.user-id {
+		@extend .secondary-text, .monospace-text;
+	}
+}
+
+.user-badges {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+}
+
+// ─── Role Chip ────────────────────────────────────────────────────────────────
+
+.role-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-border-radius-pill, 9999px);
+	font-size: var(--ov-meet-font-size-sm);
+	font-weight: var(--ov-meet-font-weight-medium);
+	line-height: 1;
+	white-space: nowrap;
+
+	&.role-admin {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+		color: var(--ov-meet-color-primary);
+	}
+
+	&.role-user {
+		background-color: color-mix(in srgb, var(--ov-meet-color-success) 15%, transparent);
+		color: var(--ov-meet-color-success);
+	}
+
+	&.role-room_member {
+		background-color: color-mix(in srgb, var(--ov-meet-color-warning) 15%, transparent);
+		color: var(--ov-meet-color-warning);
+	}
+}
+
+// ─── Badges ───────────────────────────────────────────────────────────────────
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px var(--ov-meet-spacing-xs);
+	border-radius: var(--ov-meet-border-radius-pill, 9999px);
+	font-size: 10px;
+	font-weight: var(--ov-meet-font-weight-semibold);
+	line-height: 1;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+
+	&.badge-root {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 12%, transparent);
+		color: var(--ov-meet-color-primary);
+		border: 1px solid color-mix(in srgb, var(--ov-meet-color-primary) 25%, transparent);
+	}
+
+	&.badge-self {
+		background-color: color-mix(in srgb, var(--ov-meet-color-success) 12%, transparent);
+		color: var(--ov-meet-color-success);
+		border: 1px solid color-mix(in srgb, var(--ov-meet-color-success) 25%, transparent);
+	}
+}
+
+// ─── Date ─────────────────────────────────────────────────────────────────────
+
+.date-info {
+	@extend .ov-date-info;
+}
+
+.no-data {
+	@extend .ov-no-data;
+}
+
+// ─── Protected rows ───────────────────────────────────────────────────────────
+
+.mat-mdc-row {
+	&.protected-row {
+		background-color: color-mix(in srgb, var(--ov-meet-text-hint) 4%, transparent);
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-meet-text-hint) 6%, transparent);
+		}
+	}
+}
+
+// ─── Action buttons ───────────────────────────────────────────────────────────
+
+.action-buttons {
+	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+
+	.mat-mdc-icon-button {
+		&:hover {
+			background-color: transparent;
+		}
+
+		&.delete-action {
+			color: var(--ov-meet-color-error);
+		}
+	}
+}
+
+.delete-action {
+	@extend .ov-delete-action;
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
+.no-users-state {
+	@extend .ov-empty-state;
+
+	.getting-started-actions {
+		@include design-tokens.ov-mobile-down {
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
+
+			button {
+				width: 100%;
+				padding: var(--ov-meet-spacing-md);
+			}
+		}
+	}
+}
+
+// ─── Load More ────────────────────────────────────────────────────────────────
+
+.load-more-container {
+	display: flex;
+	justify-content: center;
+	padding: var(--ov-meet-spacing-lg);
+
+	.load-more-btn {
+		color: var(--ov-meet-color-primary);
+	}
+}
+
+.mat-mdc-checkbox,
+.mat-mdc-icon-button,
+.mat-mdc-button {
+	@extend .ov-focus-visible;
+}

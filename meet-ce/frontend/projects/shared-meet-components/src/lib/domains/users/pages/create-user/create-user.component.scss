@@ -1,0 +1,114 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.form-card-wrapper {
+	max-width: 680px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+// ─── Form Card ─────────────────────────────────────────────────────────────────
+
+.create-user-card {
+	@include design-tokens.ov-section-card;
+}
+
+// ─── Form Layout ───────────────────────────────────────────────────────────────
+
+.create-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+	padding-top: var(--ov-meet-spacing-sm);
+
+	mat-form-field {
+		width: 100%;
+	}
+}
+
+.field-prefix-icon {
+	@include design-tokens.ov-icon(md);
+	color: var(--ov-meet-text-secondary);
+	margin-right: var(--ov-meet-spacing-xs);
+}
+
+// ─── Password Section ──────────────────────────────────────────────────────────
+
+.password-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-md);
+	padding-top: var(--ov-meet-spacing-md);
+	border-top: 1px solid var(--ov-border-color-light);
+}
+
+.password-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--ov-meet-spacing-md);
+
+	@include design-tokens.ov-tablet-down {
+		flex-direction: column;
+	}
+
+	.password-header-text {
+		h3 {
+			margin: 0 0 var(--ov-meet-spacing-xs) 0;
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-primary);
+		}
+
+		p {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+}
+
+.autogenerate-toggle {
+	flex-shrink: 0;
+	font-size: var(--ov-meet-font-size-sm);
+	border-color: var(--ov-meet-color-primary) !important;
+	color: var(--ov-meet-color-primary) !important;
+
+	mat-icon {
+		@include design-tokens.ov-icon(sm);
+		margin-right: var(--ov-meet-spacing-xs);
+	}
+
+	&.active {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 10%, transparent);
+	}
+}
+
+// ─── Footer & Actions ──────────────────────────────────────────────────────────
+
+.footer-note {
+	margin: 0;
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-hint);
+	text-align: center;
+	line-height: var(--ov-meet-line-height-normal);
+}
+
+.form-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--ov-meet-spacing-sm);
+}
+
+// ─── Spinner inside buttons ───────────────────────────────────────────────────
+
+mat-spinner {
+	::ng-deep {
+		.mdc-circular-progress__determinate-circle,
+		.mdc-circular-progress__indeterminate-circle-graphic {
+			stroke: currentColor;
+		}
+	}
+}

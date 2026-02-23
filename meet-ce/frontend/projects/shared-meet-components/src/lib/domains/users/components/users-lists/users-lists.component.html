@@ -1,0 +1,324 @@
+@if (!loading() && users().length === 0 && !showEmptyFilterMessage) {
+	<!-- Empty State -->
+	<div class="no-users-state">
+		<div class="empty-content">
+			<h3>No users created yet</h3>
+			<p>No users found. Create your first user to start managing accounts and access control.</p>
+
+			<div class="getting-started-actions">
+				<button mat-button (click)="createUser()" class="create-user-btn primary-button">
+					<mat-icon>person_add</mat-icon>
+					Create Your First User
+				</button>
+			</div>
+		</div>
+	</div>
+} @else {
+	<!-- Users Toolbar -->
+	<mat-toolbar class="users-toolbar" id="users-toolbar">
+		<!-- Left Section: Search -->
+		<div class="toolbar-left" id="toolbar-left">
+			@if (showSearchBox()) {
+				<mat-form-field class="search-field" appearance="outline" id="search-field">
+					<mat-label>Search users</mat-label>
+					<input
+						matInput
+						[formControl]="nameFilterControl"
+						placeholder="Search by name or user ID"
+						id="search-input"
+						(keydown.enter)="triggerSearch()"
+					/>
+					<button
+						mat-icon-button
+						matSuffix
+						class="search-btn"
+						(click)="triggerSearch()"
+						[disabled]="loading() || !nameFilterControl.value"
+						matTooltip="Search"
+						id="search-btn"
+					>
+						<mat-icon>search</mat-icon>
+					</button>
+				</mat-form-field>
+			}
+		</div>
+
+		<!-- Center Section: Batch Actions (visible when items selected) -->
+		@if (showSelection() && selectedUsers().size > 0) {
+			<div class="toolbar-center" id="toolbar-center">
+				<div class="batch-actions" id="batch-actions">
+					<button
+						mat-icon-button
+						color="warn"
+						(click)="bulkDeleteSelected()"
+						[disabled]="loading()"
+						matTooltip="Delete selected users"
+						id="bulk-delete-btn"
+					>
+						<mat-icon [matBadge]="selectedUsers().size" matBadgePosition="below after"> delete </mat-icon>
+					</button>
+				</div>
+			</div>
+		}
+
+		<!-- Right Section: Actions -->
+		<div class="toolbar-right" id="toolbar-right">
+			@if (hasActiveFilters()) {
+				<button
+					mat-icon-button
+					class="clear-btn"
+					(click)="clearFilters()"
+					[disabled]="loading()"
+					matTooltip="Clear all filters"
+					id="clear-filters-btn"
+				>
+					<mat-icon>filter_alt_off</mat-icon>
+				</button>
+			}
+
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refreshUsers()"
+				[disabled]="loading()"
+				matTooltip="Refresh users"
+				id="refresh-btn"
+			>
+				<mat-icon>refresh</mat-icon>
+			</button>
+
+			<button mat-button (click)="createUser()" class="create-user-btn primary-button" id="create-user-btn">
+				<mat-icon>person_add</mat-icon>
+				Create User
+			</button>
+
+			@if (showFilters()) {
+				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter users" id="filters-btn">
+					<mat-icon>tune</mat-icon>
+				</button>
+
+				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu filters-menu" id="filters-menu">
+					<div class="filter-content" (click)="$event.stopPropagation()" id="filter-content">
+						<h4>Filter by Role</h4>
+						<mat-form-field appearance="outline" id="role-filter-field">
+							<mat-label>Role</mat-label>
+							<mat-select [formControl]="roleFilterControl" id="role-filter-select">
+								@for (option of roleOptions; track option.value) {
+									<mat-option [value]="option.value" id="role-option-{{ option.value }}">{{
+										option.label
+									}}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+					</div>
+				</mat-menu>
+			}
+		</div>
+	</mat-toolbar>
+
+	<!-- Loading Spinner -->
+	@if (loading()) {
+		<div class="loading-container">
+			<mat-spinner diameter="40"></mat-spinner>
+			<span>Loading users...</span>
+		</div>
+	} @else if (users().length === 0 && showEmptyFilterMessage) {
+		<!-- No users match the current filters -->
+		<div class="no-users-state">
+			<div class="empty-content">
+				<h3>No users match your search criteria and/or filters</h3>
+				<p>Try adjusting or clearing your filters to see more users.</p>
+				<div class="getting-started-actions">
+					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
+						<mat-icon>filter_alt_off</mat-icon>
+						Clear Filters
+					</button>
+				</div>
+			</div>
+		</div>
+	} @else {
+		<!-- Users Table -->
+		<div class="table-container" id="table-container">
+			<table
+				mat-table
+				[dataSource]="users()"
+				matSort
+				matSortDisableClear
+				[matSortActive]="currentSortField"
+				[matSortDirection]="currentSortOrder"
+				(matSortChange)="onSortChange($event)"
+				class="users-table"
+				id="users-table"
+			>
+				<!-- Selection Column -->
+				@if (showSelection()) {
+					<ng-container matColumnDef="select">
+						<th mat-header-cell *matHeaderCellDef id="select-header">
+							<mat-checkbox
+								[checked]="allSelected()"
+								[indeterminate]="someSelected()"
+								(change)="toggleAllSelection()"
+								(click)="$event.stopPropagation()"
+								[disabled]="loading()"
+								id="select-all-checkbox"
+							>
+							</mat-checkbox>
+						</th>
+						<td mat-cell *matCellDef="let user" id="select-cell-{{ user.userId }}">
+							@if (canSelectUser(user)) {
+								<mat-checkbox
+									[checked]="isUserSelected(user)"
+									(click)="$event.stopPropagation()"
+									(change)="toggleUserSelection(user)"
+									[disabled]="loading()"
+									id="select-user-{{ user.userId }}"
+								>
+								</mat-checkbox>
+							}
+						</td>
+					</ng-container>
+				}
+
+				<!-- User Name Column -->
+				<ng-container matColumnDef="userName">
+					<th
+						mat-header-cell
+						*matHeaderCellDef
+						mat-sort-header="name"
+						class="user-header"
+						id="user-name-header"
+					>
+						User
+					</th>
+					<td mat-cell *matCellDef="let user" class="user-cell" id="user-name-cell-{{ user.userId }}">
+						<div class="user-info-container" id="user-info-{{ user.userId }}">
+							<div
+								class="user-avatar"
+								[ngClass]="'avatar-role-' + user.role"
+								id="user-avatar-{{ user.userId }}"
+							>
+								<span class="avatar-initials" id="user-initials-{{ user.userId }}">{{
+									getInitials(user.name)
+								}}</span>
+							</div>
+							<div class="user-info" id="user-text-info-{{ user.userId }}">
+								<span class="user-name" id="user-name-{{ user.userId }}">{{ user.name }}</span>
+								<span class="user-id" id="user-id-{{ user.userId }}">{{ user.userId }}</span>
+							</div>
+							<div class="user-badges" id="user-badges-{{ user.userId }}">
+								@if (isRootAdmin(user)) {
+									<span
+										class="badge badge-root"
+										matTooltip="Root admin — cannot be modified"
+										id="badge-root-{{ user.userId }}"
+									>
+										Root
+									</span>
+								}
+								@if (isSelf(user)) {
+									<span class="badge badge-self" id="badge-self-{{ user.userId }}">You</span>
+								}
+							</div>
+						</div>
+					</td>
+				</ng-container>
+
+				<!-- Role Column -->
+				<ng-container matColumnDef="role">
+					<th mat-header-cell *matHeaderCellDef id="role-header">Role</th>
+					<td mat-cell *matCellDef="let user" id="role-cell-{{ user.userId }}">
+						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">{{
+							getRoleLabel(user.role)
+						}}</span>
+					</td>
+				</ng-container>
+
+				<!-- Registration Date Column -->
+				<ng-container matColumnDef="registrationDate">
+					<th
+						mat-header-cell
+						*matHeaderCellDef
+						mat-sort-header="registrationDate"
+						id="registration-date-header"
+					>
+						Member Since
+					</th>
+					<td mat-cell *matCellDef="let user" id="registration-date-cell-{{ user.userId }}">
+						@if (user.registrationDate) {
+							<div class="date-info" id="date-info-{{ user.userId }}">
+								<span class="date" id="registration-date-{{ user.userId }}">{{
+									user.registrationDate | date: 'mediumDate'
+								}}</span>
+								<span class="time" id="registration-time-{{ user.userId }}">{{
+									user.registrationDate | date: 'shortTime'
+								}}</span>
+							</div>
+						} @else {
+							<span class="no-data" id="no-registration-date-{{ user.userId }}">-</span>
+						}
+					</td>
+				</ng-container>
+
+				<!-- Actions Column -->
+				<ng-container matColumnDef="actions">
+					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
+					<td mat-cell *matCellDef="let user" class="actions-cell" id="actions-cell-{{ user.userId }}">
+						<div class="action-buttons" id="action-buttons-{{ user.userId }}">
+							<!-- Reset Password Button -->
+							<button
+								mat-icon-button
+								[matTooltip]="
+									isProtected(user) ? 'Cannot reset password for this user' : 'Reset password'
+								"
+								(click)="$event.stopPropagation(); resetPassword(user)"
+								[disabled]="loading() || isProtected(user)"
+								id="reset-password-btn-{{ user.userId }}"
+							>
+								<mat-icon>key</mat-icon>
+							</button>
+
+							<!-- Delete Button -->
+							<button
+								mat-icon-button
+								[matTooltip]="isProtected(user) ? 'Cannot delete this user' : 'Delete user'"
+								(click)="$event.stopPropagation(); deleteUser(user)"
+								[disabled]="loading() || isProtected(user)"
+								class="delete-action"
+								id="delete-user-btn-{{ user.userId }}"
+							>
+								<mat-icon>delete</mat-icon>
+							</button>
+						</div>
+					</td>
+				</ng-container>
+
+				<tr mat-header-row *matHeaderRowDef="displayedColumns" id="table-header-row"></tr>
+				<tr
+					mat-row
+					*matRowDef="let row; columns: displayedColumns"
+					[class.selected-row]="isUserSelected(row)"
+					[class.protected-row]="isProtected(row)"
+					[class.root-row]="isRootAdmin(row)"
+					id="table-row-{{ row.userId }}"
+					(click)="onUserClick(row)"
+				></tr>
+			</table>
+		</div>
+
+		<!-- Load More Section -->
+		@if (showLoadMore()) {
+			<div class="load-more-container" id="load-more-container">
+				<button
+					mat-button
+					class="load-more-btn"
+					(click)="loadMoreUsers()"
+					[disabled]="loading()"
+					id="load-more-btn"
+				>
+					<mat-icon>expand_more</mat-icon>
+					<span>Load More Users</span>
+				</button>
+			</div>
+		}
+	}
+}

@@ -21,5 +21,11 @@ export const usersConsoleRoutes: DomainRouteConfig[] = [
 			iconClass: 'ov-users material-symbols-outlined',
 			order: 4
 		}
+	},
+	{
+		route: {
+			path: 'users/new',
+			loadComponent: () => import('../pages/create-user/create-user.component').then((m) => m.CreateUserComponent)
+		}
 	}
 ];

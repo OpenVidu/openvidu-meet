@@ -1,0 +1,129 @@
+<div class="ov-page-container ov-mb-xxl">
+	<!-- Page Header -->
+	<div class="page-header">
+		<div class="title">
+			<mat-icon>person_add</mat-icon>
+			<h1>Create User</h1>
+		</div>
+		<p class="subtitle">Configure the profile and permissions for the new user.</p>
+	</div>
+
+	<!-- Card -->
+	<div class="form-card-wrapper">
+		<mat-card class="section-card create-user-card">
+			<mat-card-header>
+				<div mat-card-avatar class="section-avatar">
+					<mat-icon class="section-icon">person</mat-icon>
+				</div>
+				<mat-card-title>Account Information</mat-card-title>
+				<mat-card-subtitle>Basic details for the new user</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content>
+				<form [formGroup]="form" (ngSubmit)="onSubmit()" class="create-form">
+					<!-- User ID -->
+					<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-label>User ID</mat-label>
+						<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
+						<input matInput formControlName="userId" placeholder="e.g. jsmith_123" autofocus />
+						<mat-hint>Lowercase letters, numbers, hyphens and underscores only</mat-hint>
+						@if (getFieldError('userId')) {
+							<mat-error>{{ getFieldError('userId') }}</mat-error>
+						}
+					</mat-form-field>
+
+					<!-- Name -->
+					<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-label>Full Name</mat-label>
+						<mat-icon matPrefix class="field-prefix-icon">person_outline</mat-icon>
+						<input matInput formControlName="name" placeholder="Enter full name" />
+						@if (getFieldError('name')) {
+							<mat-error>{{ getFieldError('name') }}</mat-error>
+						}
+					</mat-form-field>
+
+					<!-- Role -->
+					<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-label>Role</mat-label>
+						<mat-icon matPrefix class="field-prefix-icon">manage_accounts</mat-icon>
+						<mat-select formControlName="role">
+							@for (role of availableRoles; track role) {
+								<mat-option [value]="role">{{ getRoleLabel(role) }}</mat-option>
+							}
+						</mat-select>
+						@if (getFieldError('role')) {
+							<mat-error>{{ getFieldError('role') }}</mat-error>
+						}
+					</mat-form-field>
+
+					<!-- Password Section -->
+					<div class="password-section">
+						<div class="password-header">
+							<div class="password-header-text">
+								<h3>Password</h3>
+								<p>Set a manual password or auto-generate one.</p>
+							</div>
+							<button
+								mat-stroked-button
+								type="button"
+								class="autogenerate-toggle"
+								[class.active]="autoGenerate()"
+								(click)="toggleAutoGenerate()"
+							>
+								<mat-icon>{{ autoGenerate() ? 'autorenew' : 'casino' }}</mat-icon>
+								{{ autoGenerate() ? 'Auto-generated' : 'Auto-generate' }}
+							</button>
+						</div>
+
+						<mat-form-field subscriptSizing="dynamic" appearance="outline">
+							<mat-label>Password</mat-label>
+							<input
+								matInput
+								[type]="showPassword() ? 'text' : 'password'"
+								formControlName="password"
+								placeholder="Enter or auto-generate a password"
+							/>
+							<button
+								mat-icon-button
+								matSuffix
+								type="button"
+								(click)="showPassword.set(!showPassword())"
+								[matTooltip]="showPassword() ? 'Hide password' : 'Show password'"
+							>
+								<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+							</button>
+							<mat-hint>Minimum 5 characters</mat-hint>
+							@if (getFieldError('password')) {
+								<mat-error>{{ getFieldError('password') }}</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</form>
+			</mat-card-content>
+		</mat-card>
+
+		<!-- Footer note -->
+		<p class="footer-note">
+			Once created, you must send the credentials to the user. They will be required to change their password upon
+			their first login.
+		</p>
+
+		<!-- Actions -->
+		<div class="form-actions">
+			<button mat-button class="cancel-button" type="button" (click)="onCancel()">Cancel</button>
+			<button
+				mat-button
+				class="primary-button"
+				type="button"
+				[disabled]="form.invalid || isSaving()"
+				(click)="onSubmit()"
+			>
+				@if (isSaving()) {
+					<mat-spinner diameter="18"></mat-spinner>
+				} @else {
+					Create User
+				}
+			</button>
+		</div>
+	</div>
+</div>
