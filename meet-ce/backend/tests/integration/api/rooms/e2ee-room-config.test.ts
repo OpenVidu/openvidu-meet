@@ -26,8 +26,8 @@ describe('E2EE Room Configuration Tests', () => {
 	});
 
 	afterAll(async () => {
-		await deleteAllRecordings();
 		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('E2EE Default Configuration', () => {

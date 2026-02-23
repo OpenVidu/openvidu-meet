@@ -30,7 +30,8 @@ describe('Recordings API Tests', () => {
 
 	describe('List Recordings Tests', () => {
 		beforeEach(async () => {
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			const response = await getAllRecordings();
 			expect(response.status).toBe(200);
 			expectSuccessListRecordingResponse(response, 0, false, false);
@@ -38,7 +39,8 @@ describe('Recordings API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			context = null;
 		});
 
@@ -184,7 +186,8 @@ describe('Recordings API Tests', () => {
 
 			// Disconnect participants and clean up
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should sort recordings by startDate ascending and descending', async () => {
@@ -289,8 +292,16 @@ describe('Recordings API Tests', () => {
 
 	describe('List recordings - Fields filtering', () => {
 		beforeAll(async () => {
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			context = await setupMultiRecordingsTestContext(2, 2, 2);
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await deleteAllRooms();
+			await deleteAllRecordings();
+			context = null;
 		});
 
 		it('should filter fields using X-Fields header', async () => {

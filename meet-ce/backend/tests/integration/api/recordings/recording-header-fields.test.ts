@@ -11,7 +11,6 @@ import {
 	stopRecording
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
-import { TestContext } from '../../../interfaces/scenarios.js';
 
 /**
  * Tests for X-Fields header and fields query parameter support across all recording operations.
@@ -22,28 +21,21 @@ import { TestContext } from '../../../interfaces/scenarios.js';
  * When both are provided, values are merged (union of unique fields).
  */
 describe('Recording Header Fields Tests', () => {
-	let context: TestContext | null = null;
-
 	beforeAll(async () => {
 		await startTestServer();
 	});
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
-		context = null;
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
-
-
-
-
-
-
 
 	describe('POST /recordings/:recordingId/stop - X-Fields header and fields query param', () => {
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should filter response fields using X-Fields header on stop recording', async () => {

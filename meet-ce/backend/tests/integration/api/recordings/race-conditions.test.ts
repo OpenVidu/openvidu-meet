@@ -43,7 +43,8 @@ describe('Recording API Race Conditions Tests', () => {
 
 		eventController.reset();
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 		jest.clearAllMocks();
 	});
 

@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { Express } from 'express';
 import request from 'supertest';
+import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
+import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -11,8 +13,6 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
-import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
-import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 
 describe('Recording API Tests', () => {
 	let app: Express;
@@ -28,7 +28,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Get Recording URL Tests', () => {

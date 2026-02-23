@@ -30,7 +30,8 @@ describe('Recording API Tests', () => {
 	afterAll(async () => {
 		await stopAllRecordings();
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Stop Recording Tests', () => {

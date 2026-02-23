@@ -21,7 +21,8 @@ describe('Recording API Tests', () => {
 	afterEach(async () => {
 		// Ensure a clean state after each test
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 		const recordings = await getAllRecordings();
 		expect(recordings.body.recordings).toHaveLength(0);
 	});

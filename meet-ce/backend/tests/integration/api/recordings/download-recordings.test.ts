@@ -20,7 +20,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	const getZipEntries = async (buffer: Buffer) => {

@@ -20,7 +20,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Delete Recording Tests', () => {
@@ -35,7 +36,8 @@ describe('Recording API Tests', () => {
 
 		afterAll(async () => {
 			await stopAllRecordings();
-			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should delete a recording successfully', async () => {
@@ -61,7 +63,8 @@ describe('Recording API Tests', () => {
 
 		afterAll(async () => {
 			await stopAllRecordings();
-			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should fail when recordingId has incorrect format', async () => {

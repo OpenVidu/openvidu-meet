@@ -18,7 +18,8 @@ describe('Analytics API Tests', () => {
 
 	afterEach(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Get analytics', () => {

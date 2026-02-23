@@ -41,7 +41,8 @@ describe('Recording API Security Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 		await deleteAllUsers();
 	});
 

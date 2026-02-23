@@ -70,7 +70,8 @@ describe('Webhook Integration Tests', () => {
 		await restoreDefaultGlobalConfig();
 
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
