@@ -33,7 +33,7 @@
 	} @else if (targetUser()) {
 		<!-- ─── Two-column layout ──────────────────────────────────────────────── -->
 		<div class="profile-layout">
-			<!-- LEFT — Profile Header -->
+			<!-- LEFT — Profile Sidebar -->
 			<aside class="profile-sidebar">
 				<mat-card class="section-card profile-header-card">
 					<mat-card-content>
@@ -55,48 +55,22 @@
 							<mat-icon class="meta-icon">calendar_today</mat-icon>
 							Member since {{ formatDate(targetUser()!.registrationDate) }}
 						</p>
+
+						<mat-divider class="sidebar-divider"></mat-divider>
+
+						<!-- Account Details -->
+						<div class="sidebar-details">
+							<div class="sidebar-detail-item">
+								<span class="info-label">User ID</span>
+								<span class="info-value monospace">{{ targetUser()!.userId }}</span>
+							</div>
+						</div>
 					</mat-card-content>
 				</mat-card>
 			</aside>
 
-			<!-- RIGHT — Details -->
+			<!-- RIGHT — Main Content -->
 			<div class="profile-main">
-				<!-- ─── Account Information ──────────────────────────────────── -->
-				<mat-card class="section-card">
-					<mat-card-header>
-						<div mat-card-avatar class="section-avatar">
-							<mat-icon class="section-icon">person</mat-icon>
-						</div>
-						<mat-card-title>Account Information</mat-card-title>
-						<mat-card-subtitle>Read-only details for this account</mat-card-subtitle>
-					</mat-card-header>
-
-					<mat-card-content>
-						<div class="info-grid">
-							<div class="info-item">
-								<span class="info-label">User ID</span>
-								<span class="info-value monospace">{{ targetUser()!.userId }}</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">Name</span>
-								<span class="info-value">{{ targetUser()!.name }}</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">Role</span>
-								<span class="info-value">
-									<span class="role-chip" [ngClass]="'role-' + targetUser()!.role">
-										{{ getRoleLabel(targetUser()!.role) }}
-									</span>
-								</span>
-							</div>
-							<div class="info-item">
-								<span class="info-label">Member since</span>
-								<span class="info-value">{{ formatDate(targetUser()!.registrationDate) }}</span>
-							</div>
-						</div>
-					</mat-card-content>
-				</mat-card>
-
 				<!-- ─── Security: Change Password (own profile only) ──────────── -->
 				@if (isOwnProfile()) {
 					<mat-card class="section-card">
