@@ -15,7 +15,8 @@ import {
 } from '../../models/zod-schemas/room.schema.js';
 
 export const validateCreateRoomReq = (req: Request, res: Response, next: NextFunction) => {
-	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
 
 	const bodyResult = RoomOptionsSchema.safeParse(req.body);
 
@@ -25,27 +26,28 @@ export const validateCreateRoomReq = (req: Request, res: Response, next: NextFun
 
 	req.body = bodyResult.data;
 
-	const { success, error, data } = RoomQueryFieldsSchema.safeParse(req.query);
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 
 export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields and X-ExtraFields headers into query params before validation
-	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
 
-	const { success, error, data } = RoomFiltersSchema.safeParse(req.query);
+	const { success, error, data } = RoomFiltersSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = {
+	res.locals.validatedQuery = {
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
@@ -54,15 +56,16 @@ export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunct
 
 export const validateBulkDeleteRoomsReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields and X-ExtraFields headers into query params before validation
-	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
 
-	const { success, error, data } = BulkDeleteRoomsReqSchema.safeParse(req.query);
+	const { success, error, data } = BulkDeleteRoomsReqSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 
@@ -80,15 +83,16 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 
 export const validateGetRoomReq = (req: Request, res: Response, next: NextFunction) => {
 	// Merge X-Fields and X-ExtraFields headers into query params before validation
-	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
 
-	const { success, error, data } = RoomQueryFieldsSchema.safeParse(req.query);
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 
@@ -102,15 +106,16 @@ export const validateDeleteRoomReq = (req: Request, res: Response, next: NextFun
 	req.params.roomId = roomIdResult.data;
 
 	// Merge X-Fields and X-ExtraFields headers into query params before validation
-	mergeHeaderFieldsIntoQuery(req.headers, req.query);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
 
-	const queryParamsResult = DeleteRoomReqSchema.safeParse(req.query);
+	const queryParamsResult = DeleteRoomReqSchema.safeParse(query);
 
 	if (!queryParamsResult.success) {
 		return rejectUnprocessableRequest(res, queryParamsResult.error);
 	}
 
-	req.query = queryParamsResult.data;
+	res.locals.validatedQuery = queryParamsResult.data;
 	next();
 };
 

@@ -32,7 +32,7 @@ export const getRoomMembers = async (req: Request, res: Response) => {
 	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId } = req.params;
-	const filters = req.query as MeetRoomMemberFilters;
+	const filters = res.locals.validatedQuery as MeetRoomMemberFilters;
 
 	try {
 		logger.verbose(`Getting members for room '${roomId}'`);
@@ -100,7 +100,7 @@ export const bulkDeleteRoomMembers = async (req: Request, res: Response) => {
 	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId } = req.params;
-	const { memberIds } = req.query as { memberIds: string[] };
+	const { memberIds } = res.locals.validatedQuery as { memberIds: string[] };
 
 	try {
 		logger.verbose(`Deleting members from room '${roomId}' with IDs: ${memberIds}`);

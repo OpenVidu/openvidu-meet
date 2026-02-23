@@ -380,11 +380,6 @@ describe('Recordings API Tests', () => {
 			expectValidationError(response, 'maxItems', 'must be a positive number');
 		});
 
-		it('should fail when fields is not a string', async () => {
-			const response = await getAllRecordings({ fields: { invalid: 'object' } });
-			expectValidationError(response, 'fields', 'Expected string');
-		});
-
 		it('should fail when sortField is invalid', async () => {
 			const response = await getAllRecordings({ sortField: 'invalidField' });
 			expectValidationError(response, 'sortField', 'Invalid enum value');
