@@ -97,6 +97,8 @@ export class MigrationService {
 	): Promise<void> {
 		this.logger.info(`Syncing indexes for collection: ${registry.collectionName}`);
 
+		await this.ensureCollectionExists(registry);
+
 		const indexesBeforeSync = await registry.model.collection.indexes();
 		const indexNamesBeforeSync = new Set(indexesBeforeSync.map((index) => index.name));
 
@@ -119,6 +121,30 @@ export class MigrationService {
 				`dropped=${droppedIndexes.length} [${droppedIndexes.join(', ')}], ` +
 				`created=${createdIndexes.length} [${createdIndexes.join(', ')}]`
 		);
+	}
+
+	/**
+	 * Ensures MongoDB collection exists before running index synchronization.
+	 * This avoids NamespaceNotFound errors on fresh databases with no documents.
+	 */
+	protected async ensureCollectionExists<TDocument extends SchemaMigratableDocument>(
+		registry: CollectionMigrationRegistry<TDocument>
+	): Promise<void> {
+		const nativeDb = registry.model.db.db;
+
+		if (!nativeDb) {
+			throw new Error(`MongoDB native connection is not available for ${registry.collectionName}`);
+		}
+
+		const collectionName = registry.model.collection.collectionName;
+		const collectionExists = await nativeDb.listCollections({ name: collectionName }, { nameOnly: true }).hasNext();
+
+		if (collectionExists) {
+			return;
+		}
+
+		await registry.model.createCollection();
+		this.logger.info(`Created missing collection for index sync: ${registry.collectionName}`);
 	}
 
 	/**
