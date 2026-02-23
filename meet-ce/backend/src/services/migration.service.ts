@@ -381,7 +381,7 @@ export class MigrationService {
 				}
 
 				failedCount++;
-				this.logger.warn(`Failed to migrate document ${String(documents[i]._id)}:`, batchResult.reason);
+				this.logger.error(`Failed to migrate document ${String(documents[i]._id)}:`, batchResult.reason);
 			}
 
 			processedDocumentsCount += documents.length;
