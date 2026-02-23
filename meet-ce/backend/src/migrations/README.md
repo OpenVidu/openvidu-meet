@@ -143,6 +143,23 @@ export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 3. Verify documents in MongoDB have correct version
 4. Test API to ensure new field appears correctly
 
+### Step 7: Update Migration Tests
+
+Every schema migration must be covered by both unit and integration tests:
+
+1. **Unit tests (one per transform function)**
+    - Add/update a unit test for each migration transform (e.g., `v2 -> v3`).
+    - Validate only that transform logic in isolation (no DB startup required).
+
+2. **Integration tests (legacy -> current version)**
+    - Add/update one integration test case per supported legacy schema version.
+    - Insert legacy documents directly in MongoDB, run `runMigrations()`, and assert final document shape matches the **current** schema version.
+    - Do not assert intermediate schema states in integration tests.
+
+3. **When current version increases**
+    - Keep previous legacy version cases and add the new required ones.
+    - Update shared final-state assertions/helpers to the new current schema.
+
 ---
 
 ## Migration Tracking
