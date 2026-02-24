@@ -16,6 +16,7 @@ import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-cr
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
+import { RolePermissionsComponent } from './steps/role-permissions/role-permissions.component';
 import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 
@@ -33,7 +34,8 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		RecordingConfigComponent,
 		RecordingTriggerComponent,
 		RecordingLayoutComponent,
-		RoomConfigComponent
+		RoomConfigComponent,
+		RolePermissionsComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'

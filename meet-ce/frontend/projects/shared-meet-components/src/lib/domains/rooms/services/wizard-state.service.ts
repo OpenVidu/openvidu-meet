@@ -5,9 +5,45 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { WizardNavigationConfig, WizardStep } from '../models';
+
+// Default permissions for each role
+const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
+	canRecord: true,
+	canRetrieveRecordings: true,
+	canDeleteRecordings: true,
+	canJoinMeeting: true,
+	canShareAccessLinks: true,
+	canMakeModerator: true,
+	canKickParticipants: true,
+	canEndMeeting: true,
+	canPublishVideo: true,
+	canPublishAudio: true,
+	canShareScreen: true,
+	canReadChat: true,
+	canWriteChat: true,
+	canChangeVirtualBackground: true
+};
+
+const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
+	canRecord: false,
+	canRetrieveRecordings: true,
+	canDeleteRecordings: false,
+	canJoinMeeting: true,
+	canShareAccessLinks: true,
+	canMakeModerator: false,
+	canKickParticipants: false,
+	canEndMeeting: false,
+	canPublishVideo: true,
+	canPublishAudio: true,
+	canShareScreen: true,
+	canReadChat: true,
+	canWriteChat: true,
+	canChangeVirtualBackground: true
+};
 
 // Default room config following the app's defaults
 const DEFAULT_CONFIG: MeetRoomConfig = {
@@ -193,6 +229,27 @@ export class RoomWizardStateService {
 					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
 					captionsEnabled: initialRoomOptions.config!.captions!.enabled
 				})
+			},
+			{
+				id: 'rolePermissions',
+				label: 'Role Permissions',
+				isCompleted: editMode,
+				isActive: false,
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					moderator: this.formBuilder.group({
+						anonymousEnabled: initialRoomOptions.anonymous?.moderator?.enabled ?? false,
+						...this.buildPermissionsFormConfig(
+							initialRoomOptions.roles?.moderator?.permissions ?? DEFAULT_MODERATOR_PERMISSIONS
+						)
+					}),
+					speaker: this.formBuilder.group({
+						anonymousEnabled: initialRoomOptions.anonymous?.speaker?.enabled ?? false,
+						...this.buildPermissionsFormConfig(
+							initialRoomOptions.roles?.speaker?.permissions ?? DEFAULT_SPEAKER_PERMISSIONS
+						)
+					})
+				})
 			}
 		];
 
@@ -212,81 +269,136 @@ export class RoomWizardStateService {
 	 */
 	updateStepData(stepId: string, stepData: Partial<MeetRoomOptions>): void {
 		const currentOptions = this._roomOptions();
-		let updatedOptions: MeetRoomOptions;
-
-		switch (stepId) {
-			case 'roomDetails':
-				updatedOptions = {
-					...currentOptions
-				};
-
-				// Only update fields that are explicitly provided
-				if ('roomName' in stepData) {
-					updatedOptions.roomName = stepData.roomName;
-				}
-				if ('autoDeletionDate' in stepData) {
-					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;
-				}
-				if ('autoDeletionPolicy' in stepData) {
-					updatedOptions.autoDeletionPolicy = stepData.autoDeletionPolicy;
-				}
-
-				break;
-			case 'recording':
-			case 'recordingLayout':
-				updatedOptions = {
-					...currentOptions,
-					config: {
-						...currentOptions.config,
-						recording: {
-							...currentOptions.config?.recording,
-							...stepData.config?.recording
-						}
-					} as MeetRoomConfig
-				};
-				break;
-			case 'recordingTrigger':
-				// These steps don't update room options
-				updatedOptions = { ...currentOptions };
-				break;
-			case 'config':
-				updatedOptions = {
-					...currentOptions,
-					config: {
-						...currentOptions.config,
-						chat: {
-							...currentOptions.config?.chat,
-							...stepData.config?.chat
-						},
-						virtualBackground: {
-							...currentOptions.config?.virtualBackground,
-							...stepData.config?.virtualBackground
-						},
-						e2ee: {
-							...currentOptions.config?.e2ee,
-							...stepData.config?.e2ee
-						},
-						captions: {
-							...currentOptions.config?.captions,
-							...stepData.config?.captions
-						},
-						recording: {
-							...currentOptions.config?.recording,
-							// If recording is explicitly set in stepData, use it
-							...(stepData.config?.recording?.enabled !== undefined && {
-								enabled: stepData.config.recording.enabled
-							})
-						}
-					} as MeetRoomConfig
-				};
-				break;
-			default:
-				console.warn(`Unknown step ID: ${stepId}`);
-				updatedOptions = currentOptions;
-		}
+		const updatedOptions = this.getUpdatedOptionsForStep(stepId, stepData, currentOptions);
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
+	}
+
+	private getUpdatedOptionsForStep(
+		stepId: string,
+		stepData: Partial<MeetRoomOptions>,
+		currentOptions: MeetRoomOptions
+	): MeetRoomOptions {
+		switch (stepId) {
+			case 'roomDetails':
+				return this.mergeRoomDetailsData(currentOptions, stepData);
+			case 'recording':
+			case 'recordingLayout':
+				return this.mergeRecordingData(currentOptions, stepData);
+			case 'recordingTrigger':
+				return currentOptions;
+			case 'config':
+				return this.mergeConfigData(currentOptions, stepData);
+			case 'rolePermissions':
+				return this.mergeRolePermissionsData(currentOptions, stepData);
+			default:
+				console.warn(`Unknown step ID: ${stepId}`);
+				return currentOptions;
+		}
+	}
+
+	private mergeRoomDetailsData(
+		currentOptions: MeetRoomOptions,
+		stepData: Partial<MeetRoomOptions>
+	): MeetRoomOptions {
+		return {
+			...currentOptions,
+			...('roomName' in stepData ? { roomName: stepData.roomName } : {}),
+			...('autoDeletionDate' in stepData ? { autoDeletionDate: stepData.autoDeletionDate } : {}),
+			...('autoDeletionPolicy' in stepData ? { autoDeletionPolicy: stepData.autoDeletionPolicy } : {})
+		};
+	}
+
+	private mergeRecordingData(
+		currentOptions: MeetRoomOptions,
+		stepData: Partial<MeetRoomOptions>
+	): MeetRoomOptions {
+		return {
+			...currentOptions,
+			config: this.buildMergedConfig(currentOptions.config, {
+				recording: stepData.config?.recording
+			})
+		};
+	}
+
+	private mergeConfigData(currentOptions: MeetRoomOptions, stepData: Partial<MeetRoomOptions>): MeetRoomOptions {
+		return {
+			...currentOptions,
+			config: this.buildMergedConfig(currentOptions.config, stepData.config)
+		};
+	}
+
+	private mergeRolePermissionsData(
+		currentOptions: MeetRoomOptions,
+		stepData: Partial<MeetRoomOptions>
+	): MeetRoomOptions {
+		const currentModeratorPermissions =
+			currentOptions.roles?.moderator?.permissions ?? DEFAULT_MODERATOR_PERMISSIONS;
+		const currentSpeakerPermissions = currentOptions.roles?.speaker?.permissions ?? DEFAULT_SPEAKER_PERMISSIONS;
+
+		return {
+			...currentOptions,
+			roles: {
+				moderator: {
+					permissions: {
+						...currentModeratorPermissions,
+						...stepData.roles?.moderator?.permissions
+					}
+				},
+				speaker: {
+					permissions: {
+						...currentSpeakerPermissions,
+						...stepData.roles?.speaker?.permissions
+					}
+				}
+			},
+			anonymous: {
+				moderator: {
+					enabled:
+						stepData.anonymous?.moderator?.enabled ??
+						currentOptions.anonymous?.moderator?.enabled ??
+						false
+				},
+				speaker: {
+					enabled:
+						stepData.anonymous?.speaker?.enabled ?? currentOptions.anonymous?.speaker?.enabled ?? false
+				}
+			}
+		};
+	}
+
+	private buildMergedConfig(
+		currentConfig: Partial<MeetRoomConfig> | undefined,
+		incomingConfig: Partial<MeetRoomConfig> | undefined
+	): MeetRoomConfig {
+		return {
+			recording: {
+				...DEFAULT_CONFIG.recording,
+				...currentConfig?.recording,
+				...incomingConfig?.recording
+			},
+			chat: {
+				...DEFAULT_CONFIG.chat,
+				...currentConfig?.chat,
+				...incomingConfig?.chat
+			},
+			virtualBackground: {
+				...DEFAULT_CONFIG.virtualBackground,
+				...currentConfig?.virtualBackground,
+				...incomingConfig?.virtualBackground
+			},
+			e2ee: {
+				...DEFAULT_CONFIG.e2ee,
+				...currentConfig?.e2ee,
+				...incomingConfig?.e2ee
+			},
+			captions: {
+				...DEFAULT_CONFIG.captions,
+				...currentConfig?.captions,
+				...incomingConfig?.captions
+			}
+		};
 	}
 
 	/**
@@ -425,6 +537,16 @@ export class RoomWizardStateService {
 		const roomDetailsStep = visibleSteps.find((step) => step.id === 'roomDetails');
 		const isEditMode = !!roomDetailsStep && roomDetailsStep.isCompleted && roomDetailsStep.formGroup.disabled;
 		return isEditMode;
+	}
+
+	/**
+	 * Builds a flat form controls config from a permissions object.
+	 */
+	private buildPermissionsFormConfig(permissions: Partial<MeetRoomMemberPermissions>): Record<string, boolean> {
+		return Object.fromEntries(Object.entries(permissions).map(([key, value]) => [key, value ?? false])) as Record<
+			string,
+			boolean
+		>;
 	}
 
 	/**
