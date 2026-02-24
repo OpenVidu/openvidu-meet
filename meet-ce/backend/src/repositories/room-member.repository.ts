@@ -39,7 +39,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @throws Error if room member not found
 	 */
 	async update(member: MeetRoomMember): Promise<MeetRoomMember> {
-		return this.updateOne({ roomId: member.roomId, memberId: member.memberId }, member);
+		return this.replaceOne({ roomId: member.roomId, memberId: member.memberId }, member);
 	}
 
 	/**

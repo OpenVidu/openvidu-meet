@@ -295,7 +295,7 @@ export class UserService {
 					await Promise.all(
 						roomBatch.map((room) => {
 							room.owner = adminUserId;
-							return this.roomRepository.update(room);
+							return this.roomRepository.replace(room);
 						})
 					);
 				}

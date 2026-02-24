@@ -43,28 +43,28 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Updates an existing room.
+	 * Replaces an existing room with new data.
 	 * URLs are stored in the database without the base URL.
 	 *
 	 * @param room - The complete updated room data
 	 * @returns The updated room with enriched URLs
 	 * @throws Error if room not found
-	 *
-	 * TODO: This method should be renamed to replace or updateFull to better reflect that it replaces the entire document
 	 */
-	async update(room: MeetRoom): Promise<MeetRoom> {
+	async replace(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
-		return this.updateOne({ roomId: room.roomId }, normalizedRoom);
+		return this.replaceOne({ roomId: room.roomId }, normalizedRoom);
 	}
 
 	/**
-	 * TODO: This method should be updated when updatePartial is implemented in the base repository.
 	 * Updates specific fields of a room without replacing the entire document.
-	 * @param roomId
-	 * @param fieldsToUpdate
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param fieldsToUpdate - Partial room data with fields to update
+	 * @returns The updated room with enriched URLs
+	 * @throws Error if room not found
 	 */
 	async updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<void> {
-		await this.updateOne({ roomId }, fieldsToUpdate);
+		await this.updatePartialOne({ roomId }, fieldsToUpdate);
 	}
 
 	/**

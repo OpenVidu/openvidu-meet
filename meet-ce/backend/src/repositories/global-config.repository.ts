@@ -47,7 +47,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 */
 	async update(config: GlobalConfig): Promise<GlobalConfig> {
 		// Update the first document in the collection (there should only be one)
-		return this.updateOne({}, config);
+		return this.replaceOne({}, config);
 	}
 
 	/**

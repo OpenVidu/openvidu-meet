@@ -39,7 +39,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @throws Error if user not found
 	 */
 	async update(user: MeetUser): Promise<MeetUser> {
-		return this.updateOne({ userId: user.userId }, user);
+		return this.replaceOne({ userId: user.userId }, user);
 	}
 
 	/**

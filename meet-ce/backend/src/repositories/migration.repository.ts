@@ -31,7 +31,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 
 		if (existingMigration) {
 			// Update existing document to RUNNING status
-			return this.updateOne(
+			return this.updatePartialOne(
 				{ name },
 				{
 					$set: {
@@ -63,7 +63,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @returns The updated migration document
 	 */
 	async markAsCompleted(name: MigrationName, metadata?: Record<string, unknown>): Promise<MeetMigration> {
-		return this.updateOne(
+		return this.updatePartialOne(
 			{ name },
 			{
 				$set: {
@@ -84,7 +84,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @returns The updated migration document
 	 */
 	async markAsFailed(name: MigrationName, error: string): Promise<MeetMigration> {
-		return this.updateOne(
+		return this.updatePartialOne(
 			{ name },
 			{
 				$set: {

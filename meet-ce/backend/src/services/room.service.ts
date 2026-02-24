@@ -222,7 +222,7 @@ export class RoomService {
 			room.config.recording.enabled = false;
 		}
 
-		await this.roomRepository.update(room);
+		await this.roomRepository.replace(room);
 		// Send signal to frontend.
 		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
 		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
@@ -251,7 +251,7 @@ export class RoomService {
 			room.meetingEndAction = MeetingEndAction.NONE;
 		}
 
-		await this.roomRepository.update(room);
+		await this.roomRepository.replace(room);
 		return { room, updated };
 	}
 
@@ -272,7 +272,7 @@ export class RoomService {
 		// Merge existing roles with new roles (partial update)
 		room.roles = merge({}, room.roles, roles);
 		room.rolesUpdatedAt = Date.now();
-		await this.roomRepository.update(room);
+		await this.roomRepository.replace(room);
 
 		// Update existing room members with new effective permissions
 		const roomMemberService = await this.getRoomMemberService();
@@ -299,7 +299,7 @@ export class RoomService {
 		room.anonymous = merge({}, room.anonymous, anonymous);
 		room.rolesUpdatedAt = Date.now();
 
-		await this.roomRepository.update(room);
+		await this.roomRepository.replace(room);
 		return room;
 	}
 

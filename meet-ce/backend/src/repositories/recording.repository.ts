@@ -54,7 +54,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @throws Error if recording not found
 	 */
 	async update(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
-		return this.updateOne({ recordingId: recording.recordingId }, { $set: recording });
+		return this.replaceOne({ recordingId: recording.recordingId }, recording);
 	}
 
 	/**

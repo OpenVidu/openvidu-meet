@@ -220,7 +220,7 @@ export class LivekitWebhookService {
 
 			// Update Meet room status to ACTIVE_MEETING
 			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
-			await this.roomRepository.update(meetRoom);
+			await this.roomRepository.replace(meetRoom);
 
 			// Send webhook notification
 			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
@@ -271,12 +271,12 @@ export class LivekitWebhookService {
 					);
 					meetRoom.status = MeetRoomStatus.CLOSED;
 					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(this.roomRepository.update(meetRoom));
+					tasks.push(this.roomRepository.replace(meetRoom));
 					break;
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.roomRepository.update(meetRoom));
+					tasks.push(this.roomRepository.replace(meetRoom));
 			}
 
 			// Send webhook notification
