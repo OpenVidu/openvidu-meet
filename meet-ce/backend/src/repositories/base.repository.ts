@@ -1,6 +1,6 @@
 import { SortAndPagination, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
-import { FilterQuery, Model, Require_id, UpdateQuery } from 'mongoose';
+import { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
 import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
@@ -33,7 +33,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param data - The data to create
 	 * @returns The created domain object
 	 */
-	protected async createDocument(data: TDomain): Promise<TDomain> {
+	protected async createDocument(data: TDocument): Promise<TDomain> {
 		try {
 			const document = await this.model.create(data);
 			this.logger.debug(`Document created with ID: ${document._id}`);
@@ -51,7 +51,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param fields - Optional array of field names to select from database
 	 * @returns The domain object or null if not found
 	 */
-	protected async findOne(filter: FilterQuery<TDocument>, fields?: string[]): Promise<TDomain | null> {
+	protected async findOne(filter: QueryFilter<TDocument>, fields?: string[]): Promise<TDomain | null> {
 		try {
 			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
 			const document = (await this.model.findOne(filter, projection).lean().exec()) as
@@ -72,7 +72,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param fields - Optional array of field names to select from database
 	 * @returns Array of domain objects matching the filter
 	 */
-	protected async findAll(filter: FilterQuery<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
+	protected async findAll(filter: QueryFilter<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
 		try {
 			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
 			const documents = (await this.model.find(filter, projection).lean().exec()) as Array<
@@ -98,7 +98,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @returns Paginated result with items, truncation flag, and optional next token
 	 */
 	protected async findMany(
-		filter: FilterQuery<TDocument> = {},
+		filter: QueryFilter<TDocument> = {},
 		options: SortAndPagination = {},
 		fields?: string[]
 	): Promise<PaginatedResult<TDomain>> {
@@ -156,7 +156,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @throws Error if document not found or update fails
 	 */
 	protected async updatePartialOne(
-		filter: FilterQuery<TDocument>,
+		filter: QueryFilter<TDocument>,
 		update: UpdateQuery<TDocument> | Partial<TDocument>
 	): Promise<TDomain> {
 		try {
@@ -202,7 +202,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @returns The replaced domain object
 	 * @throws Error if document not found or replace fails
 	 */
-	protected async replaceOne(filter: FilterQuery<TDocument>, replacement: TDomain): Promise<TDomain> {
+	protected async replaceOne(filter: QueryFilter<TDocument>, replacement: TDomain): Promise<TDomain> {
 		try {
 			const existingDocument = (await this.model.findOne(filter).lean().exec()) as
 				| (Require_id<TDocument> & { __v: number })
@@ -252,7 +252,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param filter - MongoDB query filter
 	 * @throws Error if no document was found or deleted
 	 */
-	protected async deleteOne(filter: FilterQuery<TDocument>): Promise<void> {
+	protected async deleteOne(filter: QueryFilter<TDocument>): Promise<void> {
 		try {
 			const result = await this.model.findOneAndDelete(filter).exec();
 
@@ -275,7 +275,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param failIfEmpty - Whether to throw error if no documents are found (default: true)
 	 * @throws Error if no documents were found or deleted (only when failIfEmpty is true)
 	 */
-	protected async deleteMany(filter: FilterQuery<TDocument> = {}, failIfEmpty = true): Promise<void> {
+	protected async deleteMany(filter: QueryFilter<TDocument> = {}, failIfEmpty = true): Promise<void> {
 		try {
 			const result = await this.model.deleteMany(filter).exec();
 			const deletedCount = result.deletedCount || 0;
@@ -306,7 +306,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param filter - MongoDB query filter (optional, defaults to counting all documents)
 	 * @returns The number of documents matching the filter
 	 */
-	protected async count(filter: FilterQuery<TDocument> = {}): Promise<number> {
+	protected async count(filter: QueryFilter<TDocument> = {}): Promise<number> {
 		try {
 			return await this.model.countDocuments(filter).exec();
 		} catch (error) {
@@ -447,7 +447,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param sortOrder - The sort order ('asc' or 'desc')
 	 */
 	protected applyCursorToFilter(
-		filter: FilterQuery<TDocument>,
+		filter: QueryFilter<TDocument>,
 		cursor: PaginationCursor,
 		sortField: string,
 		sortOrder: SortOrder
@@ -457,7 +457,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 		// Build compound filter for pagination
 		// This ensures correct ordering even when sortField values are not unique
-		const orConditions: FilterQuery<TDocument>[] = [];
+		const orConditions: QueryFilter<TDocument>[] = [];
 
 		// If cursor field value is null (field doesn't exist in the document)
 		if (cursor.fieldValue === null) {
@@ -465,31 +465,31 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			orConditions.push({
 				[sortField]: { $exists: false },
 				_id: { [equalComparison]: cursor.id }
-			} as FilterQuery<TDocument>);
+			} as QueryFilter<TDocument>);
 
 			// In ascending order, also include documents where the field exists (they come after missing fields)
 			if (sortOrder === SortOrder.ASC) {
 				orConditions.push({
 					[sortField]: { $exists: true }
-				} as FilterQuery<TDocument>);
+				} as QueryFilter<TDocument>);
 			}
 		} else {
 			// Normal case: field has a value
 			orConditions.push(
 				{
 					[sortField]: { [comparison]: cursor.fieldValue }
-				} as FilterQuery<TDocument>,
+				} as QueryFilter<TDocument>,
 				{
 					[sortField]: cursor.fieldValue,
 					_id: { [equalComparison]: cursor.id }
-				} as FilterQuery<TDocument>
+				} as QueryFilter<TDocument>
 			);
 
 			// In descending order, also include documents where the field doesn't exist (they come after all values)
 			if (sortOrder === SortOrder.DESC) {
 				orConditions.push({
 					[sortField]: { $exists: false }
-				} as FilterQuery<TDocument>);
+				} as QueryFilter<TDocument>);
 			}
 		}
 

@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { FilterQuery, Model, Require_id, Types } from 'mongoose';
+import { Model, QueryFilter, Require_id, Types } from 'mongoose';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
@@ -356,7 +356,7 @@ export class MigrationService {
 		let migratedCount = 0;
 		let failedCount = 0;
 
-		const sourceVersionFilter: FilterQuery<TDocument> = { schemaVersion: sourceSchemaVersion };
+		const sourceVersionFilter: QueryFilter<TDocument> = { schemaVersion: sourceSchemaVersion };
 		const totalSourceVersionDocuments = await model.countDocuments(sourceVersionFilter).exec();
 
 		if (totalSourceVersionDocuments === 0) {
@@ -372,7 +372,7 @@ export class MigrationService {
 		let hasMoreBatches = true;
 
 		while (hasMoreBatches) {
-			const batchFilter: FilterQuery<TDocument> =
+			const batchFilter: QueryFilter<TDocument> =
 				lastProcessedDocumentId === null
 					? sourceVersionFilter
 					: {
