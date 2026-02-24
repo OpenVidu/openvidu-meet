@@ -28,7 +28,7 @@ export const validateGetRoomMembersReq = (req: Request, res: Response, next: Nex
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = {
+	res.locals.validatedQuery = {
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
@@ -42,7 +42,7 @@ export const validateBulkDeleteRoomMembersReq = (req: Request, res: Response, ne
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 

@@ -22,7 +22,7 @@ export const createRoom = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 	const options: MeetRoomOptions = req.body;
 	// Fields are merged from headers into req.query by the middleware
-	const { fields, extraFields } = req.query as {
+	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
 		extraFields?: MeetRoomExtraField[];
 	};
@@ -46,7 +46,7 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const queryParams = req.query as MeetRoomFilters;
+	const queryParams = res.locals.validatedQuery as MeetRoomFilters;
 
 	logger.verbose(`Getting all rooms with filters: ${JSON.stringify(queryParams)}`);
 
@@ -71,7 +71,7 @@ export const getRoom = async (req: Request, res: Response) => {
 
 	const { roomId } = req.params;
 	// Zod already validated and transformed to typed arrays
-	const { fields, extraFields } = req.query as {
+	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
 		extraFields?: MeetRoomExtraField[];
 	};
@@ -101,7 +101,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 
 	const { roomId } = req.params;
-	const { fields, extraFields, withMeeting, withRecordings } = req.query as {
+	const { fields, extraFields, withMeeting, withRecordings } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
 		extraFields?: MeetRoomExtraField[];
 		withMeeting: MeetRoomDeletionPolicyWithMeeting;
@@ -141,7 +141,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
-	const { roomIds, fields, extraFields, withMeeting, withRecordings } = req.query as {
+	const { roomIds, fields, extraFields, withMeeting, withRecordings } = res.locals.validatedQuery as {
 		roomIds: string[];
 		fields?: MeetRoomField[];
 		extraFields?: MeetRoomExtraField[];
@@ -150,7 +150,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	};
 
 	try {
-		logger.verbose(`Deleting rooms: ${roomIds} with options: ${JSON.stringify(req.query)}`);
+		logger.verbose(`Deleting rooms: ${roomIds} with options: ${JSON.stringify(res.locals.validatedQuery)}`);
 
 		const deleteOpts: MeetRoomDeletionOptions = {
 			withMeeting,

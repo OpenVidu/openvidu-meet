@@ -19,7 +19,7 @@ export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { roomId, config } = req.body;
-	const { fields } = req.query as { fields?: MeetRecordingField[] };
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 	logger.info(`Starting recording in room '${roomId}'`);
 
 	try {
@@ -39,7 +39,7 @@ export const startRecording = async (req: Request, res: Response) => {
 export const stopRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingId = req.params.recordingId;
-	const { fields } = req.query as { fields?: MeetRecordingField[] };
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	try {
 		logger.info(`Stopping recording '${recordingId}'`);
@@ -58,7 +58,7 @@ export const stopRecording = async (req: Request, res: Response) => {
 export const getRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const queryParams = req.query;
+	const queryParams = res.locals.validatedQuery ?? {};
 
 	logger.info('Getting all recordings');
 
@@ -82,7 +82,7 @@ export const getRecordings = async (req: Request, res: Response) => {
 export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const { recordingIds } = req.query as { recordingIds: string[] };
+	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
@@ -105,7 +105,7 @@ export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const { fields } = req.query as { fields?: MeetRecordingField[] };
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	logger.info(`Getting recording '${recordingId}'`);
 
@@ -220,13 +220,14 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const privateAccess = req.query.privateAccess === 'true';
+	const { privateAccess } = res.locals.validatedQuery as { privateAccess: string };
+	const isPrivateAccess = privateAccess === 'true';
 
 	logger.info(`Getting URL for recording '${recordingId}'`);
 
 	try {
 		const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
-		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
+		const secret = isPrivateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
 		const recordingUrl = `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
 
 		return res.status(200).json({ url: recordingUrl });
@@ -239,7 +240,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 
-	const { recordingIds } = req.query as { recordingIds: string[] };
+	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
 	const validRecordings: MeetRecordingInfo[] = [];
 
 	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);

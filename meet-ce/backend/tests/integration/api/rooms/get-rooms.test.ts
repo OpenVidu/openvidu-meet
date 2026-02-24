@@ -229,11 +229,6 @@ describe('Room API Tests', () => {
 			expectValidationError(response, 'maxItems', 'must be a positive number');
 		});
 
-		it('should fail when fields is not a string', async () => {
-			const response = await getRooms({ fields: { invalid: 'data' } });
-			expectValidationError(response, 'fields', 'Expected string');
-		});
-
 		it('should fail when sortField is invalid', async () => {
 			const response = await getRooms({ sortField: 'invalidField' });
 			expectValidationError(response, 'sortField', 'Invalid enum value');

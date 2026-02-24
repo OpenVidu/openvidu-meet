@@ -127,7 +127,7 @@ const startServer = (app: express.Application) => {
 	const basePath = getBasePath();
 	const basePathDisplay = basePath === '/' ? '' : basePath.slice(0, -1);
 
-	app.listen(MEET_ENV.SERVER_PORT, async () => {
+	const server = app.listen(MEET_ENV.SERVER_PORT, () => {
 		console.log(' ');
 		console.log('---------------------------------------------------------');
 		console.log(' ');
@@ -144,6 +144,11 @@ const startServer = (app: express.Application) => {
 			)
 		);
 		logEnvVars();
+	});
+
+	server.on('error', (error: Error) => {
+		console.error('Server failed to start:', error.message);
+		process.exit(1);
 	});
 };
 

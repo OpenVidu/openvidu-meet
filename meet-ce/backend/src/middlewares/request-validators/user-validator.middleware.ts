@@ -27,7 +27,7 @@ export const validateGetUsersReq = (req: Request, res: Response, next: NextFunct
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = {
+	res.locals.validatedQuery = {
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
@@ -41,7 +41,7 @@ export const validateBulkDeleteUsersReq = (req: Request, res: Response, next: Ne
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 

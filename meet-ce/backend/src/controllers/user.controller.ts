@@ -10,9 +10,9 @@ import {
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { TokenService } from '../services/token.service.js';
 import { UserService } from '../services/user.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
-import { TokenService } from '../services/token.service.js';
 
 export const createUser = async (req: Request, res: Response) => {
 	const userOptions = req.body as MeetUserOptions;
@@ -31,7 +31,7 @@ export const createUser = async (req: Request, res: Response) => {
 };
 
 export const getUsers = async (req: Request, res: Response) => {
-	const queryParams = req.query as MeetUserFilters;
+	const queryParams = res.locals.validatedQuery as MeetUserFilters;
 
 	const logger = container.get(LoggerService);
 	logger.verbose(`Getting all users`);
@@ -186,7 +186,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 };
 
 export const bulkDeleteUsers = async (req: Request, res: Response) => {
-	const { userIds } = req.query as { userIds: string[] };
+	const { userIds } = res.locals.validatedQuery as { userIds: string[] };
 
 	const logger = container.get(LoggerService);
 	logger.verbose(`Deleting users: ${userIds}`);
