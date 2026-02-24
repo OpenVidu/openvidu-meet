@@ -1,6 +1,7 @@
 import { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { Require_id } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from '../models/mongoose-schemas/global-config.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -33,7 +34,11 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @returns The created global configuration
 	 */
 	async create(config: GlobalConfig): Promise<GlobalConfig> {
-		return this.createDocument(config);
+		const document: MeetGlobalConfigDocument = {
+			...config,
+			schemaVersion: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**

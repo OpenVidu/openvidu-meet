@@ -6,8 +6,9 @@ import {
 	SortOrder
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { FilterQuery, Require_id } from 'mongoose';
+import { QueryFilter, Require_id } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -35,15 +36,15 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @returns The created recording (without access secrets)
 	 */
 	async create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
-		// Generate access secrets
-		const recordingDoc: Omit<MeetRecordingDocument, 'schemaVersion'> = {
+		const document: MeetRecordingDocument = {
 			...recording,
 			accessSecrets: {
 				public: secureUid(10),
 				private: secureUid(10)
-			}
+			},
+			schemaVersion: INTERNAL_CONFIG.RECORDING_SCHEMA_VERSION
 		};
-		return this.createDocument(recordingDoc);
+		return this.createDocument(document);
 	}
 
 	/**
@@ -105,7 +106,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		} = options;
 
 		// Build base filter
-		const filter: FilterQuery<MeetRecordingDocument> = {};
+		const filter: QueryFilter<MeetRecordingDocument> = {};
 
 		if (roomIds) {
 			// Filter by multiple room IDs

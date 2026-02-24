@@ -1,6 +1,7 @@
 import { MeetUser, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { FilterQuery, Require_id } from 'mongoose';
+import { QueryFilter, Require_id } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -28,7 +29,11 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @returns The created user
 	 */
 	async create(user: MeetUser): Promise<MeetUser> {
-		return this.createDocument(user);
+		const document: MeetUserDocument = {
+			...user,
+			schemaVersion: INTERNAL_CONFIG.USER_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
@@ -91,7 +96,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		} = options;
 
 		// Build base filter
-		const filter: FilterQuery<MeetUserDocument> = {};
+		const filter: QueryFilter<MeetUserDocument> = {};
 
 		if (userId && name) {
 			// Both defined: OR filter with regex userId match and regex name match

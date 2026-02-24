@@ -1,6 +1,7 @@
 import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { FilterQuery, Require_id } from 'mongoose';
+import { QueryFilter, Require_id } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
@@ -39,7 +40,11 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 */
 	async create(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room);
-		return this.createDocument(normalizedRoom);
+		const document: MeetRoomDocument = {
+			...normalizedRoom,
+			schemaVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
@@ -128,7 +133,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		} = options;
 
 		// Build base filter
-		const filter: FilterQuery<MeetRoomDocument> = {};
+		const filter: QueryFilter<MeetRoomDocument> = {};
 
 		// Handle owner and roomIds with $or when both are present
 		if (owner && roomIds) {

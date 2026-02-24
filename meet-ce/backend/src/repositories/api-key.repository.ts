@@ -1,6 +1,7 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { Require_id } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetApiKeyDocument, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -24,7 +25,11 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	 * Creates a new API key.
 	 */
 	async create(apiKey: MeetApiKey): Promise<MeetApiKey> {
-		return this.createDocument(apiKey);
+		const document: MeetApiKeyDocument = {
+			...apiKey,
+			schemaVersion: INTERNAL_CONFIG.API_KEY_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**

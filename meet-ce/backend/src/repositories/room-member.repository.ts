@@ -1,6 +1,7 @@
 import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { FilterQuery, Require_id } from 'mongoose';
+import { QueryFilter, Require_id } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -28,7 +29,11 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @returns The created room member
 	 */
 	async create(member: MeetRoomMember): Promise<MeetRoomMember> {
-		return this.createDocument(member);
+		const document: MeetRoomMemberDocument = {
+			...member,
+			schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
@@ -128,7 +133,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		} = options;
 
 		// Build base filter
-		const filter: FilterQuery<MeetRoomMemberDocument> = { roomId };
+		const filter: QueryFilter<MeetRoomMemberDocument> = { roomId };
 
 		if (name) {
 			filter.name = new RegExp(name, 'i');
