@@ -148,20 +148,33 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	}
 
 	/**
-	 * Updates a document by a custom filter.
+	 * Updates specific fields of a document using MongoDB operators.
 	 *
 	 * @param filter - MongoDB query filter
-	 * @param updateData - The data to update
+	 * @param update - Partial update operators, or a partial object to be converted into operators
 	 * @returns The updated domain object
 	 * @throws Error if document not found or update fails
 	 */
-	protected async updateOne(filter: FilterQuery<TDocument>, updateData: UpdateQuery<TDocument>): Promise<TDomain> {
+	protected async updatePartialOne(
+		filter: FilterQuery<TDocument>,
+		update: UpdateQuery<TDocument> | Partial<TDocument>
+	): Promise<TDomain> {
 		try {
+			const isUpdateQuery = Object.keys(update).some((key) => key.startsWith('$'));
+			const safeUpdate = isUpdateQuery
+				? (update as UpdateQuery<TDocument>)
+				: this.buildUpdateQuery(update as Partial<TDocument>);
+
+			if (!safeUpdate.$set && !safeUpdate.$unset) {
+				throw new Error('Partial update requires at least one field to set or unset');
+			}
+
 			const document = (await this.model
-				.findOneAndUpdate(filter, updateData, {
-					new: true,
-					runValidators: true,
-					lean: true
+				.findOneAndUpdate(filter, safeUpdate, {
+					new: true, // Return the updated document
+					runValidators: true, // Ensure update data is validated against schema
+					lean: true, // Return plain JavaScript object instead of Mongoose document
+					upsert: false // Do not create a new document if none matches the filter
 				})
 				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
 
@@ -174,6 +187,61 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			return this.toDomain(document);
 		} catch (error) {
 			this.logger.error('Error updating document:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Replaces a full document by a custom filter.
+	 * The replacement document is built by merging the replacement domain object
+	 * with the existing document's fields that are not present in the replacement.
+	 * This ensures that fields like _id and other database-only fields are preserved during replacement.
+	 *
+	 * @param filter - MongoDB query filter
+	 * @param replacement - Full replacement payload
+	 * @returns The replaced domain object
+	 * @throws Error if document not found or replace fails
+	 */
+	protected async replaceOne(filter: FilterQuery<TDocument>, replacement: TDomain): Promise<TDomain> {
+		try {
+			const existingDocument = (await this.model.findOne(filter).lean().exec()) as
+				| (Require_id<TDocument> & { __v: number })
+				| null;
+
+			if (!existingDocument) {
+				this.logger.error('No document found to replace with filter:', filter);
+				throw new Error('Document not found for replacement');
+			}
+
+			// Build replacement document by merging existing document's fields that are not in the replacement object
+			const documentOnlyFields = Object.fromEntries(
+				Object.entries(existingDocument).filter(
+					([key]) => !Object.prototype.hasOwnProperty.call(replacement, key)
+				)
+			);
+			const replacementDocument = {
+				...documentOnlyFields,
+				...replacement
+			} as TDocument;
+
+			const document = (await this.model
+				.findOneAndReplace(filter, replacementDocument, {
+					new: true,
+					runValidators: true,
+					lean: true,
+					upsert: false
+				})
+				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
+
+			if (!document) {
+				this.logger.error('Document disappeared during replacement with filter:', filter);
+				throw new Error('Document not found during replacement');
+			}
+
+			this.logger.debug(`Document with ID '${document._id}' replaced`);
+			return this.toDomain(document);
+		} catch (error) {
+			this.logger.error('Error replacing document:', error);
 			throw error;
 		}
 	}
@@ -213,10 +281,11 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			const deletedCount = result.deletedCount || 0;
 
 			if (deletedCount === 0) {
-				this.logger.error('No documents found to delete with filter:', filter);
-
 				if (failIfEmpty) {
+					this.logger.error('No documents found to delete with filter:', filter);
 					throw new Error('No documents found for deletion');
+				} else {
+					this.logger.debug('No documents found to delete with filter:', filter);
 				}
 			} else {
 				this.logger.debug(`Deleted ${deletedCount} documents`);
@@ -247,8 +316,67 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	}
 
 	// ==========================================
-	// PAGINATION HELPER METHODS
+	// HELPER METHODS
 	// ==========================================
+
+	/**
+	 * Builds a MongoDB update query from a partial object, converting undefined values to $unset operators.
+	 * Handles nested objects recursively.
+	 *
+	 * @param partial - The partial object containing fields to update (undefined values will be unset)
+	 * @returns An UpdateQuery object with $set and $unset operators
+	 */
+	protected buildUpdateQuery(partial: Partial<TDocument>): UpdateQuery<TDocument> {
+		const $set: Record<string, unknown> = {};
+		const $unset: Record<string, ''> = {};
+
+		const buildUpdateQueryDeep = (input: Record<string, unknown>, prefix = ''): void => {
+			for (const key in input) {
+				const value = input[key];
+				const path = prefix ? `${prefix}.${key}` : key;
+
+				if (value === undefined) {
+					// Mark field for unsetting if value is undefined
+					$unset[path] = '';
+				} else if (this.isPlainObject(value)) {
+					// Recursively build update query for nested objects
+					buildUpdateQueryDeep(value, path);
+				} else {
+					// Set field value for $set operator
+					$set[path] = value;
+				}
+			}
+		};
+
+		buildUpdateQueryDeep(partial as Record<string, unknown>);
+
+		const updateQuery: UpdateQuery<TDocument> = {};
+
+		if (Object.keys($set).length > 0) {
+			updateQuery.$set = $set;
+		}
+
+		if (Object.keys($unset).length > 0) {
+			updateQuery.$unset = $unset;
+		}
+
+		return updateQuery;
+	}
+
+	/**
+	 * Checks whether a value is a plain object.
+	 */
+	private isPlainObject(value: unknown): value is Record<string, unknown> {
+		if (value === null || typeof value !== 'object') {
+			return false;
+		}
+
+		if (Array.isArray(value)) {
+			return false;
+		}
+
+		return Object.getPrototypeOf(value) === Object.prototype;
+	}
 
 	/**
 	 * Encodes a cursor for pagination.
