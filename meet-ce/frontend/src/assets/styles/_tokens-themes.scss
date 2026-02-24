@@ -18,7 +18,7 @@
 	--ov-meet-text-disabled: #bdbdbd;
 	--ov-meet-text-on-primary: #ffffff;
 	--ov-meet-text-on-secondary: #ffffff;
-	--ov-meet-text-on-accent: #ffffff;
+	--ov-meet-text-on-accent: #4ba3eb;
 	--ov-meet-text-on-surface: #494949;
 	--ov-meet-text-on-background: #212121;
 
@@ -37,7 +37,6 @@
 // === DARK THEME ===
 // Activated when the [data-theme="dark"] attribute is present on html
 [data-theme='dark'] {
-
 	--ov-meet-color-info: #2a9bf7;
 
 	// === SURFACE COLORS - DARK THEME ===
@@ -54,6 +53,7 @@
 	--ov-meet-text-secondary: #a5a5b5;
 	--ov-meet-text-hint: #7c7c8c;
 	--ov-meet-text-disabled: #5a5a68;
+	--ov-meet-text-on-accent: #3ea8ff;
 	--ov-meet-text-on-surface: #e4e4ec;
 	--ov-meet-text-on-background: #e4e4ec;
 

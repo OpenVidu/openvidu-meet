@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, effect, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +13,7 @@ import { MeetApiKey } from '@openvidu-meet/typings';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 
 @Component({
 	selector: 'ov-embedded',
@@ -31,6 +32,9 @@ import { NotificationService } from '../../../../shared/services/notification.se
 	styleUrl: './embedded.component.scss'
 })
 export class EmbeddedComponent implements OnInit {
+	private runtimeConfigServc = inject(RuntimeConfigService);
+	restApiDocsUrl = signal<string>('');
+
 	isLoading = signal(true);
 	hasWebhookChanges = signal(false);
 
@@ -85,6 +89,10 @@ export class EmbeddedComponent implements OnInit {
 	}
 
 	async ngOnInit() {
+		// Build the REST API documentation URL with base href
+		const docsPath = 'api/v1/docs/';
+		this.restApiDocsUrl.set(this.runtimeConfigServc.basePath ? `${this.runtimeConfigServc.basePath}${docsPath}` : `/${docsPath}`);
+
 		this.isLoading.set(true);
 		await this.loadApiKeyData();
 		await this.loadWebhookConfig();

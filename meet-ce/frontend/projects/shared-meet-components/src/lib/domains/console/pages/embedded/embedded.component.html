@@ -32,7 +32,19 @@
 						<mat-icon class="section-icon">vpn_key</mat-icon>
 					</div>
 					<mat-card-title>API KEY</mat-card-title>
-					<mat-card-subtitle>Generate and manage your API key for REST API access</mat-card-subtitle>
+					<mat-card-subtitle>
+						Generate and manage your API key for
+						<a
+							href="{{ restApiDocsUrl() }}"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="rest-api-link"
+						>
+							REST API
+							<mat-icon class="external-link-icon">open_in_new</mat-icon>
+						</a>
+						access
+					</mat-card-subtitle>
 				</mat-card-header>
 
 				<mat-card-content>

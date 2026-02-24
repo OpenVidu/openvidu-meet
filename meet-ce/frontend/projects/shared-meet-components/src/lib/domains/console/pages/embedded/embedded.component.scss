@@ -5,8 +5,28 @@
 		padding: var(--ov-meet-button-padding-vertical) var(--ov-meet-button-padding-horizontal);
 	}
 }
+
 // API Key Section - use utility classes
 .api-key-section {
+	.rest-api-link {
+		color: var(--ov-meet-text-on-accent);
+		// text-decoration: none;
+		border-bottom: 1px solid transparent;
+		transition: border-color 0.2s ease;
+
+		mat-icon {
+			font-size: var(--ov-meet-font-size-md);
+			width: var(--ov-meet-font-size-md);
+			height: var(--ov-meet-font-size-md);
+			vertical-align: middle;
+		}
+
+		&:focus {
+			outline: 2px solid var(--ov-meet-text-on-accent);
+			outline-offset: 2px;
+		}
+	}
+
 	.api-key-display {
 		@extend .ov-api-key-display;
 
