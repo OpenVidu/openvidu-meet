@@ -41,7 +41,7 @@ describe('Active Rooms Status GC Tests', () => {
 
 		if (room) {
 			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
+			await roomRepository.replace(room);
 		}
 
 		let response = await getRoom(createdRoom.roomId);
@@ -71,7 +71,7 @@ describe('Active Rooms Status GC Tests', () => {
 
 		if (room) {
 			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
+			await roomRepository.replace(room);
 		}
 
 		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(true);
@@ -109,7 +109,7 @@ describe('Active Rooms Status GC Tests', () => {
 
 		if (room) {
 			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
+			await roomRepository.replace(room);
 		}
 
 		// Mock LiveKitService.roomExists to throw an error
@@ -158,12 +158,12 @@ describe('Active Rooms Status GC Tests', () => {
 
 		if (room1) {
 			room1.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room1);
+			await roomRepository.replace(room1);
 		}
 
 		if (room2) {
 			room2.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room2);
+			await roomRepository.replace(room2);
 		}
 
 		// Mock LiveKitService.roomExists to return false for both rooms
