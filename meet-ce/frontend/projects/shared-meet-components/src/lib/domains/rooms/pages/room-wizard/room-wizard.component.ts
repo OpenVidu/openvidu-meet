@@ -130,7 +130,8 @@ export class RoomWizardComponent implements OnInit {
 
 	async onCancel() {
 		this.wizardService.resetWizard();
-		await this.navigationService.navigateTo('/rooms', undefined, true);
+		const destination = this.editMode && this.roomId ? `/rooms/${this.roomId}` : '/rooms';
+		await this.navigationService.navigateTo(destination, undefined, true);
 	}
 
 	async createRoomBasic(roomName?: string) {
@@ -163,7 +164,7 @@ export class RoomWizardComponent implements OnInit {
 		try {
 			if (this.editMode && this.roomId && roomOptions.config) {
 				await this.roomService.updateRoomConfig(this.roomId, roomOptions.config);
-				await this.navigationService.navigateTo('/rooms', undefined, true);
+				await this.navigationService.navigateTo(`/rooms/${this.roomId}`, undefined, true);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
@@ -178,7 +179,8 @@ export class RoomWizardComponent implements OnInit {
 			const errorMessage = `Failed to ${this.editMode ? 'update' : 'create'} room`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
-			await this.navigationService.navigateTo('/rooms', undefined, true);
+			const destination = this.editMode && this.roomId ? `/rooms/${this.roomId}` : '/rooms';
+			await this.navigationService.navigateTo(destination, undefined, true);
 		} finally {
 			this.wizardService.resetWizard();
 			// Deactivate loading state
