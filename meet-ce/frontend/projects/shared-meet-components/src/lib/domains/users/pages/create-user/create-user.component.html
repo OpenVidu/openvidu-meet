@@ -34,9 +34,9 @@
 
 					<!-- Name -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>Full Name</mat-label>
+						<mat-label>Name</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">person_outline</mat-icon>
-						<input matInput formControlName="name" placeholder="Enter full name" />
+						<input matInput formControlName="name" placeholder="Enter your name" />
 						@if (getFieldError('name')) {
 							<mat-error>{{ getFieldError('name') }}</mat-error>
 						}
