@@ -4,7 +4,7 @@ import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRoomMember.
- * This array is the source of truth and TypeScript validates it matches the MeetRoomMember interface.
+ * IMPORTANT: Update this list if new properties are added to the MeetRoomMember interface.
  */
 export const MEET_ROOM_MEMBER_FIELDS = [
 	'memberId',
@@ -65,4 +65,11 @@ export interface MeetRoomMemberTokenMetadata {
 	customPermissions?: Partial<MeetRoomMemberPermissions>;
 	/** Effective permissions for the member (combination of base role and custom permissions). See {@link MeetRoomMemberPermissions} for details. */
 	effectivePermissions: MeetRoomMemberPermissions;
+}
+
+export enum MeetRoomMemberUIBadge {
+	OWNER = 'owner',
+	ADMIN = 'admin',
+	MODERATOR = 'moderator',
+	OTHER = 'other'
 }

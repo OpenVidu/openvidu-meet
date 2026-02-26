@@ -5,8 +5,7 @@ import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRoom.
- * This array is the source of truth and TypeScript validates it matches the MeetRoom interface.
- * If you add a property to MeetRoom, TypeScript will error until you add it here.
+ * IMPORTANT: Update this list if new properties are added to the MeetRoom interface.
  */
 export const MEET_ROOM_FIELDS = [
 	'roomId',
@@ -26,7 +25,6 @@ export const MEET_ROOM_FIELDS = [
 
 /**
  * Properties of a {@link MeetRoom} that can be included in the API response when fields filtering is applied.
- * Derived from MEET_ROOM_FIELDS array which is validated by TypeScript to match MeetRoom keys.
  */
 export type MeetRoomField = (typeof MEET_ROOM_FIELDS)[number];
 

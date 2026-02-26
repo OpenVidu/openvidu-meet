@@ -3,8 +3,7 @@ import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRecordingInfo.
- * This array is the source of truth and TypeScript validates it matches the MeetRecordingInfo interface.
- * If you add a property to MeetRecordingInfo, TypeScript will error until you add it here.
+ * IMPORTANT: Update this list if new properties are added to the MeetRecordingInfo interface.
  */
 export const MEET_RECORDING_FIELDS = [
 	'recordingId',
@@ -25,7 +24,6 @@ export const MEET_RECORDING_FIELDS = [
 
 /**
  * Properties of a {@link MeetRecordingInfo} that can be included in the API response when fields filtering is applied.
- * Derived from MEET_RECORDING_FIELDS array which is validated by TypeScript to match MeetRecordingInfo keys.
  */
 export type MeetRecordingField = (typeof MEET_RECORDING_FIELDS)[number];
 
