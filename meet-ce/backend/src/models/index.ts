@@ -1,5 +1,5 @@
 // Core models
-export * from './db-pagination.model.js';
+export * from './database.model.js';
 export * from './distributed-event.model.js';
 export * from './error.model.js';
 export * from './migration.model.js';

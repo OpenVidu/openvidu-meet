@@ -1,7 +1,7 @@
 import { SortAndPagination, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
 import { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
-import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
+import { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**
@@ -26,6 +26,14 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @returns The domain object
 	 */
 	protected abstract toDomain(dbObject: Require_id<TDocument> & { __v: number }): TDomain;
+
+	/**
+	 * Returns the list of fields that exist only in the persistence model (TDocument)
+	 * and are not part of the domain contract (TDomain).
+	 */
+	protected getDocumentOnlyFields(): readonly DocumentOnlyField<TDocument, TDomain>[] {
+		return [];
+	}
 
 	/**
 	 * Creates a new document.
@@ -171,7 +179,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 			const document = (await this.model
 				.findOneAndUpdate(filter, safeUpdate, {
-					new: true, // Return the updated document
+					returnDocument: 'after', // Return the document after replacement
 					runValidators: true, // Ensure update data is validated against schema
 					lean: true, // Return plain JavaScript object instead of Mongoose document
 					upsert: false // Do not create a new document if none matches the filter
@@ -204,38 +212,39 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 */
 	protected async replaceOne(filter: QueryFilter<TDocument>, replacement: TDomain): Promise<TDomain> {
 		try {
-			const existingDocument = (await this.model.findOne(filter).lean().exec()) as
-				| (Require_id<TDocument> & { __v: number })
-				| null;
+			const documentOnlyFields = this.getDocumentOnlyFields();
+			const replacementDocument = { ...replacement } as TDocument;
 
-			if (!existingDocument) {
-				this.logger.error('No document found to replace with filter:', filter);
-				throw new Error('Document not found for replacement');
+			if (documentOnlyFields.length > 0) {
+				const projection = documentOnlyFields.join(' ');
+				const existingDocument = (await this.model
+					.findOne(filter, projection)
+					.lean()
+					.exec()) as TDocument | null;
+
+				if (!existingDocument) {
+					this.logger.error('No document found to replace with filter:', filter);
+					throw new Error('Document not found for replacement');
+				}
+
+				// Copy document-only fields from existing document to replacement document
+				for (const key of documentOnlyFields) {
+					replacementDocument[key] = existingDocument[key];
+				}
 			}
-
-			// Build replacement document by merging existing document's fields that are not in the replacement object
-			const documentOnlyFields = Object.fromEntries(
-				Object.entries(existingDocument).filter(
-					([key]) => !Object.prototype.hasOwnProperty.call(replacement, key)
-				)
-			);
-			const replacementDocument = {
-				...documentOnlyFields,
-				...replacement
-			} as TDocument;
 
 			const document = (await this.model
 				.findOneAndReplace(filter, replacementDocument, {
-					new: true,
-					runValidators: true,
-					lean: true,
-					upsert: false
+					returnDocument: 'after', // Return the document after replacement
+					runValidators: true, // Validate replacement document against schema
+					lean: true, // Return plain JavaScript object instead of Mongoose document
+					upsert: false // Do not create a new document if none matches the filter
 				})
 				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
 
 			if (!document) {
-				this.logger.error('Document disappeared during replacement with filter:', filter);
-				throw new Error('Document not found during replacement');
+				this.logger.error('No document found to replace with filter:', filter);
+				throw new Error('Document not found for replacement');
 			}
 
 			this.logger.debug(`Document with ID '${document._id}' replaced`);
