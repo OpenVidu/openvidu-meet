@@ -48,12 +48,25 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns The created room with enriched URLs
 	 */
 	async create(room: MeetRoom): Promise<MeetRoom> {
-		const normalizedRoom = this.normalizeRoomForStorage(room);
+		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
 		const document: MeetRoomDocument = {
 			...normalizedRoom,
 			schemaVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
 		};
 		return this.createDocument(document);
+	}
+
+	/**
+	 * Updates specific fields of a room without replacing the entire document.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param fieldsToUpdate - Partial room data with fields to update
+	 * @returns The updated room with enriched URLs
+	 * @throws Error if room not found
+	 */
+	async updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<MeetRoom> {
+		const normalizedFieldsToUpdate = this.normalizeRoomForStorage(fieldsToUpdate);
+		return this.updatePartialOne({ roomId }, normalizedFieldsToUpdate);
 	}
 
 	/**
@@ -65,20 +78,8 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @throws Error if room not found
 	 */
 	async replace(room: MeetRoom): Promise<MeetRoom> {
-		const normalizedRoom = this.normalizeRoomForStorage(room);
+		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
 		return this.replaceOne({ roomId: room.roomId }, normalizedRoom);
-	}
-
-	/**
-	 * Updates specific fields of a room without replacing the entire document.
-	 *
-	 * @param roomId - The unique room identifier
-	 * @param fieldsToUpdate - Partial room data with fields to update
-	 * @returns The updated room with enriched URLs
-	 * @throws Error if room not found
-	 */
-	async updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<void> {
-		await this.updatePartialOne({ roomId }, fieldsToUpdate);
 	}
 
 	/**
@@ -248,26 +249,28 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	/**
 	 * Normalizes room data for storage by removing the base URL from access URLs.
 	 * This ensures only the path is stored in the database.
+	 * NOTE: Only normalizes fields that are present in the partial payload.
 	 *
-	 * @param room - The room data to normalize
-	 * @returns Normalized room data
+	 * @param room - The partial room data to normalize
+	 * @returns Normalized partial room data
 	 */
-	private normalizeRoomForStorage(room: MeetRoom): MeetRoom {
-		return {
-			...room,
-			accessUrl: this.extractPathFromUrl(room.accessUrl),
-			anonymous: {
-				...room.anonymous,
-				moderator: {
-					...room.anonymous.moderator,
-					accessUrl: this.extractPathFromUrl(room.anonymous.moderator.accessUrl)
-				},
-				speaker: {
-					...room.anonymous.speaker,
-					accessUrl: this.extractPathFromUrl(room.anonymous.speaker.accessUrl)
-				}
-			}
-		};
+	private normalizeRoomForStorage(room: Partial<MeetRoom>): Partial<MeetRoom> {
+		if (room.accessUrl) {
+			room.accessUrl = this.extractPathFromUrl(room.accessUrl);
+		}
+
+		const moderatorUrl = room.anonymous?.moderator.accessUrl;
+		const speakerUrl = room.anonymous?.speaker.accessUrl;
+
+		if (moderatorUrl) {
+			room.anonymous!.moderator.accessUrl = this.extractPathFromUrl(moderatorUrl);
+		}
+
+		if (speakerUrl) {
+			room.anonymous!.speaker.accessUrl = this.extractPathFromUrl(speakerUrl);
+		}
+
+		return room;
 	}
 
 	/**
@@ -313,7 +316,6 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 
 	/**
 	 * Enriches room data by adding the base URL to access URLs.
-	 * Converts MongoDB document to domain object.
 	 * Only enriches URLs that are present in the document.
 	 *
 	 * @param document - The MongoDB document
@@ -322,22 +324,21 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
 		const baseUrl = getBaseUrl();
 
-		return {
-			...room,
-			...(room.accessUrl !== undefined && { accessUrl: `${baseUrl}${room.accessUrl}` }),
-			...(room.anonymous !== undefined && {
-				anonymous: {
-					...room.anonymous,
-					moderator: {
-						...room.anonymous.moderator,
-						accessUrl: `${baseUrl}${room.anonymous.moderator.accessUrl}`
-					},
-					speaker: {
-						...room.anonymous.speaker,
-						accessUrl: `${baseUrl}${room.anonymous.speaker.accessUrl}`
-					}
-				}
-			})
-		};
+		if (room.accessUrl) {
+			room.accessUrl = `${baseUrl}${room.accessUrl}`;
+		}
+
+		const moderatorUrl = room.anonymous?.moderator.accessUrl;
+		const speakerUrl = room.anonymous?.speaker.accessUrl;
+
+		if (moderatorUrl) {
+			room.anonymous!.moderator.accessUrl = `${baseUrl}${moderatorUrl}`;
+		}
+
+		if (speakerUrl) {
+			room.anonymous!.speaker.accessUrl = `${baseUrl}${speakerUrl}`;
+		}
+
+		return room;
 	}
 }
