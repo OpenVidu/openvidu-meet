@@ -409,9 +409,9 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 	]);
 
 	// Change room ownership to userOwner
-	roomData.room.owner = userOwner.user.userId;
 	const roomRepository = container.get(RoomRepository);
-	await roomRepository.replace(roomData.room);
+	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: userOwner.user.userId });
+	roomData.room = updatedRoom;
 
 	// Add userMember and roomMember as room members
 	const [userMemberDetails, roomMemberDetails] = await Promise.all([

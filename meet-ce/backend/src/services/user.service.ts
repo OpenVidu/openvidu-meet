@@ -281,7 +281,7 @@ export class UserService {
 				// Delete memberships for all users in this batch in parallel
 				Promise.all(userBatch.map((userId) => this.roomMemberRepository.deleteAllByMemberId(userId))),
 				// Fetch owned rooms for all users in this batch in parallel
-				Promise.all(userBatch.map((userId) => this.roomRepository.findByOwner(userId)))
+				Promise.all(userBatch.map((userId) => this.roomRepository.findByOwner(userId, ['roomId'])))
 			]);
 
 			// Flatten all owned rooms from this batch
@@ -294,8 +294,7 @@ export class UserService {
 
 					await Promise.all(
 						roomBatch.map((room) => {
-							room.owner = adminUserId;
-							return this.roomRepository.replace(room);
+							return this.roomRepository.updatePartial(room.roomId, { owner: adminUserId });
 						})
 					);
 				}

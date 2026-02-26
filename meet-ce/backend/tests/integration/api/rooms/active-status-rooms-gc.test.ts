@@ -36,13 +36,7 @@ describe('Active Rooms Status GC Tests', () => {
 		});
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
-
-
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.replace(room);
-		}
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		let response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(200);
@@ -67,12 +61,7 @@ describe('Active Rooms Status GC Tests', () => {
 		});
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
-
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.replace(room);
-		}
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(true);
 
@@ -105,12 +94,7 @@ describe('Active Rooms Status GC Tests', () => {
 		const createdRoom = await createRoom({ roomName: 'test-livekit-error-gc' });
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
-
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.replace(room);
-		}
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		// Mock LiveKitService.roomExists to throw an error
 		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockRejectedValue(new Error('LiveKit down'));
@@ -153,18 +137,10 @@ describe('Active Rooms Status GC Tests', () => {
 		const r1 = await createRoom({ roomName: 'test-multi-inconsistent-1' });
 		const r2 = await createRoom({ roomName: 'test-multi-inconsistent-2' });
 
-		const room1 = await roomRepository.findByRoomId(r1.roomId);
-		const room2 = await roomRepository.findByRoomId(r2.roomId);
-
-		if (room1) {
-			room1.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.replace(room1);
-		}
-
-		if (room2) {
-			room2.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.replace(room2);
-		}
+		await Promise.all([
+			roomRepository.updatePartial(r1.roomId, { status: MeetRoomStatus.ACTIVE_MEETING }),
+			roomRepository.updatePartial(r2.roomId, { status: MeetRoomStatus.ACTIVE_MEETING })
+		]);
 
 		// Mock LiveKitService.roomExists to return false for both rooms
 		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(false);

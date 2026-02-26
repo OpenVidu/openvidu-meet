@@ -209,21 +209,15 @@ export class LivekitWebhookService {
 	 */
 	async handleRoomStarted({ name: roomId }: Room) {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomId);
-
-			if (!meetRoom) {
-				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
-				return;
-			}
-
 			this.logger.info(`Processing room_started event for room: ${roomId}`);
 
 			// Update Meet room status to ACTIVE_MEETING
-			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
-			await this.roomRepository.replace(meetRoom);
+			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
+				status: MeetRoomStatus.ACTIVE_MEETING
+			});
 
 			// Send webhook notification
-			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
+			this.openViduWebhookService.sendMeetingStartedWebhook(updatedRoom);
 		} catch (error) {
 			this.logger.error('Error handling room started event:', error);
 		}
@@ -248,11 +242,6 @@ export class LivekitWebhookService {
 		try {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
-			if (!meetRoom) {
-				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
-				return;
-			}
-
 			this.logger.info(`Processing room_finished event for room: ${roomId}`);
 			const tasks = [];
 
@@ -271,12 +260,17 @@ export class LivekitWebhookService {
 					);
 					meetRoom.status = MeetRoomStatus.CLOSED;
 					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(this.roomRepository.replace(meetRoom));
+					tasks.push(
+						this.roomRepository.updatePartial(roomId, {
+							status: MeetRoomStatus.CLOSED,
+							meetingEndAction: MeetingEndAction.NONE
+						})
+					);
 					break;
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.roomRepository.replace(meetRoom));
+					tasks.push(this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.OPEN }));
 			}
 
 			// Send webhook notification

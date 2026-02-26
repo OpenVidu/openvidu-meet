@@ -207,7 +207,7 @@ export class RoomService {
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
 	async updateMeetRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoom> {
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, ['config', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			// Reject config updates during active meetings
@@ -215,19 +215,19 @@ export class RoomService {
 		}
 
 		// Merge existing config with new config (partial update)
-		room.config = merge({}, room.config, config);
+		const updatedConfig = merge({}, room.config, config);
 
 		// Disable recording if E2EE is enabled
-		if (room.config.e2ee.enabled && room.config.recording.enabled) {
-			room.config.recording.enabled = false;
+		if (updatedConfig.e2ee.enabled && updatedConfig.recording.enabled) {
+			updatedConfig.recording.enabled = false;
 		}
 
-		await this.roomRepository.replace(room);
+		const updatedRoom = await this.roomRepository.updatePartial(roomId, { config: updatedConfig });
 		// Send signal to frontend.
 		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
 		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
-		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, room);
-		return room;
+		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, updatedRoom);
+		return updatedRoom;
 	}
 
 	/**
@@ -239,20 +239,20 @@ export class RoomService {
 	 * and a boolean indicating if the update was immediate or scheduled
 	 */
 	async updateMeetRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ room: MeetRoom; updated: boolean }> {
-		const room = await this.getMeetRoom(roomId);
+		const { status: currentStatus } = await this.getMeetRoom(roomId, ['status']);
 		let updated = true;
+		let fieldsToUpdate: Partial<MeetRoom>;
 
 		// If closing the room while a meeting is active, mark it to be closed when the meeting ends
-		if (status === MeetRoomStatus.CLOSED && room.status === MeetRoomStatus.ACTIVE_MEETING) {
-			room.meetingEndAction = MeetingEndAction.CLOSE;
+		if (status === MeetRoomStatus.CLOSED && currentStatus === MeetRoomStatus.ACTIVE_MEETING) {
+			fieldsToUpdate = { meetingEndAction: MeetingEndAction.CLOSE };
 			updated = false;
 		} else {
-			room.status = status;
-			room.meetingEndAction = MeetingEndAction.NONE;
+			fieldsToUpdate = { status, meetingEndAction: MeetingEndAction.NONE };
 		}
 
-		await this.roomRepository.replace(room);
-		return { room, updated };
+		const updatedRoom = await this.roomRepository.updatePartial(roomId, fieldsToUpdate);
+		return { room: updatedRoom, updated };
 	}
 
 	/**
@@ -263,22 +263,24 @@ export class RoomService {
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
 	async updateMeetRoomRoles(roomId: string, roles: MeetRoomRolesConfig): Promise<MeetRoom> {
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, ['roles', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
 		// Merge existing roles with new roles (partial update)
-		room.roles = merge({}, room.roles, roles);
-		room.rolesUpdatedAt = Date.now();
-		await this.roomRepository.replace(room);
+		const updatedRoles = merge({}, room.roles, roles);
+		const updatedRoom = await this.roomRepository.updatePartial(roomId, {
+			roles: updatedRoles,
+			rolesUpdatedAt: Date.now()
+		});
 
 		// Update existing room members with new effective permissions
 		const roomMemberService = await this.getRoomMemberService();
-		await roomMemberService.updateAllRoomMemberPermissions(roomId, room.roles);
+		await roomMemberService.updateAllRoomMemberPermissions(roomId, updatedRoom.roles);
 
-		return room;
+		return updatedRoom;
 	}
 
 	/**
@@ -289,18 +291,19 @@ export class RoomService {
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
 	async updateMeetRoomAnonymous(roomId: string, anonymous: MeetRoomAnonymousConfig): Promise<MeetRoom> {
-		const room = await this.getMeetRoom(roomId);
+		const room = await this.getMeetRoom(roomId, ['anonymous', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
 		// Merge existing anonymous config with new anonymous config (partial update)
-		room.anonymous = merge({}, room.anonymous, anonymous);
-		room.rolesUpdatedAt = Date.now();
+		const updatedAnonymous = merge({}, room.anonymous, anonymous);
 
-		await this.roomRepository.replace(room);
-		return room;
+		return this.roomRepository.updatePartial(roomId, {
+			anonymous: updatedAnonymous,
+			rolesUpdatedAt: Date.now()
+		});
 	}
 
 	/**
@@ -449,15 +452,8 @@ export class RoomService {
 				`Deleting room '${roomId}' with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 			);
 
-			// Create a Set for adding required fields for deletion logic
-			const requiredFields = new Set<MeetRoomField>(['roomId', 'status']);
-			// requiredFields.add('autoDeletionPolicy');
-			// requiredFields.add('meetingEndAction');
-
-			// Merge and deduplicate fields for DB query
-			const fieldsForQuery = Array.from(new Set([...(fields || []), ...requiredFields]));
-			const room = await this.getMeetRoom(roomId, Array.from(fieldsForQuery));
-			const hasActiveMeeting = room.status === MeetRoomStatus.ACTIVE_MEETING;
+			const { status } = await this.getMeetRoom(roomId, ['status']);
+			const hasActiveMeeting = status === MeetRoomStatus.ACTIVE_MEETING;
 			const hasRecordings = await this.recordingService.hasRoomRecordings(roomId);
 
 			this.logger.debug(
@@ -466,14 +462,14 @@ export class RoomService {
 
 			// Pass room object to avoid second DB fetch
 			let updatedRoom = await this.executeDeletionStrategy(
-				room,
+				roomId,
 				hasActiveMeeting,
 				hasRecordings,
 				withMeeting,
 				withRecordings
 			);
 
-			// Remove required fields added for deletion logic from the response (they are not needed in the response)
+			// Apply field filters to the updated room if it is not deleted and fields were requested
 			updatedRoom = updatedRoom ? MeetRoomHelper.applyFieldFilters(updatedRoom, fields) : undefined;
 
 			return this.getDeletionResponse(
@@ -501,14 +497,12 @@ export class RoomService {
 	 * @param room - The room object (already fetched from DB) to avoid duplicate queries
 	 */
 	protected async executeDeletionStrategy(
-		room: MeetRoom,
+		roomId: string,
 		hasActiveMeeting: boolean,
 		hasRecordings: boolean,
 		withMeeting: MeetRoomDeletionPolicyWithMeeting,
 		withRecordings: MeetRoomDeletionPolicyWithRecordings
 	): Promise<MeetRoom | undefined> {
-		const roomId = room.roomId;
-
 		// Validate policies first (fail-fast)
 		this.validateDeletionPolicies(roomId, hasActiveMeeting, hasRecordings, withMeeting, withRecordings);
 
@@ -527,22 +521,21 @@ export class RoomService {
 
 		if (hasActiveMeeting) {
 			// Set meeting end action (DELETE or CLOSE) depending on recording policy
-			room.meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
-			await this.roomRepository.updatePartial(room.roomId, { meetingEndAction: room.meetingEndAction });
+			const meetingEndAction = shouldCloseRoom ? MeetingEndAction.CLOSE : MeetingEndAction.DELETE;
+			const updatedRoom = await this.roomRepository.updatePartial(roomId, { meetingEndAction });
 
 			if (shouldForceEndMeeting) {
 				// Force end meeting by deleting the LiveKit room
 				await this.livekitService.deleteRoom(roomId);
 			}
 
-			return room;
+			return updatedRoom;
 		}
 
 		if (shouldCloseRoom) {
 			// Close room instead of deleting if recordings exist and policy is CLOSE
-			room.status = MeetRoomStatus.CLOSED;
-			await this.roomRepository.updatePartial(room.roomId, { status: room.status });
-			return room;
+			const updatedRoom = await this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.CLOSED });
+			return updatedRoom;
 		}
 
 		// Force delete: delete room and all recordings and members
