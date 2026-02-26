@@ -1,6 +1,7 @@
 import { MeetRoomMember, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
@@ -8,6 +9,19 @@ import { SchemaMigratableDocument } from '../migration.model.js';
  * Extends the MeetRoomMember interface with schemaVersion for migration tracking.
  */
 export interface MeetRoomMemberDocument extends MeetRoomMember, SchemaMigratableDocument {}
+
+/**
+ * Type for fields in MeetRoomMemberDocument that are not present in MeetRoomMember domain model.
+ */
+export type MeetRoomMemberDocumentOnlyField = DocumentOnlyField<MeetRoomMemberDocument, MeetRoomMember>;
+
+/**
+ * List of fields that exist only in the MeetRoomMemberDocument and not in the MeetRoomMember domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetRoomMemberDocument interface
+ */
+export const MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion'
+] as const satisfies readonly MeetRoomMemberDocumentOnlyField[];
 
 const permissionFields = {
 	canRecord: { type: Boolean },

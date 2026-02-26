@@ -2,7 +2,12 @@ import { MeetRoom, MeetRoomField, MeetRoomFilters, MeetRoomStatus, SortOrder } f
 import { inject, injectable } from 'inversify';
 import { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import {
+	MEET_ROOM_DOCUMENT_ONLY_FIELDS,
+	MeetRoomDocument,
+	MeetRoomDocumentOnlyField,
+	MeetRoomModel
+} from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
@@ -29,6 +34,10 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		const { _id, __v, schemaVersion, ...room } = dbObject;
 		(void _id, __v, schemaVersion);
 		return this.enrichRoomWithBaseUrls(room as MeetRoom);
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetRoomDocumentOnlyField[] {
+		return MEET_ROOM_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**

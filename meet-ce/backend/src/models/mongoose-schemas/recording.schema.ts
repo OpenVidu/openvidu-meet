@@ -1,6 +1,7 @@
 import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
@@ -14,6 +15,20 @@ export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratab
 		private: string;
 	};
 }
+
+/**
+ * Type for fields in MeetRecordingDocument that are not present in MeetRecordingInfo domain model.
+ */
+export type MeetRecordingDocumentOnlyField = DocumentOnlyField<MeetRecordingDocument, MeetRecordingInfo>;
+
+/**
+ * List of fields that exist only in the MeetRecordingDocument and not in the MeetRecordingInfo domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetRecordingDocument interface
+ */
+export const MEET_RECORDING_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion',
+	'accessSecrets'
+] as const satisfies readonly MeetRecordingDocumentOnlyField[];
 
 /**
  * Mongoose schema for MeetRecordingInfo entity.

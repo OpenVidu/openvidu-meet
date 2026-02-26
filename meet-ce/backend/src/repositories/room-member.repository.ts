@@ -2,7 +2,12 @@ import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions, SortO
 import { inject, injectable } from 'inversify';
 import { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetRoomMemberDocument, MeetRoomMemberModel } from '../models/mongoose-schemas/room-member.schema.js';
+import {
+	MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS,
+	MeetRoomMemberDocument,
+	MeetRoomMemberDocumentOnlyField,
+	MeetRoomMemberModel
+} from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -20,6 +25,10 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		const { _id, __v, schemaVersion, ...member } = dbObject;
 		(void _id, __v, schemaVersion);
 		return member as MeetRoomMember;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetRoomMemberDocumentOnlyField[] {
+		return MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**

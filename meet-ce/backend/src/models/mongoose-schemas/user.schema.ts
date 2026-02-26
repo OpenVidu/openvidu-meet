@@ -1,6 +1,7 @@
 import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
@@ -8,6 +9,17 @@ import { SchemaMigratableDocument } from '../migration.model.js';
  * Extends the MeetUser interface with schemaVersion for migration tracking.
  */
 export interface MeetUserDocument extends MeetUser, SchemaMigratableDocument {}
+
+/**
+ * Type for fields in MeetUserDocument that are not present in MeetUser domain model.
+ */
+export type MeetUserDocumentOnlyField = DocumentOnlyField<MeetUserDocument, MeetUser>;
+
+/**
+ * List of fields that exist only in the MeetUserDocument and not in the MeetUser domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetUserDocument interface
+ */
+export const MEET_USER_DOCUMENT_ONLY_FIELDS = ['schemaVersion'] as const satisfies readonly MeetUserDocumentOnlyField[];
 
 /**
  * Mongoose schema for MeetUser entity.

@@ -9,14 +9,26 @@ import {
 } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
+import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
 
 /**
  * Mongoose Document interface for rooms.
  * Extends the MeetRoom interface with schemaVersion for migration tracking.
  */
 export interface MeetRoomDocument extends MeetRoom, SchemaMigratableDocument {}
+
+/**
+ * Type for fields in MeetRoomDocument that are not present in MeetRoom domain model.
+ */
+export type MeetRoomDocumentOnlyField = DocumentOnlyField<MeetRoomDocument, MeetRoom>;
+
+/**
+ * List of fields that exist only in the MeetRoomDocument and not in the MeetRoom domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetRoomDocument interface
+ */
+export const MEET_ROOM_DOCUMENT_ONLY_FIELDS = ['schemaVersion'] as const satisfies readonly MeetRoomDocumentOnlyField[];
 
 /**
  * Sub-schema for auto-deletion policy.

@@ -2,7 +2,12 @@ import { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetApiKeyDocument, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
+import {
+	MEET_API_KEY_DOCUMENT_ONLY_FIELDS,
+	MeetApiKeyDocument,
+	MeetApiKeyDocumentOnlyField,
+	MeetApiKeyModel
+} from '../models/mongoose-schemas/api-key.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -19,6 +24,10 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 		const { _id, __v, schemaVersion, ...apiKey } = dbObject;
 		(void _id, __v, schemaVersion);
 		return apiKey as MeetApiKey;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetApiKeyDocumentOnlyField[] {
+		return MEET_API_KEY_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**

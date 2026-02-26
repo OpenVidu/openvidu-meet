@@ -1,6 +1,7 @@
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
@@ -8,6 +9,19 @@ import { SchemaMigratableDocument } from '../migration.model.js';
  * Extends the MeetApiKey interface with schemaVersion for migration tracking.
  */
 export interface MeetApiKeyDocument extends MeetApiKey, SchemaMigratableDocument {}
+
+/**
+ * Type for fields in MeetApiKeyDocument that are not present in MeetApiKey domain model.
+ */
+export type MeetApiKeyDocumentOnlyField = DocumentOnlyField<MeetApiKeyDocument, MeetApiKey>;
+
+/**
+ * List of fields that exist only in the MeetApiKeyDocument and not in the MeetApiKey domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetApiKeyDocument interface
+ */
+export const MEET_API_KEY_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion'
+] as const satisfies readonly MeetApiKeyDocumentOnlyField[];
 
 /**
  * Mongoose schema for MeetApiKey entity.

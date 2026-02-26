@@ -1,14 +1,28 @@
 import { GlobalConfig, OAuthProvider } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { MeetAppearanceConfigSchema } from './room.schema.js';
+import { DocumentOnlyField } from '../database.model.js';
 import { SchemaMigratableDocument } from '../migration.model.js';
+import { MeetAppearanceConfigSchema } from './room.schema.js';
 
 /**
  * Mongoose Document interface for global config.
  * Extends the GlobalConfig interface with schemaVersion for migration tracking.
  */
 export interface MeetGlobalConfigDocument extends GlobalConfig, SchemaMigratableDocument {}
+
+/**
+ * Type for fields in MeetGlobalConfigDocument that are not present in GlobalConfig domain model.
+ */
+export type MeetGlobalConfigDocumentOnlyField = DocumentOnlyField<MeetGlobalConfigDocument, GlobalConfig>;
+
+/**
+ * List of fields that exist only in the MeetGlobalConfigDocument and not in the GlobalConfig domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetGlobalConfigDocument interface
+ */
+export const MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion'
+] as const satisfies readonly MeetGlobalConfigDocumentOnlyField[];
 
 /**
  * Sub-schema for OAuth provider configuration.

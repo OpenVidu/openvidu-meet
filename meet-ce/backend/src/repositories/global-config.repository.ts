@@ -2,7 +2,12 @@ import { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from '../models/mongoose-schemas/global-config.schema.js';
+import {
+	MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS,
+	MeetGlobalConfigDocument,
+	MeetGlobalConfigDocumentOnlyField,
+	MeetGlobalConfigModel
+} from '../models/mongoose-schemas/global-config.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -22,6 +27,10 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 		const { _id, __v, schemaVersion, ...globalConfig } = dbObject;
 		(void _id, __v, schemaVersion);
 		return globalConfig as GlobalConfig;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetGlobalConfigDocumentOnlyField[] {
+		return MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**

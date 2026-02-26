@@ -9,7 +9,12 @@ import { inject, injectable } from 'inversify';
 import { QueryFilter, Require_id } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
+import {
+	MEET_RECORDING_DOCUMENT_ONLY_FIELDS,
+	MeetRecordingDocument,
+	MeetRecordingDocumentOnlyField,
+	MeetRecordingModel
+} from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -27,6 +32,10 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		const { _id, __v, schemaVersion, accessSecrets, ...recording } = dbObject;
 		(void _id, __v, schemaVersion, accessSecrets);
 		return recording as MeetRecordingInfo;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetRecordingDocumentOnlyField[] {
+		return MEET_RECORDING_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**
