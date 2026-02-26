@@ -63,13 +63,25 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Updates an existing recording.
+	 * Updates specific fields of a recording without replacing the entire document.
+	 *
+	 * @param recordingId - The recording identifier
+	 * @param fieldsToUpdate - Partial recording data with fields to update
+	 * @returns The updated recording (without access secrets)
+	 * @throws Error if recording not found
+	 */
+	async updatePartial(recordingId: string, fieldsToUpdate: Partial<MeetRecordingInfo>): Promise<MeetRecordingInfo> {
+		return this.updatePartialOne({ recordingId }, fieldsToUpdate);
+	}
+
+	/**
+	 * Replaces an existing recording with new data.
 	 *
 	 * @param recording - The recording data to update
 	 * @returns The updated recording (without access secrets)
 	 * @throws Error if recording not found
 	 */
-	async update(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+	async replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
 		return this.replaceOne({ recordingId: recording.recordingId }, recording);
 	}
 

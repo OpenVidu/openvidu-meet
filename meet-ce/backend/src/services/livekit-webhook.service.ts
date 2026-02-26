@@ -316,7 +316,7 @@ export class LivekitWebhookService {
 				recordingTask = this.recordingRepository.create(recordingInfo);
 			} else {
 				// Update existing recording
-				recordingTask = this.recordingRepository.update(recordingInfo);
+				recordingTask = this.recordingRepository.replace(recordingInfo);
 			}
 
 			const commonTasks = [recordingTask];

@@ -563,9 +563,9 @@ export class RecordingService {
 	}
 
 	async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
-		const recordingInfo = await this.getRecording(recordingId);
-		recordingInfo.status = status;
-		await this.recordingRepository.update(recordingInfo);
+		// Ensure recording exists before updating
+		await this.getRecording(recordingId, ['recordingId']);
+		await this.recordingRepository.updatePartial(recordingId, { status });
 	}
 
 	/**
