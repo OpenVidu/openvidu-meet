@@ -40,6 +40,12 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		return MEET_ROOM_DOCUMENT_ONLY_FIELDS;
 	}
 
+	protected override getAtomicUpdatePaths(): readonly string[] {
+		// Recording encoding must be treated as an atomic update path because
+		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
+		return ['config.recording.encoding'];
+	}
+
 	/**
 	 * Creates a new room.
 	 * URLs are stored in the database without the base URL.

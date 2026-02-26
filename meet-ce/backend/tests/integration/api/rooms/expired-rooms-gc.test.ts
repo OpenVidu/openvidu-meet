@@ -98,7 +98,7 @@ describe('Expired Rooms GC Tests', () => {
 		expect(response.body).toHaveProperty('meetingEndAction', 'delete');
 
 		// End the meeting
-		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		const { moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(room.anonymous);
 		const moderatorToken = await generateRoomMemberToken(room.roomId, { secret: moderatorSecret });
 		await endMeeting(room.roomId, moderatorToken);
 

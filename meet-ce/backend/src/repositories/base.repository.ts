@@ -36,6 +36,16 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	}
 
 	/**
+	 * Returns document paths that must be updated atomically.
+	 *
+	 * Paths listed here are treated as leaf values during partial updates,
+	 * so nested properties are not flattened into dot notation.
+	 */
+	protected getAtomicUpdatePaths(): readonly string[] {
+		return [];
+	}
+
+	/**
 	 * Creates a new document.
 	 *
 	 * @param data - The data to create
@@ -338,6 +348,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	protected buildUpdateQuery(partial: Partial<TDocument>): UpdateQuery<TDocument> {
 		const $set: Record<string, unknown> = {};
 		const $unset: Record<string, ''> = {};
+		const atomicUpdatePaths = new Set(this.getAtomicUpdatePaths());
 
 		const buildUpdateQueryDeep = (input: Record<string, unknown>, prefix = ''): void => {
 			for (const key in input) {
@@ -347,8 +358,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 				if (value === undefined) {
 					// Mark field for unsetting if value is undefined
 					$unset[path] = '';
-				} else if (this.isPlainObject(value)) {
-					// Recursively build update query for nested objects
+				} else if (this.isPlainObject(value) && !atomicUpdatePaths.has(path)) {
+					// Recursively build update query for nested objects that are not atomic paths
 					buildUpdateQueryDeep(value, path);
 				} else {
 					// Set field value for $set operator

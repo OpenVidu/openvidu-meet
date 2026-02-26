@@ -38,6 +38,12 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		return MEET_RECORDING_DOCUMENT_ONLY_FIELDS;
 	}
 
+	protected override getAtomicUpdatePaths(): readonly string[] {
+		// Recording encoding must be treated as an atomic update path because
+		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
+		return ['encoding'];
+	}
+
 	/**
 	 * Creates a new recording with generated access secrets.
 	 *
