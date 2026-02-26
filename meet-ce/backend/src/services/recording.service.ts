@@ -504,7 +504,7 @@ export class RecordingService {
 	 * @param recordingId - The unique identifier of the recording to delete.
 	 * @returns The recording information that was deleted.
 	 */
-	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
+	async deleteRecording(recordingId: string): Promise<void> {
 		try {
 			// Get the recording metadata from MongoDB
 			const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
@@ -523,8 +523,6 @@ export class RecordingService {
 			]);
 
 			this.logger.info(`Successfully deleted recording ${recordingId}`);
-
-			return recordingInfo;
 		} catch (error) {
 			this.logger.error(`Error deleting recording ${recordingId}: ${error}`);
 			throw error;
@@ -576,11 +574,12 @@ export class RecordingService {
 	 */
 	async hasRoomRecordings(roomId: string): Promise<boolean> {
 		try {
-			const response = await this.recordingRepository.find({
+			const { recordings } = await this.recordingRepository.find({
 				roomId,
-				maxItems: 1
+				maxItems: 1,
+				fields: ['recordingId']
 			});
-			return response.recordings.length > 0;
+			return recordings.length > 0;
 		} catch (error) {
 			this.logger.warn(`Error checking recordings for room '${roomId}': ${error}`);
 			return false;
