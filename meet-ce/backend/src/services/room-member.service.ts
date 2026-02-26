@@ -109,8 +109,8 @@ export class RoomMemberService {
 		}
 
 		// Compute effective permissions
-		const room = await this.roomService.getMeetRoom(roomId, ['roles']);
-		const effectivePermissions = this.computeEffectivePermissions(room.roles, baseRole, customPermissions);
+		const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
+		const effectivePermissions = this.computeEffectivePermissions(roles, baseRole, customPermissions);
 
 		const now = Date.now();
 		const roomMember = {
@@ -219,9 +219,9 @@ export class RoomMemberService {
 		}
 
 		// Recompute effective permissions
-		const room = await this.roomService.getMeetRoom(roomId, ['roles']);
+		const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
 		member.effectivePermissions = this.computeEffectivePermissions(
-			room.roles,
+			roles,
 			member.baseRole,
 			member.customPermissions
 		);
@@ -419,14 +419,14 @@ export class RoomMemberService {
 			} else {
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
 				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
-				const room = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
+				const { roles, anonymous } = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
 
 				// Check that anonymous access is enabled for the role
-				if (!room.anonymous[baseRole].enabled) {
+				if (!anonymous[baseRole].enabled) {
 					throw errorAnonymousAccessDisabled(roomId, baseRole);
 				}
 
-				effectivePermissions = room.roles[baseRole].permissions;
+				effectivePermissions = roles[baseRole].permissions;
 			}
 		} else {
 			// Case 2: Authenticated user
@@ -491,9 +491,9 @@ export class RoomMemberService {
 		userId?: string
 	): Promise<string> {
 		// Check that room is open
-		const room = await this.roomService.getMeetRoom(roomId, ['status', 'config']);
+		const { status, config } = await this.roomService.getMeetRoom(roomId, ['status', 'config']);
 
-		if (room.status === MeetRoomStatus.CLOSED) {
+		if (status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
 		}
 
@@ -557,7 +557,7 @@ export class RoomMemberService {
 			customPermissions,
 			effectivePermissions
 		};
-		const roomWithCaptions = room.config.captions.enabled;
+		const roomWithCaptions = config.captions.enabled;
 
 		// Generate token with participant name
 		return this.tokenService.generateRoomMemberToken({
@@ -610,8 +610,8 @@ export class RoomMemberService {
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
 	protected async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
-		const room = await this.roomService.getMeetRoom(roomId, ['roomId', 'anonymous']);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		const { anonymous } = await this.roomService.getMeetRoom(roomId, ['anonymous']);
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
 
 		switch (secret) {
 			case moderatorSecret:
@@ -619,7 +619,7 @@ export class RoomMemberService {
 			case speakerSecret:
 				return MeetRoomMemberRole.SPEAKER;
 			default:
-				throw errorInvalidRoomSecret(room.roomId, secret);
+				throw errorInvalidRoomSecret(roomId, secret);
 		}
 	}
 
@@ -779,7 +779,7 @@ export class RoomMemberService {
 		newRole: MeetRoomMemberRole
 	): Promise<void> {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
+			const { roles, anonymous } = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const metadata: MeetRoomMemberTokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(
 				participant.metadata
@@ -788,11 +788,11 @@ export class RoomMemberService {
 			// Update role and permissions in metadata
 			metadata.baseRole = newRole;
 			metadata.customPermissions = undefined;
-			metadata.effectivePermissions = meetRoom.roles[newRole].permissions;
+			metadata.effectivePermissions = roles[newRole].permissions;
 
 			await this.livekitService.updateParticipantMetadata(roomId, participantIdentity, JSON.stringify(metadata));
 
-			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(meetRoom);
+			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
 			const secret = newRole === MeetRoomMemberRole.MODERATOR ? moderatorSecret : speakerSecret;
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,

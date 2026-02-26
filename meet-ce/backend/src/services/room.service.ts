@@ -313,7 +313,7 @@ export class RoomService {
 	 * @returns A Promise that resolves to true if the room exists, false otherwise
 	 */
 	async meetRoomExists(roomId: string): Promise<boolean> {
-		const meetRoom = await this.roomRepository.findByRoomId(roomId);
+		const meetRoom = await this.roomRepository.findByRoomId(roomId, ['roomId']);
 		return !!meetRoom;
 	}
 
@@ -857,8 +857,8 @@ export class RoomService {
 	 * @throws Error if room not found
 	 */
 	async isRoomOwner(roomId: string, userId: string): Promise<boolean> {
-		const room = await this.getMeetRoom(roomId, ['owner']);
-		return room.owner === userId;
+		const { owner } = await this.getMeetRoom(roomId, ['owner']);
+		return owner === userId;
 	}
 
 	/**
@@ -870,8 +870,8 @@ export class RoomService {
 	 * @throws Error if room not found
 	 */
 	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		const room = await this.getMeetRoom(roomId, ['anonymous']);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+		const { anonymous } = await this.getMeetRoom(roomId, ['anonymous']);
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
 		return secret === moderatorSecret || secret === speakerSecret;
 	}
 
@@ -934,7 +934,7 @@ export class RoomService {
 	 */
 	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
 		// Verify room exists first (throws 404 if not found)
-		const room = await this.getMeetRoom(roomId, ['owner']);
+		const { owner } = await this.getMeetRoom(roomId, ['owner']);
 
 		if (user.role === MeetUserRole.ADMIN) {
 			// Admins can access all rooms
@@ -942,7 +942,7 @@ export class RoomService {
 		}
 
 		// Users can access rooms they own or are members of
-		const isOwner = room.owner === user.userId;
+		const isOwner = owner === user.userId;
 
 		if (isOwner) {
 			return true;

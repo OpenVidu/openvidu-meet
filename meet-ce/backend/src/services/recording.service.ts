@@ -1,4 +1,5 @@
 import {
+	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingField,
@@ -6,8 +7,6 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
-	MeetRoom,
-	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
@@ -86,7 +85,7 @@ export class RecordingService {
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
-			const room = await this.validateRoomForStartRecording(roomId);
+			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 
 			// Manually send the recording signal to OpenVidu Components for avoiding missing event if timeout occurs
 			// and the egress_started webhook is not received.
@@ -131,7 +130,7 @@ export class RecordingService {
 			// Promise that starts the recording process
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
-					const options = this.generateCompositeOptionsFromRequest(room.config, configOverride);
+					const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
 					const output = this.generateFileOutputFromRequest(roomId);
 					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
@@ -592,18 +591,18 @@ export class RecordingService {
 	 * Validates that a room exists and has participants before starting a recording.
 	 *
 	 * @param roomId
-	 * @returns The MeetRoom object if validation passes.
+	 * @returns The MeetRecordingConfig object if validation passes.
 	 * @throws Will throw an error if the room does not exist or has no participants.
 	 */
-	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRoom> {
+	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRecordingConfig> {
 		const roomService = await this.getRoomService();
-		const room = await roomService.getMeetRoom(roomId);
+		const { config } = await roomService.getMeetRoom(roomId, ['config']);
 
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
 
-		return room;
+		return config.recording;
 	}
 
 	/**
@@ -738,21 +737,20 @@ export class RecordingService {
 	}
 
 	/**
-	 * Generates composite options for recording based on the provided room configuration.
+	 * Generates composite options for recording based on the provided room recording configuration.
 	 * If configOverride is provided, its values will take precedence over room configuration.
 	 *
-	 * @param roomConfig  The room configuration
+	 * @param roomRecordingConfig  The recording configuration defined for the room
 	 * @param configOverride  Optional configuration override from the request
 	 * @returns The generated RoomCompositeOptions object.
 	 */
 	protected generateCompositeOptionsFromRequest(
-		roomConfig: MeetRoomConfig,
+		roomRecordingConfig: MeetRecordingConfig,
 		configOverride?: {
 			layout?: MeetRecordingLayout;
 			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 		}
 	): RoomCompositeOptions {
-		const roomRecordingConfig = roomConfig.recording;
 		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
 		const encoding = configOverride?.encoding ?? roomRecordingConfig.encoding;
 		const encodingOptions = EncodingConverter.toLivekit(encoding);

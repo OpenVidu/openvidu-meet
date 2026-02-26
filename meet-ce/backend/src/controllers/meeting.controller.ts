@@ -15,7 +15,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 
 	// Check if the room exists
 	try {
-		await roomService.getMeetRoom(roomId);
+		await roomService.getMeetRoom(roomId, ['roomId']);
 	} catch (error) {
 		return handleError(res, error, `getting room '${roomId}'`);
 	}
@@ -53,7 +53,7 @@ export const kickParticipantFromMeeting = async (req: Request, res: Response) =>
 
 	// Check if the room exists
 	try {
-		await roomService.getMeetRoom(roomId);
+		await roomService.getMeetRoom(roomId, ['roomId']);
 	} catch (error) {
 		return handleError(res, error, `getting room '${roomId}'`);
 	}

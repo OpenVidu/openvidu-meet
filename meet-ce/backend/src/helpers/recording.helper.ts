@@ -45,7 +45,7 @@ export class RecordingHelper {
 		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
 		const encoding = RecordingHelper.extractRecordingEncoding(egressInfo);
 		const roomService = container.get(RoomService);
-		const { roomName } = await roomService.getMeetRoom(roomId);
+		const { roomName } = await roomService.getMeetRoom(roomId, ['roomName']);
 
 		return {
 			recordingId,

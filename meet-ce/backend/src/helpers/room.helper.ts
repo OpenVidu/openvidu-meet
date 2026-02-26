@@ -2,6 +2,7 @@ import {
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
 	MeetRoom,
+	MeetRoomAnonymous,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
@@ -89,19 +90,19 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Extracts speaker and moderator secrets from a MeetRoom object's URLs.
+	 * Extracts speaker and moderator secrets from MeetRoom anonymous access URLs.
 	 *
 	 * This method parses the 'secret' query parameter from both speaker and moderator
 	 * anonymous access URLs associated with the meeting room.
 	 *
-	 * @param room - The MeetRoom object containing speakerUrl and moderatorUrl properties
+	 * @param room - The anonymous access configuration of the MeetRoom from which to extract secrets.
 	 * @returns An object containing the extracted secrets with the following properties:
 	 *   - speakerSecret: The secret extracted from the speaker anonymous access URL
 	 *   - moderatorSecret: The secret extracted from the moderator anonymous access URL
 	 */
-	static extractSecretsFromRoom(room: MeetRoom): { speakerSecret: string; moderatorSecret: string } {
-		const speakerUrl = room.anonymous.speaker.accessUrl;
-		const moderatorUrl = room.anonymous.moderator.accessUrl;
+	static extractSecretsFromRoom(anonymous: MeetRoomAnonymous): { speakerSecret: string; moderatorSecret: string } {
+		const speakerUrl = anonymous.speaker.accessUrl;
+		const moderatorUrl = anonymous.moderator.accessUrl;
 
 		const parsedSpeakerUrl = new URL(speakerUrl);
 		const speakerSecret = parsedSpeakerUrl.searchParams.get('secret') || '';
