@@ -7,6 +7,24 @@ import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 export type MeetUserDTO = Omit<MeetUser, 'passwordHash' | 'mustChangePassword'>;
 
 /**
+ * List of all valid fields that can be selected from a MeetUser.
+ * IMPORTANT: Update this list if new properties are added to the MeetUser interface.
+ */
+export const MEET_USER_FIELDS = [
+	'userId',
+	'name',
+	'registrationDate',
+	'role',
+	'passwordHash',
+	'mustChangePassword'
+] as const satisfies readonly (keyof MeetUser)[];
+
+/**
+ * Properties of a {@link MeetUser} that can be included in the API response when fields filtering is applied.
+ */
+export type MeetUserField = (typeof MEET_USER_FIELDS)[number];
+
+/**
  * User fields that are allowed for sorting in user list queries.
  */
 export const MEET_USER_SORT_FIELDS = [

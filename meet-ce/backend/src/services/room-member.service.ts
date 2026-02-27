@@ -76,7 +76,7 @@ export class RoomMemberService {
 
 		if (userId) {
 			// Registered user
-			const user = await this.userService.getUser(userId);
+			const user = await this.userService.getUser(userId, ['userId', 'name', 'role']);
 
 			if (!user) {
 				throw errorUserNotFound(userId);

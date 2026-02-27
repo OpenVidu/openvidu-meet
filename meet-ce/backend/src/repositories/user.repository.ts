@@ -1,4 +1,4 @@
-import { MeetUser, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
+import { MeetUser, MeetUserField, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -46,13 +46,25 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	}
 
 	/**
-	 * Updates an existing user.
+	 * Updates specific fields of a user without replacing the entire document.
+	 *
+	 * @param userId - The user identifier
+	 * @param fieldsToUpdate - Partial user data with fields to update
+	 * @returns The updated user
+	 * @throws Error if user not found
+	 */
+	async updatePartial(userId: string, fieldsToUpdate: Partial<MeetUser>): Promise<MeetUser> {
+		return this.updatePartialOne({ userId }, fieldsToUpdate);
+	}
+
+	/**
+	 * Replaces an existing user with new data.
 	 *
 	 * @param user - The complete updated user data
 	 * @returns The updated user
 	 * @throws Error if user not found
 	 */
-	async update(user: MeetUser): Promise<MeetUser> {
+	async replace(user: MeetUser): Promise<MeetUser> {
 		return this.replaceOne({ userId: user.userId }, user);
 	}
 
@@ -60,20 +72,22 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * Finds a user by their userId.
 	 *
 	 * @param userId - The unique user identifier
+	 * @param fields - Array of field names to include in the result
 	 * @returns The user or null if not found
 	 */
-	async findByUserId(userId: string): Promise<MeetUser | null> {
-		return this.findOne({ userId });
+	async findByUserId(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
+		return this.findOne({ userId }, fields);
 	}
 
 	/**
 	 * Finds users by their userIds.
 	 *
 	 * @param userIds - Array of user identifiers
+	 * @param fields - Optional array of field names to include in the result
 	 * @returns Array of found users
 	 */
-	async findByUserIds(userIds: string[]): Promise<MeetUser[]> {
-		return await this.findAll({ userId: { $in: userIds } });
+	async findByUserIds(userIds: string[], fields?: MeetUserField[]): Promise<MeetUser[]> {
+		return this.findAll({ userId: { $in: userIds } }, fields);
 	}
 
 	/**

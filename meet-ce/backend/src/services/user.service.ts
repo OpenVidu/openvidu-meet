@@ -1,4 +1,11 @@
-import { MeetUser, MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
+import {
+	MeetUser,
+	MeetUserDTO,
+	MeetUserField,
+	MeetUserFilters,
+	MeetUserOptions,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
@@ -34,7 +41,7 @@ export class UserService {
 	 */
 	async initializeAdminUser(): Promise<void> {
 		// Check if the admin user already exists
-		const existingUser = await this.userRepository.findByUserId(MEET_ENV.INITIAL_ADMIN_USER);
+		const existingUser = await this.userRepository.findByUserId(MEET_ENV.INITIAL_ADMIN_USER, ['userId']);
 
 		if (existingUser) {
 			this.logger.info('Admin user already initialized, skipping admin user initialization');
@@ -55,7 +62,7 @@ export class UserService {
 	}
 
 	async createUser(userOptions: MeetUserOptions): Promise<MeetUser> {
-		const existingUser = await this.userRepository.findByUserId(userOptions.userId);
+		const existingUser = await this.userRepository.findByUserId(userOptions.userId, ['userId']);
 
 		if (existingUser) {
 			throw errorUserAlreadyExists(userOptions.userId);
@@ -92,8 +99,8 @@ export class UserService {
 		return user;
 	}
 
-	async getUser(userId: string): Promise<MeetUser | null> {
-		return this.userRepository.findByUserId(userId);
+	async getUser(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
+		return this.userRepository.findByUserId(userId, fields);
 	}
 
 	async getUserAssociatedWithApiKey(): Promise<MeetUser | null> {
@@ -102,7 +109,7 @@ export class UserService {
 	}
 
 	async changePassword(userId: string, currentPassword: string, newPassword: string) {
-		const user = await this.userRepository.findByUserId(userId);
+		const user = await this.userRepository.findByUserId(userId, ['passwordHash']);
 
 		if (!user) {
 			throw errorUserNotFound(userId);
@@ -114,10 +121,10 @@ export class UserService {
 			throw errorInvalidPassword();
 		}
 
-		user.passwordHash = await PasswordHelper.hashPassword(newPassword);
-		user.mustChangePassword = false; // Clear the flag (if needed) after password change
-
-		await this.userRepository.update(user);
+		await this.userRepository.updatePartial(userId, {
+			passwordHash: await PasswordHelper.hashPassword(newPassword),
+			mustChangePassword: false // Reset mustChangePassword flag after successful password change
+		});
 	}
 
 	/**
@@ -140,16 +147,16 @@ export class UserService {
 			throw errorCannotResetRootAdminPassword();
 		}
 
-		const user = await this.userRepository.findByUserId(userId);
+		const user = await this.userRepository.findByUserId(userId, ['userId']);
 
 		if (!user) {
 			throw errorUserNotFound(userId);
 		}
 
-		user.passwordHash = await PasswordHelper.hashPassword(newPassword);
-		user.mustChangePassword = true; // Force password change on next login
-
-		await this.userRepository.update(user);
+		await this.userRepository.updatePartial(userId, {
+			passwordHash: await PasswordHelper.hashPassword(newPassword),
+			mustChangePassword: true // Force user to change password on next login
+		});
 		this.logger.info(`Password reset for user '${userId}' by admin. User must change password on next login.`);
 	}
 
@@ -172,17 +179,16 @@ export class UserService {
 			throw errorCannotChangeOwnRole();
 		}
 
-		const user = await this.userRepository.findByUserId(userId);
+		const user = await this.userRepository.findByUserId(userId, ['userId']);
 
 		if (!user) {
 			throw errorUserNotFound(userId);
 		}
 
-		user.role = newRole;
-		await this.userRepository.update(user);
+		const updatedUser = await this.userRepository.updatePartial(userId, { role: newRole });
 
 		this.logger.info(`Role for user '${userId}' changed to '${newRole}' by admin`);
-		return user;
+		return updatedUser;
 	}
 
 	async deleteUser(userId: string): Promise<void> {
@@ -198,7 +204,7 @@ export class UserService {
 			throw errorCannotDeleteOwnAccount();
 		}
 
-		const user = await this.userRepository.findByUserId(userId);
+		const user = await this.userRepository.findByUserId(userId, ['userId']);
 
 		if (!user) {
 			throw errorUserNotFound(userId);
@@ -236,7 +242,7 @@ export class UserService {
 			filteredUserIds = filteredUserIds.filter((id) => id !== authenticatedUser.userId);
 		}
 
-		const usersToDelete = await this.userRepository.findByUserIds(filteredUserIds);
+		const usersToDelete = await this.userRepository.findByUserIds(filteredUserIds, ['userId']);
 		const foundUserIds = usersToDelete.map((u) => u.userId);
 
 		failed.push(
