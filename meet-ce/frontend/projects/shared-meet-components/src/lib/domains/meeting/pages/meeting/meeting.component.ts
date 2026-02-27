@@ -1,12 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from 'openvidu-components-angular';
-import { Subject } from 'rxjs';
-import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
@@ -65,8 +62,6 @@ export class MeetingComponent implements OnInit {
 	features = this.meetingContextService.meetingUI;
 	hasRecordings = this.meetingContextService.hasRecordings;
 
-	protected destroy$ = new Subject<void>();
-
 	constructor() {
 		// Change theme variables when custom theme is enabled
 		effect(() => {
@@ -113,9 +108,6 @@ export class MeetingComponent implements OnInit {
 	}
 
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-
 		// Cleanup captions service
 		this.captionsService.destroy();
 	}

@@ -1,12 +1,11 @@
-import { Component, inject, OnDestroy } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../services';
 
 export interface PermissionItem {
@@ -135,25 +134,20 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 	styleUrl: './role-permissions.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RolePermissionsComponent implements OnDestroy {
+export class RolePermissionsComponent {
 	rolePermissionsForm: FormGroup;
 	permissionGroups = PERMISSION_GROUPS;
 
-	private destroy$ = new Subject<void>();
+	private destroyRef = inject(DestroyRef);
 	private wizardService = inject(RoomWizardStateService);
 
 	constructor() {
 		const currentStep = this.wizardService.currentStep();
 		this.rolePermissionsForm = currentStep!.formGroup;
 
-		this.rolePermissionsForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.rolePermissionsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
 			this.saveFormData(value);
 		});
-	}
-
-	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	get moderatorForm(): FormGroup {
