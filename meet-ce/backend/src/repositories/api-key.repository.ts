@@ -45,7 +45,7 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	 * Returns all API keys.
 	 */
 	async findAll(): Promise<MeetApiKey[]> {
-		return await super.findAll();
+		return super.findAll();
 	}
 
 	/**

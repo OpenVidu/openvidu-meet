@@ -37,7 +37,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * Creates the global configuration document.
 	 *
 	 * WARNING: This should only be called once during system initialization.
-	 * If a config already exists, use update() instead.
+	 * If a config already exists, use replace() or updatePartial() instead.
 	 *
 	 * @param config - The global configuration data to create
 	 * @returns The created global configuration
@@ -51,7 +51,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	}
 
 	/**
-	 * Updates the global configuration.
+	 * Replaces the global configuration.
 	 *
 	 * Since there's only one document, this updates the first (and only) document in the collection.
 	 *
@@ -59,19 +59,33 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @returns The updated global configuration
 	 * @throws Error if no config exists
 	 */
-	async update(config: GlobalConfig): Promise<GlobalConfig> {
+	async replace(config: GlobalConfig): Promise<GlobalConfig> {
 		// Update the first document in the collection (there should only be one)
 		return this.replaceOne({}, config);
 	}
 
 	/**
+	 * Partially updates the global configuration.
+	 *
+	 * Since there's only one document, this updates the first (and only) document in the collection.
+	 *
+	 * @param fieldsToUpdate - Partial global configuration data to update
+	 * @returns The updated global configuration
+	 * @throws Error if no config exists
+	 */
+	async updatePartial(fieldsToUpdate: Partial<GlobalConfig>): Promise<GlobalConfig> {
+		return this.updatePartialOne({}, fieldsToUpdate);
+	}
+
+	/**
 	 * Retrieves the global configuration.
 	 *
+	 * @param fields - Optional array of field names to include in the result
 	 * @returns The global configuration or null if not found
 	 */
-	async get(): Promise<GlobalConfig | null> {
+	async get(fields?: (keyof GlobalConfig)[]): Promise<GlobalConfig | null> {
 		// Get the first (and only) document from the collection
-		return this.findOne({});
+		return this.findOne({}, fields);
 	}
 
 	/**

@@ -30,6 +30,7 @@ import request, { Response } from 'supertest';
 import { container, initializeEagerServices } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import { MEET_ENV } from '../../src/environment.js';
+import { GlobalConfigRepository } from '../../src/repositories/global-config.repository.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
@@ -206,7 +207,8 @@ export const getCaptionsConfig = async () => {
 export const restoreDefaultGlobalConfig = async () => {
 	const configService = container.get(GlobalConfigService);
 	const defaultGlobalConfig = configService['getDefaultConfig']();
-	await configService['saveGlobalConfig'](defaultGlobalConfig);
+	const configRepository = container.get(GlobalConfigRepository);
+	await configRepository.replace(defaultGlobalConfig);
 };
 
 // AUTH HELPERS
@@ -937,10 +939,7 @@ export const stopRecording = async (
 	return response;
 };
 
-export const getAllRecordings = async (
-	query: Record<string, unknown> = {},
-	headers?: { xFields?: string }
-) => {
+export const getAllRecordings = async (query: Record<string, unknown> = {}, headers?: { xFields?: string }) => {
 	checkAppIsRunning();
 
 	const req = request(app)

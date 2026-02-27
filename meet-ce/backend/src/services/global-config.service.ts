@@ -37,8 +37,8 @@ export class GlobalConfigService {
 	 */
 	async getWebhookConfig(): Promise<WebhookConfig> {
 		try {
-			const config = await this.getGlobalConfig();
-			return config.webhooksConfig;
+			const webhookConfig = await this.getGlobalConfigField('webhooksConfig');
+			return webhookConfig;
 		} catch (error) {
 			this.logger.error('Error retrieving webhook config:', error);
 			throw error;
@@ -53,16 +53,15 @@ export class GlobalConfigService {
 	 */
 	async updateWebhookConfig(webhookConfig: WebhookConfig): Promise<WebhookConfig> {
 		try {
-			const globalConfig = await this.getGlobalConfig();
-
-			globalConfig.webhooksConfig = {
-				enabled: webhookConfig.enabled,
-				url: webhookConfig.url === undefined ? globalConfig.webhooksConfig.url : webhookConfig.url
-			};
-
-			await this.saveGlobalConfig(globalConfig);
+			const webhookConfigDB = await this.getGlobalConfigField('webhooksConfig');
+			const updatedConfig = await this.globalConfigRepository.updatePartial({
+				webhooksConfig: {
+					enabled: webhookConfig.enabled,
+					url: webhookConfig.url === undefined ? webhookConfigDB.url : webhookConfig.url
+				}
+			});
 			this.logger.info('Webhook config updated successfully');
-			return globalConfig.webhooksConfig;
+			return updatedConfig.webhooksConfig;
 		} catch (error) {
 			this.logger.error('Error updating webhook config:', error);
 			throw error;
@@ -76,8 +75,8 @@ export class GlobalConfigService {
 	 */
 	async getSecurityConfig(): Promise<SecurityConfig> {
 		try {
-			const config = await this.getGlobalConfig();
-			return config.securityConfig;
+			const securityConfig = await this.getGlobalConfigField('securityConfig');
+			return securityConfig;
 		} catch (error) {
 			this.logger.error('Error retrieving security config:', error);
 			throw error;
@@ -92,11 +91,9 @@ export class GlobalConfigService {
 	 */
 	async updateSecurityConfig(securityConfig: SecurityConfig): Promise<SecurityConfig> {
 		try {
-			const globalConfig = await this.getGlobalConfig();
-			globalConfig.securityConfig.authentication = securityConfig.authentication;
-			await this.saveGlobalConfig(globalConfig);
+			const updatedConfig = await this.globalConfigRepository.updatePartial({ securityConfig });
 			this.logger.info('Security config updated successfully');
-			return globalConfig.securityConfig;
+			return updatedConfig.securityConfig;
 		} catch (error) {
 			this.logger.error('Error updating security config:', error);
 			throw error;
@@ -110,8 +107,8 @@ export class GlobalConfigService {
 	 */
 	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
 		try {
-			const config = await this.getGlobalConfig();
-			return config.roomsConfig;
+			const roomsConfig = await this.getGlobalConfigField('roomsConfig');
+			return roomsConfig;
 		} catch (error) {
 			this.logger.error('Error retrieving rooms appearance config:', error);
 			throw error;
@@ -128,12 +125,15 @@ export class GlobalConfigService {
 		appearance: MeetAppearanceConfig;
 	}): Promise<{ appearance: MeetAppearanceConfig }> {
 		try {
-			const globalConfig = await this.getGlobalConfig();
+			const roomsConfigDB = await this.getGlobalConfigField('roomsConfig');
+			const updatedRoomsConfig = {
+				...appearanceConfig
+			};
 
-			if (globalConfig.roomsConfig.appearance.themes.length > 0) {
+			if (roomsConfigDB.appearance.themes.length > 0) {
 				// Preserve existing theme colors if they are not provided in the update
-				const existingTheme = globalConfig.roomsConfig.appearance.themes[0];
-				const newTheme = appearanceConfig.appearance.themes[0];
+				const existingTheme = roomsConfigDB.appearance.themes[0];
+				const newTheme = updatedRoomsConfig.appearance.themes[0];
 
 				newTheme.backgroundColor = newTheme.backgroundColor ?? existingTheme.backgroundColor;
 				newTheme.primaryColor = newTheme.primaryColor ?? existingTheme.primaryColor;
@@ -142,10 +142,9 @@ export class GlobalConfigService {
 				newTheme.surfaceColor = newTheme.surfaceColor ?? existingTheme.surfaceColor;
 			}
 
-			globalConfig.roomsConfig = appearanceConfig;
-			await this.saveGlobalConfig(globalConfig);
+			const updatedConfig = await this.globalConfigRepository.updatePartial({ roomsConfig: updatedRoomsConfig });
 			this.logger.info('Rooms appearance config updated successfully');
-			return globalConfig.roomsConfig;
+			return updatedConfig.roomsConfig;
 		} catch (error) {
 			this.logger.error('Error updating rooms appearance config:', error);
 			throw error;
@@ -153,18 +152,22 @@ export class GlobalConfigService {
 	}
 
 	/**
-	 * Retrieves the global configuration.
+	 * Retrieves a specific field from the global configuration.
+	 *
+	 * @param field - The field name to retrieve
+	 * @returns The value of the requested field
+	 * @throws Error if global config is not found
 	 */
-	protected async getGlobalConfig(): Promise<GlobalConfig> {
+	protected async getGlobalConfigField<T extends keyof GlobalConfig>(field: T): Promise<GlobalConfig[T]> {
 		try {
-			const config = await this.globalConfigRepository.get();
+			const config = await this.globalConfigRepository.get([field]);
 
 			if (!config) {
 				this.logger.error('Global config not found');
 				throw new Error('Global config not found');
 			}
 
-			return config;
+			return config[field];
 		} catch (error) {
 			this.logger.error('Error retrieving global config:', error);
 			throw error;
@@ -172,31 +175,7 @@ export class GlobalConfigService {
 	}
 
 	/**
-	 * Updates the global configuration.
-	 *
-	 * NOTE: This method only updates an existing configuration.
-	 * If no global config exists, it will throw an error.
-	 *
-	 * @param config - The global configuration to save
-	 * @returns The updated global configuration
-	 * @throws Error if global config does not exist
-	 */
-	protected async saveGlobalConfig(config: GlobalConfig): Promise<GlobalConfig> {
-		try {
-			// Update existing config (will throw if not found)
-			const updated = await this.globalConfigRepository.update(config);
-			this.logger.info('Global config updated successfully');
-			return updated;
-		} catch (error) {
-			this.logger.error('Error saving global config:', error);
-			throw error;
-		}
-	}
-
-	/**
 	 * Returns the default global configuration.
-	 *
-	 * @returns The default GlobalConfig object
 	 */
 	protected getDefaultConfig(): GlobalConfig {
 		const defaultConfig: GlobalConfig = {

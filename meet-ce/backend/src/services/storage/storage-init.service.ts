@@ -84,7 +84,7 @@ export class StorageInitService {
 	 */
 	private async checkStorageInitialization(): Promise<boolean> {
 		try {
-			const existingConfig = await this.globalConfigRepository.get();
+			const existingConfig = await this.globalConfigRepository.get(['projectId']);
 
 			if (!existingConfig) {
 				this.logger.verbose('No global config found, storage needs initialization');
