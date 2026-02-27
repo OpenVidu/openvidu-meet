@@ -1,6 +1,7 @@
 import {
 	LiveKitPermissions,
 	MeetRoomMember,
+	MeetRoomMemberField,
 	MeetRoomMemberFilters,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
@@ -82,9 +83,9 @@ export class RoomMemberService {
 			}
 
 			// Check if user is already a member of the room
-			const existingMember = await this.getRoomMember(roomId, userId);
+			const memberExists = await this.isRoomMember(roomId, userId);
 
-			if (existingMember) {
+			if (memberExists) {
 				throw errorRoomMemberAlreadyExists(roomId, userId);
 			}
 
@@ -155,7 +156,7 @@ export class RoomMemberService {
 	async isRoomMember(roomId: string, memberId: string): Promise<boolean> {
 		// Verify room exists first
 		await this.roomService.getMeetRoom(roomId, ['roomId']);
-		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+		const member = await this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId, ['memberId']);
 		return !!member;
 	}
 
@@ -164,10 +165,15 @@ export class RoomMemberService {
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberId - The ID of the member
+	 * @param fields - Array of field names to include in the result
 	 * @returns A promise that resolves to the MeetRoomMember object or null if not found
 	 */
-	async getRoomMember(roomId: string, memberId: string): Promise<MeetRoomMember | null> {
-		return this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+	async getRoomMember(
+		roomId: string,
+		memberId: string,
+		fields?: MeetRoomMemberField[]
+	): Promise<MeetRoomMember | null> {
+		return this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId, fields);
 	}
 
 	/**
@@ -202,35 +208,28 @@ export class RoomMemberService {
 		memberId: string,
 		updates: { baseRole?: MeetRoomMemberRole; customPermissions?: Partial<MeetRoomMemberPermissions> }
 	): Promise<MeetRoomMember> {
-		const member = await this.getRoomMember(roomId, memberId);
+		const member = await this.getRoomMember(roomId, memberId, ['baseRole', 'customPermissions']);
 
 		if (!member) {
 			throw errorRoomMemberNotFound(roomId, memberId);
 		}
 
-		// Update baseRole if provided
-		if (updates.baseRole) {
-			member.baseRole = updates.baseRole;
-		}
-
-		// Update customPermissions if provided
-		if (updates.customPermissions) {
-			member.customPermissions = updates.customPermissions;
-		}
+		const nextBaseRole = updates.baseRole ?? member.baseRole;
+		const nextCustomPermissions = updates.customPermissions ?? member.customPermissions;
 
 		// Recompute effective permissions
 		const { roles } = await this.roomService.getMeetRoom(roomId, ['roles']);
-		member.effectivePermissions = this.computeEffectivePermissions(
-			roles,
-			member.baseRole,
-			member.customPermissions
-		);
-		member.permissionsUpdatedAt = Date.now();
+		const effectivePermissions = this.computeEffectivePermissions(roles, nextBaseRole, nextCustomPermissions);
 
-		const updatedMember = await this.roomMemberRepository.update(member);
+		const updatedMember = await this.roomMemberRepository.updatePartial(roomId, memberId, {
+			baseRole: nextBaseRole,
+			customPermissions: nextCustomPermissions,
+			effectivePermissions,
+			permissionsUpdatedAt: Date.now()
+		});
 
 		// If member lost permission to join meeting, kick them out
-		if (!updatedMember.effectivePermissions.canJoinMeeting) {
+		if (!effectivePermissions.canJoinMeeting) {
 			await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
 		} else {
 			// TODO: Notify participant of role/permission changes if currently in a meeting
@@ -255,7 +254,7 @@ export class RoomMemberService {
 		let batchNumber = 0;
 		let nextPageToken: string | undefined;
 		let totalUpdated = 0;
-		const totalMembers: MeetRoomMember[] = [];
+		const membersToKick: string[] = [];
 
 		do {
 			batchNumber++;
@@ -267,9 +266,9 @@ export class RoomMemberService {
 				nextPageToken: token
 			} = await this.getAllRoomMembers(roomId, {
 				maxItems: BATCH_SIZE,
-				nextPageToken
+				nextPageToken,
+				fields: ['memberId', 'baseRole', 'customPermissions']
 			});
-			totalMembers.push(...members);
 
 			if (members.length === 0) {
 				break;
@@ -288,9 +287,14 @@ export class RoomMemberService {
 					);
 
 					// Update the member with new effective permissions
-					member.effectivePermissions = effectivePermissions;
-					member.permissionsUpdatedAt = Date.now();
-					await this.roomMemberRepository.update(member);
+					if (!effectivePermissions.canJoinMeeting) {
+						membersToKick.push(member.memberId);
+					}
+
+					await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
+						effectivePermissions,
+						permissionsUpdatedAt: Date.now()
+					});
 
 					this.logger.verbose(
 						`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
@@ -319,8 +323,6 @@ export class RoomMemberService {
 		}
 
 		// Kick members who lost canJoinMeeting permission
-		const membersToKick = totalMembers.filter((m) => !m.effectivePermissions.canJoinMeeting).map((m) => m.memberId);
-
 		if (membersToKick.length > 0) {
 			await this.kickMembersFromMeetingInBatches(roomId, membersToKick);
 		}
@@ -335,9 +337,9 @@ export class RoomMemberService {
 	 * @param memberId - The ID of the member to delete
 	 */
 	async deleteRoomMember(roomId: string, memberId: string): Promise<void> {
-		const member = await this.getRoomMember(roomId, memberId);
+		const memberExists = await this.isRoomMember(roomId, memberId);
 
-		if (!member) {
+		if (!memberExists) {
 			throw errorRoomMemberNotFound(roomId, memberId);
 		}
 
@@ -361,10 +363,7 @@ export class RoomMemberService {
 		deleted: string[];
 		failed: { memberId: string; error: string }[];
 	}> {
-		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(roomId, memberIds, [
-			'memberId',
-			'currentParticipantIdentity'
-		]);
+		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(roomId, memberIds, ['memberId']);
 		const foundMemberIds = membersToDelete.map((m) => m.memberId);
 
 		const failed = memberIds

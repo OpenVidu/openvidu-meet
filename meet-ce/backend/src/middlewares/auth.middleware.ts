@@ -205,7 +205,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 			// If the token has a memberId, validate that permissions haven't been updated after token issuance
 			if (memberId) {
 				const roomMemberRepository = container.get(RoomMemberRepository);
-				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId);
+				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt']);
 
 				// If member not found or permissions were updated after token issuance, invalidate token
 				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {

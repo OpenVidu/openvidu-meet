@@ -911,7 +911,7 @@ export class RoomService {
 				return roomMemberService.getAllPermissions();
 			}
 
-			const member = await roomMemberService.getRoomMember(roomId, user.userId);
+			const member = await roomMemberService.getRoomMember(roomId, user.userId, ['effectivePermissions']);
 
 			if (!member) {
 				return roomMemberService.getNoPermissions();

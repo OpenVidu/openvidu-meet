@@ -1,4 +1,10 @@
-import { MeetRoomMember, MeetRoomMemberFilters, MeetRoomMemberPermissions, SortOrder } from '@openvidu-meet/typings';
+import {
+	MeetRoomMember,
+	MeetRoomMemberField,
+	MeetRoomMemberFilters,
+	MeetRoomMemberPermissions,
+	SortOrder
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -46,13 +52,30 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	}
 
 	/**
-	 * Updates an existing room member.
+	 * Updates specific fields of a room member without replacing the entire document.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param memberId - The ID of the member
+	 * @param fieldsToUpdate - Partial member data with fields to update
+	 * @returns The updated room member
+	 * @throws Error if room member not found
+	 */
+	async updatePartial(
+		roomId: string,
+		memberId: string,
+		fieldsToUpdate: Partial<MeetRoomMember>
+	): Promise<MeetRoomMember> {
+		return this.updatePartialOne({ roomId, memberId }, fieldsToUpdate);
+	}
+
+	/**
+	 * Replaces an existing room member with new data.
 	 *
 	 * @param member - The complete updated room member data
 	 * @returns The updated room member
 	 * @throws Error if room member not found
 	 */
-	async update(member: MeetRoomMember): Promise<MeetRoomMember> {
+	async replace(member: MeetRoomMember): Promise<MeetRoomMember> {
 		return this.replaceOne({ roomId: member.roomId, memberId: member.memberId }, member);
 	}
 
@@ -61,10 +84,15 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberId - The ID of the member
+	 * @param fields - Array of field names to include in the result
 	 * @returns The room member or null if not found
 	 */
-	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null> {
-		return this.findOne({ roomId, memberId });
+	async findByRoomAndMemberId(
+		roomId: string,
+		memberId: string,
+		fields?: MeetRoomMemberField[]
+	): Promise<MeetRoomMember | null> {
+		return this.findOne({ roomId, memberId }, fields);
 	}
 
 	/**
@@ -75,7 +103,11 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(roomId: string, memberIds: string[], fields?: string[]): Promise<MeetRoomMember[]> {
+	async findByRoomAndMemberIds(
+		roomId: string,
+		memberIds: string[],
+		fields?: MeetRoomMemberField[]
+	): Promise<MeetRoomMember[]> {
 		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
 	}
 
