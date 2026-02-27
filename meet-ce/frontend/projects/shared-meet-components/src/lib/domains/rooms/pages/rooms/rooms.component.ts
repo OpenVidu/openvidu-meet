@@ -1,5 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -58,7 +59,8 @@ import { RoomService } from '../../services/room.service';
 		RoomsListsComponent
 	],
 	templateUrl: './rooms.component.html',
-	styleUrl: './rooms.component.scss'
+	styleUrl: './rooms.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsComponent implements OnInit {
 	rooms = signal<MeetRoom[]>([]);

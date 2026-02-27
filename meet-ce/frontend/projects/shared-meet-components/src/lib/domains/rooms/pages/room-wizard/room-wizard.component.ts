@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, Signal, signal } from '@angular/core';
+import { Component, computed, OnInit, Signal, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -39,7 +40,8 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		RoomConfigComponent
 	],
 	templateUrl: './room-wizard.component.html',
-	styleUrl: './room-wizard.component.scss'
+	styleUrl: './room-wizard.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;

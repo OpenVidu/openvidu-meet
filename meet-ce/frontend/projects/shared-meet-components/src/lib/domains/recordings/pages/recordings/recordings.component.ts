@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -14,7 +15,8 @@ import { RecordingService } from '../../services/recording.service';
 	selector: 'ov-recordings',
 	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
 	templateUrl: './recordings.component.html',
-	styleUrl: './recordings.component.scss'
+	styleUrl: './recordings.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);

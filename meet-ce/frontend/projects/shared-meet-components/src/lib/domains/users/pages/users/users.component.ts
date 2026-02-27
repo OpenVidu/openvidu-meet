@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +22,8 @@ import { UserService } from '../../services/user.service';
 		UsersListsComponent
 	],
 	templateUrl: './users.component.html',
-	styleUrl: './users.component.scss'
+	styleUrl: './users.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsersComponent implements OnInit {
 	private userService = inject(UserService);

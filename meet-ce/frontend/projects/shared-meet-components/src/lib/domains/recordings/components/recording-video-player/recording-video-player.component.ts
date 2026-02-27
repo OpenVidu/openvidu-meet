@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -11,7 +12,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 	selector: 'ov-recording-video-player',
 	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule],
 	templateUrl: './recording-video-player.component.html',
-	styleUrl: './recording-video-player.component.scss'
+	styleUrl: './recording-video-player.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingVideoPlayerComponent implements OnDestroy {
 	/**

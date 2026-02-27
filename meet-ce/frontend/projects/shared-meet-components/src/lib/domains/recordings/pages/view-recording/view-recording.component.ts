@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,7 +32,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatTooltipModule,
 		MatSnackBarModule,
 		RecordingVideoPlayerComponent
-	]
+	],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;

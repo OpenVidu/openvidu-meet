@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -11,7 +12,8 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 	selector: 'ov-overview',
 	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
 	templateUrl: './overview.component.html',
-	styleUrl: './overview.component.scss'
+	styleUrl: './overview.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OverviewComponent implements OnInit {
 	stats: MeetAnalytics = {

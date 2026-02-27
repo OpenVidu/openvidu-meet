@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -28,7 +29,8 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingComponent implements OnInit {
 	protected meetingContextService = inject(MeetingContextService);

@@ -1,4 +1,5 @@
 import { Component, computed, inject, Signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,7 +26,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		SelectableCardComponent
 	],
 	templateUrl: './recording-layout.component.html',
-	styleUrl: './recording-layout.component.scss'
+	styleUrl: './recording-layout.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingLayoutComponent {
 	private themeService = inject(ThemeService);

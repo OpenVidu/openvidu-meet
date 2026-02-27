@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, ElementRef, input, QueryList, signal, untracked, ViewChildren } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { Caption } from '../../models/captions.model';
 
 @Component({
 	selector: 'ov-meeting-captions',
 	imports: [CommonModule],
 	templateUrl: './meeting-captions.component.html',
-	styleUrl: './meeting-captions.component.scss'
+	styleUrl: './meeting-captions.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingCaptionsComponent {
 	// Reactive caption data from service

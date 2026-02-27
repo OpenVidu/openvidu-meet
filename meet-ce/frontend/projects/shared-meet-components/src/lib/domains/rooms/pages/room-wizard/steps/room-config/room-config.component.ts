@@ -1,4 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -9,7 +10,8 @@ import { RoomWizardStateService } from '../../../../services';
 	selector: 'ov-room-config',
 	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule],
 	templateUrl: './room-config.component.html',
-	styleUrl: './room-config.component.scss'
+	styleUrl: './room-config.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomConfigComponent implements OnDestroy {
 	configForm: FormGroup;

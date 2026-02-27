@@ -1,4 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,7 +24,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		SelectableCardComponent
 	],
 	templateUrl: './recording-trigger.component.html',
-	styleUrl: './recording-trigger.component.scss'
+	styleUrl: './recording-trigger.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingTriggerComponent implements OnDestroy {
 	triggerForm: FormGroup;

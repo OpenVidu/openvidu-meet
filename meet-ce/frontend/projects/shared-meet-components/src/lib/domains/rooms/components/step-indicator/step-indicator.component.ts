@@ -2,6 +2,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Observable } from 'rxjs';
@@ -9,10 +10,11 @@ import { map } from 'rxjs/operators';
 import { WizardStep } from '../../models';
 
 @Component({
-	selector: 'ov-step-indicator',
-	imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
-	templateUrl: './step-indicator.component.html',
-	styleUrl: './step-indicator.component.scss'
+    selector: 'ov-step-indicator',
+    imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
+    templateUrl: './step-indicator.component.html',
+    styleUrl: './step-indicator.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();

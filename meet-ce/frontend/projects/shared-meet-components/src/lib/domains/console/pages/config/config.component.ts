@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -31,7 +32,8 @@ import { GlobalConfigService, NotificationService } from '../../../../shared/ser
 		ReactiveFormsModule
 	],
 	templateUrl: './config.component.html',
-	styleUrl: './config.component.scss'
+	styleUrl: './config.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfigComponent implements OnInit {
 	isLoading = signal(true);

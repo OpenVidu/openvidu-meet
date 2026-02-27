@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, computed, effect, EventEmitter, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -66,7 +67,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		DatePipe
 	],
 	templateUrl: './recording-lists.component.html',
-	styleUrl: './recording-lists.component.scss'
+	styleUrl: './recording-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingListsComponent implements OnInit {
 	recordings = input<MeetRecordingInfo[]>([]);

@@ -1,4 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -131,7 +132,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 	selector: 'ov-role-permissions',
 	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule, MatTabsModule],
 	templateUrl: './role-permissions.component.html',
-	styleUrl: './role-permissions.component.scss'
+	styleUrl: './role-permissions.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RolePermissionsComponent implements OnDestroy {
 	rolePermissionsForm: FormGroup;

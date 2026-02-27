@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, Signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -24,7 +25,8 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 		RouterModule
 	],
 	templateUrl: './console-nav.component.html',
-	styleUrl: './console-nav.component.scss'
+	styleUrl: './console-nav.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsoleNavComponent {
 	@ViewChild(MatSidenav) sidenav!: MatSidenav;

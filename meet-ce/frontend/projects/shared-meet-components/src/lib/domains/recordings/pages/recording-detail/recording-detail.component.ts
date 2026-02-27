@@ -1,6 +1,7 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -32,7 +33,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		RecordingVideoPlayerComponent
 	],
 	templateUrl: './recording-detail.component.html',
-	styleUrl: './recording-detail.component.scss'
+	styleUrl: './recording-detail.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingDetailComponent implements OnInit {
 	recording = signal<MeetRecordingInfo | undefined>(undefined);

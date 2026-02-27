@@ -1,4 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -31,7 +32,8 @@ import { RoomWizardStateService } from '../../../../services';
         MatTooltipModule
     ],
     templateUrl: './room-details.component.html',
-    styleUrl: './room-details.component.scss'
+    styleUrl: './room-details.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	roomDetailsForm: FormGroup;

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -15,7 +16,8 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 	selector: 'ov-meeting-toolbar-more-options-menu',
 	imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
 	templateUrl: './meeting-toolbar-more-options-menu.component.html',
-	styleUrl: './meeting-toolbar-more-options-menu.component.scss'
+	styleUrl: './meeting-toolbar-more-options-menu.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarMoreOptionsMenuComponent {
 	private meetingContextService = inject(MeetingContextService);

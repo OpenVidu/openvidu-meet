@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -6,7 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
     selector: 'ov-share-meeting-link',
     imports: [MatButtonModule, MatIconModule],
     templateUrl: './share-meeting-link.component.html',
-    styleUrl: './share-meeting-link.component.scss'
+    styleUrl: './share-meeting-link.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ShareMeetingLinkComponent {
 	@Input() meetingUrl!: string;

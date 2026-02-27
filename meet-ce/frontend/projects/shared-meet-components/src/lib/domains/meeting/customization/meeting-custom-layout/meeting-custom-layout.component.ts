@@ -1,6 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from 'openvidu-components-angular';
+import { ChangeDetectionStrategy } from '@angular/core';
+import {
+	LoggerService,
+	OpenViduComponentsUiModule,
+	PanelService,
+	PanelType,
+	ParticipantModel
+} from 'openvidu-components-angular';
 import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { CustomParticipantModel } from '../../models/custom-participant.model';
@@ -20,7 +27,8 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 		MeetingCaptionsComponent
 	],
 	templateUrl: './meeting-custom-layout.component.html',
-	styleUrl: './meeting-custom-layout.component.scss'
+	styleUrl: './meeting-custom-layout.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);

@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 export interface BreadcrumbItem {
@@ -34,7 +35,8 @@ export interface BreadcrumbItem {
 	selector: 'ov-breadcrumb',
 	imports: [MatIconModule],
 	templateUrl: './breadcrumb.component.html',
-	styleUrl: './breadcrumb.component.scss'
+	styleUrl: './breadcrumb.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BreadcrumbComponent {
 	/**

@@ -1,4 +1,5 @@
 import { Component, effect, EventEmitter, OnDestroy, Output } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,7 +21,8 @@ import { RoomWizardStateService } from '../../services';
         MatTooltipModule
     ],
     templateUrl: './room-basic-creation.component.html',
-    styleUrl: './room-basic-creation.component.scss'
+    styleUrl: './room-basic-creation.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomBasicCreationComponent implements OnDestroy {
 	@Output() createRoom = new EventEmitter<string | undefined>();

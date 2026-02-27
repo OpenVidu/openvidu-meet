@@ -1,5 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, Inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -36,7 +37,8 @@ import { RecordingService } from '../../services/recording.service';
 		MatProgressSpinnerModule
 	],
 	templateUrl: './recording-share-dialog.component.html',
-	styleUrl: './recording-share-dialog.component.scss'
+	styleUrl: './recording-share-dialog.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingShareDialogComponent implements OnInit {
 	accessType: 'private' | 'public' = 'public';

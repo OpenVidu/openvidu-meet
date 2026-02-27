@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
@@ -8,7 +9,8 @@ import { consoleChildRoutes } from '../../routes/console.routes';
 	selector: 'ov-console',
 	imports: [ConsoleNavComponent],
 	templateUrl: './console.component.html',
-	styleUrl: './console.component.scss'
+	styleUrl: './console.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[];

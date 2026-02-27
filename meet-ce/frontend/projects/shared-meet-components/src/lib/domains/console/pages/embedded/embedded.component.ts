@@ -1,5 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -29,7 +30,8 @@ import { NotificationService } from '../../../../shared/services/notification.se
 		MatProgressSpinnerModule
 	],
 	templateUrl: './embedded.component.html',
-	styleUrl: './embedded.component.scss'
+	styleUrl: './embedded.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmbeddedComponent implements OnInit {
 	private navigationService = inject(NavigationService);
