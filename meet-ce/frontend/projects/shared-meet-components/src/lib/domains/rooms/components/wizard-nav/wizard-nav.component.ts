@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -15,7 +15,7 @@ export class WizardNavComponent {
 	/**
 	 * Navigation configuration with default values
 	 */
-	@Input() config: WizardNavigationConfig = {
+	config = input<WizardNavigationConfig>({
 		showPrevious: false,
 		showNext: true,
 		showCancel: false,
@@ -27,89 +27,89 @@ export class WizardNavComponent {
 		previousLabel: 'Previous',
 		cancelLabel: 'Cancel',
 		finishLabel: 'Finish'
-	};
+	});
 
-	@Input() backButtonText: string = 'Back';
+	backButtonText = input('Back');
 
 	/**
 	 * Current step identifier for context
 	 */
-	@Input() currentStepId?: number;
+	currentStepId = input<number | undefined>(undefined);
 
 	/**
 	 * Event emitters for navigation actions
 	 */
-	@Output() previous = new EventEmitter<WizardNavigationEvent>();
-	@Output() next = new EventEmitter<WizardNavigationEvent>();
-	@Output() cancel = new EventEmitter<WizardNavigationEvent>();
-	@Output() back = new EventEmitter<WizardNavigationEvent>();
-	@Output() finish = new EventEmitter<WizardNavigationEvent>();
+	previous = output<WizardNavigationEvent>();
+	next = output<WizardNavigationEvent>();
+	cancel = output<WizardNavigationEvent>();
+	back = output<WizardNavigationEvent>();
+	finish = output<WizardNavigationEvent>();
 
 	/**
 	 * Generic navigation event for centralized handling
 	 */
-	@Output() navigate = new EventEmitter<WizardNavigationEvent>();
+	navigate = output<WizardNavigationEvent>();
 
 	onPrevious() {
-		if (!this.config.showPrevious) return;
+		if (!this.config().showPrevious) return;
 
 		const event: WizardNavigationEvent = {
 			action: 'previous',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.previous.emit(event);
 		this.navigate.emit(event);
 	}
 
 	onNext() {
-		if (!this.config.showNext) return;
+		if (!this.config().showNext) return;
 
 		const event: WizardNavigationEvent = {
 			action: 'next',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.next.emit(event);
 		this.navigate.emit(event);
 	}
 
 	onCancel() {
-		if (!this.config.showCancel) return;
+		if (!this.config().showCancel) return;
 
 		const event: WizardNavigationEvent = {
 			action: 'cancel',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.cancel.emit(event);
 		this.navigate.emit(event);
 	}
 
 	onBack() {
-		if (!this.config.showBack) return;
+		if (!this.config().showBack) return;
 		const event: WizardNavigationEvent = {
 			action: 'back',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.back.emit(event);
 		this.navigate.emit(event);
 	}
 
 	onFinish() {
-		if (!this.config.showFinish) return;
+		if (!this.config().showFinish) return;
 
 		const event: WizardNavigationEvent = {
 			action: 'finish',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.finish.emit(event);
 		this.navigate.emit(event);
 	}
 
 	skipAndFinish() {
-		if (!this.config.showSkipAndFinish) return;
+		if (!this.config().showSkipAndFinish) return;
 
 		const event: WizardNavigationEvent = {
 			action: 'finish',
-			currentStepIndex: this.currentStepId
+			currentStepIndex: this.currentStepId()
 		};
 		this.finish.emit(event);
 		this.navigate.emit(event);

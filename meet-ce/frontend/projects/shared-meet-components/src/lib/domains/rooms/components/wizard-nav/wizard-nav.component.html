@@ -1,7 +1,7 @@
 <nav class="wizard-navigation" [class.loading]="false" [class.compact]="false" id="wizard-navigation">
 	<div class="nav-buttons">
 		<!-- Cancel Button -->
-		@if (config.showCancel) {
+		@if (config().showCancel) {
 			<button
 				mat-stroked-button
 				class="cancel-btn"
@@ -10,11 +10,11 @@
 				[attr.aria-label]="'Cancel wizard and return to previous page'"
 			>
 				<mat-icon class="leading-icon">close</mat-icon>
-				{{ config.cancelLabel || 'Cancel' }}
+				{{ config().cancelLabel || 'Cancel' }}
 			</button>
 		}
 
-		@if (config.showBack) {
+		@if (config().showBack) {
 			<!-- Back Button -->
 			<button
 				mat-stroked-button
@@ -24,7 +24,7 @@
 				[attr.aria-label]="'Go back'"
 			>
 				<mat-icon class="leading-icon">arrow_back</mat-icon>
-				{{ backButtonText }}
+				{{ backButtonText() }}
 			</button>
 		}
 
@@ -33,7 +33,7 @@
 		<!-- Navigation Group -->
 		<div class="nav-group">
 			<!-- Previous Button -->
-			@if (config.showPrevious) {
+			@if (config().showPrevious) {
 				<button
 					mat-stroked-button
 					class="prev-btn"
@@ -42,27 +42,27 @@
 					[attr.aria-label]="'Go to previous step'"
 				>
 					<mat-icon class="leading-icon">chevron_left</mat-icon>
-					{{ config.previousLabel || 'Previous' }}
+					{{ config().previousLabel || 'Previous' }}
 				</button>
 			}
 
-			@if (config.showSkipAndFinish) {
+			@if (config().showSkipAndFinish) {
 				<!-- Skip Wizard Button -->
 				<button
 					mat-raised-button
 					class="finish-btn"
 					id="wizard-quick-create-btn"
-					[disabled]="config.disableFinish ?? false"
+					[disabled]="config().disableFinish ?? false"
 					(click)="skipAndFinish()"
 					[attr.aria-label]="'Skip wizard and finish'"
 				>
 					<mat-icon>bolt</mat-icon>
-					{{ config.skipAndFinishLabel || 'Skip and Finish' }}
+					{{ config().skipAndFinishLabel || 'Skip and Finish' }}
 				</button>
 			}
 
 			<!-- Next Button -->
-			@if (config.showNext) {
+			@if (config().showNext) {
 				<button
 					mat-raised-button
 					class="next-btn"
@@ -70,23 +70,23 @@
 					(click)="onNext()"
 					[attr.aria-label]="'Continue to next step'"
 				>
-					{{ config.nextLabel || 'Next' }}
+					{{ config().nextLabel || 'Next' }}
 					<mat-icon class="trailing-icon">chevron_right</mat-icon>
 				</button>
 			}
 
 			<!-- Finish Button -->
-			@if (config.showFinish) {
+			@if (config().showFinish) {
 				<button
 					mat-raised-button
 					class="finish-btn"
 					id="wizard-finish-btn"
-					[disabled]="config.disableFinish ?? false"
+					[disabled]="config().disableFinish ?? false"
 					(click)="onFinish()"
 					[attr.aria-label]="'Complete wizard and save changes'"
 				>
 					<mat-icon class="leading-icon">check</mat-icon>
-					{{ config.finishLabel || 'Finish' }}
+					{{ config().finishLabel || 'Finish' }}
 				</button>
 			}
 		</div>

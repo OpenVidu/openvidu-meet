@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { Component, effect, HostBinding, input, OnInit, output, signal, untracked } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -113,11 +113,11 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	// Output events
-	@Output() roomAction = new EventEmitter<RoomTableAction>();
-	@Output() filterChange = new EventEmitter<RoomTableFilter>();
-	@Output() loadMore = new EventEmitter<RoomTableFilter>();
-	@Output() refresh = new EventEmitter<RoomTableFilter>();
-	@Output() roomClicked = new EventEmitter<string>();
+	roomAction = output<RoomTableAction>();
+	filterChange = output<RoomTableFilter>();
+	loadMore = output<RoomTableFilter>();
+	refresh = output<RoomTableFilter>();
+	roomClicked = output<string>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');

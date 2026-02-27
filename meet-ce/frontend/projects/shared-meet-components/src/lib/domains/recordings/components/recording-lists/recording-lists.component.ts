@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, computed, effect, EventEmitter, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { Component, computed, effect, input, OnInit, output, signal, untracked } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -88,11 +88,11 @@ export class RecordingListsComponent implements OnInit {
 	});
 
 	// Output events
-	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
-	@Output() recordingClicked = new EventEmitter<string>();
-	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
-	@Output() loadMore = new EventEmitter<RecordingTableFilter>();
-	@Output() refresh = new EventEmitter<RecordingTableFilter>();
+	recordingAction = output<RecordingTableAction>();
+	recordingClicked = output<string>();
+	filterChange = output<RecordingTableFilter>();
+	loadMore = output<RecordingTableFilter>();
+	refresh = output<RecordingTableFilter>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
