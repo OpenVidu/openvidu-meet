@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, EventEmitter, Input, Output, Signal, ViewChild } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,7 +15,7 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 @Component({
 	selector: 'ov-console-nav',
 	imports: [
-		CommonModule,
+		NgClass,
 		MatToolbarModule,
 		MatListModule,
 		MatButtonModule,

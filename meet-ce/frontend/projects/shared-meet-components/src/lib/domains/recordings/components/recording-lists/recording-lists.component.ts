@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit, output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -47,7 +47,6 @@ import { RecordingUiUtils } from '../../utils/ui';
 @Component({
 	selector: 'ov-recording-lists',
 	imports: [
-		CommonModule,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +17,6 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 @Component({
 	selector: 'ov-meeting-settings-extensions',
 	imports: [
-		CommonModule,
 		MatIconModule,
 		MatListModule,
 		MatRadioModule,

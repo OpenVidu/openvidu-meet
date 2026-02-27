@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, TemplateRef, ViewChild, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,7 +18,7 @@ import { MeetingService } from '../../services/meeting.service';
 	selector: 'ov-meeting-participant-item',
 	templateUrl: './meeting-participant-item.component.html',
 	styleUrls: ['./meeting-participant-item.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule],
+	imports: [MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingParticipantItemComponent {

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -19,7 +19,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	templateUrl: './meeting-lobby.component.html',
 	styleUrls: ['./meeting-lobby.component.scss'],
 	imports: [
-		CommonModule,
+		NgClass,
 		MatFormFieldModule,
 		MatInputModule,
 		FormsModule,

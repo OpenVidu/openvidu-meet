@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +18,7 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 	selector: 'ov-meeting-toolbar-extra-buttons',
 	templateUrl: './meeting-toolbar-extra-buttons.component.html',
 	styleUrls: ['./meeting-toolbar-extra-buttons.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	imports: [NgClass, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarExtraButtonsComponent {

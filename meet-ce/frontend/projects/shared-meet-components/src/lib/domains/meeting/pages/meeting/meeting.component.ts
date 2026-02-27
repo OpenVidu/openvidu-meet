@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +19,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	styleUrls: ['./meeting.component.scss'],
 	imports: [
 		OpenViduComponentsUiModule,
-		CommonModule,
+		NgTemplateOutlet,
 		FormsModule,
 		ReactiveFormsModule,
 		MatIconModule,

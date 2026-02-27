@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import {
@@ -20,7 +20,7 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 @Component({
 	selector: 'ov-meeting-custom-layout',
 	imports: [
-		CommonModule,
+		NgClass,
 		OpenViduComponentsUiModule,
 		ShareMeetingLinkComponent,
 		HiddenParticipantsIndicatorComponent,

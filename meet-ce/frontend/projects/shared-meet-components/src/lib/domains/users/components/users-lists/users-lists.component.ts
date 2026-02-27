@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -60,7 +60,7 @@ export interface UserTableFilter {
 @Component({
 	selector: 'ov-users-lists',
 	imports: [
-		CommonModule,
+		NgClass,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,

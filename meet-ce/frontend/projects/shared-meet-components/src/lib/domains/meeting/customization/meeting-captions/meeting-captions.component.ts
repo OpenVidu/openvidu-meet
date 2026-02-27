@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, effect, ElementRef, input, QueryList, signal, untracked, ViewChildren } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { Caption } from '../../models/captions.model';
 
 @Component({
 	selector: 'ov-meeting-captions',
-	imports: [CommonModule],
+	imports: [NgClass],
 	templateUrl: './meeting-captions.component.html',
 	styleUrl: './meeting-captions.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush

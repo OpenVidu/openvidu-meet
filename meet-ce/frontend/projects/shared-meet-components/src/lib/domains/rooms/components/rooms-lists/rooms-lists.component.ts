@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, HostBinding, input, OnInit, output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -69,7 +69,7 @@ export interface RoomTableFilter {
 @Component({
 	selector: 'ov-rooms-lists',
 	imports: [
-		CommonModule,
+		NgClass,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
