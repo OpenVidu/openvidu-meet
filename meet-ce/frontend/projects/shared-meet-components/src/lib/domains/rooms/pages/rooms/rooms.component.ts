@@ -1,6 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,13 +16,14 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
-	MeetRoom,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode,
-	MeetRoomFilters,
-	MeetRoomStatus,
-	SortOrder
+    MeetRoom,
+    MeetRoomDeletionErrorCode,
+    MeetRoomDeletionPolicyWithMeeting,
+    MeetRoomDeletionPolicyWithRecordings,
+    MeetRoomDeletionSuccessCode,
+    MeetRoomFilters,
+    MeetRoomStatus,
+    SortOrder
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -32,9 +32,9 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import {
-	RoomsListsComponent,
-	RoomTableAction,
-	RoomTableFilter
+    RoomsListsComponent,
+    RoomTableAction,
+    RoomTableFilter
 } from '../../components/rooms-lists/rooms-lists.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';

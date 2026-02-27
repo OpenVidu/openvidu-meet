@@ -1,5 +1,4 @@
-import { Component, input, output } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import type { WizardNavigationConfig, WizardNavigationEvent } from '../../models';

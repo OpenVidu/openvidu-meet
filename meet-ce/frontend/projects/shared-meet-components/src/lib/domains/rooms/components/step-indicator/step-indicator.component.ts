@@ -1,8 +1,7 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { Observable } from 'rxjs';

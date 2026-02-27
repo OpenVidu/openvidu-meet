@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';

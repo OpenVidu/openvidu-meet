@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
 
