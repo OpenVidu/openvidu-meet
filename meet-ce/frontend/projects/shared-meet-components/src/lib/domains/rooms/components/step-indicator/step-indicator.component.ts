@@ -8,6 +8,8 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { map } from 'rxjs/operators';
 import { WizardStep } from '../../models';
 
+type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact';
+
 @Component({
     selector: 'ov-step-indicator',
     imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
@@ -25,11 +27,11 @@ export class StepIndicatorComponent {
 
 	visibleSteps = computed<WizardStep[]>(() => this.steps().filter((step) => step.isVisible));
 	private breakpointObserver = inject(BreakpointObserver);
-	layoutType = toSignal<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>(
+	layoutType = toSignal(
 		this.breakpointObserver
 			.observe(['(min-width: 1200px)', '(min-width: 768px)', Breakpoints.HandsetPortrait])
 			.pipe(
-				map(() => {
+				map((): LayoutType => {
 					const isLargeDesktop = this.breakpointObserver.isMatched('(min-width: 1200px)');
 					const isMediumDesktop = this.breakpointObserver.isMatched('(min-width: 768px)') && !isLargeDesktop;
 
