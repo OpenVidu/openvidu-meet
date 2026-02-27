@@ -1,7 +1,7 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
@@ -25,11 +25,12 @@ export class StepIndicatorComponent {
 	stepClick = output<{ index: number; step: WizardStep }>();
 
 	visibleSteps = computed<WizardStep[]>(() => this.steps().filter((step) => step.isVisible));
+	private breakpointObserver = inject(BreakpointObserver);
 
 	stepperOrientation$: Observable<StepperOrientation>;
 	layoutType$: Observable<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>;
 
-	constructor(private breakpointObserver: BreakpointObserver) {
+	constructor() {
 		// Enhanced responsive strategy:
 		// - Large desktop (>1200px): Vertical sidebar for space efficiency
 		// - Medium desktop (768-1200px): Horizontal compact

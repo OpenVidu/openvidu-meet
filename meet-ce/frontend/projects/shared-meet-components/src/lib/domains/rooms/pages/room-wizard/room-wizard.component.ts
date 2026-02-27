@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, Signal, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, Signal, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -54,14 +54,13 @@ export class RoomWizardComponent implements OnInit {
 	currentStep: Signal<WizardStep | undefined>;
 	currentStepIndex: Signal<number>;
 	navigationConfig: Signal<WizardNavigationConfig>;
+	private wizardService = inject(RoomWizardStateService);
+	protected roomService = inject(RoomService);
+	protected notificationService = inject(NotificationService);
+	private navigationService = inject(NavigationService);
+	private route = inject(ActivatedRoute);
 
-	constructor(
-		private wizardService: RoomWizardStateService,
-		protected roomService: RoomService,
-		protected notificationService: NotificationService,
-		private navigationService: NavigationService,
-		private route: ActivatedRoute
-	) {
+	constructor() {
 		this.steps = this.wizardService.steps;
 		this.currentStep = this.wizardService.currentStep;
 		this.currentStepIndex = this.wizardService.currentStepIndex;

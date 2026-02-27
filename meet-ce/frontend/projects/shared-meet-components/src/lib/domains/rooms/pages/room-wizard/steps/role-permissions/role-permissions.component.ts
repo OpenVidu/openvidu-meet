@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, inject, OnDestroy } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -140,8 +140,9 @@ export class RolePermissionsComponent implements OnDestroy {
 	permissionGroups = PERMISSION_GROUPS;
 
 	private destroy$ = new Subject<void>();
+	private wizardService = inject(RoomWizardStateService);
 
-	constructor(private wizardService: RoomWizardStateService) {
+	constructor() {
 		const currentStep = this.wizardService.currentStep();
 		this.rolePermissionsForm = currentStep!.formGroup;
 

@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -82,16 +82,14 @@ export class RoomsComponent implements OnInit {
 	private nextPageToken?: string;
 
 	protected log: ILogger;
+	protected loggerService = inject(LoggerService);
+	private roomService = inject(RoomService);
+	private notificationService = inject(NotificationService);
+	protected navigationService = inject(NavigationService);
+	private clipboard = inject(Clipboard);
+	private dialog = inject(MatDialog);
 
-	constructor(
-		protected loggerService: LoggerService,
-		private roomService: RoomService,
-		private roomDeletionService: RoomDeletionService,
-		private notificationService: NotificationService,
-		protected navigationService: NavigationService,
-		private clipboard: Clipboard,
-		private dialog: MatDialog
-	) {
+	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
 

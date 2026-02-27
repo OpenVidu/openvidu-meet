@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -14,8 +14,9 @@ import { consoleChildRoutes } from '../../routes/console.routes';
 })
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[];
+	private authService = inject(AuthService);
 
-	constructor(private authService: AuthService) {
+	constructor() {
 		// Build navigation links from console child route configurations
 		this.navLinks = consoleChildRoutes
 			.filter((config) => config.navMetadata) // Only include routes with navigation metadata

@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, inject, OnDestroy } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,8 +19,9 @@ export class RoomConfigComponent implements OnDestroy {
 	private destroy$ = new Subject<void>();
 	// Store the previous recording state before E2EE disables it
 	private recordingStateBeforeE2EE: string | null = null;
+	private wizardService = inject(RoomWizardStateService);
 
-	constructor(private wizardService: RoomWizardStateService) {
+	constructor() {
 		const currentStep = this.wizardService.currentStep();
 		this.configForm = currentStep!.formGroup;
 
