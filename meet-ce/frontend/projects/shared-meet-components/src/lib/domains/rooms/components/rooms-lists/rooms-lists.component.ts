@@ -15,7 +15,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MEET_ROOM_SORT_FIELDS, MeetRoom, MeetRoomSortField, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomSortField, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 

@@ -4,15 +4,15 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
-import { WizardStep } from '../../models';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { WizardStep } from '../../models';
 
 @Component({
-    selector: 'ov-step-indicator',
-    imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
-    templateUrl: './step-indicator.component.html',
-    styleUrl: './step-indicator.component.scss'
+	selector: 'ov-step-indicator',
+	imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
+	templateUrl: './step-indicator.component.html',
+	styleUrl: './step-indicator.component.scss'
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();
