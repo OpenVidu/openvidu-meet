@@ -1,0 +1,286 @@
+import { CommonModule, DatePipe } from '@angular/common';
+import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberSortField, SortOrder } from '@openvidu-meet/typings';
+import { setsAreEqual } from '../../../../shared/utils/array.utils';
+
+export interface MemberTableAction {
+	members: MeetRoomMember[];
+	action: 'copyLink' | 'delete' | 'bulkDelete';
+}
+
+export interface MemberTableFilter {
+	nameFilter: string;
+	sortField: MeetRoomMemberSortField;
+	sortOrder: SortOrder;
+}
+
+/**
+ * Reusable component for displaying a list of room members with filtering, selection, and bulk operations.
+ *
+ * Features:
+ * - Display room members in a Material Design table
+ * - Filter by member name
+ * - Multi-selection for bulk operations
+ * - Individual member actions (copy link, delete)
+ * - Responsive design with mobile optimization
+ *
+ * @example
+ * ```html
+ * <ov-room-members-lists
+ *   [members]="members"
+ *   [loading]="isLoading"
+ *   [showFilters]="true"
+ *   [showSelection]="true"
+ *   (memberAction)="handleMemberAction($event)"
+ *   (filterChange)="handleFilterChange($event)"
+ *   (refresh)="refreshMembers()">
+ * </ov-room-members-lists>
+ * ```
+ */
+@Component({
+	selector: 'ov-room-members-list',
+	imports: [
+		CommonModule,
+		ReactiveFormsModule,
+		MatTableModule,
+		MatCheckboxModule,
+		MatButtonModule,
+		MatIconModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatMenuModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatToolbarModule,
+		MatBadgeModule,
+		MatDividerModule,
+		MatSortModule,
+		DatePipe
+	],
+	templateUrl: './room-members-list.component.html',
+	styleUrl: './room-members-list.component.scss'
+})
+export class RoomMembersListsComponent implements OnInit {
+	members = input<MeetRoomMember[]>([]);
+	showSearchBox = input(true);
+	showFilters = input(false);
+	showSelection = input(true);
+	showLoadMore = input(false);
+	loading = input(false);
+	initialFilters = input<MemberTableFilter>({
+		nameFilter: '',
+		sortField: 'membershipDate',
+		sortOrder: SortOrder.DESC
+	});
+
+	// Host binding for styling when members are selected
+	@HostBinding('class.has-selections')
+	get hasSelections(): boolean {
+		return this.selectedMembers().size > 0;
+	}
+
+	// Output events
+	@Output() memberAction = new EventEmitter<MemberTableAction>();
+	@Output() filterChange = new EventEmitter<MemberTableFilter>();
+	@Output() loadMore = new EventEmitter<MemberTableFilter>();
+	@Output() refresh = new EventEmitter<MemberTableFilter>();
+	@Output() addMember = new EventEmitter<void>();
+
+	// Filter controls
+	nameFilterControl = new FormControl('');
+
+	// Sort state
+	currentSortField: MeetRoomMemberSortField = 'membershipDate';
+	currentSortOrder: SortOrder = SortOrder.DESC;
+
+	showEmptyFilterMessage = false;
+
+	// Selection state
+	selectedMembers = signal<Set<string>>(new Set());
+	allSelected = signal(false);
+	someSelected = signal(false);
+
+	// Table configuration
+	displayedColumns: string[] = ['select', 'name', 'role', 'memberType', 'membershipDate', 'actions'];
+
+	// Expose enum to template
+	protected readonly MeetRoomMemberRole = MeetRoomMemberRole;
+
+	constructor() {
+		effect(() => {
+			const members = this.members();
+			const validMemberIds = new Set(members.map((m) => m.memberId));
+
+			const currentSelection = untracked(() => this.selectedMembers());
+			const filteredSelection = new Set([...currentSelection].filter((id) => validMemberIds.has(id)));
+
+			if (!setsAreEqual(filteredSelection, currentSelection)) {
+				this.selectedMembers.set(filteredSelection);
+				this.updateSelectionState();
+			}
+
+			this.showEmptyFilterMessage = members.length === 0 && this.hasActiveFilters();
+		});
+	}
+
+	ngOnInit() {
+		this.setupFilters();
+		this.updateDisplayedColumns();
+	}
+
+	// ===== INITIALIZATION METHODS =====
+
+	private setupFilters() {
+		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
+		this.currentSortField = this.initialFilters().sortField;
+		this.currentSortOrder = this.initialFilters().sortOrder;
+
+		this.nameFilterControl.valueChanges.subscribe((value) => {
+			if (!value) {
+				this.emitFilterChange();
+			}
+		});
+	}
+
+	private updateDisplayedColumns() {
+		this.displayedColumns = [];
+
+		if (this.showSelection()) {
+			this.displayedColumns.push('select');
+		}
+
+		this.displayedColumns.push('name', 'role', 'memberType', 'membershipDate', 'actions');
+	}
+
+	// ===== SELECTION METHODS =====
+
+	toggleAllSelection() {
+		const selected = this.selectedMembers();
+		if (this.allSelected()) {
+			selected.clear();
+		} else {
+			this.members().forEach((member) => selected.add(member.memberId));
+		}
+		this.selectedMembers.set(new Set(selected));
+		this.updateSelectionState();
+	}
+
+	toggleMemberSelection(member: MeetRoomMember) {
+		const selected = this.selectedMembers();
+		if (selected.has(member.memberId)) {
+			selected.delete(member.memberId);
+		} else {
+			selected.add(member.memberId);
+		}
+		this.selectedMembers.set(new Set(selected));
+		this.updateSelectionState();
+	}
+
+	private updateSelectionState() {
+		const memberCount = this.members().length;
+		const selectedCount = this.selectedMembers().size;
+
+		this.allSelected.set(selectedCount > 0 && selectedCount === memberCount);
+		this.someSelected.set(selectedCount > 0 && selectedCount < memberCount);
+	}
+
+	isMemberSelected(member: MeetRoomMember): boolean {
+		return this.selectedMembers().has(member.memberId);
+	}
+
+	getSelectedMembers(): MeetRoomMember[] {
+		const selected = this.selectedMembers();
+		return this.members().filter((m) => selected.has(m.memberId));
+	}
+
+	// ===== ACTION METHODS =====
+
+	copyMemberLink(member: MeetRoomMember) {
+		this.memberAction.emit({ members: [member], action: 'copyLink' });
+	}
+
+	deleteMember(member: MeetRoomMember) {
+		this.memberAction.emit({ members: [member], action: 'delete' });
+	}
+
+	bulkDeleteSelected() {
+		const selectedMembers = this.getSelectedMembers();
+		if (selectedMembers.length > 0) {
+			this.memberAction.emit({ members: selectedMembers, action: 'bulkDelete' });
+		}
+	}
+
+	refreshMembers() {
+		const nameFilter = this.nameFilterControl.value || '';
+		this.refresh.emit({
+			nameFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
+	}
+
+	loadMoreMembers() {
+		const nameFilter = this.nameFilterControl.value || '';
+		this.loadMore.emit({
+			nameFilter,
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
+	}
+
+	onSortChange(sortState: Sort) {
+		this.currentSortField = sortState.active as MeetRoomMemberSortField;
+		this.currentSortOrder = sortState.direction as SortOrder;
+		this.emitFilterChange();
+	}
+
+	// ===== FILTER METHODS =====
+
+	triggerSearch() {
+		this.emitFilterChange();
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit({
+			nameFilter: this.nameFilterControl.value || '',
+			sortField: this.currentSortField,
+			sortOrder: this.currentSortOrder
+		});
+	}
+
+	hasActiveFilters(): boolean {
+		return !!this.nameFilterControl.value;
+	}
+
+	clearFilters() {
+		this.nameFilterControl.setValue('');
+	}
+
+	// ===== UTILS =====
+
+	getMemberTypeLabel(member: MeetRoomMember): string {
+		return member.memberId.startsWith('ext-') ? 'External' : 'Registered';
+	}
+
+	getMemberTypeIcon(member: MeetRoomMember): string {
+		return member.memberId.startsWith('ext-') ? 'person_outline' : 'verified_user';
+	}
+
+	getMemberInitials(member: MeetRoomMember): string {
+		return member.name.substring(0, 2).toUpperCase();
+	}
+}

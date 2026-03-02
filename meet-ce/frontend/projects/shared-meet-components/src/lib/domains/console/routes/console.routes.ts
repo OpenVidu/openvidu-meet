@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
 import { checkUserAuthenticatedGuard } from '../../auth/guards/auth.guard';
 import { recordingsConsoleRoutes } from '../../recordings/routes/recordings.routes';
+import { roomMembersConsoleRoutes } from '../../room-members/routes/room-members.routes';
 import { roomsConsoleRoutes } from '../../rooms/routes/rooms.routes';
 import { usersConsoleRoutes } from '../../users/routes/users.routes';
 import { clearRoomSessionGuard } from '../guards/clear-room-session.guard';
@@ -24,6 +25,7 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 		}
 	},
 	...roomsConsoleRoutes,
+	...roomMembersConsoleRoutes,
 	...recordingsConsoleRoutes,
 	...usersConsoleRoutes,
 	{

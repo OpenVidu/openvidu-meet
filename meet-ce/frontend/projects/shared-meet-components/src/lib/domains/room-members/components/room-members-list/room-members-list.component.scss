@@ -1,0 +1,209 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.members-toolbar {
+	@extend .ov-data-toolbar;
+
+	.toolbar-left {
+		::ng-deep .search-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+
+	.toolbar-right {
+		gap: var(--ov-meet-spacing-sm);
+
+		::ng-deep .refresh-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+
+		::ng-deep .clear-btn {
+			padding: var(--ov-meet-spacing-sm);
+		}
+	}
+}
+
+.search-field {
+	@extend .ov-search-field;
+}
+
+.batch-actions {
+	@extend .ov-batch-actions;
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+}
+
+.loading-container {
+	@extend .ov-loading-container;
+}
+
+.table-container {
+	@extend .ov-table-container;
+	margin-top: 0;
+}
+
+.members-toolbar + .table-container {
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+	border-top: none;
+	box-shadow: var(--ov-meet-shadow-sm);
+}
+
+:host:not(:has(.members-toolbar)) .table-container {
+	margin-top: var(--ov-meet-spacing-md);
+}
+
+.members-table {
+	@extend .ov-data-table;
+
+	.mat-mdc-header-cell {
+		&.member-name-header {
+			@extend .primary-header;
+		}
+
+		&.actions-header {
+			@extend .actions-header;
+		}
+	}
+
+	.mat-mdc-cell {
+		&.member-cell {
+			@extend .primary-cell;
+		}
+
+		&.actions-cell {
+			@extend .actions-cell;
+		}
+	}
+}
+
+.member-info {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.member-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background-color: var(--ov-meet-color-primary);
+		color: var(--ov-meet-color-on-primary, white);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		flex-shrink: 0;
+	}
+
+	.member-details {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.member-name {
+		@extend .primary-text;
+	}
+
+	.member-id {
+		@extend .secondary-text, .monospace-text;
+	}
+}
+
+.role-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	font-size: var(--ov-meet-font-size-xs);
+	font-weight: var(--ov-meet-font-weight-medium);
+	text-transform: uppercase;
+	background-color: var(--ov-meet-surface-variant);
+	color: var(--ov-meet-text-secondary);
+
+	&.moderator {
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary), transparent 85%);
+		color: var(--ov-meet-color-primary);
+	}
+
+	&.speaker {
+		background-color: color-mix(in srgb, var(--ov-meet-color-success), transparent 85%);
+		color: var(--ov-meet-color-success);
+	}
+}
+
+.member-type {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+
+	.type-icon {
+		@include design-tokens.ov-icon(sm);
+		color: var(--ov-meet-text-hint);
+	}
+}
+
+.date-info {
+	@extend .ov-date-info;
+}
+
+.no-data {
+	@extend .ov-no-data;
+}
+
+.action-buttons {
+	@extend .ov-action-buttons;
+
+	::ng-deep button {
+		padding: var(--ov-meet-spacing-sm);
+	}
+
+	.mat-mdc-icon-button {
+		&:hover {
+			background-color: transparent;
+		}
+
+		&.copy-link-btn {
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+}
+
+.delete-action {
+	@extend .ov-delete-action;
+}
+
+.no-members-state {
+	@extend .ov-empty-state;
+
+	.empty-icon {
+		@include design-tokens.ov-icon(lg);
+		color: var(--ov-meet-text-hint);
+	}
+	box-shadow: none;
+	&:hover {
+		color: var(--ov-meet-text-hint);
+		background-color: transparent;
+		box-shadow: none;
+	}
+}
+
+.load-more-container {
+	display: flex;
+	justify-content: center;
+	padding: var(--ov-meet-spacing-md);
+	border-top: 1px solid var(--ov-meet-border-color);
+
+	.load-more-btn {
+		color: var(--ov-meet-color-primary);
+	}
+}
+
+.mat-mdc-checkbox,
+.mat-mdc-icon-button,
+.mat-mdc-button {
+	@extend .ov-focus-visible;
+}

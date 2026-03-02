@@ -1,0 +1,263 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+// ─── Page Layout ──────────────────────────────────────────────────────────────
+
+.form-card-wrapper {
+	max-width: 680px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+
+.add-member-card {
+	@include design-tokens.ov-section-card;
+}
+
+// ─── Form ─────────────────────────────────────────────────────────────────────
+
+.create-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+	padding-top: var(--ov-meet-spacing-sm);
+
+	mat-form-field {
+		width: 100%;
+	}
+}
+
+.field-prefix-icon {
+	@include design-tokens.ov-icon(md);
+	color: var(--ov-meet-text-secondary);
+	margin-right: var(--ov-meet-spacing-xs);
+}
+
+.field-suffix-icon {
+	@include design-tokens.ov-icon(md);
+	color: var(--ov-meet-text-secondary);
+}
+
+.search-spinner {
+	margin-right: var(--ov-meet-spacing-xs);
+}
+
+// ─── Autocomplete Options ─────────────────────────────────────────────────────
+
+.user-option {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.user-option-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-primary);
+		flex-shrink: 0;
+	}
+
+	.user-option-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+
+		.user-option-id {
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+		}
+
+		.user-option-name {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
+		}
+	}
+}
+
+.no-results {
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+	font-style: italic;
+}
+
+// ─── Role Select Options ──────────────────────────────────────────────────────
+
+.role-option {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.role-option-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-primary);
+	}
+}
+
+// ─── Permissions Section ──────────────────────────────────────────────────────
+
+.permissions-section {
+	padding-top: var(--ov-meet-spacing-sm);
+}
+
+.permissions-accordion {
+	border: 1px solid var(--ov-border-color-light);
+	border-radius: var(--ov-meet-radius-md) !important;
+	overflow: hidden;
+}
+
+.permissions-panel {
+	box-shadow: none !important;
+
+	::ng-deep .mat-expansion-panel-header {
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+		background: var(--ov-meet-surface-secondary);
+
+		&:hover {
+			background: var(--ov-meet-surface-hover) !important;
+		}
+	}
+
+	::ng-deep .mat-expansion-panel-body {
+		padding: 0;
+	}
+}
+
+.permissions-panel-title {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-meet-text-primary);
+
+	.permissions-panel-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-settings);
+	}
+}
+
+.permissions-panel-description {
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+}
+
+.permissions-content {
+	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg);
+	display: flex;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-lg);
+}
+
+.permissions-hint {
+	margin: 0 0 var(--ov-meet-spacing-sm) 0;
+	font-size: var(--ov-meet-font-size-sm);
+	color: var(--ov-meet-text-secondary);
+	line-height: var(--ov-meet-line-height-normal);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	background: var(--ov-meet-surface-secondary);
+	border-radius: var(--ov-meet-radius-sm);
+	border-left: 3px solid var(--ov-meet-color-primary);
+}
+
+.permission-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.permission-group-header {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+	margin-bottom: var(--ov-meet-spacing-xs);
+
+	.permission-group-icon {
+		@include design-tokens.ov-icon(sm);
+		color: var(--ov-meet-icon-primary);
+	}
+
+	.permission-group-label {
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--ov-meet-text-secondary);
+	}
+}
+
+.permission-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	border-radius: var(--ov-meet-radius-sm);
+	transition: background-color var(--ov-meet-transition-fast);
+
+	&:hover {
+		background: var(--ov-meet-surface-hover);
+	}
+
+	.permission-info {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		flex: 1;
+		min-width: 0;
+
+		.permission-icon {
+			@include design-tokens.ov-icon(md);
+			color: var(--ov-meet-icon-primary);
+			flex-shrink: 0;
+		}
+
+		.permission-text {
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			min-width: 0;
+
+			.permission-label {
+				font-size: var(--ov-meet-font-size-md);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.permission-description {
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.permission-toggle {
+		flex-shrink: 0;
+	}
+}
+
+// ─── Card Footer Actions ──────────────────────────────────────────────────────
+
+.card-actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg) !important;
+	border-top: 1px solid var(--ov-border-color-light);
+	margin: 0 !important;
+
+	.cancel-button {
+		color: var(--ov-meet-text-secondary);
+	}
+
+	.primary-button {
+		min-width: 140px;
+
+		mat-spinner {
+			margin-right: var(--ov-meet-spacing-xs);
+		}
+	}
+}

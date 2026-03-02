@@ -138,71 +138,18 @@
 						</ng-template>
 
 						<div class="tab-content">
-							@if (loadingMembers()) {
-								<div class="loading-state">
-									<mat-spinner diameter="40"></mat-spinner>
-									<p>Loading members...</p>
-								</div>
-							} @else if (roomMembers().length === 0) {
-								<div class="empty-state">
-									<mat-icon>person_off</mat-icon>
-									<h3>No members yet</h3>
-									<p>This room doesn't have any members assigned.</p>
-								</div>
-							} @else {
-								<!-- Members List - Simple table for now -->
-								<div class="members-list">
-									<div class="members-header">
-										<h3>Members ({{ roomMembers().length }})</h3>
-									</div>
-									@for (member of roomMembers(); track member.memberId) {
-										<div class="member-item">
-											<div class="member-info">
-												<div class="member-avatar">
-													<span>{{ member.name.substring(0, 2).toUpperCase() }}</span>
-												</div>
-												<div class="member-details">
-													<p class="member-name">{{ member.name }}</p>
-													<p class="member-id">{{ member.memberId }}</p>
-												</div>
-											</div>
-											<div class="member-meta">
-												<div class="member-type">
-													<mat-icon class="meta-icon">
-														{{
-															member.memberId.startsWith('ext-')
-																? 'person_outline'
-																: 'verified_user'
-														}}
-													</mat-icon>
-													<span>{{
-														member.memberId.startsWith('ext-') ? 'External' : 'Registered'
-													}}</span>
-												</div>
-												<div class="member-role">
-													<span
-														class="role-badge"
-														[class.moderator]="member.baseRole === 'moderator'"
-													>
-														{{ member.baseRole }}
-													</span>
-												</div>
-											</div>
-											<div class="member-actions">
-												<button mat-icon-button matTooltip="Copy access URL">
-													<mat-icon>link</mat-icon>
-												</button>
-												<button mat-icon-button matTooltip="Edit permissions">
-													<mat-icon>edit</mat-icon>
-												</button>
-												<button mat-icon-button matTooltip="Remove member" color="warn">
-													<mat-icon>person_remove</mat-icon>
-												</button>
-											</div>
-										</div>
-									}
-								</div>
-							}
+							<ov-room-members-list
+								[members]="roomMembers()"
+								[loading]="loadingMembers()"
+								[showSearchBox]="true"
+								[showSelection]="true"
+								[showLoadMore]="hasMoreMembers"
+								(memberAction)="onMemberAction($event)"
+								(loadMore)="loadMoreRoomMembers($event)"
+								(refresh)="refreshRoomMembers($event)"
+								(filterChange)="refreshRoomMembers($event)"
+								(addMember)="onAddMember()"
+							></ov-room-members-list>
 						</div>
 					</mat-tab>
 

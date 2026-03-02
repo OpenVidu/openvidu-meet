@@ -1,0 +1,172 @@
+<div class="ov-page-container ov-mb-xxl">
+	<!-- Page Header -->
+	<div class="page-header">
+		<div class="title">
+			<mat-icon>person_add</mat-icon>
+			<h1>Add Room Member</h1>
+		</div>
+		<p class="subtitle">Assign a registered user to this room and configure their role and permissions.</p>
+	</div>
+
+	<!-- Form Card Wrapper -->
+	<div class="form-card-wrapper">
+		<mat-card class="section-card add-member-card">
+			<mat-card-header>
+				<div mat-card-avatar class="section-avatar">
+					<mat-icon class="section-icon">group_add</mat-icon>
+				</div>
+				<mat-card-title>Member Configuration</mat-card-title>
+				<mat-card-subtitle>Select a user and configure their access role</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content>
+				<form [formGroup]="form" class="create-form">
+
+					<!-- User ID (Autocomplete) -->
+					<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-label>User ID</mat-label>
+						<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
+						<input
+							matInput
+							formControlName="userId"
+							placeholder="Search for a user by ID..."
+							[matAutocomplete]="userAutocomplete"
+							autofocus
+						/>
+						@if (isLoadingUsers()) {
+							<mat-spinner matSuffix diameter="18" class="search-spinner"></mat-spinner>
+						} @else {
+							<mat-icon matSuffix class="field-suffix-icon">search</mat-icon>
+						}
+						<mat-autocomplete
+							#userAutocomplete="matAutocomplete"
+							[displayWith]="displayUserFn"
+							(optionSelected)="onUserSelected($event.option.value)"
+						>
+							@for (user of filteredUsers(); track user.userId) {
+								<mat-option [value]="user.userId">
+									<div class="user-option">
+										<mat-icon class="user-option-icon">person</mat-icon>
+										<div class="user-option-info">
+											<span class="user-option-id">{{ user.userId }}</span>
+											@if (user.name) {
+												<span class="user-option-name">{{ user.name }}</span>
+											}
+										</div>
+									</div>
+								</mat-option>
+							}
+							@if (!isLoadingUsers() && filteredUsers().length === 0 && form.get('userId')?.value) {
+								<mat-option disabled>
+									<span class="no-results">No users found</span>
+								</mat-option>
+							}
+						</mat-autocomplete>
+						<mat-hint>Start typing to search registered users</mat-hint>
+						@if (getFieldError('userId')) {
+							<mat-error>{{ getFieldError('userId') }}</mat-error>
+						}
+					</mat-form-field>
+
+					<!-- Role -->
+					<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-label>Role</mat-label>
+						<mat-icon matPrefix class="field-prefix-icon">manage_accounts</mat-icon>
+						<mat-select formControlName="role">
+							@for (role of availableRoles; track role) {
+								<mat-option [value]="role">
+									<div class="role-option">
+										<mat-icon class="role-option-icon">{{ getRoleIcon(role) }}</mat-icon>
+										<span>{{ getRoleLabel(role) }}</span>
+									</div>
+								</mat-option>
+							}
+						</mat-select>
+						<mat-hint>The base role determines default permissions</mat-hint>
+						@if (getFieldError('role')) {
+							<mat-error>{{ getFieldError('role') }}</mat-error>
+						}
+					</mat-form-field>
+
+					<!-- Custom Permissions Accordion -->
+					<div class="permissions-section">
+						<mat-accordion class="permissions-accordion">
+							<mat-expansion-panel class="permissions-panel">
+								<mat-expansion-panel-header>
+									<mat-panel-title class="permissions-panel-title">
+										<mat-icon class="permissions-panel-icon">admin_panel_settings</mat-icon>
+										<span>Custom Permissions</span>
+									</mat-panel-title>
+									<mat-panel-description class="permissions-panel-description">
+										Override the default role permissions
+									</mat-panel-description>
+								</mat-expansion-panel-header>
+
+								<div class="permissions-content" [formGroup]="permissionsForm">
+									<p class="permissions-hint">
+										These settings override the defaults for the selected role. Leave toggles in
+										their default position to inherit role permissions.
+									</p>
+
+									@for (group of permissionGroups; track group.label) {
+										<div class="permission-group">
+											<div class="permission-group-header">
+												<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
+												<span class="permission-group-label">{{ group.label }}</span>
+											</div>
+
+											@for (permission of group.permissions; track permission.key) {
+												<div class="permission-row">
+													<div class="permission-info">
+														<mat-icon class="permission-icon material-symbols-outlined">{{
+															permission.icon
+														}}</mat-icon>
+														<div class="permission-text">
+															<span class="permission-label">{{ permission.label }}</span>
+															<span class="permission-description">{{
+																permission.description
+															}}</span>
+														</div>
+													</div>
+													<mat-slide-toggle
+														[formControlName]="permission.key"
+														color="primary"
+														class="permission-toggle"
+													>
+													</mat-slide-toggle>
+												</div>
+											}
+										</div>
+									}
+								</div>
+							</mat-expansion-panel>
+						</mat-accordion>
+					</div>
+				</form>
+			</mat-card-content>
+
+			<!-- Card Footer Actions -->
+			<mat-card-actions class="card-actions">
+				<button mat-button class="cancel-button" type="button" (click)="onCancel()" [disabled]="isSaving()">
+					<mat-icon>close</mat-icon>
+					Cancel
+				</button>
+				<button
+					mat-flat-button
+					color="primary"
+					class="primary-button"
+					type="button"
+					[disabled]="form.invalid || isSaving()"
+					(click)="onSubmit()"
+				>
+					@if (isSaving()) {
+						<mat-spinner diameter="18"></mat-spinner>
+					} @else {
+						<mat-icon>person_add</mat-icon>
+					}
+					Add Member
+				</button>
+			</mat-card-actions>
+		</mat-card>
+	</div>
+</div>
