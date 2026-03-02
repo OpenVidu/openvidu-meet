@@ -68,12 +68,15 @@ properties:
             - Speaker: Permissions to publish audio and video streams.
 
             You can customize this by providing partial permissions for each role (only specify the permissions you want to override).
-    anonymous:
-        $ref: meet-room-anonymous-config.yaml
+    access:
+        $ref: meet-room-access-config.yaml
         description: |
-            Configuration for anonymous access to the room.
+            Configuration for room access.
 
-            By default (if not specified), anonymous access is enabled for both moderators and speakers.
-            You can customize this behavior by disabling anonymous access for specific roles (moderator/speaker) with per-role `enabled: false`
+            By default (if not specified), anonymous access is enabled for both moderator and speaker roles, and for recording access.
+            However, registered access is disabled by default.
+            You can customize this behavior by disabling access for specific scopes and roles
+            (`registered`, `anonymous.moderator`, `anonymous.speaker`, `anonymous.recording`) using `enabled: false`.
 
-            Permissions for anonymous users are determined by the room's role permissions.
+            Permissions for anonymous users are determined by the room's role permissions. For registered users (who are not admins or members of the room),
+            permissions will be the same as the speaker role.

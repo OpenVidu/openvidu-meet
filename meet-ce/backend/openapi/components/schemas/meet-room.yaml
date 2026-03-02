@@ -62,7 +62,7 @@ properties:
                     Policy for automatic deletion when the room has recordings. Options are:
                     - force: The room and its recordings will be deleted.
                     - close: The room will be closed instead of deleted, maintaining its recordings.
-    config (excluded by default):
+    config:
         description: |
             Room configuration (chat, recording, virtual background, e2ee, captions).
             <br/><br/>
@@ -70,7 +70,7 @@ properties:
             **Excluded from responses by default to reduce payload size.**
             To include it in the response:
             - **POST requests:** use the `X-ExtraFields: config` header
-            - **Other requests:** use either the `extraFields=config` query parameter or the `X-ExtraFields: config` header        $ref: meet-room-config.yaml#/MeetRoomConfig
+            - **Other requests:** use either the `extraFields=config` query parameter or the `X-ExtraFields: config` header
         $ref: meet-room-config.yaml#/MeetRoomConfig
     # maxParticipants:
     #     type: integer
@@ -97,49 +97,71 @@ properties:
                         $ref: meet-permissions.yaml
                         description: >
                             The complete set of permissions for the speaker role. These define what speakers can do in the meeting.
-    anonymous:
+    access:
         description: >
-            Configuration for anonymous access to the room. Defines which roles have anonymous access enabled and their access URLs.
+            Access configuration and generated access URLs for the room.
         type: object
         properties:
-            moderator:
+            anonymous:
+                type: object
+                properties:
+                    moderator:
+                        type: object
+                        properties:
+                            enabled:
+                                type: boolean
+                                example: true
+                                description: >
+                                    Whether anonymous access for the moderator role is enabled.
+                            url:
+                                type: string
+                                format: uri
+                                example: 'http://localhost:6080/room/room-123?secret=123456'
+                                description: >
+                                    The URL for anonymous moderators to access the room.
+                    speaker:
+                        type: object
+                        properties:
+                            enabled:
+                                type: boolean
+                                example: true
+                                description: >
+                                    Whether anonymous access for the speaker role is enabled.
+                            url:
+                                type: string
+                                format: uri
+                                example: 'http://localhost:6080/room/room-123?secret=654321'
+                                description: >
+                                    The URL for anonymous speakers to access the room.
+                    recording:
+                        type: object
+                        properties:
+                            enabled:
+                                type: boolean
+                                example: true
+                                description: >
+                                    Whether anonymous access for recordings in the room is enabled.
+                            url:
+                                type: string
+                                format: uri
+                                example: 'http://localhost:6080/room/room-123?secret=987654'
+                                description: >
+                                    The URL for anonymous access to the room's recordings.
+            registered:
                 type: object
                 properties:
                     enabled:
                         type: boolean
                         example: true
                         description: >
-                            Whether anonymous access with moderator role is enabled.
-                    accessUrl:
+                            Whether access for registered users is enabled.
+                            **Note**: admins, owner and members of the room will always have access regardless of this setting.
+                    url:
                         type: string
                         format: uri
-                        example: 'http://localhost:6080/room/room-123?secret=123456'
+                        example: 'http://localhost:6080/room/room-123'
                         description: >
-                            The URL for anonymous moderators to access the room.
-            speaker:
-                type: object
-                properties:
-                    enabled:
-                        type: boolean
-                        example: true
-                        description: >
-                            Whether anonymous access with speaker role is enabled.
-                    accessUrl:
-                        type: string
-                        format: uri
-                        example: 'http://localhost:6080/room/room-123?secret=654321'
-                        description: >
-                            The URL for anonymous speakers to access the room.
-    accessUrl:
-        type: string
-        format: uri
-        example: 'http://localhost:6080/room/room-123'
-        description: |
-            The general access URL for authenticated users to join the room.
-
-            This URL should be used by:
-            - The room owner (registered Meet user who created the room)
-            - Registered Meet users who are members of the room
+                            The URL for registered users to access the room.
     status:
         type: string
         enum:

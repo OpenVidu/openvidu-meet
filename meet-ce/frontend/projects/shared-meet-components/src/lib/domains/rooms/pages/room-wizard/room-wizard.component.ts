@@ -137,10 +137,10 @@ export class RoomWizardComponent implements OnInit {
 	async createRoomBasic(roomName?: string) {
 		try {
 			// Create room with basic config including e2ee: false (default settings)
-			const { accessUrl } = await this.roomService.createRoom({ roomName }, { fields: ['accessUrl'] });
+			const { access } = await this.roomService.createRoom({ roomName }, { fields: ['access'] });
 
 			// Extract the path from the access URL and navigate to it
-			const url = new URL(accessUrl);
+			const url = new URL(access.registered.url);
 			const path = url.pathname;
 			await this.navigationService.redirectTo(path);
 		} catch (error) {
@@ -168,10 +168,10 @@ export class RoomWizardComponent implements OnInit {
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
-				const { accessUrl } = await this.roomService.createRoom(roomOptions, { fields: ['accessUrl'] });
+				const { access } = await this.roomService.createRoom(roomOptions, { fields: ['access'] });
 
 				// Extract the path from the access URL and navigate to it
-				const url = new URL(accessUrl);
+				const url = new URL(access.registered.url);
 				const path = url.pathname;
 				await this.navigationService.redirectTo(path);
 			}

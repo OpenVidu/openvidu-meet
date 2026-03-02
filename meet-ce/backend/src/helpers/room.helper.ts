@@ -2,7 +2,7 @@ import {
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
 	MeetRoom,
-	MeetRoomAnonymous,
+	MeetRoomAccess,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
@@ -77,12 +77,20 @@ export class MeetRoomHelper {
 			autoDeletionPolicy: room.autoDeletionPolicy,
 			config: room.config,
 			roles: room.roles,
-			anonymous: {
-				moderator: {
-					enabled: room.anonymous.moderator.enabled
+			access: {
+				anonymous: {
+					moderator: {
+						enabled: room.access.anonymous.moderator.enabled
+					},
+					speaker: {
+						enabled: room.access.anonymous.speaker.enabled
+					},
+					recording: {
+						enabled: room.access.anonymous.recording.enabled
+					}
 				},
-				speaker: {
-					enabled: room.anonymous.speaker.enabled
+				registered: {
+					enabled: room.access.registered.enabled
 				}
 			}
 			// maxParticipants: room.maxParticipants
@@ -90,25 +98,33 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 * Extracts speaker and moderator secrets from MeetRoom anonymous access URLs.
+	 * Extracts speaker, moderator, and recording secrets from MeetRoom anonymous access URLs.
 	 *
-	 * This method parses the 'secret' query parameter from both speaker and moderator
+	 * This method parses the 'secret' query parameter from speaker, moderator, and recording
 	 * anonymous access URLs associated with the meeting room.
 	 *
-	 * @param room - The anonymous access configuration of the MeetRoom from which to extract secrets.
+	 * @param roomAccess - The access configuration of the MeetRoom from which to extract secrets.
 	 * @returns An object containing the extracted secrets with the following properties:
 	 *   - speakerSecret: The secret extracted from the speaker anonymous access URL
 	 *   - moderatorSecret: The secret extracted from the moderator anonymous access URL
+	 *   - recordingSecret: The secret extracted from the recording anonymous access URL
 	 */
-	static extractSecretsFromRoom(anonymous: MeetRoomAnonymous): { speakerSecret: string; moderatorSecret: string } {
-		const speakerUrl = anonymous.speaker.accessUrl;
-		const moderatorUrl = anonymous.moderator.accessUrl;
+	static extractSecretsFromRoom(roomAccess: MeetRoomAccess): {
+		speakerSecret: string;
+		moderatorSecret: string;
+		recordingSecret: string;
+	} {
+		const speakerUrl = roomAccess.anonymous.speaker.url;
+		const moderatorUrl = roomAccess.anonymous.moderator.url;
+		const recordingUrl = roomAccess.anonymous.recording.url;
 
 		const parsedSpeakerUrl = new URL(speakerUrl);
 		const speakerSecret = parsedSpeakerUrl.searchParams.get('secret') || '';
 		const parsedModeratorUrl = new URL(moderatorUrl);
 		const moderatorSecret = parsedModeratorUrl.searchParams.get('secret') || '';
-		return { speakerSecret, moderatorSecret };
+		const parsedRecordingUrl = new URL(recordingUrl);
+		const recordingSecret = parsedRecordingUrl.searchParams.get('secret') || '';
+		return { speakerSecret, moderatorSecret, recordingSecret };
 	}
 
 	/**

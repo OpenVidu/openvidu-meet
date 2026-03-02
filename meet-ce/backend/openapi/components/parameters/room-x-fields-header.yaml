@@ -9,5 +9,5 @@ schema:
     type: string
 examples:
     basic:
-        value: 'roomId,roomName,accessUrl'
+        value: 'roomId,roomName,status'
         summary: Only return basic room information

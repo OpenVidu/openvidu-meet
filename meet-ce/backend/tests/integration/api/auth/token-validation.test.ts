@@ -15,7 +15,7 @@ import {
 	resetUserPassword,
 	sleep,
 	startTestServer,
-	updateRoomAnonymousConfig,
+	updateRoomAccessConfig,
 	updateRoomConfig,
 	updateRoomMember,
 	updateRoomRoles
@@ -478,7 +478,7 @@ describe('Token Validation Tests', () => {
 			expect(response.body.message).toContain('Invalid token');
 		});
 
-		it('should succeed when room anonymous config is updated after room member token issuance', async () => {
+		it('should succeed when room access config is updated after room member token issuance', async () => {
 			// Create a room with an external member
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
@@ -492,11 +492,13 @@ describe('Token Validation Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
 			expect(initialResponse.status).toBe(200);
 
-			// Update the room anonymous configuration
+			// Update the room access configuration
 			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomAnonymousConfig(roomData.room.roomId, {
-				moderator: {
-					enabled: false
+			await updateRoomAccessConfig(roomData.room.roomId, {
+				anonymous: {
+					moderator: {
+						enabled: false
+					}
 				}
 			});
 
@@ -507,7 +509,7 @@ describe('Token Validation Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when room anonymous config is updated after anonymous room member token issuance', async () => {
+		it('should fail when room access config is updated after anonymous room member token issuance', async () => {
 			// Create a room and generate an anonymous room member token
 			const roomData = await setupSingleRoom();
 
@@ -517,11 +519,13 @@ describe('Token Validation Tests', () => {
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken);
 			expect(initialResponse.status).toBe(200);
 
-			// Update the room's anonymous configuration
+			// Update the room's access configuration
 			await sleep('100ms'); // Small delay to ensure timestamp difference
-			await updateRoomAnonymousConfig(roomData.room.roomId, {
-				moderator: {
-					enabled: false
+			await updateRoomAccessConfig(roomData.room.roomId, {
+				anonymous: {
+					moderator: {
+						enabled: false
+					}
 				}
 			});
 
@@ -538,7 +542,7 @@ describe('Token Validation Tests', () => {
 			// Create a room and generate an anonymous room member token
 			const roomData = await setupSingleRoom();
 
-			// Update room config (not roles/permissions/anonymous)
+			// Update room config (not roles/access)
 			await sleep('100ms');
 			await updateRoomConfig(roomData.room.roomId, {
 				chat: { enabled: false }

@@ -9,7 +9,7 @@ content:
                       _extraFields:
                           type: array
                           description: >
-                            List of extra fields that can be included in the response based on the `X-ExtraFields` header.
+                              List of extra fields that can be included in the response based on the `X-ExtraFields` header.
                           items:
                               type: string
                               example: config
@@ -58,17 +58,23 @@ content:
                                 canReadChat: true
                                 canWriteChat: true
                                 canChangeVirtualBackground: true
-                    anonymous:
-                        moderator:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=123456'
-                        speaker:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=654321'
-                    accessUrl: 'https://example.com/room/room-123'
+                    access:
+                        anonymous:
+                            moderator:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=123456'
+                            speaker:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=654321'
+                            recording:
+                                enabled: true
+                                url: 'https://example.com/room/room-123/recordings?secret=987654'
+                        registered:
+                            enabled: false
+                            url: 'https://example.com/room/room-123'
                     status: open
                     meetingEndAction: none
-                    _extraFields: ["config"]
+                    _extraFields: ['config']
 headers:
     Location:
         description: URL of the newly created room

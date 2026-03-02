@@ -1,4 +1,5 @@
 import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import { uid as secureUid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
 import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
 import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
@@ -63,17 +64,26 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 			}
 		}
 	};
-	room.anonymous = {
-		moderator: {
-			enabled: true,
-			accessUrl: legacyRoom.moderatorUrl!
+	room.access = {
+		anonymous: {
+			moderator: {
+				enabled: true,
+				url: legacyRoom.moderatorUrl!
+			},
+			speaker: {
+				enabled: true,
+				url: legacyRoom.speakerUrl!
+			},
+			recording: {
+				enabled: false,
+				url: `/room/${room.roomId}/recordings?secret=${secureUid(10)}`
+			}
 		},
-		speaker: {
+		registered: {
 			enabled: true,
-			accessUrl: legacyRoom.speakerUrl!
+			url: `/room/${room.roomId}`
 		}
 	};
-	room.accessUrl = `/room/${room.roomId}`;
 	room.rolesUpdatedAt = Date.now();
 
 	delete legacyRoom.moderatorUrl;

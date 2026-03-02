@@ -201,14 +201,14 @@ export class RoomDetailComponent implements OnInit {
 		const room = this.room();
 		if (!room) return;
 
-		window.open(room.accessUrl, '_blank');
+		window.open(room.access.registered.url, '_blank');
 	}
 
 	copyAccessLink() {
 		const room = this.room();
 		if (!room) return;
 
-		this.clipboard.copy(room.accessUrl);
+		this.clipboard.copy(room.access.registered.url);
 		this.notificationService.showSnackbar('Access link copied to clipboard');
 	}
 

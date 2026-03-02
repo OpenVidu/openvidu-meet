@@ -20,7 +20,7 @@ content:
 
         examples:
             default_room_details:
-                summary: Full room details response with multiple rooms
+                summary: Full room details without extra fields for multiple rooms
                 value:
                     rooms:
                         - roomId: 'room-123'
@@ -64,14 +64,20 @@ content:
                                       canReadChat: true
                                       canWriteChat: true
                                       canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: true
-                                  accessUrl: 'https://example.com/room/room-123?secret=123456'
-                              speaker:
-                                  enabled: true
-                                  accessUrl: 'https://example.com/room/room-123?secret=654321'
-                          accessUrl: 'https://example.com/room/room-123'
+                          access:
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123?secret=654321'
+                                  recording:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123/recordings?secret=987654'
+                              registered:
+                                  enabled: false
+                                  url: 'https://example.com/room/room-123'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
@@ -115,14 +121,20 @@ content:
                                       canReadChat: true
                                       canWriteChat: true
                                       canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: false
-                                  accessUrl: 'https://example.com/room/room-456?secret=789012'
-                              speaker:
+                          access:
+                              anonymous:
+                                  moderator:
+                                      enabled: false
+                                      url: 'https://example.com/room/room-456?secret=789012'
+                                  speaker:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-456?secret=210987'
+                                  recording:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-456/recordings?secret=345678'
+                              registered:
                                   enabled: true
-                                  accessUrl: 'https://example.com/room/room-456?secret=210987'
-                          accessUrl: 'https://example.com/room/room-456'
+                                  url: 'https://example.com/room/room-456'
                           status: open
                           meetingEndAction: none
                     _extraFields:
@@ -199,14 +211,20 @@ content:
                                       canReadChat: true
                                       canWriteChat: true
                                       canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: true
-                                  accessUrl: 'https://example.com/room/room-123?secret=123456'
-                              speaker:
-                                  enabled: true
-                                  accessUrl: 'https://example.com/room/room-123?secret=654321'
-                          accessUrl: 'https://example.com/room/room-123'
+                          access:
+                              anonymous:
+                                  moderator:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123?secret=123456'
+                                  speaker:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123?secret=654321'
+                                  recording:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-123/recordings?secret=987654'
+                              registered:
+                                  enabled: false
+                                  url: 'https://example.com/room/room-123'
                           status: open
                           meetingEndAction: none
                         - roomId: 'room-456'
@@ -273,14 +291,20 @@ content:
                                       canReadChat: true
                                       canWriteChat: true
                                       canChangeVirtualBackground: true
-                          anonymous:
-                              moderator:
-                                  enabled: false
-                                  accessUrl: 'https://example.com/room/room-456?secret=789012'
-                              speaker:
+                          access:
+                              anonymous:
+                                  moderator:
+                                      enabled: false
+                                      url: 'https://example.com/room/room-456?secret=789012'
+                                  speaker:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-456?secret=210987'
+                                  recording:
+                                      enabled: true
+                                      url: 'https://example.com/room/room-456/recordings?secret=345678'
+                              registered:
                                   enabled: true
-                                  accessUrl: 'https://example.com/room/room-456?secret=210987'
-                          accessUrl: 'https://example.com/room/room-456'
+                                  url: 'https://example.com/room/room-456'
                           status: open
                           meetingEndAction: none
                     _extraFields:

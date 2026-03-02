@@ -261,19 +261,25 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns Normalized partial room data
 	 */
 	private normalizeRoomForStorage(room: Partial<MeetRoom>): Partial<MeetRoom> {
-		if (room.accessUrl) {
-			room.accessUrl = this.extractPathFromUrl(room.accessUrl);
+		const registeredUrl = room.access?.registered.url;
+		const moderatorUrl = room.access?.anonymous.moderator.url;
+		const speakerUrl = room.access?.anonymous.speaker.url;
+		const recordingUrl = room.access?.anonymous.recording.url;
+
+		if (registeredUrl) {
+			room.access!.registered.url = this.extractPathFromUrl(registeredUrl);
 		}
 
-		const moderatorUrl = room.anonymous?.moderator.accessUrl;
-		const speakerUrl = room.anonymous?.speaker.accessUrl;
-
 		if (moderatorUrl) {
-			room.anonymous!.moderator.accessUrl = this.extractPathFromUrl(moderatorUrl);
+			room.access!.anonymous.moderator.url = this.extractPathFromUrl(moderatorUrl);
 		}
 
 		if (speakerUrl) {
-			room.anonymous!.speaker.accessUrl = this.extractPathFromUrl(speakerUrl);
+			room.access!.anonymous.speaker.url = this.extractPathFromUrl(speakerUrl);
+		}
+
+		if (recordingUrl) {
+			room.access!.anonymous.recording.url = this.extractPathFromUrl(recordingUrl);
 		}
 
 		return room;
@@ -330,19 +336,25 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
 		const baseUrl = getBaseUrl();
 
-		if (room.accessUrl) {
-			room.accessUrl = `${baseUrl}${room.accessUrl}`;
+		const registeredUrl = room.access?.registered.url;
+		const moderatorUrl = room.access?.anonymous.moderator.url;
+		const speakerUrl = room.access?.anonymous.speaker.url;
+		const recordingUrl = room.access?.anonymous.recording.url;
+
+		if (registeredUrl) {
+			room.access!.registered.url = `${baseUrl}${registeredUrl}`;
 		}
 
-		const moderatorUrl = room.anonymous?.moderator.accessUrl;
-		const speakerUrl = room.anonymous?.speaker.accessUrl;
-
 		if (moderatorUrl) {
-			room.anonymous!.moderator.accessUrl = `${baseUrl}${moderatorUrl}`;
+			room.access!.anonymous.moderator.url = `${baseUrl}${moderatorUrl}`;
 		}
 
 		if (speakerUrl) {
-			room.anonymous!.speaker.accessUrl = `${baseUrl}${speakerUrl}`;
+			room.access!.anonymous.speaker.url = `${baseUrl}${speakerUrl}`;
+		}
+
+		if (recordingUrl) {
+			room.access!.anonymous.recording.url = `${baseUrl}${recordingUrl}`;
 		}
 
 		return room;

@@ -22,7 +22,7 @@ import {
 	validateDeleteRoomReq,
 	validateGetRoomReq,
 	validateGetRoomsReq,
-	validateUpdateRoomAnonymousReq,
+	validateUpdateRoomAccessReq,
 	validateUpdateRoomConfigReq,
 	validateUpdateRoomRolesReq,
 	validateUpdateRoomStatusReq,
@@ -116,12 +116,12 @@ roomRouter.put(
 	roomCtrl.updateRoomRoles
 );
 roomRouter.put(
-	'/:roomId/anonymous',
+	'/:roomId/access',
 	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
-	validateUpdateRoomAnonymousReq,
+	validateUpdateRoomAccessReq,
 	authorizeRoomManagement,
-	roomCtrl.updateRoomAnonymous
+	roomCtrl.updateRoomAccess
 );
 
 // Room Member Routes

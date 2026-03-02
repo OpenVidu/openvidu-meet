@@ -38,13 +38,9 @@ export interface MeetRoom {
 	 */
 	roles: MeetRoomRoles;
 	/**
-	 * Anonymous access configuration for the room. See {@link MeetRoomAnonymous} for details.
+	 * Access configuration for the room. See {@link MeetRoomAccess} for details.
 	 */
-	anonymous: MeetRoomAnonymous;
-	/**
-	 * General access URL for registered users with access to the room.
-	 */
-	accessUrl: string;
+	access: MeetRoomAccess;
 	/**
 	 * Status of the room. See {@link MeetRoomStatus} for details.
 	 */
@@ -73,17 +69,63 @@ export interface MeetRoomRoles {
 }
 
 /**
- * Anonymous access configuration for a room.
+ * Access configuration for a room.
+ */
+export interface MeetRoomAccess {
+	/**
+	 * Anonymous users access configuration for the room. See {@link MeetRoomAnonymousUsers} for details.
+	 */
+	anonymous: MeetRoomAnonymousUsers;
+	/**
+	 * Registered users access configuration for the room. See {@link MeetRoomRegisteredUsers} for details.
+	 */
+	registered: MeetRoomRegisteredUsers;
+}
+
+/**
+ * Access configuration for registered users in a room.
+ */
+export interface MeetRoomRegisteredUsers {
+	/**
+	 * Indicates if all registered users can access the room.
+	 * When enabled, any registered user can join, including non-members.
+	 * Room owners and administrators always have access regardless of this setting.
+	 */
+	enabled: boolean;
+	/**
+	 * General access URL for registered users with access to the room.
+	 */
+	url: string;
+}
+
+/**
+ * Access configuration for anonymous users in a room.
  * Defines which roles have anonymous access enabled and their access URLs.
  */
-export interface MeetRoomAnonymous {
+export interface MeetRoomAnonymousUsers {
+	/**
+	 * Indicates if anonymous access is enabled for the moderator role in the room.
+	 * If true, anonymous users with moderator permissions can access the room using the provided URL.
+	 */
 	moderator: {
 		enabled: boolean;
-		accessUrl: string;
+		url: string;
 	};
+	/**
+	 * Indicates if anonymous access is enabled for the speaker role in the room.
+	 * If true, anonymous users with speaker permissions can access the room using the provided URL.
+	 */
 	speaker: {
 		enabled: boolean;
-		accessUrl: string;
+		url: string;
+	};
+	/**
+	 * Indicates if anonymous access is enabled for recordings of the room.
+	 * If true, anonymous users can access the recordings using the provided URL.
+	 */
+	recording: {
+		enabled: boolean;
+		url: string;
 	};
 }
 

@@ -156,7 +156,7 @@ export class MeetingLobbyService {
 
 			const [room] = await Promise.all([
 				this.roomService.getRoom(roomId, {
-					fields: ['roomId', 'roomName', 'status', 'config', 'accessUrl', 'anonymous'],
+					fields: ['roomId', 'roomName', 'status', 'config', 'access'],
 					extraFields: ['config']
 				}),
 				this.setBackButtonText(),

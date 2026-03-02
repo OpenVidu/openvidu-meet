@@ -21,7 +21,7 @@ export class MeetingService {
 	 * Copies the meeting speaker link to the clipboard.
 	 */
 	copyMeetingSpeakerLink(room: MeetRoom): void {
-		const speakerLink = room.anonymous.speaker.accessUrl;
+		const speakerLink = room.access.anonymous.speaker.url;
 		this.clipboard.copy(speakerLink);
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
 	}

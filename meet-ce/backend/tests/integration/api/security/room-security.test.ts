@@ -757,7 +757,7 @@ describe('Room API Security Tests', () => {
 		});
 	});
 
-	describe('Update Room Anonymous Config Tests', () => {
+	describe('Update Room Access Config Tests', () => {
 		let roomData: RoomData;
 		let roomId: string;
 		let roomUsers: RoomTestUsers;
@@ -771,70 +771,70 @@ describe('Room API Security Tests', () => {
 
 		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as USER and is room owner', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is authenticated as USER and is room member', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is authenticated as USER without access to the room', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomMember.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is authenticated as ROOM_MEMBER without access to the room', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/anonymous`).send({ anonymous: {} });
+			const response = await request(app).put(`${ROOMS_PATH}/${roomId}/access`).send({ access: {} });
 			expect(response.status).toBe(401);
 		});
 
 		it('should fail when using room member token', async () => {
 			const response = await request(app)
-				.put(`${ROOMS_PATH}/${roomId}/anonymous`)
+				.put(`${ROOMS_PATH}/${roomId}/access`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomData.moderatorToken)
-				.send({ anonymous: {} });
+				.send({ access: {} });
 			expect(response.status).toBe(401);
 		});
 	});

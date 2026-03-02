@@ -200,26 +200,48 @@ const MeetRoomRolesSchema = new Schema(
 );
 
 /**
- * Sub-schema for anonymous access configuration.
+ * Sub-schema for access configuration.
  */
-const MeetRoomAnonymousSchema = new Schema(
+const MeetRoomAccessSchema = new Schema(
 	{
-		moderator: {
-			enabled: {
-				type: Boolean,
-				required: true
+		anonymous: {
+			moderator: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
 			},
-			accessUrl: {
-				type: String,
-				required: true
+			speaker: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
+			},
+			recording: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
 			}
 		},
-		speaker: {
+		registered: {
 			enabled: {
 				type: Boolean,
 				required: true
 			},
-			accessUrl: {
+			url: {
 				type: String,
 				required: true
 			}
@@ -300,12 +322,8 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: MeetRoomRolesSchema,
 			required: true
 		},
-		anonymous: {
-			type: MeetRoomAnonymousSchema,
-			required: true
-		},
-		accessUrl: {
-			type: String,
+		access: {
+			type: MeetRoomAccessSchema,
 			required: true
 		},
 		status: {

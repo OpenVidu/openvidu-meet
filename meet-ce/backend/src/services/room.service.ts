@@ -1,8 +1,8 @@
 import {
 	MeetingEndAction,
 	MeetRoom,
-	MeetRoomAnonymous,
-	MeetRoomAnonymousConfig,
+	MeetRoomAccess,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionErrorCode,
 	MeetRoomDeletionPolicyWithMeeting,
@@ -81,7 +81,7 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, anonymous } = roomOptions;
+		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, access } = roomOptions;
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
@@ -135,14 +135,24 @@ export class RoomService {
 			}
 		};
 
-		const anonymousConfig: MeetRoomAnonymous = {
-			moderator: {
-				enabled: anonymous?.moderator?.enabled ?? true,
-				accessUrl: `/room/${roomId}?secret=${secureUid(10)}`
+		const accessConfig: MeetRoomAccess = {
+			anonymous: {
+				moderator: {
+					enabled: access?.anonymous?.moderator?.enabled ?? true,
+					url: `/room/${roomId}?secret=${secureUid(10)}`
+				},
+				speaker: {
+					enabled: access?.anonymous?.speaker?.enabled ?? true,
+					url: `/room/${roomId}?secret=${secureUid(10)}`
+				},
+				recording: {
+					enabled: access?.anonymous?.recording?.enabled ?? true,
+					url: `/room/${roomId}/recordings?secret=${secureUid(10)}`
+				}
 			},
-			speaker: {
-				enabled: anonymous?.speaker?.enabled ?? true,
-				accessUrl: `/room/${roomId}?secret=${secureUid(10)}`
+			registered: {
+				enabled: access?.registered?.enabled ?? false,
+				url: `/room/${roomId}`
 			}
 		};
 
@@ -157,8 +167,7 @@ export class RoomService {
 			autoDeletionPolicy: autoDeletionDate ? autoDeletionPolicy : undefined,
 			config: config as MeetRoomConfig,
 			roles: roomRoles,
-			anonymous: anonymousConfig,
-			accessUrl: `/room/${roomId}`,
+			access: accessConfig,
 			status: MeetRoomStatus.OPEN,
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
@@ -284,24 +293,24 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the anonymous access configuration of a specific meeting room.
+	 * Updates the access configuration of a specific meeting room.
 	 *
 	 * @param roomId - The unique identifier of the meeting room to update
-	 * @param anonymous - Partial anonymous config with the fields to update
+	 * @param access - Partial access config with the fields to update
 	 * @returns A Promise that resolves to the updated MeetRoom object
 	 */
-	async updateMeetRoomAnonymous(roomId: string, anonymous: MeetRoomAnonymousConfig): Promise<MeetRoom> {
-		const room = await this.getMeetRoom(roomId, ['anonymous', 'status']);
+	async updateMeetRoomAccess(roomId: string, access: MeetRoomAccessConfig): Promise<MeetRoom> {
+		const room = await this.getMeetRoom(roomId, ['access', 'status']);
 
 		if (room.status === MeetRoomStatus.ACTIVE_MEETING) {
 			throw errorRoomActiveMeeting(roomId);
 		}
 
-		// Merge existing anonymous config with new anonymous config (partial update)
-		const updatedAnonymous = merge({}, room.anonymous, anonymous);
+		// Merge existing access config with new access config (partial update)
+		const updatedAccess = merge({}, room.access, access);
 
 		return this.roomRepository.updatePartial(roomId, {
-			anonymous: updatedAnonymous,
+			access: updatedAccess,
 			rolesUpdatedAt: Date.now()
 		});
 	}
@@ -870,9 +879,10 @@ export class RoomService {
 	 * @throws Error if room not found
 	 */
 	async isValidRoomSecret(roomId: string, secret: string): Promise<boolean> {
-		const { anonymous } = await this.getMeetRoom(roomId, ['anonymous']);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
-		return secret === moderatorSecret || secret === speakerSecret;
+		const { access } = await this.getMeetRoom(roomId, ['access']);
+		const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
+		const allSecrets = [moderatorSecret, speakerSecret, recordingSecret];
+		return allSecrets.includes(secret);
 	}
 
 	/**

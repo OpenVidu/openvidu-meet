@@ -257,18 +257,18 @@ export const updateRoomRoles = async (req: Request, res: Response) => {
 	}
 };
 
-export const updateRoomAnonymous = async (req: Request, res: Response) => {
+export const updateRoomAccess = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { anonymous } = req.body;
+	const { access } = req.body;
 	const { roomId } = req.params;
 
-	logger.verbose(`Updating anonymous access config for room '${roomId}'`);
+	logger.verbose(`Updating access config for room '${roomId}'`);
 
 	try {
-		await roomService.updateMeetRoomAnonymous(roomId, anonymous);
-		return res.status(200).json({ message: `Anonymous access config for room '${roomId}' updated successfully` });
+		await roomService.updateMeetRoomAccess(roomId, access);
+		return res.status(200).json({ message: `Access config for room '${roomId}' updated successfully` });
 	} catch (error) {
-		handleError(res, error, `updating anonymous access config for room '${roomId}'`);
+		handleError(res, error, `updating access config for room '${roomId}'`);
 	}
 };

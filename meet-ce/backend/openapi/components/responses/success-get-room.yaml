@@ -15,7 +15,7 @@ content:
                               example: config
         examples:
             default_room_details:
-                summary: Full room details response
+                summary: Full room details response without extra fields
                 value:
                     roomId: 'room-123'
                     roomName: 'room'
@@ -58,14 +58,20 @@ content:
                                 canReadChat: true
                                 canWriteChat: true
                                 canChangeVirtualBackground: true
-                    anonymous:
-                        moderator:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=123456'
-                        speaker:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=654321'
-                    accessUrl: 'https://example.com/room/room-123'
+                    access:
+                        anonymous:
+                            moderator:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=123456'
+                            speaker:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=654321'
+                            recording:
+                                enabled: true
+                                url: 'https://example.com/room/room-123/recordings?secret=987654'
+                        registered:
+                            enabled: false
+                            url: 'https://example.com/room/room-123'
                     status: open
                     meetingEndAction: none
                     _extraFields:
@@ -73,16 +79,6 @@ content:
 
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config
-                value:
-                    roomId: 'room-123'
-                    roomName: 'room'
-                    creationDate: 1620000000000
-                    autoDeletionDate: 1900000000000
-                    _extraFields:
-                        - config
-
-            extraFields=config:
-                summary: Room details with expanded config
                 value:
                     roomId: 'room-123'
                     roomName: 'room'
@@ -103,15 +99,98 @@ content:
                             enabled: true
                     _extraFields:
                         - config
-            fields=anonymous:
-                summary: Response containing only anonymous access configuration
+
+            extraFields=config:
+                summary: Room details with expanded config
                 value:
-                    anonymous:
+                    roomId: 'room-123'
+                    roomName: 'room'
+                    owner: 'admin'
+                    creationDate: 1620000000000
+                    autoDeletionDate: 1900000000000
+                    autoDeletionPolicy:
+                        withMeeting: when_meeting_ends
+                        withRecordings: close
+                    config:
+                        chat:
+                            enabled: true
+                        recording:
+                            enabled: true
+                            layout: grid
+                            encoding: H264_720P_30
+                        virtualBackground:
+                            enabled: true
+                        e2ee:
+                            enabled: false
+                        captions:
+                            enabled: true
+                    roles:
                         moderator:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=123456'
+                            permissions:
+                                canRecord: true
+                                canRetrieveRecordings: true
+                                canDeleteRecordings: true
+                                canJoinMeeting: true
+                                canShareAccessLinks: true
+                                canMakeModerator: true
+                                canKickParticipants: true
+                                canEndMeeting: true
+                                canPublishVideo: true
+                                canPublishAudio: true
+                                canShareScreen: true
+                                canReadChat: true
+                                canWriteChat: true
+                                canChangeVirtualBackground: true
                         speaker:
-                            enabled: true
-                            accessUrl: 'https://example.com/room/room-123?secret=654321'
+                            permissions:
+                                canRecord: false
+                                canRetrieveRecordings: true
+                                canDeleteRecordings: false
+                                canJoinMeeting: true
+                                canShareAccessLinks: false
+                                canMakeModerator: false
+                                canKickParticipants: false
+                                canEndMeeting: false
+                                canPublishVideo: true
+                                canPublishAudio: true
+                                canShareScreen: true
+                                canReadChat: true
+                                canWriteChat: true
+                                canChangeVirtualBackground: true
+                    access:
+                        anonymous:
+                            moderator:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=123456'
+                            speaker:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=654321'
+                            recording:
+                                enabled: true
+                                url: 'https://example.com/room/room-123/recordings?secret=987654'
+                        registered:
+                            enabled: false
+                            url: 'https://example.com/room/room-123'
+                    status: open
+                    meetingEndAction: none
+                    _extraFields:
+                        - config
+            fields=access:
+                summary: Response containing only access configuration
+                value:
+                    access:
+                        anonymous:
+                            moderator:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=123456'
+                            speaker:
+                                enabled: true
+                                url: 'https://example.com/room/room-123?secret=654321'
+                            recording:
+                                enabled: true
+                                url: 'https://example.com/room/room-123/recordings?secret=987654'
+                        registered:
+                            enabled: false
+                            url: 'https://example.com/room/room-123'
                     _extraFields:
                         - config

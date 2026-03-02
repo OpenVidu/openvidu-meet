@@ -27,9 +27,9 @@ export interface MeetRoomOptions {
 	 */
 	roles?: MeetRoomRolesConfig;
 	/**
-	 * Anonymous access configuration for the room. See {@link MeetRoomAnonymousConfig} for details.
+	 * Access configuration for the room. See {@link MeetRoomAccessConfig} for details.
 	 */
-	anonymous?: MeetRoomAnonymousConfig;
+	access?: MeetRoomAccessConfig;
 }
 
 /**
@@ -46,14 +46,22 @@ export interface MeetRoomRolesConfig {
 }
 
 /**
- * Anonymous access configuration for creating/updating a room.
+ * Access configuration for creating/updating a room.
  * Only includes enabled flags.
  */
-export interface MeetRoomAnonymousConfig {
-	moderator?: {
-		enabled: boolean;
+export interface MeetRoomAccessConfig {
+	anonymous?: {
+		moderator?: {
+			enabled: boolean;
+		};
+		speaker?: {
+			enabled: boolean;
+		};
+		recording?: {
+			enabled: boolean;
+		};
 	};
-	speaker?: {
+	registered?: {
 		enabled: boolean;
 	};
 }

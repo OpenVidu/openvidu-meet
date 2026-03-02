@@ -8,7 +8,7 @@ import {
 	RoomFiltersSchema,
 	RoomOptionsSchema,
 	RoomQueryFieldsSchema,
-	UpdateRoomAnonymousReqSchema,
+	UpdateRoomAccessReqSchema,
 	UpdateRoomConfigReqSchema,
 	UpdateRoomRolesReqSchema,
 	UpdateRoomStatusReqSchema
@@ -152,8 +152,8 @@ export const validateUpdateRoomRolesReq = (req: Request, res: Response, next: Ne
 	next();
 };
 
-export const validateUpdateRoomAnonymousReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = UpdateRoomAnonymousReqSchema.safeParse(req.body);
+export const validateUpdateRoomAccessReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomAccessReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);

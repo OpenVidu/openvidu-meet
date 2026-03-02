@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import {
 	MeetRoom,
-	MeetRoomAnonymousConfig,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -167,15 +167,15 @@ export class RoomService {
 	}
 
 	/**
-	 * Updates the anonymous access configuration of a room.
+	 * Updates the access configuration of a room.
 	 *
 	 * @param roomId - The unique identifier of the room
-	 * @param anonymousConfig - The new anonymous access configuration to be set
-	 * @returns A promise that resolves when the anonymous access configuration has been updated
+	 * @param accessConfig - The new access configuration to be set
+	 * @returns A promise that resolves when the access configuration has been updated
 	 */
-	async updateRoomAnonymous(roomId: string, anonymousConfig: MeetRoomAnonymousConfig): Promise<void> {
-		const path = `${this.ROOMS_API}/${roomId}/anonymous`;
-		return this.httpService.putRequest(path, { anonymous: anonymousConfig });
+	async updateRoomAccess(roomId: string, accessConfig: MeetRoomAccessConfig): Promise<void> {
+		const path = `${this.ROOMS_API}/${roomId}/access`;
+		return this.httpService.putRequest(path, { access: accessConfig });
 	}
 
 	/**

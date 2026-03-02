@@ -238,13 +238,13 @@ export class RoomWizardStateService {
 				isVisible: true,
 				formGroup: this.formBuilder.group({
 					moderator: this.formBuilder.group({
-						anonymousEnabled: initialRoomOptions.anonymous?.moderator?.enabled ?? false,
+						anonymousEnabled: initialRoomOptions.access?.anonymous?.moderator?.enabled ?? false,
 						...this.buildPermissionsFormConfig(
 							initialRoomOptions.roles?.moderator?.permissions ?? DEFAULT_MODERATOR_PERMISSIONS
 						)
 					}),
 					speaker: this.formBuilder.group({
-						anonymousEnabled: initialRoomOptions.anonymous?.speaker?.enabled ?? false,
+						anonymousEnabled: initialRoomOptions.access?.anonymous?.speaker?.enabled ?? false,
 						...this.buildPermissionsFormConfig(
 							initialRoomOptions.roles?.speaker?.permissions ?? DEFAULT_SPEAKER_PERMISSIONS
 						)
@@ -298,10 +298,7 @@ export class RoomWizardStateService {
 		}
 	}
 
-	private mergeRoomDetailsData(
-		currentOptions: MeetRoomOptions,
-		stepData: Partial<MeetRoomOptions>
-	): MeetRoomOptions {
+	private mergeRoomDetailsData(currentOptions: MeetRoomOptions, stepData: Partial<MeetRoomOptions>): MeetRoomOptions {
 		return {
 			...currentOptions,
 			...('roomName' in stepData ? { roomName: stepData.roomName } : {}),
@@ -310,10 +307,7 @@ export class RoomWizardStateService {
 		};
 	}
 
-	private mergeRecordingData(
-		currentOptions: MeetRoomOptions,
-		stepData: Partial<MeetRoomOptions>
-	): MeetRoomOptions {
+	private mergeRecordingData(currentOptions: MeetRoomOptions, stepData: Partial<MeetRoomOptions>): MeetRoomOptions {
 		return {
 			...currentOptions,
 			config: this.buildMergedConfig(currentOptions.config, {
@@ -353,16 +347,29 @@ export class RoomWizardStateService {
 					}
 				}
 			},
-			anonymous: {
-				moderator: {
-					enabled:
-						stepData.anonymous?.moderator?.enabled ??
-						currentOptions.anonymous?.moderator?.enabled ??
-						false
+			access: {
+				anonymous: {
+					moderator: {
+						enabled:
+							stepData.access?.anonymous?.moderator?.enabled ??
+							currentOptions.access?.anonymous?.moderator?.enabled ??
+							false
+					},
+					speaker: {
+						enabled:
+							stepData.access?.anonymous?.speaker?.enabled ??
+							currentOptions.access?.anonymous?.speaker?.enabled ??
+							false
+					},
+					recording: {
+						enabled:
+							stepData.access?.anonymous?.recording?.enabled ??
+							currentOptions.access?.anonymous?.recording?.enabled ??
+							false
+					}
 				},
-				speaker: {
-					enabled:
-						stepData.anonymous?.speaker?.enabled ?? currentOptions.anonymous?.speaker?.enabled ?? false
+				registered: {
+					enabled: stepData.access?.registered?.enabled ?? currentOptions.access?.registered?.enabled ?? true
 				}
 			}
 		};

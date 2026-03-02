@@ -290,14 +290,15 @@
                 $ref: '../components/responses/validation-error.yaml'
             '500':
                 $ref: '../components/responses/internal-server-error.yaml'
-/rooms/{roomId}/anonymous:
+/rooms/{roomId}/access:
     put:
-        operationId: updateRoomAnonymous
-        summary: Update anonymous access config for a room
+        operationId: updateRoomAccess
+        summary: Update access config for a room
         description: |
-            Updates the anonymous access configuration for the specified room.
+            Updates the access configuration for the specified room.
 
-            This allows you to enable or disable anonymous access for specific roles (moderator/speaker).
+            This allows you to enable or disable access for registered users and anonymous roles
+            (moderator/speaker/recording).
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -306,10 +307,10 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
         requestBody:
-            $ref: '../components/requestBodies/update-room-anonymous-request.yaml'
+            $ref: '../components/requestBodies/update-room-access-request.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-update-room-anonymous.yaml'
+                $ref: '../components/responses/success-update-room-access.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':

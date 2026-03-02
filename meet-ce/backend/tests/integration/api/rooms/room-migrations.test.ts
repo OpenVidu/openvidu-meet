@@ -100,17 +100,26 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 				permissions: expect.any(Object)
 			}
 		},
-		anonymous: {
-			moderator: {
-				enabled: true,
-				accessUrl: `/room/${roomId}?secret=123456`
+		access: {
+			anonymous: {
+				moderator: {
+					enabled: true,
+					url: `/room/${roomId}?secret=123456`
+				},
+				speaker: {
+					enabled: true,
+					url: `/room/${roomId}?secret=abcdef`
+				},
+				recording: {
+					enabled: false,
+					url: expect.stringContaining(`/room/${roomId}/recordings`)
+				}
 			},
-			speaker: {
+			registered: {
 				enabled: true,
-				accessUrl: `/room/${roomId}?secret=abcdef`
+				url: `/room/${roomId}`
 			}
 		},
-		accessUrl: `/room/${roomId}`,
 		rolesUpdatedAt: expect.any(Number),
 		status: MeetRoomStatus.OPEN,
 		meetingEndAction: MeetingEndAction.NONE
@@ -259,17 +268,26 @@ describe('Room Schema Migrations', () => {
 						}
 					}
 				},
-				anonymous: {
-					moderator: {
-						enabled: true,
-						accessUrl: '/room/room-v2?secret=123456'
+				access: {
+					anonymous: {
+						moderator: {
+							enabled: true,
+							url: '/room/room-v2?secret=123456'
+						},
+						speaker: {
+							enabled: true,
+							url: '/room/room-v2?secret=abcdef'
+						},
+						recording: {
+							enabled: false,
+							url: expect.stringContaining('/room/room-v2/recordings')
+						}
 					},
-					speaker: {
+					registered: {
 						enabled: true,
-						accessUrl: '/room/room-v2?secret=abcdef'
+						url: '/room/room-v2'
 					}
 				},
-				accessUrl: '/room/room-v2',
 				rolesUpdatedAt: expect.any(Number),
 				status: MeetRoomStatus.OPEN,
 				meetingEndAction: MeetingEndAction.NONE

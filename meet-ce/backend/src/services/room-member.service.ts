@@ -418,10 +418,10 @@ export class RoomMemberService {
 			} else {
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
 				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
-				const { roles, anonymous } = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
+				const { roles, access } = await this.roomService.getMeetRoom(roomId, ['roles', 'access']);
 
 				// Check that anonymous access is enabled for the role
-				if (!anonymous[baseRole].enabled) {
+				if (!access.anonymous[baseRole].enabled) {
 					throw errorAnonymousAccessDisabled(roomId, baseRole);
 				}
 
@@ -609,8 +609,8 @@ export class RoomMemberService {
 	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
 	 */
 	protected async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
-		const { anonymous } = await this.roomService.getMeetRoom(roomId, ['anonymous']);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
+		const { access } = await this.roomService.getMeetRoom(roomId, ['access']);
+		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
 
 		switch (secret) {
 			case moderatorSecret:
@@ -778,7 +778,7 @@ export class RoomMemberService {
 		newRole: MeetRoomMemberRole
 	): Promise<void> {
 		try {
-			const { roles, anonymous } = await this.roomService.getMeetRoom(roomId, ['roles', 'anonymous']);
+			const { roles, access } = await this.roomService.getMeetRoom(roomId, ['roles', 'access']);
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 			const metadata: MeetRoomMemberTokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(
 				participant.metadata
@@ -791,7 +791,7 @@ export class RoomMemberService {
 
 			await this.livekitService.updateParticipantMetadata(roomId, participantIdentity, JSON.stringify(metadata));
 
-			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(anonymous);
+			const { speakerSecret, moderatorSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
 			const secret = newRole === MeetRoomMemberRole.MODERATOR ? moderatorSecret : speakerSecret;
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,

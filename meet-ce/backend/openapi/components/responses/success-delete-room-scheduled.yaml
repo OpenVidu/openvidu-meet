@@ -36,14 +36,20 @@ content:
                         roomName: room
                         owner: 'admin'
                         creationDate: 1620000000000
-                        anonymous:
-                            moderator:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=123456'
-                            speaker:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=654321'
-                        accessUrl: 'https://example.com/room/room-123'
+                        access:
+                            anonymous:
+                                moderator:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=123456'
+                                speaker:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=654321'
+                                recording:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123/recordings?secret=987654'
+                            registered:
+                                enabled: false
+                                url: 'https://example.com/room/room-123'
                         status: active_meeting
                         meetingEndAction: delete
                         _extraFields:
@@ -57,14 +63,20 @@ content:
                         roomName: room
                         owner: 'admin'
                         creationDate: 1620000000000
-                        anonymous:
-                            moderator:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=123456'
-                            speaker:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=654321'
-                        accessUrl: 'https://example.com/room/room-123'
+                        access:
+                            anonymous:
+                                moderator:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=123456'
+                                speaker:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=654321'
+                                recording:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123/recordings?secret=987654'
+                            registered:
+                                enabled: false
+                                url: 'https://example.com/room/room-123'
                         status: active_meeting
                         meetingEndAction: delete
                         _extraFields:
@@ -78,14 +90,20 @@ content:
                         roomName: room
                         owner: 'admin'
                         creationDate: 1620000000000
-                        anonymous:
-                            moderator:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=123456'
-                            speaker:
-                                enabled: true
-                                accessUrl: 'https://example.com/room/room-123?secret=654321'
-                        accessUrl: 'https://example.com/room/room-123'
+                        access:
+                            anonymous:
+                                moderator:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=123456'
+                                speaker:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123?secret=654321'
+                                recording:
+                                    enabled: true
+                                    url: 'https://example.com/room/room-123/recordings?secret=987654'
+                            registered:
+                                enabled: false
+                                url: 'https://example.com/room/room-123'
                         status: active_meeting
                         meetingEndAction: close
                         _extraFields:

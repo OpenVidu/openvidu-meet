@@ -18,7 +18,7 @@ import {
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
 	startTestServer,
-	updateRoomAnonymousConfig,
+	updateRoomAccessConfig,
 	updateRoomRoles,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
@@ -63,8 +63,10 @@ describe('Room Members API Tests', () => {
 	describe('Generate Room Member Token Tests', () => {
 		it('should generate anonymous moderator token when anonymous.moderator.enabled is true', async () => {
 			// Enable anonymous moderator access
-			await updateRoomAnonymousConfig(roomId, {
-				moderator: { enabled: true }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					moderator: { enabled: true }
+				}
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
@@ -77,23 +79,29 @@ describe('Room Members API Tests', () => {
 
 		it('should fail to generate anonymous moderator token when anonymous.moderator.enabled is false', async () => {
 			// Disable anonymous moderator access
-			await updateRoomAnonymousConfig(roomId, {
-				moderator: { enabled: false }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					moderator: { enabled: false }
+				}
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
 			expect(response.status).toBe(403);
 
 			// Enable anonymous moderator access for further tests
-			await updateRoomAnonymousConfig(roomId, {
-				moderator: { enabled: true }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					moderator: { enabled: true }
+				}
 			});
 		});
 
 		it('should generate anonymous speaker token when anonymous.speaker.enabled is true', async () => {
 			// Enable anonymous speaker access
-			await updateRoomAnonymousConfig(roomId, {
-				speaker: { enabled: true }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					speaker: { enabled: true }
+				}
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
@@ -106,16 +114,20 @@ describe('Room Members API Tests', () => {
 
 		it('should fail to generate anonymous speaker token when anonymous.speaker.enabled is false', async () => {
 			// Disable anonymous speaker access
-			await updateRoomAnonymousConfig(roomId, {
-				speaker: { enabled: false }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					speaker: { enabled: false }
+				}
 			});
 
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
 			expect(response.status).toBe(403);
 
 			// Enable anonymous speaker access for further tests
-			await updateRoomAnonymousConfig(roomId, {
-				speaker: { enabled: true }
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					speaker: { enabled: true }
+				}
 			});
 		});
 

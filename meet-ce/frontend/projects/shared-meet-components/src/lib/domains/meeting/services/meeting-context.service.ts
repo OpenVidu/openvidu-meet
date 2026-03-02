@@ -93,7 +93,7 @@ export class MeetingContextService {
 	setMeetRoom(room: MeetRoom): void {
 		this._meetRoom.set(room);
 		this.setRoomId(room.roomId);
-		this.setMeetingUrl(room.accessUrl);
+		this.setMeetingUrl(room.access.registered.url);
 	}
 
 	/**

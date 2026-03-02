@@ -11,7 +11,7 @@ import {
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
-	MeetRoomAnonymousConfig,
+	MeetRoomAccessConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
@@ -296,13 +296,27 @@ const RoomRolesConfigSchema: z.ZodType<MeetRoomRolesConfig> = z.object({
 		.optional()
 });
 
-const RoomAnonymousConfigSchema: z.ZodType<MeetRoomAnonymousConfig> = z.object({
-	moderator: z
+const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
+	anonymous: z
 		.object({
-			enabled: z.boolean()
+			moderator: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional(),
+			speaker: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional(),
+			recording: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional()
 		})
 		.optional(),
-	speaker: z
+	registered: z
 		.object({
 			enabled: z.boolean()
 		})
@@ -359,9 +373,13 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		captions: { enabled: true }
 	}),
 	roles: RoomRolesConfigSchema.optional(),
-	anonymous: RoomAnonymousConfigSchema.optional().default({
-		moderator: { enabled: true },
-		speaker: { enabled: true }
+	access: RoomAccessConfigSchema.optional().default({
+		anonymous: {
+			moderator: { enabled: true },
+			speaker: { enabled: true },
+			recording: { enabled: true }
+		},
+		registered: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()
@@ -556,8 +574,8 @@ export const UpdateRoomRolesReqSchema = z.object({
 	roles: RoomRolesConfigSchema
 });
 
-export const UpdateRoomAnonymousReqSchema = z.object({
-	anonymous: RoomAnonymousConfigSchema
+export const UpdateRoomAccessReqSchema = z.object({
+	access: RoomAccessConfigSchema
 });
 
 export const UpdateRoomStatusReqSchema = z.object({

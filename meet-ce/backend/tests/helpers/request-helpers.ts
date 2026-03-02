@@ -6,7 +6,7 @@ import {
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
-	MeetRoomAnonymousConfig,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -547,13 +547,13 @@ export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRoles
 		.send({ roles: rolesConfig });
 };
 
-export const updateRoomAnonymousConfig = async (roomId: string, anonymousConfig: MeetRoomAnonymousConfig) => {
+export const updateRoomAccessConfig = async (roomId: string, accessConfig: MeetRoomAccessConfig) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/anonymous`))
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/access`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send({ anonymous: anonymousConfig });
+		.send({ access: accessConfig });
 };
 
 export const deleteRoom = async (

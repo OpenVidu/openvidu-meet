@@ -1,4 +1,4 @@
-description: Success response for updating room anonymous access configuration
+description: Success response for updating room access configuration
 content:
     application/json:
         schema:
@@ -7,4 +7,4 @@ content:
                 message:
                     type: string
         example:
-            message: Anonymous access config for room 'room-123' updated successfully
+            message: Access config for room 'room-123' updated successfully
