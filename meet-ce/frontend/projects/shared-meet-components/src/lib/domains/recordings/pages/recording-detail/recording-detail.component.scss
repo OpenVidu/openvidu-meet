@@ -282,12 +282,12 @@
 .body-columns {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: var(--ov-meet-spacing-lg);
-	margin-top: var(--ov-meet-spacing-lg);
+	gap: var(--ov-meet-spacing-md);
+	margin-top: var(--ov-meet-spacing-md);
 	align-items: start;
 
 	@media (min-width: 900px) {
-		grid-template-columns: 1fr 2fr;
+		grid-template-columns: 2fr 1fr;
 	}
 
 	// ---- Info Card ----

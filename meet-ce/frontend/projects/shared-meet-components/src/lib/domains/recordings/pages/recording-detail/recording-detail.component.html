@@ -156,6 +156,17 @@
 		<!-- ── Two-column body ───────────────────────────────────────── -->
 		<div class="body-columns">
 			<!-- LEFT — secondary info ─────────────────────────────── -->
+			<ov-recording-video-player
+				[recordingUrl]="recordingUrl()"
+				[recordingStatus]="recording()!.status"
+				[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
+				[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
+				(videoError)="onVideoError()"
+				(download)="downloadRecording()"
+				(share)="shareRecording()"
+			/>
+			<!-- RIGHT — video player ────────────────────────────────── -->
+
 			<mat-card class="info-card">
 				<mat-card-header>
 					<mat-card-title>
@@ -232,17 +243,6 @@
 					}
 				</mat-card-content>
 			</mat-card>
-
-			<!-- RIGHT — video player ────────────────────────────────── -->
-			<ov-recording-video-player
-				[recordingUrl]="recordingUrl()"
-				[recordingStatus]="recording()!.status"
-				[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
-				[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
-				(videoError)="onVideoError()"
-				(download)="downloadRecording()"
-				(share)="shareRecording()"
-			/>
 		</div>
 	</div>
 }
