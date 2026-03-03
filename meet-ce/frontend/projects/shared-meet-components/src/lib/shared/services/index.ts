@@ -1,3 +1,4 @@
+export * from './ai-assistant.service';
 export * from './analytics.service';
 export * from './api-key.service';
 export * from './app-config.service';

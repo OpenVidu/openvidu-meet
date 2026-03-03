@@ -44,9 +44,18 @@ export class MeetingToolbarExtraButtonsComponent {
 	protected showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
 
 	/**
-	 * Whether captions button is disabled (true when DISABLED_WITH_WARNING)
+	 * Whether captions button is disabled:
+	 * - Always disabled when captions are turned off at admin/system level (DISABLED_WITH_WARNING)
+	 * - Also disabled while an enable/disable request is in flight to prevent concurrent calls
 	 */
-	protected isCaptionsButtonDisabled = computed(() => this.captionsStatus() === 'DISABLED_WITH_WARNING');
+	protected isCaptionsButtonDisabled = computed(
+		() => this.captionsStatus() === 'DISABLED_WITH_WARNING' || this.captionService.isCaptionsTogglePending()
+	);
+
+	/**
+	 * Whether the captions toggle is pending a server response
+	 */
+	protected isCaptionsTogglePending = computed(() => this.captionService.isCaptionsTogglePending());
 
 	/**
 	 * Whether the device is mobile (affects button style)
@@ -65,12 +74,18 @@ export class MeetingToolbarExtraButtonsComponent {
 		this.meetingService.copyMeetingSpeakerLink(room);
 	}
 
-	onCaptionsClick(): void {
-		// Don't allow toggling if captions are disabled at system level
-		if (this.isCaptionsButtonDisabled()) {
-			this.log.w('Captions are disabled at system level (MEET_CAPTIONS_ENABLED=false)');
-			return;
+	async onCaptionsClick(): Promise<void> {
+		try {
+			// Don't allow toggling if captions are disabled at system level
+			if (this.isCaptionsButtonDisabled()) {
+				this.log.w('Captions are disabled at system level (MEET_CAPTIONS_ENABLED=false)');
+				return;
+			}
+			this.captionService.areCaptionsEnabledByUser()
+				? await this.captionService.disable()
+				: await this.captionService.enable();
+		} catch (error) {
+			this.log.e('Error toggling captions:', error);
 		}
-		this.captionService.areCaptionsEnabledByUser() ? this.captionService.disable() : this.captionService.enable();
 	}
 }
