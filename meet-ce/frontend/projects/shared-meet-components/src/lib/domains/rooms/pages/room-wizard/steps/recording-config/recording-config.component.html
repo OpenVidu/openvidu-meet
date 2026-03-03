@@ -24,6 +24,26 @@
 					></ov-selectable-card>
 				}
 			</div>
+
+			<!-- Anonymous Recording Access -->
+			@if (isRecordingEnabled) {
+				<div class="anonymous-access-row">
+					<div class="permission-info">
+						<mat-icon class="permission-icon anonymous-icon">no_accounts</mat-icon>
+						<div class="permission-text">
+							<span class="permission-label">Anonymous Recording Access</span>
+							<span class="permission-description"
+								>Allow users to access recordings without logging in</span
+							>
+						</div>
+					</div>
+					<mat-slide-toggle
+						formControlName="anonymousRecordingEnabled"
+						color="primary"
+						class="permission-toggle"
+					></mat-slide-toggle>
+				</div>
+			}
 		</form>
 	</main>
 </div>

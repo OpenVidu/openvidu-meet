@@ -6,12 +6,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 import {
-	SelectableCardComponent,
-	SelectableCardOption,
-	SelectionCardEvent
+    SelectableCardComponent,
+    SelectableCardOption,
+    SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
@@ -25,6 +26,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatRadioModule,
 		MatSelectModule,
 		MatFormFieldModule,
+		MatSlideToggleModule,
 		SelectableCardComponent
 	],
 	templateUrl: './recording-config.component.html',
@@ -78,6 +80,13 @@ export class RecordingConfigComponent implements OnDestroy {
 				recording: {
 					enabled,
 					...(enabled && { allowAccessTo: formValue.allowAccessTo })
+				}
+			},
+			access: {
+				anonymous: {
+					recording: {
+						enabled: formValue.anonymousRecordingEnabled ?? false
+					}
 				}
 			}
 		};
