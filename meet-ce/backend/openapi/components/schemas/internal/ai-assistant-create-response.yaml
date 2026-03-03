@@ -1,0 +1,14 @@
+type: object
+required:
+    - id
+    - status
+properties:
+    id:
+        type: string
+        description: Identifier of the assistant activation.
+        example: asst_123
+    status:
+        type: string
+        enum: ['active']
+        description: Current assistant activation state.
+        example: active

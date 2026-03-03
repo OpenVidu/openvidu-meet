@@ -1,4 +1,3 @@
-import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
 import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
@@ -42,8 +41,7 @@ export class TokenService {
 		role: MeetRoomMemberRole,
 		permissions: MeetRoomMemberPermissions,
 		participantName?: string,
-		participantIdentity?: string,
-		roomWithCaptions = false
+		participantIdentity?: string
 	): Promise<string> {
 		const metadata: MeetRoomMemberTokenMetadata = {
 			livekitUrl: MEET_ENV.LIVEKIT_URL,
@@ -57,44 +55,14 @@ export class TokenService {
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(metadata)
 		};
-		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant, roomWithCaptions);
+		return await this.generateJwtToken(tokenOptions, permissions.livekit as VideoGrant);
 	}
 
-	private async generateJwtToken(
-		tokenOptions: AccessTokenOptions,
-		grants?: VideoGrant,
-		roomWithCaptions = false
-	): Promise<string> {
+	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {
 		const at = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, tokenOptions);
 
 		if (grants) {
 			at.addGrant(grants);
-		}
-
-		const captionsEnabledGlobally = MEET_ENV.CAPTIONS_ENABLED === 'true';
-		const captionsEnabledInRoom = Boolean(roomWithCaptions);
-
-		// Warn if configuration is inconsistent
-		if (!captionsEnabledGlobally) {
-			if (captionsEnabledInRoom) {
-				this.logger.warn(
-					`Captions feature is disabled in environment but Room is created with captions enabled. ` +
-						`Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
-				);
-			}
-
-			return await at.toJwt();
-		}
-
-		if (captionsEnabledInRoom) {
-			this.logger.debug('Activating Captions Agent. Configuring Room Agent Dispatch.');
-			at.roomConfig = new RoomConfiguration({
-				agents: [
-					new RoomAgentDispatch({
-						agentName: INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
-					})
-				]
-			});
 		}
 
 		return await at.toJwt();

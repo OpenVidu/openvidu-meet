@@ -1,4 +1,5 @@
 export * from './analytics.routes.js';
+export * from './ai-assistant.routes.js';
 export * from './api-key.routes.js';
 export * from './auth.routes.js';
 export * from './global-config.routes.js';

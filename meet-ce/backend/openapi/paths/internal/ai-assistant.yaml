@@ -1,0 +1,56 @@
+/ai/assistants:
+    post:
+        operationId: createAiAssistant
+        summary: Create AI assistant
+        description: |
+            Activates AI assistance.
+
+            > Currently only meeting AI Assistand and `live_captions` capability is supported.
+        tags:
+            - Internal API - AI Assistants
+        security:
+            - roomMemberTokenHeader: []
+        requestBody:
+            $ref: '../../components/requestBodies/internal/create-ai-assistant-request.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-create-ai-assistant.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+/ai/assistants/{assistantId}:
+    delete:
+        operationId: cancelAiAssistant
+        summary: Cancel AI assistant
+        description: |
+            Cancels AI assistant.
+
+            The assistant process (live_captions) is stopped only when the last participant cancels it.
+        tags:
+            - Internal API - AI Assistants
+        security:
+            - roomMemberTokenHeader: []
+        parameters:
+            - in: path
+              name: assistantId
+              required: true
+              schema:
+                  type: string
+                  minLength: 1
+              description: Identifier of the assistant activation returned by create operation.
+              example: asst_123
+        responses:
+            '204':
+                description: AI assistant canceled successfully.
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '422':
+                $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'

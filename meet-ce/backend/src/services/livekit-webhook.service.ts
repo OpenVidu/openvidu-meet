@@ -9,6 +9,7 @@ import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { AiAssistantService } from './ai-assistant.service.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
@@ -33,6 +34,7 @@ export class LivekitWebhookService {
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
+		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -189,8 +191,10 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
-			// Release the participant's reserved name
-			await this.roomMemberService.releaseParticipantName(room.name, participant.name);
+			await Promise.all([
+				this.roomMemberService.releaseParticipantName(room.name, participant.name),
+				this.aiAssistantService.cleanupState(room.name, participant.identity)
+			]);
 			this.logger.verbose(`Released name for participant '${participant.name}' in room '${room.name}'`);
 		} catch (error) {
 			this.logger.error('Error releasing participant name on participant left:', error);
@@ -282,7 +286,8 @@ export class LivekitWebhookService {
 
 			tasks.push(
 				this.roomMemberService.cleanupParticipantNames(roomId),
-				this.recordingService.releaseRecordingLockIfNoEgress(roomId)
+				this.recordingService.releaseRecordingLockIfNoEgress(roomId),
+				this.aiAssistantService.cleanupState(roomId)
 			);
 			await Promise.all(tasks);
 		} catch (error) {

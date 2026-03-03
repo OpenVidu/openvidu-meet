@@ -1,0 +1,37 @@
+type: object
+required:
+    # - scope
+    - capabilities
+properties:
+    # scope:
+    #     type: object
+    #     required:
+    #         - resourceType
+    #         - resourceIds
+    #     properties:
+    #         resourceType:
+    #             type: string
+    #             enum: ['meeting']
+    #             description: Scope resource type where assistant will be activated.
+    #             example: meeting
+    #         resourceIds:
+    #             type: array
+    #             minItems: 1
+    #             items:
+    #                 type: string
+    #                 minLength: 1
+    #             description: List of target resource ids.
+    #             example: ['meeting_123']
+    capabilities:
+        type: array
+        minItems: 1
+        items:
+            type: object
+            required:
+                - name
+            properties:
+                name:
+                    type: string
+                    enum: ['live_captions']
+                    description: AI capability to activate.
+                    example: live_captions

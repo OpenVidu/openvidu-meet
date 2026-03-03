@@ -9,6 +9,7 @@ export * from './room.middleware.js';
 
 // Request validators
 export * from './request-validators/auth-validator.middleware.js';
+export * from './request-validators/ai-assistant-validator.middleware.js';
 export * from './request-validators/config-validator.middleware.js';
 export * from './request-validators/meeting-validator.middleware.js';
 export * from './request-validators/recording-validator.middleware.js';
