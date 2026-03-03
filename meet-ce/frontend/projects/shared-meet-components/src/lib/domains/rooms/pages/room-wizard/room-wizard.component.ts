@@ -1,12 +1,13 @@
-import { Component, computed, OnInit, Signal, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRoomOptions } from '@openvidu-meet/typings';
+import { MeetRoomMemberOptions, MeetRoomOptions } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { StepIndicatorComponent } from '../../components/step-indicator/step-indicator.component';
 import { WizardNavComponent } from '../../components/wizard-nav/wizard-nav.component';
 import { WizardNavigationConfig, WizardStep } from '../../models/wizard.model';
@@ -16,7 +17,7 @@ import { RoomBasicCreationComponent } from '../room-basic-creation/room-basic-cr
 import { RecordingConfigComponent } from './steps/recording-config/recording-config.component';
 import { RecordingLayoutComponent } from './steps/recording-layout/recording-layout.component';
 import { RecordingTriggerComponent } from './steps/recording-trigger/recording-trigger.component';
-import { RolePermissionsComponent } from './steps/role-permissions/role-permissions.component';
+import { RoomAccessComponent } from './steps/room-access/room-access.component';
 import { RoomConfigComponent } from './steps/room-config/room-config.component';
 import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-details.component';
 
@@ -31,11 +32,11 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		MatSlideToggleModule,
 		RoomBasicCreationComponent,
 		RoomWizardRoomDetailsComponent,
+		RoomAccessComponent,
 		RecordingConfigComponent,
 		RecordingTriggerComponent,
 		RecordingLayoutComponent,
-		RoomConfigComponent,
-		RolePermissionsComponent
+		RoomConfigComponent
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss'
@@ -46,6 +47,7 @@ export class RoomWizardComponent implements OnInit {
 	existingRoomData?: MeetRoomOptions; // Edit mode
 	isCreatingRoom = signal(false);
 	isBasicCreation = signal(true);
+	protected roomMemberService = inject(RoomMemberService);
 	steps: Signal<WizardStep[]>;
 	currentStep: Signal<WizardStep | undefined>;
 	currentStepIndex: Signal<number>;
@@ -156,7 +158,8 @@ export class RoomWizardComponent implements OnInit {
 
 	async createRoomAdvance() {
 		const roomOptions = this.wizardService.roomOptions();
-		console.log('Wizard completed with data:', roomOptions);
+		const pendingMembers = this.wizardService.pendingMembers();
+		console.log('Wizard completed with data:', roomOptions, 'pending members:', pendingMembers);
 
 		// Activate loading state
 		this.isCreatingRoom.set(true);
@@ -168,10 +171,16 @@ export class RoomWizardComponent implements OnInit {
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
-				const { access } = await this.roomService.createRoom(roomOptions, { fields: ['access'] });
+				const room = await this.roomService.createRoom(roomOptions, { fields: ['access', 'roomId'] });
+
+				// TODO: Should this creation of pending memeber be handled by the backend as part of the room creation when pending members exist?
+				// Create pending members (best-effort – failures are reported as warnings)
+				if (pendingMembers.length > 0) {
+					await this.createPendingMembers(room.roomId, pendingMembers);
+				}
 
 				// Extract the path from the access URL and navigate to it
-				const url = new URL(access.registered.url);
+				const url = new URL(room.access.registered.url);
 				const path = url.pathname;
 				await this.navigationService.redirectTo(path);
 			}
@@ -185,6 +194,23 @@ export class RoomWizardComponent implements OnInit {
 			this.wizardService.resetWizard();
 			// Deactivate loading state
 			this.isCreatingRoom.set(false);
+		}
+	}
+
+	private async createPendingMembers(roomId: string, members: MeetRoomMemberOptions[]): Promise<void> {
+		const results = await Promise.allSettled(
+			members.map((m) => this.roomMemberService.createRoomMember(roomId, m))
+		);
+		const failed = results.filter((r) => r.status === 'rejected');
+		if (failed.length > 0) {
+			const failedIds = members
+				.filter((_, i) => results[i].status === 'rejected')
+				.map((m) => m.userId)
+				.join(', ');
+			this.notificationService.showSnackbar(
+				`Room created, but failed to add ${failed.length} member(s): ${failedIds}`
+			);
+			console.warn('Failed to add members:', failed);
 		}
 	}
 }

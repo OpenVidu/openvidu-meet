@@ -1,0 +1,453 @@
+@use '../../../../../../../../../../src/assets/styles/design-tokens';
+
+@mixin access-row-base {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	border-radius: var(--ov-meet-radius-sm);
+	transition: background-color var(--ov-meet-transition-fast);
+
+	&:hover {
+		background: var(--ov-meet-surface-hover);
+	}
+}
+
+@mixin permission-row-base {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	transition: background-color var(--ov-meet-transition-fast);
+
+	&:hover {
+		background: var(--ov-meet-surface-hover);
+	}
+
+	.permission-info {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		flex: 1;
+		min-width: 0;
+
+		.permission-icon {
+			@include design-tokens.ov-icon(sm);
+			color: var(--ov-meet-icon-primary);
+			flex-shrink: 0;
+		}
+
+		.permission-text {
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			min-width: 0;
+
+			.permission-label {
+				font-size: var(--ov-meet-font-size-sm);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.permission-description {
+				font-size: var(--ov-meet-font-size-xs);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	.permission-toggle {
+		flex-shrink: 0;
+	}
+}
+
+.room-access-step {
+	@include design-tokens.ov-page-content;
+	@include design-tokens.ov-container;
+
+	justify-content: center;
+	gap: var(--ov-meet-spacing-md);
+
+	// ─── Step Header ────────────────────────────────────────────────────────────
+
+	.step-header {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--ov-meet-spacing-sm);
+		margin-bottom: var(--ov-meet-spacing-lg);
+
+		.step-icon {
+			@include design-tokens.ov-icon(xl);
+			color: var(--ov-meet-icon-settings);
+			margin-top: var(--ov-meet-spacing-xs);
+		}
+
+		.step-title-group {
+			flex: 1;
+
+			.step-title {
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+				line-height: var(--ov-meet-line-height-tight);
+			}
+
+			.step-description {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-md);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+	}
+
+	// ─── Step Content ────────────────────────────────────────────────────────────
+
+	.step-content {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-lg);
+
+		form {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
+		}
+	}
+
+	// ─── Section Label ───────────────────────────────────────────────────────────
+
+	.section-label {
+		margin: 0 0 var(--ov-meet-spacing-sm) var(--ov-meet-spacing-xs);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-text-hint);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.section-subtitle {
+		margin: 0 0 var(--ov-meet-spacing-md);
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-normal);
+	}
+
+	// ─── Access Section ─────────────────────────────────────────────────────────
+
+	.access-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	.access-row {
+		@include access-row-base;
+		border: 1px solid var(--ov-meet-border-secondary);
+		background: var(--ov-meet-surface-variant);
+
+		&:hover {
+			background: var(--ov-meet-surface-hover);
+		}
+
+		.access-info {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			flex: 1;
+			min-width: 0;
+
+			.access-icon {
+				@include design-tokens.ov-icon(md);
+				color: var(--ov-meet-icon-settings);
+				flex-shrink: 0;
+			}
+
+			.access-text {
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+				min-width: 0;
+
+				.access-label {
+					font-size: var(--ov-meet-font-size-md);
+					font-weight: var(--ov-meet-font-weight-medium);
+					color: var(--ov-meet-text-primary);
+					line-height: var(--ov-meet-line-height-tight);
+				}
+
+				.access-description {
+					font-size: var(--ov-meet-font-size-sm);
+					color: var(--ov-meet-text-secondary);
+					line-height: var(--ov-meet-line-height-normal);
+				}
+			}
+		}
+
+		.access-toggle {
+			flex-shrink: 0;
+		}
+	}
+
+	// ─── Permissions Section ─────────────────────────────────────────────────────
+
+	.permissions-section {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.roles-accordion {
+		.mat-expansion-panel:first-of-type {
+			border-top-right-radius: var(--ov-meet-radius-sm);
+			border-top-left-radius: var(--ov-meet-radius-sm);
+		}
+		.mat-expansion-panel:last-of-type {
+			border-bottom-right-radius: var(--ov-meet-radius-sm);
+			border-bottom-left-radius: var(--ov-meet-radius-sm);
+		}
+		.role-expansion-panel {
+			background: var(--ov-meet-card-background);
+			&.mat-expanded {
+				border-radius: var(--ov-meet-radius-sm);
+			}
+
+			.role-panel-title {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+				font-size: var(--ov-meet-font-size-md);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+
+				.role-panel-icon {
+					@include design-tokens.ov-icon(md);
+					color: var(--ov-meet-icon-primary);
+				}
+			}
+
+			.role-panel-description {
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+			}
+		}
+	}
+
+	.role-permissions-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-sm) 0;
+
+		.permission-group {
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			margin-bottom: var(--ov-meet-spacing-xs);
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+
+			.permission-group-header {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-xs);
+				padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+				margin-bottom: 4px;
+
+				.permission-group-icon {
+					@include design-tokens.ov-icon(sm);
+					color: var(--ov-meet-icon-secondary);
+				}
+
+				.permission-group-label {
+					font-size: var(--ov-meet-font-size-xs);
+					font-weight: var(--ov-meet-font-weight-semibold);
+					color: var(--ov-meet-text-hint);
+					letter-spacing: 0.06em;
+					text-transform: uppercase;
+				}
+			}
+
+			.permission-row {
+				@include permission-row-base;
+			}
+		}
+	}
+
+	// ─── Members Section ─────────────────────────────────────────────────────────
+
+	.members-section {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.add-member-form {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--ov-meet-spacing-sm);
+		flex-wrap: wrap;
+		margin-bottom: var(--ov-meet-spacing-md);
+
+		.user-field {
+			flex: 1 1 220px;
+			min-width: 0;
+		}
+
+		.role-field {
+			flex: 0 1 160px;
+			min-width: 0;
+		}
+
+		.add-member-button {
+			height: 56px; // match form field height
+			white-space: nowrap;
+			border-radius: var(--ov-meet-radius-sm);
+		}
+	}
+
+	.pending-members-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+
+		.pending-label {
+			margin: 0 0 var(--ov-meet-spacing-xs) var(--ov-meet-spacing-xs);
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-hint);
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+
+		.pending-member-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--ov-meet-spacing-sm);
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+			border-radius: var(--ov-meet-radius-sm);
+			background: var(--ov-meet-surface-variant);
+			border: 1px solid var(--ov-meet-border-secondary);
+
+			.member-info {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+				flex: 1;
+				min-width: 0;
+
+				.member-icon {
+					@include design-tokens.ov-icon(md);
+					color: var(--ov-meet-icon-primary);
+					flex-shrink: 0;
+				}
+
+				.member-text {
+					display: flex;
+					flex-direction: column;
+					gap: 2px;
+					min-width: 0;
+
+					.member-user-id {
+						font-size: var(--ov-meet-font-size-md);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-primary);
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+
+					.member-role {
+						font-size: var(--ov-meet-font-size-sm);
+						color: var(--ov-meet-text-secondary);
+					}
+				}
+			}
+
+			.remove-member-button {
+				flex-shrink: 0;
+				color: var(--ov-meet-text-secondary);
+
+				&:hover {
+					color: var(--ov-meet-color-warn);
+				}
+			}
+		}
+	}
+
+	// ─── Shared helpers ──────────────────────────────────────────────────────────
+
+	.field-suffix-icon {
+		color: var(--ov-meet-icon-secondary);
+	}
+
+	.search-spinner {
+		margin-right: var(--ov-meet-spacing-xs);
+	}
+
+	.user-option {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+
+		.user-option-icon {
+			@include design-tokens.ov-icon(md);
+			color: var(--ov-meet-icon-secondary);
+		}
+
+		.user-option-info {
+			display: flex;
+			flex-direction: column;
+
+			.user-option-id {
+				font-size: var(--ov-meet-font-size-md);
+				font-weight: var(--ov-meet-font-weight-medium);
+				color: var(--ov-meet-text-primary);
+			}
+
+			.user-option-name {
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+			}
+		}
+	}
+
+	.role-option {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+	}
+
+	.no-results {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		font-style: italic;
+	}
+
+	// ─── Responsive ─────────────────────────────────────────────────────────────
+
+	@include design-tokens.ov-mobile-down {
+		.add-member-form {
+			flex-direction: column;
+
+			.user-field,
+			.role-field {
+				width: 100%;
+				flex: 1 1 auto;
+			}
+
+			.add-member-button {
+				width: 100%;
+			}
+		}
+	}
+}

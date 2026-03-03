@@ -1,12 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import {
-	MeetRecordingLayout,
-	MeetRoomConfig,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomMemberPermissions,
-	MeetRoomOptions
+    MeetRecordingLayout,
+    MeetRoomConfig,
+    MeetRoomDeletionPolicyWithMeeting,
+    MeetRoomDeletionPolicyWithRecordings,
+    MeetRoomMemberOptions,
+    MeetRoomMemberPermissions,
+    MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { WizardNavigationConfig, WizardStep } from '../models';
 
@@ -72,6 +73,7 @@ export class RoomWizardStateService {
 	private _roomOptions = signal<MeetRoomOptions>({
 		config: DEFAULT_CONFIG
 	});
+	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
 
 	public readonly steps = computed(() => this._steps());
 	public readonly currentStepIndex = computed(() => this._currentStepIndex());
@@ -86,6 +88,7 @@ export class RoomWizardStateService {
 		return visibleSteps[currentIndex];
 	});
 	public readonly roomOptions = computed(() => this._roomOptions());
+	public readonly pendingMembers = computed(() => this._pendingMembers());
 
 	constructor(private formBuilder: FormBuilder) {}
 
@@ -105,6 +108,7 @@ export class RoomWizardStateService {
 		};
 
 		this._roomOptions.set(initialRoomOptions);
+		this._pendingMembers.set([]);
 
 		// Define wizard steps
 		const baseSteps: WizardStep[] = [
@@ -188,13 +192,36 @@ export class RoomWizardStateService {
 				)
 			},
 			{
+				id: 'roomAccess',
+				label: 'Room Access',
+				isCompleted: editMode,
+				isActive: editMode, // Start with roomAccess step active in edit mode
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					anonymousModeratorEnabled: initialRoomOptions.access?.anonymous?.moderator?.enabled ?? false,
+					anonymousSpeakerEnabled: initialRoomOptions.access?.anonymous?.speaker?.enabled ?? false,
+					registeredEnabled: initialRoomOptions.access?.registered?.enabled ?? true,
+					moderator: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(
+							initialRoomOptions.roles?.moderator?.permissions ?? DEFAULT_MODERATOR_PERMISSIONS
+						)
+					}),
+					speaker: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(
+							initialRoomOptions.roles?.speaker?.permissions ?? DEFAULT_SPEAKER_PERMISSIONS
+						)
+					})
+				})
+			},
+			{
 				id: 'recording',
 				label: 'Recording Settings',
 				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: editMode, // Only active in edit mode
+				isActive: false,
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled'
+					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled',
+					anonymousRecordingEnabled: initialRoomOptions.access?.anonymous?.recording?.enabled ?? false
 				})
 			},
 			{
@@ -228,27 +255,6 @@ export class RoomWizardStateService {
 					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
 					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
 					captionsEnabled: initialRoomOptions.config!.captions!.enabled
-				})
-			},
-			{
-				id: 'rolePermissions',
-				label: 'Role Permissions',
-				isCompleted: editMode,
-				isActive: false,
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					moderator: this.formBuilder.group({
-						anonymousEnabled: initialRoomOptions.access?.anonymous?.moderator?.enabled ?? false,
-						...this.buildPermissionsFormConfig(
-							initialRoomOptions.roles?.moderator?.permissions ?? DEFAULT_MODERATOR_PERMISSIONS
-						)
-					}),
-					speaker: this.formBuilder.group({
-						anonymousEnabled: initialRoomOptions.access?.anonymous?.speaker?.enabled ?? false,
-						...this.buildPermissionsFormConfig(
-							initialRoomOptions.roles?.speaker?.permissions ?? DEFAULT_SPEAKER_PERMISSIONS
-						)
-					})
 				})
 			}
 		];
@@ -290,8 +296,8 @@ export class RoomWizardStateService {
 				return currentOptions;
 			case 'config':
 				return this.mergeConfigData(currentOptions, stepData);
-			case 'rolePermissions':
-				return this.mergeRolePermissionsData(currentOptions, stepData);
+			case 'roomAccess':
+				return this.mergeRoomAccessData(currentOptions, stepData);
 			default:
 				console.warn(`Unknown step ID: ${stepId}`);
 				return currentOptions;
@@ -312,18 +318,26 @@ export class RoomWizardStateService {
 			...currentOptions,
 			config: this.buildMergedConfig(currentOptions.config, {
 				recording: stepData.config?.recording
-			})
+			}),
+			access: {
+				...currentOptions.access,
+				anonymous: {
+					...currentOptions.access?.anonymous,
+					moderator: currentOptions.access?.anonymous?.moderator ?? { enabled: false },
+					speaker: currentOptions.access?.anonymous?.speaker ?? { enabled: false },
+					recording: {
+						enabled:
+							stepData.access?.anonymous?.recording?.enabled ??
+							currentOptions.access?.anonymous?.recording?.enabled ??
+							false
+					}
+				},
+				registered: currentOptions.access?.registered ?? { enabled: true }
+			}
 		};
 	}
 
-	private mergeConfigData(currentOptions: MeetRoomOptions, stepData: Partial<MeetRoomOptions>): MeetRoomOptions {
-		return {
-			...currentOptions,
-			config: this.buildMergedConfig(currentOptions.config, stepData.config)
-		};
-	}
-
-	private mergeRolePermissionsData(
+	private mergeRoomAccessData(
 		currentOptions: MeetRoomOptions,
 		stepData: Partial<MeetRoomOptions>
 	): MeetRoomOptions {
@@ -363,15 +377,24 @@ export class RoomWizardStateService {
 					},
 					recording: {
 						enabled:
-							stepData.access?.anonymous?.recording?.enabled ??
 							currentOptions.access?.anonymous?.recording?.enabled ??
 							false
 					}
 				},
 				registered: {
-					enabled: stepData.access?.registered?.enabled ?? currentOptions.access?.registered?.enabled ?? true
+					enabled:
+						stepData.access?.registered?.enabled ??
+						currentOptions.access?.registered?.enabled ??
+						true
 				}
 			}
+		};
+	}
+
+	private mergeConfigData(currentOptions: MeetRoomOptions, stepData: Partial<MeetRoomOptions>): MeetRoomOptions {
+		return {
+			...currentOptions,
+			config: this.buildMergedConfig(currentOptions.config, stepData.config)
 		};
 	}
 
@@ -557,6 +580,21 @@ export class RoomWizardStateService {
 	}
 
 	/**
+	 * Adds a pending member to the wizard state.
+	 * Members are created after the room is successfully created.
+	 */
+	addPendingMember(member: MeetRoomMemberOptions): void {
+		this._pendingMembers.update((members) => [...members, member]);
+	}
+
+	/**
+	 * Removes a pending member from the wizard state by index.
+	 */
+	removePendingMember(index: number): void {
+		this._pendingMembers.update((members) => members.filter((_, i) => i !== index));
+	}
+
+	/**
 	 * Resets the wizard to its initial state with default options.
 	 */
 	resetWizard(): void {
@@ -566,5 +604,6 @@ export class RoomWizardStateService {
 		this._roomOptions.set(defaultOptions);
 		this._steps.set([]);
 		this._currentStepIndex.set(0);
+		this._pendingMembers.set([]);
 	}
 }
