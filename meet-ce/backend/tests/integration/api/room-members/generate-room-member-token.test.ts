@@ -42,6 +42,23 @@ const allPermissions: MeetRoomMemberPermissions = {
 	canChangeVirtualBackground: true
 };
 
+const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
+	canRecord: false,
+	canRetrieveRecordings: true,
+	canDeleteRecordings: false,
+	canJoinMeeting: false,
+	canShareAccessLinks: false,
+	canMakeModerator: false,
+	canKickParticipants: false,
+	canEndMeeting: false,
+	canPublishVideo: false,
+	canPublishAudio: false,
+	canShareScreen: false,
+	canReadChat: false,
+	canWriteChat: false,
+	canChangeVirtualBackground: false
+};
+
 describe('Room Members API Tests', () => {
 	let roomData: RoomData;
 	let roomId: string;
@@ -129,6 +146,57 @@ describe('Room Members API Tests', () => {
 					speaker: { enabled: true }
 				}
 			});
+		});
+
+		it('should generate read-only recording token when anonymous.recording.enabled is true', async () => {
+			expect(roomData.recordingSecret).toBeDefined();
+			const recordingSecret = roomData.recordingSecret!;
+
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					recording: { enabled: true }
+				}
+			});
+
+			const response = await generateRoomMemberTokenRequest(roomId, { secret: recordingSecret });
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				effectivePermissions: recordingReadOnlyPermissions
+			});
+		});
+
+		it('should fail to generate recording token when anonymous.recording.enabled is false', async () => {
+			expect(roomData.recordingSecret).toBeDefined();
+			const recordingSecret = roomData.recordingSecret!;
+
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					recording: { enabled: false }
+				}
+			});
+
+			const response = await generateRoomMemberTokenRequest(roomId, { secret: recordingSecret });
+			expect(response.status).toBe(403);
+
+			await updateRoomAccessConfig(roomId, {
+				anonymous: {
+					recording: { enabled: true }
+				}
+			});
+		});
+
+		it('should fail to generate recording token for joining meeting', async () => {
+			expect(roomData.recordingSecret).toBeDefined();
+			const recordingSecret = roomData.recordingSecret!;
+
+			const response = await generateRoomMemberTokenRequest(roomId, {
+				secret: recordingSecret,
+				joinMeeting: true,
+				participantName: 'Recording Viewer'
+			});
+
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail to generate token when secret is invalid', async () => {

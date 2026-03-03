@@ -538,6 +538,16 @@ describe('Room Members API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
+		it('should succeed when using room recording secret', async () => {
+			expect(roomData.recordingSecret).toBeDefined();
+
+			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`).send({
+				secret: roomData.recordingSecret,
+				joinMeeting: false
+			});
+			expect(response.status).toBe(200);
+		});
+
 		it('should fail when using invalid room secret', async () => {
 			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`).send({
 				secret: 'invalid_secret',

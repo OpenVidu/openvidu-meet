@@ -4,7 +4,13 @@ required:
 properties:
     secret:
         type: string
-        description: A secret key for room access. Determines the member's role.
+        description: |
+            A secret key for room access.
+
+            Supported secret types:
+            - Moderator anonymous access secret
+            - Speaker anonymous access secret
+            - Recording anonymous access secret (generates a token with read-only recording permissions)
         example: 'abc123456'
     joinMeeting:
         type: boolean

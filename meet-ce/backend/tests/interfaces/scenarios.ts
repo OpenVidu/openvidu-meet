@@ -6,6 +6,7 @@ export interface RoomData {
 	moderatorToken: string;
 	speakerSecret: string;
 	speakerToken: string;
+	recordingSecret?: string;
 	recordingId?: string;
 	users?: RoomTestUsers;
 }

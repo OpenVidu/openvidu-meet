@@ -417,15 +417,9 @@ export class RoomMemberService {
 				effectivePermissions = member.effectivePermissions;
 			} else {
 				// If secret matches anonymous access URL secret, assign role and permissions based on it
-				baseRole = await this.getRoomMemberRoleBySecret(roomId, secret);
-				const { roles, access } = await this.roomService.getMeetRoom(roomId, ['roles', 'access']);
-
-				// Check that anonymous access is enabled for the role
-				if (!access.anonymous[baseRole].enabled) {
-					throw errorAnonymousAccessDisabled(roomId, baseRole);
-				}
-
-				effectivePermissions = roles[baseRole].permissions;
+				const anonymousAccess = await this.resolveAnonymousAccessBySecret(roomId, secret);
+				baseRole = anonymousAccess.baseRole;
+				effectivePermissions = anonymousAccess.effectivePermissions;
 			}
 		} else {
 			// Case 2: Authenticated user
@@ -473,6 +467,49 @@ export class RoomMemberService {
 		}
 
 		return this.generateToken(roomId, baseRole, effectivePermissions, customPermissions, memberId);
+	}
+
+	/**
+	 * Resolves anonymous access and effective permissions from a room secret.
+	 *
+	 * - Moderator and speaker secrets map to their room role permissions.
+	 * - Recording secret maps to read-only recording permissions.
+	 */
+	protected async resolveAnonymousAccessBySecret(
+		roomId: string,
+		secret: string
+	): Promise<{ baseRole: MeetRoomMemberRole; effectivePermissions: MeetRoomMemberPermissions }> {
+		const { roles, access } = await this.roomService.getMeetRoom(roomId, ['roles', 'access']);
+		const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
+
+		const anonymousRole: MeetRoomMemberRole | 'recording' | undefined =
+			secret === moderatorSecret
+				? MeetRoomMemberRole.MODERATOR
+				: secret === speakerSecret
+					? MeetRoomMemberRole.SPEAKER
+					: secret === recordingSecret
+						? 'recording'
+						: undefined;
+
+		if (!anonymousRole) {
+			throw errorInvalidRoomSecret(roomId, secret);
+		}
+
+		if (!access.anonymous[anonymousRole].enabled) {
+			throw errorAnonymousAccessDisabled(roomId, anonymousRole);
+		}
+
+		if (anonymousRole === 'recording') {
+			return {
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				effectivePermissions: this.getRecordingReadOnlyPermissions()
+			};
+		}
+
+		return {
+			baseRole: anonymousRole,
+			effectivePermissions: roles[anonymousRole].permissions
+		};
 	}
 
 	/**
@@ -599,30 +636,6 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Validates a secret against a room's moderator and speaker secrets and returns the corresponding role.
-	 *
-	 * @param roomId - The unique identifier of the room to check
-	 * @param secret - The secret to validate against the room's moderator and speaker secrets
-	 * @returns A promise that resolves to the room member role (MODERATOR or SPEAKER) if the secret is valid
-	 * @throws Error if room not found
-	 * @throws Error if the moderator or speaker secrets cannot be extracted from their URLs
-	 * @throws Error if the provided secret doesn't match any of the room's secrets (unauthorized)
-	 */
-	protected async getRoomMemberRoleBySecret(roomId: string, secret: string): Promise<MeetRoomMemberRole> {
-		const { access } = await this.roomService.getMeetRoom(roomId, ['access']);
-		const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(access);
-
-		switch (secret) {
-			case moderatorSecret:
-				return MeetRoomMemberRole.MODERATOR;
-			case speakerSecret:
-				return MeetRoomMemberRole.SPEAKER;
-			default:
-				throw errorInvalidRoomSecret(roomId, secret);
-		}
-	}
-
-	/**
 	 * Gets all permissions set to true.
 	 */
 	getAllPermissions(): MeetRoomMemberPermissions {
@@ -663,6 +676,16 @@ export class RoomMemberService {
 			canReadChat: false,
 			canWriteChat: false,
 			canChangeVirtualBackground: false
+		};
+	}
+
+	/**
+	 * Gets a permission set that only allows retrieving recordings.
+	 */
+	getRecordingReadOnlyPermissions(): MeetRoomMemberPermissions {
+		return {
+			...this.getNoPermissions(),
+			canRetrieveRecordings: true
 		};
 	}
 

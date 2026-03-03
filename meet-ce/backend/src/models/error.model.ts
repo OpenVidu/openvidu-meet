@@ -283,10 +283,13 @@ export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenVidu
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };
 
-export const errorAnonymousAccessDisabled = (roomId: string, role: MeetRoomMemberRole): OpenViduMeetError => {
+export const errorAnonymousAccessDisabled = (
+	roomId: string,
+	role: MeetRoomMemberRole | 'recording'
+): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Room Error',
-		`Anonymous access in room '${roomId}' is disabled for role '${role}'`,
+		`Anonymous access in room '${roomId}' is disabled for ${role === 'recording' ? 'recordings' : `role '${role}'`}`,
 		403
 	);
 };
