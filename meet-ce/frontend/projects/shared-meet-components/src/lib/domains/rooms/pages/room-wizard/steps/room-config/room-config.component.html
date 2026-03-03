@@ -3,7 +3,7 @@
 	<header class="step-header">
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Room Config</h3>
+			<h3 class="step-title">Room Features</h3>
 			<p class="step-description">Configure additional features and functionality for your room</p>
 		</div>
 	</header>
@@ -11,20 +11,25 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="configForm" class="config-form">
-			<!-- Config Cards Grid -->
-			<div class="config-grid">
-				<!-- End-to-End Encryption Card -->
-				<mat-card class="config-card e2ee-card">
-					<mat-card-content>
-						<div class="card-header">
-							<div class="icon-title-group">
+
+			<!-- ── Security ─────────────────────────────── -->
+			<div class="feature-category">
+				<div class="category-header">
+					<mat-icon class="category-icon">security</mat-icon>
+					<span class="category-label">Security</span>
+				</div>
+				<div class="config-grid">
+					<!-- End-to-End Encryption -->
+					<div class="feature-row-wrapper">
+						<div class="feature-row e2ee-row">
+							<div class="feature-info">
 								<mat-icon class="feature-icon">lock</mat-icon>
-								<div class="title-group">
-									<h4 class="card-title">End-to-End Encryption</h4>
-									<p class="card-description">
-										Add an extra layer of security to your meetings. No one outside the meeting, not
-										even anyone with server access, can see or hear the conversation.
-									</p>
+								<div class="feature-text">
+									<span class="feature-label">End-to-End Encryption</span>
+									<span class="feature-description">
+										Add an extra layer of security to your meetings. No one outside the
+										meeting, not even anyone with server access, can see or hear the conversation.
+									</span>
 								</div>
 							</div>
 							<mat-slide-toggle
@@ -32,11 +37,8 @@
 								(change)="onE2EEToggleChange($event)"
 								color="primary"
 								class="feature-toggle"
-							>
-							</mat-slide-toggle>
+							></mat-slide-toggle>
 						</div>
-
-						<!-- E2EE Info Section -->
 						@if (e2eeEnabled) {
 							<div class="e2ee-info-section fade-in">
 								<div class="warning-card">
@@ -45,8 +47,7 @@
 										<p class="warning-title">Restrictions</p>
 										<ul class="restrictions-list">
 											<li>
-												All participants must use the same encryption key to see and hear each
-												other.
+												All participants must use the same encryption key to see and hear each other.
 												<span class="restriction-detail">
 													Participants who enter an incorrect key will not receive an error
 													message but will be unable to see or hear others.
@@ -58,82 +59,82 @@
 								</div>
 							</div>
 						}
-					</mat-card-content>
-				</mat-card>
-
-				<!-- Captions Card -->
-				<mat-card class="config-card">
-					<mat-card-content>
-						<div class="card-header">
-							<div class="icon-title-group">
-								<mat-icon class="feature-icon">closed_caption</mat-icon>
-								<div class="title-group">
-									<h4 class="card-title">Captions</h4>
-									<p class="card-description">
-										Enable live transcription to display captions during the meeting
-									</p>
-								</div>
-							</div>
-							<mat-slide-toggle
-								[checked]="captionsEnabled"
-								(change)="onCaptionsToggleChange($event)"
-								color="primary"
-								class="feature-toggle"
-							>
-							</mat-slide-toggle>
-						</div>
-					</mat-card-content>
-				</mat-card>
-
-				<!-- Chat Settings Card -->
-				<mat-card class="config-card">
-					<mat-card-content>
-						<div class="card-header">
-							<div class="icon-title-group">
-								<mat-icon class="feature-icon">chat</mat-icon>
-								<div class="title-group">
-									<h4 class="card-title">Chat</h4>
-									<p class="card-description">
-										Allow participants to send messages during the meeting
-									</p>
-								</div>
-							</div>
-							<mat-slide-toggle
-								[checked]="chatEnabled"
-								(change)="onChatToggleChange($event)"
-								color="primary"
-								class="feature-toggle"
-							>
-							</mat-slide-toggle>
-						</div>
-					</mat-card-content>
-				</mat-card>
-
-				<!-- Virtual Backgrounds Card -->
-				<mat-card class="config-card">
-					<mat-card-content>
-						<div class="card-header">
-							<div class="icon-title-group">
-								<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
-								<div class="title-group">
-									<h4 class="card-title">Virtual Backgrounds</h4>
-									<p class="card-description">
-										Enable virtual backgrounds and blur effects for participants
-									</p>
-								</div>
-							</div>
-
-							<mat-slide-toggle
-								[checked]="virtualBackgroundEnabled"
-								(change)="onVirtualBackgroundToggleChange($event)"
-								color="primary"
-								class="feature-toggle"
-							>
-							</mat-slide-toggle>
-						</div>
-					</mat-card-content>
-				</mat-card>
+					</div>
+				</div>
 			</div>
-		</form>
-	</main>
-</div>
+
+			<!-- ── Communication ────────────────────────── -->
+			<div class="feature-category">
+				<div class="category-header">
+					<mat-icon class="category-icon">forum</mat-icon>
+					<span class="category-label">Communication</span>
+				</div>
+				<div class="config-grid">
+					<!-- Captions -->
+					<div class="feature-row">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">closed_caption</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">Captions</span>
+								<span class="feature-description">
+									Enable live transcription to display captions during the meeting
+								</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							[checked]="captionsEnabled"
+							(change)="onCaptionsToggleChange($event)"
+							color="primary"
+							class="feature-toggle"
+						></mat-slide-toggle>
+					</div>
+
+					<!-- Chat -->
+					<div class="feature-row">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">chat</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">Chat</span>
+								<span class="feature-description">
+									Allow participants to send messages during the meeting
+								</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							[checked]="chatEnabled"
+							(change)="onChatToggleChange($event)"
+							color="primary"
+							class="feature-toggle"
+						></mat-slide-toggle>
+					</div>
+				</div>
+			</div>
+
+			<!-- ── Experience ───────────────────────────── -->
+			<div class="feature-category">
+				<div class="category-header">
+					<mat-icon class="category-icon">auto_awesome</mat-icon>
+					<span class="category-label">Experience</span>
+				</div>
+				<div class="config-grid">
+					<!-- Virtual Backgrounds -->
+					<div class="feature-row">
+						<div class="feature-info">
+							<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">Virtual Backgrounds</span>
+								<span class="feature-description">
+									Enable virtual backgrounds and blur effects for participants
+								</span>
+							</div>
+						</div>
+						<mat-slide-toggle
+							[checked]="virtualBackgroundEnabled"
+							(change)="onVirtualBackgroundToggleChange($event)"
+							color="primary"
+							class="feature-toggle"
+						></mat-slide-toggle>
+					</div>
+				</div>
+			</div>
+

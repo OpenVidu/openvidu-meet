@@ -1,13 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import {
-    MeetRecordingLayout,
-    MeetRoomConfig,
-    MeetRoomDeletionPolicyWithMeeting,
-    MeetRoomDeletionPolicyWithRecordings,
-    MeetRoomMemberOptions,
-    MeetRoomMemberPermissions,
-    MeetRoomOptions
+	MeetRecordingLayout,
+	MeetRoomConfig,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
+	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { WizardNavigationConfig, WizardStep } from '../models';
 
@@ -192,10 +192,23 @@ export class RoomWizardStateService {
 				)
 			},
 			{
+				id: 'config',
+				label: 'Room Features',
+				isCompleted: editMode,
+				isActive: editMode, // Start with Room Features step active in edit mode
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					chatEnabled: initialRoomOptions.config!.chat!.enabled,
+					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
+					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
+					captionsEnabled: initialRoomOptions.config!.captions!.enabled
+				})
+			},
+			{
 				id: 'roomAccess',
 				label: 'Room Access',
 				isCompleted: editMode,
-				isActive: editMode, // Start with roomAccess step active in edit mode
+				isActive: false,
 				isVisible: true,
 				formGroup: this.formBuilder.group({
 					anonymousModeratorEnabled: initialRoomOptions.access?.anonymous?.moderator?.enabled ?? false,
@@ -244,19 +257,6 @@ export class RoomWizardStateService {
 					layout: initialRoomOptions.config?.recording?.layout || MeetRecordingLayout.GRID
 				})
 			},
-			{
-				id: 'config',
-				label: 'Room Features',
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: false,
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					chatEnabled: initialRoomOptions.config!.chat!.enabled,
-					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
-					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
-					captionsEnabled: initialRoomOptions.config!.captions!.enabled
-				})
-			}
 		];
 
 		this._steps.set(baseSteps);

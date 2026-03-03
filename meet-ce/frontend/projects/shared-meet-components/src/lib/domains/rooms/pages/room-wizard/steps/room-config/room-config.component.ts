@@ -1,6 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Subject, takeUntil } from 'rxjs';
@@ -8,7 +7,7 @@ import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-room-config',
-	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
+	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule],
 	templateUrl: './room-config.component.html',
 	styleUrl: './room-config.component.scss'
 })
