@@ -386,7 +386,7 @@ export const runExpiredRoomsGC = async () => {
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
 	await roomTaskScheduler['deleteExpiredRooms']();
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 };
 
 /**
