@@ -335,7 +335,7 @@ export const deleteRoom = async (roomId: string, query: Record<string, unknown> 
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return result;
 };
 
@@ -346,7 +346,7 @@ export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, w
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return result;
 };
 
@@ -567,7 +567,7 @@ export const disconnectFakeParticipants = async () => {
 	});
 
 	fakeParticipantsProcesses.clear();
-	await sleep('1s');
+	await sleep('1s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 };
 
 export const updateParticipant = async (
@@ -602,7 +602,7 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send();
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return response;
 };
 
@@ -640,7 +640,7 @@ export const stopRecording = async (recordingId: string) => {
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
-	await sleep('2.5s');
+	await sleep('2.5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 
 	return response;
 };
