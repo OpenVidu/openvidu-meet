@@ -238,13 +238,14 @@ export class AiAssistantService {
 
 	protected async stopCaptionsAssistantIfRunning(roomId: string): Promise<void> {
 		const assistants = await this.livekitService.listAgents(roomId);
+
+		if (assistants.length === 0) return;
+
 		const captionsAssistant = assistants.find(
 			(assistant) => assistant.agentName === INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
 		);
 
-		if (!captionsAssistant) {
-			return;
-		}
+		if (!captionsAssistant) return;
 
 		await this.livekitService.stopAgent(captionsAssistant.id, roomId);
 	}

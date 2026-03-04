@@ -305,7 +305,7 @@ export class LiveKitService {
 			return await this.agentClient.listDispatch(roomName);
 		} catch (error) {
 			this.logger.error(`Error listing agents for room '${roomName}':`, error);
-			throw internalError(`listing agents for room '${roomName}'`);
+			return [];
 		}
 	}
 
@@ -320,7 +320,7 @@ export class LiveKitService {
 			return await this.agentClient.getDispatch(agentId, roomName);
 		} catch (error) {
 			this.logger.error(`Error getting agent dispatch '${agentId}' for room '${roomName}':`, error);
-			throw internalError(`getting agent dispatch '${agentId}' for room '${roomName}'`);
+			return undefined;
 		}
 	}
 
@@ -334,7 +334,6 @@ export class LiveKitService {
 			await this.agentClient.deleteDispatch(agentId, roomName);
 		} catch (error) {
 			this.logger.error(`Error deleting agent dispatch '${agentId}' for room '${roomName}':`, error);
-			throw internalError(`deleting agent dispatch '${agentId}' for room '${roomName}'`);
 		}
 	}
 
