@@ -97,7 +97,6 @@ export class MeetingEventHandlerService {
 
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
 							await this.handleParticipantRoleUpdated(event);
-							this.showParticipantRoleUpdatedNotification(event);
 							break;
 					}
 				} catch (error) {
@@ -278,7 +277,7 @@ export class MeetingEventHandlerService {
 
 				// Update local participant role
 				local.meetRole = newRole;
-				console.log(`You have been assigned the role of ${newRole}`);
+				this.showParticipantRoleUpdatedNotification(event);
 
 				// Increment version to trigger reactivity
 				this.meetingContext.incrementParticipantsVersion();
