@@ -18,5 +18,7 @@
   description: Operations related to managing members within OpenVidu Meet rooms
 - name: Internal API - Meetings
   description: Operations related to managing meetings in OpenVidu Meet rooms
+- name: Internal API - AI Assistants
+  description: High-level operations to manage AI assistance capabilities in meetings
 - name: Internal API - Recordings
   description: Operations related to managing OpenVidu Meet recordings

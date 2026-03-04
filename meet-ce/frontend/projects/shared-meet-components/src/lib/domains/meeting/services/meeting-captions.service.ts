@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ILogger, LoggerService, ParticipantService, Room, TextStreamReader } from 'openvidu-components-angular';
 import { Caption, CaptionsConfig } from '../models/captions.model';
 import { CustomParticipantModel } from '../models/custom-participant.model';
+import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
 
 /**
  * Service responsible for managing live transcription captions.
@@ -21,6 +22,7 @@ export class MeetingCaptionsService {
 	private readonly participantService = inject(ParticipantService);
 	private readonly loggerService = inject(LoggerService);
 	private readonly logger: ILogger;
+	private readonly aiAssistantService = inject(AiAssistantService);
 
 	// Configuration with defaults
 	private readonly defaultConfig: Required<CaptionsConfig> = {
@@ -38,6 +40,8 @@ export class MeetingCaptionsService {
 	// Reactive state
 	private readonly _captions = signal<Caption[]>([]);
 	private readonly _areCaptionsEnabledByUser = signal<boolean>(false);
+	private readonly _captionsAgentId = signal<string | null>(null);
+	private readonly _isCaptionsTogglePending = signal<boolean>(false);
 
 	/**
 	 * Current list of active captions
@@ -47,6 +51,11 @@ export class MeetingCaptionsService {
 	 * Whether captions are enabled by the user
 	 */
 	readonly areCaptionsEnabledByUser = this._areCaptionsEnabledByUser.asReadonly();
+	/**
+	 * True while an enable() or disable() call is in flight.
+	 * Use this to prevent concurrent toggle requests.
+	 */
+	readonly isCaptionsTogglePending = this._isCaptionsTogglePending.asReadonly();
 
 	// Map to track expiration timeouts
 	private expirationTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
@@ -82,7 +91,7 @@ export class MeetingCaptionsService {
 	 * Enables captions by registering the transcription handler.
 	 * This is called when the user activates captions.
 	 */
-	enable(): void {
+	async enable(): Promise<void> {
 		if (!this.room) {
 			this.logger.e('Cannot enable captions: room is not initialized');
 			return;
@@ -93,29 +102,63 @@ export class MeetingCaptionsService {
 			return;
 		}
 
-		// Register the LiveKit transcription handler
-		this.room.registerTextStreamHandler('lk.transcription', this.handleTranscription.bind(this));
+		if (this._isCaptionsTogglePending()) {
+			this.logger.d('Captions toggle already in progress');
+			return;
+		}
 
-		this._areCaptionsEnabledByUser.set(true);
-		this.logger.d('Captions enabled');
+		this._isCaptionsTogglePending.set(true);
+
+		try {
+			// Register the LiveKit transcription handler
+			const agent = await this.aiAssistantService.createLiveCaptionsAssistant();
+			this._captionsAgentId.set(agent.id);
+			this.room.registerTextStreamHandler('lk.transcription', this.handleTranscription.bind(this));
+			this._areCaptionsEnabledByUser.set(true);
+			this.logger.d('Captions enabled');
+		} finally {
+			// Add a small delay before allowing another toggle to prevent rapid concurrent calls
+			setTimeout(() => this._isCaptionsTogglePending.set(false), 500);
+		}
 	}
 
 	/**
 	 * Disables captions by clearing all captions and stopping transcription.
 	 * This is called when the user deactivates captions.
 	 */
-	disable(): void {
+	async disable(): Promise<void> {
 		if (!this._areCaptionsEnabledByUser()) {
 			this.logger.d('Captions already disabled');
 			return;
 		}
 
-		// Clear all active captions
-		this.clearAllCaptions();
+		if (this._isCaptionsTogglePending()) {
+			this.logger.d('Captions toggle already in progress');
+			return;
+		}
 
-		this._areCaptionsEnabledByUser.set(false);
-		this.room?.unregisterTextStreamHandler('lk.transcription');
-		this.logger.d('Captions disabled');
+		this._isCaptionsTogglePending.set(true);
+
+		try {
+			const agentId = this._captionsAgentId();
+
+			// Clear all active captions and unregister handler immediately so the UI
+			// reflects the disabled state before the async server call completes.
+			this.clearAllCaptions();
+			this._areCaptionsEnabledByUser.set(false);
+			this.room?.unregisterTextStreamHandler('lk.transcription');
+
+			if (agentId) {
+				await this.aiAssistantService.cancelAssistant(agentId);
+			}
+
+			this.logger.d('Captions disabled');
+		} catch (error) {
+			this.logger.e('Error disabling captions:', error);
+		} finally {
+			// Add a small delay before allowing another toggle to prevent rapid concurrent calls
+			setTimeout(() => this._isCaptionsTogglePending.set(false), 500);
+		}
 	}
 
 	/**

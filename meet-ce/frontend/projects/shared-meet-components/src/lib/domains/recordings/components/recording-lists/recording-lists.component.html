@@ -450,17 +450,19 @@
 										class="action-button download-button"
 										(click)="$event.stopPropagation(); downloadRecording(recording)"
 										[disabled]="loading()"
+										id="download-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>download</mat-icon>
 									</button>
 								}
+
 								@if (isRecordingFailed(recording)) {
 									<button
 										mat-icon-button
+										matTooltip="Delete Recording"
+										class="action-button delete-button"
 										(click)="$event.stopPropagation(); deleteRecording(recording)"
 										[disabled]="loading()"
-										class="action-button delete-button"
-										matTooltip="Delete Recording"
 										id="delete-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>delete</mat-icon>
@@ -471,7 +473,7 @@
 										mat-icon-button
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
-										(click)="$event.stopPropagation();"
+										(click)="$event.stopPropagation()"
 										matTooltip="More Actions"
 										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"

@@ -9,6 +9,7 @@ import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { analyticsRouter } from './routes/analytics.routes.js';
+import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
 import { apiKeyRouter } from './routes/api-key.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
@@ -99,6 +100,7 @@ const createApp = () => {
 	// appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai`, aiAssistantRouter);
 
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 

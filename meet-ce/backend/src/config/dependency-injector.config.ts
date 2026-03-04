@@ -55,6 +55,7 @@ import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
 import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
 import { AnalyticsService } from '../services/analytics.service.js';
+import { AiAssistantService } from '../services/ai-assistant.service.js';
 
 export const container: Container = new Container();
 
@@ -115,6 +116,7 @@ export const registerDependencies = () => {
 	container.bind(RoomScheduledTasksService).toSelf().inSingletonScope();
 	container.bind(RecordingScheduledTasksService).toSelf().inSingletonScope();
 	container.bind(AnalyticsService).toSelf().inSingletonScope();
+	container.bind(AiAssistantService).toSelf().inSingletonScope();
 };
 
 const configureStorage = (storageMode: string) => {

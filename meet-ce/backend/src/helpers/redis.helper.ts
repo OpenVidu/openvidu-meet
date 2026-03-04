@@ -45,4 +45,16 @@ export class MeetLock {
 
 		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK}_${webhookEvent.event}_${webhookEvent.id}`;
 	}
+
+	static getAiAssistantLock(roomId: string, capabilityName: string): string {
+		if (!roomId) {
+			throw new Error('roomId must be a non-empty string');
+		}
+
+		if (!capabilityName) {
+			throw new Error('capabilityName must be a non-empty string');
+		}
+
+		return `${RedisLockPrefix.BASE}${RedisLockName.AI_ASSISTANT}_${roomId}_${capabilityName}`;
+	}
 }

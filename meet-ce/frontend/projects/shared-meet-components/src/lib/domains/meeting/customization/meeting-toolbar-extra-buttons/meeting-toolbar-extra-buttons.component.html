@@ -11,8 +11,10 @@
 		>
 			<mat-icon class="material-symbols-outlined">subtitles</mat-icon>
 			<span class="button-text">
-				@if (isCaptionsButtonDisabled()) {
+				@if (captionsStatus() === 'DISABLED_WITH_WARNING') {
 					Live captions (disabled by admin)
+				} @else if (isCaptionsTogglePending()) {
+					{{ areCaptionsEnabledByUser() ? 'Disabling live captions...' : 'Enabling live captions...' }}
 				} @else {
 					{{ areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions' }}
 				}
@@ -28,14 +30,16 @@
 			[disabledInteractive]="isCaptionsButtonDisabled()"
 			[disableRipple]="true"
 			[matTooltip]="
-				isCaptionsButtonDisabled()
+				captionsStatus() === 'DISABLED_WITH_WARNING'
 					? 'Live captions are disabled by admin'
-					: areCaptionsEnabledByUser()
-						? 'Disable live captions'
-						: 'Enable live captions'
+					: isCaptionsTogglePending()
+						? (areCaptionsEnabledByUser() ? 'Disabling live captions...' : 'Enabling live captions...')
+						: areCaptionsEnabledByUser()
+							? 'Disable live captions'
+							: 'Enable live captions'
 			"
 		>
-			@if (isCaptionsButtonDisabled()) {
+			@if (captionsStatus() === 'DISABLED_WITH_WARNING') {
 				<mat-icon>subtitles_off</mat-icon>
 			} @else {
 				<mat-icon>subtitles</mat-icon>

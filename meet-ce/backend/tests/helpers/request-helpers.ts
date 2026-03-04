@@ -577,7 +577,7 @@ export const deleteRoom = async (
 	}
 
 	const result = await req;
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return result;
 };
 
@@ -619,7 +619,7 @@ export const bulkDeleteRooms = async (
 	}
 
 	const result = await req;
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return result;
 };
 
@@ -659,7 +659,7 @@ export const runExpiredRoomsGC = async () => {
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
 	await roomTaskScheduler['deleteExpiredRooms']();
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 };
 
 /**
@@ -831,7 +831,7 @@ export const disconnectFakeParticipants = async () => {
 	});
 
 	fakeParticipantsProcesses.clear();
-	await sleep('1s');
+	await sleep('1s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 };
 
 export const updateParticipant = async (
@@ -874,7 +874,7 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send();
-	await sleep('1s');
+	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 	return response;
 };
 
@@ -934,7 +934,7 @@ export const stopRecording = async (
 	}
 
 	const response = await req;
-	await sleep('2.5s');
+	await sleep('2.5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
 
 	return response;
 };

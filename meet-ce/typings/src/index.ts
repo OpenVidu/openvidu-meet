@@ -1,3 +1,4 @@
+export * from './ai-assistant.js';
 export * from './analytics.js';
 export * from './frontend-signal.js';
 export * from './livekit-permissions.js';

@@ -105,6 +105,33 @@ export class MutexService {
 		return locks;
 	}
 
+	/**
+	 * Attempts to acquire a lock, retrying up to `maxAttempts` times with a fixed delay between
+	 * attempts. Intended for fire-and-forget flows (e.g. webhooks) where the caller has no
+	 * opportunity to retry externally and a missed lock acquisition would leave the system in an
+	 * inconsistent state.
+	 *
+	 * @param key - The resource to acquire a lock for.
+	 * @param ttl - The time-to-live for the lock in milliseconds.
+	 * @param maxAttempts - Maximum number of acquisition attempts. Defaults to 3.
+	 * @param delayMs - Fixed delay in milliseconds between attempts. Defaults to 200.
+	 * @returns A Promise that resolves to the acquired Lock, or null if all attempts fail.
+	 */
+	async acquireWithRetry(key: string, ttl: number = this.TTL_MS, maxAttempts = 3, delayMs = 200): Promise<Lock | null> {
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			const lock = await this.acquire(key, ttl);
+
+			if (lock) return lock;
+
+			if (attempt < maxAttempts) {
+				this.logger.warn(`Lock '${key}' attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`);
+				await new Promise((resolve) => setTimeout(resolve, delayMs));
+			}
+		}
+
+		return null;
+	}
+
 	lockExists(key: string): Promise<boolean> {
 		const registryKey = MeetLock.getRegistryLock(key);
 		return this.redisService.exists(registryKey);

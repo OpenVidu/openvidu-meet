@@ -5,7 +5,9 @@ export const enum RedisKeyName {
 	ROOM_PARTICIPANTS = `${REDIS_KEY_PREFIX}room_participants:`,
 	// Stores released numeric suffixes (per base name) in a sorted set, so that freed numbers
 	// can be reused efficiently instead of always incrementing to the next highest number.
-	PARTICIPANT_NAME_POOL = `${REDIS_KEY_PREFIX}participant_pool:`
+	PARTICIPANT_NAME_POOL = `${REDIS_KEY_PREFIX}participant_pool:`,
+	// Tracks participant-level assistant capability state in a room.
+	AI_ASSISTANT_PARTICIPANT_STATE = `${REDIS_KEY_PREFIX}ai_assistant:participant_state:`
 }
 
 export const enum RedisLockPrefix {
@@ -18,5 +20,6 @@ export const enum RedisLockName {
 	SCHEDULED_TASK = 'scheduled_task',
 	STORAGE_INITIALIZATION = 'storage_initialization',
 	MIGRATION = 'migration',
-	WEBHOOK = 'webhook'
+	WEBHOOK = 'webhook',
+	AI_ASSISTANT = 'ai_assistant'
 }

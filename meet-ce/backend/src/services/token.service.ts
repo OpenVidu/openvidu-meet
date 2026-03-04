@@ -1,4 +1,3 @@
-import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
 import { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
@@ -55,7 +54,7 @@ export class TokenService {
 	}
 
 	async generateRoomMemberToken(options: MeetRoomMemberTokenOptions): Promise<string> {
-		const { tokenMetadata, livekitPermissions, participantName, participantIdentity, roomWithCaptions } = options;
+		const { tokenMetadata, livekitPermissions, participantName, participantIdentity } = options;
 
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantIdentity,
@@ -63,7 +62,7 @@ export class TokenService {
 			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(tokenMetadata)
 		};
-		return await this.generateJwtToken(tokenOptions, livekitPermissions, roomWithCaptions);
+		return await this.generateJwtToken(tokenOptions, livekitPermissions);
 	}
 
 	parseRoomMemberTokenMetadata(metadata: string): MeetRoomMemberTokenMetadata {
@@ -76,41 +75,11 @@ export class TokenService {
 		}
 	}
 
-	private async generateJwtToken(
-		tokenOptions: AccessTokenOptions,
-		grants?: VideoGrant,
-		roomWithCaptions = false
-	): Promise<string> {
+	private async generateJwtToken(tokenOptions: AccessTokenOptions, grants?: VideoGrant): Promise<string> {
 		const at = new AccessToken(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET, tokenOptions);
 
 		if (grants) {
 			at.addGrant(grants);
-		}
-
-		const captionsEnabledGlobally = MEET_ENV.CAPTIONS_ENABLED === 'true';
-		const captionsEnabledInRoom = Boolean(roomWithCaptions);
-
-		// Warn if configuration is inconsistent
-		if (!captionsEnabledGlobally) {
-			if (captionsEnabledInRoom) {
-				this.logger.warn(
-					`Captions feature is disabled in environment but Room is created with captions enabled. ` +
-						`Please enable captions in environment by setting MEET_CAPTIONS_ENABLED=true to ensure proper functionality.`
-				);
-			}
-
-			return await at.toJwt();
-		}
-
-		if (captionsEnabledInRoom) {
-			this.logger.debug('Activating Captions Agent. Configuring Room Agent Dispatch.');
-			at.roomConfig = new RoomConfiguration({
-				agents: [
-					new RoomAgentDispatch({
-						agentName: INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
-					})
-				]
-			});
 		}
 
 		return await at.toJwt();

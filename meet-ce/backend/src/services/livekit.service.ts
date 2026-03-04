@@ -1,6 +1,7 @@
-import { ParticipantInfo_Kind } from '@livekit/protocol';
+import { AgentDispatch, ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import {
+	AgentDispatchClient,
 	CreateOptions,
 	DataPacket_Kind,
 	EgressClient,
@@ -31,11 +32,17 @@ import { LoggerService } from './logger.service.js';
 export class LiveKitService {
 	private egressClient: EgressClient;
 	private roomClient: RoomServiceClient;
+	private agentClient: AgentDispatchClient;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		const livekitUrlHostname = MEET_ENV.LIVEKIT_URL_PRIVATE.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
 		this.egressClient = new EgressClient(livekitUrlHostname, MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
 		this.roomClient = new RoomServiceClient(
+			livekitUrlHostname,
+			MEET_ENV.LIVEKIT_API_KEY,
+			MEET_ENV.LIVEKIT_API_SECRET
+		);
+		this.agentClient = new AgentDispatchClient(
 			livekitUrlHostname,
 			MEET_ENV.LIVEKIT_API_KEY,
 			MEET_ENV.LIVEKIT_API_SECRET
@@ -267,6 +274,66 @@ export class LiveKitService {
 		} catch (error) {
 			this.logger.error(`Error sending data: ${error}`);
 			throw internalError(`sending data to LiveKit room '${roomName}'`);
+		}
+	}
+
+	/**
+	 * Start an agent for a specific room.
+	 * @param roomName
+	 * @param agentName
+	 * @returns The created AgentDispatch
+	 */
+	async createAgent(
+		roomName: string,
+		agentName: string /*, options: CreateDispatchOptions*/
+	): Promise<AgentDispatch> {
+		try {
+			return await this.agentClient.createDispatch(roomName, agentName);
+		} catch (error) {
+			this.logger.error(`Error creating agent dispatch for room '${roomName}':`, error);
+			throw internalError(`creating agent dispatch for room '${roomName}'`);
+		}
+	}
+
+	/**
+	 * Lists all agents in a LiveKit room.
+	 * @param roomName
+	 * @returns An array of agents in the specified room
+	 */
+	async listAgents(roomName: string): Promise<AgentDispatch[]> {
+		try {
+			return await this.agentClient.listDispatch(roomName);
+		} catch (error) {
+			this.logger.error(`Error listing agents for room '${roomName}':`, error);
+			return [];
+		}
+	}
+
+	/**
+	 * Gets an agent dispatch by its ID in a LiveKit room.
+	 * @param roomName
+	 * @param agentId
+	 * @returns The agent if found, otherwise undefined
+	 */
+	async getAgent(roomName: string, agentId: string): Promise<AgentDispatch | undefined> {
+		try {
+			return await this.agentClient.getDispatch(agentId, roomName);
+		} catch (error) {
+			this.logger.error(`Error getting agent dispatch '${agentId}' for room '${roomName}':`, error);
+			return undefined;
+		}
+	}
+
+	/**
+	 * Stops an agent in a LiveKit room.
+	 * @param agentId
+	 * @param roomName
+	 */
+	async stopAgent(agentId: string, roomName: string): Promise<void> {
+		try {
+			await this.agentClient.deleteDispatch(agentId, roomName);
+		} catch (error) {
+			this.logger.error(`Error deleting agent dispatch '${agentId}' for room '${roomName}':`, error);
 		}
 	}
 

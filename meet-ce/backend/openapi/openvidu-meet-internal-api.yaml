@@ -46,6 +46,10 @@ paths:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
     /meetings/{roomId}/participants/{participantIdentity}/role:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
+    /ai/assistants:
+        $ref: './paths/internal/ai-assistant.yaml#/~1ai~1assistants'
+    /ai/assistants/{assistantId}:
+        $ref: './paths/internal/ai-assistant.yaml#/~1ai~1assistants~1{assistantId}'
     /analytics:
         $ref: './paths/internal/analytics.yaml#/~1analytics'
 
@@ -67,5 +71,9 @@ components:
             $ref: components/schemas/meet-room.yaml
         MeetAnalytics:
             $ref: components/schemas/internal/meet-analytics.yaml
+        AiAssistantCreateRequest:
+            $ref: components/schemas/internal/ai-assistant-create-request.yaml
+        AiAssistantCreateResponse:
+            $ref: components/schemas/internal/ai-assistant-create-response.yaml
         Error:
             $ref: components/schemas/error.yaml

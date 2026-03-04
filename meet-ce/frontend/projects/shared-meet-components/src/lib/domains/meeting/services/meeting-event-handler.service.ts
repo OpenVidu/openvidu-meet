@@ -81,7 +81,6 @@ export class MeetingEventHandlerService {
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
 							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
 							await this.handleParticipantRoleUpdated(roleUpdateEvent);
-							this.showParticipantRoleUpdatedNotification(roleUpdateEvent.newRole);
 							break;
 					}
 				} catch (error) {
@@ -210,7 +209,7 @@ export class MeetingEventHandlerService {
 
 				// Update local participant role
 				local.meetRole = newRole;
-				console.log(`You have been assigned the role of ${newRole}`);
+				this.showParticipantRoleUpdatedNotification(newRole);
 			} catch (error) {
 				console.error('Error refreshing room member token:', error);
 			}
