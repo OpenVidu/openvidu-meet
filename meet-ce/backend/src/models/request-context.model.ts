@@ -11,7 +11,7 @@ import {
  */
 export interface RequestContext {
 	user?: MeetUser;
-	roomMember?: MeetRoomMemberTokenMetadata;
+	roomMember?: MeetRoomMemberTokenMetadata & { participantIdentity?: string };
 }
 
 /**

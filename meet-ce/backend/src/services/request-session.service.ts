@@ -1,10 +1,4 @@
-import {
-	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
-	MeetUser,
-	MeetUserRole
-} from '@openvidu-meet/typings';
+import { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
 import { injectable } from 'inversify';
 import { RequestContext } from '../models/request-context.model.js';
@@ -84,15 +78,18 @@ export class RequestSessionService {
 	}
 
 	/**
-	 * Sets the room member token metadata (room ID, base role, permissions)
-	 * in the current request context.
+	 * Sets the room member token information in the current request context.
 	 * If called outside a request context, this operation is silently ignored.
+	 *
+	 * @param metadata - The room member token metadata to store in the context
+	 * @param participantIdentity - The participant identity (token subject) to store in the context
 	 */
-	setRoomMemberTokenMetadata(metadata: MeetRoomMemberTokenMetadata): void {
+	setRoomMemberTokenInfo(metadata: MeetRoomMemberTokenMetadata, participantIdentity?: string): void {
 		const context = this.getContext();
 
 		if (context) {
 			context.roomMember = metadata;
+			context.roomMember.participantIdentity = participantIdentity;
 		}
 	}
 
@@ -111,16 +108,16 @@ export class RequestSessionService {
 	}
 
 	/**
-	 * Gets the room member base role from the current request context.
+	 * Gets the participant identity from the current request context.
 	 */
-	getRoomMemberBaseRole(): MeetRoomMemberRole | undefined {
-		return this.getContext()?.roomMember?.baseRole;
+	getParticipantIdentity(): string | undefined {
+		return this.getContext()?.roomMember?.participantIdentity;
 	}
 
 	/**
-	 * Gets the room member effective permissions from the current request context.
+	 * Gets the room member permissions from the current request context.
 	 */
 	getRoomMemberPermissions(): MeetRoomMemberPermissions | undefined {
-		return this.getContext()?.roomMember?.effectivePermissions;
+		return this.getContext()?.roomMember?.permissions;
 	}
 }

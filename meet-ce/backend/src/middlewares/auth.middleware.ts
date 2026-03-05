@@ -1,4 +1,4 @@
-import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import ms from 'ms';
@@ -192,7 +192,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 		try {
 			// Verify the token and extract the room member token metadata
 			const tokenService = container.get(TokenService);
-			const { metadata: tokenMetadata } = await tokenService.verifyToken(token);
+			const { sub: participantIdentity, metadata: tokenMetadata } = await tokenService.verifyToken(token);
 
 			if (!tokenMetadata) {
 				throw new Error('Missing required token claims');
@@ -205,7 +205,9 @@ export const roomMemberTokenValidator: AuthValidator = {
 			// If the token has a memberId, validate that permissions haven't been updated after token issuance
 			if (memberId) {
 				const roomMemberRepository = container.get(RoomMemberRepository);
-				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId, ['permissionsUpdatedAt']);
+				const roomMember = await roomMemberRepository.findByRoomAndMemberId(roomId, memberId, [
+					'permissionsUpdatedAt'
+				]);
 
 				// If member not found or permissions were updated after token issuance, invalidate token
 				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {
@@ -223,19 +225,14 @@ export const roomMemberTokenValidator: AuthValidator = {
 			}
 
 			// Set room member token metadata in the session
-			requestSessionService.setRoomMemberTokenMetadata(parsedMetadata);
+			requestSessionService.setRoomMemberTokenInfo(parsedMetadata, participantIdentity);
 		} catch (error) {
 			const logger = container.get(LoggerService);
 			logger.error('Invalid room member token:', error);
 			throw errorInvalidToken();
 		}
 
-		// Set authenticated user if present
-		const user = await getAuthenticatedUserOrAnonymous(req);
-
-		if (user) {
-			requestSessionService.setUser(user);
-		}
+		await setAuthenticatedUserIfPresent(req);
 	}
 };
 
@@ -294,37 +291,37 @@ export const allowAnonymous: AuthValidator = {
 	},
 
 	async validate(req: Request): Promise<void> {
-		const user = await getAuthenticatedUserOrAnonymous(req);
+		await setAuthenticatedUserIfPresent(req);
+	}
+};
+
+/**
+ * Set authenticated user in request context if access token is present and valid
+ */
+const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
+	// Check if there is a user already authenticated
+	const token = getAccessToken(req);
+
+	if (!token) {
+		return;
+	}
+
+	try {
+		const tokenService = container.get(TokenService);
+		const payload = await tokenService.verifyToken(token);
+		const userId = payload.sub;
+
+		const userService = container.get(UserService);
+		const user = userId ? await userService.getUser(userId) : null;
 
 		if (user) {
 			const requestSessionService = container.get(RequestSessionService);
 			requestSessionService.setUser(user);
 		}
+	} catch (error) {
+		const logger = container.get(LoggerService);
+		logger.debug('Token found but invalid:' + error);
 	}
-};
-
-// Return the authenticated user if available, otherwise return null
-const getAuthenticatedUserOrAnonymous = async (req: Request): Promise<MeetUser | null> => {
-	let user: MeetUser | null = null;
-
-	// Check if there is a user already authenticated
-	const token = getAccessToken(req);
-
-	if (token) {
-		try {
-			const tokenService = container.get(TokenService);
-			const payload = await tokenService.verifyToken(token);
-			const userId = payload.sub;
-
-			const userService = container.get(UserService);
-			user = userId ? await userService.getUser(userId) : null;
-		} catch (error) {
-			const logger = container.get(LoggerService);
-			logger.debug('Token found but invalid:' + error);
-		}
-	}
-
-	return user;
 };
 
 // Limit login attempts to avoid brute force attacks
