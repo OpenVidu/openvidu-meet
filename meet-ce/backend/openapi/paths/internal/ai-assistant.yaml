@@ -50,6 +50,8 @@
                 description: AI assistant canceled successfully.
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
