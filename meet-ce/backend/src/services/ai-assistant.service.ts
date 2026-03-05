@@ -14,7 +14,7 @@ import { RoomService } from './room.service.js';
 
 @injectable()
 export class AiAssistantService {
-	private readonly ASSISTANT_STATE_LOCK_TTL = ms('15s');
+	private readonly ASSISTANT_STATE_LOCK_TTL = ms(INTERNAL_CONFIG.ASSISTANT_STATE_LOCK_TTL);
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,

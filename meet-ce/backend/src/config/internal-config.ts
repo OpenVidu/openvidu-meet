@@ -47,6 +47,7 @@ export const INTERNAL_CONFIG = {
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
 
 	CAPTIONS_AGENT_NAME: 'speech-processing',
+	ASSISTANT_STATE_LOCK_TTL: '15s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
