@@ -83,7 +83,7 @@
 		<div *ovParticipantPanelItem="let participant">
 			<ng-container
 				[ngTemplateOutlet]="participantItemTemplate()"
-				[ngTemplateOutletContext]="{ participant: participant, localParticipant: localParticipant() }"
+				[ngTemplateOutletContext]="{ participant: participant }"
 			>
 			</ng-container>
 		</div>

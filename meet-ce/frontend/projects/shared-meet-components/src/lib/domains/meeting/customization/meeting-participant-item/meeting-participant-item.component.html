@@ -1,14 +1,20 @@
-<ng-template #template let-participantContext="participant" let-localParticipant="localParticipant">
-	@let ctx = getDisplayProperties(participantContext, localParticipant);
+<ng-template #template let-participant="participant">
+	@let ctx = getDisplayProperties(participant);
 
 	<div class="participant-item-container">
-		<ov-participant-panel-item [participant]="participantContext">
-			<!-- Moderator Badge -->
+		<ov-participant-panel-item [participant]="participant">
+			<!-- Participant Badge -->
 			<ng-container *ovParticipantPanelParticipantBadge>
-				@if (ctx.showModeratorBadge) {
-					<span class="moderator-badge" [attr.id]="'moderator-badge-' + participantContext.sid">
-						<mat-icon [matTooltip]="'Moderator'" class="material-symbols-outlined">
-							shield_person
+				@if (ctx.showBadge) {
+					<span
+						[class]="getParticipantBadgeClass(participant)"
+						[attr.id]="'participant-badge-' + participant.sid"
+					>
+						<mat-icon
+							[matTooltip]="getParticipantBadgeTooltip(participant)"
+							class="material-symbols-outlined"
+						>
+							{{ getParticipantBadgeIcon(participant) }}
 						</mat-icon>
 					</span>
 				}
@@ -19,16 +25,16 @@
 				<div
 					*ovParticipantPanelItemElements
 					class="moderation-controls"
-					[attr.id]="'moderation-controls-' + participantContext.sid"
+					[attr.id]="'moderation-controls-' + participant.sid"
 				>
 					<!-- Make Moderator Button -->
 					@if (ctx.showMakeModeratorButton) {
 						<button
 							mat-icon-button
-							(click)="onMakeModeratorClick(participantContext, localParticipant)"
+							(click)="onMakeModeratorClick(participant)"
 							[matTooltip]="'Make participant moderator'"
 							class="make-moderator-btn"
-							[attr.id]="'make-moderator-btn-' + participantContext.sid"
+							[attr.id]="'make-moderator-btn-' + participant.sid"
 						>
 							<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
 						</button>
@@ -38,10 +44,10 @@
 					@if (ctx.showUnmakeModeratorButton) {
 						<button
 							mat-icon-button
-							(click)="onUnmakeModeratorClick(participantContext, localParticipant)"
+							(click)="onUnmakeModeratorClick(participant)"
 							[matTooltip]="'Unmake participant moderator'"
 							class="remove-moderator-btn"
-							[attr.id]="'remove-moderator-btn-' + participantContext.sid"
+							[attr.id]="'remove-moderator-btn-' + participant.sid"
 						>
 							<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
 						</button>
@@ -51,10 +57,10 @@
 					@if (ctx.showKickButton) {
 						<button
 							mat-icon-button
-							(click)="onKickParticipantClick(participantContext, localParticipant)"
+							(click)="onKickParticipantClick(participant)"
 							[matTooltip]="'Kick participant'"
 							class="force-disconnect-btn"
-							[attr.id]="'kick-participant-btn-' + participantContext.sid"
+							[attr.id]="'kick-participant-btn-' + participant.sid"
 						>
 							<mat-icon>call_end</mat-icon>
 						</button>

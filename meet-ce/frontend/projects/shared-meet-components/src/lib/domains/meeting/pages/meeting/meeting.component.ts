@@ -60,7 +60,6 @@ export class MeetingComponent implements OnInit {
 	roomName = this.lobbyService.roomName;
 	roomMemberToken = this.lobbyService.roomMemberToken;
 	e2eeKey = this.lobbyService.e2eeKeyValue;
-	localParticipant = this.meetingContextService.localParticipant;
 	features = this.meetingContextService.meetingUI;
 	hasRecordings = this.meetingContextService.hasRecordings;
 

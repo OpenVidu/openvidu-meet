@@ -1,11 +1,11 @@
-import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import { ParticipantModel, ParticipantProperties } from 'openvidu-components-angular';
 
 /**
  * Interface for computed participant display properties
  */
 export interface ParticipantDisplayProperties {
-	showModeratorBadge: boolean;
+	showBadge: boolean;
 	showModerationControls: boolean;
 	showMakeModeratorButton: boolean;
 	showUnmakeModeratorButton: boolean;
@@ -14,49 +14,64 @@ export interface ParticipantDisplayProperties {
 
 // Represents a participant in the application.
 export class CustomParticipantModel extends ParticipantModel {
-	// Indicates the original role of the participant.
-	private _meetOriginalRole: MeetRoomMemberRole;
-	// Indicates the current role of the participant.
-	private _meetRole: MeetRoomMemberRole;
+	private _meetBadge = MeetRoomMemberUIBadge.OTHER;
+	private _isPromotedModerator = false;
 
 	constructor(props: ParticipantProperties) {
 		super(props);
-		const participant = props.participant;
-		this._meetOriginalRole = extractParticipantRole(participant.metadata);
-		this._meetRole = this._meetOriginalRole;
+		this.updateModerationMetadata(props.participant.metadata);
 	}
 
-	set meetRole(role: MeetRoomMemberRole) {
-		this._meetRole = role;
+	set meetBadge(badge: MeetRoomMemberUIBadge) {
+		this._meetBadge = badge;
+	}
+
+	set promotedModerator(isPromoted: boolean) {
+		this._isPromotedModerator = isPromoted;
+	}
+
+	private updateModerationMetadata(metadata: unknown): void {
+		const parsedMetadata = parseParticipantMetadata(metadata);
+		this._meetBadge = parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER;
+		this._isPromotedModerator = Boolean(parsedMetadata?.isPromotedModerator);
 	}
 
 	/**
-	 * Checks if the current role of the participant is moderator.
-	 * @returns True if the current role is moderator, false otherwise.
+	 * Gets the participant's badge.
+	 * @returns The MeetRoomMemberUIBadge representing the participant's badge.
 	 */
-	isModerator(): boolean {
-		return this._meetRole === MeetRoomMemberRole.MODERATOR;
+	getBadge(): MeetRoomMemberUIBadge {
+		return this._meetBadge;
 	}
 
 	/**
-	 * Checks if the original role of the participant is moderator.
-	 * @returns True if the original role is moderator, false otherwise.
+	 * Checks if the participant has a badge other than OTHER.
+	 * @returns True if the participant has a badge, false otherwise.
 	 */
-	isOriginalModerator(): boolean {
-		return this._meetOriginalRole === MeetRoomMemberRole.MODERATOR;
+	hasBadge(): boolean {
+		return this._meetBadge !== MeetRoomMemberUIBadge.OTHER;
+	}
+
+	/**
+	 * Checks if the participant is a promoted moderator (not an original moderator).
+	 * @returns True if the participant is a promoted moderator, false otherwise.
+	 */
+	isPromotedModerator(): boolean {
+		return this._isPromotedModerator;
 	}
 }
 
-const extractParticipantRole = (metadata: any): MeetRoomMemberRole => {
+const parseParticipantMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata | undefined => {
 	let parsedMetadata: MeetRoomMemberTokenMetadata | undefined;
 	try {
-		parsedMetadata = JSON.parse(metadata || '{}');
+		parsedMetadata = JSON.parse((metadata as string) || '{}');
 	} catch (e) {
 		console.warn('Failed to parse participant metadata:', e);
 	}
 
 	if (!parsedMetadata || typeof parsedMetadata !== 'object') {
-		return MeetRoomMemberRole.SPEAKER;
+		return undefined;
 	}
-	return parsedMetadata.baseRole || MeetRoomMemberRole.SPEAKER;
+
+	return parsedMetadata;
 };
