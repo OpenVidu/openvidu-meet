@@ -8,10 +8,10 @@ content:
                     $ref: '../schemas/meet-room-config.yaml#/MeetRoomConfig'
         example:
             config:
+                chat:
+                    enabled: true
                 recording:
                     enabled: true
                     encoding: H264_720P_30
-                chat:
-                    enabled: true
                 virtualBackground:
                     enabled: true

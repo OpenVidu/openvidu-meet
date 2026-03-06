@@ -1,4 +1,4 @@
-description: Successfully retrieved authenticated user info
+description: Successfully retrieved user profile
 content:
     application/json:
         schema:

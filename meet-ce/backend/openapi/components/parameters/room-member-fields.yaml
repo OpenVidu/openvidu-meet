@@ -1,9 +1,0 @@
-name: fields
-in: query
-description: >
-    Specifies which fields to include in the response for the room member resource.
-    Provide a comma-separated list of field names.
-required: false
-schema:
-    type: string
-example: 'accessUrl,baseRole'

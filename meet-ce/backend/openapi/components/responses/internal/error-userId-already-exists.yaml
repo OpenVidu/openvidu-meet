@@ -1,8 +1,0 @@
-description: UserId already exists
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/error.yaml'
-        example:
-            error: 'User Error'
-            message: 'User "alice_smith" already exists'

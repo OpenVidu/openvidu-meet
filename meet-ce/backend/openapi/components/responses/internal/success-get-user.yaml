@@ -1,5 +1,0 @@
-description: User retrieved successfully
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/meet-user.yaml'

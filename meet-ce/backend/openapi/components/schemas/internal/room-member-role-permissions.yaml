@@ -1,0 +1,74 @@
+type: object
+properties:
+    role:
+        type: string
+        enum: ['moderator', 'speaker']
+        description: |
+            A role that a user can have as a member of a room.
+            The role determines the permissions of the user in the room.
+            - `moderator`: Can manage the room resources and meeting participants.
+            - `speaker`: Can publish media streams to the meeting.
+        example: 'moderator'
+    permissions:
+        type: object
+        properties:
+            livekit:
+                type: object
+                properties:
+                    roomJoin:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can join a room.
+                        example: true
+                    room:
+                        type: string
+                        description: >
+                            Unique identifier of the room to which the participant is assigned.
+                    canPublish:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can publish media streams to the room.
+                        example: true
+                    canSubscribe:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can subscribe to media streams in the room.
+                        example: true
+                    canPublishData:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can publish data messages to the room.
+                        example: true
+                    canUpdateOwnMetadata:
+                        type: boolean
+                        description: >
+                            Indicates whether the participant can update their own metadata.
+                        example: true
+            openvidu:
+                type: object
+                properties:
+                    canRecord:
+                        type: boolean
+                        description: >
+                            Indicates whether the user can record a meeting in the room.
+                        example: true
+                    canRetrieveRecordings:
+                        type: boolean
+                        description: >
+                            Indicates whether the user can retrieve and play recordings of meetings in the room.
+                        example: true
+                    canDeleteRecordings:
+                        type: boolean
+                        description: >
+                            Indicates whether the user can delete recordings of meetings in the room.
+                        example: true
+                    canChat:
+                        type: boolean
+                        description: >
+                            Indicates whether the user can send and receive chat messages in the room.
+                        example: true
+                    canChangeVirtualBackground:
+                        type: boolean
+                        description: >
+                            Indicates whether the user can change their own virtual background.
+                        example: true

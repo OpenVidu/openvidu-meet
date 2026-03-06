@@ -1,0 +1,38 @@
+description: Successfully retrieved all roles and associated permissions in a room
+content:
+    application/json:
+        schema:
+            type: array
+            items:
+                $ref: '../../schemas/internal/room-member-role-permissions.yaml'
+        example:
+            - role: 'moderator'
+              permissions:
+                  livekit:
+                      roomJoin: true
+                      room: 'room-123'
+                      canPublish: true
+                      canSubscribe: true
+                      canPublishData: true
+                      canUpdateOwnMetadata: true
+                  openvidu:
+                      canRecord: true
+                      canRetrieveRecordings: true
+                      canDeleteRecordings: true
+                      canChat: true
+                      canChangeVirtualBackground: true
+            - role: 'speaker'
+              permissions:
+                  livekit:
+                      roomJoin: true
+                      room: 'room-123'
+                      canPublish: true
+                      canSubscribe: true
+                      canPublishData: true
+                      canUpdateOwnMetadata: true
+                  openvidu:
+                      canRecord: false
+                      canRetrieveRecordings: true
+                      canDeleteRecordings: false
+                      canChat: true
+                      canChangeVirtualBackground: true

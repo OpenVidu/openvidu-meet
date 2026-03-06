@@ -58,22 +58,3 @@ properties:
         $ref: './meet-room-config.yaml#/MeetRoomConfig'
         description: >
             The config for the room. These config will be used to configure the room's settings.
-    roles:
-        $ref: meet-room-roles-config.yaml
-        description: |
-            Configuration for role permissions.
-
-            By default (if not specified), default permissions will be used for both moderator and speaker roles:
-            - Moderator: Full permissions to manage the room and meeting.
-            - Speaker: Permissions to publish audio and video streams.
-
-            You can customize this by providing partial permissions for each role (only specify the permissions you want to override).
-    anonymous:
-        $ref: meet-room-anonymous-config.yaml
-        description: |
-            Configuration for anonymous access to the room.
-
-            By default (if not specified), anonymous access is enabled for both moderators and speakers.
-            You can customize this behavior by disabling anonymous access for specific roles (moderator/speaker) with per-role `enabled: false`
-
-            Permissions for anonymous users are determined by the room's role permissions.
