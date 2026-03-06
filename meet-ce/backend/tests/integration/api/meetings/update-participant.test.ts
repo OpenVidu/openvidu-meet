@@ -4,13 +4,8 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { MEET_ENV } from '../../../../src/environment.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import {
-	deleteAllRooms,
-	disconnectFakeParticipants,
-	startTestServer,
-	updateParticipant,
-	updateParticipantMetadata
-} from '../../../helpers/request-helpers.js';
+import { disconnectFakeParticipants, updateParticipantMetadata } from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, startTestServer, updateParticipant } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 

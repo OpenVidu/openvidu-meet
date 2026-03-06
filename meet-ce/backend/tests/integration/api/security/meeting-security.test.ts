@@ -5,14 +5,12 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import {
-	deleteAllRooms,
 	disconnectFakeParticipants,
-	getFullPath,
 	joinFakeParticipant,
-	loginRootAdmin,
-	startTestServer,
 	updateParticipantMetadata
-} from '../../../helpers/request-helpers.js';
+} from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, getFullPath, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';
+
 import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 

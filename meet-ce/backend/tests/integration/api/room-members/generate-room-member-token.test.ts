@@ -8,12 +8,12 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { expectValidationError, expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
 	deleteAllRooms,
 	deleteAllUsers,
-	disconnectFakeParticipants,
 	endMeeting,
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,

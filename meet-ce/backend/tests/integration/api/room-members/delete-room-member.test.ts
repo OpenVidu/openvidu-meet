@@ -11,13 +11,16 @@ import {
 	deleteAllRooms,
 	deleteAllUsers,
 	deleteRoomMember,
-	disconnectFakeParticipants,
 	getRoomMember,
 	getUser,
-	joinFakeParticipant,
-	startTestServer,
-	updateParticipantMetadata
+	startTestServer
 } from '../../../helpers/request-helpers.js';
+
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 
 describe('Room Members API Tests', () => {
 	let roomId: string;

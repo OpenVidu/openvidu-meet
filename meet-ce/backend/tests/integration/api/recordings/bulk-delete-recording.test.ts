@@ -1,15 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { expectValidationError } from '../../../helpers/assertion-helpers';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	generateRoomMemberToken,
 	getAllRecordings,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {

@@ -16,13 +16,13 @@ import { MeetRoomHelper } from '../../src/helpers/room.helper';
 import { RoomRepository } from '../../src/repositories/room.repository';
 import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
+import { joinFakeParticipant } from './livekit-cli-helpers.js';
 import {
 	changePassword,
 	createRoom,
 	createRoomMember,
 	createUser,
 	generateRoomMemberToken,
-	joinFakeParticipant,
 	loginUser,
 	sleep,
 	startRecording,

@@ -6,14 +6,15 @@ import {
 	expectValidGetRecordingResponse,
 	expectValidRecordingWithFields
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getRecording,
 	startTestServer,
 	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
+
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 

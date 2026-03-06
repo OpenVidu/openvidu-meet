@@ -3,13 +3,14 @@ import {
 	expectValidRecordingLocationHeader,
 	expectValidRecordingWithFields
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
+
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 /**

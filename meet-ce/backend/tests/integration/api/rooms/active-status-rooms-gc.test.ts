@@ -3,11 +3,11 @@ import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RoomRepository } from '../../../../src/repositories/room.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	executeRoomStatusValidationGC,
 	getRoom,
 	startTestServer

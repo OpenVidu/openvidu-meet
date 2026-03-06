@@ -6,6 +6,7 @@ import {
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomConfig,
+	MeetRoomDeletionPolicyWithMeeting,
 	MeetWebhookEvent,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -18,7 +19,6 @@ import {
 	disconnectFakeParticipants,
 	endMeeting,
 	restoreDefaultGlobalConfig,
-	sleep,
 	startTestServer,
 	updateWebhookConfig
 } from '../../helpers/request-helpers.js';
@@ -28,6 +28,7 @@ import {
 	startWebhookServer,
 	stopWebhookServer
 } from '../../helpers/test-scenarios.js';
+import { waitForRecordingToStop, waitForRoomToDelete } from '../../helpers/wait-helpers.js';
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
@@ -86,17 +87,12 @@ describe('Webhook Integration Tests', () => {
 
 		await setupSingleRoom(true);
 
-		// Wait for the room to be created
-		await sleep('3s');
 		expect(receivedWebhooks.length).toBe(0);
 	});
 
 	it('should send meeting_started webhook when room is created', async () => {
 		const context = await setupSingleRoom(true);
 		const roomData = context.room;
-
-		// Wait for the room to be created
-		await sleep('1s');
 
 		// Verify 'meetingStarted' webhook is sent
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
@@ -123,9 +119,6 @@ describe('Webhook Integration Tests', () => {
 		// Close the room
 		await endMeeting(roomData.roomId, moderatorToken);
 
-		// Wait for the room to be closed
-		await sleep('1s');
-
 		// Verify 'meetingEnded' webhook is sent
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
 		const meetingEndedWebhook = receivedWebhooks.find((w) => w.body.event === MeetWebhookEventType.MEETING_ENDED);
@@ -144,8 +137,8 @@ describe('Webhook Integration Tests', () => {
 		const context = await setupSingleRoom(true);
 		const roomData = context.room;
 		// Forcefully delete the room
-		await deleteRoom(roomData.roomId, { withMeeting: 'force' });
-
+		await deleteRoom(roomData.roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE });
+		await waitForRoomToDelete(roomData.roomId); // Wait for the webhook to process the deletion
 		// Verify 'meetingEnded' webhook is sent
 		expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
 		const meetingEndedWebhook = receivedWebhooks.find((w) => w.body.event === MeetWebhookEventType.MEETING_ENDED);
@@ -166,6 +159,8 @@ describe('Webhook Integration Tests', () => {
 		const context = await setupSingleRoomWithRecording(true, '2s');
 		const roomData = context.room;
 		const recordingId = context.recordingId;
+
+		await waitForRecordingToStop(recordingId!); // Wait for the recording to stop and webhook to be processed
 
 		const recordingWebhooks = receivedWebhooks.filter((w) => w.body.event.startsWith('recording'));
 		// STARTED, ACTIVE, ENDING, COMPLETE

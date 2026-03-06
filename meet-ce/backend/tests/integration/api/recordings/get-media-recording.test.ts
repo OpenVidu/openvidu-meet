@@ -1,14 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
 import { expectSuccessRecordingMediaResponse, expectValidationError } from '../../../helpers/assertion-helpers';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getRecordingMedia,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {

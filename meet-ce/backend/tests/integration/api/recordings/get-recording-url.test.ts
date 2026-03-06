@@ -5,13 +5,16 @@ import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { errorRecordingNotFound } from '../../../../src/models/error.model.js';
 import { expectValidGetRecordingUrlResponse } from '../../../helpers/assertion-helpers.js';
 import {
+	disconnectFakeParticipants
+} from '../../../helpers/livekit-cli-helpers.js';
+import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getFullPath,
 	getRecordingUrl,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+
 import { setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {

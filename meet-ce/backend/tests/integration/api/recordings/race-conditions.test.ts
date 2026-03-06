@@ -9,12 +9,12 @@ import {
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers';
 import { eventController } from '../../../helpers/event-controller';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
-	disconnectFakeParticipants,
 	getRecording,
 	getRecordingMedia,
 	sleep,
@@ -23,6 +23,7 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
@@ -39,12 +40,12 @@ describe('Recording API Race Conditions Tests', () => {
 	});
 
 	afterEach(async () => {
+		await disconnectFakeParticipants();
 		await stopAllRecordings();
 
-		eventController.reset();
-		await disconnectFakeParticipants();
 		await deleteAllRooms();
 		await deleteAllRecordings();
+		eventController.reset();
 		jest.clearAllMocks();
 	});
 

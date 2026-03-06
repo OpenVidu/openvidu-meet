@@ -5,11 +5,11 @@ import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidStartRecordingResponse } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
-	disconnectFakeParticipants,
 	getFullPath,
 	getRecordingAccessSecret,
 	sleep,
@@ -17,6 +17,7 @@ import {
 	startTestServer,
 	stopAllRecordings
 } from '../../../helpers/request-helpers.js';
+
 import {
 	setupCompletedRecording,
 	setupRoomMember,

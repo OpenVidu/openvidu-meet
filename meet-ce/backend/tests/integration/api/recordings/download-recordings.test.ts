@@ -2,14 +2,15 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import stream from 'stream';
 import unzipper from 'unzipper';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	downloadRecordings,
 	generateRoomMemberToken,
 	startTestServer
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {

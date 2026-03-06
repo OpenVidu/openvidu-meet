@@ -4,6 +4,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRoomMembers,
 	createRoom,
@@ -11,10 +12,9 @@ import {
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
-	disconnectFakeParticipants,
+
 	getRoomMember,
 	getUser,
-	joinFakeParticipant,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 

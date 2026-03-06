@@ -14,7 +14,6 @@ import {
 	MeetRoomField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
@@ -23,7 +22,6 @@ import {
 	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
-import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
@@ -31,12 +29,19 @@ import { container, initializeEagerServices } from '../../src/config/dependency-
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import { MEET_ENV } from '../../src/environment.js';
 import { GlobalConfigRepository } from '../../src/repositories/global-config.repository.js';
+import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
+import {
+	waitForAllRecordingsToStop,
+	waitForAllRoomsToDelete,
+	waitForMeetingToEnd,
+	waitForRecordingToStop
+} from './wait-helpers.js';
 
 /**
  * Constructs the full API path by prepending the base path.
@@ -54,7 +59,6 @@ export const getFullPath = (apiPath: string): string => {
 };
 
 let app: Express;
-const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
 export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
@@ -576,9 +580,7 @@ export const deleteRoom = async (
 		req.set('x-extrafields', headers.xExtraFields);
 	}
 
-	const result = await req;
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-	return result;
+	return await req;
 };
 
 export const bulkDeleteRooms = async (
@@ -618,9 +620,7 @@ export const bulkDeleteRooms = async (
 		req.set('x-extrafields', headers.xExtraFields);
 	}
 
-	const result = await req;
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-	return result;
+	return await req;
 };
 
 export const deleteAllRooms = async () => {
@@ -657,9 +657,19 @@ export const deleteAllRooms = async () => {
 export const runExpiredRoomsGC = async () => {
 	checkAppIsRunning();
 
+	// Capture expired rooms without active meetings — these are synchronously deleted by the GC,
+	// which in turn causes LiveKit to emit room_finished webhooks that the backend must process.
+	const roomRepository = container.get(RoomRepository);
+	const expiredRooms = await roomRepository.findExpiredRooms();
+	const expiredRoomIdsToWait = expiredRooms
+		.filter((r) => r.status !== MeetRoomStatus.ACTIVE_MEETING)
+		.map((r) => r.roomId);
+
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
 	await roomTaskScheduler['deleteExpiredRooms']();
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+
+	// Wait until the deleted rooms are confirmed gone (404) or no longer active in the Meet API.
+	await waitForAllRoomsToDelete(expiredRoomIdsToWait);
 };
 
 /**
@@ -767,73 +777,6 @@ export const generateRoomMemberToken = async (
 
 // MEETING HELPERS
 
-/**
- * Adds a fake participant to a LiveKit room for testing purposes.
- *
- * @param roomId The ID of the room to join
- * @param participantIdentity The identity for the fake participant
- */
-export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
-	await ensureLivekitCliInstalled();
-	const process = spawn('lk', [
-		'room',
-		'join',
-		'--identity',
-		participantIdentity,
-		'--publish-demo',
-		roomId,
-		'--api-key',
-		MEET_ENV.LIVEKIT_API_KEY,
-		'--api-secret',
-		MEET_ENV.LIVEKIT_API_SECRET
-	]);
-
-	// Store the process to be able to terminate it later
-	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
-	await sleep('1s');
-};
-
-/**
- * Updates the metadata for a participant in a LiveKit room.
- *
- * @param roomId The ID of the room
- * @param participantIdentity The identity of the participant
- * @param metadata The metadata to update
- */
-export const updateParticipantMetadata = async (
-	roomId: string,
-	participantIdentity: string,
-	metadata: MeetRoomMemberTokenMetadata
-) => {
-	await ensureLivekitCliInstalled();
-	spawn('lk', [
-		'room',
-		'participants',
-		'update',
-		'--room',
-		roomId,
-		'--identity',
-		participantIdentity,
-		'--metadata',
-		JSON.stringify(metadata),
-		'--api-key',
-		MEET_ENV.LIVEKIT_API_KEY,
-		'--api-secret',
-		MEET_ENV.LIVEKIT_API_SECRET
-	]);
-	await sleep('1s');
-};
-
-export const disconnectFakeParticipants = async () => {
-	fakeParticipantsProcesses.forEach((process, participant) => {
-		process.kill();
-		console.log(`Stopped process for participant '${participant}'`);
-	});
-
-	fakeParticipantsProcesses.clear();
-	await sleep('1s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-};
-
 export const updateParticipant = async (
 	roomId: string,
 	participantIdentity: string,
@@ -874,7 +817,8 @@ export const endMeeting = async (roomId: string, moderatorToken: string) => {
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
 		.send();
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+
+	await waitForMeetingToEnd(roomId);
 	return response;
 };
 
@@ -934,7 +878,7 @@ export const stopRecording = async (
 	}
 
 	const response = await req;
-	await sleep('2.5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+	await waitForRecordingToStop(recordingId);
 
 	return response;
 };
@@ -1107,7 +1051,7 @@ export const stopAllRecordings = async () => {
 	results.forEach((response) => {
 		expect(response.status).toBe(202);
 	});
-	await sleep('1s');
+	await waitForAllRecordingsToStop(recordingIds);
 };
 
 export const deleteAllRecordings = async () => {
@@ -1163,52 +1107,4 @@ const checkAppIsRunning = () => {
 	if (!app) {
 		throw new Error('App instance is not defined');
 	}
-};
-
-/**
- * Verifies that the LiveKit CLI tool 'lk' is installed and accessible
- * @throws Error if 'lk' command is not found
- */
-const ensureLivekitCliInstalled = async (): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		const checkProcess = spawn('lk', ['--version'], {
-			stdio: 'pipe'
-		});
-
-		let hasResolved = false;
-
-		const resolveOnce = (success: boolean, message?: string) => {
-			if (hasResolved) return;
-
-			hasResolved = true;
-
-			if (success) {
-				resolve();
-			} else {
-				reject(new Error(message || 'LiveKit CLI check failed'));
-			}
-		};
-
-		checkProcess.on('error', (error) => {
-			if (error.message.includes('ENOENT')) {
-				resolveOnce(false, '❌ LiveKit CLI tool "lk" is not installed or not in PATH.');
-			} else {
-				resolveOnce(false, `Failed to check LiveKit CLI: ${error.message}`);
-			}
-		});
-
-		checkProcess.on('exit', (code) => {
-			if (code === 0) {
-				resolveOnce(true);
-			} else {
-				resolveOnce(false, `LiveKit CLI exited with code ${code}`);
-			}
-		});
-
-		// Timeout after 5 seconds
-		setTimeout(() => {
-			checkProcess.kill();
-			resolveOnce(false, 'LiveKit CLI check timed out');
-		}, 5000);
-	});
 };

@@ -9,17 +9,17 @@ import {
 	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { expectExtraFieldsInResponse, expectValidRoom } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRooms,
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	endMeeting,
-	getRoom,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
+import { waitForAllRoomsToDelete, waitForRoomToClose } from '../../../helpers/wait-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -37,6 +37,7 @@ describe('Room API Tests', () => {
 			const { roomId } = await createRoom();
 
 			const response = await bulkDeleteRooms([roomId]);
+			await waitForAllRoomsToDelete([roomId]);
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
@@ -55,6 +56,7 @@ describe('Room API Tests', () => {
 			const { room: room2 } = await setupSingleRoom(true);
 
 			const response = await bulkDeleteRooms([room1.roomId, room2.roomId]);
+			await waitForAllRoomsToDelete([room1.roomId]);
 			expect(response.status).toBe(400);
 			expect(response.body).toEqual({
 				message: '1 room(s) failed to process while deleting',
@@ -97,6 +99,7 @@ describe('Room API Tests', () => {
 			const { roomId } = await createRoom();
 
 			const response = await bulkDeleteRooms([roomId, roomId, roomId]);
+			await waitForAllRoomsToDelete([roomId]);
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
@@ -114,6 +117,7 @@ describe('Room API Tests', () => {
 			const { roomId } = await createRoom();
 
 			const response = await bulkDeleteRooms([roomId, '!!@##$']);
+			await waitForAllRoomsToDelete([roomId]);
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
@@ -147,27 +151,32 @@ describe('Room API Tests', () => {
 			});
 
 			// Verify all rooms are deleted
-			for (const room of rooms) {
-				const getResponse = await getRoom(room.roomId);
-				expect(getResponse.status).toBe(404);
-			}
+			await waitForAllRoomsToDelete(rooms.map((r) => r.roomId));
 		});
 
 		it('should handle deletion when specifying withMeeting and withRecordings parameters', async () => {
-			const [room1, { room: room2 }, { room: room3 }, { room: room4, moderatorToken }] = await Promise.all([
+			const [
+				room1,
+				{ room: room2, moderatorToken: modToken2 },
+				{ room: room3, moderatorToken: modToken3 },
+				{ room: room4, moderatorToken: modToken4 }
+			] = await Promise.all([
 				createRoom(), // Room without active meeting or recordings
 				setupSingleRoom(true), // Room with active meeting
 				setupSingleRoomWithRecording(true), // Room with active meeting and recordings
 				setupSingleRoomWithRecording(true) // Room with recordings
 			]);
-			await endMeeting(room4.roomId, moderatorToken);
+			await endMeeting(room4.roomId, modToken4); // End meeting for room4 so it has recordings but no active meeting
 			const fakeRoomId = 'fake_room-123'; // Non-existing room
-
 			const response = await bulkDeleteRooms(
 				[room1.roomId, room2.roomId, room3.roomId, room4.roomId, fakeRoomId],
 				MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
 				MeetRoomDeletionPolicyWithRecordings.CLOSE
 			);
+
+			// Room 3 and Room 2 are scheduled to be closed, so we need to wait for the meeting to end before asserting the response
+			await waitForAllRoomsToDelete([room1.roomId]);
+			await waitForRoomToClose(room4.roomId); // Room 4 should be CLOSED
 			expect(response.status).toBe(400);
 			expect(response.body).toEqual({
 				message: '1 room(s) failed to process while deleting',
@@ -252,6 +261,12 @@ describe('Room API Tests', () => {
 				MeetingEndAction.NONE
 			);
 			expectExtraFieldsInResponse(successfulRoom4.room);
+
+			await endMeeting(room2.roomId, modToken2);
+			await endMeeting(room3.roomId, modToken3);
+
+			await waitForAllRoomsToDelete([room2.roomId]);
+			await waitForRoomToClose(room3.roomId); // Room 3 should be CLOSED
 		});
 
 		it('should return partial room properties based on fields parameter when some rooms fail due to active meetings', async () => {

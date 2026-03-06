@@ -11,13 +11,13 @@ import {
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRooms,
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
-	disconnectFakeParticipants,
 	getRoom,
 	getRooms,
 	startTestServer

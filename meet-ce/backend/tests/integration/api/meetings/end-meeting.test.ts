@@ -2,13 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import {
-	deleteAllRooms,
-	disconnectFakeParticipants,
-	endMeeting,
-	getRoom,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, endMeeting, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
+
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 

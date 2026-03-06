@@ -18,16 +18,16 @@ import {
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
-	joinFakeParticipant,
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
+
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 

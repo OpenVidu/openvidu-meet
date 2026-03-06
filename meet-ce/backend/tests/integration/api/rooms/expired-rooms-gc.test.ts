@@ -3,20 +3,21 @@ import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings
 import ms from 'ms';
 import { setInternalConfig } from '../../../../src/config/internal-config.js';
 import { MeetRoomHelper } from '../../../../src/helpers/room.helper.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	endMeeting,
 	generateRoomMemberToken,
 	getRoom,
-	joinFakeParticipant,
 	runExpiredRoomsGC,
 	sleep,
 	startRecording,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
+
+import { waitForRoomToClose, waitForRoomToDelete } from '../../../helpers/wait-helpers.js';
 
 describe('Expired Rooms GC Tests', () => {
 	beforeAll(async () => {
@@ -58,7 +59,7 @@ describe('Expired Rooms GC Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 		await joinFakeParticipant(createdRoom.roomId, 'test-participant');
-
+		await sleep('2s'); // Make sure the auto-deletion date has passed
 		await runExpiredRoomsGC();
 
 		// The room should not be deleted but scheduled for deletion
@@ -88,7 +89,7 @@ describe('Expired Rooms GC Tests', () => {
 			autoDeletionDate: Date.now() + ms('1s')
 		});
 		await joinFakeParticipant(room.roomId, 'test-participant');
-
+		await sleep('2s'); // Make sure the auto-deletion date has passed
 		await runExpiredRoomsGC();
 
 		// The room should not be deleted but scheduled for deletion
@@ -102,6 +103,7 @@ describe('Expired Rooms GC Tests', () => {
 		const moderatorToken = await generateRoomMemberToken(room.roomId, { secret: moderatorSecret });
 		await endMeeting(room.roomId, moderatorToken);
 
+		await waitForRoomToDelete(room.roomId);
 		// Verify that the room is deleted
 		response = await getRoom(room.roomId);
 		expect(response.status).toBe(404);
@@ -179,6 +181,7 @@ describe('Expired Rooms GC Tests', () => {
 		await startRecording(room1.roomId);
 
 		await runExpiredRoomsGC();
+		await waitForRoomToClose(room1.roomId);
 
 		const response = await getRoom(room1.roomId);
 		expect(response.status).toBe(200);
