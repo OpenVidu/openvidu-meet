@@ -1,6 +1,6 @@
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
 export const UpdateParticipantRoleReqSchema = z.object({
-	role: z.nativeEnum(MeetRoomMemberRole)
+	action: z.nativeEnum(MeetParticipantModerationAction)
 });

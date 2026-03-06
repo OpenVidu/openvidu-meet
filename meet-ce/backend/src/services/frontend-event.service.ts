@@ -3,7 +3,7 @@ import {
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomConfigUpdatedPayload,
-	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetSignalPayload,
 	MeetSignalType
 } from '@openvidu-meet/typings';
@@ -99,41 +99,24 @@ export class FrontendEventService {
 	async sendParticipantRoleUpdatedSignal(
 		roomId: string,
 		participantIdentity: string,
-		newRole: MeetRoomMemberRole,
-		secret: string
+		newBadge: MeetRoomMemberUIBadge
 	): Promise<void> {
 		this.logger.debug(
 			`Sending participant role updated signal for participant '${participantIdentity}' in room '${roomId}'`
 		);
 
-		const basePayload: MeetParticipantRoleUpdatedPayload = {
+		const signalPayload: MeetParticipantRoleUpdatedPayload = {
 			roomId,
 			participantIdentity,
-			newRole,
+			newBadge,
 			timestamp: Date.now()
 		};
-
-		const baseOptions: SendDataOptions = {
+		const singalOptions: SendDataOptions = {
 			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
 		};
 
-		// Send signal with secret to the participant whose role has been updated
-		await this.sendSignal(
-			roomId,
-			{ ...basePayload, secret },
-			{ ...baseOptions, destinationIdentities: [participantIdentity] }
-		);
-
-		// Broadcast the role update to all other participants without the secret
-		const participants = await this.livekitService.listRoomParticipants(roomId);
-		const otherParticipantIdentities = participants
-			.filter((p) => p.identity !== participantIdentity)
-			.map((p) => p.identity);
-
-		await this.sendSignal(roomId, basePayload, {
-			...baseOptions,
-			destinationIdentities: otherParticipantIdentities
-		});
+		// Broadcast the role update to all participants in the meeting
+		await this.sendSignal(roomId, signalPayload, singalOptions);
 	}
 
 	/**

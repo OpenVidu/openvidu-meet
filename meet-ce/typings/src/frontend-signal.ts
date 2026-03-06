@@ -1,5 +1,5 @@
 import { MeetRoomConfig } from './database/room-config.js';
-import { MeetRoomMemberRole } from './database/room-member.entity.js';
+import { MeetRoomMemberUIBadge } from './response/room-member-response.js';
 
 /**
  * Interface representing a signal emitted by OpenVidu Meet to notify clients about real-time updates in the meeting.
@@ -26,17 +26,15 @@ export interface MeetRoomConfigUpdatedPayload {
 
 /**
  * Payload for MEET_PARTICIPANT_ROLE_UPDATED signal,
- * containing information about the participant whose role was updated and the new role.
+ * containing information about the participant whose role was updated and the new badge.
  */
 export interface MeetParticipantRoleUpdatedPayload {
 	/** ID of the room where the participant's role was updated */
 	roomId: string;
 	/** Identity of the participant whose role was updated */
 	participantIdentity: string;
-	/** New role assigned to the participant */
-	newRole: MeetRoomMemberRole;
-	/** Optional secret for regenerating the participant's token if needed */
-	secret?: string;
+	/** New badge assigned to the participant */
+	newBadge: MeetRoomMemberUIBadge;
 	/** Timestamp in milliseconds when the role update occurred */
 	timestamp: number;
 }

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
 	LeftEventReason,
 	MeetParticipantRoleUpdatedPayload,
-	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetSignalType,
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
@@ -20,9 +20,7 @@ import {
 } from 'openvidu-components-angular';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
-import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { SoundService } from '../../../shared/services/sound.service';
-import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
@@ -41,8 +39,6 @@ export class MeetingEventHandlerService {
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
-	protected sessionStorageService = inject(SessionStorageService);
-	protected tokenStorageService = inject(TokenStorageService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
@@ -186,48 +182,55 @@ export class MeetingEventHandlerService {
 	 * Obtains all necessary data from MeetingContextService.
 	 */
 	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
-		const { participantIdentity, newRole, secret } = event;
+		const { participantIdentity, newBadge } = event;
 		const roomId = this.meetingContext.roomId();
 		const local = this.meetingContext.localParticipant();
 		const participantName = this.roomMemberContextService.participantName();
+		const isPromotedModerator = newBadge === MeetRoomMemberUIBadge.MODERATOR;
 
 		// Check if the role update is for the local participant
 		if (local && participantIdentity === local.identity) {
-			if (!secret || !roomId) return;
-
-			// Update room secret in context (without updating session storage)
-			this.meetingContext.setRoomSecret(secret);
+			if (!roomId) return;
 
 			try {
-				// Refresh participant token with new role
+				// Refresh room member token to get updated permissions based on new role
 				await this.roomMemberContextService.generateToken(roomId, {
-					secret,
 					joinMeeting: true,
 					participantName,
-					participantIdentity
+					participantIdentity,
+					useParticipantMetadata: true
 				});
 
-				// Update local participant role
-				local.meetRole = newRole;
-				this.showParticipantRoleUpdatedNotification(newRole);
+				local.meetBadge = newBadge;
+
+				local.promotedModerator = isPromotedModerator;
+				this.roomMemberContextService.setPromotedModerator(isPromotedModerator);
+				this.showParticipantRoleUpdatedNotification(isPromotedModerator);
 			} catch (error) {
 				console.error('Error refreshing room member token:', error);
 			}
 		} else {
-			// Update remote participant role
+			// Update remote participant badge
 			const remoteParticipants = this.meetingContext.remoteParticipants();
 			const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
 			if (participant) {
-				participant.meetRole = newRole;
+				participant.meetBadge = newBadge;
+				participant.promotedModerator = isPromotedModerator;
 			}
 		}
 	}
 
-	private showParticipantRoleUpdatedNotification(newRole: MeetRoomMemberRole): void {
-		this.notificationService.showSnackbar(`You have been assigned the role of ${newRole.toUpperCase()}`);
-		newRole === MeetRoomMemberRole.MODERATOR
-			? this.soundService.playParticipantRoleUpgradedSound()
-			: this.soundService.playParticipantRoleDowngradedSound();
+	private showParticipantRoleUpdatedNotification(isPromotedModerator: boolean): void {
+		const message = isPromotedModerator
+			? 'You have been promoted to moderator'
+			: 'Your moderator role has been removed';
+		this.notificationService.showSnackbar(message);
+
+		if (isPromotedModerator) {
+			this.soundService.playParticipantRoleUpgradedSound();
+		} else {
+			this.soundService.playParticipantRoleDowngradedSound();
+		}
 	}
 
 	/**

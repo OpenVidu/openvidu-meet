@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { inject, Injectable } from '@angular/core';
-import { MeetRoom } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetRoom } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -55,12 +55,16 @@ export class MeetingService {
 	 *
 	 * @param roomId - The unique identifier of the meeting room
 	 * @param participantIdentity - The identity of the participant whose role is to be changed
-	 * @param newRole - The new role to be assigned to the participant
+	 * @param action - Moderation action to apply
 	 */
-	async changeParticipantRole(roomId: string, participantIdentity: string, newRole: string): Promise<void> {
+	async changeParticipantRole(
+		roomId: string,
+		participantIdentity: string,
+		action: MeetParticipantModerationAction
+	): Promise<void> {
 		const path = `${this.MEETINGS_API}/${roomId}/participants/${participantIdentity}/role`;
-		const body = { role: newRole };
+		const body = { action };
 		await this.httpService.putRequest(path, body);
-		this.log.d(`Changed role of participant '${participantIdentity}' to '${newRole}' in room '${roomId}'`);
+		this.log.d(`Applied moderation action '${action}' to participant '${participantIdentity}' in room '${roomId}'`);
 	}
 }
