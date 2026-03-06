@@ -12,11 +12,11 @@ import {
 } from '@openvidu-meet/typings';
 import { Request } from 'express';
 import http from 'http';
+import { disconnectFakeParticipants } from '../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
-	disconnectFakeParticipants,
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	startTestServer,

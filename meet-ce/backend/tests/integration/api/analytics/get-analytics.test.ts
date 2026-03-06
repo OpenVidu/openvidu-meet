@@ -1,10 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetAnalytics } from '@openvidu-meet/typings';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getAnalytics,
 	startTestServer,
 	stopRecording
