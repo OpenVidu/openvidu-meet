@@ -1,5 +1,5 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
-import { MeetRoomMember, MeetRoomMemberRole } from '../database/room-member.entity.js';
+import { MeetRoomMember } from '../database/room-member.entity.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 
 /**
@@ -53,23 +53,32 @@ export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberS
 export interface MeetRoomMemberTokenMetadata {
 	/** Token issued at timestamp (milliseconds since epoch) */
 	iat: number;
-	/** URL of the LiveKit server to connect to */
-	livekitUrl: string;
 	/** Unique identifier for the room */
 	roomId: string;
 	/** Unique identifier for the member if defined */
 	memberId?: string;
-	/** Base role assigned to the member. See {@link MeetRoomMemberRole} for details. */
-	baseRole: MeetRoomMemberRole;
-	/** Custom permissions for the member (overrides base role permissions). See {@link MeetRoomMemberPermissions} for details. */
-	customPermissions?: Partial<MeetRoomMemberPermissions>;
-	/** Effective permissions for the member (combination of base role and custom permissions). See {@link MeetRoomMemberPermissions} for details. */
-	effectivePermissions: MeetRoomMemberPermissions;
+	/** Unique identifier for the user if defined */
+	userId?: string;
+	/** Effective permissions for the member. */
+	permissions: MeetRoomMemberPermissions;
+	/** Visual badge/category used in participant UI. */
+	badge: MeetRoomMemberUIBadge;
+	/** Indicates if participant has been promoted to moderator during the meeting and is not originally a moderator. */
+	isPromotedModerator?: boolean;
+	/** URL of the LiveKit server to connect to when joining the meeting */
+	livekitUrl?: string;
 }
 
+/**
+ * UI badge/category for room members, used to visually distinguish roles in the participant list and other UI elements.
+ */
 export enum MeetRoomMemberUIBadge {
+	/** Owner badge, typically for the creator of the room */
 	OWNER = 'owner',
+	/** Admin badge, typically for users with administrative privileges */
 	ADMIN = 'admin',
+	/** Moderator badge, typically for users with moderation privileges */
 	MODERATOR = 'moderator',
+	/** Other badge, typically for regular participants without special privileges */
 	OTHER = 'other'
 }

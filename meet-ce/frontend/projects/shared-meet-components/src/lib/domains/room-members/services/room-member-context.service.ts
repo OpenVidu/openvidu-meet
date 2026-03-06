@@ -3,7 +3,8 @@ import {
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions
+	MeetRoomMemberTokenOptions,
+	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { E2eeService, LoggerService } from 'openvidu-components-angular';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
@@ -23,6 +24,8 @@ export class RoomMemberContextService {
 	private readonly _participantName = signal<string | undefined>(undefined);
 	private readonly _isParticipantNameFromUrl = signal<boolean>(false);
 	private readonly _participantIdentity = signal<string | undefined>(undefined);
+	private readonly _memberBadge = signal<MeetRoomMemberUIBadge>(MeetRoomMemberUIBadge.OTHER);
+	private readonly _isPromotedModerator = signal<boolean>(false);
 	private readonly _permissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	private readonly _member = signal<MeetRoomMember | undefined>(undefined);
 
@@ -40,6 +43,10 @@ export class RoomMemberContextService {
 	readonly member = this._member.asReadonly();
 	/** Computed signal for the room member's display name */
 	readonly memberName = computed(() => this._member()?.name);
+	/** Readonly signal for the room member's UI badge */
+	readonly memberBadge = this._memberBadge.asReadonly();
+	/** Readonly signal for whether the room member is a promoted moderator */
+	readonly isPromotedModerator = this._isPromotedModerator.asReadonly();
 
 	protected log;
 
@@ -81,6 +88,14 @@ export class RoomMemberContextService {
 			this._participantName.set(storedName);
 			this._isParticipantNameFromUrl.set(false);
 		}
+	}
+
+	/**
+	 * Sets the promoted moderator status for the current room member.
+	 * @param isPromoted - A boolean indicating whether the member has been promoted to moderator status.
+	 */
+	setPromotedModerator(isPromoted: boolean): void {
+		this._isPromotedModerator.set(isPromoted);
 	}
 
 	/**
@@ -132,7 +147,8 @@ export class RoomMemberContextService {
 				this._participantIdentity.set(decodedToken.sub);
 			}
 
-			this._permissions.set(metadata.effectivePermissions);
+			this._permissions.set(metadata.permissions);
+			this._memberBadge.set(metadata.badge);
 
 			// If token contains memberId, fetch and store member info
 			if (metadata.memberId) {
@@ -143,7 +159,6 @@ export class RoomMemberContextService {
 					this.log.w('Could not fetch member info:', error);
 				}
 			}
-
 		} catch (error) {
 			this.log.e('Error decoding room member token:', error);
 			throw new Error('Invalid room member token');
@@ -159,6 +174,8 @@ export class RoomMemberContextService {
 		this._isParticipantNameFromUrl.set(false);
 		this._participantIdentity.set(undefined);
 		this._permissions.set(undefined);
+		this._memberBadge.set(MeetRoomMemberUIBadge.OTHER);
+		this._isPromotedModerator.set(false);
 		this._member.set(undefined);
 	}
 }

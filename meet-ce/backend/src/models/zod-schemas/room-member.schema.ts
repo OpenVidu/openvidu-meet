@@ -7,6 +7,7 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
+	MeetRoomMemberUIBadge,
 	SortOrder
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
@@ -141,7 +142,8 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 		secret: z.string().optional(),
 		joinMeeting: z.boolean().optional().default(false),
 		participantName: z.string().optional(),
-		participantIdentity: z.string().optional()
+		participantIdentity: z.string().optional(),
+		useParticipantMetadata: z.boolean().optional().default(false)
 	})
 	.refine(
 		(data) => {
@@ -156,10 +158,11 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	iat: z.number(),
-	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
 	roomId: z.string(),
 	memberId: z.string().optional(),
-	baseRole: RoomMemberRoleSchema,
-	customPermissions: PartialMeetPermissionsSchema.optional(),
-	effectivePermissions: MeetPermissionsSchema
+	userId: z.string().optional(),
+	permissions: MeetPermissionsSchema,
+	badge: z.nativeEnum(MeetRoomMemberUIBadge),
+	isPromotedModerator: z.boolean().optional(),
+	livekitUrl: z.string().url('LiveKit URL must be a valid URL').optional()
 });

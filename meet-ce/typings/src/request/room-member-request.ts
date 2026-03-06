@@ -39,4 +39,19 @@ export interface MeetRoomMemberTokenOptions {
 	 * Required when refreshing an existing token used to join a meeting.
 	 */
 	participantIdentity?: string;
+	/**
+	 * If true, the token metadata is rebuilt from the current participant metadata in LiveKit.
+	 * Used when refreshing tokens after in-meeting permission updates.
+	 */
+	useParticipantMetadata?: boolean;
+}
+
+/**
+ * Enum representing moderation actions that can be performed on a meeting participant.
+ */
+export enum MeetParticipantModerationAction {
+	/** Action to promote a participant to moderator role */
+	UPGRADE = 'upgrade',
+	/** Action to demote a participant from moderator role and revert to original role */
+	DOWNGRADE = 'downgrade'
 }

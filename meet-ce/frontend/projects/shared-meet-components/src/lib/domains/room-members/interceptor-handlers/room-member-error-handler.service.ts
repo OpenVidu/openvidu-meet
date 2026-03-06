@@ -75,13 +75,16 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		const participantName = this.roomMemberContextService.participantName();
 		const participantIdentity = this.roomMemberContextService.participantIdentity();
 		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
+		// If the member is a promoted moderator, we need to use LiveKit participant metadata to get the updated permissions in the token
+		const useParticipantMetadata = this.roomMemberContextService.isPromotedModerator();
 
 		return from(
 			this.roomMemberContextService.generateToken(roomId, {
 				secret,
 				joinMeeting,
 				participantName,
-				participantIdentity
+				participantIdentity,
+				useParticipantMetadata
 			})
 		).pipe(
 			switchMap(() => {

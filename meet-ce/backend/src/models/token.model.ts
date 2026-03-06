@@ -34,6 +34,4 @@ export interface MeetRoomMemberTokenOptions {
 	participantName?: string;
 	/** Identity of the participant */
 	participantIdentity?: string;
-	/** Indicates if the room has captions enabled */
-	roomWithCaptions?: boolean;
 }
