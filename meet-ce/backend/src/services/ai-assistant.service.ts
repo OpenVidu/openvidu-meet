@@ -4,7 +4,7 @@ import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { errorInsufficientPermissions } from '../models/error.model.js';
+import { errorConfigurationError } from '../models/error.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -42,7 +42,7 @@ export class AiAssistantService {
 		try {
 			await this.validateCreateConditions(roomId, capability);
 
-			const lock = await this.mutexService.acquire(lockName, this.ASSISTANT_STATE_LOCK_TTL);
+			const lock = await this.mutexService.acquireWithRetry(lockName, this.ASSISTANT_STATE_LOCK_TTL);
 
 			if (!lock) {
 				this.logger.error(`Could not acquire lock '${lockName}' for creating assistant in room '${roomId}'`);
@@ -173,13 +173,13 @@ export class AiAssistantService {
 	protected async validateCreateConditions(roomId: string, capability: MeetAssistantCapabilityName): Promise<void> {
 		if (capability === MeetAssistantCapabilityName.LIVE_CAPTIONS) {
 			if (MEET_ENV.CAPTIONS_ENABLED !== 'true') {
-				throw errorInsufficientPermissions();
+				throw errorConfigurationError('Live captions are not enabled in the server configuration. Please set CAPTIONS_ENABLED to true to enable this feature.');
 			}
 
 			const room = await this.roomService.getMeetRoom(roomId);
 
 			if (!room.config.captions.enabled) {
-				throw errorInsufficientPermissions();
+				throw errorConfigurationError('Live captions are not enabled in the room configuration.');
 			}
 		}
 	}

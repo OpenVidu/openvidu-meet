@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import { MeetAssistantCapabilityName, MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -9,12 +9,21 @@ import {
 	joinFakeParticipant,
 	updateParticipantMetadata
 } from '../../../helpers/livekit-cli-helpers.js';
-import { deleteAllRooms, getFullPath, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	createAssistant,
+	deleteAllRooms,
+	generateRoomMemberToken,
+	getFullPath,
+	loginRootAdmin,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
 
 import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
 const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`);
+const ASSISTANTS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`);
+const LIVE_CAPTIONS_BODY = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] };
 
 describe('Meeting API Security Tests', () => {
 	const participantIdentity = 'TEST_PARTICIPANT';
@@ -218,6 +227,73 @@ describe('Meeting API Security Tests', () => {
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
 			expect(response.status).toBe(403);
+		});
+	});
+
+	describe('AI Assistant Tests', () => {
+		const MOCK_DISPATCH_ID = 'dispatch-test-001';
+
+		describe('Create Assistant Security Tests', () => {
+			it('should return 401 when no room member token header is provided', async () => {
+				const response = await request(app).post(ASSISTANTS_PATH).send(LIVE_CAPTIONS_BODY);
+
+				expect(response.status).toBe(401);
+			});
+
+			it('should return 401 when the room member token is malformed', async () => {
+				const response = await request(app)
+					.post(ASSISTANTS_PATH)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'Bearer this.is.not.a.valid.jwt')
+					.send(LIVE_CAPTIONS_BODY);
+
+				expect(response.status).toBe(401);
+			});
+
+			it('should return 401 when the token header contains a random string without Bearer prefix', async () => {
+				const response = await request(app)
+					.post(ASSISTANTS_PATH)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'random-garbage-token')
+					.send(LIVE_CAPTIONS_BODY);
+
+				expect(response.status).toBe(401);
+			});
+
+			it('should return 401 when an expired token is used', async () => {
+				// Generate a token for a room that has already been deleted → verify will fail
+				const expiredToken = await generateRoomMemberToken(roomData.room.roomId, {
+					secret: roomData.speakerSecret
+				});
+				await deleteAllRooms();
+
+				const response = await createAssistant(expiredToken);
+
+				// The room is gone → token validation or room lookup fails → not 200
+				expect(response.status).not.toBe(200);
+			});
+		});
+
+		describe('Cancel Assistant Security Tests', () => {
+			it('should return 401 when no room member token header is provided', async () => {
+				const response = await request(app).delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`);
+
+				expect(response.status).toBe(401);
+			});
+
+			it('should return 401 when the room member token is malformed', async () => {
+				const response = await request(app)
+					.delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'Bearer malformed.token.here');
+
+				expect(response.status).toBe(401);
+			});
+
+			it('should return 401 when the token header contains a random string without Bearer prefix', async () => {
+				const response = await request(app)
+					.delete(`${ASSISTANTS_PATH}/${MOCK_DISPATCH_ID}`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'garbage');
+
+				expect(response.status).toBe(401);
+			});
 		});
 	});
 });

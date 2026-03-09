@@ -63,6 +63,10 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
+export const errorConfigurationError = (message: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Configuration Error', message, 500);
+}
+
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {

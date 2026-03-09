@@ -1,6 +1,7 @@
 import { expect } from '@jest/globals';
 import {
 	MeetAppearanceConfig,
+	MeetAssistantCapabilityName,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
@@ -781,6 +782,21 @@ export const generateRoomMemberToken = async (
 };
 
 // MEETING HELPERS
+
+export const createAssistant = (
+	token: string,
+	body = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] }
+): Promise<Response> =>
+	request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
+		.send(body);
+
+/** DELETE /ai/assistants/:id with a room member token */
+export const cancelAssistant = (assistantId: string, token: string): Promise<Response> =>
+	request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants/${assistantId}`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
 
 export const updateParticipant = async (
 	roomId: string,
