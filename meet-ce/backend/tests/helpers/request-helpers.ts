@@ -627,6 +627,7 @@ export const deleteAllRooms = async () => {
 	checkAppIsRunning();
 
 	let nextPageToken: string | undefined;
+	const roomIdsToDelete: string[] = [];
 
 	do {
 		const response = await getRooms({ fields: 'roomId', maxItems: 100, nextPageToken });
@@ -639,12 +640,16 @@ export const deleteAllRooms = async () => {
 			break;
 		}
 
+		roomIdsToDelete.push(...roomIds);
+
 		await bulkDeleteRooms(
 			roomIds,
 			MeetRoomDeletionPolicyWithMeeting.FORCE,
 			MeetRoomDeletionPolicyWithRecordings.FORCE
 		);
 	} while (nextPageToken);
+
+	await waitForAllRoomsToDelete(roomIdsToDelete);
 };
 
 /**
