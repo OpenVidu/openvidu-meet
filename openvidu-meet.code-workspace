@@ -32,7 +32,7 @@
 	"settings": {
 		"editor.codeActionsOnSave": {
 			"source.organizeImports": "always",
-			"source.removeUnusedImports": "always",
+			"source.removeUnusedImports": "always"
 		},
 		"files.exclude": {
 			"**/meet-ce": true,
@@ -44,15 +44,21 @@
 			"**/public": false,
 			"**/dist": false,
 			"**/node_modules": true,
-			"**/test-results": true,
+			"**/test-results": true
 		},
-		"jest.disabledWorkspaceFolders": ["openvidu-meet (root)", "openvidu-components-angular", "shared-meet-components", "meet-testapp"],
+		"jest.disabledWorkspaceFolders": [
+			"openvidu-meet (root)",
+			"openvidu-components-angular",
+			"shared-meet-components",
+			"meet-testapp"
+		],
 		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
 		"mochaExplorer.require": ".mocharc.js",
 		"files.watcherExclude": {
 			"**/node_modules/**": true,
-			"**/dist/**": true,
+			"**/dist/**": true
 		},
+		"chat.useAgentSkills": true
 	},
 	"launch": {
 		"version": "0.2.0",
@@ -74,9 +80,7 @@
 				"windows": {
 					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
 				},
-				"runtimeArgs": [
-					"--experimental-vm-modules"
-				],
+				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
@@ -99,9 +103,7 @@
 				"windows": {
 					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
 				},
-				"runtimeArgs": [
-					"--experimental-vm-modules"
-				],
+				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
@@ -124,9 +126,7 @@
 				"windows": {
 					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
 				},
-				"runtimeArgs": [
-					"--experimental-vm-modules"
-				],
+				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
@@ -147,9 +147,7 @@
 				],
 				"console": "integratedTerminal",
 				"internalConsoleOptions": "neverOpen",
-				"runtimeArgs": [
-					"--experimental-vm-modules"
-				],
+				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
@@ -170,9 +168,7 @@
 				],
 				"console": "integratedTerminal",
 				"internalConsoleOptions": "neverOpen",
-				"runtimeArgs": [
-					"--experimental-vm-modules"
-				],
+				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
@@ -187,5 +183,5 @@
 				"type": "promptString"
 			}
 		]
-	},
+	}
 }
