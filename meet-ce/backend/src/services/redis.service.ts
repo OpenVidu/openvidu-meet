@@ -189,43 +189,45 @@ export class RedisService extends EventEmitter {
 	}
 
 	/**
-	 * Sets a value in Redis with an optional TTL (time-to-live).
-	 *
-	 * @param {string} key - The key under which the value will be stored.
-	 * @param {any} value - The value to be stored. Can be a string, number, boolean, or object.
-	 * @param {boolean} [withTTL=true] - Whether to set a TTL for the key. Defaults to true.
-	 * @returns {Promise<string>} - A promise that resolves to 'OK' if the operation is successful.
-	 * @throws {Error} - Throws an error if the value type is invalid or if there is an issue setting the value in Redis.
+	 * Sets a value in Redis with a specified TTL (time-to-live) in milliseconds.
+	 * @param key - The key under which the value will be stored.
+	 * @param value - The value to be stored. Can be a string, number, boolean, or object.
+	 * @param ttlMs TTL in milliseconds for the key. If not provided, the key will not expire.
+	 * @returns A promise that resolves to 'OK' if the operation is successful.
+	 * @throws Error if there is an issue setting the value in Redis.
 	 */
-	async set(key: string, value: string | number | boolean | object, withTTL = true): Promise<string> {
+	async set(key: string, value: string | number | boolean | object, ttlMs: number): Promise<string> {
 		try {
 			const valueType = typeof value;
+			const hasTTL = ttlMs !== undefined;
 
 			if (valueType === 'string' || valueType === 'number') {
-				if (withTTL) {
-					await this.redisPublisher.set(key, value.toString(), 'EX', this.DEFAULT_TTL);
+				if (hasTTL) {
+					await this.redisPublisher.set(key, value.toString(), 'PX', ttlMs);
 				} else {
 					await this.redisPublisher.set(key, value.toString());
 				}
 			} else if (valueType === 'boolean') {
 				const stringValue = value.toString();
 
-				if (withTTL) {
-					await this.redisPublisher.set(key, stringValue, 'EX', this.DEFAULT_TTL);
+				if (hasTTL) {
+					await this.redisPublisher.set(key, stringValue, 'PX', ttlMs);
 				} else {
 					await this.redisPublisher.set(key, stringValue);
 				}
 			} else if (valueType === 'object') {
 				await this.redisPublisher.hmset(key, value as Record<string, string | number>);
 
-				if (withTTL) await this.redisPublisher.expire(key, this.DEFAULT_TTL);
+				if (hasTTL) {
+					await this.redisPublisher.pexpire(key, ttlMs);
+				}
 			} else {
 				throw new Error('Invalid value type');
 			}
 
 			return 'OK';
 		} catch (error) {
-			this.logger.error('Error setting value in Redis', error);
+			this.logger.error('Error setting value in Redis with TTL', error);
 			throw error;
 		}
 	}

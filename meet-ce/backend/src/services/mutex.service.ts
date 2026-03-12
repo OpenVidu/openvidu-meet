@@ -6,6 +6,13 @@ import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 
 export type RedisLock = Lock;
+type RedisLockRegistryData = {
+	resources: string[];
+	value: string;
+	expiration: number;
+	createdAt: number;
+};
+
 @injectable()
 export class MutexService {
 	protected redlockWithoutRetry: Redlock;
@@ -35,18 +42,30 @@ export class MutexService {
 			this.logger.debug(`Requesting lock: ${key}`);
 			const lock = await this.redlockWithoutRetry.acquire([key], ttl);
 
-			// Store Lock data in Redis registry for support HA and release lock
-			await this.redisService.set(
-				registryKey,
-				JSON.stringify({
-					resources: lock.resources,
-					value: lock.value,
-					expiration: lock.expiration,
-					createdAt: Date.now()
-				}),
-				true
-			);
-			return lock;
+			try {
+				// Store lock details in the registry for later retrieval and management in others instances
+				await this.redisService.set(
+					registryKey,
+					JSON.stringify({
+						resources: lock.resources,
+						value: lock.value,
+						expiration: lock.expiration,
+						createdAt: Date.now()
+					}),
+					ttl
+				);
+				return lock;
+			} catch (error) {
+				this.logger.error(`Error storing lock registry for key ${key}:`, error);
+
+				try {
+					await lock.release();
+				} catch (releaseError) {
+					this.logger.error(`Error rolling back lock acquisition for key ${key}:`, releaseError);
+				}
+
+				return null;
+			}
 		} catch (error) {
 			this.logger.warn('Error acquiring lock:', error);
 			return null;
@@ -61,7 +80,7 @@ export class MutexService {
 	 */
 	async release(key: string): Promise<void> {
 		const registryKey = MeetLock.getRegistryLock(key);
-		const lock = await this.getLockData(registryKey);
+		const lock = await this.buildLock(registryKey);
 
 		if (!lock) {
 			this.logger.warn(`Lock not found for resource: ${key}. May be expired or released by another process.`);
@@ -97,7 +116,7 @@ export class MutexService {
 			return [];
 		}
 
-		const lockPromises: Promise<Lock | null>[] = keys.map((key) => this.getLockData(key));
+		const lockPromises: Promise<Lock | null>[] = keys.map((key) => this.buildLock(key));
 
 		const locksResult = await Promise.all(lockPromises);
 
@@ -134,7 +153,7 @@ export class MutexService {
 
 	lockExists(key: string): Promise<boolean> {
 		const registryKey = MeetLock.getRegistryLock(key);
-		return this.redisService.exists(registryKey);
+		return this.hasActiveLock(registryKey);
 	}
 
 	/**
@@ -145,8 +164,7 @@ export class MutexService {
 	 */
 	async getLockCreatedAt(key: string): Promise<number | null> {
 		const registryKey = MeetLock.getRegistryLock(key);
-
-		const redisLockData = await this.redisService.get(registryKey);
+		const redisLockData = await this.getRegistryLockData(registryKey);
 
 		if (!redisLockData) {
 			this.logger.warn(
@@ -155,29 +173,102 @@ export class MutexService {
 			return null;
 		}
 
-		const { createdAt } = JSON.parse(redisLockData);
+		const { createdAt } = redisLockData;
 		return createdAt;
 	}
 
 	/**
-	 * Retrieves the lock data for a given resource key.
+	 * Builds a Lock instance from the lock data stored in the registry for the given key.
 	 *
 	 * @param registryKey - The resource key to retrieve the lock data for.
 	 * @returns A promise that resolves to a `Lock` instance or null if not found.
 	 */
-	protected async getLockData(registryKey: string): Promise<Lock | null> {
-		try {
-			// Try to get lock from Redis
-			const redisLockData = await this.redisService.get(registryKey);
+	protected async buildLock(registryKey: string): Promise<Lock | null> {
+		const registryLockData = await this.getRegistryLockData(registryKey);
 
-			if (!redisLockData) {
-				return null;
-			}
-
-			const { resources, value, expiration } = JSON.parse(redisLockData);
-			return new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
-		} catch (error) {
+		if (!registryLockData) {
 			return null;
+		}
+
+		const { resources, value, expiration } = registryLockData;
+		return new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
+	}
+
+	protected async getRegistryLockData(registryKey: string): Promise<RedisLockRegistryData | null> {
+		let redisLockData: string | null;
+
+		try {
+			redisLockData = await this.redisService.get(registryKey);
+		} catch (error) {
+			this.logger.warn(`Error reading lock registry '${registryKey}': ${error}`);
+			return null;
+		}
+
+		if (!redisLockData) {
+			return null;
+		}
+
+		let parsedLockData: unknown;
+
+		try {
+			parsedLockData = JSON.parse(redisLockData);
+		} catch {
+			await this.cleanupRegistryKey(registryKey, 'registry payload is invalid JSON');
+			return null;
+		}
+
+		if (!this.isValidRegistryLockData(parsedLockData)) {
+			await this.cleanupRegistryKey(registryKey, 'registry payload is incomplete');
+			return null;
+		}
+
+		if (parsedLockData.expiration <= Date.now()) {
+			await this.cleanupRegistryKey(registryKey, 'registry lock is expired');
+			return null;
+		}
+
+		const resourcesExist = await Promise.all(parsedLockData.resources.map((resource) => this.redisService.exists(resource)));
+
+		if (resourcesExist.some((exists) => !exists)) {
+			await this.cleanupRegistryKey(registryKey, 'lock resources are missing');
+			return null;
+		}
+
+		return parsedLockData;
+	}
+
+	protected async hasActiveLock(registryKey: string): Promise<boolean> {
+		const lockData = await this.getRegistryLockData(registryKey);
+		return !!lockData;
+	}
+
+
+	/**
+	 * Validates the structure of the lock data retrieved from the registry to ensure it contains all necessary fields with correct types.
+	 * @param lockData - The lock data object to validate.
+	 * @returns A boolean indicating whether the lock data is valid.
+	 */
+	protected isValidRegistryLockData(lockData: unknown): lockData is RedisLockRegistryData {
+		if (!lockData || typeof lockData !== 'object') {
+			return false;
+		}
+
+		const candidate = lockData as Partial<RedisLockRegistryData>;
+		return (
+			Array.isArray(candidate.resources) &&
+			candidate.resources.every((resource) => typeof resource === 'string' && resource.length > 0) &&
+			typeof candidate.value === 'string' &&
+			typeof candidate.expiration === 'number' &&
+			typeof candidate.createdAt === 'number'
+		);
+	}
+
+	protected async cleanupRegistryKey(registryKey: string, reason: string): Promise<void> {
+		try {
+			await this.redisService.delete(registryKey);
+			this.logger.debug(`Deleted orphaned lock registry '${registryKey}': ${reason}`);
+		} catch (error) {
+			this.logger.warn(`Error deleting lock registry '${registryKey}': ${error}`);
 		}
 	}
 }
