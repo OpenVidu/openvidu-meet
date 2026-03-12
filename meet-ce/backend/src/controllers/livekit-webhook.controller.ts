@@ -1,22 +1,28 @@
 import { Request, Response } from 'express';
 import { WebhookEvent } from 'livekit-server-sdk';
+import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
+import { MeetLock } from '../helpers/redis.helper.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { LoggerService } from '../services/logger.service.js';
+import { MutexService } from '../services/mutex.service.js';
 
 export const lkWebhookHandler = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
+	const mutexService = container.get(MutexService);
+	let webhookEvent: WebhookEvent | undefined;
+	let webhookLockKey: string | undefined;
 
 	try {
 		const lkWebhookService = container.get(LivekitWebhookService);
 
-		const webhookEvent: WebhookEvent | undefined = await lkWebhookService.getEventFromWebhook(
-			req.body,
-			req.get('Authorization')!
-		);
+		webhookEvent = await lkWebhookService.getEventFromWebhook(req.body, req.get('Authorization')!);
+		webhookLockKey = MeetLock.getWebhookLock(webhookEvent);
 
-		if (!webhookEvent) {
-			logger.debug(`Webhook processing skipped: May another instance is processing it`);
+		const lock = await mutexService.acquire(webhookLockKey, ms('5s'));
+
+		if (!lock) {
+			logger.debug(`Webhook processing skipped: another instance is already processing '${webhookLockKey}'`);
 			return res.status(200).send();
 		}
 
@@ -59,6 +65,10 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 		}
 	} catch (error) {
 		logger.error(`Error handling webhook event: ${error}`);
+	} finally {
+		if (webhookLockKey) {
+			await mutexService.release(webhookLockKey);
+		}
 	}
 
 	return res.status(200).send();
