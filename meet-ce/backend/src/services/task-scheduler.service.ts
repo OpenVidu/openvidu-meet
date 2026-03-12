@@ -54,6 +54,29 @@ export class TaskSchedulerService {
 		}
 	}
 
+	protected async runCronTask(name: string, lockDuration: number, callback: () => Promise<void>): Promise<void> {
+		const lockKey = MeetLock.getScheduledTaskLock(name);
+
+		try {
+			this.logger.debug(`Attempting to acquire lock for cron task "${name}"`);
+			const lock = await this.mutexService.acquire(lockKey, lockDuration);
+
+			if (!lock) {
+				this.logger.debug(`Task "${name}" skipped: another instance holds the lock.`);
+				return;
+			}
+
+			try {
+				this.logger.debug(`Running cron task "${name}"...`);
+				await callback();
+			} finally {
+				await this.mutexService.release(lockKey);
+			}
+		} catch (error) {
+			this.logger.error(`Error running cron task "${name}":`, error);
+		}
+	}
+
 	protected async scheduleTask(task: IScheduledTask): Promise<void> {
 		const { name, type, scheduleOrDelay, callback } = task;
 
@@ -68,24 +91,10 @@ export class TaskSchedulerService {
 			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms(INTERNAL_CONFIG.CRON_JOB_LOCK_TTL));
 
 			const job = new CronJob(cronExpression, async () => {
-				try {
-					this.logger.debug(`Attempting to acquire lock for cron task "${name}"`);
-
-					const lock = await this.mutexService.acquire(MeetLock.getScheduledTaskLock(name), lockDuration);
-
-					if (!lock) {
-						this.logger.debug(`Task "${name}" skipped: another instance holds the lock.`);
-						return;
-					}
-
-					this.logger.debug(`Running cron task "${name}"...`);
-					await callback();
-				} catch (error) {
-					this.logger.error(`Error running cron task "${name}":`, error);
-				}
+				await this.runCronTask(name, lockDuration, callback);
 			});
-			// Start the job immediately
-			await callback();
+			// Start the job immediately only in one instance to avoid multiple instances running the same task at the same time on startup.
+			await this.runCronTask(name, lockDuration, callback);
 			job.start();
 			this.scheduledTasks.set(name, job);
 		} else if (type === 'timeout') {
