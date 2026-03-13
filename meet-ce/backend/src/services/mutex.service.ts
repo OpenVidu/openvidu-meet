@@ -53,7 +53,11 @@ export class MutexService {
 		try {
 			return await callback();
 		} finally {
-			await this.release(lock);
+			// If callback process took longer than TTL, the lock may have expired and been released by Redlock automatically.
+			// In that case, we should not attempt to release it again to avoid errors. Instead, we check if the lock still exists before releasing.
+			if (await this.lockExists(key)) {
+				await this.release(lock);
+			}
 		}
 	}
 
@@ -76,6 +80,10 @@ export class MutexService {
 		}
 
 		return null;
+	}
+
+	async lockExists(key: string): Promise<boolean> {
+		return await this.redisService.exists(key);
 	}
 
 	/**
@@ -123,7 +131,7 @@ export class MutexService {
 				return null;
 			}
 		} catch (error) {
-			this.logger.warn('Error acquiring lock:', error);
+			this.logger.warn(`Error acquiring lock ${key}:`, error);
 			return null;
 		}
 	}
@@ -185,9 +193,9 @@ export class MutexService {
 		return locks;
 	}
 
-	lockExists(key: string): Promise<boolean> {
+	lockRegistryExists(key: string): Promise<boolean> {
 		const registryKey = MeetLock.getRegistryLock(key);
-		return this.hasActiveLock(registryKey);
+		return this.hasActiveLockFromRegistry(registryKey);
 	}
 
 	/**
@@ -196,7 +204,7 @@ export class MutexService {
 	 * @param key - The unique identifier for the lock
 	 * @returns A Promise that resolves to the creation timestamp (as a number) of the lock, or null if the lock doesn't exist or has expired
 	 */
-	async getLockCreatedAt(key: string): Promise<number | null> {
+	async getLockCreatedAtFromRegistry(key: string): Promise<number | null> {
 		const registryKey = MeetLock.getRegistryLock(key);
 		const redisLockData = await this.getRegistryLockData(registryKey);
 
@@ -225,7 +233,7 @@ export class MutexService {
 			this.logger.debug(`Requesting local lock: ${key}`);
 			return await this.redlockWithoutRetry.acquire([key], ttl);
 		} catch (error) {
-			this.logger.warn('Error acquiring local lock:', error);
+			this.logger.warn(`Error acquiring local lock '${key}':`, error);
 			return null;
 		}
 	}
@@ -240,7 +248,7 @@ export class MutexService {
 			await lock.release();
 			this.logger.verbose(`Local lock successfully released.`);
 		} catch (error) {
-			this.logger.error(`Error releasing local lock:`, error);
+			this.logger.error(`Error releasing local lock :`, error);
 		}
 	}
 
@@ -306,7 +314,12 @@ export class MutexService {
 		return parsedLockData;
 	}
 
-	protected async hasActiveLock(registryKey: string): Promise<boolean> {
+	/**
+	 * Checks if there is an active lock for the given registry key by verifying the existence and validity of the lock data in Redis.
+	 * @param registryKey
+	 * @returns
+	 */
+	protected async hasActiveLockFromRegistry(registryKey: string): Promise<boolean> {
 		const lockData = await this.getRegistryLockData(registryKey);
 		return !!lockData;
 	}

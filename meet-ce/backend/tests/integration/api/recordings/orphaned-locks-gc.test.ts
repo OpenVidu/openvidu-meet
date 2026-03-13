@@ -42,8 +42,8 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 		// Setup spies and store mock references
 		getRegistryLocksByPrefixMock = jest.spyOn(mutexService, 'getRegistryLocksByPrefix');
-		lockExistsMock = jest.spyOn(mutexService, 'lockExists');
-		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAt');
+		lockExistsMock = jest.spyOn(mutexService, 'lockRegistryExists');
+		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAtFromRegistry');
 		releaseWithRegistryMock = jest.spyOn(mutexService, 'releaseWithRegistry');
 		roomExistsMock = jest.spyOn(livekitService, 'roomExists');
 		getRoomMock = jest.spyOn(livekitService, 'getRoom');
