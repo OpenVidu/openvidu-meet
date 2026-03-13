@@ -27,15 +27,71 @@ export class MutexService {
 	}
 
 	/**
+	 * Executes a callback while holding the specified lock.
+	 * The lock is always released after the callback completes, even if the callback throws.
+	 * Returns null if the lock cannot be acquired (i.e., another process holds it).
+	 *
+	 * Preferred pattern for ephemeral locks:
+	 * ```typescript
+	 * return this.mutexService.withLock(key, ms('5s'), async () => {
+	 *   await doWork();
+	 * });
+	 * ```
+	 *
+	 * @param key The resource to lock.
+	 * @param ttl The time-to-live (TTL) in milliseconds.
+	 * @param callback The function to execute while holding the lock.
+	 * @returns A Promise resolving to the callback's return value, or null if the lock could not be acquired.
+	 */
+	async withLock<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T | null> {
+		const lock = await this.acquire(key, ttl);
+
+		if (!lock) {
+			return null;
+		}
+
+		try {
+			return await callback();
+		} finally {
+			await this.release(lock);
+		}
+	}
+
+	async withRetryLock<T>(
+		key: string,
+		ttl: number,
+		callback: () => Promise<T>,
+		maxAttempts = 3,
+		delayMs = 200
+	): Promise<T | null> {
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			const result = await this.withLock(key, ttl, callback);
+
+			if (result !== null) return result;
+
+			if (attempt < maxAttempts) {
+				this.logger.warn(`Lock '${key}' attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`);
+				await new Promise((resolve) => setTimeout(resolve, delayMs));
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Acquires a lock for the specified resource.
 	 * This method uses the Redlock library to acquire a distributed lock on a resource identified by the key.
 	 * The request will return null if the lock cannot be acquired.
+	 *
+	 * @deprecated Use {@link acquire} for ephemeral locks or {@link withLock} for the try-finally pattern.
+	 * This method persists a registry entry in Redis for cross-instance release, which is only needed
+	 * for long-lived locks like `recording_active`. Use {@link acquire} for all other cases.
 	 *
 	 * @param key The resource to acquire a lock for.
 	 * @param ttl The time-to-live (TTL) for the lock in milliseconds. Defaults to the TTL value of the MutexService.
 	 * @returns A Promise that resolves to the acquired Lock object. If the lock cannot be acquired, it resolves to null.
 	 */
-	async acquire(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
+	async acquireWithRegistry(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
 		const registryKey = MeetLock.getRegistryLock(key);
 
 		try {
@@ -75,10 +131,15 @@ export class MutexService {
 	/**
 	 * Releases a lock on a resource.
 	 *
+	 * @deprecated Use {@link release} with the Lock instance returned by {@link acquire},
+	 * or use {@link withLock} which handles release automatically.
+	 * This method performs a cross-instance release by reading from the Redis registry, which is only
+	 * needed for long-lived locks like `recording_active`.
+	 *
 	 * @param key - The resource to release the lock on.
 	 * @returns A Promise that resolves when the lock is released.
 	 */
-	async release(key: string): Promise<void> {
+	async releaseWithRegistry(key: string): Promise<void> {
 		const registryKey = MeetLock.getRegistryLock(key);
 		const lock = await this.buildLock(registryKey);
 
@@ -107,7 +168,7 @@ export class MutexService {
 	 * @param pattern - The prefix to filter the keys in Redis.
 	 * @returns A promise that resolves to an array of `Lock` instances.
 	 */
-	async getLocksByPrefix(pattern: string): Promise<Lock[]> {
+	async getRegistryLocksByPrefix(pattern: string): Promise<Lock[]> {
 		const registryPattern = MeetLock.getRegistryLock(pattern);
 		const keys = await this.redisService.getKeys(registryPattern);
 		this.logger.debug(`Found ${keys.length} registry keys for pattern "${pattern}".`);
@@ -122,33 +183,6 @@ export class MutexService {
 
 		const locks = locksResult.filter((lock): lock is Lock => lock !== null);
 		return locks;
-	}
-
-	/**
-	 * Attempts to acquire a lock, retrying up to `maxAttempts` times with a fixed delay between
-	 * attempts. Intended for fire-and-forget flows (e.g. webhooks) where the caller has no
-	 * opportunity to retry externally and a missed lock acquisition would leave the system in an
-	 * inconsistent state.
-	 *
-	 * @param key - The resource to acquire a lock for.
-	 * @param ttl - The time-to-live for the lock in milliseconds.
-	 * @param maxAttempts - Maximum number of acquisition attempts. Defaults to 3.
-	 * @param delayMs - Fixed delay in milliseconds between attempts. Defaults to 200.
-	 * @returns A Promise that resolves to the acquired Lock, or null if all attempts fail.
-	 */
-	async acquireWithRetry(key: string, ttl: number = this.TTL_MS, maxAttempts = 3, delayMs = 200): Promise<Lock | null> {
-		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			const lock = await this.acquire(key, ttl);
-
-			if (lock) return lock;
-
-			if (attempt < maxAttempts) {
-				this.logger.warn(`Lock '${key}' attempt ${attempt}/${maxAttempts} failed. Retrying in ${delayMs}ms...`);
-				await new Promise((resolve) => setTimeout(resolve, delayMs));
-			}
-		}
-
-		return null;
 	}
 
 	lockExists(key: string): Promise<boolean> {
@@ -175,6 +209,39 @@ export class MutexService {
 
 		const { createdAt } = redisLockData;
 		return createdAt;
+	}
+
+	/**
+	 * Acquires a distributed lock without registry persistence.
+	 * Use this for ephemeral locks that are acquired and released in the same execution flow.
+	 * The caller is responsible for releasing the returned Lock via {@link release}.
+	 *
+	 * @param key The resource to acquire a lock for.
+	 * @param ttl The time-to-live (TTL) for the lock in milliseconds.
+	 * @returns A Promise that resolves to the acquired Lock, or null if it cannot be acquired.
+	 */
+	protected async acquire(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
+		try {
+			this.logger.debug(`Requesting local lock: ${key}`);
+			return await this.redlockWithoutRetry.acquire([key], ttl);
+		} catch (error) {
+			this.logger.warn('Error acquiring local lock:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Releases a lock acquired via {@link acquire}.
+	 *
+	 * @param lock The Lock instance to release.
+	 */
+	protected async release(lock: Lock): Promise<void> {
+		try {
+			await lock.release();
+			this.logger.verbose(`Local lock successfully released.`);
+		} catch (error) {
+			this.logger.error(`Error releasing local lock:`, error);
+		}
 	}
 
 	/**
@@ -227,7 +294,9 @@ export class MutexService {
 			return null;
 		}
 
-		const resourcesExist = await Promise.all(parsedLockData.resources.map((resource) => this.redisService.exists(resource)));
+		const resourcesExist = await Promise.all(
+			parsedLockData.resources.map((resource) => this.redisService.exists(resource))
+		);
 
 		if (resourcesExist.some((exists) => !exists)) {
 			await this.cleanupRegistryKey(registryKey, 'lock resources are missing');
@@ -241,7 +310,6 @@ export class MutexService {
 		const lockData = await this.getRegistryLockData(registryKey);
 		return !!lockData;
 	}
-
 
 	/**
 	 * Validates the structure of the lock data retrieved from the registry to ensure it contains all necessary fields with correct types.

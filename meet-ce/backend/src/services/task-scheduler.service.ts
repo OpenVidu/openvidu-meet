@@ -59,18 +59,15 @@ export class TaskSchedulerService {
 
 		try {
 			this.logger.debug(`Attempting to acquire lock for cron task "${name}"`);
-			const lock = await this.mutexService.acquire(lockKey, lockDuration);
-
-			if (!lock) {
-				this.logger.debug(`Task "${name}" skipped: another instance holds the lock.`);
-				return;
-			}
-
-			try {
+			const executionResult = await this.mutexService.withLock(lockKey, lockDuration, async () => {
 				this.logger.debug(`Running cron task "${name}"...`);
 				await callback();
-			} finally {
-				await this.mutexService.release(lockKey);
+				return true;
+			});
+
+			if (executionResult === null) {
+				this.logger.debug(`Task "${name}" skipped: another instance holds the lock.`);
+				return;
 			}
 		} catch (error) {
 			this.logger.error(`Error running cron task "${name}":`, error);

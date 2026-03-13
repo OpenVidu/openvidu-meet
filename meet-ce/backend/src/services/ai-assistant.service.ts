@@ -37,35 +37,39 @@ export class AiAssistantService {
 	): Promise<MeetCreateAssistantResponse> {
 		// ! For now, we are assuming that the only capability is live captions.
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
-		const lockName = MeetLock.getAiAssistantLock(roomId, capability);
+		const lockKey = MeetLock.getAiAssistantLock(roomId, capability);
+		let executionResult: MeetCreateAssistantResponse | null = null;
 
 		try {
 			await this.validateCreateConditions(roomId, capability);
 
-			const lock = await this.mutexService.acquire(lockName, this.ASSISTANT_STATE_LOCK_TTL);
+			executionResult = await this.mutexService.withLock(lockKey, this.ASSISTANT_STATE_LOCK_TTL, async () => {
+				const existingAgent = await this.livekitService.getAgent(roomId, INTERNAL_CONFIG.CAPTIONS_AGENT_NAME);
 
-			if (!lock) {
-				this.logger.error(`Could not acquire lock '${lockName}' for creating assistant in room '${roomId}'`);
+				if (existingAgent) {
+					await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
+					return { id: existingAgent.id, status: 'active' };
+				}
+
+				const assistant = await this.livekitService.createAgent(roomId, INTERNAL_CONFIG.CAPTIONS_AGENT_NAME);
+
+				await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
+
+				return {
+					id: assistant.id,
+					status: 'active'
+				};
+			});
+
+			if (executionResult === null) {
+				this.logger.error(`Could not acquire lock '${lockKey}' for creating assistant in room '${roomId}'`);
 				throw new Error('Could not acquire lock for creating assistant. Please try again.');
 			}
 
-			const existingAgent = await this.livekitService.getAgent(roomId, INTERNAL_CONFIG.CAPTIONS_AGENT_NAME);
-
-			if (existingAgent) {
-				await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
-				return { id: existingAgent.id, status: 'active' };
-			}
-
-			const assistant = await this.livekitService.createAgent(roomId, INTERNAL_CONFIG.CAPTIONS_AGENT_NAME);
-
-			await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
-
-			return {
-				id: assistant.id,
-				status: 'active'
-			};
-		} finally {
-			await this.mutexService.release(lockName);
+			return executionResult;
+		} catch (error) {
+			this.logger.error(`Error creating live captions assistant for room '${roomId}': ${error}`);
+			throw error;
 		}
 	}
 
@@ -80,39 +84,42 @@ export class AiAssistantService {
 	async cancelAssistant(assistantId: string, roomId: string, participantIdentity: string): Promise<void> {
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
 		// The lock only protects the atomic "count → stop dispatch" decision.
-		const lockName = MeetLock.getAiAssistantLock(roomId, capability);
+		const lockKey = MeetLock.getAiAssistantLock(roomId, capability);
+		let executionResult: boolean | null = null;
 
 		try {
 			await this.setParticipantAssistantState(roomId, participantIdentity, capability, false);
 
-			const lock = await this.mutexService.acquire(lockName, this.ASSISTANT_STATE_LOCK_TTL);
+			executionResult = await this.mutexService.withLock(lockKey, this.ASSISTANT_STATE_LOCK_TTL, async () => {
+				const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
 
-			if (!lock) {
+				if (enabledParticipants > 0) {
+					this.logger.debug(
+						`Skipping assistant stop for room '${roomId}'. Remaining enabled participants: ${enabledParticipants}`
+					);
+					return true;
+				}
+
+				const assistant = await this.livekitService.getAgent(roomId, assistantId);
+
+				if (!assistant) {
+					this.logger.warn(`Captions assistant not found in room '${roomId}'. Skipping stop request.`);
+					return true;
+				}
+
+				await this.livekitService.stopAgent(assistantId, roomId);
+				return true;
+			});
+
+			if (executionResult === null) {
 				this.logger.warn(
-					`Could not acquire lock '${lockName}' for stopping assistant in room '${roomId}'. Participant state saved as disabled.`
+					`Could not acquire lock '${lockKey}' for stopping assistant in room '${roomId}'. Participant state saved as disabled.`
 				);
 				return;
 			}
-
-			const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
-
-			if (enabledParticipants > 0) {
-				this.logger.debug(
-					`Skipping assistant stop for room '${roomId}'. Remaining enabled participants: ${enabledParticipants}`
-				);
-				return;
-			}
-
-			const assistant = await this.livekitService.getAgent(roomId, assistantId);
-
-			if (!assistant) {
-				this.logger.warn(`Captions assistant not found in room '${roomId}'. Skipping stop request.`);
-				return;
-			}
-
-			await this.livekitService.stopAgent(assistantId, roomId);
-		} finally {
-			await this.mutexService.release(lockName);
+		} catch (error) {
+			this.logger.error(`Error cancelling assistant '${assistantId}' in room '${roomId}': ${error}`);
+			throw error;
 		}
 	}
 
@@ -132,11 +139,34 @@ export class AiAssistantService {
 				await this.setParticipantAssistantState(roomId, participantIdentity, capability, false);
 			}
 
-			// acquireWithRetry because this is called from webhooks (participantLeft / roomFinished).
+			// Called from webhooks (participantLeft / roomFinished). Adquire lock with retries to ensure cleanup is performed even if there is contention with assistant creation or cancellation.
 			// The agent may run indefinitely with no further opportunity to stop it.
-			const lock = await this.mutexService.acquireWithRetry(lockName, this.ASSISTANT_STATE_LOCK_TTL);
+			const executionResult = await this.mutexService.withRetryLock(
+				lockName,
+				this.ASSISTANT_STATE_LOCK_TTL,
+				async () => {
+					if (!participantIdentity) {
+						// If participantIdentity is not provided, we are cleaning up the entire room.
+						const pattern = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomId}:${capability}:*`;
+						const keys = await this.redisService.getKeys(pattern);
 
-			if (!lock) {
+						if (keys.length > 0) {
+							await this.redisService.delete(keys);
+						}
+					}
+
+					const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
+
+					if (enabledParticipants > 0) {
+						return;
+					}
+
+					// No enabled participants remain, stop the dispatch if running.
+					await this.stopCaptionsAssistantIfRunning(roomId);
+				}
+			);
+
+			if (executionResult === null) {
 				const scope = participantIdentity ? `participant '${participantIdentity}'` : `room '${roomId}'`;
 				this.logger.error(
 					`Could not acquire lock '${lockName}' for dispatch cleanup (${scope}) after retries. ` +
@@ -144,29 +174,9 @@ export class AiAssistantService {
 							? 'Participant state was saved but dispatch stop may be skipped.'
 							: 'Room state cleanup and dispatch stop were skipped.')
 				);
-				return;
 			}
-
-			if (!participantIdentity) {
-				const pattern = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomId}:${capability}:*`;
-				const keys = await this.redisService.getKeys(pattern);
-
-				if (keys.length > 0) {
-					await this.redisService.delete(keys);
-				}
-			}
-
-			const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
-
-			if (enabledParticipants > 0) {
-				return;
-			}
-
-			await this.stopCaptionsAssistantIfRunning(roomId);
 		} catch (error) {
 			this.logger.error(`Error occurred while cleaning up assistant state for room '${roomId}': ${error}`);
-		} finally {
-			await this.mutexService.release(lockName);
 		}
 	}
 

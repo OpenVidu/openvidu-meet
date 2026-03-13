@@ -604,7 +604,7 @@ export class RecordingService {
 		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
-			const lock = await this.mutexService.acquire(lockName, ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL));
+			const lock = await this.mutexService.acquireWithRegistry(lockName, ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL));
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
@@ -633,7 +633,7 @@ export class RecordingService {
 			}
 
 			try {
-				await this.mutexService.release(lockName);
+				await this.mutexService.releaseWithRegistry(lockName);
 				this.logger.verbose(`Recording active lock released for room '${roomId}'.`);
 			} catch (error) {
 				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended: ${error}`);

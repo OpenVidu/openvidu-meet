@@ -78,7 +78,7 @@ export class RecordingScheduledTasksService {
 		let recordingLocks: RedisLock[] = [];
 
 		try {
-			recordingLocks = await this.mutexService.getLocksByPrefix(lockPattern);
+			recordingLocks = await this.mutexService.getRegistryLocksByPrefix(lockPattern);
 
 			if (recordingLocks.length === 0) {
 				this.logger.debug('No active recording locks found');
@@ -123,7 +123,7 @@ export class RecordingScheduledTasksService {
 			const stillExists = await this.mutexService.lockExists(lockKey);
 
 			if (stillExists) {
-				await this.mutexService.release(lockKey);
+				await this.mutexService.releaseWithRegistry(lockKey);
 			}
 		};
 
