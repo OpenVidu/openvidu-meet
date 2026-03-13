@@ -161,6 +161,44 @@ export class RedisService extends EventEmitter {
 	}
 
 	/**
+	 * Checks existence for multiple keys using a pipeline to reduce Redis roundtrips.
+	 *
+	 * @param keys - Keys to verify
+	 * @returns Boolean existence flags ordered as input keys
+	 */
+	async existsMany(keys: string[]): Promise<boolean[]> {
+		if (keys.length === 0) {
+			return [];
+		}
+
+		try {
+			const pipeline = this.redisPublisher.pipeline();
+
+			for (const key of keys) {
+				pipeline.exists(key);
+			}
+
+			const pipelineResults = await pipeline.exec();
+
+			if (!pipelineResults) {
+				return keys.map(() => false);
+			}
+
+			return pipelineResults.map(([error, result], index) => {
+				if (error) {
+					this.logger.warn(`Error checking existence for Redis key '${keys[index]}': ${error}`);
+					return false;
+				}
+
+				return Number(result) === 1;
+			});
+		} catch (error) {
+			this.logger.error('Error checking multiple key existence in Redis', error);
+			throw internalError('checking multiple key existence in Redis');
+		}
+	}
+
+	/**
 	 * Checks if a given key exists in the Redis store.
 	 *
 	 * @param {string} key - The key to check for existence.
@@ -175,13 +213,33 @@ export class RedisService extends EventEmitter {
 		}
 	}
 
-	get(key: string, hashKey?: string): Promise<string | null> {
+	/**
+	 * Retrieves multiple string values in a single Redis roundtrip.
+	 *
+	 * @param keys - Keys to fetch
+	 * @returns Values ordered as input keys. Missing keys are returned as null.
+	 */
+	async getMany(keys: string[]): Promise<Array<string | null>> {
+		if (keys.length === 0) {
+			return [];
+		}
+
 		try {
-			if (hashKey) {
-				return this.redisPublisher.hget(key, hashKey);
-			} else {
-				return this.redisPublisher.get(key);
-			}
+			return await this.redisPublisher.mget(keys);
+		} catch (error) {
+			this.logger.error('Error getting multiple values from Redis', error);
+			throw internalError('getting multiple values from Redis');
+		}
+	}
+
+	/**
+	 * Retrieves a value from Redis for a given key.
+	 *
+	 * @param key - The key to retrieve the value for.
+	 */
+	get(key: string): Promise<string | null> {
+		try {
+			return this.redisPublisher.get(key);
 		} catch (error) {
 			this.logger.error('Error getting value from Redis', error);
 			throw internalError('getting value from Redis');

@@ -17,6 +17,7 @@ type RedisLockRegistryData = {
 export class MutexService {
 	protected redlockWithoutRetry: Redlock;
 	protected readonly TTL_MS = ms('1m');
+	protected readonly LOCK_REGISTRY_BATCH_SIZE = 100;
 
 	constructor(
 		@inject(RedisService) protected redisService: RedisService,
@@ -185,11 +186,49 @@ export class MutexService {
 			return [];
 		}
 
-		const lockPromises: Promise<Lock | null>[] = keys.map((key) => this.buildLock(key));
+		const lockEntries: Array<{ registryKey: string; data: RedisLockRegistryData }> = [];
 
-		const locksResult = await Promise.all(lockPromises);
+		for (let i = 0; i < keys.length; i += this.LOCK_REGISTRY_BATCH_SIZE) {
+			const keyBatch = keys.slice(i, i + this.LOCK_REGISTRY_BATCH_SIZE);
+			const payloadBatch = await this.redisService.getMany(keyBatch);
 
-		const locks = locksResult.filter((lock): lock is Lock => lock !== null);
+			for (let j = 0; j < keyBatch.length; j++) {
+				const payload = payloadBatch[j];
+
+				if (!payload) {
+					continue;
+				}
+
+				const parsed = await this.parseRegistryLockData(keyBatch[j], payload);
+
+				if (parsed) {
+					lockEntries.push({ registryKey: keyBatch[j], data: parsed });
+				}
+			}
+		}
+
+		if (lockEntries.length === 0) {
+			return [];
+		}
+
+		const uniqueResources = Array.from(new Set(lockEntries.flatMap((entry) => entry.data.resources)));
+		const resourceExistenceMap = await this.getResourceExistenceMap(uniqueResources);
+
+		const locks: Lock[] = [];
+
+		for (const entry of lockEntries) {
+			const hasMissingResource = entry.data.resources.some((resource) => !resourceExistenceMap.get(resource));
+
+			if (hasMissingResource) {
+				await this.cleanupRegistryKey(entry.registryKey, 'lock resources are missing');
+				continue;
+			}
+
+			locks.push(
+				new Lock(this.redlockWithoutRetry, entry.data.resources, entry.data.value, [], entry.data.expiration)
+			);
+		}
+
 		return locks;
 	}
 
@@ -283,6 +322,26 @@ export class MutexService {
 			return null;
 		}
 
+		const parsedLockData = await this.parseRegistryLockData(registryKey, redisLockData);
+
+		if (!parsedLockData) {
+			return null;
+		}
+
+		const resourcesExist = await this.redisService.existsMany(parsedLockData.resources);
+
+		if (resourcesExist.some((exists) => !exists)) {
+			await this.cleanupRegistryKey(registryKey, 'lock resources are missing');
+			return null;
+		}
+
+		return parsedLockData;
+	}
+
+	protected async parseRegistryLockData(
+		registryKey: string,
+		redisLockData: string
+	): Promise<RedisLockRegistryData | null> {
 		let parsedLockData: unknown;
 
 		try {
@@ -302,16 +361,22 @@ export class MutexService {
 			return null;
 		}
 
-		const resourcesExist = await Promise.all(
-			parsedLockData.resources.map((resource) => this.redisService.exists(resource))
-		);
+		return parsedLockData;
+	}
 
-		if (resourcesExist.some((exists) => !exists)) {
-			await this.cleanupRegistryKey(registryKey, 'lock resources are missing');
-			return null;
+	protected async getResourceExistenceMap(resources: string[]): Promise<Map<string, boolean>> {
+		const existenceMap = new Map<string, boolean>();
+
+		for (let i = 0; i < resources.length; i += this.LOCK_REGISTRY_BATCH_SIZE) {
+			const resourceBatch = resources.slice(i, i + this.LOCK_REGISTRY_BATCH_SIZE);
+			const existsBatch = await this.redisService.existsMany(resourceBatch);
+
+			for (let j = 0; j < resourceBatch.length; j++) {
+				existenceMap.set(resourceBatch[j], existsBatch[j]);
+			}
 		}
 
-		return parsedLockData;
+		return existenceMap;
 	}
 
 	/**
