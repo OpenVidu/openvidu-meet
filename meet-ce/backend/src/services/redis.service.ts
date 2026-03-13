@@ -168,8 +168,8 @@ export class RedisService extends EventEmitter {
 	 */
 	async exists(key: string): Promise<boolean> {
 		try {
-			const result = await this.get(key);
-			return !!result;
+			const result = await this.redisPublisher.exists(key);
+			return result === 1;
 		} catch (error) {
 			return false;
 		}
