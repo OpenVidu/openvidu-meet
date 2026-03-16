@@ -28,6 +28,8 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
 	errorInvalidToken,
+	errorParticipantCannotBeDemotedFromModerator,
+	errorParticipantCannotBePromotedToModerator,
 	errorParticipantNameRequiredForMeetingJoin,
 	errorRoomClosed,
 	errorRoomMemberAlreadyExists,
@@ -879,6 +881,20 @@ export class RoomMemberService {
 		return livekitPermissions;
 	}
 
+	/**
+	 * Applies a moderation action to a participant currently in a meeting.
+	 *
+	 * - `UPGRADE`: promotes an eligible participant to moderator by merging moderator permissions.
+	 * - `DOWNGRADE`: reverts a promoted moderator to their original permissions.
+	 *
+	 * After updating participant metadata in LiveKit, it sends a targeted role-updated signal
+	 * so the affected participant can refresh their token and notify the UI.
+	 *
+	 * @param roomId - The ID of the room where the participant is connected.
+	 * @param participantIdentity - The LiveKit identity of the participant to moderate.
+	 * @param action - The moderation action to apply.
+	 */
+
 	async updateParticipantRole(
 		roomId: string,
 		participantIdentity: string,
@@ -891,8 +907,7 @@ export class RoomMemberService {
 
 			if (action === MeetParticipantModerationAction.UPGRADE) {
 				if (metadata.badge !== MeetRoomMemberUIBadge.OTHER) {
-					// TODO: Consider throwing a more specific error indicating that only participants with OTHER badge can be promoted to moderator
-					throw errorInsufficientPermissions();
+					throw errorParticipantCannotBePromotedToModerator(participantIdentity, roomId);
 				}
 
 				metadata.originalPermissions = metadata.permissions;
@@ -908,9 +923,7 @@ export class RoomMemberService {
 					!metadata.isPromotedModerator ||
 					!metadata.originalPermissions
 				) {
-					// TODO: Consider throwing a more specific error indicating that only participants with MODERATOR badge
-					// that were promoted (not original moderators) can be demoted back to their original permissions
-					throw errorInsufficientPermissions();
+					throw errorParticipantCannotBeDemotedFromModerator(participantIdentity, roomId);
 				}
 
 				metadata.permissions = metadata.originalPermissions;

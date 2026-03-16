@@ -65,7 +65,7 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 
 export const errorConfigurationError = (message: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Configuration Error', message, 500);
-}
+};
 
 // Auth errors
 
@@ -333,6 +333,28 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 		'Participant Error',
 		`Participant '${participantIdentity}' not found in room '${roomId}'`,
 		404
+	);
+};
+
+export const errorParticipantCannotBePromotedToModerator = (
+	participantIdentity: string,
+	roomId: string
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be promoted to moderator because they are not eligible for promotion`,
+		409
+	);
+};
+
+export const errorParticipantCannotBeDemotedFromModerator = (
+	participantIdentity: string,
+	roomId: string
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be demoted because they are not a promoted moderator`,
+		409
 	);
 };
 
