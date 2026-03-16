@@ -13,18 +13,21 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 
 	try {
 		const lkWebhookService = container.get(LivekitWebhookService);
-		const webhookEvent: WebhookEvent = await lkWebhookService.getEventFromWebhook(req.body, req.get('Authorization')!);
+		const webhookEvent: WebhookEvent = await lkWebhookService.getEventFromWebhook(
+			req.body,
+			req.get('Authorization')!
+		);
+
 		const webhookLockKey = MeetLock.getWebhookLock(webhookEvent);
+		const belongsToOpenViduMeet = await lkWebhookService.webhookEventBelongsToOpenViduMeet(webhookEvent);
+
+		if (!belongsToOpenViduMeet) {
+			logger.verbose(`Webhook skipped: ${webhookEvent.event}. Not related to OpenVidu Meet.`);
+			return;
+		}
 
 		const executionResult = await mutexService.withLock(webhookLockKey, ms('5s'), async () => {
 			const { event: eventType, egressInfo, room, participant } = webhookEvent;
-
-			const belongsToOpenViduMeet = await lkWebhookService.webhookEventBelongsToOpenViduMeet(webhookEvent);
-
-			if (!belongsToOpenViduMeet) {
-				logger.verbose(`Webhook skipped: ${eventType}. Not related to OpenVidu Meet.`);
-				return;
-			}
 
 			logger.info(`Webhook received: ${eventType}`);
 			logger.debug(`Webhook event object: ${JSON.stringify(webhookEvent, null, 2)}`);
