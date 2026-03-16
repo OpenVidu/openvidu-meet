@@ -220,7 +220,7 @@ export class MeetingEventHandlerService {
 			this.showParticipantRoleUpdatedNotification(isPromotedModerator);
 		} catch (error) {
 			console.error('Error refreshing room member token after role update:', error);
-			await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
 	}
 
@@ -249,7 +249,7 @@ export class MeetingEventHandlerService {
 			this.notificationService.showSnackbar('Your permissions have been updated');
 		} catch (error) {
 			console.error('Error regenerating room member token after permissions update:', error);
-			await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
 	}
 

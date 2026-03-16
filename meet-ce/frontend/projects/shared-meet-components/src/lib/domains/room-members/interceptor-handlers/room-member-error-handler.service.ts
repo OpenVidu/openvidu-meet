@@ -94,7 +94,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			catchError(async (error: HttpErrorResponse) => {
 				if (error.url?.includes('/members/token')) {
 					console.error('Error regenerating room member token');
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+					await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 					throw originalError;
 				}
 

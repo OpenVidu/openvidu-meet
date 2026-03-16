@@ -8,5 +8,6 @@ export enum NavigationErrorReason {
 	INVALID_MEMBER = 'invalid-member',
 	FORBIDDEN_ROOM_ACCESS = 'forbidden-room-access',
 	FORBIDDEN_RECORDING_ACCESS = 'forbidden-recording-access',
+	ROOM_ACCESS_REVOKED = 'room-access-revoked',
 	INTERNAL_ERROR = 'internal-error'
 }

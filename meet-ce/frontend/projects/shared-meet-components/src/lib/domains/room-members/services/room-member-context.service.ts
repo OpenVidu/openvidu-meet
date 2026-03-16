@@ -210,7 +210,7 @@ export class RoomMemberContextService {
 				await this.refreshToken(roomId);
 			} catch (error) {
 				this.log.e('Error refreshing room member token automatically:', error);
-				await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+				await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 			}
 		}, delayMs);
 	}

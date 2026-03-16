@@ -89,6 +89,11 @@ export class ErrorComponent implements OnInit {
 				title: 'Forbidden recording access',
 				message: 'You are not authorized to access the recordings in this room'
 			},
+			[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
+				title: 'Room access revoked',
+				message:
+					'Your permissions in this room have been changed, and you no longer have access. Please contact a moderator for more information'
+			},
 			[NavigationErrorReason.INTERNAL_ERROR]: {
 				title: 'Internal error',
 				message: 'An unexpected error occurred, please try again later'
