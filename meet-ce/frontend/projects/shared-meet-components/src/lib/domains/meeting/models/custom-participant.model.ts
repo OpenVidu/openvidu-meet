@@ -14,7 +14,7 @@ export interface ParticipantDisplayProperties {
 
 // Represents a participant in the application.
 export class CustomParticipantModel extends ParticipantModel {
-	private _meetBadge = MeetRoomMemberUIBadge.OTHER;
+	private _badge = MeetRoomMemberUIBadge.OTHER;
 	private _isPromotedModerator = false;
 
 	constructor(props: ParticipantProperties) {
@@ -22,8 +22,8 @@ export class CustomParticipantModel extends ParticipantModel {
 		this.updateModerationMetadata(props.participant.metadata);
 	}
 
-	set meetBadge(badge: MeetRoomMemberUIBadge) {
-		this._meetBadge = badge;
+	set badge(badge: MeetRoomMemberUIBadge) {
+		this._badge = badge;
 	}
 
 	set promotedModerator(isPromoted: boolean) {
@@ -32,7 +32,7 @@ export class CustomParticipantModel extends ParticipantModel {
 
 	private updateModerationMetadata(metadata: unknown): void {
 		const parsedMetadata = parseParticipantMetadata(metadata);
-		this._meetBadge = parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER;
+		this._badge = parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER;
 		this._isPromotedModerator = Boolean(parsedMetadata?.isPromotedModerator);
 	}
 
@@ -41,7 +41,7 @@ export class CustomParticipantModel extends ParticipantModel {
 	 * @returns The MeetRoomMemberUIBadge representing the participant's badge.
 	 */
 	getBadge(): MeetRoomMemberUIBadge {
-		return this._meetBadge;
+		return this._badge;
 	}
 
 	/**
@@ -49,7 +49,7 @@ export class CustomParticipantModel extends ParticipantModel {
 	 * @returns True if the participant has a badge, false otherwise.
 	 */
 	hasBadge(): boolean {
-		return this._meetBadge !== MeetRoomMemberUIBadge.OTHER;
+		return this._badge !== MeetRoomMemberUIBadge.OTHER;
 	}
 
 	/**

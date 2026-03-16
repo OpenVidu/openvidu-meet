@@ -288,7 +288,10 @@ export class MeetingEventHandlerService {
 
 		try {
 			const parsed = JSON.parse(metadata) as Partial<MeetRoomMemberTokenMetadata>;
-			if (!parsed.badge || typeof parsed.isPromotedModerator !== 'boolean') {
+			if (
+				!parsed.badge ||
+				(parsed.isPromotedModerator !== undefined && typeof parsed.isPromotedModerator !== 'boolean')
+			) {
 				return undefined;
 			}
 

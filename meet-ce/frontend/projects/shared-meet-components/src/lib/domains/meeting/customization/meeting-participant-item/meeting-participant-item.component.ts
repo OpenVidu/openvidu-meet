@@ -7,6 +7,7 @@ import { MeetParticipantModerationAction, MeetRoomMemberUIBadge } from '@openvid
 import { LoggerService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
+import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 
 /**
@@ -24,6 +25,7 @@ export class MeetingParticipantItemComponent {
 	@ViewChild('template', { static: true }) template!: TemplateRef<any>;
 
 	protected meetingService = inject(MeetingService);
+	protected meetingContextService = inject(MeetingContextService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
@@ -79,9 +81,9 @@ export class MeetingParticipantItemComponent {
 	getParticipantBadgeIcon(participant: CustomParticipantModel): string {
 		switch (participant.getBadge()) {
 			case MeetRoomMemberUIBadge.OWNER:
-				return 'workspace_premium';
+				return 'crown'; // passkey or location_away
 			case MeetRoomMemberUIBadge.ADMIN:
-				return 'admin_panel_settings';
+				return 'manage_accounts';
 			case MeetRoomMemberUIBadge.MODERATOR:
 				return 'shield_person';
 			default:
@@ -118,9 +120,9 @@ export class MeetingParticipantItemComponent {
 	async onMakeModeratorClick(participant: CustomParticipantModel): Promise<void> {
 		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
-		const roomId = participant.roomName;
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
 		}
 
@@ -139,9 +141,9 @@ export class MeetingParticipantItemComponent {
 	async onUnmakeModeratorClick(participant: CustomParticipantModel): Promise<void> {
 		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
-		const roomId = participant.roomName;
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
 		}
 
@@ -160,9 +162,9 @@ export class MeetingParticipantItemComponent {
 	async onKickParticipantClick(participant: CustomParticipantModel): Promise<void> {
 		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) return;
 
-		const roomId = participant.roomName;
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot kick participant: local participant room name is undefined');
+			this.log.e('Cannot kick participant: room ID is undefined');
 			return;
 		}
 
