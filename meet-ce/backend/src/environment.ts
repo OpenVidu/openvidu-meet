@@ -50,6 +50,13 @@ export const MEET_ENV = {
 	MONGO_ADMIN_PASSWORD: process.env.MEET_MONGO_ADMIN_PASSWORD ?? 'mongoadmin',
 	MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME ?? 'rs0',
 	MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME ?? 'openvidu-meet',
+	// pool configuration
+	MONGO_MAX_POOL_SIZE: parseInt(process.env.MEET_MONGO_MAX_POOL_SIZE ?? '30', 10),
+	MONGO_MIN_POOL_SIZE: parseInt(process.env.MEET_MONGO_MIN_POOL_SIZE ?? '10', 10),
+	// connection timeouts
+	MONGO_SERVER_SELECTION_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SERVER_SELECTION_TIMEOUT_MS ?? '5000', 10),
+	MONGO_CONNECT_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_CONNECT_TIMEOUT_MS ?? '10000', 10),
+	MONGO_SOCKET_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SOCKET_TIMEOUT_MS ?? '45000', 10),
 
 	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
