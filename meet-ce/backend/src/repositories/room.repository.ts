@@ -204,14 +204,16 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 
 	/**
 	 * Finds all rooms with active meetings.
-	 * Returns all active rooms without pagination.
 	 *
-	 * @returns Array of active rooms with enriched URLs
+	 * @returns Array of all active rooms with ONLY the roomId field and without pagination.
 	 */
 	async findActiveRooms(): Promise<MeetRoom[]> {
-		return this.findAll({
-			status: MeetRoomStatus.ACTIVE_MEETING
-		});
+		return this.findAll(
+			{
+				status: MeetRoomStatus.ACTIVE_MEETING
+			},
+			['roomId']
+		);
 	}
 
 	/**

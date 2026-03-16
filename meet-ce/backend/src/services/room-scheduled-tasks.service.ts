@@ -92,15 +92,33 @@ export class RoomScheduledTasksService {
 				return;
 			}
 
-			for (const room of activeRooms) {
-				const roomExists = await this.livekitService.roomExists(room.roomId);
+			const roomIds: string[] = activeRooms.map((room) => room.roomId);
+			const roomExistenceMap = await this.livekitService.roomsExist(roomIds);
 
-				if (!roomExists) {
-					this.logger.warn(
-						`Room '${room.roomId}' is active in DB but does not exist in LiveKit. Cleaning up...`
-					);
-					await this.livekitWebhookService.handleRoomFinished({ name: room.roomId } as unknown as Room);
-				}
+			const roomsToCleanup = activeRooms.filter((room) => {
+				const exists = roomExistenceMap.get(room.roomId);
+				return !exists;
+
+			});
+
+			if (roomsToCleanup.length === 0) {
+				this.logger.verbose(`All active rooms are consistent with LiveKit. No cleanup needed.`);
+				return;
+			}
+
+			this.logger.warn(`Found ${roomsToCleanup.length} rooms active in DB but not in LiveKit. Cleaning up...`);
+
+			const BATCH_SIZE = 10;
+
+			for (let i = 0; i < roomsToCleanup.length; i += BATCH_SIZE) {
+				const batch = roomsToCleanup.slice(i, i + BATCH_SIZE);
+				await Promise.all(
+					batch.map((room) =>
+						this.livekitWebhookService
+							.handleRoomFinished({ name: room.roomId } as unknown as Room)
+							.catch((error) => this.logger.error(`Error cleaning up room '${room.roomId}':`, error))
+					)
+				);
 			}
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);

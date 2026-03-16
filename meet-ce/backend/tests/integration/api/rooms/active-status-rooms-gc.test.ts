@@ -43,7 +43,7 @@ describe('Active Rooms Status GC Tests', () => {
 		expect(response.body.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
 
 		// Mock LiveKitService.roomExists to return false
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(false);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[createdRoom.roomId, false]]));
 
 		await executeRoomStatusValidationGC();
 
@@ -63,7 +63,7 @@ describe('Active Rooms Status GC Tests', () => {
 		// Force status to ACTIVE_MEETING directly in DB
 		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(true);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[createdRoom.roomId, true]]));
 
 		await executeRoomStatusValidationGC();
 
@@ -72,6 +72,9 @@ describe('Active Rooms Status GC Tests', () => {
 		expect(response.body.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
 
 		roomExistsSpy.mockRestore();
+		// Cleanup: set back to OPEN so afterAll can delete it
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.OPEN });
+
 	});
 
 	it('should not run the GC if no active rooms exist', async () => {
@@ -79,7 +82,7 @@ describe('Active Rooms Status GC Tests', () => {
 		await deleteAllRooms();
 
 		// Spy on LiveKitService.roomExists to ensure it's not called
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists');
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist');
 
 		// Clear any previous calls that could have been recorded by earlier test runs
 		roomExistsSpy.mockClear();
@@ -97,7 +100,7 @@ describe('Active Rooms Status GC Tests', () => {
 		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		// Mock LiveKitService.roomExists to throw an error
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockRejectedValue(new Error('LiveKit down'));
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockRejectedValue(new Error('LiveKit down'));
 
 		// Run GC - it should catch the error and continue without throwing
 		await expect(executeRoomStatusValidationGC()).resolves.not.toThrow();
@@ -143,7 +146,7 @@ describe('Active Rooms Status GC Tests', () => {
 		]);
 
 		// Mock LiveKitService.roomExists to return false for both rooms
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(false);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[r1.roomId, false], [r2.roomId, false]]));
 
 		await executeRoomStatusValidationGC();
 

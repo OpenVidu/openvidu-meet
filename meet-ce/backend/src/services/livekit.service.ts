@@ -59,6 +59,38 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Checks if multiple rooms exist in LiveKit using a single API call.
+	 *
+	 * @param roomNames - Array of room names to check
+	 * @returns A Map with room names as keys and boolean indicating existence as values
+	 */
+	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
+		const result = new Map<string, boolean>();
+
+		if (roomNames.length === 0) {
+			return result;
+		}
+
+		try {
+			const existingRooms = await this.roomClient.listRooms(roomNames);
+			const existingRoomNames = new Set(existingRooms.map((room) => room.name));
+
+			for (const roomName of roomNames) {
+				result.set(roomName, existingRoomNames.has(roomName));
+			}
+		} catch (error) {
+			this.logger.error(`Error batch checking rooms: ${error}`);
+
+			// If the API call fails, assume no rooms exist
+			for (const roomName of roomNames) {
+				result.set(roomName, false);
+			}
+		}
+
+		return result;
+	}
+
+	/**
 	 * Checks if a room with the specified name exists in LiveKit.
 	 *
 	 * @param roomName - The name of the room to check
