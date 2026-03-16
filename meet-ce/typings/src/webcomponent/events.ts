@@ -38,6 +38,8 @@ export enum LeftEventReason {
 	MEETING_ENDED = 'meeting_ended',
 	/** The local participant ended the meeting for all participants */
 	MEETING_ENDED_BY_SELF = 'meeting_ended_by_self',
+	/** The participant was disconnected because the same identity joined again */
+	DUPLICATE_IDENTITY = 'duplicate_identity',
 	/** Unknown reason for leaving the meeting */
 	UNKNOWN = 'unknown'
 }

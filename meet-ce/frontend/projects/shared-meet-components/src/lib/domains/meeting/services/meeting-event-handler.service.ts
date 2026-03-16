@@ -328,7 +328,7 @@ export class MeetingEventHandlerService {
 			[ParticipantLeftReason.SERVER_SHUTDOWN]: LeftEventReason.SERVER_SHUTDOWN,
 			[ParticipantLeftReason.PARTICIPANT_REMOVED]: LeftEventReason.PARTICIPANT_KICKED,
 			[ParticipantLeftReason.ROOM_DELETED]: LeftEventReason.MEETING_ENDED,
-			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.UNKNOWN,
+			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.DUPLICATE_IDENTITY,
 			[ParticipantLeftReason.OTHER]: LeftEventReason.UNKNOWN
 		};
 		return reasonMap[reason] ?? LeftEventReason.UNKNOWN;

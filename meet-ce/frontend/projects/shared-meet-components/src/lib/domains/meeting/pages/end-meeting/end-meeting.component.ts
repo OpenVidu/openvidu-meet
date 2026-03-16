@@ -76,6 +76,10 @@ export class EndMeetingComponent implements OnInit {
 				title: 'Disconnected from Meeting',
 				message: 'Connection lost due to server shutdown'
 			},
+			[LeftEventReason.DUPLICATE_IDENTITY]: {
+				title: 'Disconnected from Meeting',
+				message: 'This session was closed because you joined the same meeting from another tab or device'
+			},
 			[LeftEventReason.UNKNOWN]: {
 				title: 'Disconnected from Meeting',
 				message: 'Some unexpected error occurred, please try again later'
