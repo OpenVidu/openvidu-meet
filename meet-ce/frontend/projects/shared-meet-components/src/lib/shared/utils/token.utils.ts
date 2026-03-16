@@ -1,24 +1,19 @@
-import { jwtDecode } from 'jwt-decode';
+import { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 
-export const decodeToken = (token: string) => {
-	checkIsJWTValid(token);
-	const decodedToken: any = jwtDecode(token);
-	decodedToken.metadata = JSON.parse(decodedToken.metadata);
+interface LiveKitJwtClaims extends JwtPayload {
+	metadata: string;
+}
 
-	if (decodedToken.exp && Date.now() >= decodedToken.exp * 1000) {
-		throw new Error('Token is expired. Please, request a new one');
-	}
+export interface DecodedRoomMemberToken extends Omit<LiveKitJwtClaims, 'metadata'> {
+	metadata: MeetRoomMemberTokenMetadata;
+}
 
-	return decodedToken;
-};
+export const decodeToken = (token: string): DecodedRoomMemberToken => {
+	const decodedToken = jwtDecode<LiveKitJwtClaims>(token);
 
-const checkIsJWTValid = (token: string) => {
-	if (!token || typeof token !== 'string') {
-		throw new Error('Invalid token. Token must be a string');
-	}
-
-	const tokenParts = token.split('.');
-	if (tokenParts.length !== 3) {
-		throw new Error('Invalid token. Token must be a valid JWT');
-	}
+	return {
+		...decodedToken,
+		metadata: JSON.parse(decodedToken.metadata) as MeetRoomMemberTokenMetadata
+	};
 };

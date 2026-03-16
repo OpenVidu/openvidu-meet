@@ -1,11 +1,13 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, from, switchMap } from 'rxjs';
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import {
 	HttpErrorContext,
 	HttpErrorHandler,
 	HttpErrorNotifierService
 } from '../../../shared/services/http-error-notifier.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../services/room-member-context.service';
 import { RoomMemberHeaderProviderService } from './room-member-header-provider.service';
@@ -23,6 +25,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
 	private readonly roomMemberHeaderProvider = inject(RoomMemberHeaderProviderService);
+	private readonly navigationService = inject(NavigationService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -63,32 +66,24 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 	 */
 	private refreshRoomMemberToken(context: HttpErrorContext): Observable<HttpEvent<unknown>> {
 		const { request: originalRequest, error: originalError, next } = context;
-		console.log('Refreshing room member token...');
+		console.log('Regenerating room member token...');
 
 		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			console.error('Cannot refresh room member token: room ID is undefined');
-			return throwError(() => originalError);
+			console.error('Cannot regenerate room member token: room ID is undefined');
+			throw originalError;
 		}
 
 		const secret = this.meetingContextService.roomSecret();
-		const participantName = this.roomMemberContextService.participantName();
-		const participantIdentity = this.roomMemberContextService.participantIdentity();
-		const joinMeeting = !!participantIdentity; // Grant join permission if identity is set
-		// If the member is a promoted moderator, we need to use LiveKit participant metadata to get the updated permissions in the token
-		const useParticipantMetadata = this.roomMemberContextService.isPromotedModerator();
-
+		const joinMeeting = !!this.meetingContextService.isActiveMeeting();
 		return from(
 			this.roomMemberContextService.generateToken(roomId, {
 				secret,
-				joinMeeting,
-				participantName,
-				participantIdentity,
-				useParticipantMetadata
+				joinMeeting
 			})
 		).pipe(
 			switchMap(() => {
-				console.log('Room member token refreshed');
+				console.log('Room member token regenerated');
 
 				// Update the request with the new token
 				const headers = this.roomMemberHeaderProvider.provideHeaders();
@@ -96,13 +91,14 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 
 				return next(updatedRequest);
 			}),
-			catchError((error: HttpErrorResponse) => {
+			catchError(async (error: HttpErrorResponse) => {
 				if (error.url?.includes('/members/token')) {
-					console.error('Error refreshing room member token');
-					return throwError(() => originalError);
+					console.error('Error regenerating room member token');
+					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+					throw originalError;
 				}
 
-				return throwError(() => error);
+				throw error;
 			})
 		);
 	}

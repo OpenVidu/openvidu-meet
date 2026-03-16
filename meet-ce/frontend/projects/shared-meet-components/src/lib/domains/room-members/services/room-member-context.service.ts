@@ -2,13 +2,14 @@ import { computed, Injectable, signal } from '@angular/core';
 import {
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { E2eeService, LoggerService } from 'openvidu-components-angular';
-import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { NavigationService } from '../../../shared/services/navigation.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
+import { AuthService } from '../../auth/services/auth.service';
 import { RoomMemberService } from './room-member.service';
 
 @Injectable({
@@ -17,15 +18,18 @@ import { RoomMemberService } from './room-member.service';
 export class RoomMemberContextService {
 	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
 
+	protected readonly TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
+	protected readonly TOKEN_REFRESH_MIN_DELAY_MS = 5 * 1000;
+	protected readonly TOKEN_REFRESH_JITTER_MS = 10 * 1000;
+	private tokenRefreshTimeoutId?: ReturnType<typeof setTimeout>;
+
 	/**
 	 * Individual signals for room member context
 	 */
 	private readonly _roomMemberToken = signal<string | undefined>(undefined);
 	private readonly _participantName = signal<string | undefined>(undefined);
 	private readonly _isParticipantNameFromUrl = signal<boolean>(false);
-	private readonly _participantIdentity = signal<string | undefined>(undefined);
 	private readonly _memberBadge = signal<MeetRoomMemberUIBadge>(MeetRoomMemberUIBadge.OTHER);
-	private readonly _isPromotedModerator = signal<boolean>(false);
 	private readonly _permissions = signal<MeetRoomMemberPermissions | undefined>(undefined);
 	private readonly _member = signal<MeetRoomMember | undefined>(undefined);
 
@@ -35,8 +39,6 @@ export class RoomMemberContextService {
 	readonly participantName = this._participantName.asReadonly();
 	/** Readonly signal for whether the participant name came from a URL parameter */
 	readonly isParticipantNameFromUrl = this._isParticipantNameFromUrl.asReadonly();
-	/** Readonly signal for the participant identity */
-	readonly participantIdentity = this._participantIdentity.asReadonly();
 	/** Readonly signal for the room member permissions */
 	readonly permissions = this._permissions.asReadonly();
 	/** Readonly signal for the room member info (when memberId is set) */
@@ -45,15 +47,14 @@ export class RoomMemberContextService {
 	readonly memberName = computed(() => this._member()?.name);
 	/** Readonly signal for the room member's UI badge */
 	readonly memberBadge = this._memberBadge.asReadonly();
-	/** Readonly signal for whether the room member is a promoted moderator */
-	readonly isPromotedModerator = this._isPromotedModerator.asReadonly();
 
 	protected log;
 
 	constructor(
 		protected loggerService: LoggerService,
 		protected roomMemberService: RoomMemberService,
-		protected tokenStorageService: TokenStorageService,
+		protected navigationService: NavigationService,
+		protected authService: AuthService,
 		protected e2eeService: E2eeService
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
@@ -91,14 +92,6 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Sets the promoted moderator status for the current room member.
-	 * @param isPromoted - A boolean indicating whether the member has been promoted to moderator status.
-	 */
-	setPromotedModerator(isPromoted: boolean): void {
-		this._isPromotedModerator.set(isPromoted);
-	}
-
-	/**
 	 * Checks if the current room member has a specific permission.
 	 *
 	 * @param permission - The permission to check
@@ -117,6 +110,16 @@ export class RoomMemberContextService {
 	 * @return A promise that resolves to the room member token
 	 */
 	async generateToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions, e2eeKey?: string): Promise<string> {
+		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
+		const isAuthenticated = await this.authService.isUserAuthenticated();
+		if (isAuthenticated) {
+			try {
+				await this.authService.refreshToken();
+			} catch {
+				// Ignore refresh failures here. Generation can still succeed for anonymous/secret-based flows.
+			}
+		}
+
 		if (tokenOptions.participantName && e2eeKey) {
 			// Assign E2EE key and encrypt participant name
 			await this.e2eeService.setE2EEKey(e2eeKey);
@@ -131,6 +134,26 @@ export class RoomMemberContextService {
 	}
 
 	/**
+	 * Refreshes the current room member token for a participant already inside a meeting
+	 * and updates the context with new role and permissions.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @return A promise that resolves to the refreshed room member token
+	 */
+	async refreshToken(roomId: string): Promise<string> {
+		const previousToken = this._roomMemberToken();
+
+		if (!previousToken) {
+			throw new Error('Cannot refresh room member token: previous token not found');
+		}
+
+		const { token } = await this.roomMemberService.refreshRoomMemberToken(roomId);
+		this._roomMemberToken.set(token);
+		await this.updateContextFromToken(token);
+		return token;
+	}
+
+	/**
 	 * Updates the room member context based on the provided token.
 	 *
 	 * @param token - The room member token
@@ -139,21 +162,25 @@ export class RoomMemberContextService {
 	protected async updateContextFromToken(token: string): Promise<void> {
 		try {
 			const decodedToken = decodeToken(token);
-			const metadata = decodedToken.metadata as MeetRoomMemberTokenMetadata;
+			const tokenMetadata = decodedToken.metadata;
 
-			if (decodedToken.sub && decodedToken.name) {
-				const decryptedName = await this.e2eeService.decrypt(decodedToken.name);
-				this._participantName.set(decryptedName);
-				this._participantIdentity.set(decodedToken.sub);
+			// Schedule automatic token refresh if token contains sub (participant identity) claim,
+			// i.e. it's a token for a participant already inside the meeting, not a pre-join token without sub claim
+			if (decodedToken.sub && decodedToken.exp) {
+				const expirationMs = decodedToken.exp * 1000;
+				this.scheduleTokenRefresh(tokenMetadata.roomId, expirationMs);
 			}
 
-			this._permissions.set(metadata.permissions);
-			this._memberBadge.set(metadata.badge);
+			this._permissions.set(tokenMetadata.permissions);
+			this._memberBadge.set(tokenMetadata.badge);
 
 			// If token contains memberId, fetch and store member info
-			if (metadata.memberId) {
+			if (tokenMetadata.memberId) {
 				try {
-					const member = await this.roomMemberService.getRoomMember(metadata.roomId, metadata.memberId);
+					const member = await this.roomMemberService.getRoomMember(
+						tokenMetadata.roomId,
+						tokenMetadata.memberId
+					);
 					this._member.set(member);
 				} catch (error) {
 					this.log.w('Could not fetch member info:', error);
@@ -166,16 +193,48 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Clears the room member context, including token, participant info, member, role, and permissions.
+	 * Schedules an automatic token refresh before the token expires, with added jitter to avoid thundering herd issues.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @param expirationMs - The timestamp when the token expires
+	 */
+	private scheduleTokenRefresh(roomId: string, expirationMs: number): void {
+		this.clearTokenRefreshTimeout();
+
+		const jitterMs = Math.floor(Math.random() * this.TOKEN_REFRESH_JITTER_MS);
+		const refreshAtMs = expirationMs - this.TOKEN_REFRESH_BUFFER_MS - jitterMs;
+		const delayMs = Math.max(this.TOKEN_REFRESH_MIN_DELAY_MS, refreshAtMs - Date.now());
+
+		this.tokenRefreshTimeoutId = setTimeout(async () => {
+			try {
+				await this.refreshToken(roomId);
+			} catch (error) {
+				this.log.e('Error refreshing room member token automatically:', error);
+				await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+			}
+		}, delayMs);
+	}
+
+	/**
+	 * Clears the scheduled token refresh timeout if it exists.
+	 */
+	private clearTokenRefreshTimeout(): void {
+		if (this.tokenRefreshTimeoutId) {
+			clearTimeout(this.tokenRefreshTimeoutId);
+			this.tokenRefreshTimeoutId = undefined;
+		}
+	}
+
+	/**
+	 * Clears the room member context.
 	 */
 	clearContext(): void {
+		this.clearTokenRefreshTimeout();
 		this._roomMemberToken.set(undefined);
 		this._participantName.set(undefined);
 		this._isParticipantNameFromUrl.set(false);
-		this._participantIdentity.set(undefined);
 		this._permissions.set(undefined);
 		this._memberBadge.set(MeetRoomMemberUIBadge.OTHER);
-		this._isPromotedModerator.set(false);
 		this._member.set(undefined);
 	}
 }

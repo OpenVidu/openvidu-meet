@@ -155,4 +155,16 @@ export class RoomMemberService {
 		const path = `${this.getRoomMemberApiPath(roomId, true)}/token`;
 		return this.httpService.postRequest(path, tokenOptions);
 	}
+
+	/**
+	 * Refreshes a room member token for a participant already inside a meeting.
+	 *
+	 * @param roomId - The unique identifier of the room
+	 * @returns A promise that resolves to an object containing the refreshed token
+	 */
+	async refreshRoomMemberToken(roomId: string): Promise<{ token: string }> {
+		const path = `${this.getRoomMemberApiPath(roomId, true)}/token/refresh`;
+		// Note: The previous token is expected to be sent in the corresponding header by the HTTP interceptor
+		return this.httpService.postRequest(path, {});
+	}
 }
