@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import {
 	LeftEventReason,
+	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberTokenOptions,
 	MeetRoomMemberUIBadge,
 	MeetSignalType,
 	WebComponentEvent,
@@ -9,6 +12,7 @@ import {
 } from '@openvidu-meet/typings';
 import {
 	DataPacket_Kind,
+	LocalParticipant,
 	ParticipantLeftEvent,
 	ParticipantLeftReason,
 	ParticipantModel,
@@ -18,6 +22,7 @@ import {
 	Room,
 	RoomEvent
 } from 'openvidu-components-angular';
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { SoundService } from '../../../shared/services/sound.service';
@@ -59,7 +64,11 @@ export class MeetingEventHandlerService {
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				// Only process topics that this handler is responsible for
-				const relevantTopics = ['recordingStopped', MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED];
+				const relevantTopics = [
+					'recordingStopped',
+					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
+					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED
+				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
 					return;
@@ -78,10 +87,22 @@ export class MeetingEventHandlerService {
 							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
 							await this.handleParticipantRoleUpdated(roleUpdateEvent);
 							break;
+
+						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
+							const permissionsUpdateEvent = event as MeetParticipantPermissionsUpdatedPayload;
+							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
+							break;
 					}
 				} catch (error) {
 					console.warn(`Failed to parse data message for topic: ${topic}`, error);
 				}
+			}
+		);
+
+		room.on(
+			RoomEvent.ParticipantMetadataChanged,
+			(_prevMetadata: string | undefined, participant: LocalParticipant | RemoteParticipant) => {
+				this.handleParticipantMetadataChanged(participant.identity, participant.metadata);
 			}
 		);
 	}
@@ -178,46 +199,103 @@ export class MeetingEventHandlerService {
 	// ============================================
 
 	/**
-	 * Handles participant role updated event.
-	 * Updates local or remote participant role and refreshes room member token if needed.
-	 * Obtains all necessary data from MeetingContextService.
+	 * Handles role updated event for the local participant by refreshing the room member token to get updated permissions.
+	 * Also shows a notification to the user about their new role.
+	 *
+	 * @param event Participant role updated event payload
 	 */
 	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
-		const { participantIdentity, newBadge } = event;
+		const { roomId, participantIdentity, newBadge } = event;
+		const local = this.meetingContext.localParticipant();
+
+		if (!roomId || !local || local.identity !== participantIdentity) {
+			return;
+		}
+
+		try {
+			// Refresh room member token to get updated permissions based on new role
+			await this.roomMemberContextService.refreshToken(roomId);
+
+			const isPromotedModerator = newBadge === MeetRoomMemberUIBadge.MODERATOR;
+			this.showParticipantRoleUpdatedNotification(isPromotedModerator);
+		} catch (error) {
+			console.error('Error refreshing room member token after role update:', error);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+		}
+	}
+
+	/**
+	 * Handles permissions updated event for the local participant by regenerating the room member token to get updated permissions.
+	 *
+	 * @param event Participant permissions updated event payload
+	 */
+	private async handleParticipantPermissionsUpdated(event: MeetParticipantPermissionsUpdatedPayload): Promise<void> {
+		const { participantIdentity } = event;
 		const roomId = this.meetingContext.roomId();
 		const local = this.meetingContext.localParticipant();
-		const participantName = this.roomMemberContextService.participantName();
-		const isPromotedModerator = newBadge === MeetRoomMemberUIBadge.MODERATOR;
 
-		// Check if the role update is for the local participant
-		if (local && participantIdentity === local.identity) {
-			if (!roomId) return;
+		if (!roomId || !local || local.identity !== participantIdentity) {
+			return;
+		}
 
-			try {
-				// Refresh room member token to get updated permissions based on new role
-				await this.roomMemberContextService.generateToken(roomId, {
-					joinMeeting: true,
-					participantName,
-					participantIdentity,
-					useParticipantMetadata: true
-				});
+		try {
+			const roomSecret = this.meetingContext.roomSecret();
+			const tokenOptions: MeetRoomMemberTokenOptions = {
+				secret: roomSecret,
+				joinMeeting: true
+			};
+			await this.roomMemberContextService.generateToken(roomId, tokenOptions);
 
-				local.meetBadge = newBadge;
+			this.notificationService.showSnackbar('Your permissions have been updated');
+		} catch (error) {
+			console.error('Error regenerating room member token after permissions update:', error);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
+		}
+	}
 
-				local.promotedModerator = isPromotedModerator;
-				this.roomMemberContextService.setPromotedModerator(isPromotedModerator);
-				this.showParticipantRoleUpdatedNotification(isPromotedModerator);
-			} catch (error) {
-				console.error('Error refreshing room member token:', error);
+	/**
+	 * Handles LiveKit participant metadata updates to synchronize participant badge and moderation state.
+	 * This is necessary to reflect role changes (e.g. promoted to moderator) in the UI based on metadata updates from the backend.
+	 *
+	 * @param participantIdentity - The identity of the participant whose metadata changed
+	 * @param metadata - The new metadata string, expected to be a JSON string containing badge and promotedModerator properties
+	 */
+	private handleParticipantMetadataChanged(participantIdentity: string, metadata: string | undefined): void {
+		const parsedMetadata = this.parseParticipantMetadata(metadata);
+		if (!parsedMetadata) {
+			return;
+		}
+
+		const local = this.meetingContext.localParticipant();
+		if (local && local.identity === participantIdentity) {
+			local.badge = parsedMetadata.badge;
+			local.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
+			return;
+		}
+
+		const remoteParticipants = this.meetingContext.remoteParticipants();
+		const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
+		if (participant) {
+			participant.badge = parsedMetadata.badge;
+			participant.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
+		}
+	}
+
+	private parseParticipantMetadata(metadata: string | undefined): MeetRoomMemberTokenMetadata | undefined {
+		if (!metadata) {
+			return undefined;
+		}
+
+		try {
+			const parsed = JSON.parse(metadata) as Partial<MeetRoomMemberTokenMetadata>;
+			if (!parsed.badge || typeof parsed.isPromotedModerator !== 'boolean') {
+				return undefined;
 			}
-		} else {
-			// Update remote participant badge
-			const remoteParticipants = this.meetingContext.remoteParticipants();
-			const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
-			if (participant) {
-				participant.meetBadge = newBadge;
-				participant.promotedModerator = isPromotedModerator;
-			}
+
+			return parsed as MeetRoomMemberTokenMetadata;
+		} catch (error) {
+			console.warn('Failed to parse participant metadata', error);
+			return undefined;
 		}
 	}
 
