@@ -20,13 +20,15 @@ import { ParticipantInfo } from 'livekit-server-sdk';
 import merge from 'lodash.merge';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
-	errorParticipantNotFound,
+	errorInvalidToken,
+	errorParticipantNameRequiredForMeetingJoin,
 	errorRoomClosed,
 	errorRoomMemberAlreadyExists,
 	errorRoomMemberCannotBeOwnerOrAdmin,
@@ -48,6 +50,7 @@ import { UserService } from './user.service.js';
 interface ResolvedPermissionSource {
 	memberId?: string;
 	userId?: string;
+	name?: string;
 	permissions: MeetRoomMemberPermissions;
 	badge?: MeetRoomMemberUIBadge;
 }
@@ -241,11 +244,12 @@ export class RoomMemberService {
 			permissionsUpdatedAt: Date.now()
 		});
 
-		// If member lost permission to join meeting, kick them out
 		if (!effectivePermissions.canJoinMeeting) {
+			// If member lost permission to join meeting, kick them out if they are currently in a meeting
 			await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
 		} else {
-			// TODO: Notify participant of role/permission changes if currently in a meeting
+			// Send a signal to the participant to regenerate their token and update permissions in real-time if they are currently in a meeting
+			await this.notifyParticipantPermissionsUpdate(roomId, memberId);
 		}
 
 		return updatedMember;
@@ -267,7 +271,6 @@ export class RoomMemberService {
 		let batchNumber = 0;
 		let nextPageToken: string | undefined;
 		let totalUpdated = 0;
-		const membersToKick: string[] = [];
 
 		do {
 			batchNumber++;
@@ -300,10 +303,6 @@ export class RoomMemberService {
 					);
 
 					// Update the member with new effective permissions
-					if (!effectivePermissions.canJoinMeeting) {
-						membersToKick.push(member.memberId);
-					}
-
 					await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
 						effectivePermissions,
 						permissionsUpdatedAt: Date.now()
@@ -333,11 +332,6 @@ export class RoomMemberService {
 		if (totalUpdated === 0) {
 			this.logger.verbose(`No members found in room '${roomId}' to update`);
 			return;
-		}
-
-		// Kick members who lost canJoinMeeting permission
-		if (membersToKick.length > 0) {
-			await this.kickMembersFromMeetingInBatches(roomId, membersToKick);
 		}
 
 		this.logger.info(`Successfully updated effective permissions for ${totalUpdated} members in room '${roomId}'`);
@@ -397,30 +391,19 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Generates or refreshes a room member token.
+	 * Generates a room member token.
 	 *
 	 * @param roomId - The room identifier
 	 * @param tokenOptions - Options for token generation
+	 * @param previousToken - An optional existing token to regenerate from
 	 * @returns A promise that resolves to the generated token
 	 */
-	async generateOrRefreshRoomMemberToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions): Promise<string> {
-		const {
-			secret,
-			joinMeeting = false,
-			participantName,
-			participantIdentity,
-			useParticipantMetadata = false
-		} = tokenOptions;
-
-		if (joinMeeting && participantName && useParticipantMetadata) {
-			if (!participantIdentity) {
-				// TODO: Consider throwing a more specific error indicating that participant identity is required for token refresh when using participant metadata
-				throw errorUnauthorized();
-			}
-
-			const tokenMetadata = await this.resolveTokenMetadataFromParticipant(roomId, participantIdentity);
-			return this.generateTokenForJoiningMeeting(roomId, tokenMetadata, participantName, participantIdentity);
-		}
+	async generateRoomMemberToken(
+		roomId: string,
+		tokenOptions: MeetRoomMemberTokenOptions,
+		previousToken?: string
+	): Promise<string> {
+		const { secret, joinMeeting = false, participantName } = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
 			secret ? this.resolvePermissionSourceFromSecret(roomId, secret) : Promise.resolve(undefined),
@@ -448,9 +431,27 @@ export class RoomMemberService {
 			badge
 		};
 
-		if (joinMeeting && participantName) {
+		if (joinMeeting) {
 			tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
-			return this.generateTokenForJoiningMeeting(roomId, tokenMetadata, participantName, participantIdentity);
+			const resolvedParticipantName = participantName || secretSource?.name || authenticatedSource?.name;
+			let participantIdentity: string | undefined;
+
+			// If regenerating an existing token for joining a meeting, use the participant identity from the previous token's context
+			// to ensure they keep the same identity in LiveKit and maintain their presence in the meeting.
+			if (previousToken) {
+				const tokenContext = await this.getValidatedRoomMemberTokenContext(roomId, previousToken);
+
+				if (tokenContext.participantIdentity) {
+					participantIdentity = tokenContext.participantIdentity;
+				}
+			}
+
+			return this.generateTokenForJoiningMeeting(
+				roomId,
+				tokenMetadata,
+				resolvedParticipantName,
+				participantIdentity
+			);
 		}
 
 		this.logger.verbose(
@@ -460,17 +461,25 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Generates a token for joining a meeting.
-	 * Handles both new token generation and token refresh.
+	 * Generates a room member token for joining a meeting. This method handles both initial token generation when joining a meeting
+	 * for the first time and token regeneration when refreshing an existing token while in a meeting.
+	 * When regenerating a token, it ensures that the participant keeps the same identity in LiveKit to maintain their presence in the meeting
+	 * and updates their permissions based on the current LiveKit participant metadata.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param tokenMetadata - The metadata to include in the token
+	 * @param participantName - The name of the participant (required for initial generation)
+	 * @param participantIdentity - The identity of the participant (required for regeneration)
+	 * @returns A promise that resolves to the generated token
 	 */
 	protected async generateTokenForJoiningMeeting(
 		roomId: string,
 		tokenMetadata: MeetRoomMemberTokenMetadata,
-		participantName: string,
+		participantName?: string,
 		participantIdentity?: string
 	): Promise<string> {
 		// Check that room is open
-		const { status } = await this.roomService.getMeetRoom(roomId, ['status']);
+		const { status, roles } = await this.roomService.getMeetRoom(roomId, ['status', 'roles']);
 
 		if (status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
@@ -485,6 +494,12 @@ export class RoomMemberService {
 
 		if (!isRefresh) {
 			// GENERATION MODE
+
+			// Name is required for joining a meeting
+			if (!participantName) {
+				throw errorParticipantNameRequiredForMeetingJoin();
+			}
+
 			this.logger.verbose(
 				`Generating room member token for joining a meeting for '${participantName}' in room '${roomId}'`
 			);
@@ -514,15 +529,40 @@ export class RoomMemberService {
 		} else {
 			// REFRESH MODE
 			this.logger.verbose(
-				`Refreshing room member token for participant '${participantIdentity}' in room '${roomId}'`
+				`Regenerating room member token for participant '${participantIdentity}' in room '${roomId}'`
 			);
 
-			// Check if participant exists in the room
-			const participantExists = await this.existsParticipantInMeeting(roomId, participantIdentity!);
+			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
+			participantName = participant.name;
 
-			if (!participantExists) {
-				this.logger.verbose(`Participant '${participantIdentity}' does not exist in room '${roomId}'`);
-				throw errorParticipantNotFound(participantIdentity!, roomId);
+			const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
+			const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
+
+			if (isCurrentlyPromotedModerator && tokenMetadata.badge === MeetRoomMemberUIBadge.OTHER) {
+				const mergedPermissions = this.mergePermissions(
+					tokenMetadata.permissions,
+					roles[MeetRoomMemberRole.MODERATOR].permissions
+				);
+
+				// Keep current promotion status while refreshing to new non-moderator base permissions.
+				participantMetadata.originalPermissions = tokenMetadata.permissions;
+				participantMetadata.permissions = mergedPermissions;
+
+				tokenMetadata.permissions = mergedPermissions;
+				tokenMetadata.badge = MeetRoomMemberUIBadge.MODERATOR;
+				tokenMetadata.isPromotedModerator = true;
+
+				await this.livekitService.updateParticipantMetadata(
+					roomId,
+					participantIdentity!,
+					JSON.stringify(participantMetadata)
+				);
+			} else {
+				await this.livekitService.updateParticipantMetadata(
+					roomId,
+					participantIdentity!,
+					JSON.stringify(tokenMetadata)
+				);
 			}
 		}
 
@@ -535,6 +575,72 @@ export class RoomMemberService {
 		});
 	}
 
+	/**
+	 * Refreshes a room member token by verifying the previous token and generating a new one
+	 * with metadata obtained from the current LiveKit participant.
+	 * This method should be called when a participant wants to refresh their token while in a meeting to get updated permissions
+	 * based on their current LiveKit participant metadata.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param previousToken - The previous room member token to refresh
+	 * @returns A promise that resolves to the new refreshed token
+	 * @throws Error if the previous token is invalid, expired, or if the participant is not found in the meeting
+	 */
+	async refreshRoomMemberToken(roomId: string, previousToken: string): Promise<string> {
+		const { participantIdentity, participantName } = await this.getValidatedRoomMemberTokenContext(
+			roomId,
+			previousToken
+		);
+
+		if (!participantIdentity || !participantName) {
+			throw errorInvalidToken();
+		}
+
+		const tokenMetadata = await this.buildTokenMetadataFromParticipant(roomId, participantIdentity);
+		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
+		return this.tokenService.generateRoomMemberToken({
+			tokenMetadata,
+			livekitPermissions,
+			participantName: participantName,
+			participantIdentity
+		});
+	}
+
+	protected async getValidatedRoomMemberTokenContext(
+		roomId: string,
+		roomMemberToken: string
+	): Promise<{ participantIdentity?: string; participantName?: string; tokenMetadata: MeetRoomMemberTokenMetadata }> {
+		try {
+			const {
+				sub: participantIdentity,
+				name: participantName,
+				metadata
+			} = await this.tokenService.verifyToken(roomMemberToken, INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS);
+
+			if (!metadata) {
+				throw errorInvalidToken();
+			}
+
+			const tokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(metadata);
+
+			if (tokenMetadata.roomId !== roomId) {
+				throw errorInsufficientPermissions();
+			}
+
+			return { participantIdentity, participantName, tokenMetadata };
+		} catch (error) {
+			if (error instanceof OpenViduMeetError) {
+				throw error;
+			}
+
+			this.logger.warn(
+				`Room member token validation rejected for room '${roomId}': token verification failed`,
+				error
+			);
+			throw errorInvalidToken();
+		}
+	}
+
 	protected async resolvePermissionSourceFromSecret(
 		roomId: string,
 		secret: string
@@ -542,7 +648,7 @@ export class RoomMemberService {
 		const isExternalMemberId = secret.startsWith('ext-');
 
 		if (isExternalMemberId) {
-			const member = await this.getRoomMember(roomId, secret);
+			const member = await this.getRoomMember(roomId, secret, ['memberId', 'name', 'effectivePermissions']);
 
 			if (!member) {
 				throw errorRoomMemberNotFound(roomId, secret);
@@ -550,6 +656,7 @@ export class RoomMemberService {
 
 			return {
 				memberId: member.memberId,
+				name: member.name,
 				permissions: member.effectivePermissions
 			};
 		}
@@ -611,12 +718,13 @@ export class RoomMemberService {
 			// Admins and room owner get all permissions without needing a member record in the database
 			return {
 				userId: user.userId,
+				name: user.name,
 				permissions: this.getAllPermissions(),
-				badge: isAdmin ? MeetRoomMemberUIBadge.ADMIN : MeetRoomMemberUIBadge.OWNER
+				badge: isOwner ? MeetRoomMemberUIBadge.OWNER : MeetRoomMemberUIBadge.ADMIN
 			};
 		}
 
-		const member = await this.getRoomMember(roomId, user.userId);
+		const member = await this.getRoomMember(roomId, user.userId, ['name', 'effectivePermissions']);
 
 		if (!member) {
 			return undefined;
@@ -625,6 +733,7 @@ export class RoomMemberService {
 		return {
 			memberId: user.userId,
 			userId: user.userId,
+			name: member.name,
 			permissions: member.effectivePermissions
 		};
 	}
@@ -663,16 +772,10 @@ export class RoomMemberService {
 		return hasModeratorPermissions ? MeetRoomMemberUIBadge.MODERATOR : MeetRoomMemberUIBadge.OTHER;
 	}
 
-	protected async resolveTokenMetadataFromParticipant(
+	protected async buildTokenMetadataFromParticipant(
 		roomId: string,
 		participantIdentity: string
 	): Promise<MeetRoomMemberTokenMetadata> {
-		const sessionParticipantIdentity = this.requestSessionService.getParticipantIdentity();
-
-		if (!sessionParticipantIdentity || sessionParticipantIdentity !== participantIdentity) {
-			throw errorInsufficientPermissions();
-		}
-
 		const participant = await this.getParticipantFromMeeting(roomId, participantIdentity);
 		const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
 
@@ -826,6 +929,27 @@ export class RoomMemberService {
 			this.logger.error('Error applying participant moderation action:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Sends a signal to the participant to regenerate their token and update their permissions in real-time.
+	 * This is used after a participant's permissions have been updated while they are in a meeting.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant to send the signal to
+	 */
+	protected async notifyParticipantPermissionsUpdate(roomId: string, participantIdentity: string): Promise<void> {
+		const isParticipantInMeeting = await this.existsParticipantInMeeting(roomId, participantIdentity);
+
+		if (!isParticipantInMeeting) {
+			this.logger.verbose(
+				`Not sending permissions updated signal to participant '${participantIdentity}' in room '${roomId}'
+				because they are not currently in a meeting`
+			);
+			return;
+		}
+
+		await this.frontendEventService.sendParticipantPermissionsUpdatedSignal(roomId, participantIdentity);
 	}
 
 	/**

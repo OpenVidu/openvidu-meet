@@ -26,24 +26,13 @@ export interface MeetRoomMemberTokenOptions {
 	secret?: string;
 	/**
 	 * Whether the token is intended for joining a meeting.
-	 * If true, participantName must be provided.
 	 */
 	joinMeeting?: boolean;
 	/**
 	 * The name of the participant when joining the meeting.
-	 * Required if joinMeeting is true.
+	 * Required if joinMeeting is true and user is anonymous.
 	 */
 	participantName?: string;
-	/**
-	 * The identity of the participant in the meeting.
-	 * Required when refreshing an existing token used to join a meeting.
-	 */
-	participantIdentity?: string;
-	/**
-	 * If true, the token metadata is rebuilt from the current participant metadata in LiveKit.
-	 * Used when refreshing tokens after in-meeting permission updates.
-	 */
-	useParticipantMetadata?: boolean;
 }
 
 /**

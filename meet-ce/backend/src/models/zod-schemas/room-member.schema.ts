@@ -137,24 +137,11 @@ export const UpdateRoomMemberReqSchema = z.object({
 	customPermissions: PartialMeetPermissionsSchema.optional()
 });
 
-export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
-	.object({
-		secret: z.string().optional(),
-		joinMeeting: z.boolean().optional().default(false),
-		participantName: z.string().optional(),
-		participantIdentity: z.string().optional(),
-		useParticipantMetadata: z.boolean().optional().default(false)
-	})
-	.refine(
-		(data) => {
-			// If joinMeeting is true, participantName must be provided
-			return !data.joinMeeting || data.participantName;
-		},
-		{
-			message: 'participantName is required when joinMeeting is true',
-			path: ['participantName']
-		}
-	);
+export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z.object({
+	secret: z.string().optional(),
+	joinMeeting: z.boolean().optional().default(false),
+	participantName: z.string().optional()
+});
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
 	iat: z.number(),

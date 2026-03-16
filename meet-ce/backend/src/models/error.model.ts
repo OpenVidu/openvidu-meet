@@ -320,6 +320,14 @@ export const errorRoomMemberCannotBeOwnerOrAdmin = (roomId: string, userId: stri
 	);
 };
 
+export const errorParticipantNameRequiredForMeetingJoin = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Member Error',
+		'participantName is required when joining a meeting and it cannot be inferred from member/user context',
+		400
+	);
+};
+
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Participant Error',

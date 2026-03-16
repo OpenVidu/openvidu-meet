@@ -186,3 +186,4 @@ internalRoomRouter.post(
 	authorizeRoomMemberTokenGeneration,
 	roomMemberCtrl.generateRoomMemberToken
 );
+internalRoomRouter.post('/:roomId/members/token/refresh', withValidRoomId, roomMemberCtrl.refreshRoomMemberToken);

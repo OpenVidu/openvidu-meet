@@ -1,4 +1,5 @@
 import {
+	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRoom,
@@ -94,7 +95,7 @@ export class FrontendEventService {
 	}
 
 	/**
-	 * Sends a signal to notify participants in a room about updated participant roles.
+	 * Sends a signal to notify a participant that their role has been updated, including the new badge they received.
 	 */
 	async sendParticipantRoleUpdatedSignal(
 		roomId: string,
@@ -111,12 +112,34 @@ export class FrontendEventService {
 			newBadge,
 			timestamp: Date.now()
 		};
-		const singalOptions: SendDataOptions = {
-			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
+		const signalOptions: SendDataOptions = {
+			topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
+			destinationIdentities: [participantIdentity]
 		};
 
-		// Broadcast the role update to all participants in the meeting
-		await this.sendSignal(roomId, signalPayload, singalOptions);
+		await this.sendSignal(roomId, signalPayload, signalOptions);
+	}
+
+	/**
+	 * Sends a signal to notify a participant that their permissions changed and
+	 * they must regenerate their room member token.
+	 */
+	async sendParticipantPermissionsUpdatedSignal(roomId: string, participantIdentity: string): Promise<void> {
+		this.logger.debug(
+			`Sending participant permissions updated signal for participant '${participantIdentity}' in room '${roomId}'`
+		);
+
+		const signalPayload: MeetParticipantPermissionsUpdatedPayload = {
+			roomId,
+			participantIdentity,
+			timestamp: Date.now()
+		};
+		const signalOptions: SendDataOptions = {
+			topic: MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+			destinationIdentities: [participantIdentity]
+		};
+
+		await this.sendSignal(roomId, signalPayload, signalOptions);
 	}
 
 	/**

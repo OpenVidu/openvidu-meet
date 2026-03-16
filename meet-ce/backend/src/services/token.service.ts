@@ -85,9 +85,9 @@ export class TokenService {
 		return await at.toJwt();
 	}
 
-	async verifyToken(token: string): Promise<ClaimGrants> {
+	async verifyToken(token: string, clockToleranceSeconds = 0): Promise<ClaimGrants> {
 		const verifier = new TokenVerifier(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
-		return await verifier.verify(token, 0);
+		return await verifier.verify(token, clockToleranceSeconds);
 	}
 
 	/**

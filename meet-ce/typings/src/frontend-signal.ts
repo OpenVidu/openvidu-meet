@@ -8,7 +8,9 @@ export enum MeetSignalType {
 	/** Emitted when the configuration of a meeting room is updated */
 	MEET_ROOM_CONFIG_UPDATED = 'meet_room_config_updated',
 	/** Emitted when a participant's role in a meeting room is updated */
-	MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated'
+	MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated',
+	/** Emitted when a participant must regenerate their room member token to sync updated permissions */
+	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated'
 }
 
 /**
@@ -40,7 +42,24 @@ export interface MeetParticipantRoleUpdatedPayload {
 }
 
 /**
- * Union type representing the payload of a MeetSignal.
- * It can be either a {@link MeetRoomConfigUpdatedPayload} or a {@link MeetParticipantRoleUpdatedPayload}, depending on the signal type.
+ * Payload for MEET_PARTICIPANT_PERMISSIONS_UPDATED signal,
+ * containing routing information for the participant that must regenerate their room member token.
  */
-export type MeetSignalPayload = MeetRoomConfigUpdatedPayload | MeetParticipantRoleUpdatedPayload;
+export interface MeetParticipantPermissionsUpdatedPayload {
+	/** ID of the room where permissions were updated */
+	roomId: string;
+	/** Identity of the participant that must regenerate the token */
+	participantIdentity: string;
+	/** Timestamp in milliseconds when the permission update occurred */
+	timestamp: number;
+}
+
+/**
+ * Union type representing the payload of a MeetSignal.
+ * It can be either a {@link MeetRoomConfigUpdatedPayload}, {@link MeetParticipantRoleUpdatedPayload}
+ * or {@link MeetParticipantPermissionsUpdatedPayload}, depending on the signal type.
+ */
+export type MeetSignalPayload =
+	| MeetRoomConfigUpdatedPayload
+	| MeetParticipantRoleUpdatedPayload
+	| MeetParticipantPermissionsUpdatedPayload;

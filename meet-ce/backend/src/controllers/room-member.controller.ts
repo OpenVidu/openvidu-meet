@@ -2,9 +2,10 @@ import { MeetRoomMemberFilters, MeetRoomMemberTokenOptions } from '@openvidu-mee
 import { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { errorRoomMemberNotFound, handleError } from '../models/error.model.js';
+import { errorRoomMemberNotFound, errorUnauthorized, handleError } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
+import { getRoomMemberToken } from '../utils/token.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createRoomMember = async (req: Request, res: Response) => {
@@ -125,13 +126,34 @@ export const generateRoomMemberToken = async (req: Request, res: Response) => {
 	const roomMemberTokenService = container.get(RoomMemberService);
 
 	const { roomId } = req.params;
-	const tokenOptions: MeetRoomMemberTokenOptions = req.body;
+	const tokenOptions = req.body as MeetRoomMemberTokenOptions;
+	const previousToken = getRoomMemberToken(req);
 
 	try {
 		logger.verbose(`Generating room member token for room '${roomId}'`);
-		const token = await roomMemberTokenService.generateOrRefreshRoomMemberToken(roomId, tokenOptions);
+		const token = await roomMemberTokenService.generateRoomMemberToken(roomId, tokenOptions, previousToken);
 		return res.status(200).json({ token });
 	} catch (error) {
 		handleError(res, error, `generating room member token for room '${roomId}'`);
+	}
+};
+
+export const refreshRoomMemberToken = async (req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const roomMemberTokenService = container.get(RoomMemberService);
+
+	const { roomId } = req.params;
+	const previousToken = getRoomMemberToken(req);
+
+	try {
+		if (!previousToken) {
+			throw errorUnauthorized();
+		}
+
+		logger.verbose(`Refreshing room member token for room '${roomId}'`);
+		const token = await roomMemberTokenService.refreshRoomMemberToken(roomId, previousToken);
+		return res.status(200).json({ token });
+	} catch (error) {
+		handleError(res, error, `refreshing room member token for room '${roomId}'`);
 	}
 };
