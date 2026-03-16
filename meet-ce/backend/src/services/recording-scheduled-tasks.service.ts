@@ -78,7 +78,7 @@ export class RecordingScheduledTasksService {
 		let recordingLocks: RedisLock[] = [];
 
 		try {
-			recordingLocks = await this.mutexService.getLocksByPrefix(lockPattern);
+			recordingLocks = await this.mutexService.getRegistryLocksByPrefix(lockPattern);
 
 			if (recordingLocks.length === 0) {
 				this.logger.debug('No active recording locks found');
@@ -120,16 +120,16 @@ export class RecordingScheduledTasksService {
 		const gracePeriodMs = ms(INTERNAL_CONFIG.RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD);
 
 		const safeLockRelease = async (lockKey: string) => {
-			const stillExists = await this.mutexService.lockExists(lockKey);
+			const stillExists = await this.mutexService.lockRegistryExists(lockKey);
 
 			if (stillExists) {
-				await this.mutexService.release(lockKey);
+				await this.mutexService.releaseWithRegistry(lockKey);
 			}
 		};
 
 		try {
 			// Verify if the lock still exists
-			const lockExists = await this.mutexService.lockExists(lockKey);
+			const lockExists = await this.mutexService.lockRegistryExists(lockKey);
 
 			if (!lockExists) {
 				this.logger.debug(`Lock for room ${roomId} no longer exists, skipping cleanup`);
@@ -137,7 +137,7 @@ export class RecordingScheduledTasksService {
 			}
 
 			// Get the lock creation timestamp
-			const lockCreatedAt = await this.mutexService.getLockCreatedAt(lockKey);
+			const lockCreatedAt = await this.mutexService.getLockCreatedAtFromRegistry(lockKey);
 
 			if (lockCreatedAt == null) {
 				this.logger.warn(

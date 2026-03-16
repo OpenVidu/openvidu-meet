@@ -1,10 +1,8 @@
 import { MeetingEndAction, MeetRecordingInfo, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
-import ms from 'ms';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
-import { MeetLock } from '../helpers/redis.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
@@ -15,7 +13,6 @@ import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import { MutexService } from './mutex.service.js';
 import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
@@ -31,7 +28,6 @@ export class LivekitWebhookService {
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
-		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
@@ -48,14 +44,9 @@ export class LivekitWebhookService {
 	 * @param auth - The authentication token for verifying the webhook request.
 	 * @returns The WebhookEvent extracted from the request body.
 	 */
-	async getEventFromWebhook(body: string, auth?: string): Promise<WebhookEvent | undefined> {
+	async getEventFromWebhook(body: string, auth?: string): Promise<WebhookEvent> {
 		try {
-			const webhookEvent = await this.webhookReceiver.receive(body, auth);
-			const lock = await this.mutexService.acquire(MeetLock.getWebhookLock(webhookEvent), ms('5s'));
-
-			if (!lock) return undefined;
-
-			return webhookEvent;
+			return await this.webhookReceiver.receive(body, auth);
 		} catch (error) {
 			this.logger.error('Error receiving webhook event', error);
 			throw error;

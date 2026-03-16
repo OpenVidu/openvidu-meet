@@ -17,10 +17,10 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 	let livekitService: LiveKitService;
 
 	// Mock functions
-	let getLocksByPrefixMock: SpiedFunction<(pattern: string) => Promise<Lock[]>>;
+	let getRegistryLocksByPrefixMock: SpiedFunction<(pattern: string) => Promise<Lock[]>>;
 	let lockExistsMock: SpiedFunction<(key: string) => Promise<boolean>>;
 	let getLockCreatedAtMock: SpiedFunction<(key: string) => Promise<number | null>>;
-	let releaseMock: SpiedFunction<(key: string) => Promise<void>>;
+	let releaseWithRegistryMock: SpiedFunction<(key: string) => Promise<void>>;
 	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let getRoomMock: SpiedFunction<(roomName: string) => Promise<Room>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
@@ -41,10 +41,10 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 		jest.spyOn(logger, 'error').mockImplementation(() => {});
 
 		// Setup spies and store mock references
-		getLocksByPrefixMock = jest.spyOn(mutexService, 'getLocksByPrefix');
-		lockExistsMock = jest.spyOn(mutexService, 'lockExists');
-		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAt');
-		releaseMock = jest.spyOn(mutexService, 'release');
+		getRegistryLocksByPrefixMock = jest.spyOn(mutexService, 'getRegistryLocksByPrefix');
+		lockExistsMock = jest.spyOn(mutexService, 'lockRegistryExists');
+		getLockCreatedAtMock = jest.spyOn(mutexService, 'getLockCreatedAtFromRegistry');
+		releaseWithRegistryMock = jest.spyOn(mutexService, 'releaseWithRegistry');
 		roomExistsMock = jest.spyOn(livekitService, 'roomExists');
 		getRoomMock = jest.spyOn(livekitService, 'getRoom');
 		getInProgressRecordingsEgressMock = jest.spyOn(livekitService, 'getInProgressRecordingsEgress');
@@ -54,7 +54,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 		);
 
 		// Default mock implementations
-		releaseMock.mockResolvedValue();
+		releaseWithRegistryMock.mockResolvedValue();
 	});
 
 	afterEach(() => {
@@ -64,25 +64,25 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 	describe('performActiveRecordingLocksGC', () => {
 		it('should not process any locks when the system has no active recording locks', async () => {
 			// Simulate empty response from lock service
-			getLocksByPrefixMock.mockResolvedValueOnce([]);
+			getRegistryLocksByPrefixMock.mockResolvedValueOnce([]);
 
 			// Execute the garbage collector
 			await recordingTaskScheduler['performActiveRecordingLocksGC']();
 
 			// Verify that we checked for locks but didn't attempt to process any
-			expect(getLocksByPrefixMock).toHaveBeenCalled();
+			expect(getRegistryLocksByPrefixMock).toHaveBeenCalled();
 			expect(evaluateAndReleaseOrphanedLockMock).not.toHaveBeenCalled();
 		});
 
 		it('should gracefully handle database errors during lock retrieval', async () => {
 			// Simulate database connection failure or other error
-			getLocksByPrefixMock.mockRejectedValueOnce(new Error('Failed to retrieve locks'));
+			getRegistryLocksByPrefixMock.mockRejectedValueOnce(new Error('Failed to retrieve locks'));
 
 			// Execute the garbage collector - should not throw
 			await recordingTaskScheduler['performActiveRecordingLocksGC']();
 
 			// Verify the error was handled properly without further processing
-			expect(getLocksByPrefixMock).toHaveBeenCalled();
+			expect(getRegistryLocksByPrefixMock).toHaveBeenCalled();
 			expect(evaluateAndReleaseOrphanedLockMock).not.toHaveBeenCalled();
 		});
 
@@ -95,7 +95,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			];
 
 			// Simulate existing locks in the system
-			getLocksByPrefixMock.mockResolvedValueOnce(
+			getRegistryLocksByPrefixMock.mockResolvedValueOnce(
 				testLockResources.map((resource) => ({ resources: [resource] }) as Lock)
 			);
 
@@ -126,7 +126,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			// Verify that no further checks were performed
 			expect(getLockCreatedAtMock).not.toHaveBeenCalled();
 			expect(roomExistsMock).not.toHaveBeenCalled();
-			expect(releaseMock).not.toHaveBeenCalled();
+			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
 		it('should skip processing if the lock is too recent', async () => {
@@ -144,7 +144,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			// Verify that lock age was checked but no further processing occurred
 			expect(getLockCreatedAtMock).toHaveBeenCalled();
 			expect(roomExistsMock).not.toHaveBeenCalled();
-			expect(releaseMock).not.toHaveBeenCalled();
+			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
 		it('should release lock for a room with no publishers and no active recordings', async () => {
@@ -168,7 +168,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(getRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseMock).toHaveBeenCalledWith(`prefix_${roomId}`);
+			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
 
 		it('should release the lock for a room with active recordings and lack of publishers', async () => {
@@ -192,7 +192,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(getRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseMock).toHaveBeenCalledWith(`prefix_${roomId}`);
+			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
 
 		it('should keep lock for a room with active recordings and with publishers', async () => {
@@ -216,7 +216,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(getRoomMock).toHaveBeenCalledWith(roomId);
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseMock).not.toHaveBeenCalled();
+			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
 		it('should release the lock for a non-existent room with active recordings', async () => {
@@ -237,7 +237,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(getRoomMock).not.toHaveBeenCalled(); // Room doesn't exist
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseMock).toHaveBeenCalledWith(`prefix_${roomId}`);
+			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
 
 		it('should release lock for a non-existent room with no active recordings', async () => {
@@ -258,7 +258,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			expect(roomExistsMock).toHaveBeenCalledWith(roomId);
 			expect(getRoomMock).not.toHaveBeenCalled(); // Room doesn't exist
 			expect(getInProgressRecordingsEgressMock).toHaveBeenCalledWith(roomId);
-			expect(releaseMock).toHaveBeenCalledWith(`prefix_${roomId}`);
+			expect(releaseWithRegistryMock).toHaveBeenCalledWith(`prefix_${roomId}`);
 		});
 
 		it('should handle errors during room existence check', async () => {
@@ -279,7 +279,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Verify that process stopped at roomExists
 			expect(getRoomMock).not.toHaveBeenCalled();
-			expect(releaseMock).not.toHaveBeenCalled();
+			expect(releaseWithRegistryMock).not.toHaveBeenCalled();
 		});
 
 		it('should handle errors during lock release', async () => {
@@ -294,7 +294,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 			getInProgressRecordingsEgressMock.mockResolvedValueOnce([]);
 
 			// Simulate error during release
-			releaseMock.mockRejectedValueOnce(new Error('Failed to release lock'));
+			releaseWithRegistryMock.mockRejectedValueOnce(new Error('Failed to release lock'));
 
 			// Execute evaluateAndReleaseOrphanedLock and expect error to propagate
 			await expect(recordingTaskScheduler['evaluateAndReleaseOrphanedLock'](roomId, 'prefix_')).rejects.toThrow(

@@ -32,47 +32,38 @@ export class StorageInitService {
 	 */
 	async initializeStorage(): Promise<void> {
 		const lockKey = MeetLock.getStorageInitializationLock();
-		let lockAcquired = false;
 
 		try {
-			// Acquire a global lock to prevent multiple initializations at the same time when running in HA mode
-			const lock = await this.mutexService.acquire(lockKey, ms('30s'));
+			const executionResult = await this.mutexService.withLock(lockKey, ms('30s'), async () => {
+				const isInitialized = await this.checkStorageInitialization();
 
-			if (!lock) {
+				if (isInitialized) {
+					this.logger.verbose('Storage already initialized for this project');
+					return;
+				}
+
+				this.logger.info('Starting storage initialization with default data');
+
+				// Initialize all components
+				await Promise.all([
+					this.globalConfigService.initializeGlobalConfig(),
+					this.userService.initializeAdminUser(),
+					this.apiKeyService.initializeApiKey()
+				]);
+
+				this.logger.info('Storage initialization completed successfully');
+				return true;
+			});
+
+			if (executionResult === null) {
 				this.logger.warn(
 					'Unable to acquire lock for storage initialization. May be already initialized by another instance.'
 				);
 				return;
 			}
-
-			lockAcquired = true;
-
-			const isInitialized = await this.checkStorageInitialization();
-
-			if (isInitialized) {
-				this.logger.verbose('Storage already initialized for this project');
-				return;
-			}
-
-			this.logger.info('Starting storage initialization with default data');
-
-			// Initialize all components
-			await Promise.all([
-				this.globalConfigService.initializeGlobalConfig(),
-				this.userService.initializeAdminUser(),
-				this.apiKeyService.initializeApiKey()
-			]);
-
-			this.logger.info('Storage initialization completed successfully');
 		} catch (error) {
 			this.logger.error('Error initializing storage with default data:', error);
 			throw internalError('Failed to initialize storage');
-		} finally {
-			// Always release the lock after initialization completes or fails
-			if (lockAcquired) {
-				await this.mutexService.release(lockKey);
-				this.logger.debug('Storage initialization lock released');
-			}
 		}
 	}
 

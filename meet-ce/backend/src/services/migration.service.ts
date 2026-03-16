@@ -36,35 +36,28 @@ export class MigrationService {
 	async runMigrations(): Promise<void> {
 		this.logger.info('Running migrations...');
 		const lockKey = MeetLock.getMigrationLock();
-		let lockAcquired = false;
 
 		try {
-			// Acquire a global lock to prevent multiple migrations at the same time when running in HA mode
-			const lock = await this.mutexService.acquire(lockKey, ms('5m'));
+			const executionResult = await this.mutexService.withLock(lockKey, ms('5m'), async () => {
+				// Run schema migrations to upgrade document structures
+				await this.runSchemaMigrations();
 
-			if (!lock) {
+				// Sync collection indexes to match current schema definitions
+				await this.runIndexMigrations();
+
+				this.logger.info('All migrations completed successfully');
+				return true;
+			});
+
+			if (executionResult === null) {
 				this.logger.warn('Unable to acquire lock for migrations. May be already running on another instance.');
 				return;
 			}
-
-			lockAcquired = true;
-
-			// Run schema migrations to upgrade document structures
-			await this.runSchemaMigrations();
-
-			// Sync collection indexes to match current schema definitions
-			await this.runIndexMigrations();
 
 			this.logger.info('All migrations completed successfully');
 		} catch (error) {
 			this.logger.error('Error running migrations:', error);
 			throw error;
-		} finally {
-			// Always release the lock after migrations complete or fail
-			if (lockAcquired) {
-				await this.mutexService.release(lockKey);
-				this.logger.debug('Migration lock released');
-			}
 		}
 	}
 
