@@ -132,8 +132,9 @@ export class MeetingEventHandlerService {
 		};
 		this.wcManagerService.sendMessageToParent(message);
 
-		// Clear participant identity and token
+		// Clear room member and meeting context
 		this.roomMemberContextService.clearContext();
+		this.meetingContext.clearContext();
 
 		// Navigate to disconnected page
 		await this.navigationService.navigateTo('/disconnected', { reason: leftReason }, true);

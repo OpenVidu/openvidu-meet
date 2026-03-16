@@ -378,6 +378,7 @@ export class MeetingLobbyService {
 			}
 
 			this._roomMemberToken.set(roomMemberToken);
+			this.meetingContextService.setIsActiveMeeting(true);
 		} catch (error: any) {
 			this.log.e('Error generating room member token for joining meeting:', error);
 			const message = error?.error?.message || error.message || 'Unknown error';

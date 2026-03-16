@@ -28,6 +28,7 @@ export class MeetingContextService {
 	private readonly _e2eeKey = signal<string>('');
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _hasRecordings = signal<boolean>(false);
+	private readonly _isActiveMeeting = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
@@ -51,6 +52,8 @@ export class MeetingContextService {
 	readonly hasRecordings = this._hasRecordings.asReadonly();
 	/** Readonly signal for who ended the meeting ('self', 'other', or null) */
 	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
+	/** Readonly signal for whether the meeting is active */
+	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
 
 	/** Readonly signal for the current LiveKit room */
 	readonly lkRoom = this._lkRoom.asReadonly();
@@ -93,7 +96,10 @@ export class MeetingContextService {
 	setMeetRoom(room: MeetRoom): void {
 		this._meetRoom.set(room);
 		this.setRoomId(room.roomId);
-		this.setMeetingUrl(room.access.registered.url);
+
+		if (room.access?.registered?.url) {
+			this.setMeetingUrl(room.access.registered.url);
+		}
 	}
 
 	/**
@@ -151,6 +157,14 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Sets whether the meeting is active
+	 * @param isActive True if the meeting is active, false otherwise
+	 */
+	setIsActiveMeeting(isActive: boolean): void {
+		this._isActiveMeeting.set(isActive);
+	}
+
+	/**
 	 * Sets who ended the meeting
 	 * @param by 'self' if ended by this user, 'other' if ended by someone else
 	 */
@@ -195,6 +209,7 @@ export class MeetingContextService {
 		this._e2eeKey.set('');
 		this._isE2eeKeyFromUrl.set(false);
 		this._hasRecordings.set(false);
+		this._isActiveMeeting.set(false);
 		this._meetingEndedBy.set(null);
 		this._lkRoom.set(undefined);
 		this._localParticipant.set(undefined);
